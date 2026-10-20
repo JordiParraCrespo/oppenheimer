@@ -30,7 +30,12 @@ function check(files, extra = {}) {
   const root = mkdtempSync(join(tmpdir(), 'oppenheimer-structure-'));
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
-  for (const script of ['check-frontend-structure.mjs', 'query-state-slots.mjs']) {
+  for (const script of [
+    'check-frontend-structure.mjs',
+    'query-state-slots.mjs',
+    'skeleton-shape.mjs',
+    'skeleton-slab-debt.mjs',
+  ]) {
     copyFileSync(new URL(`./${script}`, import.meta.url), join(root, 'scripts', script));
   }
   // A feature is named after a module of the kernel or of the product package.
@@ -384,6 +389,49 @@ test('a QueryState missing a rung is reported with its file and line', () => {
   });
   assert.match(report, /sections\/no-error\.tsx:3: <QueryState> without QueryState\.Error —/);
 });
+const slabbed = (...pendings) => `export function ThingList() {
+  return (
+    <>
+${pendings
+  .map(
+    (inside) => `      <QueryState>
+        <QueryState.Pending>${inside}</QueryState.Pending>
+        <QueryState.Error fallback="failed" />
+        <QueryState.Data><ThingRows /></QueryState.Data>
+      </QueryState>`,
+  )
+  .join('\n')}
+    </>
+  );
+}
+`;
+const SLAB = '<Skeleton className="h-60 w-full" />';
+// On SLAB_DEBT with one slab.
+const DEBTOR = 'src/features/bots/screens/bot-memory.tsx';
+
+test('a slab placeholder is reported with its file and line', () => {
+  const { report } = check({ 'src/features/things/sections/thing-list.tsx': slabbed(SLAB) });
+  assert.match(
+    report,
+    /sections\/thing-list\.tsx:5: QueryState\.Pending is a slab \(h-60 w-full\)/,
+  );
+});
+
+test('a debt-listed file is held to its count: one more slab is reported, as many pass', () => {
+  assert.doesNotMatch(check({ [DEBTOR]: slabbed(SLAB) }).report, /bot-memory\.tsx.*slab/);
+  assert.match(
+    check({ [DEBTOR]: slabbed(SLAB, SLAB) }).report,
+    /bot-memory\.tsx:\d+: QueryState\.Pending is a slab/,
+  );
+});
+
+test('a debt-listed file with fewer slabs than its count asks for the count to come down', () => {
+  assert.match(
+    check({ [DEBTOR]: slabbed('<ThingListSkeleton />') }).report,
+    /bot-memory\.tsx: holds 0 slabs, SLAB_DEBT says 1 — lower its count/,
+  );
+});
+
 test('a Suspense read that draws no ErrorAlert for a later failure is reported', () => {
   const rows = (alert) => `import { useSuspenseThings } from '@oppenheimer/frontend-consumer/react';
 export function ThingRows() {

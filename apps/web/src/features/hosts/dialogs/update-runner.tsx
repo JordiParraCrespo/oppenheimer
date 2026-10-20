@@ -23,7 +23,7 @@ export function UpdateRunnerDialog({ host, onClose }: { host: HostEntity; onClos
     <ConfirmDialog
       tone="primary"
       title={t('hosts.settings.updateTitle', { name: host.name })}
-      description={t('hosts.settings.updateDescription', { name: host.name })}
+      description={t('hosts.settings.updateDescription')}
       confirmLabel={t('hosts.settings.updateRunner')}
       pendingLabel={t('hosts.settings.updating')}
       pending={update.isPending}

@@ -128,6 +128,8 @@ describe('BotSessionToolsFactory', () => {
     });
     expect(command.idempotencyKey).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(result.content).toContain('Started session session-1');
+    // The chat links to the session from this, not from the words.
+    expect(result.data).toEqual({ sessionId: 'session-1' });
   });
 
   it('gives the same call in the same turn the same idempotency key', async () => {

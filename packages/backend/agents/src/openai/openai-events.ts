@@ -1,5 +1,5 @@
 import type { BotEngineEvent } from '../bot-engine';
-import { describeError, failed, resetFromHeaders } from '../turn';
+import { describeError, failed, resetFromHeaders, type ToolCallData } from '../turn';
 
 /**
  * The part of the OpenAI Agents SDK's `RunStreamEvent` this package reads,
@@ -62,15 +62,18 @@ function outputText(output: unknown): string {
 /**
  * Turns the OpenAI Agents SDK's stream events into the engine's events, and
  * the run's end into `usage` and `done`. Whether a tool call failed is not
- * in the SDK's event; the adapter records it as it runs the tool, and
- * passes it in.
+ * in the SDK's event, nor what the call made; the adapter records both as
+ * it runs the tool, and passes them in.
  */
 export class OpenAiEventTranslator {
   private inputTokens = 0;
   private outputTokens = 0;
   private sawUsage = false;
 
-  constructor(private readonly toolFailed: (callId: string) => boolean) {}
+  constructor(
+    private readonly toolFailed: (callId: string) => boolean,
+    private readonly made: ToolCallData,
+  ) {}
 
   translate(event: OpenAiStreamEvent): BotEngineEvent[] {
     if (event.type === 'raw_model_stream_event') {
@@ -102,8 +105,9 @@ export class OpenAiEventTranslator {
             input: parseArguments(raw.arguments),
           },
         ];
-      case 'tool_output':
+      case 'tool_output': {
         if (raw.type !== 'function_call_result' || !raw.callId || !raw.name) return [];
+        const data = this.made.take(raw.callId);
         return [
           {
             type: 'tool.finished',
@@ -111,8 +115,10 @@ export class OpenAiEventTranslator {
             name: raw.name,
             output: outputText(event.item.output),
             isError: this.toolFailed(raw.callId),
+            ...(data ? { data } : {}),
           },
         ];
+      }
       default:
         return [];
     }

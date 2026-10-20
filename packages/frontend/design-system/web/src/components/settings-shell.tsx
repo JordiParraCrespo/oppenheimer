@@ -8,6 +8,9 @@ import { cn } from '../lib/utils';
  * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left, then a
  * main column on the recessed ground (grey under white cards) that scrolls on
  * its own, holding the measured content column. What goes in it is the page's.
+ * Settings stacks its nav over the page on a phone (`flex-col md:flex-row`,
+ * the nav a strip there); a shell whose first column is the console's rail
+ * stays a row and stacks inside the column beside it.
  *
  * ```tsx
  * <SettingsShell>
@@ -33,18 +36,33 @@ function SettingsMain({ className, ...props }: React.ComponentProps<'main'>) {
   return (
     <main
       data-slot="settings-main"
-      className={cn('min-w-0 flex-1 overflow-y-auto bg-canvas-recessed', className)}
+      className={cn('min-h-0 min-w-0 flex-1 overflow-y-auto bg-canvas-recessed', className)}
       {...props}
     />
   );
 }
 
-/** The measured content column: 760px, centred, the export's padding, sections 40px apart. */
-function SettingsContent({ className, ...props }: React.ComponentProps<'div'>) {
+/**
+ * The measured content column: the console's 760px and gutter (32px, 16px on
+ * a phone), sections 40px apart. Where it opens is `offset`, what sits above it:
+ *
+ * - `shell` (Settings): 72px down, where a console page's title sits under
+ *   its 48px bar; on a phone, 24px under the nav's strip.
+ * - `bar` (a bot's settings, under its own bar): 24px down at every width,
+ *   as a console page opens under its bar.
+ */
+const SETTINGS_OFFSET = { shell: 'pt-6 md:pt-18', bar: 'pt-6' } as const;
+
+function SettingsContent({
+  offset = 'shell',
+  className,
+  ...props
+}: React.ComponentProps<'div'> & { offset?: keyof typeof SETTINGS_OFFSET }) {
   return (
     <div
       data-slot="settings-content"
-      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-10 pt-16 pb-24', className)}
+      data-offset={offset}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-10 px-4 pb-18 sm:px-8', SETTINGS_OFFSET[offset], className)}
       {...props}
     />
   );
@@ -53,7 +71,7 @@ function SettingsContent({ className, ...props }: React.ComponentProps<'div'>) {
 /**
  * How a section opens: the display title at the ladder's h2 stop, a muted
  * line under it, and the section's one action on the right (Add host),
- * aligned to the foot.
+ * aligned to the foot; on a narrow page the action wraps under the text.
  */
 function SettingsTitle({
   title,
@@ -67,8 +85,8 @@ function SettingsTitle({
   action?: React.ReactNode;
 }) {
   return (
-    <div data-slot="settings-title" className={cn('flex items-end gap-4', className)} {...props}>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+    <div data-slot="settings-title" className={cn('flex flex-wrap items-end gap-x-4 gap-y-3', className)} {...props}>
+      <div className="wrap-lead flex flex-col gap-1.5">
         <h1 className="m-0 font-display text-h2 leading-(--leading-body) font-semibold tracking-[-0.02em] text-fg">
           {title}
         </h1>

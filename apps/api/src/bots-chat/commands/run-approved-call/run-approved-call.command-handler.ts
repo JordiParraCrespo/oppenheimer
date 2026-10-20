@@ -56,7 +56,7 @@ export class RunApprovedCallCommandHandler
       granted,
       asked?.timeZone ?? null,
     );
-    approval.recordResult(answer.content, answer.isError);
+    approval.recordResult(answer.content, answer.isError, answer.sessionId ?? null);
     const owner = bot.unwrap();
     // An approver whose account is gone gets no report: there is nobody to send it as.
     const continuation = approval.decidedByUserId

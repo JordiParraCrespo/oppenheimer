@@ -14,11 +14,13 @@ import {
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
-import type {
-  BotApprovalDecision,
-  BotDocumentName,
-  BotMessageEvent,
-  BotProvider,
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_REPLY_OUTCOMES,
+  type BotApprovalDecision,
+  type BotDocumentName,
+  type BotMessageEvent,
+  type BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -74,6 +76,7 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.configured,
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
+    dto.isDefault,
   );
 }
 
@@ -151,18 +154,54 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   );
 }
 
-/** The response's event as the domain's: the wire is already the union, kind by kind. */
-function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent {
-  return dto.kind === 'routine'
-    ? {
+/**
+ * The wire's event as the union the chat draws from, kind by kind: an
+ * approval, a routine's activity, a message from another bot, or the answer
+ * to an ask. An outcome this client does not know reads as no event, and the
+ * chat falls back to the message's first line.
+ */
+function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent | null {
+  switch (dto.kind) {
+    case 'approval': {
+      const outcome = BOT_EVENT_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'approval',
+            outcome,
+            tool: dto.tool,
+            summary: dto.summary,
+            sessionId: dto.sessionId ?? null,
+          }
+        : null;
+    }
+    case 'routine':
+      return {
         kind: 'routine',
         activity: dto.activity,
         automationId: dto.automationId,
         runId: dto.runId ?? null,
         name: dto.name,
         reason: dto.reason ?? null,
-      }
-    : { kind: 'approval', outcome: dto.outcome, tool: dto.tool, summary: dto.summary };
+      };
+    case 'bot_message':
+      return {
+        kind: 'bot_message',
+        fromBotId: dto.fromBotId ?? null,
+        fromBotName: dto.fromBotName,
+        expectsReply: dto.expectsReply,
+      };
+    case 'bot_reply': {
+      const outcome = BOT_REPLY_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'bot_reply',
+            fromBotId: dto.fromBotId ?? null,
+            fromBotName: dto.fromBotName,
+            outcome,
+          }
+        : null;
+    }
+  }
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
@@ -328,7 +367,10 @@ export class BotsRepository {
     return toBot(data);
   }
 
-  /** A blank bot: the next free first name ("Juno", "Milo"…), ungrouped. */
+  /**
+   * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
+   * the workspace's default provider.
+   */
   @MapApiError(BotsErrors.SAVE_FAILED)
   async create(): Promise<BotEntity> {
     const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
@@ -521,6 +563,15 @@ export class BotsRepository {
     await unwrap(
       heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
       BotsErrors.SAVE_PROVIDER_KEY_FAILED,
+    );
+  }
+
+  /** Makes `provider`, which must have a key, the one new bots start on. */
+  @MapApiError(BotsErrors.SET_DEFAULT_PROVIDER_FAILED)
+  async setDefaultModelProvider(provider: BotProvider): Promise<void> {
+    await unwrap(
+      heyApiSdk.setDefaultModelProvider({ path: { provider } }),
+      BotsErrors.SET_DEFAULT_PROVIDER_FAILED,
     );
   }
 

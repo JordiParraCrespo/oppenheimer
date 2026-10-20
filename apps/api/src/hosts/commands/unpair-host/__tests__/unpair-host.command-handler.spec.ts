@@ -2,6 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostRepositoryPort } from '../../../database/host.repository.port';
+import { HostUnpairedDomainEvent } from '../../../domain/events/host-unpaired.domain-event';
 import { HostEntity } from '../../../domain/host.entity';
 import { UnpairHostCommand } from '../unpair-host.command';
 import { UnpairHostCommandHandler } from '../unpair-host.command-handler';
@@ -41,7 +42,8 @@ describe('UnpairHostCommandHandler', () => {
     handler = new UnpairHostCommandHandler(hosts as HostRepositoryPort);
   });
 
-  const command = () => new UnpairHostCommand({ scope: scope(), hostId: 'host-1' });
+  const command = (wipe = false) =>
+    new UnpairHostCommand({ scope: scope(), hostId: 'host-1', wipe });
 
   it('marks the host unpaired and keeps the row', async () => {
     await handler.execute(command());
@@ -49,6 +51,15 @@ describe('UnpairHostCommandHandler', () => {
     const [saved] = vi.mocked(hosts.save).mock.calls[0];
     expect(saved.unpairedAt).toBeInstanceOf(Date);
     expect(saved.id).toBe('host-1');
+  });
+
+  it('carries the owner’s clean-up request on the unpaired event', async () => {
+    await handler.execute(command(true));
+
+    const [saved] = vi.mocked(hosts.save).mock.calls[0];
+    const [event] = saved.domainEvents;
+    expect(event).toBeInstanceOf(HostUnpairedDomainEvent);
+    expect(event).toMatchObject({ wipe: true });
   });
 
   it('reports a host outside the caller’s scope as missing', async () => {

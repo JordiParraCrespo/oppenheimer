@@ -1,0 +1,14 @@
+# Loads every dashboard in deploy/dev/monitoring/grafana/ (mounted read-only
+# at /var/lib/grafana/dashboards), so the repository stays their source of
+# truth: an edit to the JSON shows up within the interval below, and an edit
+# made in the UI is refused rather than lost on the next restart.
+apiVersion: 1
+
+providers:
+  - name: oppenheimer
+    folder: Oppenheimer
+    type: file
+    allowUiUpdates: false
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards

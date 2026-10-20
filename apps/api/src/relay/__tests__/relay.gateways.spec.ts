@@ -171,7 +171,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
 
   const registry = new InProcessLinkRegistry(() => 0);
   const reconciliation: SessionReconciliationPort = {
-    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
+    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [], reclosed: [] }),
   };
   const scopes: ScopeResolverPort = {
     resolve: vi.fn(async ({ userId, organizationId }) => ({

@@ -64,10 +64,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
-  useModelProviders,
-  usePutModelProviderKey,
   useReloadBotDocuments,
-  useRemoveModelProviderKey,
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
@@ -77,7 +74,6 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
-  useSuspenseModelProviders,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -122,6 +118,13 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export {
+  useModelProviders,
+  usePutModelProviderKey,
+  useRemoveModelProviderKey,
+  useSetDefaultModelProvider,
+  useSuspenseModelProviders,
+} from './model-providers.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
   useCheckSlug,

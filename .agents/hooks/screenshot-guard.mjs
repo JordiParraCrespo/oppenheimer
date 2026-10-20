@@ -14,7 +14,9 @@
 //   hook's internals). The same line belongs in the PR.
 //
 // It blocks once per stop: `stop_hook_active` lets the second stop through,
-// so a turn that is only a question to the user is never held. Cases are in
+// so a turn that is only a question to the user is never held. A run that
+// photographs nothing by design sets `OPPENHEIMER_SCREENSHOT_GUARD=off` (the
+// audit eval's agent, whose cases change `apps/web`). Cases are in
 // `.agents/hooks/screenshot-guard.test.mjs`.
 
 import { execFileSync } from 'node:child_process';
@@ -61,6 +63,8 @@ function main() {
     input = JSON.parse(readFileSync(0, 'utf8') || '{}');
   } catch {}
   if (input.stop_hook_active) return;
+  // A run that photographs nothing by design (the audit eval's worktrees).
+  if (process.env.OPPENHEIMER_SCREENSHOT_GUARD === 'off') return;
   let root;
   try {
     root = execFileSync('git', ['rev-parse', '--show-toplevel'], {

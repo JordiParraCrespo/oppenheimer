@@ -5,13 +5,13 @@ import {
   CardFooter,
   Prose,
   PullRequestHeader,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { PencilIcon } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { useSuspensePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, Markdown, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { CommentersSkeleton } from '../components/commenters-skeleton';
 import { LaneBadge } from '../components/lane-badge';
 import { PullRequestRail } from '../components/pull-request-rail';
 import { pullState } from '../lib/pull-state';
@@ -75,7 +75,7 @@ export function PullRequestDescription({ address }: { address: PullRequestAddres
           comments={
             <QueryState>
               <QueryState.Pending>
-                <Skeleton className="h-5 w-32" />
+                <CommentersSkeleton />
               </QueryState.Pending>
               <QueryState.Error fallback={t('pullRequests.detail.rail.commentsFailed')} />
               <QueryState.Data>

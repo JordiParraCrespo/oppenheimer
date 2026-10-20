@@ -39,12 +39,15 @@ type SessionRename = {
  * name truncated, and a mono age that appears on hover and on the active row.
  * A session still provisioning is `pending`: the grey glyph pulses, so a row
  * that joined the list a second ago reads as on its way rather than idle.
+ * A row waiting on something says so in a `status` word that stays in the
+ * age's place (a deleted session its host has not removed yet).
  * 30px is the floor; tighter and the pointer target gets unreliable in a long
  * list. Rows sit 1px apart in a `SessionList`.
  */
 function SessionItem({
   name,
   age,
+  status,
   state = 'idle',
   active,
   icon,
@@ -60,6 +63,12 @@ function SessionItem({
   name: string;
   /** Relative age, mono ("2m", "4h"). */
   age?: string;
+  /**
+   * A word for what the row is waiting on ("Deleting…", "Not deleted"), in the
+   * age's place and shown at all times: unlike the age, the reader needs it
+   * without pointing at the row. It gives way to the ellipsis like the age.
+   */
+  status?: string;
   state?: StatusState;
   active?: boolean;
   /** Replaces the branch glyph. */
@@ -130,7 +139,17 @@ function SessionItem({
           {name}
         </span>
       )}
-      {age && !rename ? (
+      {status && !rename ? (
+        <span
+          className={cn(
+            'shrink-0 text-[11px] text-fg-muted',
+            state === 'failed' && 'text-danger',
+            withAction && META_GIVES_WAY,
+          )}
+        >
+          {status}
+        </span>
+      ) : age && !rename ? (
         <span
           className={cn(
             'figures shrink-0 text-[11px] text-fg opacity-0 transition-opacity duration-fast group-hover/session:opacity-100 group-data-active/session:opacity-100 group-focus-visible/session:opacity-100',

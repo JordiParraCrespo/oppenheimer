@@ -20,9 +20,11 @@ import { CloseSessionCommand } from './close-session.command';
  * would make the terminal tombstone permanent before anybody looked at the worktrees.
  *
  * `acceptUnpushedWork` rides with the close the runner is sent, and on the log entry:
- * it lets a host remove a dirty worktree. With the host offline the session stays
- * `open` with a request on its log, the honest state, which the `host_offline` hint
- * reports.
+ * it lets a host remove a dirty worktree. The fold keeps the request as the row's
+ * `closeRequest` until the host answers, so with the host offline (or the link lost
+ * after the send) the session stays `open` with a close owed, the honest state, which
+ * the `host_offline` hint reports and the host's next hello is sent again
+ * (`SessionReconciliationResolver`).
  *
  * Asking twice is asking once for a session already resolved: a retry after a lost
  * response is not a conflict.

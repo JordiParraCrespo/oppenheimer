@@ -5827,6 +5827,64 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/wipe": {
+      "post": {
+        "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
+        "operationId": "wipeHost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired, its runner told to clean up"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host and clean its machine up",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/hosts/{id}/update": {
       "post": {
         "description": "Asks the host's runner to install the newest signed release on its channel now. Accepted is not done: the runner verifies the release itself, restarts on it, and reports the new version when it reconnects. A runner already current, or pinned, stays as it is.",
@@ -8149,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8307,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16710,6 +16778,84 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/model-providers/{provider}/default": {
+      "put": {
+        "description": "Only a provider the workspace has a key for. Bots already made keep their provider; a bot created naming none starts on this one, at its default model.",
+        "operationId": "setDefaultModelProvider",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_023 — That model provider has no key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a model provider the one new bots start on",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/model-providers/chatgpt/login": {
       "post": {
         "description": "ChatGPT's device code flow, as the Codex CLI runs it: the person types `userCode` on `verificationUrl` and the console polls with `flowId` until the sign-in is stored. Bots on the `chatgpt` provider then run on that ChatGPT subscription.",
@@ -21841,6 +21987,37 @@
           "branch"
         ]
       },
+      "SessionCloseRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the close was asked for."
+          },
+          "acceptUnpushedWork": {
+            "type": "boolean",
+            "description": "Whether the close may remove a worktree with unpushed work."
+          }
+        },
+        "required": ["requestedAt", "acceptUnpushedWork"]
+      },
+      "SessionCloseRefusalResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.",
+            "example": "GIT_003"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Git’s or the runner’s own words, verbatim.",
+            "nullable": true
+          }
+        },
+        "required": ["code"]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -21943,6 +22120,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "closeRequest": {
+            "nullable": true,
+            "description": "A close owed to the host and not yet answered. Null when none is.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRequestResponseDto"
+              }
+            ]
+          },
+          "closeRefusal": {
+            "nullable": true,
+            "description": "Why the host refused the last close. Null when it did not, or it was asked again.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRefusalResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "format": "date-time",
@@ -24538,6 +24735,11 @@
             "type": "string",
             "nullable": true,
             "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "meetingUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one."
           }
         },
         "required": ["id", "source", "title", "notes", "date", "allDay", "busy"]
@@ -24725,6 +24927,11 @@
             "type": "string",
             "nullable": true,
             "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "meetingUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one."
           },
           "connectionId": {
             "type": "string",
@@ -26203,9 +26410,13 @@
             "type": "string",
             "nullable": true,
             "format": "date-time"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is."
           }
         },
-        "required": ["provider", "configured", "keyHint", "updatedAt"]
+        "required": ["provider", "configured", "keyHint", "updatedAt", "isDefault"]
       },
       "PutModelProviderCredentialRequest": {
         "type": "object",
@@ -26284,9 +26495,15 @@
           "summary": {
             "type": "string",
             "description": "The card's line: what the call does, in words."
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the approved call started; null when it started none."
           }
         },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
       },
       "BotRoutineEventResponseDto": {
         "type": "object",
@@ -26322,6 +26539,54 @@
         },
         "required": ["kind", "activity", "automationId", "runId", "name", "reason"]
       },
+      "BotPeerMessageEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_message"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "description": "Sent with ask_bot, so this bot answers it."
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "expectsReply"]
+      },
+      "BotPeerReplyEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_reply"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that answered; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The answering bot's name when it answered."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["answered", "failed", "cancelled"]
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "outcome"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -26343,9 +26608,15 @@
           },
           "isError": {
             "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the call started (`start_session`); null for any other call."
           }
         },
-        "required": ["callId", "name", "input", "output", "isError"]
+        "required": ["callId", "name", "input", "output", "isError", "sessionId"]
       },
       "BotMessageResponseDto": {
         "type": "object",
@@ -26380,6 +26651,12 @@
               },
               {
                 "$ref": "#/components/schemas/BotRoutineEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerMessageEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerReplyEventResponseDto"
               }
             ],
             "nullable": true,

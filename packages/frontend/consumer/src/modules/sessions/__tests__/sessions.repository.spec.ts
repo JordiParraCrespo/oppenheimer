@@ -77,22 +77,26 @@ describe('SessionsRepository.findAll', () => {
 });
 
 /**
- * The API takes a close for a host that is offline and records it, but never
- * sends it again: answered as a success, the console would wait on a delete
- * nothing will carry out.
+ * The API takes a close for a host that is offline and keeps it owed, sending
+ * it again when the host reconnects. Refusing it here was right while nothing
+ * re-sent it; now it would tell the reader a delete failed that is on its way.
  */
 describe('SessionsRepository.close', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('refuses a close that never reached its host', async () => {
+  it('answers a close that has not reached its host yet with the close owed', async () => {
     vi.mocked(heyApiSdk.closeSession).mockResolvedValue(
-      ok({ ...session('s1'), hints: ['host_offline'] }),
+      ok({
+        ...session('s1'),
+        hints: ['host_offline'],
+        closeRequest: { requestedAt: '2026-10-18T12:00:00Z', acceptUnpushedWork: false },
+      }),
     );
 
-    const error = await new SessionsRepository().close('s1').catch((e) => e as AppError);
+    const closed = await new SessionsRepository().close('s1');
 
-    expect(error).toBeInstanceOf(AppError);
-    expect((error as AppError).code).toBe('SESSIONS_CLIENT_019');
+    expect(closed.isHostOffline).toBe(true);
+    expect(closed.isClosing).toBe(true);
   });
 
   it('answers the row of a close its host was sent', async () => {

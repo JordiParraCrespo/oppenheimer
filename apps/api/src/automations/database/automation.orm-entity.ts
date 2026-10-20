@@ -22,7 +22,7 @@ export class AutomationOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  /** Null only for a bot routine (`1791002600000-AddBotRoutines`). */
+  /** Null only for a bot routine (`1791003000000-AddBotRoutines`). */
   @Column({ type: 'uuid', nullable: true })
   projectId!: string | null;
 

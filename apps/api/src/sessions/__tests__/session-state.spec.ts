@@ -44,7 +44,11 @@ function generateLog(seed: number, length: number): SessionLogEntry[] {
     const payload =
       kind === SESSION_EVENT_KINDS.NAMED
         ? { name: `name-${next() % 100}`, source: next() % 2 === 0 ? 'user' : 'model' }
-        : { agentSessionId: `agent-${next() % 10}` };
+        : kind === SESSION_EVENT_KINDS.CLOSE_REQUESTED
+          ? { acceptUnpushedWork: next() % 2 === 0 }
+          : kind === SESSION_EVENT_KINDS.COMMAND_FAILED
+            ? { command: next() % 2 === 0 ? 'session.close' : 'session.stop', code: 'GIT_003' }
+            : { agentSessionId: `agent-${next() % 10}` };
     return entry(kind, payload);
   });
 }
@@ -191,6 +195,90 @@ describe('the fold as a property', () => {
       }
       expect(current.stateSeq).toBe(changes);
     }
+  });
+});
+
+/**
+ * The close a session is owed: what the hello reconciliation sends again and the
+ * console draws as deleting. A request, so it is owed until the host answers or the
+ * person changes their mind.
+ */
+describe('the close the fold keeps owed', () => {
+  const requested = (acceptUnpushedWork: boolean) =>
+    entry(SESSION_EVENT_KINDS.CLOSE_REQUESTED, { acceptUnpushedWork });
+  const refused = (command = 'session.close') =>
+    entry(SESSION_EVENT_KINDS.COMMAND_FAILED, { command, code: 'GIT_003', detail: 'rejected' });
+  const opened = () => [entry(SESSION_EVENT_KINDS.REQUESTED), entry(SESSION_EVENT_KINDS.STARTED)];
+
+  it('owes a close from its request until the host closes it, with what it was asked with', () => {
+    const asked = requested(true);
+    const owed = foldSessionLog([...opened(), asked]);
+    expect(owed.closeRequest).toEqual({ requestedAt: asked.occurredAt, acceptUnpushedWork: true });
+    expect(owed.state).toBe('open');
+
+    const closed = foldSessionLog([entry(SESSION_EVENT_KINDS.CLOSED)], owed);
+    expect(closed.state).toBe('resolved');
+    expect(closed.closeRequest).toBeNull();
+  });
+
+  it('reads anything but an explicit true as keeping unpushed work', () => {
+    const fold = foldSessionLog([
+      ...opened(),
+      entry(SESSION_EVENT_KINDS.CLOSE_REQUESTED, { acceptUnpushedWork: 'yes' }),
+    ]);
+    expect(fold.closeRequest?.acceptUnpushedWork).toBe(false);
+  });
+
+  it('ends the close on the host’s refusal and keeps its code and words', () => {
+    const fold = foldSessionLog([...opened(), requested(false), refused()]);
+    expect(fold.closeRequest).toBeNull();
+    expect(fold.closeRefusal).toEqual({ code: 'GIT_003', detail: 'rejected' });
+    expect(fold.state).toBe('open');
+  });
+
+  it('ignores a refusal of any other command, and one with no close owed', () => {
+    const other = foldSessionLog([...opened(), requested(false), refused('session.stop')]);
+    expect(other.closeRequest).not.toBeNull();
+    expect(other.closeRefusal).toBeNull();
+
+    const late = foldSessionLog([...opened(), refused()]);
+    expect(late.closeRefusal).toBeNull();
+  });
+
+  it('answers a refusal with a new request, which clears it', () => {
+    const fold = foldSessionLog([...opened(), requested(false), refused(), requested(true)]);
+    expect(fold.closeRefusal).toBeNull();
+    expect(fold.closeRequest?.acceptUnpushedWork).toBe(true);
+  });
+
+  it('lets a restart request supersede an owed close and a refusal', () => {
+    const owed = foldSessionLog([
+      ...opened(),
+      requested(false),
+      entry(SESSION_EVENT_KINDS.RESTART_REQUESTED),
+    ]);
+    expect(owed.closeRequest).toBeNull();
+    // A refusal arriving after the restart refuses nothing anybody still wants.
+    expect(foldSessionLog([refused()], owed).closeRefusal).toBeNull();
+  });
+
+  it('owes nothing on a resolved session', () => {
+    const fold = foldSessionLog([...opened(), entry(SESSION_EVENT_KINDS.CLOSED), requested(true)]);
+    expect(fold.closeRequest).toBeNull();
+  });
+
+  it('holds a refusal to the wire’s bounds', () => {
+    const fold = foldSessionLog([
+      ...opened(),
+      requested(false),
+      entry(SESSION_EVENT_KINDS.COMMAND_FAILED, {
+        command: 'session.close',
+        code: 'X'.repeat(40),
+        detail: 'y'.repeat(600),
+      }),
+    ]);
+    expect(fold.closeRefusal?.code).toHaveLength(32);
+    expect(fold.closeRefusal?.detail).toHaveLength(500);
   });
 });
 

@@ -170,7 +170,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await expect(copy).toBeVisible();
   await copy.getByRole('button', { name: 'Automation actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
-  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  await confirm.getByRole('button', { name: 'Delete automation' }).click();
   await expect(confirm).toHaveCount(0);
   await expect(copy).toHaveCount(0);
   await expect(toast(page, '“Nightly dependency audit copy” deleted.')).toBeVisible();
@@ -180,7 +180,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('row', { name: 'Nightly dependency audit', exact: true }).click();
   await page.getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete automation' }).click();
-  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete automation' }).click();
   await expect(toast(page, '“Nightly dependency audit” deleted.')).toBeVisible();
   await expect(page).toHaveURL(/\/automations$/);
   await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();

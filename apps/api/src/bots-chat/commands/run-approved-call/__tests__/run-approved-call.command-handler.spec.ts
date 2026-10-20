@@ -26,9 +26,11 @@ import { RunApprovedCallCommandHandler } from '../run-approved-call.command-hand
  * credential's scopes cover the tool; the answer and the turn that reports it
  * are one write, and that turn gets the same intersection. A token limited to
  * `bots:write` approving a card raised in the browser runs nothing. A job
- * retried after the result landed does nothing.
+ * retried after the result landed does nothing. The session the call says
+ * it started is kept as data, beside words that never name it.
  */
 const OWNER = 'owner-1';
+const SESSION = '0b6c3f0e-5a7d-4c1e-9f2a-1d2e3f4a5b6c';
 
 function setup(
   options: {
@@ -72,7 +74,7 @@ function setup(
 
   const run = vi.fn(async (input: { task: string }) => {
     if (options.fails) throw new Error('boom');
-    return `Started session for ${input.task}.`;
+    return { content: `Started session for ${input.task}.`, sessionId: SESSION };
   });
   const area: BotToolArea = {
     definitions: () => [
@@ -121,7 +123,7 @@ function setup(
 }
 
 describe('RunApprovedCallCommandHandler', () => {
-  it('runs exactly the stored call, keyed by the approval, and reports it in the same write', async () => {
+  it('runs exactly the stored call, keyed by the approval, and reports it and its session in the same write', async () => {
     const { approval, run, execute, effects } = setup();
     await execute();
     expect(run).toHaveBeenCalledOnce();
@@ -133,6 +135,7 @@ describe('RunApprovedCallCommandHandler', () => {
     expect(approval).toMatchObject({
       status: 'approved',
       result: 'Started session for Fix the test.',
+      sessionId: SESSION,
     });
     const { continuation } = effects();
     expect(continuation?.turn).toMatchObject({
@@ -142,7 +145,7 @@ describe('RunApprovedCallCommandHandler', () => {
     });
     expect(continuation?.opening).toMatchObject({
       role: 'event',
-      event: { outcome: 'approved', tool: 'start_session' },
+      event: { outcome: 'approved', tool: 'start_session', sessionId: SESSION },
       content:
         'Ana approved: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
     });
@@ -155,6 +158,7 @@ describe('RunApprovedCallCommandHandler', () => {
     expect(approval).toMatchObject({
       status: 'failed',
       result: 'Not run: your credential does not cover sessions:write.',
+      sessionId: null,
     });
     expect(effects().continuation?.turn.credentialScopes).toEqual(['bots:write']);
     expect(effects().continuation?.opening.event).toMatchObject({ outcome: 'failed' });

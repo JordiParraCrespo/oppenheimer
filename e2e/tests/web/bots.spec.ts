@@ -148,7 +148,7 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   // Delete bot, behind its confirm, from the settings' menu: back to the list.
   await page.getByRole('button', { name: 'Bot options' }).click();
   await page.getByRole('menuitem', { name: 'Delete bot' }).click();
-  const confirm = page.getByRole('alertdialog', { name: 'Delete Release Bot?' });
+  const confirm = page.getByRole('alertdialog', { name: 'Delete “Release Bot”?' });
   await confirm.getByRole('button', { name: 'Delete bot' }).click();
   await expect(page).toHaveURL(/\/bots$/);
   await expect(toast(page, '“Release Bot” deleted.')).toBeVisible();

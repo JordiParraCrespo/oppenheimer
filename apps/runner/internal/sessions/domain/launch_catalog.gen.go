@@ -31,7 +31,7 @@ var launchCatalog = map[string]launchMap{
 		command:      "codex",
 		always:       []string{"--no-daemon"},
 		model:        []string{"--model", "<model>"},
-		defaultModel: "gpt-5.6-sol",
+		defaultModel: "gpt-6.1-sol",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--ask-for-approval", "on-request", "--sandbox", "workspace-write"}},
 			"auto": {argv: []string{"--approve-for-me"}},
@@ -39,7 +39,10 @@ var launchCatalog = map[string]launchMap{
 		},
 		effort: launchLevel{argv: []string{"-c", "model_reasoning_effort=<effort>"}},
 		effortLevels: map[string][]string{
+			"gpt-6.1-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-astra":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-6-sol":     {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-6-luna":    {"low", "medium", "high", "xhigh", "max"},
 			"gpt-5.6-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-5.6-luna":  {"low", "medium", "high", "xhigh", "max"},
@@ -64,6 +67,7 @@ var launchCatalog = map[string]launchMap{
 			"anthropic/claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
 			"anthropic/claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
+			"openai/gpt-6.1-sol":          {"low", "medium", "high", "xhigh", "max"},
 			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt:             []string{"--prompt", "<prompt>"},

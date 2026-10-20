@@ -446,7 +446,7 @@ describe('bots (integration)', () => {
   function credential(
     key: string,
     organization = organizationId,
-    provider: 'glm' | 'chatgpt' = 'glm',
+    provider: 'glm' | 'openai' | 'chatgpt' = 'glm',
   ) {
     return ModelProviderCredentialEntity.createNew({
       organizationId: organization,
@@ -486,6 +486,55 @@ describe('bots (integration)', () => {
       [organizationId],
     );
     expect(count).toBe(0);
+  });
+
+  it('marks one default per workspace, keeps it across a key replace, and refuses a provider with no key', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    expect(await credentials.defaultProvider(scope())).toBe('openai');
+    expect(await credentials.setDefault(scope(), 'glm')).toBe(true);
+    expect(await credentials.defaultProvider(scope())).toBe('glm');
+    expect(await credentials.setDefault(scope(), 'openai')).toBe(true);
+    await credentials.put(credential('openai-key-3333', organizationId, 'openai'));
+    const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+    expect(await credentials.defaultProvider(scope())).toBe('openai');
+
+    expect(await credentials.setDefault(scope(), 'anthropic')).toBe(false);
+    const after = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(after.map((row) => row.provider)).toEqual(['openai']);
+  });
+
+  it('lets a switch of default wait out one in flight instead of colliding on the index', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    // A first switch to GLM, held open between its set and its commit.
+    const runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    await runner.query(
+      `UPDATE model_provider_credential SET "markedDefault" = true WHERE "organizationId" = $1 AND provider = 'glm'`,
+      [organizationId],
+    );
+    const second = credentials.setDefault(scope(), 'openai');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await runner.commitTransaction();
+    await runner.release();
+
+    await expect(second).resolves.toBe(true);
+    const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+  });
+
+  it('refuses a second default in a workspace', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    await expect(
+      dataSource.query(
+        `UPDATE model_provider_credential SET "markedDefault" = true WHERE "organizationId" = $1`,
+        [organizationId],
+      ),
+    ).rejects.toMatchObject({ constraint: 'UQ_model_provider_credential_default' });
   });
 
   it('refuses a provider the check does not list', async () => {
@@ -560,7 +609,7 @@ describe('bots (integration)', () => {
         {
           assertUsable: async () => ({ probedTools: null }),
         },
-        new NewBotProviderResolver({ findAll: async () => [] }),
+        new NewBotProviderResolver({ defaultProvider: async () => 'anthropic' }),
       );
 
     it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
@@ -621,7 +670,7 @@ describe('bots (integration)', () => {
         {
           assertUsable: async () => ({ probedTools: null }),
         },
-        new NewBotProviderResolver({ findAll: async () => [] }),
+        new NewBotProviderResolver({ defaultProvider: async () => 'anthropic' }),
       );
       await expect(
         racing.execute(

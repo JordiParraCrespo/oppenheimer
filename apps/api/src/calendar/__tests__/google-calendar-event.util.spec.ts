@@ -7,8 +7,9 @@ import {
 /**
  * Google's events as the month view draws them. What breaks if this regresses:
  * a cancelled meeting still shows, a holiday spanning a week shows on its first
- * day only, or an evening event that runs past midnight is drawn ending before
- * it starts.
+ * day only, an evening event that runs past midnight is drawn ending before
+ * it starts, or a meeting loses its join link (or offers one that is not
+ * `https:`).
  */
 describe('googleEventsToProvider', () => {
   const range = { from: '2026-10-01', to: '2026-10-31' };
@@ -39,6 +40,7 @@ describe('googleEventsToProvider', () => {
         endTime: '16:00',
         busy: true,
         url: 'https://calendar.google.com/a',
+        meetingUrl: null,
         dedupeKey: 'a|2026-10-05T13:00:00.000Z',
       },
     ]);
@@ -79,6 +81,99 @@ describe('googleEventsToProvider', () => {
       range,
     );
     expect([late.startTime, late.endTime, late.title]).toEqual(['22:00', '23:59', '']);
+  });
+
+  it('finds where to join: Meet first, then an add-on’s video link, then a location that is an https address', () => {
+    const at = { start: { dateTime: '2026-10-05T09:00:00Z' } };
+    const events = googleEventsToProvider(
+      {
+        items: [
+          {
+            id: 'meet',
+            ...at,
+            hangoutLink: 'https://meet.google.com/abc-defg-hij',
+            conferenceData: {
+              entryPoints: [{ entryPointType: 'video', uri: 'https://zoom.us/j/1' }],
+            },
+          },
+          {
+            id: 'zoom',
+            ...at,
+            conferenceData: {
+              entryPoints: [
+                { entryPointType: 'phone', uri: 'tel:+34-900' },
+                { entryPointType: 'video', uri: 'https://zoom.us/j/2' },
+              ],
+            },
+          },
+          { id: 'pasted', ...at, location: ' https://teams.microsoft.com/l/meetup/3 ' },
+          { id: 'relative-looking', ...at, location: 'https:zoom.us/j/5' },
+          { id: 'room', ...at, location: 'Room 4' },
+          { id: 'prose', ...at, location: 'https://example.com/call or Room 4' },
+          { id: 'unsafe', ...at, hangoutLink: 'javascript:alert(1)', location: 'http://x.test' },
+        ],
+      },
+      range,
+    );
+    expect(events.map((e) => [e.id, e.meetingUrl])).toEqual([
+      ['meet', 'https://meet.google.com/abc-defg-hij'],
+      ['zoom', 'https://zoom.us/j/2'],
+      ['pasted', 'https://teams.microsoft.com/l/meetup/3'],
+      ['relative-looking', 'https://zoom.us/j/5'],
+      ['room', null],
+      ['prose', null],
+      ['unsafe', null],
+    ]);
+  });
+
+  it('finds a Zoom, Teams or Webex join link written in the location or the description, and nothing else', () => {
+    const at = { start: { dateTime: '2026-10-05T09:00:00Z' } };
+    const events = googleEventsToProvider(
+      {
+        items: [
+          {
+            id: 'zoom-location',
+            ...at,
+            location: 'Zoom: https://acme.zoom.us/j/123?pwd=x (or Room 4)',
+          },
+          {
+            id: 'zoom-html',
+            ...at,
+            description:
+              'Join: <a href="https://us02web.zoom.us/j/456?pwd=a&amp;from=addon">https://us02web.zoom.us/j/456</a>.',
+          },
+          {
+            id: 'teams',
+            ...at,
+            description:
+              'Agenda https://docs.example.com/x then https://teams.microsoft.com/l/meetup-join/7.',
+          },
+          { id: 'webex', ...at, location: 'https://acme.webex.com/meet/ana, floor 2' },
+          {
+            id: 'location-first',
+            ...at,
+            location: 'Call https://acme.zoom.us/j/1',
+            description: 'https://acme.zoom.us/j/2',
+          },
+          {
+            id: 'not-a-meeting',
+            ...at,
+            description: 'Get the app https://zoom.us/download and https://example.com/j/1',
+          },
+          { id: 'http', ...at, description: 'http://acme.zoom.us/j/9' },
+        ],
+      },
+      range,
+    );
+    expect(events.map((e) => [e.id, e.meetingUrl])).toEqual([
+      ['zoom-location', 'https://acme.zoom.us/j/123?pwd=x'],
+      ['zoom-html', 'https://us02web.zoom.us/j/456?pwd=a&from=addon'],
+      ['teams', 'https://teams.microsoft.com/l/meetup-join/7'],
+      ['webex', 'https://acme.webex.com/meet/ana'],
+      ['location-first', 'https://acme.zoom.us/j/1'],
+      ['not-a-meeting', null],
+      ['http', null],
+    ]);
   });
 
   it('keys two accounts’ copies of one meeting the same, whatever offset each answered in', () => {

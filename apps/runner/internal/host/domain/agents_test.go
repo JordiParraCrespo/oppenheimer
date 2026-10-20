@@ -7,7 +7,8 @@ import (
 )
 
 // The catalog decides which CLIs the runner updates on its own. git and tmux
-// are the package manager's, and OpenCode's updater stops to ask.
+// are the package manager's. OpenCode's updater has one, but it needs the
+// install method (ResolveUpdateArgs).
 func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
 	cases := []struct {
 		tool string
@@ -18,7 +19,7 @@ func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
 		{domain.ToolGrok, true},
 		{domain.ToolGit, false},
 		{domain.ToolTmux, false},
-		{domain.ToolOpenCode, false},
+		{domain.ToolOpenCode, true},
 	}
 	for _, c := range cases {
 		args, ok := domain.AgentUpdateArgs(c.tool)

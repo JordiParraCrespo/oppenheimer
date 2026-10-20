@@ -38,7 +38,7 @@
     "loadFailed": "No se ha podido cargar este proyecto."
   },
   "deleteDialog": {
-    "title": "¿Eliminar {{name}}?",
+    "title": "¿Eliminar «{{name}}»?",
     "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
     "confirm": "Eliminar proyecto",
     "deleting": "Eliminando…",
