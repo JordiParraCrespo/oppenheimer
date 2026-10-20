@@ -156,6 +156,7 @@ export class PullRequestMapper {
       ...this.toRow(snapshot, viewerLogin, now),
       body: pull.body,
       baseRef: pull.baseRef,
+      headSha: pull.headSha,
       fromFork: pull.fromFork,
       state: pull.merged ? 'merged' : pull.state,
       changedFiles: pull.changedFiles,

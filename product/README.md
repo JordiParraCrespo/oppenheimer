@@ -611,3 +611,10 @@ earlier note:
   "Routines in this change" group yet, and a routine turn that failed is
   shown by its turn rather than by a second `failed` notice (26 §4 "In the
   chat", "Decided").
+- `versions/mvp/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
+  and a bot told its owner it could not merge a pull request it had
+  reported ready. On 2026-10-20 the asking writes of the table were built
+  (comment, review, merge, review session), and issues were added to the
+  table: `list_issues`, `get_issue`, and the asking `create_issue` and
+  `comment_on_issue`, under the `pulls:*` scopes and the App's new Issues
+  permission. A bot's merge is pinned to the head its card showed.
