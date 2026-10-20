@@ -138,43 +138,31 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  const items = done.map((step) => {
+  const lines = done.map((step) => {
     const action = toolAction(step);
     const view = viewOf(action);
     const { meta, body } = view.detail(step, t, labels);
-    return {
-      step,
-      icon: view.icon,
-      body,
-      props: {
-        ...view.title(t, action),
-        meta: step.isError ? t('bots.chat.activity.stepFailed') : meta,
-        tone: step.isError ? ('danger' as const) : ('default' as const),
-        action: step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined,
-      },
-    };
-  });
-  const [only] = items;
-  if (items.length === 1 && only) {
     return (
-      <Trace>
-        <TraceStep icon={only.icon} {...only.props}>
-          {only.body}
-        </TraceStep>
-      </Trace>
+      <TraceStep
+        key={step.callId}
+        icon={view.icon}
+        {...view.title(t, action)}
+        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        tone={step.isError ? 'danger' : 'default'}
+        action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
+      >
+        {body}
+      </TraceStep>
     );
-  }
+  });
+  if (lines.length === 1) return <Trace>{lines}</Trace>;
   const failed = done.filter((step) => step.isError).length;
   return (
     <TraceGroup
       summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
-      {items.map(({ step, icon, props, body }) => (
-        <TraceStep key={step.callId} icon={icon} {...props}>
-          {body}
-        </TraceStep>
-      ))}
+      {lines}
     </TraceGroup>
   );
 }

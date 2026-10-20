@@ -34,6 +34,22 @@ function Trace({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="trace" role="list" className={cn('flex flex-col', className)} {...props} />;
 }
 
+/**
+ * The trace's line: 34px at the reply's 15px, muted, its words aligned with
+ * the column (`-ml-2` takes back the hover pad). A step and a group's
+ * summary are both this line.
+ */
+const LINE_METRICS =
+  '-ml-2 inline-flex min-h-8.5 max-w-full items-center self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted';
+
+const TRACE_LINE = cn(LINE_METRICS, 'gap-2.5 data-[tone=danger]:text-danger');
+
+/**
+ * Where a group's steps hang: a hairline under the summary's first letter
+ * (7px in), the steps' glyphs 14px past it.
+ */
+const GROUP_RAIL = 'ml-1.75 flex flex-col border-l border-border-subtle pl-3.5';
+
 function TraceGroup({
   summary,
   failed,
@@ -52,19 +68,19 @@ function TraceGroup({
 }) {
   return (
     <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
-      <FoldTrigger className="-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-1.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75">
+      <FoldTrigger
+        className={cn(LINE_METRICS, 'gap-1.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
+      >
         <span className="min-w-0 truncate">{summary}</span>
         {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
       </FoldTrigger>
-      <FoldPanel role="list" className="ml-1.75 flex flex-col border-l border-border-subtle pl-3.5">
+      <FoldPanel role="list" className={GROUP_RAIL}>
         {children}
       </FoldPanel>
     </Fold>
   );
 }
 
-const TRACE_LINE =
-  '-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-2.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted data-[tone=danger]:text-danger';
 
 function TraceStep({
   icon,
