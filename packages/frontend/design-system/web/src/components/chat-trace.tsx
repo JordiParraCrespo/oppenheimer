@@ -14,9 +14,7 @@ import { cn } from '../lib/utils';
  * - `Trace`: the steps of one run of work, a list.
  * - `TraceGroup`: several steps a bot ran together, folded into one quiet
  *   line ("Used 5 tools", "1 failed" in red after it); open, its
- *   `TraceGroupRow`s sit in a bordered card between hairlines.
- * - `TraceGroupRow`: a step in that card, a full-width 40px row with no
- *   glyph, so the verb leads; otherwise a `TraceStep`.
+ *   `TraceStep`s hang from a hairline under it, each as it reads alone.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated)
  *   with its `target` after it in full ink, a mono meta ("14 results", "2
  *   failed"), and, when it has children, the chevron that opens them. `tone="danger"` sets the line in red (a
@@ -49,7 +47,7 @@ function TraceGroup({
   failed?: React.ReactNode;
   defaultOpen?: boolean;
   className?: string;
-  /** The `TraceGroupRow`s. */
+  /** The `TraceStep`s. */
   children: React.ReactNode;
 }) {
   return (
@@ -58,18 +56,29 @@ function TraceGroup({
         <span className="min-w-0 truncate">{summary}</span>
         {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
       </FoldTrigger>
-      <FoldPanel
-        role="list"
-        className="mt-1 mb-1 flex flex-col divide-y divide-border-subtle overflow-hidden rounded-lg border border-border-subtle"
-      >
+      <FoldPanel role="list" className="ml-1.75 flex flex-col border-l border-border-subtle pl-3.5">
         {children}
       </FoldPanel>
     </Fold>
   );
 }
 
-/** What a step says and how it opens; `TraceStep` and `TraceGroupRow` take the same. */
-type TraceStepProps = {
+const TRACE_LINE =
+  '-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-2.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted data-[tone=danger]:text-danger';
+
+function TraceStep({
+  icon,
+  title,
+  target,
+  meta,
+  tone = 'default',
+  defaultOpen = false,
+  action,
+  className,
+  children,
+}: {
+  /** The step's glyph, drawn at 16px. */
+  icon: React.ReactNode;
   /** The verb: "Searched", "Failed to run", "Get pull request". */
   title: React.ReactNode;
   /** What the step was pointed at, after the verb in full ink: "abortSignal", "pnpm test". */
@@ -84,45 +93,12 @@ type TraceStepProps = {
   className?: string;
   /** What it returned (`TraceOutput`, `TraceNote`); present, the line opens to it. */
   children?: React.ReactNode;
-};
-
-/** Where a step sits: the classes of its line, its trigger, its action row and its panel. */
-type StepChrome = { line: string; trigger: string; actionRow: string; panel: string };
-
-const LINE_CHROME: StepChrome = {
-  line: '-ml-2 inline-flex min-h-8.5 max-w-full items-center gap-2.5 self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted data-[tone=danger]:text-danger',
-  trigger: '',
-  actionRow: '',
-  panel: 'pl-6.5',
-};
-
-const ROW_CHROME: StepChrome = {
-  line: 'flex min-h-10 w-full min-w-0 items-center gap-2.5 px-3.5 text-[14px] tracking-[-0.006em] text-fg-muted data-[tone=danger]:text-danger',
-  trigger: 'rounded-none hover:bg-hover-surface focus-visible:ring-inset',
-  actionRow: 'pr-2',
-  panel: 'px-3.5',
-};
-
-/** One step's line and fold, in the chrome of where it sits. */
-function StepBody({
-  chrome,
-  icon,
-  title,
-  target,
-  meta,
-  tone = 'default',
-  defaultOpen = false,
-  action,
-  className,
-  children,
-}: TraceStepProps & { chrome: StepChrome; icon?: React.ReactNode }) {
+}) {
   const line = (
     <>
-      {icon ? (
-        <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
-          {icon}
-        </span>
-      ) : null}
+      <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+        {icon}
+      </span>
       <span className="min-w-0 truncate">
         {title}
         {target ? <span className={tone === 'danger' ? undefined : 'text-fg'}> {target}</span> : null}
@@ -141,7 +117,7 @@ function StepBody({
   );
   const withAction = (head: React.ReactNode) =>
     action ? (
-      <div className={cn('flex max-w-full items-center gap-1', chrome.actionRow)}>
+      <div className="flex max-w-full items-center gap-1">
         {head}
         <span className="flex shrink-0">{action}</span>
       </div>
@@ -152,7 +128,7 @@ function StepBody({
     return (
       <div data-slot="trace-step" role="listitem" data-tone={tone} className={cn('flex flex-col', className)}>
         {withAction(
-          <div data-tone={tone} className={chrome.line}>
+          <div data-tone={tone} className={TRACE_LINE}>
             {line}
           </div>,
         )}
@@ -171,31 +147,16 @@ function StepBody({
         <FoldTrigger
           data-tone={tone}
           className={cn(
-            chrome.line,
-            chrome.trigger,
+            TRACE_LINE,
             'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
           )}
         >
           {line}
         </FoldTrigger>,
       )}
-      <FoldPanel className={chrome.panel}>{children}</FoldPanel>
+      <FoldPanel className="pl-6.5">{children}</FoldPanel>
     </Fold>
   );
-}
-
-function TraceStep({
-  icon,
-  ...props
-}: TraceStepProps & {
-  /** The step's glyph, drawn at 16px. */
-  icon: React.ReactNode;
-}) {
-  return <StepBody chrome={LINE_CHROME} icon={icon} {...props} />;
-}
-
-function TraceGroupRow(props: TraceStepProps) {
-  return <StepBody chrome={ROW_CHROME} {...props} />;
 }
 
 type TraceOutputLabels = {
@@ -296,5 +257,5 @@ function TraceLive({
   );
 }
 
-export { Trace, TraceGroup, TraceGroupRow, TraceLive, TraceNote, TraceOutput, TraceStep };
+export { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep };
 export type { TraceOutputLabels };

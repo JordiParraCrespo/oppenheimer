@@ -3,7 +3,6 @@ import {
   ChatSources,
   Trace,
   TraceGroup,
-  TraceGroupRow,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -125,8 +124,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
- * fold into one line ("Used 5 tools") that opens to a card with a row
- * each. A call still running is not drawn here: the turn's live line says
+ * fold into one line ("Used 5 tools") that opens to those same lines.
+ * A call still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
  */
@@ -171,10 +170,10 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
       summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
-      {items.map(({ step, props, body }) => (
-        <TraceGroupRow key={step.callId} {...props}>
+      {items.map(({ step, icon, props, body }) => (
+        <TraceStep key={step.callId} icon={icon} {...props}>
           {body}
-        </TraceGroupRow>
+        </TraceStep>
       ))}
     </TraceGroup>
   );
