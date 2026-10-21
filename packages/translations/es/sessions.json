@@ -436,7 +436,7 @@
     },
     "empty": {
       "title": "Todavía no se ha dicho nada",
-      "description": "Lo que tú y Claude os decís en esta sesión aparece aquí mientras trabaja, leído de su propia transcripción. Escribe abajo o en la terminal."
+      "description": "Lo que Claude dice y hace aparece aquí mientras trabaja."
     },
     "composer": {
       "placeholder": "Escribe a Claude",

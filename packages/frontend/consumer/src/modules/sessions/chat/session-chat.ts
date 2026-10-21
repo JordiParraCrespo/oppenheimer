@@ -274,7 +274,8 @@ function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | nu
   if (block?.type === 'thinking' && text(block.thinking)) {
     return { kind: 'thinking', id, at, text: String(block.thinking) };
   }
-  if (block?.type === 'tool_use') return { kind: 'tool', id, at, call: { ...toolCall(block), startedAt: at } };
+  if (block?.type === 'tool_use')
+    return { kind: 'tool', id, at, call: { ...toolCall(block), startedAt: at } };
   return null;
 }
 

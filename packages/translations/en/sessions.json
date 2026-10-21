@@ -436,7 +436,7 @@
     },
     "empty": {
       "title": "Nothing said yet",
-      "description": "What you and Claude say in this session appears here as it works, read off its own transcript. Write below, or type in the terminal."
+      "description": "Claude's words and work appear here as it goes."
     },
     "composer": {
       "placeholder": "Message Claude",
