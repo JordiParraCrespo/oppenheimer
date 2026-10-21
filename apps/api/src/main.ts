@@ -89,6 +89,7 @@ async function bootstrap() {
       QUEUE_NAMES.AUTOMATION_SCHEDULES,
       QUEUE_NAMES.AUTOMATION_RETENTION,
       QUEUE_NAMES.OUTBOX_RETENTION,
+      QUEUE_NAMES.BOT_ATTACHMENT_RETENTION,
     ],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }

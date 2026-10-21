@@ -2,8 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
+  type BotAttachment,
   type BotMessageEvent,
   type BotMessageRole,
 } from '@oppenheimer/shared';
@@ -11,6 +13,7 @@ import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
+import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
   type BotMessageEventResponseDto,
@@ -42,6 +45,7 @@ export class BotMessageMapper
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
+    record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     return record;
   }
 
@@ -59,6 +63,7 @@ export class BotMessageMapper
         steps: (record.steps ?? []).map(toStep),
         position: record.position,
         event: toEvent(record.event),
+        attachments: (record.attachments ?? []).flatMap(toAttachment),
       },
     });
   }
@@ -78,6 +83,9 @@ export class BotMessageMapper
       sessionId: step.sessionId,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
+    dto.attachments = entity.attachments.map((attachment) =>
+      Object.assign(new BotAttachmentResponseDto(), attachment),
+    );
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
@@ -109,6 +117,20 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     isError: raw.isError === true,
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
   };
+}
+
+/** A stored attachment, narrowed once; one the mapper did not write is dropped. */
+function toAttachment(raw: Record<string, unknown>): BotAttachment[] {
+  const mimeType = BOT_IMAGE_MIME_TYPES.find((known) => known === raw.mimeType);
+  if (!mimeType || typeof raw.id !== 'string') return [];
+  return [
+    {
+      id: raw.id,
+      mimeType,
+      sizeBytes: typeof raw.sizeBytes === 'number' ? raw.sizeBytes : 0,
+      name: typeof raw.name === 'string' ? raw.name : '',
+    },
+  ];
 }
 
 /** An event as the response carries it: the kind it is, with that kind's fields only. */

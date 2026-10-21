@@ -32,8 +32,21 @@ function FoldTrigger({ className, children, ...props }: CollapsiblePrimitive.Tri
   );
 }
 
-function FoldPanel(props: CollapsiblePrimitive.Panel.Props) {
-  return <CollapsiblePrimitive.Panel {...props} />;
+/**
+ * The panel opens and closes on its own height, at the base duration, fading
+ * as it goes (Base UI measures `--collapsible-panel-height`); reduced motion
+ * keeps the jump.
+ */
+function FoldPanel({ className, ...props }: CollapsiblePrimitive.Panel.Props) {
+  return (
+    <CollapsiblePrimitive.Panel
+      className={cn(
+        'h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-base ease-standard data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 /**

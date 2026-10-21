@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -150,6 +151,8 @@ function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Prom
 export interface SendBotMessageVariables {
   id: string;
   content: string;
+  /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
+  attachmentIds?: readonly string[];
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
@@ -159,8 +162,45 @@ export function useSendBotMessage(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, content }: SendBotMessageVariables) => app.bots.sendMessage(id, content),
+    mutationFn: ({ id, content, attachmentIds }: SendBotMessageVariables) =>
+      app.bots.sendMessage(id, content, attachmentIds),
     ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
+  });
+}
+
+export interface UploadBotImageVariables {
+  id: string;
+  file: Blob;
+}
+
+/**
+ * Stores an image picked in the composer, before the message is sent, so a
+ * refusal (not an image, too large, a model that reads none) is said while
+ * the person is still writing. Nothing is read again: nothing on screen
+ * holds it until the message is sent.
+ */
+export function useUploadBotImage(
+  options?: UseMutationOptions<BotAttachment, Error, UploadBotImageVariables>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: ({ id, file }: UploadBotImageVariables) => app.bots.uploadImage(id, file),
+    ...options,
+  });
+}
+
+/**
+ * An image in a bot's chat, its bytes as a `Blob`, for the chat to draw.
+ * They never change under an id, so they are read once; like everything
+ * under `bots`, they are never written to the persisted cache.
+ */
+export function useBotImage(id: string, attachmentId: string) {
+  const app = useConsumerApp();
+  return useQuery<Blob, Error>({
+    queryKey: botsKeys.image(id, attachmentId),
+    queryFn: () => app.bots.readImage(id, attachmentId),
+    staleTime: Number.POSITIVE_INFINITY,
+    structuralSharing: false,
   });
 }
 

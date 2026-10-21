@@ -77,9 +77,11 @@ export function BotChat({ botId }: { botId: string }) {
             onDismiss={() => update.reset()}
           />
           <BotComposer
+            key={bot.id}
             botId={bot.id}
             name={bot.name}
             provider={bot.provider}
+            model={bot.model}
             tools={
               <BotPermissionChip
                 value={bot.permission}

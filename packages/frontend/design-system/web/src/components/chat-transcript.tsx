@@ -48,15 +48,17 @@ function ChatUserMessage({
   time?: React.ReactNode;
   /** Icon buttons (copy, edit), shown on hover. */
   actions?: React.ReactNode;
-  /** `ChatAttachment`s, above the card. */
+  /** `ChatAttachment`s or `ChatImage`s, above the card; with no children, the message is these alone. */
   attachments?: React.ReactNode;
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
-      <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
-        {children}
-      </div>
+      {children != null && children !== false ? (
+        <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
+          {children}
+        </div>
+      ) : null}
       {time || actions ? (
         <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
           {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}

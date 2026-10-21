@@ -33,7 +33,17 @@ const APPS = [
     // loads, so a picker used on one lazy route is on the critical path; letting
     // design-system code follow its route is the fix, as its own measured diff.
     // Headroom is 4.6KB so the next drift fails while it is one change's worth.
-    budgetKB: 440,
+    // Raised to 441KB on 2026-10-21 for the session chat view (0.7), measured
+    // at 440.2KB: `vendor-ui` +0.2KB for the design system's inline chat
+    // composer and animated folds, the entry and the stylesheet +0.1KB each
+    // for its strings, the shimmer sweep and their classes. All of it is the
+    // design system's, on the critical path for the reason above.
+    // Raised to 442KB on 2026-10-21 for images in a bot's chat (#426),
+    // measured at 441.5KB: the entry +0.5KB for the default locale's new
+    // strings (`bots.chat.images.*`, `errors.byCode.BOTS_024`–`BOTS_028`);
+    // the default catalog is bundled, so every string a screen shows lands
+    // here. The upload and image code itself follows the bot's chat route.
+    budgetKB: 442,
   },
   // oppenheimer:end web
 ];

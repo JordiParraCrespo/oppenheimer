@@ -25,18 +25,22 @@ type claudeReader struct {
 }
 
 func (c claudeReader) firstPrompt(conversation string) (string, error) {
-	// The folder is the working directory as Claude Code encodes it, which
-	// changes between its versions; the conversation's own name does not, so
-	// the file is found by that, in whichever folder it is.
-	matches, err := filepath.Glob(filepath.Join(c.projects, "*", conversation+".jsonl"))
-	if err != nil {
-		return "", err
-	}
-	path := newest(matches)
+	path := c.path(conversation)
 	if path == "" {
 		return "", nil
 	}
 	return firstClaudePrompt(path)
+}
+
+// path finds the conversation by its own name: the folder is the working
+// directory as Claude Code encodes it, which changes between its versions,
+// so the file is taken from whichever folder it is in.
+func (c claudeReader) path(conversation string) string {
+	matches, err := filepath.Glob(filepath.Join(c.projects, "*", conversation+".jsonl"))
+	if err != nil {
+		return ""
+	}
+	return newest(matches)
 }
 
 // newest is the most recently written of paths, so a conversation found in

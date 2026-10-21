@@ -1,4 +1,4 @@
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
@@ -51,6 +51,10 @@ export class LocalStorageService extends StorageService {
   async delete(key: string): Promise<void> {
     const filePath = this.resolveKeyPath(key);
     await unlink(filePath);
+  }
+
+  async download(key: string): Promise<Buffer> {
+    return readFile(this.resolveKeyPath(key));
   }
 
   async getUrl(key: string): Promise<string> {

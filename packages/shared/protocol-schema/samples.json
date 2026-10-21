@@ -233,6 +233,14 @@
     "attachmentId": 7,
     "offset": 1048576
   },
+  "attachment.chat": {
+    "type": "attachment.chat",
+    "attachmentId": 7,
+    "reset": true,
+    "entries": [
+      "{\"type\":\"user\",\"uuid\":\"u1\",\"message\":{\"role\":\"user\",\"content\":\"fix the failing test\"}}"
+    ]
+  },
   "session.create": {
     "type": "session.create",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

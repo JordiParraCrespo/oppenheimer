@@ -264,6 +264,11 @@
       "BOTS_021": "The ChatGPT sign-in is being refreshed. Send your message again in a moment.",
       "BOTS_022": "Stop the running turn first.",
       "BOTS_023": "Add a key for that provider before making it the default.",
+      "BOTS_024": "That file isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+      "BOTS_025": "That image is too large. Images can be up to 5 MB.",
+      "BOTS_026": "That image is no longer available. Add it again.",
+      "BOTS_027": "That image can't be sent anymore. Add it again.",
+      "BOTS_028": "This bot's model can't read images. Remove them, or switch to a model that can.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -906,6 +911,96 @@
     },
     "screen": {
       "loadFailed": "Couldn’t refresh this session."
+    },
+    "chat": {
+      "view": {
+        "label": "How to read this session",
+        "terminal": "Terminal",
+        "chat": "Chat"
+      },
+      "empty": {
+        "title": "Nothing said yet",
+        "description": "Claude's words and work appear here as it goes."
+      },
+      "composer": {
+        "placeholder": "Message Claude",
+        "send": "Send",
+        "stop": "Stop",
+        "agent": "Claude Code"
+      },
+      "turn": {
+        "working": "Working for",
+        "worked": "Worked for",
+        "stopped": "Stopped",
+        "interrupted": "Interrupted"
+      },
+      "thinking": "Thinking",
+      "plan": "Plan",
+      "latest": "Jump to latest",
+      "truncated": "cut on the host",
+      "failedCall": "failed",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed",
+      "files_one": "{{count}} file attached",
+      "files_other": "{{count}} files attached",
+      "tasks_one": "{{done}} of {{count}} task done",
+      "tasks_other": "{{done}} of {{count}} tasks done",
+      "notice": {
+        "interrupted": "You stopped this turn",
+        "compacted": "Context compacted"
+      },
+      "verb": {
+        "command": "Ran",
+        "read": "Read",
+        "edit": "Edited",
+        "write": "Wrote",
+        "search": "Searched",
+        "web": "Fetched",
+        "todo": "Updated tasks",
+        "agent": "Ran a subagent",
+        "plan": "Proposed a plan",
+        "question": "Asked",
+        "mcp": "Called",
+        "other": "Used"
+      },
+      "summary": {
+        "read_one": "read {{count}} file",
+        "read_other": "read {{count}} files",
+        "search_one": "searched {{count}} pattern",
+        "search_other": "searched {{count}} patterns",
+        "web_one": "fetched {{count}} page",
+        "web_other": "fetched {{count}} pages",
+        "edit_one": "edited {{count}} file",
+        "edit_other": "edited {{count}} files",
+        "write_one": "wrote {{count}} file",
+        "write_other": "wrote {{count}} files",
+        "command_one": "ran {{count}} command",
+        "command_other": "ran {{count}} commands",
+        "agent_one": "ran {{count}} subagent",
+        "agent_other": "ran {{count}} subagents",
+        "mcp_one": "called {{count}} tool",
+        "mcp_other": "called {{count}} tools",
+        "question_one": "asked {{count}} question",
+        "question_other": "asked {{count}} questions",
+        "other_one": "used {{count}} tool",
+        "other_other": "used {{count}} tools"
+      },
+      "verbLive": {
+        "command": "Running",
+        "read": "Reading",
+        "edit": "Editing",
+        "write": "Writing",
+        "search": "Searching",
+        "web": "Fetching",
+        "agent": "Running a subagent",
+        "question": "Asking",
+        "mcp": "Calling",
+        "other": "Using"
+      },
+      "thought": "Thought",
+      "thoughtFor": "Thought for {{seconds}}s",
+      "changes_one": "{{count}} file changed",
+      "changes_other": "{{count}} files changed"
     }
   },
   "bots": {
@@ -966,6 +1061,21 @@
       "switchedModel": "Switched to <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_other": "{{tokens}} tokens",
+      "images": {
+        "attach": "Add images",
+        "remove": "Remove {{name}}",
+        "open": "Open {{name}}",
+        "pasted": "Pasted image",
+        "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+        "tooLarge": "{{name}} is larger than 5 MB.",
+        "tooMany": "A message can carry up to {{max}} images.",
+        "noVision": "{{model}} can't read images. Switch the bot's model to send them.",
+        "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
+        "uploading": "Wait for the images to finish adding.",
+        "failedHeld": "Remove the image that couldn't be added.",
+        "uploadFailed": "{{name}} couldn't be added.",
+        "unavailable": "This image couldn't be loaded."
+      },
       "turn": {
         "queued": "Waiting",
         "thinking": "Thinking",

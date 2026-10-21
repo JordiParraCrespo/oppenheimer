@@ -56,6 +56,21 @@
     "switchedModel": "Switched to <model>{{model}}</model>",
     "tokens_one": "{{tokens}} token",
     "tokens_other": "{{tokens}} tokens",
+    "images": {
+      "attach": "Add images",
+      "remove": "Remove {{name}}",
+      "open": "Open {{name}}",
+      "pasted": "Pasted image",
+      "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+      "tooLarge": "{{name}} is larger than 5 MB.",
+      "tooMany": "A message can carry up to {{max}} images.",
+      "noVision": "{{model}} can't read images. Switch the bot's model to send them.",
+      "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
+      "uploading": "Wait for the images to finish adding.",
+      "failedHeld": "Remove the image that couldn't be added.",
+      "uploadFailed": "{{name}} couldn't be added.",
+      "unavailable": "This image couldn't be loaded."
+    },
     "turn": {
       "queued": "Waiting",
       "thinking": "Thinking",

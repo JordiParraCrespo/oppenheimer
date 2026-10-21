@@ -17288,7 +17288,7 @@
     },
     "/api/v1/bots/{id}/messages": {
       "post": {
-        "description": "A turn, queued on the bot's provider and model as they are now. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+        "description": "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
         "operationId": "sendBotMessage",
         "parameters": [
           {
@@ -17342,7 +17342,7 @@
             }
           },
           "404": {
-            "description": "BOTS_001 — Bot not found",
+            "description": "BOTS_026 — Image not found\n\nBOTS_001 — Bot not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17352,7 +17352,17 @@
             }
           },
           "409": {
-            "description": "BOTS_013 — The bot's model provider has no key",
+            "description": "BOTS_027 — The image was already sent\n\nBOTS_013 — The bot's model provider has no key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_028 — The bot's model does not read images",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17378,6 +17388,194 @@
           }
         ],
         "summary": "Send a bot a message",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/attachments": {
+      "post": {
+        "description": "A PNG, JPEG, GIF or WebP image of up to 5 MB, judged by its bytes. Send it by naming its id in `attachmentIds` on `POST /bots/:id/messages`; one never sent is deleted after a day.",
+        "operationId": "uploadBotAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotAttachmentResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "BOTS_025 — Image too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "BOTS_024 — Not an image a bot takes",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_028 — The bot's model does not read images",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload an image for a message to a bot",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/attachments/{attachmentId}/content": {
+      "get": {
+        "description": "The bytes of an image a message carries, or of your own upload not sent yet, with its type.",
+        "operationId": "readBotAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image’s bytes"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_026 — Image not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read an image in a bot's chat",
         "tags": ["Bots"]
       }
     },
@@ -26700,6 +26898,28 @@
         },
         "required": ["callId", "name", "input", "output", "isError", "sessionId"]
       },
+      "BotAttachmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mimeType": {
+            "type": "string",
+            "enum": ["image/png", "image/jpeg", "image/gif", "image/webp"]
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "Its size in bytes."
+          },
+          "name": {
+            "type": "string",
+            "description": "The file name it was uploaded with; may be empty."
+          }
+        },
+        "required": ["id", "mimeType", "sizeBytes", "name"]
+      },
       "BotMessageResponseDto": {
         "type": "object",
         "properties": {
@@ -26746,12 +26966,28 @@
             "nullable": true,
             "description": "What an event says happened, by `kind`; null on every other role."
           },
+          "attachments": {
+            "description": "The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotAttachmentResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "turnId", "role", "content", "steps", "event", "createdAt"]
+        "required": [
+          "id",
+          "turnId",
+          "role",
+          "content",
+          "steps",
+          "event",
+          "attachments",
+          "createdAt"
+        ]
       },
       "BotTurnResponseDto": {
         "type": "object",
@@ -26845,16 +27081,24 @@
         "properties": {
           "content": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 16000
+            "maxLength": 16000,
+            "default": ""
+          },
+          "attachmentIds": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "default": []
           },
           "timeZone": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64
           }
-        },
-        "required": ["content"]
+        }
       },
       "BotApprovalResponseDto": {
         "type": "object",

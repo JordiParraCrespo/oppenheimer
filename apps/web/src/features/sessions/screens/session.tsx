@@ -69,11 +69,12 @@ export function SessionScreen({
         <SessionPane
           sessionId={sessionId}
           closed={closed}
-          terminal={(session) => (
+          terminal={(session, reading) => (
             <SessionTerminal
               sessionId={session.id}
               hostId={session.hostId}
               statusItem={statusItem}
+              reading={reading}
             />
           )}
         />

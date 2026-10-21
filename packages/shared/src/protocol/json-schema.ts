@@ -1,6 +1,8 @@
 import { z } from 'zod/v4';
 import {
   ATTACHMENT_CREDIT_WINDOW_BYTES,
+  CHAT_BATCH_MAX_ENTRIES,
+  CHAT_ENTRY_MAX_BYTES,
   LINK_FRAME_HEADER_BYTES,
   LINK_MAX_FRAME_BYTES,
   RUNNER_LINK_CLOSE_CODES,
@@ -61,6 +63,8 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       maxFrameBytes: LINK_MAX_FRAME_BYTES,
       capabilities: RUNNER_CAPABILITIES,
       maxEventPayloadBytes: PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
+      chatEntryMaxBytes: CHAT_ENTRY_MAX_BYTES,
+      chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
     },
   };
 }

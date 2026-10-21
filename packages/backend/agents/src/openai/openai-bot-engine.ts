@@ -5,7 +5,7 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { failed, guardTurn, runTool, ToolCallData } from '../turn';
+import { failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -45,8 +45,22 @@ function inputItems(request: BotTurnRequest): AgentInputItem[] {
               content: [{ type: 'output_text', text }],
             },
     ),
-    { type: 'message', role: 'user', content: request.message },
+    userMessage(request),
   ];
+}
+
+/** This turn's message: its text, or its parts (`messageParts`) as input parts. */
+function userMessage(request: BotTurnRequest): AgentInputItem {
+  if (!request.images?.length) return { type: 'message', role: 'user', content: request.message };
+  return {
+    type: 'message',
+    role: 'user',
+    content: messageParts(request).map((part) =>
+      part.type === 'image'
+        ? { type: 'input_image' as const, image: `data:${part.mimeType};base64,${part.data}` }
+        : { type: 'input_text' as const, text: part.text },
+    ),
+  };
 }
 
 /**

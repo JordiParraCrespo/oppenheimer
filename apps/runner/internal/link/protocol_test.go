@@ -320,6 +320,8 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		MaxFrameBytes        int               `json:"maxFrameBytes"`
 		Capabilities         []string          `json:"capabilities"`
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
+		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
+		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -346,6 +348,8 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
 		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
+		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
+		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
 	} {
 		if pair[0] != pair[1] {
 			t.Errorf("%s: the schema says %v, protocol.gen.go %v", name, pair[0], pair[1])
@@ -358,7 +362,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	if !slices.Equal(constants.Capabilities, []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect,
-		link.CapabilitySessionFolder, link.CapabilityFsList,
+		link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityAttachmentChat,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

@@ -41,7 +41,7 @@ export class BotMessageRepository
     // nowhere to go, and nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
       `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
-       SELECT ${MESSAGE_VALUES}, $10
+       SELECT ${MESSAGE_VALUES}, $11
         WHERE EXISTS (SELECT 1 FROM bot WHERE "organizationId" = $2 AND id = $3)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
@@ -208,8 +208,8 @@ function after(
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
-const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event"`;
-const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb';
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments"`;
+const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb';
 
 function messageParameters(record: BotMessageOrmEntity): unknown[] {
   return [
@@ -222,6 +222,7 @@ function messageParameters(record: BotMessageOrmEntity): unknown[] {
     JSON.stringify(record.steps),
     record.position,
     record.event ? JSON.stringify(record.event) : null,
+    JSON.stringify(record.attachments),
   ];
 }
 

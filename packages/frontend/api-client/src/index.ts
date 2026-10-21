@@ -40,6 +40,7 @@ export type {
   BanUserRequest,
   BotApprovalEventResponseDto,
   BotApprovalResponseDto,
+  BotAttachmentResponseDto,
   BotConversationResponseDto,
   BotDocumentResponseDto,
   BotDocumentRevisionResponseDto,

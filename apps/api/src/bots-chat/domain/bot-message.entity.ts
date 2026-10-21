@@ -5,7 +5,13 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { BOT_MESSAGE_ROLES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_MESSAGE_IMAGES_MAX,
+  BOT_MESSAGE_ROLES,
+  type BotAttachment,
+  type BotMessageEvent,
+  type BotMessageRole,
+} from '@oppenheimer/shared';
 
 /** One tool call in an activity line, as the chat opens it to. */
 export interface BotToolStep {
@@ -40,6 +46,8 @@ export interface BotMessageProps {
   position: number;
   /** What an event says happened, for the chat; an event has one, nothing else does. */
   event?: BotMessageEvent | null;
+  /** The images a message of yours carries (`25-bots.md` §3.1); none on any other. */
+  attachments?: readonly BotAttachment[];
 }
 
 /** One thing the chat draws (`25-bots.md` §3). */
@@ -78,6 +86,9 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   get event(): BotMessageEvent | null {
     return this.props.event ?? null;
   }
+  get attachments(): readonly BotAttachment[] {
+    return this.props.attachments ?? [];
+  }
 
   public validate(): void {
     const { props } = this;
@@ -93,7 +104,14 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
     if ((props.role === 'event') !== Boolean(props.event)) {
       throw new ArgumentInvalidException('An event says what happened, and only an event does');
     }
-    if (props.role !== 'activity' && !props.content) {
+    const attachments = props.attachments ?? [];
+    if (attachments.length > 0 && props.role !== 'user') {
+      throw new ArgumentInvalidException('Only a message of yours carries images');
+    }
+    if (attachments.length > BOT_MESSAGE_IMAGES_MAX) {
+      throw new ArgumentInvalidException('A message carries at most BOT_MESSAGE_IMAGES_MAX images');
+    }
+    if (props.role !== 'activity' && !props.content && attachments.length === 0) {
       throw new ArgumentInvalidException('A message says something');
     }
   }

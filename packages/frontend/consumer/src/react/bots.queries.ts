@@ -52,6 +52,8 @@ export const botsKeys = {
   // one routine refreshes both by name.
   allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
+  image: (id: string, attachmentId: string) =>
+    [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
