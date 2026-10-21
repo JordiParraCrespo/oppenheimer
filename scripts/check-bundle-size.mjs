@@ -38,7 +38,12 @@ const APPS = [
     // composer and animated folds, the entry and the stylesheet +0.1KB each
     // for its strings, the shimmer sweep and their classes. All of it is the
     // design system's, on the critical path for the reason above.
-    budgetKB: 441,
+    // Raised to 442KB on 2026-10-21 for images in a bot's chat (#426),
+    // measured at 441.5KB: the entry +0.5KB for the default locale's new
+    // strings (`bots.chat.images.*`, `errors.byCode.BOTS_024`–`BOTS_028`);
+    // the default catalog is bundled, so every string a screen shows lands
+    // here. The upload and image code itself follows the bot's chat route.
+    budgetKB: 442,
   },
   // oppenheimer:end web
 ];
