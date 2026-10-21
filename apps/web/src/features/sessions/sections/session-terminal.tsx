@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   DropZone,
   EmptyState,
   HostLinkChrome,
@@ -12,13 +13,14 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useChatAvailable, useSessionChat } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
+import type { SessionView } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { HostLinkFix } from './host-link-fix';
@@ -47,7 +49,8 @@ const AGENT_WINDOW = 0;
  * agent's transcript, the status bar offers the same session read as a chat,
  * drawn over the grid. The grid stays mounted under it at its size, so tmux
  * is never resized and Terminal is the same screen as before; the chat's
- * composer types into this pane's PTY.
+ * composer types into this pane's PTY. While it shows, the terminal paints no
+ * ground of its own, so its status bar sits on the chat's.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
@@ -58,9 +61,14 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
+  view,
+  onViewChange,
 }: {
   sessionId: string;
   hostId: string;
+  /** Terminal or Chat, which the pane around it holds (its frame follows it). */
+  view: SessionView;
+  onViewChange: (view: SessionView) => void;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
 }) {
@@ -72,7 +80,7 @@ export function SessionTerminal({
   const chatAvailable = useChatAvailable(chat);
   const chatFlag = useFeatureFlag('session_chat_view');
   const chatOffered = chatAvailable && chatFlag;
-  const [view, setView] = useState<'terminal' | 'chat'>('terminal');
+  const chatShown = chatOffered && view === 'chat';
   const terminal = useTerminal(createStream, {
     onChat: (batch) => chat.apply(batch),
     onEnd: refresh,
@@ -92,7 +100,7 @@ export function SessionTerminal({
   const viewToggle = chatOffered ? (
     <SegmentedControl
       value={view}
-      onValueChange={(next) => setView(next === 'chat' ? 'chat' : 'terminal')}
+      onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
       aria-label={t('sessions.chat.view.label')}
     >
       <SegmentedControlItem value="terminal">
@@ -105,7 +113,7 @@ export function SessionTerminal({
   return (
     <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
       <Terminal
-        className="min-h-0 flex-1 overflow-hidden"
+        className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
       >
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
@@ -133,7 +141,7 @@ export function SessionTerminal({
               </EmptyState>
             </div>
           ) : null}
-          {chatOffered && view === 'chat' ? (
+          {chatShown ? (
             <div className="absolute inset-0 bg-chat-ground font-sans text-fg">
               <SessionChat chat={chat} send={terminal.send} readOnly={false} />
             </div>

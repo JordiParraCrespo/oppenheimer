@@ -7,6 +7,9 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 
+/** How a session pane reads its session: the grid, or the chat (0.7). */
+export type SessionView = 'terminal' | 'chat';
+
 /**
  * How a turn of the chat view is drawn: its steps in blocks. A run of tool
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
