@@ -161,7 +161,7 @@ function TerminalStatusBar({ className, children, ...props }: React.ComponentPro
     <div
       data-slot="terminal-status"
       className={cn(
-        'flex h-8 shrink-0 items-center gap-[18px] overflow-x-auto border-t border-term-border px-5 text-[11.5px] whitespace-nowrap text-term-dim [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'flex h-(--term-status-h) shrink-0 items-center gap-[18px] overflow-x-auto border-t pt-1 border-term-border px-5 text-[11.5px] whitespace-nowrap text-term-dim [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         className,
       )}
       {...props}

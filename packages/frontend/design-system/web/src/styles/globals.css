@@ -372,6 +372,9 @@
     --sidebar-w: 264px;
     --sidebar-w-collapsed: 60px;
     --topbar-h: 56px;
+    /* The terminal's status bar, and the clearance what floats over the grid
+       keeps above it (the host-link drawer and notice). */
+    --term-status-h: 36px;
 
     /* =====================================================================
        Radii — six, and no others: type into a 10, press a pill, read in an 18
