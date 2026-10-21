@@ -155,7 +155,17 @@ function ComposerFoot({
             {engine}
           </span>
         ) : null}
-        <span className="ml-auto flex items-center gap-[inherit] @md/composer-foot:ml-0">{children}</span>
+        {/* Send closes the row on the right: after the engine when there is
+            one (which takes the auto margin from the medium width up), on
+            its own when there is not. */}
+        <span
+          className={cn(
+            'ml-auto flex items-center gap-[inherit]',
+            engine ? '@md/composer-foot:ml-0' : undefined,
+          )}
+        >
+          {children}
+        </span>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import type { AttachmentSink } from '../../links/application/link-registry.port'
 import { LinkAttachments } from '../infrastructure/link-attachments.util';
 
 function sink(): AttachmentSink {
-  return { deliver: vi.fn(), closed: vi.fn(), refused: vi.fn(), signal: vi.fn() };
+  return { deliver: vi.fn(), closed: vi.fn(), refused: vi.fn(), signal: vi.fn(), chat: vi.fn() };
 }
 
 describe('LinkAttachments', () => {

@@ -57,6 +57,13 @@ const MaxFrameBytes = 524288
 // never carries pane text.
 const MaxEventPayloadBytes = 8192
 
+// ChatEntryMaxBytes is the largest transcript entry `attachment.chat`
+// carries; the runner compacts each line first and drops one still bigger.
+const ChatEntryMaxBytes = 65536
+
+// ChatBatchMaxEntries is the most entries one `attachment.chat` holds.
+const ChatBatchMaxEntries = 256
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -67,6 +74,7 @@ const (
 	CapabilityAttachmentDirect    = "attachment.direct"
 	CapabilitySessionFolder       = "session.folder"
 	CapabilityFsList              = "fs.list"
+	CapabilityAttachmentChat      = "attachment.chat"
 )
 
 // The `type` of every message on the link.
@@ -103,6 +111,7 @@ const (
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
 	TypeAttachmentPath          = "attachment.path"
+	TypeAttachmentChat          = "attachment.chat"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -139,6 +148,7 @@ var MessageTypes = []string{
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
 	TypeAttachmentPath,
+	TypeAttachmentChat,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -209,6 +219,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(AttachmentDirectRefused), true
 	case TypeAttachmentPath:
 		return new(AttachmentPath), true
+	case TypeAttachmentChat:
+		return new(AttachmentChat), true
 	}
 	return nil, false
 }
@@ -548,6 +560,14 @@ type AttachmentPath struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
 	Offset       uint64 `json:"offset"`
+}
+
+// AttachmentChat is the `attachment.chat` message.
+type AttachmentChat struct {
+	Type         string   `json:"type"`
+	AttachmentID uint32   `json:"attachmentId"`
+	Reset        bool     `json:"reset,omitempty"`
+	Entries      []string `json:"entries"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

@@ -8,6 +8,7 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import {
   ATTACH_CLOSE_CODES,
+  type AttachmentChatMessage,
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
@@ -217,7 +218,22 @@ export class BrowserAttachGateway {
         logger: this.logger,
       },
       this.directPathFor(claim, link),
+      this.chatFor(claim),
     ).start([...early]);
+  }
+
+  /**
+   * Whether this attachment's browser is handed the agent's transcript
+   * entries for the chat view (0.7): for a person the `session_chat_view`
+   * flag is on for, and not through a share link, whose pane has no chat.
+   * Otherwise the runner's `attachment.chat` is dropped here.
+   */
+  private chatFor(claim: AttachTicket): boolean {
+    if (claim.share) return false;
+    return this.flags.isEnabled('session_chat_view', {
+      userId: claim.userId,
+      organizationId: claim.organizationId,
+    });
   }
 
   /**
@@ -387,6 +403,8 @@ class BrowserAttachment implements AttachmentSink {
     },
     /** `null`: this attachment stays on the relay. */
     direct: DirectPathOffer | null = null,
+    /** Whether the runner's transcript entries reach this browser (`chatFor`). */
+    private readonly chatView = false,
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
     this.directPath = new DirectPathSignalling(direct, link, (message) => this.tell(message));
@@ -458,6 +476,19 @@ class BrowserAttachment implements AttachmentSink {
 
   signal(message: AttachmentSignal): void {
     if (!this.finished) this.directPath.fromRunner(message);
+  }
+
+  chat(message: AttachmentChatMessage): void {
+    if (!this.chatView || this.finished || this.ws.readyState !== this.ws.OPEN) return;
+    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
+      this.ws.close(1008, 'slow consumer');
+      return;
+    }
+    this.tell({
+      type: 'chat',
+      ...(message.reset ? { reset: true } : {}),
+      entries: message.entries,
+    });
   }
 
   refused(code: string, detail?: string): void {

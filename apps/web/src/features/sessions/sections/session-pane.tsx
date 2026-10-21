@@ -1,3 +1,4 @@
+import { cn } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useRestartSession,
@@ -6,9 +7,12 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionClosed } from '../components/session-closed';
+import { useSessionChat } from '../hooks/use-session-chat';
+import type { PaneReading, SessionView } from '../lib/chat-blocks';
+import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
 
 /**
@@ -28,9 +32,13 @@ export function SessionPane({
   sessionId: string;
   /**
    * The live terminal, once the session has one: the screen composes it, with
-   * whatever its status bar carries.
+   * whatever its status bar carries. `reading` is the session's chat and how
+   * the pane reads it, held here because the frame changes with it (the chat
+   * sits on the console's own ground, the grid on the terminal's) and the
+   * chat is a view of its own, beside the terminal rather than inside it:
+   * the terminal feeds it and draws it over its grid as `cover`.
    */
-  terminal: (session: SessionEntity) => ReactNode;
+  terminal: (session: SessionEntity, reading: PaneReading) => ReactNode;
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -49,6 +57,8 @@ export function SessionPane({
   }) => ReactNode;
 }) {
   const { t } = useTranslation();
+  const [view, setView] = useState<SessionView>('terminal');
+  const chat = useSessionChat();
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
@@ -121,10 +131,19 @@ export function SessionPane({
        rather than the console surface `terminal.css` asks for. It is the
        terminal's colour, as the artboard's is, so frame and pane read as one
        surface in dark mode. `data-pane-ground` asks the shell's page bar
-       above it for the same colour. */
-    <div data-pane-ground="terminal" className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
+       above it for the same colour. Read as a chat, the frame paints nothing:
+       the chat, the bar and the frame are all the shell's own ground. */
+    <div
+      data-pane-ground={view}
+      className={cn('flex min-h-0 flex-1 flex-col p-3.5', view === 'terminal' && 'bg-term-bg')}
+    >
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        {terminal(session)}
+        {terminal(session, {
+          chat,
+          view,
+          onViewChange: setView,
+          cover: <SessionChat chat={chat} readOnly={false} />,
+        })}
       </div>
     </div>
   );

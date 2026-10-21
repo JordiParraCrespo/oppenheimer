@@ -1,7 +1,10 @@
 // Package transcript reads a session's first message off the agent's own
 // transcript, which is how a session launched with no task gets a name
 // (02-runner §7): the person typed the task into the terminal, and the CLI
-// wrote it down. The PTY is never scraped for it.
+// wrote it down. The PTY is never scraped for it. It also follows the
+// transcript while a browser is attached, for the console's chat view
+// (`follow.go`, 0.7), compacting each line before it leaves the host
+// (`claude_chat.go`).
 //
 // Each agent keeps its transcript its own way, so each has its own reader in
 // its own file (`claude.go`); this file only picks one. An agent with none
@@ -21,10 +24,14 @@ import (
 var conversationPattern = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
 
 // agentReader is one agent's transcript: the first message a person sent in
-// a conversation, or "" while there is none yet. An error is a transcript
-// that is there and cannot be read.
+// a conversation, or "" while there is none yet (an error is a transcript
+// that is there and cannot be read); where the conversation's file is now,
+// "" while there is none; and one of its lines as the chat view's entry, or
+// none for a line the chat does not show.
 type agentReader interface {
 	firstPrompt(conversation string) (string, error)
+	path(conversation string) string
+	chatEntry(line []byte) ([]byte, bool)
 }
 
 // Reader is app.Transcripts over the files the agent CLIs keep, dispatching

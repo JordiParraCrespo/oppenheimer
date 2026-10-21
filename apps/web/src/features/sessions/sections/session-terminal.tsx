@@ -1,20 +1,26 @@
 import {
   Button,
+  cn,
   DropZone,
   EmptyState,
   HostLinkChrome,
+  SegmentedControl,
+  SegmentedControlItem,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
+import { useChatAvailable } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
+import type { PaneReading } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { HostLinkFix } from './host-link-fix';
@@ -38,6 +44,14 @@ const AGENT_WINDOW = 0;
  * It comes back on its own; the fix is for when it does not. Share closes
  * the status line on the right, in either form.
  *
+ * **Chat** (0.7, behind `session_chat_view`): the pane hands in a chat
+ * (`reading`). This stream feeds it and lends it its input, and once the host
+ * sends the agent's transcript the status bar offers Terminal / Chat; Chat
+ * draws the pane's `cover` over the grid, which stays mounted under it at its
+ * size, so tmux is never resized. What the cover is, is the pane's: this
+ * section owns the terminal and only makes room. While it shows, the terminal
+ * paints no ground of its own, so its status bar sits on the cover's.
+ *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
@@ -47,9 +61,12 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
+  reading,
 }: {
   sessionId: string;
   hostId: string;
+  /** The chat this terminal feeds, and how the pane around it reads it. */
+  reading: PaneReading;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
 }) {
@@ -57,7 +74,13 @@ export function SessionTerminal({
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
+  const { chat, view, onViewChange, cover } = reading;
+  const chatAvailable = useChatAvailable(chat);
+  const chatFlag = useFeatureFlag('session_chat_view');
+  const chatOffered = chatAvailable && chatFlag;
+  const chatShown = chatOffered && view === 'chat';
   const terminal = useTerminal(createStream, {
+    chat,
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,
@@ -72,11 +95,23 @@ export function SessionTerminal({
     slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
+  const viewToggle = chatOffered ? (
+    <SegmentedControl
+      value={view}
+      onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
+      aria-label={t('sessions.chat.view.label')}
+    >
+      <SegmentedControlItem value="terminal">
+        {t('sessions.chat.view.terminal')}
+      </SegmentedControlItem>
+      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
+    </SegmentedControl>
+  ) : null;
 
   return (
     <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
       <Terminal
-        className="min-h-0 flex-1 overflow-hidden"
+        className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
       >
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
@@ -103,6 +138,9 @@ export function SessionTerminal({
                 </EmptyState.Header>
               </EmptyState>
             </div>
+          ) : null}
+          {chatShown ? (
+            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">{cover}</div>
           ) : null}
         </div>
 
@@ -150,6 +188,7 @@ export function SessionTerminal({
             }
             fix={<HostLinkFix host={host} />}
           >
+            {viewToggle}
             {statusItem}
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the
