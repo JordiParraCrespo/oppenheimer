@@ -1,4 +1,5 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { TFunction } from 'i18next';
 
 /**
  * The sidebar's groups: one per project, in the order given (the reader's,
@@ -45,6 +46,16 @@ export function shownGroups<T extends ProjectGroup>(
   return groups.filter(
     (group) => group.sessions.length > 0 || (group.project && group.project.id === pickedProject),
   );
+}
+
+/**
+ * What an empty list or group says: nothing yet, or nothing that matches the
+ * search, or nothing that matches the filters.
+ */
+export function emptyMessage(t: TFunction, narrowed: boolean, query: string): string {
+  const term = query.trim();
+  if (!narrowed) return t('sessions.sidebar.emptyProject');
+  return term ? t('sessions.sidebar.noMatches', { query: term }) : t('sessions.filters.noMatches');
 }
 
 /**

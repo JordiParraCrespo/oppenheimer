@@ -28,7 +28,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { matchesQuery, shownGroups } from '../lib/session-groups';
+import { emptyMessage, matchesQuery, shownGroups } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -153,11 +153,7 @@ export function SessionsSidebarBody() {
             <div className="px-3 pt-2">
               <EmptyState compact>
                 <EmptyState.Header>
-                  <EmptyState.Description>
-                    {query.trim()
-                      ? t('sessions.sidebar.noMatches', { query: query.trim() })
-                      : t('sessions.filters.noMatches')}
-                  </EmptyState.Description>
+                  <EmptyState.Description>{emptyMessage(t, true, query)}</EmptyState.Description>
                 </EmptyState.Header>
               </EmptyState>
             </div>

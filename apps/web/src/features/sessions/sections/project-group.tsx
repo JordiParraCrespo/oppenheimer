@@ -10,6 +10,7 @@ import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { emptyMessage } from '../lib/session-groups';
 import { SessionRows } from './session-rows';
 
 /**
@@ -105,11 +106,7 @@ export function ProjectGroup({
       />
       {!open ? null : sessions.length === 0 ? (
         <SidebarEmptyRow>
-          {!narrowed
-            ? t('sessions.sidebar.emptyProject')
-            : query.trim()
-              ? t('sessions.sidebar.noMatches', { query: query.trim() })
-              : t('sessions.filters.noMatches')}{' '}
+          {emptyMessage(t, narrowed, query)}{' '}
           {project && !narrowed ? (
             <button type="button" onClick={() => onNewSessionHere(project)}>
               {t('sessions.sidebar.startOne')}
