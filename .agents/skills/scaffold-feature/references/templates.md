@@ -279,12 +279,9 @@ export function ThingList() {
  * frame at the row's height, a bar per line of the row at that line's height.
  */
 export function ThingListSkeleton() {
-  const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-2.5">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       {['w-40', 'w-32', 'w-36'].map((width) => (
         <div
           key={width}

@@ -13,6 +13,7 @@ import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
+import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
@@ -65,6 +66,7 @@ function setup(
     { hostsOf: vi.fn(hostsOf) },
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
     {} as BotApprovalRequestFactory,
+    { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({

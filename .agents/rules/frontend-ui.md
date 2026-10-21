@@ -348,8 +348,12 @@ is the reference.
   shapes (a terminal or the panel that starts one), choose from what is
   already cached; when nothing tells, draw the quieter one.
 - **Quiet for assistive technology.** `Skeleton` is `aria-hidden` and pulses
-  only under `motion-safe`; the placeholder's root carries `aria-busy` and one
-  `<span role="status" className="sr-only">{t('common.loading')}</span>`.
+  only under `motion-safe`; the placeholder's root carries `aria-busy` and the
+  kit's `<LoadingStatus />`, the one "Loading…" a screen reader hears.
+- **A design-system record owns its placeholder.** When the row or card a list
+  draws is a design-system component, its placeholder sits beside it in the
+  same file on the same frame (`HostCardSkeleton` shares `HostCard`'s
+  `FRAME`; `PullRequestRowSkeleton` its row's grid), so the two cannot drift.
 - **Named and placed.** More than a bar or two is a `<View>Skeleton` in the
   feature's `components/` (or a `sections/` one when it must read a cache to
   pick its shape), one component per file.
@@ -358,10 +362,10 @@ is the reference.
 `Skeleton`s with a slab among them: a block 64px tall or more, or one that
 fills its frame (`scripts/skeleton-shape.mjs`). A pane that really is one block
 until it answers says so inside the slot,
-`{/* A block stands in here: <why> */}`. The files that held slabs when the
-check landed are `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
-with its count: debt, held to that count (one more slab fails), and the list
-only shrinks. Whether a named placeholder has the right shape is
+`{/* A block stands in here: <why> */}`. The thirteen files that held slabs when
+the check landed were `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
+held to its count; all are redrawn and the list is empty. Nothing is added
+to it: a new slab is fixed where it is written. Whether a named placeholder has the right shape is
 `/frontend-audit`'s `U7`. Before a pull request, photograph each placeholder
 held beside its loaded page (`/local-stack`, "Show a visual change").
 

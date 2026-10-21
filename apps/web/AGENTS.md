@@ -49,10 +49,9 @@
   reference; the rule is `.agents/rules/frontend-ui.md`, "A placeholder has
   the shape of what replaces it".
 - `pnpm check:structure` fails a `Pending` that is only a slab (`<Skeleton
-  className="h-80 w-full" />`); `SLAB_DEBT` in
-  `scripts/skeleton-slab-debt.mjs` lists the files that held one when
-  the check landed, each held to its count, and only shrinks. `/frontend-audit` reports the rest as
-  `U7`.
+  className="h-80 w-full" />`), with no exception: the debt list it
+  started with (`scripts/skeleton-slab-debt.mjs`) is paid off and empty.
+  `/frontend-audit` reports the rest as `U7`.
 - A change to a placeholder is a visual change: photograph it held beside
   its loaded page (`/local-stack`).
 

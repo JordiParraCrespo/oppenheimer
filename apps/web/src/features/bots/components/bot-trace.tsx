@@ -3,7 +3,6 @@ import {
   ChatSources,
   Trace,
   TraceGroup,
-  TraceGroupRow,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
@@ -125,8 +124,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
- * fold into one line ("Used 5 tools") that opens to a card with a row
- * each. A call still running is not drawn here: the turn's live line says
+ * fold into one line ("Used 5 tools") that opens to those same lines.
+ * A call still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
  */
@@ -139,43 +138,31 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
-  const items = done.map((step) => {
+  const lines = done.map((step) => {
     const action = toolAction(step);
     const view = viewOf(action);
     const { meta, body } = view.detail(step, t, labels);
-    return {
-      step,
-      icon: view.icon,
-      body,
-      props: {
-        ...view.title(t, action),
-        meta: step.isError ? t('bots.chat.activity.stepFailed') : meta,
-        tone: step.isError ? ('danger' as const) : ('default' as const),
-        action: step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined,
-      },
-    };
-  });
-  const [only] = items;
-  if (items.length === 1 && only) {
     return (
-      <Trace>
-        <TraceStep icon={only.icon} {...only.props}>
-          {only.body}
-        </TraceStep>
-      </Trace>
+      <TraceStep
+        key={step.callId}
+        icon={view.icon}
+        {...view.title(t, action)}
+        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        tone={step.isError ? 'danger' : 'default'}
+        action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
+      >
+        {body}
+      </TraceStep>
     );
-  }
+  });
+  if (lines.length === 1) return <Trace>{lines}</Trace>;
   const failed = done.filter((step) => step.isError).length;
   return (
     <TraceGroup
       summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
-      {items.map(({ step, props, body }) => (
-        <TraceGroupRow key={step.callId} {...props}>
-          {body}
-        </TraceGroupRow>
-      ))}
+      {lines}
     </TraceGroup>
   );
 }

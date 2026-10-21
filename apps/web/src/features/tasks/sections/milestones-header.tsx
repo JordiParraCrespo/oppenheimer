@@ -1,15 +1,8 @@
-import {
-  Button,
-  IconButton,
-  PageHeader,
-  PageHeaderMeta,
-  PageHeaderRow,
-  PageHeaderSep,
-  PageHeaderStat,
-} from '@oppenheimer/design-system-web';
+import { Button, IconButton, PageHeader, PageHeaderRow } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight, Plus } from '@oppenheimer/design-system-web/icons';
 import { useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
+import { PlanCounts } from '../components/plan-counts';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useToday } from '../hooks/use-today';
 import { boardCounts } from '../lib/board';
@@ -33,31 +26,15 @@ export function MilestonesHeader({
   const { t } = useTranslation();
   const today = useToday();
   const { projectId } = useScopeProject();
-  const { data: counts } = useTasks({ select: (rows) => boardCounts(rows, { projectId }, today) });
+  const { data: counts, isPending } = useTasks({
+    select: (rows) => boardCounts(rows, { projectId }, today),
+  });
 
   return (
     <PageHeader>
       <PageHeaderRow
         size="display"
-        meta={
-          counts ? (
-            <PageHeaderMeta indent={false}>
-              <PageHeaderStat value={counts.open}>{t('tasks.board.stats.open')}</PageHeaderStat>
-              <PageHeaderSep />
-              <PageHeaderStat value={counts.doing}>{t('tasks.board.stats.doing')}</PageHeaderStat>
-              <PageHeaderSep />
-              <PageHeaderStat value={counts.done}>{t('tasks.board.stats.done')}</PageHeaderStat>
-              {counts.overdue ? (
-                <>
-                  <PageHeaderSep />
-                  <PageHeaderStat value={counts.overdue} tone="danger">
-                    {t('tasks.board.stats.overdue')}
-                  </PageHeaderStat>
-                </>
-              ) : null}
-            </PageHeaderMeta>
-          ) : null
-        }
+        meta={<PlanCounts counts={counts} pending={isPending} />}
         title={t('tasks.milestones.title')}
         actions={
           <div className="flex items-center gap-1.5">

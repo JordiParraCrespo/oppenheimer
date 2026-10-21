@@ -618,6 +618,12 @@ earlier note:
   table: `list_issues`, `get_issue`, and the asking `create_issue` and
   `comment_on_issue`, under the `pulls:*` scopes and the App's new Issues
   permission. A bot's merge is pinned to the head its card showed.
+- `versions/mvp/25-bots.md` §4 said a bot "can never do more than the
+  person who owns it may do", but no tool checked the owner's roles: only
+  a token's scopes narrowed a turn. On 2026-10-20, after the review of the
+  pull request writes, the owner's live roles are checked on every call
+  and every approved run; a tool they lack stays offered and its call is
+  refused, naming the permission to ask for (25 §4).
 - `versions/mvp/02-runner.md` §5 (2026-10-18) marked a session's folder
   trusted in Claude Code only for a launch at Approve for me or Full
   access, leaving Ask on "do you trust this folder?". On 2026-10-20 the
