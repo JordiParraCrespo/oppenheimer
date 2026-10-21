@@ -50,7 +50,10 @@ export class ReviewSessionRepository
   async findOpen(scope: AccessScope): Promise<ReviewSessionRow[]> {
     // The workspace clause is the scope's; the person is this repository's.
     // The session's lifecycle is the sessions module's column, read by the
-    // ids this person's rows already name.
+    // ids this person's rows already name. A session whose delete is owed to
+    // its host is gone from the reader's point of view, so it leaves the list
+    // on the ask rather than when an offline host gets round to it; one the
+    // host refused to delete comes back.
     const rows = await this.scopedQuery(scope)
       .andWhere('review.userId = :userId', { userId: scope.userId })
       .innerJoin(
@@ -59,6 +62,7 @@ export class ReviewSessionRepository
         `"session"."id" = review.sessionId AND "session"."organizationId" = review.organizationId`,
       )
       .andWhere(`"session"."state" <> 'resolved'`)
+      .andWhere(`"session"."closeRequestedAt" IS NULL`)
       .select([
         'review.sessionId AS "sessionId"',
         'review.installationId AS "installationId"',
