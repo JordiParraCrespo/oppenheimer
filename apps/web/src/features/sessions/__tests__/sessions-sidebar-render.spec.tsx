@@ -53,14 +53,27 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
     name,
     age,
     active,
+    selected,
+    onClick,
   }: {
     name: string;
     age?: string;
     active?: boolean;
+    selected?: boolean;
+    onClick?: (event: React.MouseEvent) => void;
   }) => {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return (
-      <div data-active={active ? '' : undefined}>
+      // biome-ignore lint/a11y/useSemanticElements: a stand-in for the row's link, clicked by name.
+      <div
+        role="button"
+        tabIndex={-1}
+        aria-label={name}
+        data-active={active ? '' : undefined}
+        aria-pressed={selected}
+        onClick={onClick}
+        onKeyDown={() => {}}
+      >
         {name} {age}
       </div>
     );
@@ -187,6 +200,23 @@ describe('SessionsSidebar', () => {
     act(() => world.set({ now: START + MINUTE }));
     expect(rendered()).toEqual(['alpha', 'bravo', 'charlie', 'delta', 'echo']);
     expect(document.body.textContent).not.toBe(before);
+  });
+
+  /**
+   * Entering selection redraws every row, since each glyph turns into a box;
+   * after that a pick redraws the row it picked and no other.
+   */
+  it('renders only the picked row once the list is selecting', () => {
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'bravo' }), { metaKey: true });
+    });
+    expect(rendered()).toEqual(['alpha', 'bravo', 'charlie', 'delta', 'echo']);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'delta' }));
+    });
+    expect(rendered()).toEqual(['delta']);
+    expect(screen.getByRole('button', { name: 'delta' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   /** The half-typed word is the search box's; only the settled one reaches the list. */

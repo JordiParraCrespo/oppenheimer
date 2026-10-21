@@ -742,7 +742,9 @@
       "deleting": "Deleting…",
       "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
       "notDeleted": "Not deleted",
-      "notDeletedHint": "Its host refused to delete it. Delete it again to see why."
+      "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
+      "select": "Select",
+      "selected": "Selected"
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -755,6 +757,23 @@
       "descriptionFolder": "Ends the terminal. The folder stays as it is.",
       "refused": "Its host did not delete it",
       "refusedUnknown": "The host refused to remove the session."
+    },
+    "selection": {
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "pin": "Pin selected",
+      "unpin": "Unpin selected",
+      "move": "Move selected to a project",
+      "delete": "Delete selected",
+      "clear": "Clear selection"
+    },
+    "deleteSessions": {
+      "title_one": "Delete {{count}} session?",
+      "title_other": "Delete {{count}} sessions?",
+      "description": "Each session stops, its worktree is removed from its host, and its transcript is gone. Commits already pushed stay on the remote. A session with work that is not pushed is not deleted.",
+      "confirm": "Delete sessions",
+      "partial_one": "{{count}} session was not deleted",
+      "partial_other": "{{count}} sessions were not deleted"
     },
     "filters": {
       "label": "Filter sessions",
@@ -2721,6 +2740,7 @@
     "emailResent": "Email sent again.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",
