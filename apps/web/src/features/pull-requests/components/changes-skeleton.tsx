@@ -1,4 +1,5 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /** Each placeholder file's diff, as the widths of its lines. */
@@ -26,9 +27,7 @@ export function ChangesSkeleton() {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex min-h-0 flex-1 bg-card">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <div aria-hidden className="min-w-0 flex-1 overflow-hidden">
         {FILES.map((lines, file) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a file's place is its identity.

@@ -4,11 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { TaskEditorSkeleton } from '../components/task-editor-skeleton';
 import { NEW_TASK } from '../lib/board-search';
 import { TaskEditor } from '../sections/task-editor';
 
@@ -40,7 +40,7 @@ export function TaskDialog() {
           <div className="pb-6">
             <QueryState>
               <QueryState.Pending>
-                <Skeleton className="h-60 w-full" />
+                <TaskEditorSkeleton existing={open !== NEW_TASK} />
               </QueryState.Pending>
               <QueryState.Error fallback={t('tasks.dialog.loadFailed')} />
               <QueryState.Data>

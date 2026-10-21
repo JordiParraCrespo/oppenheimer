@@ -1,6 +1,7 @@
-import { SettingsTitle, Skeleton } from '@oppenheimer/design-system-web';
+import { SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { BotHomeHostSkeleton } from '@/features/bots/components/bot-home-host-skeleton';
 import { BotHomeHost } from '@/features/bots/sections/bot-home-host';
 
 /**
@@ -18,7 +19,7 @@ export function BotHomeHostScreen({ botId }: { botId: string }) {
       />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-36 w-full" />
+          <BotHomeHostSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.homeHost.hostsFailed')} />
         <QueryState.Data>

@@ -1,9 +1,10 @@
-import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
+import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web';
 import { useSuspenseBotDocuments } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotRevisionsSkeleton } from '@/features/bots/components/bot-revisions-skeleton';
 import { DOCUMENT_FILE } from '@/features/bots/lib/document-files';
 import { BotDocumentEditor } from './bot-document-editor';
 import { BotRevisions } from './bot-revisions';
@@ -55,7 +56,7 @@ export function BotDocuments({ botId }: { botId: string }) {
       </div>
       <QueryState key={file}>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-26 w-full" />
+          <BotRevisionsSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.instructions.historyFailed')} />
         <QueryState.Data>

@@ -2,6 +2,7 @@ import { EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { useReviewSessions } from '@oppenheimer/frontend-consumer/react';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { latestReview } from '../lib/review-session';
 
@@ -15,11 +16,7 @@ import { latestReview } from '../lib/review-session';
 export function PullRequestChatSkeleton({ address }: { address: PullRequestAddress }) {
   const { t } = useTranslation();
   const { data: sessions = [] } = useReviewSessions();
-  const status = (
-    <span role="status" className="sr-only">
-      {t('common.loading')}
-    </span>
-  );
+  const status = <LoadingStatus />;
 
   if (latestReview(sessions, address))
     return (
