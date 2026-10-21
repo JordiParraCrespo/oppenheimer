@@ -16,13 +16,16 @@ import type { BotAttachmentRepositoryPort } from './bot-attachment.repository.po
 /**
  * Marks the message's images as carried by it, in the caller's transaction
  * (the send's enqueue, which inserts the message first, for the foreign
- * key): each only if no message carries it yet and it was uploaded inside
- * the send window, so an image the sweep may be deleting is never claimed.
- * Whether every one was claimed; the caller rolls back when not.
+ * key). This is the one place the rule of who may send an image lives: each
+ * is claimed only if it is the sender's own upload to the message's bot, no
+ * message carries it yet, and it was uploaded inside the send window, so an
+ * image the sweep may be deleting is never claimed. Whether every one was
+ * claimed; the caller rolls back when not.
  */
 export async function claimAttachmentsWithin(
   manager: EntityManager,
   message: BotMessageEntity,
+  senderId: string,
   sentAt: Date,
 ): Promise<boolean> {
   const ids = message.attachments.map((attachment) => attachment.id);
@@ -32,8 +35,8 @@ export async function claimAttachmentsWithin(
   const [, affected]: [unknown[], number] = await manager.query(
     `UPDATE bot_attachment SET "messageId" = $1, "updatedAt" = now()
       WHERE id = ANY($2::uuid[]) AND "organizationId" = $3 AND "botId" = $4
-        AND "messageId" IS NULL AND "createdAt" > $5`,
-    [message.id, ids, message.organizationId, message.botId, uploadedAfter],
+        AND "messageId" IS NULL AND "createdAt" > $5 AND "uploadedByUserId" = $6`,
+    [message.id, ids, message.organizationId, message.botId, uploadedAfter, senderId],
   );
   return affected === ids.length;
 }

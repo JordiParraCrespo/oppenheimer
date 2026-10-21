@@ -82,26 +82,20 @@ function setup(
     approvals as unknown as BotApprovalRepositoryPort,
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
   );
-  const upload = (props: { by?: string; sent?: boolean } = {}) => {
+  const upload = () => {
     const created = BotAttachmentEntity.upload(
       {
         organizationId: bot.organizationId,
         botId: bot.id,
-        uploadedByUserId: props.by ?? scope.userId,
+        uploadedByUserId: scope.userId,
         mimeType: 'image/png',
         sizeBytes: 10,
         name: 'shot.png',
       },
       'png',
     );
-    const stored = props.sent
-      ? BotAttachmentEntity.create({
-          id: created.id,
-          props: { ...created.getProps(), messageId: randomUUID() },
-        })
-      : created;
-    uploads.push(stored);
-    return stored;
+    uploads.push(created);
+    return created;
   };
   return { handler, turns, bot, approvals, card, stream, upload };
 }
@@ -186,21 +180,15 @@ describe('SendBotMessageCommandHandler', () => {
     expect(turns.enqueue).not.toHaveBeenCalled();
   });
 
-  it('refuses an image already sent with BOTS_027, and someone else’s upload as not found', async () => {
-    const { handler, turns, bot, upload } = setup({ provider: 'openai' });
-    await expect(
-      send(handler, bot.id, null, null, [upload({ sent: true }).id]),
-    ).rejects.toMatchObject({ code: 'BOTS_027' });
-    await expect(
-      send(handler, bot.id, null, null, [upload({ by: randomUUID() }).id]),
-    ).rejects.toMatchObject({ code: 'BOTS_026' });
+  it('refuses an image that is not this bot’s with BOTS_026, queuing nothing', async () => {
+    const { handler, turns, bot } = setup({ provider: 'openai' });
     await expect(send(handler, bot.id, null, null, [randomUUID()])).rejects.toMatchObject({
       code: 'BOTS_026',
     });
     expect(turns.enqueue).not.toHaveBeenCalled();
   });
 
-  it('answers BOTS_027 when another send claimed an image first', async () => {
+  it('answers BOTS_027 when the claim refuses an image: sent, someone else’s, or too old', async () => {
     const { handler, turns, bot, upload } = setup({ provider: 'chatgpt' });
     turns.enqueue.mockResolvedValueOnce('attachments_taken');
     await expect(send(handler, bot.id, null, null, [upload().id])).rejects.toMatchObject({

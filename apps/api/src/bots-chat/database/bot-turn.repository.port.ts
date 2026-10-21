@@ -17,7 +17,8 @@ export interface BotTurnRepositoryPort {
    * lock on the bot, and stages the turn's job when the bot has no other
    * turn queued or running. `missing` when the bot is gone. The images the
    * message carries are claimed in the same transaction; `attachments_taken`,
-   * and nothing written, when another message claimed one first.
+   * and nothing written, when one cannot be: another message carries it, it
+   * is someone else's upload, or it is past the send window.
    */
   enqueue(
     turn: BotTurnEntity,

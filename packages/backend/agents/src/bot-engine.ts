@@ -33,8 +33,8 @@ export interface BotEngineTool {
 
 /** An image the turn's message carries, as the person sent it. */
 export interface BotTurnImage {
-  /** `image/png`, `image/jpeg`, `image/gif` or `image/webp`: the formats every engine here reads. */
-  mimeType: string;
+  /** The formats every engine here reads. */
+  mimeType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
   /** The bytes, base64-encoded. */
   data: string;
 }

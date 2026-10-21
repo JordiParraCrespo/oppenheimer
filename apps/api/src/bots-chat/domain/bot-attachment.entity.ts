@@ -115,19 +115,6 @@ export class BotAttachmentEntity extends AggregateRoot<BotAttachmentProps> {
     return this.props.name;
   }
 
-  /**
-   * Whether `userId` may send it with a message to `botId` at `now`: their
-   * own upload to that bot, not sent yet, and inside the send window.
-   */
-  sendableBy(userId: string, botId: string, now: Date): boolean {
-    return (
-      this.messageId === null &&
-      this.uploadedByUserId === userId &&
-      this.botId === botId &&
-      now.getTime() - this.createdAt.getTime() < BOT_ATTACHMENT_SEND_WINDOW_MS
-    );
-  }
-
   /** What a message keeps of it, for the chat. */
   toMessageAttachment(): BotAttachment {
     return { id: this.id, mimeType: this.mimeType, sizeBytes: this.sizeBytes, name: this.name };

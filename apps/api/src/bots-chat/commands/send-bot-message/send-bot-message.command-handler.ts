@@ -64,7 +64,7 @@ export class SendBotMessageCommandHandler
         extensions: { provider: bot.provider },
       });
     }
-    const attachments = await this.images.sendable(scope.userId, bot, attachmentIds, new Date());
+    const attachments = await this.images.sendable(bot, attachmentIds);
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -87,7 +87,7 @@ export class SendBotMessageCommandHandler
     });
     const outcome = await this.turns.enqueue(turn, message, metadata.correlationId);
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
-    if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_SENT);
+    if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.expireCard(bot.organizationId, bot.id);
     return turn.id;

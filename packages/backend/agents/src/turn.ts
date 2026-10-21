@@ -1,9 +1,28 @@
-import type { BotEngineEvent, BotEngineTool, BotToolData, BotTurnRequest } from './bot-engine';
+import type {
+  BotEngineEvent,
+  BotEngineTool,
+  BotToolData,
+  BotTurnImage,
+  BotTurnRequest,
+} from './bot-engine';
 
 type DoneEvent = Extract<BotEngineEvent, { type: 'done' }>;
 
 const CANCELLED: DoneEvent = { type: 'done', reason: 'cancelled' };
 const MAX_ERROR_LENGTH = 2_000;
+
+/** One part of a turn's message, before an engine puts it in its SDK's shape. */
+export type MessagePart = ({ type: 'image' } & BotTurnImage) | { type: 'text'; text: string };
+
+/**
+ * A turn's message as ordered parts: its images in the order they were
+ * attached, then its words when it has any (the order Anthropic recommends,
+ * and OpenAI reads either way). Each engine maps these onto its own SDK.
+ */
+export function messageParts(request: Pick<BotTurnRequest, 'message' | 'images'>): MessagePart[] {
+  const images = (request.images ?? []).map((image): MessagePart => ({ type: 'image', ...image }));
+  return request.message ? [...images, { type: 'text', text: request.message }] : images;
+}
 
 /** A thrown value as one line of text, without the stack. */
 export function describeError(error: unknown): string {

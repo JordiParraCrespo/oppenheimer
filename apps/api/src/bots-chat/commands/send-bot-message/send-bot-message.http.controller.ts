@@ -59,7 +59,11 @@ export class SendBotMessageHttpController {
     description: "The bot's model provider has no key",
     code: 'BOTS_013',
   })
-  @ApiProblemResponse({ status: 409, description: 'The image was already sent', code: 'BOTS_027' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The image can no longer be sent',
+    code: 'BOTS_027',
+  })
   @ApiProblemResponse({
     status: 422,
     description: "The bot's model does not read images",

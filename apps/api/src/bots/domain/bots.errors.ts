@@ -153,10 +153,10 @@ export const BotErrors = {
     message: 'Image not found',
     httpStatus: 404,
   },
-  /** An image a message already carries: an upload is sent once. */
-  ATTACHMENT_SENT: {
+  /** An image another message carries, someone else's upload, or one past the send window. */
+  ATTACHMENT_UNSENDABLE: {
     code: 'BOTS_027',
-    message: 'The image was already sent',
+    message: 'The image can no longer be sent',
     httpStatus: 409,
   },
   /** An image for a bot whose provider's models read none (GLM). */

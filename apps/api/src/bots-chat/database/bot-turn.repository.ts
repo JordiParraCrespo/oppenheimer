@@ -38,8 +38,23 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
   return driver.code === '23505' && driver.constraint === constraint;
 }
 
-/** Another send claimed one of the message's images first: the enqueue rolls back. */
+/**
+ * One of the message's images could not be claimed (`claimAttachmentsWithin`):
+ * thrown inside the enqueue's transaction, because a throw is what rolls the
+ * turn and its message back, and caught outside it as `attachments_taken`.
+ */
 class AttachmentsTaken extends Error {}
+
+/** The message's images, claimed for it as the turn's sender, at the send. */
+function claimAttachmentsTo(
+  manager: EntityManager,
+  turn: BotTurnEntity,
+  message: BotMessageEntity,
+): Promise<boolean> {
+  if (message.attachments.length === 0) return Promise.resolve(true);
+  if (!turn.requestedByUserId) return Promise.resolve(false);
+  return claimAttachmentsWithin(manager, message, turn.requestedByUserId, new Date());
+}
 
 @Injectable()
 export class BotTurnRepository
@@ -77,10 +92,7 @@ export class BotTurnRepository
           message,
           correlationId,
         );
-        if (
-          outcome !== 'missing' &&
-          !(await claimAttachmentsWithin(manager, message, new Date()))
-        ) {
+        if (outcome !== 'missing' && !(await claimAttachmentsTo(manager, turn, message))) {
           throw new AttachmentsTaken();
         }
         return outcome;

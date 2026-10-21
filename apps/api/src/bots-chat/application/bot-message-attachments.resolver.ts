@@ -7,11 +7,11 @@ import { BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 
 /**
- * The images a message to a bot may carry (`25-bots.md` §3.1), in the order
- * they were attached: each the sender's own upload to this bot, none sent
- * before, uploaded inside the send window, and only to a bot whose model
- * reads images. Whether another send
- * claims one first is the enqueue's to decide, in its transaction.
+ * The images a message to a bot names (`25-bots.md` §3.1), in the order they
+ * were attached, as the message keeps them: only for a bot whose model reads
+ * images, and only images of that bot. Whether the sender may send each one
+ * (their own upload, not sent yet, inside the send window) is decided once,
+ * by the claim in the enqueue's transaction (`claimAttachmentsWithin`).
  */
 @Injectable()
 export class BotMessageAttachmentsResolver {
@@ -19,12 +19,7 @@ export class BotMessageAttachmentsResolver {
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,
   ) {}
 
-  async sendable(
-    userId: string,
-    bot: BotEntity,
-    ids: readonly string[],
-    now: Date,
-  ): Promise<BotAttachment[]> {
+  async sendable(bot: BotEntity, ids: readonly string[]): Promise<BotAttachment[]> {
     if (ids.length === 0) return [];
     if (!botTakesImages(bot.provider)) {
       throw new AppError(BotErrors.MODEL_TAKES_NO_IMAGES, {
@@ -35,10 +30,7 @@ export class BotMessageAttachmentsResolver {
     const found = await this.attachments.findManyForBot(bot.organizationId, bot.id, ids);
     return ids.map((id) => {
       const attachment = found.find((candidate) => candidate.id === id);
-      if (attachment?.messageId) {
-        throw new AppError(BotErrors.ATTACHMENT_SENT, { extensions: { attachmentId: id } });
-      }
-      if (!attachment?.sendableBy(userId, bot.id, now)) {
+      if (!attachment) {
         throw new AppError(BotErrors.ATTACHMENT_NOT_FOUND, { extensions: { attachmentId: id } });
       }
       return attachment.toMessageAttachment();

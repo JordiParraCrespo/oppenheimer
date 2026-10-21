@@ -666,7 +666,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_024` <a id="bots_024" />       | That file is not an image a bot takes        | 415  |
 | `BOTS_025` <a id="bots_025" />       | The image is too large                       | 413  |
 | `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
-| `BOTS_027` <a id="bots_027" />       | The image was already sent                   | 409  |
+| `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
 | `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
@@ -727,9 +727,11 @@ it. Store the key first.
 `POST /bots/:id/attachments` (one `file` per request) and then sent by naming
 its id in `attachmentIds` on `POST /bots/:id/messages`. `BOTS_024` is a file
 that is not PNG, JPEG, GIF or WebP; `BOTS_025` one larger than 5 MB.
-`BOTS_026` is an id that is not this bot's, not in the caller's workspace, or
-someone else's upload that was never sent. `BOTS_027` is an upload a message
-already carries: pick the image again to send it again. `BOTS_028` is an
+`BOTS_026` is an id that is not this bot's or not in the caller's workspace,
+or, when reading one, someone else's upload that was never sent. `BOTS_027`
+is an image the message cannot claim: another message already carries it,
+it is someone else's upload, or it was uploaded more than 23 hours ago and
+the daily sweep may be deleting it. Pick the image again to send it. `BOTS_028` is an
 upload or a message with images to a bot on a provider whose models read no
 images (GLM); the message's words are not sent either, so nothing is lost:
 remove the images, or switch the bot's model, and send again. An upload that

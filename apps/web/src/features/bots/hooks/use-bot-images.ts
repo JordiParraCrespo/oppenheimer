@@ -10,30 +10,20 @@ import { type HeldImage, imageRefusal } from '@/features/bots/lib/bot-images';
  * moment it is picked, pasted or dropped, so a refusal is said while the
  * person still writes, and the message names the uploads when it is sent.
  * A file the composer will not hold, or one the API refused, is said under
- * the field (`problem`), never silently dropped. Held per bot: moving to
- * another bot's chat starts with none.
+ * the field (`problem`), never silently dropped. The images are this
+ * composer's: the chat keys the composer by its bot, so another bot's chat
+ * starts with none.
  */
 export function useBotImages(botId: string, takesImages: boolean, model: string) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const upload = useUploadBotImage();
-  const [held, setHeld] = useState<{ botId: string; images: HeldImage[] }>({
-    botId,
-    images: [],
-  });
-  const [refused, setRefused] = useState<{ botId: string; reason: string } | null>(null);
-  const images = held.botId === botId ? held.images : [];
+  const [images, setImages] = useState<HeldImage[]>([]);
+  const [refused, setRefused] = useState<string | null>(null);
 
   const update = (key: string, change: Partial<HeldImage>) =>
-    setHeld((current) =>
-      current.botId === botId
-        ? {
-            botId,
-            images: current.images.map((image) =>
-              image.key === key ? { ...image, ...change } : image,
-            ),
-          }
-        : current,
+    setImages((current) =>
+      current.map((image) => (image.key === key ? { ...image, ...change } : image)),
     );
 
   function hold(files: File[]) {
@@ -54,9 +44,9 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
         error: null,
       });
     }
-    setRefused(reason ? { botId, reason } : null);
+    setRefused(reason);
     if (accepted.length === 0) return;
-    setHeld({ botId, images: [...images, ...accepted] });
+    setImages((current) => [...current, ...accepted]);
     for (const image of accepted) {
       upload
         .mutateAsync({ id: botId, file: image.file })
@@ -67,17 +57,17 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
 
   function remove(key: string) {
     setRefused(null);
-    setHeld({ botId, images: images.filter((image) => image.key !== key) });
+    setImages((current) => current.filter((image) => image.key !== key));
   }
 
   function clear() {
     setRefused(null);
-    setHeld({ botId, images: [] });
+    setImages([]);
   }
 
   const failed = images.find((image) => image.status === 'failed');
   const problem =
-    (refused?.botId === botId ? refused.reason : null) ??
+    refused ??
     (failed
       ? (resolveError(
           failed.error,

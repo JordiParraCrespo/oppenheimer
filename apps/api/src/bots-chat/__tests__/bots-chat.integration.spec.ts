@@ -1423,6 +1423,24 @@ describe('bots chat (integration)', () => {
     expect(still.messageId).toBeNull();
   });
 
+  it('never claims someone else’s upload, even to the same bot', async () => {
+    const bot = await create('Vision');
+    const theirs = await uploaded(bot);
+    const other = randomUUID();
+    await dataSource.query(
+      `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+       VALUES ($1, 'Bea', $2, 'Bea', 'Ruiz')`,
+      [other, `${other}@example.com`],
+    );
+    await dataSource.query(`UPDATE bot_attachment SET "uploadedByUserId" = $1 WHERE id = $2`, [
+      other,
+      theirs.id,
+    ]);
+    const { turn, message } = sentWith(bot, [theirs]);
+
+    expect(await turns.enqueue(turn, message, null)).toBe('attachments_taken');
+  });
+
   it('frees a sent image when its chat is cleared or its bot deleted, for the sweep to delete', async () => {
     const cleared = await create('Cleared');
     const deleted = await create('Deleted');

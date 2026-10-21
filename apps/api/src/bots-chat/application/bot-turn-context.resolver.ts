@@ -17,6 +17,7 @@ import {
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
+import { withEarlierImages } from '../domain/bot-image.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
@@ -125,7 +126,7 @@ export class BotTurnContextResolver {
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner ? this.toolbox.catalog(turn.credentialScopes) : [],
       }),
-      history: botHistory(earlier, summary?.content ?? null),
+      history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(
         composeTurnContext({
           now,

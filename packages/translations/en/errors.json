@@ -190,7 +190,7 @@
     "BOTS_024": "That file isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
     "BOTS_025": "That image is too large. Images can be up to 5 MB.",
     "BOTS_026": "That image is no longer available. Add it again.",
-    "BOTS_027": "That image was already sent. Add it again to send it again.",
+    "BOTS_027": "That image can't be sent anymore. Add it again.",
     "BOTS_028": "This bot's model can't read images. Remove them, or switch to a model that can.",
     "CALENDAR_001": "That event doesn't exist, or it was deleted.",
     "CALENDAR_002": "Choose a workspace before working with the calendar.",

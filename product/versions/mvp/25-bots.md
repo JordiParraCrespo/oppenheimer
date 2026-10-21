@@ -220,7 +220,7 @@ over the text as soon as it is picked, and a message may be images alone.
   and the tile breathes until it is stored. The message names its uploads
   (`attachmentIds` on `POST /bots/:id/messages`); one image is sent by one
   message, claimed in the send's transaction, and only by the person who
-  uploaded it.
+  uploaded it: that claim is the one place the rule lives.
 - **Which models.** Anthropic, OpenAI and ChatGPT read images; GLM does
   not (`BOT_PROVIDER_CATALOG[provider].images`). On a GLM bot the
   composer refuses a picked image and says to switch the model; with
