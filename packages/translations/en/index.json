@@ -914,8 +914,8 @@
         "chat": "Chat"
       },
       "empty": {
-        "title": "No conversation yet",
-        "description": "What you and Claude say in this session shows here as it happens, read off its own transcript."
+        "title": "Nothing said yet",
+        "description": "What you and Claude say in this session appears here as it works, read off its own transcript. Write below, or type in the terminal."
       },
       "composer": {
         "placeholder": "Message Claude. It is typed into the terminal.",
@@ -923,8 +923,8 @@
         "stop": "Stop"
       },
       "turn": {
-        "working": "Working",
-        "worked": "Worked",
+        "working": "Working for",
+        "worked": "Worked for",
         "stopped": "Stopped",
         "interrupted": "Interrupted"
       },
@@ -978,7 +978,23 @@
         "question_other": "asked {{count}} questions",
         "other_one": "used {{count}} tool",
         "other_other": "used {{count}} tools"
-      }
+      },
+      "verbLive": {
+        "command": "Running",
+        "read": "Reading",
+        "edit": "Editing",
+        "write": "Writing",
+        "search": "Searching",
+        "web": "Fetching",
+        "agent": "Running a subagent",
+        "question": "Asking",
+        "mcp": "Calling",
+        "other": "Using"
+      },
+      "thought": "Thought",
+      "thoughtFor": "Thought for {{seconds}}s",
+      "changes_one": "{{count}} file changed",
+      "changes_other": "{{count}} files changed"
     }
   },
   "bots": {

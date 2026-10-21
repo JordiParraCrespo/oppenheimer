@@ -24,10 +24,14 @@ import (
 var conversationPattern = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
 
 // agentReader is one agent's transcript: the first message a person sent in
-// a conversation, or "" while there is none yet. An error is a transcript
-// that is there and cannot be read.
+// a conversation, or "" while there is none yet (an error is a transcript
+// that is there and cannot be read); where the conversation's file is now,
+// "" while there is none; and one of its lines as the chat view's entry, or
+// none for a line the chat does not show.
 type agentReader interface {
 	firstPrompt(conversation string) (string, error)
+	path(conversation string) string
+	chatEntry(line []byte) ([]byte, bool)
 }
 
 // Reader is app.Transcripts over the files the agent CLIs keep, dispatching

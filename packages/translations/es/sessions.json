@@ -435,8 +435,8 @@
       "chat": "Chat"
     },
     "empty": {
-      "title": "Todavía no hay conversación",
-      "description": "Lo que tú y Claude os decís en esta sesión aparece aquí a medida que ocurre, leído de su propia transcripción."
+      "title": "Todavía no se ha dicho nada",
+      "description": "Lo que tú y Claude os decís en esta sesión aparece aquí mientras trabaja, leído de su propia transcripción. Escribe abajo o en la terminal."
     },
     "composer": {
       "placeholder": "Escribe a Claude. Se teclea en la terminal.",
@@ -444,7 +444,7 @@
       "stop": "Detener"
     },
     "turn": {
-      "working": "Trabajando",
+      "working": "Trabajando desde hace",
       "worked": "Trabajó",
       "stopped": "Detenido",
       "interrupted": "Interrumpido"
@@ -499,6 +499,22 @@
       "question_other": "hizo {{count}} preguntas",
       "other_one": "usó {{count}} herramienta",
       "other_other": "usó {{count}} herramientas"
-    }
+    },
+    "verbLive": {
+      "command": "Ejecutando",
+      "read": "Leyendo",
+      "edit": "Editando",
+      "write": "Escribiendo",
+      "search": "Buscando",
+      "web": "Consultando",
+      "agent": "Lanzando un subagente",
+      "question": "Preguntando",
+      "mcp": "Llamando",
+      "other": "Usando"
+    },
+    "thought": "Pensó",
+    "thoughtFor": "Pensó {{seconds}} s",
+    "changes_one": "{{count}} archivo cambiado",
+    "changes_other": "{{count}} archivos cambiados"
   }
 }

@@ -53,13 +53,17 @@ export interface ChatToolCall {
   plan: string | null;
   /** The host cut the call's input or its output to keep the entry small. */
   truncated: boolean;
+  /** When the agent made the call, and when its result landed (none while it runs). */
+  startedAt: Date | null;
+  finishedAt: Date | null;
 }
 
+/** `at` is when the agent wrote the step, from its transcript line. */
 export type ChatStep =
-  | { kind: 'reply'; id: string; text: string; truncated: boolean }
-  | { kind: 'thinking'; id: string; text: string }
-  | { kind: 'tool'; id: string; call: ChatToolCall }
-  | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' };
+  | { kind: 'reply'; id: string; at: Date | null; text: string; truncated: boolean }
+  | { kind: 'thinking'; id: string; at: Date | null; text: string }
+  | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
+  | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' };
 
 export interface ChatPrompt {
   id: string;
@@ -94,13 +98,25 @@ export interface ChatBatch {
 
 const EMPTY: ChatState = { available: false, turns: [] };
 
+/** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
+const PASTE_START = '\u001b[200~';
+const PASTE_END = '\u001b[201~';
+/** The key that stops Claude Code's turn. */
+const ESCAPE = '\u001b';
+/** How long the agent's prompt takes the text before Enter submits it. */
+const SUBMIT_AFTER_TEXT_MS = 60;
+
 /**
  * One attachment's chat: batches in, an immutable `ChatState` out, with a
- * subscription a React store can read (`useSyncExternalStore`). A reset
- * starts over, which is what a reconnect's new attachment sends first.
+ * subscription a React store can read (`useSyncExternalStore`), and the way
+ * back to the agent, which is its terminal. A reset starts over, which is
+ * what a reconnect's new attachment sends first. Whoever holds the stream
+ * feeds it (`apply`) and lends it the stream's input (`connect`); the view
+ * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
   private entries: unknown[] = [];
+  private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
 
@@ -115,6 +131,31 @@ export class SessionChat {
     }
     this.state = { available: true, turns: toTurns(this.entries) };
     for (const listener of this.listeners) listener();
+  }
+
+  /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
+  connect(type: (data: string) => void): () => void {
+    this.type = type;
+    return () => {
+      if (this.type === type) this.type = null;
+    };
+  }
+
+  /**
+   * A message for the agent, typed the way a person would type it into the
+   * terminal: a line as it is, several lines as one paste, then Enter. The
+   * chat never reaches the agent any way the terminal could not.
+   */
+  send(message: string): void {
+    const type = this.type;
+    if (!type || message.trim() === '') return;
+    type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+  }
+
+  /** Stops the agent's turn: Escape, as in its terminal. */
+  interrupt(): void {
+    this.type?.(ESCAPE);
   }
 
   snapshot = (): ChatState => this.state;
@@ -144,105 +185,165 @@ function date(value: unknown): Date | null {
   return Number.isNaN(at.getTime()) ? null : at;
 }
 
+/**
+ * What one transcript entry is, for the turn loop: a prompt the person typed
+ * (it opens a turn), the agent's steps, tool results to pair with their
+ * calls, or nothing the chat shows. Pure: one entry in, one reading out.
+ */
+type Reading =
+  | { kind: 'prompt'; prompt: ChatPrompt }
+  | { kind: 'steps'; steps: ChatStep[]; model: string | null; at: Date | null }
+  | { kind: 'results'; results: ChatResult[]; at: Date | null }
+  | null;
+
+interface ChatResult {
+  toolUseId: string;
+  failed: boolean;
+  output: string | null;
+  truncated: boolean;
+}
+
+export function classify(value: unknown, index: number): Reading {
+  const entry = record(value);
+  const message = record(entry?.message);
+  if (!entry || !message || entry.isSidechain === true) return null;
+  const id = text(entry.uuid) ?? `entry-${index}`;
+  const at = date(entry.timestamp);
+  const content = message.content;
+
+  if (entry.type === 'assistant') {
+    if (!Array.isArray(content)) return null;
+    const steps = content.flatMap((raw, position) => {
+      const step = stepOf(record(raw), `${id}:${position}`, at);
+      return step ? [step] : [];
+    });
+    return { kind: 'steps', steps, model: text(message.model), at };
+  }
+  if (entry.type !== 'user') return null;
+  if (entry.isCompactSummary === true) {
+    return {
+      kind: 'steps',
+      steps: [{ kind: 'notice', id, at, notice: 'compacted' }],
+      model: null,
+      at,
+    };
+  }
+  const blocks = Array.isArray(content) ? content.map(record) : [];
+  // A tool's result rides a user line: it is the agent's turn, not the person's.
+  const results = blocks.flatMap((block): ChatResult[] =>
+    block?.type === 'tool_result'
+      ? [
+          {
+            toolUseId: String(block.tool_use_id),
+            failed: block.is_error === true,
+            output: text(block.content),
+            truncated: block.truncated === true,
+          },
+        ]
+      : [],
+  );
+  if (results.length > 0) return { kind: 'results', results, at };
+  if (entry.isMeta === true) return null;
+  const typed = typedPrompt(
+    typeof content === 'string'
+      ? content
+      : blocks
+          .filter((block) => block?.type === 'text')
+          .map((block) => String(block?.text ?? ''))
+          .join('\n'),
+  );
+  if (typed === 'interrupted') {
+    return {
+      kind: 'steps',
+      steps: [{ kind: 'notice', id, at, notice: 'interrupted' }],
+      model: null,
+      at,
+    };
+  }
+  if (typed === null) return null;
+  const files = blocks.filter(
+    (block) => block?.type === 'image' || block?.type === 'document',
+  ).length;
+  return { kind: 'prompt', prompt: { id, text: typed, files, at } };
+}
+
+function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | null {
+  if (block?.type === 'text' && text(block.text)) {
+    return { kind: 'reply', id, at, text: String(block.text), truncated: block.truncated === true };
+  }
+  if (block?.type === 'thinking' && text(block.thinking)) {
+    return { kind: 'thinking', id, at, text: String(block.thinking) };
+  }
+  if (block?.type === 'tool_use') return { kind: 'tool', id, at, call: { ...toolCall(block), startedAt: at } };
+  return null;
+}
+
 /** The entries in turns: a turn opens at each prompt the person typed. */
 export function toTurns(entries: readonly unknown[]): ChatTurn[] {
   const turns: ChatTurn[] = [];
   const calls = new Map<string, ChatToolCall>();
-  let turn: ChatTurn | null = null;
-  const open = (prompt: ChatPrompt | null, id: string, at: Date | null): ChatTurn => {
-    const next: ChatTurn = {
-      id,
-      prompt,
-      steps: [],
-      model: null,
-      startedAt: at,
-      lastAt: at,
-      working: false,
-    };
-    turns.push(next);
-    return next;
+  const current = (id: string, at: Date | null): ChatTurn => {
+    const last = turns.at(-1);
+    if (last) return last;
+    return open(turns, null, id, at);
   };
 
   entries.forEach((value, index) => {
-    const entry = record(value);
-    const message = record(entry?.message);
-    if (!entry || !message || entry.isSidechain === true) return;
-    const id = text(entry.uuid) ?? `entry-${index}`;
-    const at = date(entry.timestamp);
-    const content = message.content;
-
-    if (entry.type === 'user') {
-      if (entry.isCompactSummary === true) {
-        turn ??= open(null, id, at);
-        turn.steps.push({ kind: 'notice', id, notice: 'compacted' });
+    const reading = classify(value, index);
+    if (!reading) return;
+    switch (reading.kind) {
+      case 'prompt':
+        open(turns, reading.prompt, reading.prompt.id, reading.prompt.at);
+        return;
+      case 'steps': {
+        const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at);
+        turn.model = reading.model ?? turn.model;
+        if (reading.at) turn.lastAt = reading.at;
+        for (const step of reading.steps) {
+          if (step.kind === 'tool') calls.set(step.call.id, step.call);
+          turn.steps.push(step);
+        }
         return;
       }
-      const blocks = Array.isArray(content) ? content.map(record) : null;
-      // A tool's result rides a user line: it is the agent's turn, not the person's.
-      for (const block of blocks ?? []) {
-        if (block?.type !== 'tool_result') continue;
-        const call = calls.get(String(block.tool_use_id));
-        if (!call) continue;
-        call.status = block.is_error === true ? 'failed' : 'done';
-        call.output = text(block.content);
-        call.truncated ||= block.truncated === true;
-      }
-      if (entry.isMeta === true) return;
-      const typed = typedPrompt(
-        typeof content === 'string'
-          ? content
-          : (blocks ?? [])
-              .filter((block) => block?.type === 'text')
-              .map((block) => String(block?.text ?? ''))
-              .join('\n'),
-      );
-      if (typed === 'interrupted') {
-        turn ??= open(null, id, at);
-        turn.steps.push({ kind: 'notice', id, notice: 'interrupted' });
+      case 'results':
+        for (const result of reading.results) {
+          const call = calls.get(result.toolUseId);
+          if (!call) continue;
+          call.status = result.failed ? 'failed' : 'done';
+          call.output = result.output;
+          call.truncated ||= result.truncated;
+          call.finishedAt = reading.at;
+        }
         return;
-      }
-      if (typed === null) return;
-      const files = (blocks ?? []).filter(
-        (block) => block?.type === 'image' || block?.type === 'document',
-      ).length;
-      turn = open({ id, text: typed, files, at }, id, at);
-      return;
     }
-
-    if (entry.type !== 'assistant' || !Array.isArray(content)) return;
-    turn ??= open(null, id, at);
-    turn.model = text(message.model) ?? turn.model;
-    if (at) turn.lastAt = at;
-    content.forEach((raw, position) => {
-      const block = record(raw);
-      if (!block || !turn) return;
-      const stepId = `${id}:${position}`;
-      if (block.type === 'text' && text(block.text)) {
-        turn.steps.push({
-          kind: 'reply',
-          id: stepId,
-          text: String(block.text),
-          truncated: block.truncated === true,
-        });
-      } else if (block.type === 'thinking' && text(block.thinking)) {
-        turn.steps.push({ kind: 'thinking', id: stepId, text: String(block.thinking) });
-      } else if (block.type === 'tool_use') {
-        const call = toolCall(block);
-        calls.set(call.id, call);
-        turn.steps.push({ kind: 'tool', id: stepId, call });
-      }
-    });
   });
 
   const last = turns.at(-1);
-  if (last) {
-    const tail = last.steps.at(-1);
-    last.working =
-      last.steps.some((step) => step.kind === 'tool' && step.call.status === 'running') ||
-      tail === undefined ||
-      (tail.kind !== 'reply' && tail.kind !== 'notice');
-  }
+  if (last) last.working = isWorking(last);
   return turns;
+}
+
+function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date | null): ChatTurn {
+  const turn: ChatTurn = {
+    id,
+    prompt,
+    steps: [],
+    model: null,
+    startedAt: at,
+    lastAt: at,
+    working: false,
+  };
+  turns.push(turn);
+  return turn;
+}
+
+/** The last turn is the agent's while a call is open or it has not answered in words. */
+function isWorking(turn: ChatTurn): boolean {
+  const tail = turn.steps.at(-1);
+  if (tail === undefined) return true;
+  if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
+    return true;
+  return tail.kind !== 'reply' && tail.kind !== 'notice';
 }
 
 /**
@@ -330,6 +431,8 @@ function toolCall(block: Loose): ChatToolCall {
     todos: kind === 'todo' ? todosOf(input.todos) : null,
     plan: kind === 'plan' ? field('plan') : null,
     truncated: block.truncated === true,
+    startedAt: null,
+    finishedAt: null,
   };
 }
 

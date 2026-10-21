@@ -10,7 +10,9 @@ import { Link } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionClosed } from '../components/session-closed';
-import type { SessionView } from '../lib/chat-blocks';
+import { useSessionChat } from '../hooks/use-session-chat';
+import type { PaneReading, SessionView } from '../lib/chat-blocks';
+import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
 
 /**
@@ -30,14 +32,13 @@ export function SessionPane({
   sessionId: string;
   /**
    * The live terminal, once the session has one: the screen composes it, with
-   * whatever its status bar carries. `view` is how the pane reads it, held
-   * here because the frame changes with it: the chat sits on the console's
-   * own ground, the grid on the terminal's.
+   * whatever its status bar carries. `reading` is the session's chat and how
+   * the pane reads it, held here because the frame changes with it (the chat
+   * sits on the console's own ground, the grid on the terminal's) and the
+   * chat is a view of its own, beside the terminal rather than inside it:
+   * the terminal feeds it and draws it over its grid as `cover`.
    */
-  terminal: (
-    session: SessionEntity,
-    view: { view: SessionView; onViewChange: (view: SessionView) => void },
-  ) => ReactNode;
+  terminal: (session: SessionEntity, reading: PaneReading) => ReactNode;
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -57,6 +58,7 @@ export function SessionPane({
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<SessionView>('terminal');
+  const chat = useSessionChat();
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
@@ -136,7 +138,12 @@ export function SessionPane({
       className={cn('flex min-h-0 flex-1 flex-col p-3.5', view === 'terminal' && 'bg-term-bg')}
     >
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        {terminal(session, { view, onViewChange: setView })}
+        {terminal(session, {
+          chat,
+          view,
+          onViewChange: setView,
+          cover: <SessionChat chat={chat} readOnly={false} />,
+        })}
       </div>
     </div>
   );

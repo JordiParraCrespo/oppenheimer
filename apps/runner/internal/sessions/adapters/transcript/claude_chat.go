@@ -79,12 +79,12 @@ type chatBlock struct {
 	Truncated bool   `json:"truncated,omitempty"`
 }
 
-// compactClaude turns one transcript line into a chat entry, or reports none
+// chatEntry turns one transcript line into a chat entry, or reports none
 // for a line the chat does not show: the CLI's bookkeeping, a message with
 // nothing left in it. A pasted image is named and never sent, an empty
 // thinking block (the CLI keeps only its signature) is dropped, and long text
 // is cut at a rune boundary with the block marked truncated.
-func compactClaude(line []byte) ([]byte, bool) {
+func (claudeReader) chatEntry(line []byte) ([]byte, bool) {
 	var in claudeChatLine
 	if json.Unmarshal(line, &in) != nil || in.Message == nil {
 		return nil, false

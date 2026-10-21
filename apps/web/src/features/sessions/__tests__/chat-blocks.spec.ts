@@ -45,7 +45,7 @@ const t = ((key: string, options?: { count?: number }) =>
   `${key.split('.').at(-1)}×${options?.count}`) as unknown as TFunction;
 
 describe('blocksOf', () => {
-  it('folds a run of calls into one group, and keeps a reply, a plan and the last task list apart', () => {
+  it('folds a run of calls into one group, keeps a reply and a plan apart, and leaves the task list to the composer', () => {
     const turn = turnOf([
       tool('1', 'Read', { file_path: 'a.ts' }),
       tool('2', 'Grep', { pattern: 'x' }),
@@ -56,7 +56,7 @@ describe('blocksOf', () => {
       tool('t2', 'TodoWrite', { todos: [{ content: 'One', status: 'completed' }] }),
     ]);
     const blocks = blocksOf(turn);
-    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'reply', 'plan', 'todos']);
+    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'reply', 'plan']);
     expect(blocks[0]?.kind === 'tools' && blocks[0].calls.map((call) => call.name)).toEqual([
       'Read',
       'Grep',

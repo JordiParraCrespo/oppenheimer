@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type ChatStep, SessionChat, toTurns } from '../session-chat';
+import { type ChatStep, classify, SessionChat, toTurns } from '../session-chat';
 
 /**
  * The chat view's reading of a Claude Code transcript: prompts open turns,
@@ -171,5 +171,71 @@ describe('SessionChat', () => {
     expect(chat.snapshot()).toEqual({ available: true, turns: [] });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('classify', () => {
+  it("reads one entry on its own: a prompt, the agent's steps, results, or nothing", () => {
+    expect(classify(user('u', 'Go'), 0)).toMatchObject({ kind: 'prompt', prompt: { text: 'Go' } });
+    expect(
+      classify(
+        assistant('a', [
+          { type: 'thinking', thinking: '' },
+          { type: 'text', text: 'Hi' },
+        ]),
+        1,
+      ),
+    ).toMatchObject({
+      kind: 'steps',
+      model: 'claude-opus-5-5',
+      steps: [{ kind: 'reply', id: 'a:1' }],
+    });
+    expect(
+      classify(user('r', [{ type: 'tool_result', tool_use_id: 't', content: 'ok' }]), 2),
+    ).toMatchObject({
+      kind: 'results',
+      results: [{ toolUseId: 't', failed: false, output: 'ok' }],
+    });
+    expect(classify({ type: 'file-history-snapshot' }, 3)).toBeNull();
+  });
+
+  it('stamps each step and each call with when it happened', () => {
+    const [turn] = toTurns([
+      user('u', 'Go'),
+      assistant(
+        'a',
+        [{ type: 'tool_use', id: 't', name: 'Bash', input: { command: 'ls' } }],
+        '2026-10-21T09:00:05.000Z',
+      ),
+      {
+        ...user('r', [{ type: 'tool_result', tool_use_id: 't', content: 'a' }]),
+        timestamp: '2026-10-21T09:00:09.000Z',
+      },
+    ]);
+    const step = turn?.steps[0];
+    expect(step?.at?.toISOString()).toBe('2026-10-21T09:00:05.000Z');
+    expect(step?.kind === 'tool' && step.call.finishedAt?.toISOString()).toBe(
+      '2026-10-21T09:00:09.000Z',
+    );
+  });
+});
+
+describe('typing into the session', () => {
+  it('types a line as it is and several as one paste, then Enter, and stops with Escape', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.send('nobody is connected yet');
+    const release = chat.connect((data) => typed.push(data));
+    chat.send('Now ship it');
+    vi.runAllTimers();
+    chat.send('One\nTwo');
+    vi.runAllTimers();
+    chat.send('   ');
+    chat.interrupt();
+    release();
+    chat.interrupt();
+    expect(typed).toEqual(['Now ship it', '\r', '\u001b[200~One\nTwo\u001b[201~', '\r', '\u001b']);
+    vi.useRealTimers();
   });
 });

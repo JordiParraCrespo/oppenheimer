@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -31,14 +30,15 @@ const (
 // line as the CLI appends it. A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
 func (r *Reader) Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
-	if _, ok := r.agents[agent]; !ok || agent != domain.AgentClaude || !conversationPattern.MatchString(conversation) {
+	reader, ok := r.agents[agent]
+	if !ok || !conversationPattern.MatchString(conversation) {
 		return app.ErrNoChat
 	}
-	reader := r.agents[agent].(claudeReader)
-	f := &follower{find: func() string {
-		matches, _ := filepath.Glob(filepath.Join(reader.projects, "*", conversation+".jsonl"))
-		return newest(matches)
-	}, entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true}
+	f := &follower{
+		find:     func() string { return reader.path(conversation) },
+		entry:    reader.chatEntry,
+		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true,
+	}
 	ticker := time.NewTicker(followEvery)
 	defer ticker.Stop()
 	for {
@@ -54,6 +54,7 @@ func (r *Reader) Follow(ctx context.Context, agent domain.Agent, conversation st
 // follower is one conversation's read position.
 type follower struct {
 	find     func() string
+	entry    func(line []byte) ([]byte, bool)
 	entryMax int
 	batchMax int
 	emit     func(app.ChatBatch) error
@@ -120,7 +121,7 @@ func (f *follower) check() {
 	}
 	f.partial = append([]byte(nil), data[end+1:]...)
 	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
-		entry, ok := compactClaude(line)
+		entry, ok := f.entry(line)
 		if !ok || len(entry) > f.entryMax {
 			continue
 		}

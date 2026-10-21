@@ -37,7 +37,8 @@ describe('SessionChat', () => {
     vi.useFakeTimers();
     const chat = new Chat();
     const send = vi.fn();
-    render(<SessionChat chat={chat} send={send} readOnly={false} />);
+    chat.connect(send);
+    render(<SessionChat chat={chat} readOnly={false} />);
     expect(screen.getByText('sessions.chat.empty.title')).toBeTruthy();
 
     act(() =>
@@ -81,13 +82,75 @@ describe('SessionChat', () => {
       reset: true,
       entries: [entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } })],
     });
-    render(<SessionChat chat={chat} send={send} readOnly={false} />);
+    chat.connect(send);
+    render(<SessionChat chat={chat} readOnly={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.composer.stop' }));
     expect(send).toHaveBeenCalledWith('\u001b');
   });
 
   it('offers no composer to a watcher', () => {
-    render(<SessionChat chat={new Chat()} send={vi.fn()} readOnly />);
+    render(<SessionChat chat={new Chat()} readOnly />);
     expect(screen.queryByPlaceholderText('sessions.chat.composer.placeholder')).toBeNull();
+  });
+});
+
+describe('a settled turn', () => {
+  it('ends on the files it changed, and folds to its words once the next prompt passes it', () => {
+    const chat = new Chat();
+    const turn = [
+      entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Fix it' } }),
+      entry({
+        type: 'assistant',
+        uuid: 'a1',
+        timestamp: '2026-10-21T09:00:00.000Z',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'thinking', thinking: 'Look first.' }],
+        },
+      }),
+      entry({
+        type: 'assistant',
+        uuid: 'a2',
+        timestamp: '2026-10-21T09:00:04.000Z',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'tool_use',
+              id: 'e',
+              name: 'Edit',
+              input: { file_path: 'src/a.ts', old_string: 'a', new_string: 'a\nb' },
+            },
+          ],
+        },
+      }),
+      entry({
+        type: 'user',
+        uuid: 'r',
+        message: {
+          role: 'user',
+          content: [{ type: 'tool_result', tool_use_id: 'e', content: 'ok' }],
+        },
+      }),
+      entry({
+        type: 'assistant',
+        uuid: 'a3',
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Done.' }] },
+      }),
+    ];
+    chat.apply({ reset: true, entries: turn });
+    render(<SessionChat chat={chat} readOnly />);
+    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
+    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
+
+    act(() =>
+      chat.apply({
+        entries: [entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Next' } })],
+      }),
+    );
+    // The older turn keeps its words and its card; its thinking folds away.
+    expect(screen.getByText('Done.')).toBeTruthy();
+    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
+    expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
   });
 });

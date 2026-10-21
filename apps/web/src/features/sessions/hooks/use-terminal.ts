@@ -1,6 +1,6 @@
 import '@xterm/xterm/css/xterm.css';
 import type {
-  ChatBatch,
+  SessionChat,
   SessionStream,
   StreamEnd,
   StreamStatus,
@@ -44,9 +44,9 @@ import { keepTerminalSnapshot, readTerminalSnapshot } from '../lib/terminal-snap
  * `slowDial`, the current dial has outlasted `DIAL_GRACE_MS`;
  * `hostName`, the list's name for it.
  *
- * With `onChat`, the stream's transcript entries go to the chat view
- * (`useSessionChat`) as they arrive; `send` types into the PTY the way the
- * grid does, which is how the chat's composer reaches the agent.
+ * With `chat`, the stream feeds the chat view (`SessionChat`) the agent's
+ * transcript as it arrives and lends it its input, so the chat types into
+ * the same PTY the grid does. `chat` must be a stable reference.
  *
  * With `snapshotKey`, the pane keeps its last picture under that key when it
  * unmounts and opens on it next time (`terminal-snapshots.ts`), so switching
@@ -63,8 +63,8 @@ export function useTerminal(
     readOnly?: boolean;
     /** Which session window's picture to keep and restore; none without it. */
     snapshotKey?: string;
-    /** The chat view's entries, from a host that follows the agent's transcript. */
-    onChat?: (batch: ChatBatch) => void;
+    /** The chat view this stream feeds and types for (0.7). */
+    chat?: SessionChat;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -87,7 +87,6 @@ export function useTerminal(
   // Read through a ref so a new callback identity never rebuilds the terminal.
   const onEndRef = useRef(options.onEnd);
   const onFilesRef = useRef(options.onFiles);
-  const onChatRef = useRef(options.onChat);
   // Read through a ref too: the flags arrive after the first mount, and a
   // flag is no reason to rebuild a live terminal.
   const typeahead = useFeatureFlag('terminal_typeahead');
@@ -95,12 +94,12 @@ export function useTerminal(
   useEffect(() => {
     onEndRef.current = options.onEnd;
     onFilesRef.current = options.onFiles;
-    onChatRef.current = options.onChat;
     typeaheadRef.current = typeahead;
   });
   const agentWindow = options.agentWindow ?? false;
   const readOnly = options.readOnly ?? false;
   const snapshotKey = options.snapshotKey;
+  const chat = options.chat;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -143,7 +142,8 @@ export function useTerminal(
         setAwaySince(null);
       }
     });
-    const offChat = stream.onChat?.((batch) => onChatRef.current?.(batch));
+    const offChat = chat ? stream.onChat?.((batch) => chat.apply(batch)) : undefined;
+    const releaseChat = chat?.connect((data) => stream.send(data));
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
       onEndRef.current?.(reason);
@@ -159,12 +159,13 @@ export function useTerminal(
       document.removeEventListener('visibilitychange', wake);
       offStatus();
       offChat?.();
+      releaseChat?.();
       offEnd();
       unmount();
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,
@@ -211,11 +212,8 @@ export function useTerminal(
     streamRef.current?.reconnectNow();
   };
 
-  const send = (data: string) => streamRef.current?.send(data);
-
   return {
     containerRef,
-    send,
     status,
     hasOutput,
     ended,

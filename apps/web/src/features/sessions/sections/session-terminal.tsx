@@ -17,14 +17,13 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
-import { useChatAvailable, useSessionChat } from '../hooks/use-session-chat';
+import { useChatAvailable } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
-import type { SessionView } from '../lib/chat-blocks';
+import type { PaneReading } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { HostLinkFix } from './host-link-fix';
-import { SessionChat } from './session-chat';
 import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
@@ -45,12 +44,13 @@ const AGENT_WINDOW = 0;
  * It comes back on its own; the fix is for when it does not. Share closes
  * the status line on the right, in either form.
  *
- * **Chat** (0.7, behind `session_chat_view`): once the host sends the
- * agent's transcript, the status bar offers the same session read as a chat,
- * drawn over the grid. The grid stays mounted under it at its size, so tmux
- * is never resized and Terminal is the same screen as before; the chat's
- * composer types into this pane's PTY. While it shows, the terminal paints no
- * ground of its own, so its status bar sits on the chat's.
+ * **Chat** (0.7, behind `session_chat_view`): the pane hands in a chat
+ * (`reading`). This stream feeds it and lends it its input, and once the host
+ * sends the agent's transcript the status bar offers Terminal / Chat; Chat
+ * draws the pane's `cover` over the grid, which stays mounted under it at its
+ * size, so tmux is never resized. What the cover is, is the pane's: this
+ * section owns the terminal and only makes room. While it shows, the terminal
+ * paints no ground of its own, so its status bar sits on the cover's.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
@@ -61,14 +61,12 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
-  view,
-  onViewChange,
+  reading,
 }: {
   sessionId: string;
   hostId: string;
-  /** Terminal or Chat, which the pane around it holds (its frame follows it). */
-  view: SessionView;
-  onViewChange: (view: SessionView) => void;
+  /** The chat this terminal feeds, and how the pane around it reads it. */
+  reading: PaneReading;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
 }) {
@@ -76,13 +74,13 @@ export function SessionTerminal({
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
-  const chat = useSessionChat();
+  const { chat, view, onViewChange, cover } = reading;
   const chatAvailable = useChatAvailable(chat);
   const chatFlag = useFeatureFlag('session_chat_view');
   const chatOffered = chatAvailable && chatFlag;
   const chatShown = chatOffered && view === 'chat';
   const terminal = useTerminal(createStream, {
-    onChat: (batch) => chat.apply(batch),
+    chat,
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,
@@ -142,9 +140,7 @@ export function SessionTerminal({
             </div>
           ) : null}
           {chatShown ? (
-            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">
-              <SessionChat chat={chat} send={terminal.send} readOnly={false} />
-            </div>
+            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">{cover}</div>
           ) : null}
         </div>
 
