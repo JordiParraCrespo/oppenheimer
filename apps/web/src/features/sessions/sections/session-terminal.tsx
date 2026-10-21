@@ -144,10 +144,11 @@ export function SessionTerminal({
           {chatShown ? (
             // Typing in the chat moves focus off the grid, so a paste there
             // never reaches the grid's listener: the cover takes its files
-            // the same way, and they land in the agent's prompt.
+            // the same way, and they land in the agent's prompt. On the way
+            // down, as the grid does, so nothing in the chat can swallow it.
             <div
               className="absolute inset-0 bg-chat-ground font-sans text-fg"
-              onPaste={(event) => takeFilePaste(event, upload.send)}
+              onPasteCapture={(event) => takeFilePaste(event, upload.send)}
             >
               {cover}
             </div>
