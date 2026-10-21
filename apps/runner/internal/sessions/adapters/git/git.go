@@ -514,6 +514,13 @@ func (c *Client) Add(ctx context.Context, repo domain.Repository, path, branch, 
 // Remove deletes a worktree and prunes git's record of it. A worktree someone
 // already deleted by hand is only pruned: `worktree remove` refuses a path
 // that is not there, and what is left to do is forget it.
+//
+// A forced remove also deletes a directory git no longer has registered.
+// `worktree remove --force` drops the record even when it cannot finish
+// deleting the directory (a process still writing into it: "Directory not
+// empty"), and every later attempt is then "not a working tree", so the
+// session could never close. The leftover's `.git` may name a record git
+// has since given to another worktree, so nothing runs git inside it.
 func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string, force bool) error {
 	store := c.storeOf(repo)
 	quick := command{timeout: quickTimeout, dir: store}
@@ -521,15 +528,38 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 		_, err := c.run(ctx, quick, "worktree", "prune")
 		return err
 	}
+	if force {
+		if record, err := c.recordAt(ctx, store, path); err != nil || record == nil {
+			return c.removeUnregistered(ctx, store, path, err)
+		}
+	}
 	args := []string{"worktree", "remove"}
 	if force {
 		args = append(args, "--force")
 	}
 	args = append(args, path)
 	if _, err := c.run(ctx, quick, args...); err != nil {
+		if force {
+			if record, listErr := c.recordAt(ctx, store, path); listErr == nil && record == nil {
+				return c.removeUnregistered(ctx, store, path, nil)
+			}
+		}
 		return err
 	}
 	_, err := c.run(ctx, quick, "worktree", "prune")
+	return err
+}
+
+// removeUnregistered deletes a worktree directory git has no record of. A
+// listing that failed (listErr) decides nothing and is returned as it is.
+func (c *Client) removeUnregistered(ctx context.Context, store, path string, listErr error) error {
+	if listErr != nil {
+		return listErr
+	}
+	if err := os.RemoveAll(path); err != nil {
+		return domain.ErrWorktree.WithDetail("remove %s: %v", path, err).WithCause(err)
+	}
+	_, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "worktree", "prune")
 	return err
 }
 
