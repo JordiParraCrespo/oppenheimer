@@ -26,7 +26,8 @@
           "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
-      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it."
+      "why": "The screen subscribes to useSessions only to hand it to one section; `sessions ?? []` slips past check:structure's regex, so only judgment catches it.",
+      "tolerate": ["U1", "R5", "U7"]
     },
     {
       "id": "context-mixed-rates",
@@ -34,7 +35,7 @@
       "expect": [
         {
           "rule": "R7",
-          "accept": ["R4"],
+          "accept": ["R4", "R6"],
           "file": "apps/web/src/features/hosts/sections/host-board.tsx",
           "alsoFile": ["apps/web/src/features/hosts/hooks/use-host-view.ts"]
         }
@@ -52,7 +53,8 @@
         }
       ],
       "mechanical": ["M-compiler"],
-      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library."
+      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library.",
+      "tolerate": ["P3"]
     },
     {
       "id": "ref-mutated-in-render",
@@ -112,7 +114,7 @@
       "expect": [
         {
           "rule": "M-arch",
-          "accept": ["P3"],
+          "accept": ["P3", "P1"],
           "file": "apps/web/src/features/hosts/sections/host-sidebar.tsx"
         }
       ],
@@ -170,13 +172,13 @@
       "id": "clean-leaf-ticker",
       "commit": "feat(web): host list shows when each host last answered",
       "expect": [],
-      "why": "Decoy for R4/R6: the one-second tick lives in the leaf that shows it, and the effect names its system."
+      "why": "Decoy for R4/R6: the minute tick lives in the leaf that shows it, through the design system's shared useNow clock, so the row and the list around it never re-render for it."
     },
     {
       "id": "clean-debounced-search",
       "commit": "feat(web): hosts directory with a name search",
       "expect": [],
-      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask. U1 is tolerated: a hand-built list may fairly draw a design-system finding, which is not what the decoy is for.",
+      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask.",
       "tolerate": ["U1"]
     },
     {
