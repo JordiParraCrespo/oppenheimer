@@ -1367,10 +1367,9 @@ describe('bots chat (integration)', () => {
   }
 
   function sentWith(bot: BotEntity, images: BotAttachmentEntity[]) {
-    const { turn, message } = sent(bot, '');
+    const { turn, message } = sent(bot, 'What is this?');
     const withImages = BotMessageEntity.createNew({
       ...message.getProps(),
-      content: 'What is this?',
       attachments: images.map((image) => image.toMessageAttachment()),
     });
     return { turn, message: withImages };
