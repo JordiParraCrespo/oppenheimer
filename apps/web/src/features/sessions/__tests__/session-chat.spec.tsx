@@ -44,7 +44,11 @@ describe('SessionChat', () => {
       chat.apply({
         reset: true,
         entries: [
-          entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Fix the flaky test' } }),
+          entry({
+            type: 'user',
+            uuid: 'u',
+            message: { role: 'user', content: 'Fix the flaky test' },
+          }),
           entry({
             type: 'assistant',
             uuid: 'a',

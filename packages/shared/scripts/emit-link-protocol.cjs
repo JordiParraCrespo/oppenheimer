@@ -131,9 +131,7 @@ const CONSTANT_DOCS = {
     'ChatEntryMaxBytes is the largest transcript entry `attachment.chat`',
     'carries; the runner compacts each line first and drops one still bigger.',
   ],
-  chatBatchMaxEntries: [
-    'ChatBatchMaxEntries is the most entries one `attachment.chat` holds.',
-  ],
+  chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
 };
 
 /** `session.window.open` → `SessionWindowOpen`, `HELLO_EXPECTED` → `HelloExpected`. */

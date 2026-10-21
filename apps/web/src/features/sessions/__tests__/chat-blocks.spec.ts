@@ -75,9 +75,7 @@ describe('summaryOf', () => {
       tool('4', 'Read', { file_path: 'b' }),
     ]);
     const group = blocksOf(turn)[0];
-    expect(group?.kind === 'tools' && summaryOf(group.calls, t)).toBe(
-      'Read×2, edit×1, command×1',
-    );
+    expect(group?.kind === 'tools' && summaryOf(group.calls, t)).toBe('Read×2, edit×1, command×1');
   });
 });
 

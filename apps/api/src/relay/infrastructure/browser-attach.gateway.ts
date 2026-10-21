@@ -7,8 +7,8 @@ import { canAccessRow, SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheim
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import {
-  type AttachmentChatMessage,
   ATTACH_CLOSE_CODES,
+  type AttachmentChatMessage,
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';

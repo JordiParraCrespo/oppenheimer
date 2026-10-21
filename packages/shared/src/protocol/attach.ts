@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 import { attachTicketHintSchema } from './hint.js';
-import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './messages.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 
 /**
  * The browser attach socket's control vocabulary — the second of the two

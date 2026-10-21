@@ -114,7 +114,8 @@ export const FEATURE_FLAGS = {
    * is a reader's choice.
    */
   session_chat_view: {
-    description: "Offer a chat view of a Claude Code session beside its terminal, read off the agent's transcript.",
+    description:
+      "Offer a chat view of a Claude Code session beside its terminal, read off the agent's transcript.",
     kind: 'release',
     owner: 'console',
     type: 'boolean',

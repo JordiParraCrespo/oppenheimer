@@ -108,7 +108,7 @@ func (f *follower) check() {
 		return
 	}
 	f.offset += int64(len(chunk))
-	data := append(f.partial, chunk...)
+	data := append(append([]byte(nil), f.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
 		// A line still being written is left for the next check.

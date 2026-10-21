@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { hintSchema } from './hint.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -791,17 +792,6 @@ export const attachmentPathSchema = z.object({
 export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
 
 /* ------------------------------------------------------------------ the chat view (0.7) */
-
-/**
- * The largest transcript entry `attachment.chat` carries. The runner compacts
- * each line of the agent's transcript before it sends it — a tool's output and
- * a file it wrote are cut, a pasted image is named, never sent — and drops an
- * entry still bigger than this.
- */
-export const CHAT_ENTRY_MAX_BYTES = 64 * 1024;
-
-/** The most entries one `attachment.chat` holds; a longer history is several. */
-export const CHAT_BATCH_MAX_ENTRIES = 256;
 
 /**
  * Entries of a session's agent transcript, for the chat view beside the
