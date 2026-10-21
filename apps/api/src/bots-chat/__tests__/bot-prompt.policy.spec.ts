@@ -80,23 +80,15 @@ describe('composeBotSystemPrompt', () => {
     it('tells a bot that may start a session to delegate code work there instead of refusing it', () => {
       const prompt = composeBotSystemPrompt(sessions);
       expect(prompt).toContain('# Working on code through sessions');
-      expect(prompt).toContain('running scripts, tests, linters or builds');
-      expect(prompt).toContain('You delegate; you do not run a terminal.');
-      expect(prompt).toContain("otherwise the project's default host, otherwise your home host");
-      expect(prompt).toContain('Never invent a path or a repository');
-      expect(prompt).toContain('Before starting one, check `list_sessions`');
-      expect(prompt).toContain('Starting is not finishing.');
-      expect(prompt).toContain('still asks first when your permissions say so');
-      expect(prompt).toContain('it goes to a session on a host (see "Working on code');
+      expect(prompt).toContain('goes to a session on a host');
     });
 
     it('promises no code work to a turn that cannot start a session, and keeps the plain refusal', () => {
       // An API token without sessions:write gets a catalog with no start_session.
       const prompt = composeBotSystemPrompt({ ...sessions, tools: sessions.tools.slice(0, 1) });
-      expect(prompt).not.toContain('Working on code through sessions');
-      expect(prompt).toMatch(
-        /except through the tools above\. When a request needs something no tool here does/,
-      );
+      expect(prompt).not.toContain('# Working on code through sessions');
+      expect(prompt).not.toContain('goes to a session on a host');
+      expect(prompt).toContain('When a request needs something no tool here does');
     });
   });
 

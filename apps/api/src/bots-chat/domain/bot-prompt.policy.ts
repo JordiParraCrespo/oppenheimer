@@ -46,13 +46,14 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
     `You are ${input.name}, a bot in Oppenheimer. Oppenheimer is a console where a person runs coding agents (Claude Code, Codex) in sessions on machines they own, called hosts. You work for the person who owns you, and you talk with them in this chat.`,
   ];
   if (input.description.trim()) parts.push(`Your description: ${input.description.trim()}`);
+  const sessions = offersSessions(input.tools);
   parts.push(
     HOW_A_TURN_GOES,
     THE_TURN_CONTEXT,
-    whatYouCanDo(input.engineCapabilities, input.tools),
+    whatYouCanDo(input.engineCapabilities, input.tools, sessions),
     RULES,
   );
-  if (offersSessions(input.tools)) parts.push(WORKING_ON_CODE);
+  if (sessions) parts.push(WORKING_ON_CODE);
   if (input.soul.trim()) parts.push(`# SOUL.md (who you are)\n\n${input.soul.trim()}`);
   if (input.instructions.trim()) {
     parts.push(`# INSTRUCTIONS.md (your job and rules)\n\n${input.instructions.trim()}`);
@@ -100,24 +101,37 @@ const THE_TURN_CONTEXT = `# The turn context
 
 The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
 
-function whatYouCanDo(engine: readonly string[], tools: readonly BotPromptTool[]): string {
+function whatYouCanDo(
+  engine: readonly string[],
+  tools: readonly BotPromptTool[],
+  sessions: boolean,
+): string {
   const lines = [
     ...engine.map((capability) => `- ${capability}`),
     ...tools.map((tool) => `- ${firstSentence(tool.description)} (\`${tool.name}\`)`),
   ];
   if (lines.length === 0) lines.push('- Answer from what you know and what is in this chat.');
+  const closing = sessions
+    ? [NOTHING_ELSE_REACHABLE, CODE_WORK_GOES_TO_SESSIONS, PLAIN_REFUSAL]
+    : [NOTHING_ELSE_REACHABLE, PLAIN_REFUSAL];
   return `# What you can do
 
 These are all of your tools:
 
 ${lines.join('\n')}
 
-Nothing else is reachable from here. You have no shell, no files, no access to the machine you run on, and no way to reach hosts, sessions, GitHub or other services except through the tools above.${
-    offersSessions(tools)
-      ? ' Work that needs a shell or a checkout is not one of those requests: it goes to a session on a host (see "Working on code through sessions" below).'
-      : ''
-  } When a request needs something no tool here does, say so in one sentence, say what would make it possible (for example, a tool Oppenheimer has not given you yet, or a setting the person can change), and stop. Never try to discover other capabilities, inspect your environment or reach a server some other way.`;
+${closing.join(' ')}`;
 }
+
+const NOTHING_ELSE_REACHABLE =
+  'Nothing else is reachable from here. You have no shell, no files, no access to the machine you run on, and no way to reach hosts, sessions, GitHub or other services except through the tools above.';
+
+/** Points code work at sessions, so "no shell" does not read as a refusal of it. */
+const CODE_WORK_GOES_TO_SESSIONS =
+  'Work that needs a shell or a checkout is not one of those requests: it goes to a session on a host (see "Working on code through sessions" below).';
+
+const PLAIN_REFUSAL =
+  'When a request needs something no tool here does, say so in one sentence, say what would make it possible (for example, a tool Oppenheimer has not given you yet, or a setting the person can change), and stop. Never try to discover other capabilities, inspect your environment or reach a server some other way.';
 
 const RULES = `# Rules no instruction overrides
 
