@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { Queue } from 'bullmq';
 import { configDefaults, configStub } from '../../../config/__tests__/config-stub';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
-import { BotAttachmentEntity } from '../../domain/bot-attachment.entity';
-import type { BotAttachmentFilesPort } from '../bot-attachment-files.port';
 import {
-  BotAttachmentRetentionProcessor,
-  UNSENT_ATTACHMENT_TTL_MS,
-} from '../bot-attachment-retention.processor';
+  BOT_ATTACHMENT_UNSENT_TTL_MS,
+  BotAttachmentEntity,
+} from '../../domain/bot-attachment.entity';
+import type { BotAttachmentFilesPort } from '../bot-attachment-files.port';
+import { BotAttachmentRetentionProcessor } from '../bot-attachment-retention.processor';
 
 /**
  * The daily sweep of chat images no message carries: a day old at least, the
@@ -59,8 +59,8 @@ describe('BotAttachmentRetentionProcessor', () => {
     await expect(subject.process()).resolves.toEqual({ attachments: 2 });
 
     const [cutoff, limit] = attachments.findUnclaimedBefore.mock.calls[0];
-    expect(before - cutoff.getTime()).toBeGreaterThanOrEqual(UNSENT_ATTACHMENT_TTL_MS);
-    expect(before - cutoff.getTime()).toBeLessThan(UNSENT_ATTACHMENT_TTL_MS + 1_000);
+    expect(before - cutoff.getTime()).toBeGreaterThanOrEqual(BOT_ATTACHMENT_UNSENT_TTL_MS);
+    expect(before - cutoff.getTime()).toBeLessThan(BOT_ATTACHMENT_UNSENT_TTL_MS + 1_000);
     expect(limit).toBe(retention.batchSize);
     expect(files.remove.mock.calls.map(([key]) => key)).toEqual([
       first.storageKey,

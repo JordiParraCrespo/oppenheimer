@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { BotTurnImage } from '@oppenheimer/backend-agents';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { BotImageMimeType } from '@oppenheimer/shared';
 import { BotAttachmentOrmEntity } from './database/bot-attachment.orm-entity';
@@ -43,5 +44,10 @@ export class BotAttachmentMapper
 
   toResponse(entity: BotAttachmentEntity): BotAttachmentResponseDto {
     return Object.assign(new BotAttachmentResponseDto(), entity.toMessageAttachment());
+  }
+
+  /** An image as a turn sends it to the engine: its type and its bytes, base64-encoded. */
+  toTurnImage(entity: BotAttachmentEntity, data: Buffer): BotTurnImage {
+    return { mimeType: entity.mimeType, data: data.toString('base64') };
   }
 }

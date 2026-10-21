@@ -9,7 +9,8 @@ import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.rep
 /**
  * The images a message to a bot may carry (`25-bots.md` §3.1), in the order
  * they were attached: each the sender's own upload to this bot, none sent
- * before, and only to a bot whose model reads images. Whether another send
+ * before, uploaded inside the send window, and only to a bot whose model
+ * reads images. Whether another send
  * claims one first is the enqueue's to decide, in its transaction.
  */
 @Injectable()
@@ -18,7 +19,12 @@ export class BotMessageAttachmentsResolver {
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,
   ) {}
 
-  async sendable(userId: string, bot: BotEntity, ids: readonly string[]): Promise<BotAttachment[]> {
+  async sendable(
+    userId: string,
+    bot: BotEntity,
+    ids: readonly string[],
+    now: Date,
+  ): Promise<BotAttachment[]> {
     if (ids.length === 0) return [];
     if (!botTakesImages(bot.provider)) {
       throw new AppError(BotErrors.MODEL_TAKES_NO_IMAGES, {
@@ -32,7 +38,7 @@ export class BotMessageAttachmentsResolver {
       if (attachment?.messageId) {
         throw new AppError(BotErrors.ATTACHMENT_SENT, { extensions: { attachmentId: id } });
       }
-      if (!attachment?.sendableBy(userId, bot.id)) {
+      if (!attachment?.sendableBy(userId, bot.id, now)) {
         throw new AppError(BotErrors.ATTACHMENT_NOT_FOUND, { extensions: { attachmentId: id } });
       }
       return attachment.toMessageAttachment();

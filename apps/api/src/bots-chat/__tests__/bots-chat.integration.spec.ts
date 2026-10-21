@@ -523,11 +523,16 @@ describe('bots chat (integration)', () => {
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
-      new BotTurnOpeningResolver(messages, attachments, {
-        store: async () => undefined,
-        read: async (key) => Buffer.from(key),
-        remove: async () => undefined,
-      }),
+      new BotTurnOpeningResolver(
+        messages,
+        attachments,
+        {
+          store: async () => undefined,
+          read: async (key) => Buffer.from(key),
+          remove: async () => undefined,
+        },
+        new BotAttachmentMapper(),
+      ),
     );
   }
 
@@ -1401,6 +1406,20 @@ describe('bots chat (integration)', () => {
     expect(await turns.enqueue(later.turn, later.message, null)).toBe('attachments_taken');
 
     const [still] = await attachments.findManyForBot(organizationId, bot.id, [kept.id]);
+    expect(still.messageId).toBeNull();
+  });
+
+  it('never claims an upload past the send window, which the sweep may be deleting', async () => {
+    const bot = await create('Vision');
+    const stale = await uploaded(bot);
+    await dataSource.query(
+      `UPDATE bot_attachment SET "createdAt" = now() - interval '23 hours 30 minutes' WHERE id = $1`,
+      [stale.id],
+    );
+    const { turn, message } = sentWith(bot, [stale]);
+
+    expect(await turns.enqueue(turn, message, null)).toBe('attachments_taken');
+    const [still] = await attachments.findManyForBot(organizationId, bot.id, [stale.id]);
     expect(still.messageId).toBeNull();
   });
 

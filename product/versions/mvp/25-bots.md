@@ -245,6 +245,8 @@ over the text as soon as it is picked, and a message may be images alone.
   and a daily sweep (`bot-attachment-retention`) deletes every image no
   message carries that is a day old, the file and then the row. So an
   image lives as long as its message, and an upload never sent for a day.
+  An upload can be sent for 23 hours, an hour short of the sweep, so a
+  send never claims an image whose file the sweep is deleting.
 
 ## 4. The tools
 

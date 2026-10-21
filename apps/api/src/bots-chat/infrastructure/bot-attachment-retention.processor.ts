@@ -7,12 +7,10 @@ import { purgeInBatches } from '../../config/purge-in-batches';
 import type { RetentionConfig } from '../../config/retention.config';
 import { BOT_ATTACHMENT_FILES, BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
+import { BOT_ATTACHMENT_UNSENT_TTL_MS } from '../domain/bot-attachment.entity';
 import type { BotAttachmentFilesPort } from './bot-attachment-files.port';
 
 const SCHEDULER_ID = 'bot-attachment-retention-daily';
-
-/** How long an image no message carries is kept: an upload the person may still send. */
-export const UNSENT_ATTACHMENT_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
  * The daily sweep of chat images (`25-bots.md` §3.1) no message carries that
@@ -20,7 +18,9 @@ export const UNSENT_ATTACHMENT_TTL_MS = 24 * 60 * 60 * 1000;
  * cleared or whose bot or workspace was deleted. A file in storage outlives
  * any cascade, so the row waits for this: the file first, then the row, in
  * batches through `IDX_bot_attachment_unclaimed`. A row whose file could not
- * be deleted is left for the next night. A BullMQ job scheduler is one Redis
+ * be deleted is left for the next night. A send cannot claim an image this
+ * old (`BOT_ATTACHMENT_SEND_WINDOW_MS`), so no file is deleted under a
+ * message that just claimed it. A BullMQ job scheduler is one Redis
  * entry, so it runs once a day however many replicas there are.
  */
 @Processor(QUEUE_NAMES.BOT_ATTACHMENT_RETENTION)
@@ -47,7 +47,7 @@ export class BotAttachmentRetentionProcessor extends WorkerHost implements OnApp
   }
 
   async process(): Promise<{ attachments: number }> {
-    const cutoff = new Date(Date.now() - UNSENT_ATTACHMENT_TTL_MS);
+    const cutoff = new Date(Date.now() - BOT_ATTACHMENT_UNSENT_TTL_MS);
     const attachments = await purgeInBatches(async (limit) => {
       const batch = await this.attachments.findUnclaimedBefore(cutoff, limit);
       const removed: string[] = [];

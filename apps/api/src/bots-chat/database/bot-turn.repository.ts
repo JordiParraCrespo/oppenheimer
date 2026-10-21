@@ -12,6 +12,7 @@ import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
@@ -39,26 +40,6 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
 
 /** Another send claimed one of the message's images first: the enqueue rolls back. */
 class AttachmentsTaken extends Error {}
-
-/**
- * Marks the message's images as carried by it, each only if no message
- * carries it yet; whether every one was claimed. The message is inserted
- * first, in the same transaction, for the foreign key.
- */
-async function claimAttachments(
-  manager: EntityManager,
-  message: BotMessageEntity,
-): Promise<boolean> {
-  const ids = message.attachments.map((attachment) => attachment.id);
-  if (ids.length === 0) return true;
-  // PK_bot_attachment.
-  const [, affected]: [unknown[], number] = await manager.query(
-    `UPDATE bot_attachment SET "messageId" = $1, "updatedAt" = now()
-      WHERE id = ANY($2::uuid[]) AND "organizationId" = $3 AND "botId" = $4 AND "messageId" IS NULL`,
-    [message.id, ids, message.organizationId, message.botId],
-  );
-  return affected === ids.length;
-}
 
 @Injectable()
 export class BotTurnRepository
@@ -96,7 +77,10 @@ export class BotTurnRepository
           message,
           correlationId,
         );
-        if (outcome !== 'missing' && !(await claimAttachments(manager, message))) {
+        if (
+          outcome !== 'missing' &&
+          !(await claimAttachmentsWithin(manager, message, new Date()))
+        ) {
           throw new AttachmentsTaken();
         }
         return outcome;

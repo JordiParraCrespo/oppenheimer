@@ -64,7 +64,7 @@ export class SendBotMessageCommandHandler
         extensions: { provider: bot.provider },
       });
     }
-    const attachments = await this.images.sendable(scope.userId, bot, attachmentIds);
+    const attachments = await this.images.sendable(scope.userId, bot, attachmentIds, new Date());
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
       botId: bot.id,

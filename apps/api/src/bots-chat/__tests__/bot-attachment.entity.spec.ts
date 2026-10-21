@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { attachmentName, BotAttachmentEntity } from '../domain/bot-attachment.entity';
+import {
+  attachmentName,
+  BOT_ATTACHMENT_SEND_WINDOW_MS,
+  BOT_ATTACHMENT_UNSENT_TTL_MS,
+  BotAttachmentEntity,
+} from '../domain/bot-attachment.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 
 /**
@@ -41,14 +46,23 @@ function message(props: Partial<Parameters<typeof BotMessageEntity.createNew>[0]
 describe('BotAttachmentEntity', () => {
   it('is sendable by its uploader to its own bot, and only until a message carries it', () => {
     const image = upload();
-    expect(image.sendableBy(userId, botId)).toBe(true);
-    expect(image.sendableBy(randomUUID(), botId)).toBe(false);
-    expect(image.sendableBy(userId, randomUUID())).toBe(false);
+    const now = new Date();
+    expect(image.sendableBy(userId, botId, now)).toBe(true);
+    expect(image.sendableBy(randomUUID(), botId, now)).toBe(false);
+    expect(image.sendableBy(userId, randomUUID(), now)).toBe(false);
     const sent = BotAttachmentEntity.create({
       id: image.id,
       props: { ...image.getProps(), messageId: randomUUID() },
     });
-    expect(sent.sendableBy(userId, botId)).toBe(false);
+    expect(sent.sendableBy(userId, botId, now)).toBe(false);
+  });
+
+  it('stops being sendable an hour before the sweep may delete it', () => {
+    const image = upload();
+    const at = (ms: number) => new Date(image.createdAt.getTime() + ms);
+    expect(BOT_ATTACHMENT_SEND_WINDOW_MS).toBeLessThan(BOT_ATTACHMENT_UNSENT_TTL_MS);
+    expect(image.sendableBy(userId, botId, at(BOT_ATTACHMENT_SEND_WINDOW_MS - 1))).toBe(true);
+    expect(image.sendableBy(userId, botId, at(BOT_ATTACHMENT_SEND_WINDOW_MS))).toBe(false);
   });
 
   it('refuses a type a bot does not read and an image past the limit', () => {

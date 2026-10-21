@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { BotAttachmentMapper } from '../../bot-attachment.mapper';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import { BotAttachmentEntity } from '../../domain/bot-attachment.entity';
@@ -68,6 +69,7 @@ function setup(message: BotMessageEntity, stored: BotAttachmentEntity[], unreada
     messages as unknown as BotMessageRepositoryPort,
     attachments as unknown as BotAttachmentRepositoryPort,
     files,
+    new BotAttachmentMapper(),
   );
   return { resolver, attachments, files };
 }

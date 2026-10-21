@@ -13,6 +13,22 @@ import {
   type BotImageMimeType,
 } from '@oppenheimer/shared';
 
+const HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * How long an image no message carries is kept before the daily sweep
+ * deletes it: an upload the person may still send, or one whose message is
+ * gone.
+ */
+export const BOT_ATTACHMENT_UNSENT_TTL_MS = 24 * HOUR_MS;
+
+/**
+ * How long after its upload an image may still be sent: an hour short of
+ * the sweep's age, so an image the sweep has picked to delete is never one a
+ * send can claim while its file is being deleted.
+ */
+export const BOT_ATTACHMENT_SEND_WINDOW_MS = BOT_ATTACHMENT_UNSENT_TTL_MS - HOUR_MS;
+
 export interface BotAttachmentProps {
   organizationId: string;
   botId: string;
@@ -99,9 +115,17 @@ export class BotAttachmentEntity extends AggregateRoot<BotAttachmentProps> {
     return this.props.name;
   }
 
-  /** Whether `userId` may send it with a message to `botId`: their own upload to that bot, not sent yet. */
-  sendableBy(userId: string, botId: string): boolean {
-    return this.messageId === null && this.uploadedByUserId === userId && this.botId === botId;
+  /**
+   * Whether `userId` may send it with a message to `botId` at `now`: their
+   * own upload to that bot, not sent yet, and inside the send window.
+   */
+  sendableBy(userId: string, botId: string, now: Date): boolean {
+    return (
+      this.messageId === null &&
+      this.uploadedByUserId === userId &&
+      this.botId === botId &&
+      now.getTime() - this.createdAt.getTime() < BOT_ATTACHMENT_SEND_WINDOW_MS
+    );
   }
 
   /** What a message keeps of it, for the chat. */

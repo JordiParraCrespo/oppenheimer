@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { BotTurnImage } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { BotErrors } from '../../bots/domain/bots.errors';
+import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import {
   BOT_ATTACHMENT_FILES,
   BOT_ATTACHMENT_REPOSITORY,
@@ -32,6 +33,7 @@ export class BotTurnOpeningResolver {
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,
     @Inject(BOT_ATTACHMENT_FILES) private readonly files: BotAttachmentFilesPort,
+    private readonly mapper: BotAttachmentMapper,
   ) {}
 
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
@@ -50,7 +52,7 @@ export class BotTurnOpeningResolver {
             detail: `An image the message carries (${id}) could not be read`,
           });
         }
-        return { mimeType: attachment.mimeType, data: data.toString('base64') };
+        return this.mapper.toTurnImage(attachment, data);
       }),
     );
     return { prompt, images };
