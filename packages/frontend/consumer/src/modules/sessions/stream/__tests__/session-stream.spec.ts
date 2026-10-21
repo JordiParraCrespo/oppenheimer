@@ -371,3 +371,25 @@ describe('AttachSessionStream', () => {
     expect(h.timers).toHaveLength(0);
   });
 });
+
+describe('the chat view (0.7)', () => {
+  it("hands the relay's transcript entries to the chat, and stops once disposed", async () => {
+    const h = harness();
+    await h.flush();
+    const socket = h.sockets[0] as FakeSocket;
+    socket.open();
+    const batches: unknown[] = [];
+    h.stream.onChat?.((batch) => batches.push(batch));
+    socket.text({ type: 'chat', reset: true, entries: ['{"type":"user"}'] });
+    socket.text({ type: 'chat', entries: [] });
+    expect(batches).toEqual([
+      { type: 'chat', reset: true, entries: ['{"type":"user"}'] },
+      { type: 'chat', entries: [] },
+    ]);
+    // Nothing the chat reads ever reaches the terminal.
+    expect(h.chunks).toEqual([]);
+    h.stream.dispose();
+    socket.text({ type: 'chat', entries: [] });
+    expect(batches).toHaveLength(2);
+  });
+});

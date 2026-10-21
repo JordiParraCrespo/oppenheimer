@@ -193,6 +193,11 @@
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;
     --term-accent: var(--op-blue-600);
+    /* A session read as a chat over its terminal (0.7): the console's
+       recessed ground, painted by the chat itself because the terminal's
+       frame is under it rather than the shell's pane. Its cards (the
+       composer, the code) need that ground to float on, as in a bot's chat. */
+    --chat-ground: var(--canvas-recessed);
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
@@ -573,6 +578,7 @@
     --term-dim: var(--op-gray-500);
     --term-border: #262629;
     --term-accent: var(--op-blue-400);
+    --chat-ground: var(--canvas-recessed);
     --term-success: var(--op-green-400);
     --term-warning: var(--op-amber-400);
     --term-danger: var(--op-red-400);
@@ -810,6 +816,7 @@
   --color-term-dim: var(--term-dim);
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
+  --color-chat-ground: var(--chat-ground);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);
   --color-term-danger: var(--term-danger);

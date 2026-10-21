@@ -250,6 +250,20 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
 }
 
+// FollowChat follows a session's conversation for the chat view, sending
+// its transcript entries to emit until ctx ends (Transcripts.Follow).
+// ErrNoChat for a session whose agent's transcript this runner cannot read.
+func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, emit func(ChatBatch) error) error {
+	if s.transcripts == nil {
+		return ErrNoChat
+	}
+	session, err := s.recorded(id)
+	if err != nil {
+		return err
+	}
+	return s.transcripts.Follow(ctx, session.Agent, session.Launch.Conversation, entryMax, batchMax, emit)
+}
+
 // Send types into a window, which is how the browser's keystrokes arrive
 // while nothing is attached.
 func (s *Service) Send(ctx context.Context, id string, window int, keys string) error {

@@ -127,6 +127,13 @@ const CONSTANT_DOCS = {
     "MaxEventPayloadBytes caps an event's JSON payload string, because an event",
     'never carries pane text.',
   ],
+  chatEntryMaxBytes: [
+    'ChatEntryMaxBytes is the largest transcript entry `attachment.chat`',
+    'carries; the runner compacts each line first and drops one still bigger.',
+  ],
+  chatBatchMaxEntries: [
+    'ChatBatchMaxEntries is the most entries one `attachment.chat` holds.',
+  ],
 };
 
 /** `session.window.open` → `SessionWindowOpen`, `HELLO_EXPECTED` → `HelloExpected`. */
@@ -374,6 +381,12 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.maxEventPayloadBytes),
     `const MaxEventPayloadBytes = ${constants.maxEventPayloadBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatEntryMaxBytes),
+    `const ChatEntryMaxBytes = ${constants.chatEntryMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
+    `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(

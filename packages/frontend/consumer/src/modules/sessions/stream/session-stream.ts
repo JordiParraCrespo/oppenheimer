@@ -4,6 +4,7 @@ import {
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
 import { CONSUMER_CONFIG } from '../../../config';
+import type { ChatBatch } from '../chat/session-chat';
 import type { PeerFactory } from './direct-path';
 import { PathSwitch, type StreamPath } from './path-switch';
 
@@ -55,6 +56,13 @@ export interface SessionStream {
    * current one first. Optional: a stream with one path has nothing to say.
    */
   onPath?(listener: (path: StreamPath) => void): () => void;
+  /**
+   * The agent's transcript entries for the chat view (0.7), from a host that
+   * follows it; a `reset` batch starts the history over, as every new
+   * attachment's first one does. Optional: a stream that carries none, a
+   * shared pane's, has nothing to say.
+   */
+  onChat?(listener: (batch: ChatBatch) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
   resize(cols: number, rows: number): void;
@@ -166,6 +174,7 @@ export class AttachSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();
   private readonly statusListeners = new Set<(status: StreamStatus) => void>();
   private readonly endListeners = new Set<(reason: StreamEnd) => void>();
+  private readonly chatListeners = new Set<(batch: ChatBatch) => void>();
   private readonly socketFactory: (url: string, protocols: string[]) => WebSocket;
   private readonly schedule: (fn: () => void, ms: number) => () => void;
   private readonly encoder = new TextEncoder();
@@ -221,6 +230,11 @@ export class AttachSessionStream implements SessionStream {
     return this.paths.onPath(listener);
   }
 
+  onChat(listener: (batch: ChatBatch) => void): () => void {
+    this.chatListeners.add(listener);
+    return () => this.chatListeners.delete(listener);
+  }
+
   onEnd(listener: (reason: StreamEnd) => void): () => void {
     this.endListeners.add(listener);
     return () => this.endListeners.delete(listener);
@@ -255,6 +269,7 @@ export class AttachSessionStream implements SessionStream {
     this.cancelRetry?.();
     this.dataListeners.clear();
     this.endListeners.clear();
+    this.chatListeners.clear();
     this.paths.dispose();
     const open = this.socket;
     this.socket = null;
@@ -406,6 +421,9 @@ export class AttachSessionStream implements SessionStream {
         return;
       case 'closed':
         this.closedReason = message.data.reason;
+        return;
+      case 'chat':
+        for (const listener of this.chatListeners) listener(message.data);
         return;
     }
   }

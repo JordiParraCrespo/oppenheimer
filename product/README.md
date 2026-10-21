@@ -624,3 +624,10 @@ earlier note:
   pull request writes, the owner's live roles are checked on every call
   and every approved run; a tool they lack stays offered and its call is
   refused, naming the permission to ask for (25 §4).
+- The MVP decided "the session view stays a terminal; the Agent SDK stays
+  out". On 2026-10-21 a proof of concept added a chat view beside it,
+  behind `session_chat_view`: the terminal is still the session view and
+  the agent still runs unmodified in tmux, and the chat is read off the
+  agent's own transcript, which the runner follows while a browser is
+  attached; nothing drives the agent but the PTY
+  (`next-steps/0.7-terminal-and-chat.md`, "Proof of concept").

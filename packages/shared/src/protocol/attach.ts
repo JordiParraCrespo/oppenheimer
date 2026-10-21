@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { attachTicketHintSchema } from './hint.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './messages.js';
 
 /**
  * The browser attach socket's control vocabulary — the second of the two
@@ -106,6 +107,17 @@ export const attachClosedSchema = z.object({
   reason: z.enum(['unauthorized', 'forbidden', 'stopped', 'resolved', 'missing']),
 });
 
+/**
+ * The runner's `attachment.chat`, relayed as it came: entries of the agent's
+ * transcript for the chat view beside the terminal. `reset` starts the history
+ * over (the first message, or a transcript that was replaced).
+ */
+export const attachChatSchema = z.object({
+  type: z.literal('chat'),
+  reset: z.boolean().optional(),
+  entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
+});
+
 export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachAttachedSchema,
   attachHintSchema,
@@ -114,6 +126,7 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachDirectAnswerSchema,
   attachDirectUnavailableSchema,
   attachDirectPathSchema,
+  attachChatSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;

@@ -3,21 +3,26 @@ import {
   DropZone,
   EmptyState,
   HostLinkChrome,
+  SegmentedControl,
+  SegmentedControlItem,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
+import { useChatAvailable, useSessionChat } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { HostLinkFix } from './host-link-fix';
+import { SessionChat } from './session-chat';
 import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
@@ -38,6 +43,12 @@ const AGENT_WINDOW = 0;
  * It comes back on its own; the fix is for when it does not. Share closes
  * the status line on the right, in either form.
  *
+ * **Chat** (0.7, behind `session_chat_view`): once the host sends the
+ * agent's transcript, the status bar offers the same session read as a chat,
+ * drawn over the grid. The grid stays mounted under it at its size, so tmux
+ * is never resized and Terminal is the same screen as before; the chat's
+ * composer types into this pane's PTY.
+ *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
@@ -57,7 +68,13 @@ export function SessionTerminal({
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
+  const chat = useSessionChat();
+  const chatAvailable = useChatAvailable(chat);
+  const chatFlag = useFeatureFlag('session_chat_view');
+  const chatOffered = chatAvailable && chatFlag;
+  const [view, setView] = useState<'terminal' | 'chat'>('terminal');
   const terminal = useTerminal(createStream, {
+    onChat: (batch) => chat.apply(batch),
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,
@@ -72,6 +89,18 @@ export function SessionTerminal({
     slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
+  const viewToggle = chatOffered ? (
+    <SegmentedControl
+      value={view}
+      onValueChange={(next) => setView(next === 'chat' ? 'chat' : 'terminal')}
+      aria-label={t('sessions.chat.view.label')}
+    >
+      <SegmentedControlItem value="terminal">
+        {t('sessions.chat.view.terminal')}
+      </SegmentedControlItem>
+      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
+    </SegmentedControl>
+  ) : null;
 
   return (
     <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
@@ -102,6 +131,11 @@ export function SessionTerminal({
                   </EmptyState.Description>
                 </EmptyState.Header>
               </EmptyState>
+            </div>
+          ) : null}
+          {chatOffered && view === 'chat' ? (
+            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">
+              <SessionChat chat={chat} send={terminal.send} readOnly={false} />
             </div>
           ) : null}
         </div>
@@ -150,6 +184,7 @@ export function SessionTerminal({
             }
             fix={<HostLinkFix host={host} />}
           >
+            {viewToggle}
             {statusItem}
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the

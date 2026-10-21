@@ -1,4 +1,16 @@
 export {
+  type ChatBatch,
+  type ChatPrompt,
+  type ChatState,
+  type ChatStep,
+  type ChatTodo,
+  type ChatTodoStatus,
+  type ChatToolCall,
+  type ChatToolKind,
+  type ChatTurn,
+  SessionChat,
+} from './chat/session-chat';
+export {
   type AttachTicket,
   type CreateSessionCheckout,
   type CreateSessionInput,
