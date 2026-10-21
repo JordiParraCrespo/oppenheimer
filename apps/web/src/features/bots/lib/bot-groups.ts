@@ -16,13 +16,15 @@ export interface BotSection {
  * each with its bots by position, then Ungrouped. While a search narrows the
  * list a section with no match is left out; without one, every group stays
  * (an empty group is still somewhere to move a bot), and Ungrouped is drawn
- * only when it holds a bot. A bot's group the groups read does not have yet
- * (a refetch in flight) counts as Ungrouped rather than vanishing.
+ * only when it holds a bot, or with `keepUngrouped` (a drag held, for which
+ * it is somewhere to drop one). A bot's group the groups read does not have
+ * yet (a refetch in flight) counts as Ungrouped rather than vanishing.
  */
 export function botSections(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
   query: string,
+  { keepUngrouped = false }: { keepUngrouped?: boolean } = {},
 ): BotSection[] {
   const term = query.trim().toLowerCase();
   const matches = (bot: BotEntity) => !term || bot.name.toLowerCase().includes(term);
@@ -42,7 +44,7 @@ export function botSections(
   sections.push({ id: null, group: null, bots: ungrouped });
 
   return sections.filter((section) =>
-    term || section.group === null ? section.bots.length > 0 : true,
+    term || (section.group === null && !keepUngrouped) ? section.bots.length > 0 : true,
   );
 }
 
@@ -76,8 +78,10 @@ export function sectionOrder(sections: readonly BotSection[]): Record<string, st
 /**
  * The sections with their bots in `order` (a drag held, or a drop whose
  * write is in flight): a bot is drawn in the section and place `order` puts
- * it. A bot `order` does not name stays where it was; an id `order` names
- * that is no longer a bot is skipped.
+ * it. `order` is drawn from these same sections, so it names every bot; the
+ * exceptions are the list changing under a pending write, where a bot made
+ * since is drawn after the ones `order` places, in its own section, and an
+ * id that is no longer a bot is skipped.
  */
 export function inOrder(
   sections: readonly BotSection[],

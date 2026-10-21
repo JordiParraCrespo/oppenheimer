@@ -54,6 +54,15 @@ describe('botSections', () => {
     ]);
   });
 
+  it('keeps an empty Ungrouped while a drag is held, somewhere to drop a bot out of its group', () => {
+    const grouped = [bot('release', 'engineering', 0)];
+    expect(ids(botSections(grouped, groups, '', { keepUngrouped: true }))).toEqual([
+      ['engineering', ['release']],
+      ['research', []],
+      [null, []],
+    ]);
+  });
+
   it('draws a dropped bot in the section and place the drag put it, the others closing up', () => {
     const sections = botSections(bots, groups, '');
     expect(sectionOrder(sections)).toEqual({

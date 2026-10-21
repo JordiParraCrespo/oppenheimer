@@ -1,11 +1,10 @@
-import { DragProvider, SidebarEmptyRow } from '@oppenheimer/design-system-web';
+import { BotItem, DragProvider, SidebarEmptyRow } from '@oppenheimer/design-system-web';
 import { useSuspenseBotsAndGroups } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField, useDragLabels } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BotDragCopy } from '@/features/bots/components/bot-drag-copy';
 import { useBotOrder } from '@/features/bots/hooks/use-bot-order';
-import { botSections, sectionKey } from '@/features/bots/lib/bot-groups';
+import { sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotGroup } from './bot-group';
 import { BotsEmptyCard } from './bots-empty-card';
 import { NewGroup } from './new-group';
@@ -30,12 +29,7 @@ export function BotsSidebarList() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const term = query.trim();
-  const {
-    sections,
-    handlers,
-    error: moveError,
-    reset,
-  } = useBotOrder(botSections(bots, groups, term));
+  const { sections, handlers, error: moveError, reset } = useBotOrder(bots, groups, term);
   const dragLabels = useDragLabels();
 
   return (
@@ -64,7 +58,12 @@ export function BotsSidebarList() {
           labels={dragLabels}
           overlay={(active) => {
             const bot = bots.find((candidate) => candidate.id === active.id);
-            return bot ? <BotDragCopy bot={bot} /> : null;
+            // The lifted row, on the sidebar's ground at its width.
+            return bot ? (
+              <div className="w-60 rounded-md bg-sidebar">
+                <BotItem name={bot.name} initials={bot.initials} color={bot.avatarColor} active />
+              </div>
+            ) : null;
           }}
         >
           {sections.map((section) => {
