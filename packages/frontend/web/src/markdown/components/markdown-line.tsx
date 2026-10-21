@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { decodeEntities, type MarkdownToken, parseMarkdownLine } from '../lib/markdown';
+import { decodeEntities, type MarkdownToken, parseMarkdown } from '../lib/markdown';
 
 function node(token: MarkdownToken, key: string): ReactNode {
   const children = () =>
@@ -49,10 +49,10 @@ function render(tokens: MarkdownToken[], prefix: string): ReactNode[] {
  * The start of something written in markdown (a bot's last message) on one
  * line, the way a chat list previews it: bold, italics, struck text and code
  * spans as themselves and every other mark dropped, a link as its words (the
- * line usually sits inside a link of its own), never the syntax. A `**` the
- * cut left open reads bold to the end. It draws inline elements alone: the
- * caller sets the line's type and truncation.
+ * line usually sits inside a link of its own), never the syntax. It draws
+ * inline elements alone: the caller sets the line's type and truncation. A
+ * mark the source leaves open (a preview cut inside a bold) stays as written.
  */
 export function MarkdownLine({ source }: { source: string }) {
-  return <>{render(parseMarkdownLine(source), 'line')}</>;
+  return <>{render(parseMarkdown(source.replace(/\s+/g, ' ').trim()), 'line')}</>;
 }

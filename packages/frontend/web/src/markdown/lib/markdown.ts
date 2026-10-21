@@ -208,17 +208,3 @@ export function imageSource(html: string): { src: string; alt: string } | null {
   const alt = /\salt\s*=\s*["']([^"']*)["']/i.exec(html)?.[1] ?? '';
   return { src: decodeEntities(src), alt: decodeEntities(alt) };
 }
-
-/**
- * A line cut from the start of a message (a sidebar's preview) as the tokens
- * `MarkdownLine` renders: a code span or a `**` the cut left open is closed at
- * the end, so the line reads bold up to its last word rather than starting
- * with the marks.
- */
-export function parseMarkdownLine(source: string): MarkdownToken[] {
-  let line = source.replace(/\s+/g, ' ').trim();
-  if ((line.match(/`/g) ?? []).length % 2 === 1) line += '`';
-  const outsideCode = line.replace(/`[^`]*`/g, '');
-  if ((outsideCode.match(/\*\*/g) ?? []).length % 2 === 1) line += '**';
-  return parseMarkdown(line);
-}

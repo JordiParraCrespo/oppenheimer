@@ -4,8 +4,8 @@ import { MarkdownLine } from './markdown-line';
 
 /**
  * A bot's last message previews in the sidebar as words, not as markdown. The
- * regressions this guards: `**` and backticks on screen, a link nested inside
- * the row's own link, and a bold the stored cut left open showing its marks.
+ * regressions this guards: `**` and backticks on screen, and a link nested
+ * inside the row's own link.
  */
 
 afterEach(cleanup);
@@ -21,18 +21,6 @@ describe('MarkdownLine', () => {
     expect(page.querySelector('strong')?.textContent).toBe('#430 — Notifications');
     expect(page.querySelector('code')?.textContent).toBe('create');
     expect(page.querySelector('a')).toBeNull();
-  });
-
-  it('reads a bold the cut left open as bold to the end', () => {
-    const page = line('**17:00 routine run complete: three pull requests');
-    expect(page.textContent).toBe('17:00 routine run complete: three pull requests');
-    expect(page.querySelector('strong')?.textContent).toBe(page.textContent);
-  });
-
-  it('closes a code span the cut left open inside a bold', () => {
-    const page = line('Yes. I’m tracking the **`createBot');
-    expect(page.textContent).toBe('Yes. I’m tracking the createBot');
-    expect(page.querySelector('strong code')?.textContent).toBe('createBot');
   });
 
   it('flattens blocks onto one line and drops what has no words', () => {
