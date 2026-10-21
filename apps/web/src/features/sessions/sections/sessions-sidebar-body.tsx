@@ -130,47 +130,54 @@ export function SessionsSidebarBody() {
 
   return (
     <SessionSelectionContext value={selection}>
-      <SessionsSidebarHead
-        projectCount={projects.length}
-        filters={filters}
-        options={options}
-        dirty={dirty}
-        chips={activeFilters(filters, options)}
-        onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
-        onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
-        onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
-        onQueryChange={setQuery}
-        selectionBar={
-          selecting ? (
-            <SessionsSelectionBar
-              sessions={visible}
-              projects={projects}
-              onDelete={setDeletingMany}
-              onWrite={setFailure}
-            />
-          ) : undefined
-        }
-        onNewProject={() =>
-          dialogs.open({
-            kind: 'project',
-            // A project made from here lands on New session with it picked,
-            // which is what a person who just made one wants next.
-            onSaved: (project) =>
-              navigate({ to: '/sessions/new', search: { project: project.id } }),
-          })
-        }
-      />
-
-      <ErrorAlert error={error} fallback={t('sessions.sidebar.loadFailed')} className="mx-3 mb-2" />
-
-      <ErrorAlert
-        error={failure}
-        fallback={t('sessions.sidebar.writeFailed')}
-        onDismiss={() => setFailure(null)}
-        className="mx-3 mb-2"
-      />
-
+      {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
+        <SessionsSidebarHead
+          projectCount={projects.length}
+          filters={filters}
+          options={options}
+          dirty={dirty}
+          chips={activeFilters(filters, options)}
+          onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+          onFiltersClear={() =>
+            setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
+          }
+          onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onQueryChange={setQuery}
+          selectionBar={
+            selecting ? (
+              <SessionsSelectionBar
+                sessions={visible}
+                projects={projects}
+                onDelete={setDeletingMany}
+                onWrite={setFailure}
+              />
+            ) : undefined
+          }
+          onNewProject={() =>
+            dialogs.open({
+              kind: 'project',
+              // A project made from here lands on New session with it picked,
+              // which is what a person who just made one wants next.
+              onSaved: (project) =>
+                navigate({ to: '/sessions/new', search: { project: project.id } }),
+            })
+          }
+        />
+
+        <ErrorAlert
+          error={error}
+          fallback={t('sessions.sidebar.loadFailed')}
+          className="mx-3 mb-2"
+        />
+
+        <ErrorAlert
+          error={failure}
+          fallback={t('sessions.sidebar.writeFailed')}
+          onDismiss={() => setFailure(null)}
+          className="mx-3 mb-2"
+        />
+
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
           {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
@@ -247,16 +254,16 @@ export function SessionsSidebarBody() {
             </DragProvider>
           )}
         </div>
-      </SessionPinsContext>
 
-      <Suspense fallback={null}>
-        {deleting ? (
-          <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
-        ) : null}
-        {deletingMany ? (
-          <DeleteSessionsDialog sessions={deletingMany} onClose={() => setDeletingMany(null)} />
-        ) : null}
-      </Suspense>
+        <Suspense fallback={null}>
+          {deleting ? (
+            <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
+          ) : null}
+          {deletingMany ? (
+            <DeleteSessionsDialog sessions={deletingMany} onClose={() => setDeletingMany(null)} />
+          ) : null}
+        </Suspense>
+      </SessionPinsContext>
     </SessionSelectionContext>
   );
 }

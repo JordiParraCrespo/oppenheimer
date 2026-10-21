@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
+import { SESSION_PINS_KEY } from '../lib/session-pins';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
 /**
@@ -217,6 +218,25 @@ describe('SessionsSidebar', () => {
     });
     expect(rendered()).toEqual(['delta']);
     expect(screen.getByRole('button', { name: 'delta' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  /** The bar reads the sidebar's pins, so Pin selected pins what is picked. */
+  it('pins the picked rows from the selection bar', () => {
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'bravo' }), { metaKey: true });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'delta' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'sessions.selection.pin' }));
+    });
+    expect(JSON.parse(window.localStorage.getItem(SESSION_PINS_KEY) ?? '[]')).toEqual([
+      'bravo',
+      'delta',
+    ]);
+    expect(screen.getByText('sessions.sidebar.pinned')).toBeTruthy();
+    window.localStorage.clear();
   });
 
   /** The half-typed word is the search box's; only the settled one reaches the list. */
