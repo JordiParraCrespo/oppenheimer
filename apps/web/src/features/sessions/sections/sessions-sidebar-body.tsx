@@ -28,7 +28,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { matchesQuery } from '../lib/session-groups';
+import { emptyMessage, matchesQuery, shownGroups } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -102,6 +102,7 @@ export function SessionsSidebarBody() {
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
+  const shown = shownGroups(groups, narrowed, filters.project === ALL ? null : filters.project);
 
   return (
     <>
@@ -148,6 +149,14 @@ export function SessionsSidebarBody() {
                 </EmptyState.Header>
               </EmptyState>
             </div>
+          ) : shown.length === 0 && pinned.length === 0 ? (
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{emptyMessage(t, true, query)}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
           ) : (
             <DragProvider
               {...handlers}
@@ -166,12 +175,12 @@ export function SessionsSidebarBody() {
               ) : null}
               <SortableGroup
                 id={PROJECTS_GROUP}
-                items={groups.flatMap(({ project }) =>
+                items={shown.flatMap(({ project }) =>
                   project ? [sortableProjectId(project.id)] : [],
                 )}
                 accepts={['project']}
               >
-                {groups.map(({ project, sessions: members }) => {
+                {shown.map(({ project, sessions: members }) => {
                   const key = project?.id ?? 'unfiled';
                   return (
                     <ProjectGroup

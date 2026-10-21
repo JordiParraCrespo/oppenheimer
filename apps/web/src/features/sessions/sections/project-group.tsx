@@ -10,6 +10,7 @@ import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { emptyMessage } from '../lib/session-groups';
 import { SessionRows } from './session-rows';
 
 /**
@@ -42,8 +43,8 @@ export function ProjectGroup({
   onOpenChange: (open: boolean) => void;
   /**
    * Whether a filter or the search is narrowing the list, which changes what
-   * an empty group says, and holds the rows still: a drop would lose the
-   * places of the ones it hides.
+   * an empty group says, and holds the rows and the group still: a drop would
+   * lose the places of the ones it hides.
    */
   narrowed: boolean;
   /** The settled search, which an empty group repeats back. */
@@ -105,9 +106,7 @@ export function ProjectGroup({
       />
       {!open ? null : sessions.length === 0 ? (
         <SidebarEmptyRow>
-          {narrowed
-            ? t('sessions.sidebar.noMatches', { query })
-            : t('sessions.sidebar.emptyProject')}{' '}
+          {emptyMessage(t, narrowed, query)}{' '}
           {project && !narrowed ? (
             <button type="button" onClick={() => onNewSessionHere(project)}>
               {t('sessions.sidebar.startOne')}
@@ -127,7 +126,7 @@ export function ProjectGroup({
   );
 
   return project ? (
-    <SortableSidebarProjectGroup id={project.id} label={label}>
+    <SortableSidebarProjectGroup id={project.id} label={label} disabled={narrowed}>
       {rows}
     </SortableSidebarProjectGroup>
   ) : (
