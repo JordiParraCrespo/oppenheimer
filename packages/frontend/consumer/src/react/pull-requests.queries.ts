@@ -371,7 +371,8 @@ export interface CloseReviewSessionVariables {
  * Deletes a review session: the sessions' close, which removes the worktree
  * of its head branch. The row leaves For review on the click, and the API
  * stops listing it once the close is asked for, so a host that is offline
- * does not bring it back; a host that refuses does, on the next read.
+ * does not bring it back; a close the API refuses puts it back at once, and a
+ * host that refuses does on the next read.
  */
 export function useCloseReviewSession(
   options?: UseMutationOptions<SessionEntity, Error, CloseReviewSessionVariables>,
@@ -386,11 +387,16 @@ export function useCloseReviewSession(
     ),
     onMutate: async ({ sessionId }) => {
       await queryClient.cancelQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+      const before = queryClient.getQueryData<ReviewSession[]>(pullRequestsKeys.reviewSessions());
       queryClient.setQueryData<ReviewSession[]>(pullRequestsKeys.reviewSessions(), (rows) =>
         rows?.filter((row) => row.sessionId !== sessionId),
       );
+      return { before };
     },
     onError: (error, variables, context, mutation) => {
+      // Back at once, then read again: the list is the server's.
+      const before = (context as { before?: ReviewSession[] } | undefined)?.before;
+      if (before) queryClient.setQueryData(pullRequestsKeys.reviewSessions(), before);
       void queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
       return options?.onError?.(error, variables, context, mutation);
     },
