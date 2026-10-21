@@ -918,9 +918,10 @@
         "description": "What you and Claude say in this session appears here as it works, read off its own transcript. Write below, or type in the terminal."
       },
       "composer": {
-        "placeholder": "Message Claude. It is typed into the terminal.",
+        "placeholder": "Message Claude",
         "send": "Send",
-        "stop": "Stop"
+        "stop": "Stop",
+        "agent": "Claude Code"
       },
       "turn": {
         "working": "Working for",

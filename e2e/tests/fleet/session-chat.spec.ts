@@ -83,9 +83,7 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   await expect(page.getByText('Fixed and tested.')).toBeVisible({ timeout: 15_000 });
 
   // The composer types into the terminal: the shim's shell runs it.
-  await page
-    .getByPlaceholder('Message Claude. It is typed into the terminal.')
-    .fill('echo chat-$((6*7))');
+  await page.getByPlaceholder('Message Claude').fill('echo chat-$((6*7))');
   await page.keyboard.press('Enter');
   await toggle.getByRole('button', { name: 'Terminal' }).click();
   await expect.poll(() => screenText(page), { timeout: 15_000 }).toContain('chat-42');

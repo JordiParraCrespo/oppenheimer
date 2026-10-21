@@ -11,7 +11,7 @@ import { ChatTurn } from '../components/chat-turn';
 import { SessionChatComposer } from '../components/session-chat-composer';
 import { useChatFollow } from '../hooks/use-chat-follow';
 import { useChatState } from '../hooks/use-session-chat';
-import { latestTodos } from '../lib/chat-blocks';
+import { latestModel, latestTodos, modelName } from '../lib/chat-blocks';
 
 /**
  * A Claude Code session read as a chat (0.7): the conversation off the
@@ -57,7 +57,7 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
         </div>
       </div>
       {away ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-28 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 bottom-24 flex justify-center">
           <FloatingChip className="pointer-events-auto" onClick={toLatest}>
             <ArrowDown />
             {t('sessions.chat.latest')}
@@ -65,13 +65,16 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
         </div>
       ) : null}
       {readOnly ? null : (
-        <div className="mx-auto w-full max-w-190 px-5 pb-4">
-          <SessionChatComposer
-            busy={last?.working ?? false}
-            todos={last ? latestTodos(last) : null}
-            onSend={submit}
-            onStop={() => chat.interrupt()}
-          />
+        <div className="px-5 pb-3">
+          <div className="mx-auto w-full max-w-190">
+            <SessionChatComposer
+              busy={last?.working ?? false}
+              todos={last ? latestTodos(last) : null}
+              model={modelName(latestModel(state.turns))}
+              onSend={submit}
+              onStop={() => chat.interrupt()}
+            />
+          </div>
         </div>
       )}
     </div>

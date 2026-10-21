@@ -123,6 +123,15 @@ export function latestTodos(turn: ChatTurn): ChatTodo[] | null {
   return null;
 }
 
+/** The model the agent last answered with, for the composer's line. */
+export function latestModel(turns: readonly ChatTurn[]): string | null {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const model = turns[i]?.model;
+    if (model) return model;
+  }
+  return null;
+}
+
 /** A tool's kind as the chat names it: a plan or a task list is never in a group. */
 export type GroupKind = Exclude<ChatToolKind, 'todo' | 'plan'>;
 

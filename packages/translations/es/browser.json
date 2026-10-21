@@ -920,9 +920,10 @@
         "description": "Lo que tú y Claude os decís en esta sesión aparece aquí mientras trabaja, leído de su propia transcripción. Escribe abajo o en la terminal."
       },
       "composer": {
-        "placeholder": "Escribe a Claude. Se teclea en la terminal.",
+        "placeholder": "Escribe a Claude",
         "send": "Enviar",
-        "stop": "Detener"
+        "stop": "Detener",
+        "agent": "Claude Code"
       },
       "turn": {
         "working": "Trabajando desde hace",
