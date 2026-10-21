@@ -32,6 +32,22 @@ export function groupByProject(
 }
 
 /**
+ * The groups worth drawing. While a filter or the search narrows the list, a
+ * group left with no session is noise, so it goes; the one exception is the
+ * project the project filter picked, which stays to say it has no match.
+ */
+export function shownGroups<T extends ProjectGroup>(
+  groups: readonly T[],
+  narrowed: boolean,
+  pickedProject: string | null,
+): T[] {
+  if (!narrowed) return [...groups];
+  return groups.filter(
+    (group) => group.sessions.length > 0 || (group.project && group.project.id === pickedProject),
+  );
+}
+
+/**
  * Where a session may move: every other project. A project is metadata — a
  * session's directory and branch never name it — so there is no rule about
  * which repositories it holds (`product/versions/mvp/10-api-modules-and-data-model.md`).

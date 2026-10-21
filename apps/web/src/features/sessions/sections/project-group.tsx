@@ -42,8 +42,8 @@ export function ProjectGroup({
   onOpenChange: (open: boolean) => void;
   /**
    * Whether a filter or the search is narrowing the list, which changes what
-   * an empty group says, and holds the rows still: a drop would lose the
-   * places of the ones it hides.
+   * an empty group says, and holds the rows and the group still: a drop would
+   * lose the places of the ones it hides.
    */
   narrowed: boolean;
   /** The settled search, which an empty group repeats back. */
@@ -105,9 +105,11 @@ export function ProjectGroup({
       />
       {!open ? null : sessions.length === 0 ? (
         <SidebarEmptyRow>
-          {narrowed
-            ? t('sessions.sidebar.noMatches', { query })
-            : t('sessions.sidebar.emptyProject')}{' '}
+          {!narrowed
+            ? t('sessions.sidebar.emptyProject')
+            : query.trim()
+              ? t('sessions.sidebar.noMatches', { query: query.trim() })
+              : t('sessions.filters.noMatches')}{' '}
           {project && !narrowed ? (
             <button type="button" onClick={() => onNewSessionHere(project)}>
               {t('sessions.sidebar.startOne')}
@@ -127,7 +129,7 @@ export function ProjectGroup({
   );
 
   return project ? (
-    <SortableSidebarProjectGroup id={project.id} label={label}>
+    <SortableSidebarProjectGroup id={project.id} label={label} disabled={narrowed}>
       {rows}
     </SortableSidebarProjectGroup>
   ) : (
