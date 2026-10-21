@@ -28,6 +28,7 @@ export {
   type ExportBotConversationVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
+  useBotImage,
   useBotLiveText,
   useCancelBotTurn,
   useClearBotConversation,
@@ -35,6 +36,7 @@ export {
   useSendBotMessage,
   useSuspenseBotConversation,
   useSuspenseBotHistory,
+  useUploadBotImage,
 } from './bot-chat.queries';
 export {
   type BotRoutineVariables,

@@ -1,5 +1,6 @@
 import {
   type BotApprovalResponseDto,
+  type BotAttachmentResponseDto,
   type BotConversationResponseDto,
   type BotDocumentResponseDto,
   type BotDocumentRevisionResponseDto,
@@ -18,6 +19,7 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   type BotApprovalDecision,
+  type BotAttachment,
   type BotDocumentName,
   type BotMessageEvent,
   type BotProvider,
@@ -152,7 +154,12 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     steps,
     new Date(dto.createdAt),
     dto.event ? toEvent(dto.event) : null,
+    (dto.attachments ?? []).map(toAttachment),
   );
+}
+
+function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
+  return { id: dto.id, mimeType: dto.mimeType, sizeBytes: dto.sizeBytes, name: dto.name };
 }
 
 /**
@@ -297,17 +304,46 @@ export class BotsRepository {
   }
 
   /**
-   * Says `content` to the bot: a turn, queued behind any it has not finished.
-   * The browser's time zone goes with it, so the bot tells the time where you are.
+   * Says `content` to the bot, with the images uploaded for it
+   * (`uploadImage`): a turn, queued behind any it has not finished. The
+   * browser's time zone goes with it, so the bot tells the time where you are.
    */
   @MapApiError(BotsErrors.SEND_FAILED)
-  async sendMessage(id: string, content: string): Promise<BotTurnEntity> {
+  async sendMessage(
+    id: string,
+    content: string,
+    attachmentIds: readonly string[] = [],
+  ): Promise<BotTurnEntity> {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const data = await unwrapBody(
-      heyApiSdk.sendBotMessage({ path: { id }, body: { content, timeZone } }),
+      heyApiSdk.sendBotMessage({
+        path: { id },
+        body: { content, attachmentIds: [...attachmentIds], timeZone },
+      }),
       BotsErrors.SEND_FAILED,
     );
     return toTurn(data);
+  }
+
+  /** An image picked for a message, stored until it is sent; the API judges its bytes. */
+  @MapApiError(BotsErrors.UPLOAD_IMAGE_FAILED)
+  async uploadImage(id: string, file: Blob): Promise<BotAttachment> {
+    return toAttachment(
+      await unwrapBody(
+        heyApiSdk.uploadBotAttachment({ path: { id }, body: { file } }),
+        BotsErrors.UPLOAD_IMAGE_FAILED,
+      ),
+    );
+  }
+
+  /** An image's bytes, for the chat to draw: the API serves them only to whoever may see them. */
+  @MapApiError(BotsErrors.READ_IMAGE_FAILED)
+  async readImage(id: string, attachmentId: string): Promise<Blob> {
+    const body = await unwrapBody(
+      heyApiSdk.readBotAttachment({ path: { id, attachmentId }, parseAs: 'blob' }),
+      BotsErrors.READ_IMAGE_FAILED,
+    );
+    return body as unknown as Blob;
   }
 
   /** Stop: a queued turn ends now, a running one at its next step. */

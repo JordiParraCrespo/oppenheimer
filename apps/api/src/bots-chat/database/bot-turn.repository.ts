@@ -12,6 +12,7 @@ import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
@@ -37,6 +38,24 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
   return driver.code === '23505' && driver.constraint === constraint;
 }
 
+/**
+ * One of the message's images could not be claimed (`claimAttachmentsWithin`):
+ * thrown inside the enqueue's transaction, because a throw is what rolls the
+ * turn and its message back, and caught outside it as `attachments_taken`.
+ */
+class AttachmentsTaken extends Error {}
+
+/** The message's images, claimed for it as the turn's sender, at the send. */
+function claimAttachmentsTo(
+  manager: EntityManager,
+  turn: BotTurnEntity,
+  message: BotMessageEntity,
+): Promise<boolean> {
+  if (message.attachments.length === 0) return Promise.resolve(true);
+  if (!turn.requestedByUserId) return Promise.resolve(false);
+  return claimAttachmentsWithin(manager, message, turn.requestedByUserId, new Date());
+}
+
 @Injectable()
 export class BotTurnRepository
   extends ScopedRepositoryBase<BotTurnOrmEntity>
@@ -57,14 +76,31 @@ export class BotTurnRepository
     super();
   }
 
-  enqueue(
+  async enqueue(
     turn: BotTurnEntity,
     message: BotMessageEntity,
     correlationId: string | null,
-  ): Promise<'staged' | 'waiting' | 'missing'> {
-    return this.outbox.transaction((manager) =>
-      enqueueWithin(manager, this.outbox, this.mapper, this.messages, turn, message, correlationId),
-    );
+  ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'> {
+    try {
+      return await this.outbox.transaction(async (manager) => {
+        const outcome = await enqueueWithin(
+          manager,
+          this.outbox,
+          this.mapper,
+          this.messages,
+          turn,
+          message,
+          correlationId,
+        );
+        if (outcome !== 'missing' && !(await claimAttachmentsTo(manager, turn, message))) {
+          throw new AttachmentsTaken();
+        }
+        return outcome;
+      });
+    } catch (error) {
+      if (error instanceof AttachmentsTaken) return 'attachments_taken';
+      throw error;
+    }
   }
 
   enqueueOnce(
@@ -143,7 +179,17 @@ export class BotTurnRepository
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'> {
     try {
-      return await this.enqueue(turn, message, correlationId);
+      return await this.outbox.transaction((manager) =>
+        enqueueWithin(
+          manager,
+          this.outbox,
+          this.mapper,
+          this.messages,
+          turn,
+          message,
+          correlationId,
+        ),
+      );
     } catch (error) {
       if (isUniqueViolation(error, 'UQ_bot_turn_answers')) return 'duplicate';
       throw error;

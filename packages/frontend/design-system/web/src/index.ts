@@ -123,6 +123,7 @@ export {
   ChatTrayButton,
   ThreadFindBar,
 } from './components/chat-header';
+export { ChatImage, ChatImageRemove } from './components/chat-image';
 export type { ChatErrorLabels } from './components/chat-status';
 export {
   ChatErrorAction,

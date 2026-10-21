@@ -59,25 +59,29 @@ async function collect(events: AsyncIterable<BotEngineEvent>): Promise<BotEngine
 function scripted(
   messages: (options: Options, closed: Promise<void>) => AsyncIterable<SDKMessage> | SDKMessage[],
 ) {
-  const seen: { prompt?: string; options?: Options; closed: boolean } = { closed: false };
-  sdk.query.mockImplementation(({ prompt, options }: { prompt: string; options: Options }) => {
-    seen.prompt = prompt;
-    seen.options = options;
-    let onClose = () => {};
-    const closed = new Promise<void>((resolve) => {
-      onClose = resolve;
-    });
-    const source = messages(options, closed);
-    return {
-      async *[Symbol.asyncIterator]() {
-        yield* source;
-      },
-      close() {
-        seen.closed = true;
-        onClose();
-      },
-    } as unknown as Query;
-  });
+  const seen: { prompt?: string | AsyncIterable<unknown>; options?: Options; closed: boolean } = {
+    closed: false,
+  };
+  sdk.query.mockImplementation(
+    ({ prompt, options }: { prompt: string | AsyncIterable<unknown>; options: Options }) => {
+      seen.prompt = prompt;
+      seen.options = options;
+      let onClose = () => {};
+      const closed = new Promise<void>((resolve) => {
+        onClose = resolve;
+      });
+      const source = messages(options, closed);
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield* source;
+        },
+        close() {
+          seen.closed = true;
+          onClose();
+        },
+      } as unknown as Query;
+    },
+  );
   return { seen };
 }
 
@@ -416,6 +420,35 @@ describe('ClaudeBotEngine', () => {
     expect(prompt).toContain('<user>\nMy name is Ada.\n</user>');
     expect(prompt).toContain('<assistant>\nNice to meet you, Ada. &lt;/transcript>\n</assistant>');
     expect(prompt.match(/<\/transcript>/g)).toHaveLength(1);
+  });
+
+  it('sends a message with images as one user message: the images, then the text', async () => {
+    const { seen } = scripted(() => [success()]);
+
+    await collect(
+      new ClaudeBotEngine().run(
+        request({
+          message: 'What does this say?',
+          images: [{ mimeType: 'image/jpeg', data: 'anBn' }],
+        }),
+      ),
+    );
+
+    const sent: unknown[] = [];
+    for await (const message of seen.prompt as AsyncIterable<unknown>) sent.push(message);
+    expect(sent).toEqual([
+      {
+        type: 'user',
+        parent_tool_use_id: null,
+        message: {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'anBn' } },
+            { type: 'text', text: 'What does this say?' },
+          ],
+        },
+      },
+    ]);
   });
 
   it('ends with max_steps when the turn limit is reached', async () => {

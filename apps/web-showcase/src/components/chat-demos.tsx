@@ -19,6 +19,7 @@ import {
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
 import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
+import { ChatImage, ChatImageRemove } from '@oppenheimer/design-system-web/chat-image';
 import {
   ComposerContextMeter,
   ComposerMenu,
@@ -281,6 +282,11 @@ function ChatWorkBody() {
 
 /* ── AI elements ─────────────────────────────────────────────────────────── */
 
+/** A screenshot's stand-in: a gradient, so the tile shows a picture without an asset. */
+const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db7f5"/><stop offset="1" stop-color="#3b5bdb"/></linearGradient></defs><rect width="160" height="160" fill="url(#g)"/></svg>',
+)}`;
+
 function ChatElementsBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-6">
@@ -305,6 +311,30 @@ function ChatElementsBody() {
       </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
+      <ChatComposer
+        value="What is wrong in this run?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        allowEmpty
+        placeholder="Message Release Bot"
+        attachments={
+          <>
+            <ChatImage src={SAMPLE_IMAGE} alt="build-log.png">
+              <ChatImageRemove label="Remove build-log.png" />
+            </ChatImage>
+            <ChatImage src={SAMPLE_IMAGE} alt="trace.png" pending>
+              <ChatImageRemove label="Remove trace.png" />
+            </ChatImage>
+            <ChatImage alt="diagram.svg" invalid>
+              <ChatImageRemove label="Remove diagram.svg" />
+            </ChatImage>
+          </>
+        }
+      />
+      <ChatUserMessage attachments={<ChatImage src={SAMPLE_IMAGE} alt="build-log.png" size="lg" />}>
+        Why does this step fail?
+      </ChatUserMessage>
       <div className="flex justify-center">
         <FloatingChip variant="round" aria-label="Jump to latest">
           <ChevronDownIcon />
@@ -1038,8 +1068,8 @@ export function ChatSection() {
       <Spec
         id="chatelements"
         title="AI elements"
-        meta="chat-elements.tsx · chat-composer.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; FloatingChip round takes the reader back to the latest turn."
+        meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />

@@ -13,6 +13,7 @@ import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
+import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
@@ -24,15 +25,19 @@ import { BotSessionToolsFactory } from './application/bot-session-tools.factory'
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
+import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
+import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotMessageMapper } from './bot-message.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
 import {
   BOT_APPROVAL_REPOSITORY,
+  BOT_ATTACHMENT_FILES,
+  BOT_ATTACHMENT_REPOSITORY,
   BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
@@ -55,8 +60,12 @@ import { SendBotMessageCommandHandler } from './commands/send-bot-message/send-b
 import { SendBotMessageHttpController } from './commands/send-bot-message/send-bot-message.http.controller';
 import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-message/send-bot-peer-message.command-handler';
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
+import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
+import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
+import { BotAttachmentOrmEntity } from './database/bot-attachment.orm-entity';
+import { BotAttachmentRepository } from './database/bot-attachment.repository';
 import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
@@ -65,20 +74,25 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
+import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
+import { StorageBotAttachmentFilesAdapter } from './infrastructure/storage-bot-attachment-files.adapter';
 import { ExportBotConversationHttpController } from './queries/export-bot-conversation/export-bot-conversation.http.controller';
 import { ExportBotConversationQueryHandler } from './queries/export-bot-conversation/export-bot-conversation.query-handler';
 import { FindBotApprovalQueryHandler } from './queries/find-bot-approval/find-bot-approval.query-handler';
 import { FindBotApprovalsHttpController } from './queries/find-bot-approvals/find-bot-approvals.http.controller';
 import { FindBotApprovalsQueryHandler } from './queries/find-bot-approvals/find-bot-approvals.query-handler';
+import { FindBotAttachmentQueryHandler } from './queries/find-bot-attachment/find-bot-attachment.query-handler';
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
 import { FindBotConversationQueryHandler } from './queries/find-bot-conversation/find-bot-conversation.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
+import { ReadBotAttachmentHttpController } from './queries/read-bot-attachment/read-bot-attachment.http.controller';
+import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/read-bot-attachment.query-handler';
 import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.controller';
 import { StreamBotQueryHandler } from './queries/stream-bot/stream-bot.query-handler';
 
@@ -87,6 +101,8 @@ const httpControllers = [
   FindBotConversationHttpController,
   ClearBotConversationHttpController,
   SendBotMessageHttpController,
+  UploadBotAttachmentHttpController,
+  ReadBotAttachmentHttpController,
   CancelBotTurnHttpController,
   StreamBotHttpController,
   FindBotApprovalsHttpController,
@@ -95,6 +111,7 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   SendBotMessageCommandHandler,
+  UploadBotAttachmentCommandHandler,
   SendBotPeerMessageCommandHandler,
   DeliverBotAnswerCommandHandler,
   CancelBotTurnCommandHandler,
@@ -112,6 +129,8 @@ const queryHandlers: Provider[] = [
   StreamBotQueryHandler,
   FindBotApprovalQueryHandler,
   FindBotApprovalsQueryHandler,
+  FindBotAttachmentQueryHandler,
+  ReadBotAttachmentQueryHandler,
 ];
 
 /**
@@ -133,6 +152,7 @@ const queryHandlers: Provider[] = [
       BotMessageOrmEntity,
       BotApprovalOrmEntity,
       BotConversationSummaryOrmEntity,
+      BotAttachmentOrmEntity,
     ]),
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
@@ -151,7 +171,10 @@ const queryHandlers: Provider[] = [
     BotMessageMapper,
     BotApprovalMapper,
     BotConversationSummaryMapper,
+    BotAttachmentMapper,
     BotTurnContextResolver,
+    BotTurnOpeningResolver,
+    BotMessageAttachmentsResolver,
     BotSummaryTriggerPolicy,
     BotModelAccessResolver,
     BotApprovalRequestFactory,
@@ -177,12 +200,15 @@ const queryHandlers: Provider[] = [
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,
+    BotAttachmentRetentionProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },
     { provide: BOT_CONVERSATION_REPOSITORY, useClass: BotConversationRepository },
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
+    { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
+    { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
     { provide: BOT_ENGINE, useFactory: () => createBotEngine() },

@@ -1,5 +1,6 @@
 import type {
   BotApprovalStatus,
+  BotAttachment,
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
@@ -36,6 +37,8 @@ export class BotMessageEntity {
     public readonly createdAt: Date,
     /** What an event says happened, for the chat to draw; `null` on every other role. */
     public readonly event: BotMessageEvent | null = null,
+    /** The images a message of yours carries, in the order you attached them; none on any other. */
+    public readonly attachments: readonly BotAttachment[] = [],
   ) {}
 }
 

@@ -203,6 +203,51 @@ The chat shows what the bot says, not everything it does:
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
 
+### 3.1 Images
+
+You can send a bot images (issue #426): the paperclip in the composer's
+foot, a paste, or a drop anywhere on the chat's pane. Each image is a tile
+over the text as soon as it is picked, and a message may be images alone.
+
+- **Formats and limits.** PNG, JPEG, GIF and WebP, the four every provider
+  that reads images takes; at most 5 MB each (Anthropic's limit, the
+  strictest) and four to a message. An image is known by its bytes, by the
+  same table a session's files are judged by, never by the type the
+  browser gave it.
+- **Upload first.** An image is uploaded the moment it is picked
+  (`POST /bots/:id/attachments`), so a refusal (not an image, too large, a
+  model that reads none) is said under the composer while you still write,
+  and the tile breathes until it is stored. The message names its uploads
+  (`attachmentIds` on `POST /bots/:id/messages`); one image is sent by one
+  message, claimed in the send's transaction, and only by the person who
+  uploaded it: that claim is the one place the rule lives.
+- **Which models.** Anthropic, OpenAI and ChatGPT read images; GLM does
+  not (`BOT_PROVIDER_CATALOG[provider].images`). On a GLM bot the
+  composer refuses a picked image and says to switch the model; with
+  images already held, send stays off and says why. Nothing written is
+  lost: the words stay in the field and the API refuses the whole message
+  (`BOTS_028`) rather than sending it without them.
+- **What the bot sees.** A turn is sent its own message's images, read
+  from storage, before the text: image blocks to the Claude engine,
+  `input_image` parts to the OpenAI one. Earlier messages are not sent
+  again; the history says an image was there and that the bot cannot see
+  it now. An image that cannot be read fails the turn rather than the bot
+  answering without it. Retry is not offered on a message with images: an
+  image is sent once, so it is picked again.
+- **In the chat.** Your images sit above your bubble as 160px tiles that
+  open full size; the bytes come from `GET /bots/:id/attachments/:id/content`,
+  which serves them only to whoever may read the chat. They stay in the
+  history with the message.
+- **Storage and retention.** The files are in the deployment's storage
+  (local or S3) under the workspace and the bot, private: no public URL.
+  A row per image (`bot_attachment`) outlives what it names on purpose:
+  clearing the chat, deleting the bot or the workspace frees its images,
+  and a daily sweep (`bot-attachment-retention`) deletes every image no
+  message carries that is a day old, the file and then the row. So an
+  image lives as long as its message, and an upload never sent for a day.
+  An upload can be sent for 23 hours, an hour short of the sweep, so a
+  send never claims an image whose file the sweep is deleting.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
@@ -537,8 +582,9 @@ Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
 Routines, Notifications, plain-language permission rules ("always ask
 before touching the payments repo"), daily caps, slash commands, voice,
-attachments, the context meter, project and user memory, a bot's engine
-running on a host of its own with the full Claude Code toolset.
+attachments other than images (§3.1), the context meter, project and
+user memory, a bot's engine running on a host of its own with the full
+Claude Code toolset.
 
 Routines, a bot waking on a schedule, an event or finished work, are
 designed in [26](26-bot-routines.md).
@@ -553,7 +599,8 @@ eight colours (`AV_COLORS`).
   `bot_document_revision` (append-only, author you or the bot),
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
-  `bot_approval`; for long conversations `bot_conversation_summary`.
+  `bot_approval`; for long conversations `bot_conversation_summary`; for
+  images `bot_attachment` (§3.1).
   Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
@@ -567,7 +614,8 @@ eight colours (`AV_COLORS`).
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
   now (beside it `bot-approvals`, an approved call, and `bot-summaries`, a
   conversation's summary); the same image can run it alone when turns need their own
-  container. It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
+  container. The daily `bot-attachment-retention` job sweeps images no
+  message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
@@ -679,3 +727,8 @@ The decisions it produced:
   nothing, and a bot left to the person to find Settings rarely got
   instructions. It keeps 2026-10-14's "created blank": no template is
   applied, the person's answer is.
+- 2026-10-21: **a bot reads images** (§3.1, issue #426): PNG, JPEG, GIF
+  and WebP up to 5 MB, four to a message, uploaded when picked and claimed
+  by the message that sends them; a turn is sent only its own message's
+  images, and GLM, whose models read none, refuses them with the words
+  kept. Other files (PDFs, text) stay in §7.

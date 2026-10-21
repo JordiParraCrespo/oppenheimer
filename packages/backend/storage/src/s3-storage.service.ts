@@ -44,6 +44,12 @@ export class S3StorageService extends StorageService {
     await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
+  async download(key: string): Promise<Buffer> {
+    const object = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if (!object.Body) throw new Error(`Nothing is stored under ${key}`);
+    return Buffer.from(await object.Body.transformToByteArray());
+  }
+
   async getUrl(key: string, expiresIn = 3600): Promise<string> {
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return getSignedUrl(this.s3, command, { expiresIn });

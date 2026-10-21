@@ -115,6 +115,11 @@ export interface BotProviderDefinition {
   readonly id: BotProvider;
   readonly label: string;
   readonly auth: BotProviderAuth;
+  /**
+   * Whether the provider's models read images: a message may carry
+   * attachments only to a bot on one that does (`25-bots.md` §3.1).
+   */
+  readonly images: boolean;
   readonly models: readonly BotModel[];
 }
 
@@ -133,12 +138,14 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
   Object.freeze({
     anthropic: Object.freeze({
       id: 'anthropic',
+      images: true,
       auth: 'api_key',
       label: 'Anthropic',
       models: CODING_AGENTS['claude-code'].models,
     }),
     glm: Object.freeze({
       id: 'glm',
+      images: false,
       auth: 'api_key',
       label: 'GLM',
       models: Object.freeze([
@@ -152,17 +159,24 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
     }),
     openai: Object.freeze({
       id: 'openai',
+      images: true,
       auth: 'api_key',
       label: 'OpenAI',
       models: CODING_AGENTS.codex.models,
     }),
     chatgpt: Object.freeze({
       id: 'chatgpt',
+      images: true,
       auth: 'sign_in',
       label: 'ChatGPT',
       models: CODING_AGENTS.codex.models,
     }),
   });
+
+/** Whether a bot on `provider` can be sent images. */
+export function botTakesImages(provider: BotProvider): boolean {
+  return BOT_PROVIDER_CATALOG[provider].images;
+}
 
 /** The model a bot on `provider` runs when it names none: the provider's default row. */
 export function botDefaultModel(provider: BotProvider): BotModel {
@@ -443,15 +457,47 @@ export const BOT_MESSAGE_MAX = 16_000;
 export const BOT_CONVERSATION_PAGE_MAX = 200;
 export const BOT_CONVERSATION_PAGE_DEFAULT = 100;
 
-/** `POST /bots/:id/messages`: what you say to the bot. */
-export const sendBotMessageSchema = z.object({
-  content: z.string().trim().min(1).max(BOT_MESSAGE_MAX),
-  /**
-   * The sender's IANA time zone, from their browser. The turn tells the bot
-   * the time there, so "tomorrow at 9" means the sender's 9. UTC when absent.
-   */
-  timeZone: z.string().min(1).max(64).refine(isValidTimeZone).optional(),
-});
+/**
+ * The images a message may carry (`25-bots.md` §3.1): the four formats every
+ * provider that reads images takes, at most `BOT_IMAGE_MAX_BYTES` each (the
+ * strictest provider's limit, Anthropic's), `BOT_MESSAGE_IMAGES_MAX` a message.
+ */
+export const BOT_IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
+export type BotImageMimeType = (typeof BOT_IMAGE_MIME_TYPES)[number];
+export const BOT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const BOT_MESSAGE_IMAGES_MAX = 4;
+/** An attachment's file name as it is kept: enough to recognise it, never a path. */
+export const BOT_ATTACHMENT_NAME_MAX = 255;
+
+/** An image a message carries, as the chat shows it. */
+export interface BotAttachment {
+  id: string;
+  mimeType: BotImageMimeType;
+  sizeBytes: number;
+  name: string;
+}
+
+/**
+ * `POST /bots/:id/messages`: what you say to the bot. Words, images uploaded
+ * to `POST /bots/:id/attachments` and not sent yet, or both; never neither.
+ */
+export const sendBotMessageSchema = z
+  .object({
+    content: z.string().trim().max(BOT_MESSAGE_MAX).default(''),
+    attachmentIds: z.array(z.string().uuid()).max(BOT_MESSAGE_IMAGES_MAX).default([]),
+    /**
+     * The sender's IANA time zone, from their browser. The turn tells the bot
+     * the time there, so "tomorrow at 9" means the sender's 9. UTC when absent.
+     */
+    timeZone: z.string().min(1).max(64).refine(isValidTimeZone).optional(),
+  })
+  .refine((body) => body.content.length > 0 || body.attachmentIds.length > 0, {
+    path: ['content'],
+    params: { i18nKey: 'validation.required' },
+  })
+  .refine((body) => new Set(body.attachmentIds).size === body.attachmentIds.length, {
+    path: ['attachmentIds'],
+  });
 export type SendBotMessageDto = z.infer<typeof sendBotMessageSchema>;
 
 /** `GET /bots/:id/conversation`: the newest `limit` messages, oldest first. */

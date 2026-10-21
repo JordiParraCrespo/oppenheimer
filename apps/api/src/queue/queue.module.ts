@@ -41,6 +41,7 @@ import { EmailProcessor } from './infrastructure/email.processor';
       { name: QUEUE_NAMES.AUTOMATION_SCHEDULES },
       { name: QUEUE_NAMES.AUTOMATION_RETENTION },
       { name: QUEUE_NAMES.OUTBOX_RETENTION },
+      { name: QUEUE_NAMES.BOT_ATTACHMENT_RETENTION },
     ),
   ],
   providers: [EmailProcessor, EmailJobMapper],
