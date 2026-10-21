@@ -132,6 +132,23 @@ export function latestModel(turns: readonly ChatTurn[]): string | null {
   return null;
 }
 
+/**
+ * The names the conversation has used, for dictation's tidy to spell as
+ * written: every file the agent touched, by its name. Read once, when a
+ * recording is sent.
+ */
+export function chatVocabulary(turns: readonly ChatTurn[]): string[] {
+  const names = new Set<string>();
+  for (const turn of turns) {
+    for (const step of turn.steps) {
+      if (step.kind === 'tool' && step.call.target && step.call.kind !== 'command') {
+        names.add(pathParts(step.call.target).name);
+      }
+    }
+  }
+  return [...names];
+}
+
 /** A tool's kind as the chat names it: a plan or a task list is never in a group. */
 export type GroupKind = Exclude<ChatToolKind, 'todo' | 'plan'>;
 

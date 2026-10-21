@@ -3,6 +3,7 @@ import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { turnOnForEveryone } from '../../support/flags';
 import { type FleetHost, pairedHosts } from '../../support/fleet';
+import { STUB_TRANSCRIPT, tidied } from '../../support/namer-stub';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
@@ -13,10 +14,19 @@ import { signInAs } from '../../support/web';
  * turns — the history first, then each line the CLI appends. What the chat's
  * composer sends is typed into the same PTY as the grid. The fleet's `claude`
  * is a shim, so the transcript is written here, line by line as the CLI
- * writes it. Needs the console on `WEB_URL`.
+ * writes it. The composer takes dictation too: Chromium's fake microphone
+ * records and the stack's speech stub hears its one sentence. Needs the
+ * console on `WEB_URL`.
  */
 test.describe.configure({ timeout: 180_000 });
-test.use({ baseURL: WEB_URL });
+test.use({
+  baseURL: WEB_URL,
+  launchOptions: {
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH,
+    args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+  },
+  permissions: ['microphone'],
+});
 
 const FOLDER = '~/.claude/projects/-w-sessions-xrp-mobile';
 
@@ -52,6 +62,7 @@ test('the console reads a Claude Code session as a chat, live, and types into it
 
   const { api, user } = await signedUpContext('fleetchat');
   await turnOnForEveryone(api, 'session_chat_view');
+  await turnOnForEveryone(api, 'voice_dictation');
   const installationId = await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'chat');
   const sessionId = await createSession(api, box.id, installationId);
@@ -82,8 +93,17 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   ]);
   await expect(page.getByText('Fixed and tested.')).toBeVisible({ timeout: 15_000 });
 
+  // Dictation lands in the composer, at the end of the draft, unsent.
+  const composer = page.getByPlaceholder('Message Claude');
+  await composer.fill('First,');
+  await page.getByRole('button', { name: 'Dictate' }).click();
+  const recorder = page.locator('[data-slot="voice-recorder-bar"][data-state="recording"]');
+  await expect(recorder.getByText('0:01')).toBeVisible({ timeout: 10_000 });
+  await recorder.getByRole('button', { name: 'Stop recording' }).click();
+  await expect(composer).toHaveValue(`First, ${tidied(STUB_TRANSCRIPT)}`, { timeout: 15_000 });
+
   // The composer types into the terminal: the shim's shell runs it.
-  await page.getByPlaceholder('Message Claude').fill('echo chat-$((6*7))');
+  await composer.fill('echo chat-$((6*7))');
   await page.keyboard.press('Enter');
   await toggle.getByRole('button', { name: 'Terminal' }).click();
   await expect.poll(() => screenText(page), { timeout: 15_000 }).toContain('chat-42');

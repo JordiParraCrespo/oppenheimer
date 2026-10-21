@@ -9,6 +9,12 @@ import { SessionChat } from '../sections/session-chat';
  * same PTY the grid types into — the text, then Enter — with Stop
  * pressing Escape while the agent works. Nothing else reaches the agent.
  */
+// Whether this workspace has dictation; the recorder itself is the kit's to test.
+let voiceAvailable = false;
+vi.mock('@oppenheimer/frontend-consumer/react', () => ({
+  useVoiceDictation: () => ({ available: voiceAvailable, transcribe: vi.fn() }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, args?: Record<string, unknown>) =>
@@ -152,5 +158,18 @@ describe('a settled turn', () => {
     expect(screen.getByText('Done.')).toBeTruthy();
     expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
     expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
+  });
+});
+
+describe('dictation', () => {
+  it('offers the mic beside send only where the workspace can hear', () => {
+    voiceAvailable = false;
+    const { unmount } = render(<SessionChat chat={new Chat()} readOnly={false} />);
+    expect(screen.queryByRole('button', { name: 'common.dictation.dictate' })).toBeNull();
+    unmount();
+
+    voiceAvailable = true;
+    render(<SessionChat chat={new Chat()} readOnly={false} />);
+    expect(screen.getByRole('button', { name: 'common.dictation.dictate' })).toBeTruthy();
   });
 });

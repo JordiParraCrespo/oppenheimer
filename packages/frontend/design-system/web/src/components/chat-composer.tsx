@@ -131,7 +131,7 @@ function ChatComposer({
   const recorder = dictation?.recorder ? (
     // The bar is 12px taller than the foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
-    <div data-slot="chat-composer-recorder" className={inline ? 'w-full p-1.5' : '-mt-3 px-3 pb-3'}>
+    <div data-slot="chat-composer-recorder" className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}>
       {dictation.recorder}
     </div>
   ) : null;
@@ -146,6 +146,8 @@ function ChatComposer({
         className={cn(
           'flex rounded-xl border border-border-subtle bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
           inline ? 'items-end' : 'flex-col',
+          // Inline, the recorder bar is the box while it listens: one edge, not two.
+          inline && recorder && 'border-transparent bg-transparent',
           className,
         )}
         {...props}
