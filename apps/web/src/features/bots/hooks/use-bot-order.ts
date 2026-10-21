@@ -13,21 +13,21 @@ import { type BotSection, groupIdOf, inOrder, sectionOrder } from '../lib/bot-gr
  * published. Spread `handlers` on the sidebar's `DragProvider`.
  */
 export function useBotOrder(sections: readonly BotSection[]) {
-  const [live, setLive] = useState<SortableGroups | null>(null);
-  // The drop's order, drawn until its write settles.
-  const [dropped, setDropped] = useState<SortableGroups | null>(null);
+  // The groups the drag layer last published while a drag is held, then the
+  // drop's until its write settles; `null` is the server's order.
+  const [order, setOrder] = useState<SortableGroups | null>(null);
   const move = useUpdateBot();
-  const order = live ?? dropped;
   const drawn = order ? inOrder(sections, order) : [...sections];
 
   const handlers = useSortableGroups(
     sectionOrder(drawn),
-    (next, { settled }) => setLive(settled ? null : next),
+    // A drop settles here first and `onMove` then sets its order; a cancel only settles.
+    (next, { settled }) => setOrder(settled ? null : next),
     ({ id, to, index }, next) => {
-      setDropped(next);
+      setOrder(next);
       move.mutate(
         { id, input: { groupId: groupIdOf(to), position: index } },
-        { onSettled: () => setDropped(null) },
+        { onSettled: () => setOrder(null) },
       );
     },
   );
