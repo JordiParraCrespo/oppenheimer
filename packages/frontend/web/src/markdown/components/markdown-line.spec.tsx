@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MarkdownLine } from './markdown-line';
+import { MarkdownLine } from './markdown';
 
 /**
  * A bot's last message previews in the sidebar as words, not as markdown. The
