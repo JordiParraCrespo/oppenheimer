@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { hintSchema } from './hint.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -60,6 +61,11 @@ export const RUNNER_CAPABILITIES = [
   'session.folder',
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
   'fs.list',
+  /**
+   * Sends `attachment.chat` beside a Claude Code session's PTY frames: the
+   * agent's own transcript, compacted, for the console's chat view (0.7).
+   */
+  'attachment.chat',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -785,6 +791,31 @@ export const attachmentPathSchema = z.object({
 
 export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
 
+/* ------------------------------------------------------------------ the chat view (0.7) */
+
+/**
+ * Entries of a session's agent transcript, for the chat view beside the
+ * terminal (`product/next-steps/0.7-terminal-and-chat.md`). The agent still
+ * runs in tmux, unmodified, and the terminal is still its interface: this is a
+ * second reading of the same conversation, from the file the CLI writes, not a
+ * way of driving it.
+ *
+ * Each entry is one transcript line, compacted on the host and kept as the
+ * JSON string it is, because the transcript's shape is the CLI's and changes
+ * with its versions: the console reads it, the link only carries it. The
+ * first message for an attachment carries `reset` and the history so far;
+ * later ones carry what was appended since. Sent only by a runner that named
+ * `attachment.chat`, and only while the attachment is open.
+ */
+export const attachmentChatSchema = z.object({
+  type: z.literal('attachment.chat'),
+  attachmentId: attachmentIdSchema,
+  reset: z.boolean().optional(),
+  entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
+});
+
+export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
+
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -827,6 +858,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,
   attachmentPathSchema,
+  attachmentChatSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

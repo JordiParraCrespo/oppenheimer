@@ -61,7 +61,7 @@ function HostLinkChrome({
         {offerFix && open ? (
           <div
             data-slot="host-link-drawer"
-            className="absolute inset-x-0 bottom-7 z-5 flex flex-col gap-3.5 border-t border-term-border bg-term-bg px-5 pt-4 pb-[18px] font-sans text-term-fg motion-safe:animate-appear-fast"
+            className="absolute inset-x-0 bottom-8 z-5 flex flex-col gap-3.5 border-t border-term-border bg-term-bg px-5 pt-4 pb-[18px] font-sans text-term-fg motion-safe:animate-appear-fast"
           >
             <p className="m-0 max-w-[62ch] text-[13.5px] leading-normal tracking-[-0.006em] text-pretty">
               {labels.fixIntro(host)}
@@ -107,7 +107,7 @@ function HostLinkChrome({
 
 type Away = 'offline' | 'catching-up' | 'reconnected';
 
-/** The status bar's place while the host is away: the same 28px, an amber wash, a status region. */
+/** The status bar's place while the host is away: the same 32px, an amber wash, a status region. */
 function Banner({
   link: { phase, host, labels, row },
   elapsed,
@@ -124,7 +124,7 @@ function Banner({
       role="status"
       data-slot="host-link-banner"
       data-phase={phase}
-      className="flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-term-border bg-[color-mix(in_srgb,var(--term-warning)_9%,var(--term-bg))] pr-1.5 pl-5 font-sans text-xs tracking-[-0.004em] text-term-fg"
+      className="flex h-8 shrink-0 items-center gap-2.5 overflow-hidden border-t border-term-border bg-[color-mix(in_srgb,var(--term-warning)_9%,var(--term-bg))] pr-1.5 pl-5 font-sans text-xs tracking-[-0.004em] text-term-fg"
     >
       <LinkDot state={row.link} />
       {/* The title gives way before the time and the fix do: a long host
@@ -157,7 +157,7 @@ function Notice({
   return (
     <div
       data-slot="host-link-notice"
-      className="pointer-events-none absolute inset-x-0 top-0 bottom-7 z-5 flex items-center justify-center p-4"
+      className="pointer-events-none absolute inset-x-0 top-0 bottom-8 z-5 flex items-center justify-center p-4"
     >
       <div
         role="status"

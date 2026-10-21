@@ -105,6 +105,26 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
+   * The chat view of a Claude Code session
+   * (`product/next-steps/0.7-terminal-and-chat.md`): beside the terminal, the
+   * conversation read off the agent's own transcript, which the host follows
+   * while the terminal is attached, drawn as prompts, replies and tool cards.
+   * The agent still runs in its terminal; typing in the chat types into it.
+   * A proof of concept, so off by default; bucketed by person, since the view
+   * is a reader's choice.
+   */
+  session_chat_view: {
+    description:
+      "Offer a chat view of a Claude Code session beside its terminal, read off the agent's transcript.",
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: false,
+    client: true,
+    bucketBy: 'user',
+    expiresAt: '2027-04-30',
+  },
+  /**
    * Dictation in the console (`product/next-steps/voice.md`): the composer's
    * mic records, the API transcribes on the workspace's ChatGPT sign-in or
    * the deployment's speech key, and the text lands in the field to read

@@ -908,6 +908,96 @@
     },
     "screen": {
       "loadFailed": "No se ha podido actualizar esta sesión."
+    },
+    "chat": {
+      "view": {
+        "label": "Cómo leer esta sesión",
+        "terminal": "Terminal",
+        "chat": "Chat"
+      },
+      "empty": {
+        "title": "Todavía no se ha dicho nada",
+        "description": "Lo que Claude dice y hace aparece aquí mientras trabaja."
+      },
+      "composer": {
+        "placeholder": "Escribe a Claude",
+        "send": "Enviar",
+        "stop": "Detener",
+        "agent": "Claude Code"
+      },
+      "turn": {
+        "working": "Trabajando desde hace",
+        "worked": "Trabajó",
+        "stopped": "Detenido",
+        "interrupted": "Interrumpido"
+      },
+      "thinking": "Pensando",
+      "plan": "Plan",
+      "latest": "Ir a lo último",
+      "truncated": "recortado en el host",
+      "failedCall": "falló",
+      "failed_one": "{{count}} falló",
+      "failed_other": "{{count}} fallaron",
+      "files_one": "{{count}} archivo adjunto",
+      "files_other": "{{count}} archivos adjuntos",
+      "tasks_one": "{{done}} de {{count}} tarea hecha",
+      "tasks_other": "{{done}} de {{count}} tareas hechas",
+      "notice": {
+        "interrupted": "Detuviste este turno",
+        "compacted": "Contexto compactado"
+      },
+      "verb": {
+        "command": "Ejecutó",
+        "read": "Leyó",
+        "edit": "Editó",
+        "write": "Escribió",
+        "search": "Buscó",
+        "web": "Consultó",
+        "todo": "Actualizó tareas",
+        "agent": "Lanzó un subagente",
+        "plan": "Propuso un plan",
+        "question": "Preguntó",
+        "mcp": "Llamó",
+        "other": "Usó"
+      },
+      "summary": {
+        "read_one": "leyó {{count}} archivo",
+        "read_other": "leyó {{count}} archivos",
+        "search_one": "buscó {{count}} patrón",
+        "search_other": "buscó {{count}} patrones",
+        "web_one": "consultó {{count}} página",
+        "web_other": "consultó {{count}} páginas",
+        "edit_one": "editó {{count}} archivo",
+        "edit_other": "editó {{count}} archivos",
+        "write_one": "escribió {{count}} archivo",
+        "write_other": "escribió {{count}} archivos",
+        "command_one": "ejecutó {{count}} comando",
+        "command_other": "ejecutó {{count}} comandos",
+        "agent_one": "lanzó {{count}} subagente",
+        "agent_other": "lanzó {{count}} subagentes",
+        "mcp_one": "llamó {{count}} herramienta",
+        "mcp_other": "llamó {{count}} herramientas",
+        "question_one": "hizo {{count}} pregunta",
+        "question_other": "hizo {{count}} preguntas",
+        "other_one": "usó {{count}} herramienta",
+        "other_other": "usó {{count}} herramientas"
+      },
+      "verbLive": {
+        "command": "Ejecutando",
+        "read": "Leyendo",
+        "edit": "Editando",
+        "write": "Escribiendo",
+        "search": "Buscando",
+        "web": "Consultando",
+        "agent": "Lanzando un subagente",
+        "question": "Preguntando",
+        "mcp": "Llamando",
+        "other": "Usando"
+      },
+      "thought": "Pensó",
+      "thoughtFor": "Pensó {{seconds}} s",
+      "changes_one": "{{count}} archivo cambiado",
+      "changes_other": "{{count}} archivos cambiados"
     }
   },
   "bots": {

@@ -630,3 +630,10 @@ earlier note:
   owner asked for every session to start pre-trusted: the runner marks
   the folder before every launch and restart, whatever the permission
   (02, "Every launch starts in a trusted folder").
+- The MVP decided "the session view stays a terminal; the Agent SDK stays
+  out". On 2026-10-21 a proof of concept added a chat view beside it,
+  behind `session_chat_view`: the terminal is still the session view and
+  the agent still runs unmodified in tmux, and the chat is read off the
+  agent's own transcript, which the runner follows while a browser is
+  attached; nothing drives the agent but the PTY
+  (`next-steps/0.7-terminal-and-chat.md`, "Proof of concept").

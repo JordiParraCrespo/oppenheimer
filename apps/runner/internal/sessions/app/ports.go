@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -184,8 +185,10 @@ type Publisher interface {
 }
 
 // Transcripts reads what an agent's own transcript says, on this host. The
-// transcript is the CLI's and never leaves the host; only the first message
-// does, at most domain.FirstPromptMaxBytes of it.
+// transcript is the CLI's. Two things leave the host from it: the first
+// message, at most domain.FirstPromptMaxBytes of it, and, while a browser is
+// attached to the session, its entries compacted for the chat view (0.7) —
+// what the same browser's terminal already shows.
 type Transcripts interface {
 	// FirstPrompt is the first message a person sent the agent in the
 	// conversation it was launched under, or "" while there is none yet, for
@@ -193,7 +196,23 @@ type Transcripts interface {
 	// transcript cannot be read at all. It is asked again on the next poll,
 	// so a failure is only a later name.
 	FirstPrompt(agent domain.Agent, conversation string) string
+	// Follow sends the conversation's entries to emit, the history first
+	// under Reset and then each one the agent appends, until ctx ends. An
+	// entry over entryMax bytes is left out and a batch holds at most
+	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
+	// runner cannot read the agent's transcript.
+	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
 }
+
+// ChatBatch is a run of transcript entries for the chat view, each one the
+// JSON of one compacted transcript line. Reset starts the history over.
+type ChatBatch struct {
+	Reset   bool
+	Entries []string
+}
+
+// ErrNoChat is a session whose agent's transcript this runner cannot follow.
+var ErrNoChat = errors.New("no chat for this agent")
 
 // NopPublisher drops events: the service's publisher until the link is set.
 type NopPublisher struct{}

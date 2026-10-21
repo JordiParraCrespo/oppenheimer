@@ -44,6 +44,7 @@ function ChatComposer({
   inputRef,
   dictation,
   labels,
+  layout = 'stacked',
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -66,6 +67,14 @@ function ChatComposer({
   dictation?: DictationSlot;
   /** The send button's accessible names; any left out stay in English. */
   labels?: Partial<ChatComposerLabels>;
+  /**
+   * `stacked` (a bot's chat): the field opens at two lines over a foot row
+   * holding `tools`, `engine` and send. `inline` (a session read as a chat):
+   * one row, the field opening at one line with send at its end, and `tools`
+   * and `engine` as a quiet line under the box, so it does not crowd the
+   * conversation above it.
+   */
+  layout?: 'stacked' | 'inline';
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
   const { blocked, canSend, submit, onKeyDown } = useComposerSend({
@@ -77,61 +86,96 @@ function ChatComposer({
     onStop,
   });
 
+  const inline = layout === 'inline';
+  const field = (
+    <textarea
+      ref={inputRef}
+      data-slot="chat-composer-input"
+      value={value}
+      onChange={(event) => onValueChange(event.target.value)}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      disabled={disabled}
+      rows={inline ? 1 : 2}
+      // Grows with what is written, from its opening lines (`min-h`, since
+      // `field-sizing-content` overrides `rows`) to eight, then scrolls.
+      className={cn(
+        'field-sizing-content max-h-52 w-full resize-none bg-transparent text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+        inline ? 'min-h-11 flex-1 py-2.5 pl-4.5' : 'min-h-18 px-5 pt-4 pb-2',
+      )}
+    />
+  );
+  const send = (
+    <>
+      {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
+      <ComposerSendButton
+        busy={busy}
+        blocked={blocked}
+        canSend={canSend}
+        sendBlockedReason={sendBlockedReason}
+        labels={label}
+        onClick={submit}
+        className={cn(
+          inline ? 'ml-1 size-8' : 'ml-1 size-8.5',
+          busy && 'bg-fg text-background hover:bg-fg hover:text-background',
+        )}
+      >
+        {busy ? (
+          <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
+        ) : (
+          <ArrowUpIcon className="size-4" strokeWidth={2.2} />
+        )}
+      </ComposerSendButton>
+    </>
+  );
+  const recorder = dictation?.recorder ? (
+    // The bar is 12px taller than the foot row it replaces; it takes
+    // that from the field's bottom padding, so the box keeps its height.
+    <div data-slot="chat-composer-recorder" className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}>
+      {dictation.recorder}
+    </div>
+  ) : null;
+
   const box = (
     <ComposerFrame above={above}>
       <div
         data-slot="chat-composer"
+        data-layout={layout}
         data-disabled={disabled || undefined}
         data-above={above ? '' : undefined}
         className={cn(
-          'flex flex-col rounded-xl border border-transparent bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+          'flex rounded-xl border border-border-subtle bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+          inline ? 'items-end' : 'flex-col',
+          // Inline, the recorder bar is the box while it listens: one edge, not two.
+          inline && recorder && 'border-transparent bg-transparent',
           className,
         )}
         {...props}
       >
-        <textarea
-          ref={inputRef}
-          data-slot="chat-composer-input"
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={2}
-          // Grows with what is written, from two lines (`min-h`, since
-          // `field-sizing-content` overrides `rows`) to eight, then scrolls.
-          className="field-sizing-content max-h-52 min-h-18 w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder"
-        />
-        {dictation?.recorder ? (
-          // The bar is 12px taller than the foot row it replaces; it takes
-          // that from the field's bottom padding, so the box keeps its height.
-          <div data-slot="chat-composer-recorder" className="-mt-3 px-3 pb-3">
-            {dictation.recorder}
-          </div>
+        {inline ? (
+          (recorder ?? (
+            <>
+              {field}
+              <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
+            </>
+          ))
         ) : (
-          <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools} engine={engine}>
-            {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
-            <ComposerSendButton
-              busy={busy}
-              blocked={blocked}
-              canSend={canSend}
-              sendBlockedReason={sendBlockedReason}
-              labels={label}
-              onClick={submit}
-              className={cn(
-                'ml-1 size-8.5',
-                busy && 'bg-fg text-background hover:bg-fg hover:text-background',
-              )}
-            >
-              {busy ? (
-                <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
-              ) : (
-                <ArrowUpIcon className="size-4" strokeWidth={2.2} />
-              )}
-            </ComposerSendButton>
-          </ComposerFoot>
+          <>
+            {field}
+            {recorder ?? (
+              <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools} engine={engine}>
+                {send}
+              </ComposerFoot>
+            )}
+          </>
         )}
       </div>
+      {inline && (tools || engine) ? (
+        <div data-slot="chat-composer-meta" className="flex min-h-7 items-center gap-3 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
+          {tools}
+          <span className="ml-auto flex items-center gap-2">{engine}</span>
+        </div>
+      ) : null}
     </ComposerFrame>
   );
   if (!dictation?.notice) return box;
