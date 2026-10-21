@@ -132,7 +132,14 @@ export {
   TranscriptDivider,
 } from './components/chat-status';
 export type { TraceOutputLabels } from './components/chat-trace';
-export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from './components/chat-trace';
+export {
+  Trace,
+  TraceGroup,
+  TraceLive,
+  TraceNote,
+  TraceOutput,
+  TraceStep,
+} from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
@@ -289,7 +296,7 @@ export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
-export { HostCard } from './components/host-card';
+export { HostCard, HostCardSkeleton } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
 export { HostLinkChrome } from './components/host-link';
 export type { IconButtonProps } from './components/icon-button';
@@ -362,7 +369,7 @@ export {
   PullRequestTableHead,
 } from './components/pull-request-table';
 export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
-export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {

@@ -78,7 +78,7 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
-import { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
+import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
 import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
@@ -245,7 +245,35 @@ function ChatWorkBody() {
         <TraceStep icon={<TerminalIcon />} title="Ran pnpm test runner" meta="40 passed">
           <TraceOutput>{'PASS  runner/step.test.ts\n\nTests: 40 passed, 40 total'}</TraceOutput>
         </TraceStep>
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
       </Trace>
+      <TraceGroup summary="Used 4 tools" failed="1 failed" defaultOpen>
+        <TraceStep icon={<TerminalIcon />} title="List pull requests" target="mine">
+          <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
+        </TraceStep>
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="412" />
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="409" meta="failed" tone="danger" />
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session"
+          target="build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
+      </TraceGroup>
       <TraceLive elapsed="12s">Searching run.status</TraceLive>
     </div>
   );
@@ -489,6 +517,17 @@ function ChatStatusBody() {
           <a href="#chatstatus" className="text-operate text-link">
             Continued from chat
           </a>
+        </TranscriptDivider>
+        <TranscriptDivider
+          icon={<CheckCircleIcon />}
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        >
+          You approved: Start Claude Code on build-02
         </TranscriptDivider>
       </div>
       <ChatErrorBanner
@@ -990,7 +1029,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
@@ -1020,7 +1059,7 @@ export function ChatSection() {
         id="chatstatus"
         title="Dividers and status"
         meta="chat-status.tsx"
-        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes. ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
+        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes; its action is a control after the label (Open session after an approval that started one). ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
         code={`<ChatErrorBanner title="Turn failed" actions={<ChatErrorAction variant="danger">Continue task</ChatErrorAction>} onDismiss={…}>{error}</ChatErrorBanner>`}
       >
         <ChatStatusDemo />

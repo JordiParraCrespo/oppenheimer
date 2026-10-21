@@ -5827,6 +5827,64 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/wipe": {
+      "post": {
+        "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
+        "operationId": "wipeHost",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired, its runner told to clean up"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host and clean its machine up",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/hosts/{id}/update": {
       "post": {
         "description": "Asks the host's runner to install the newest signed release on its channel now. Accepted is not done: the runner verifies the release itself, restarts on it, and reports the new version when it reconnects. A runner already current, or pinned, stays as it is.",
@@ -8149,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
@@ -8307,7 +8375,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "description": "PROJECTS_009 — The name is the Unassigned project’s, in some locale\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10499,6 +10567,55 @@
         "tags": ["Automations"]
       }
     },
+    "/api/v1/automations/routines": {
+      "get": {
+        "description": "Every bot’s routines, oldest first, each with its bot, its triggers, whether it is on or running now, its next run and its latest run. Session automations are `GET /automations`; one bot’s routines are `GET /bots/{id}/routines`.",
+        "operationId": "findRoutines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BotRoutineResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s bot routines",
+        "tags": ["Automations"]
+      }
+    },
     "/api/v1/automations/trigger-preview": {
       "post": {
         "description": "“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.",
@@ -11393,6 +11510,287 @@
         ],
         "summary": "Set the workspace’s automation limits",
         "tags": ["Automations"]
+      }
+    },
+    "/api/v1/bots/{id}/routines": {
+      "get": {
+        "description": "The routines the bot runs on its own, oldest first, each with its triggers, whether it is on or running now, its next run and its latest run. A bot makes and changes them in chat; this is what its Routines tab reads.",
+        "operationId": "findBotRoutines",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BotRoutineResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a bot’s routines",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/routines/{routineId}": {
+      "patch": {
+        "description": "The Routines tab’s switch: off pauses its triggers, on resumes them from now. What a routine does is changed in the bot’s chat, through its own tool.",
+        "operationId": "updateBotRoutine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBotRoutineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn a bot’s routine on or off",
+        "tags": ["Bots"]
+      },
+      "delete": {
+        "description": "Its triggers stop now and it runs no more. Its past runs are kept.",
+        "operationId": "deleteBotRoutine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a bot’s routine",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/routines/{routineId}/run": {
+      "post": {
+        "description": "Queues one run, paused or not: a turn of the bot opened by the routine, as its owner. The routine reads running until that turn ends.",
+        "operationId": "runBotRoutine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retried Run now is the same run.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run a bot’s routine now",
+        "tags": ["Bots"]
       }
     },
     "/api/v1/events": {
@@ -16426,6 +16824,84 @@
           }
         ],
         "summary": "Forget the workspace's key for a model provider",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/model-providers/{provider}/default": {
+      "put": {
+        "description": "Only a provider the workspace has a key for. Bots already made keep their provider; a bot created naming none starts on this one, at its default model.",
+        "operationId": "setDefaultModelProvider",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "BOTS_002 — Bots belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_023 — That model provider has no key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a model provider the one new bots start on",
         "tags": ["Bots"]
       }
     },
@@ -21560,6 +22036,37 @@
           "branch"
         ]
       },
+      "SessionCloseRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the close was asked for."
+          },
+          "acceptUnpushedWork": {
+            "type": "boolean",
+            "description": "Whether the close may remove a worktree with unpushed work."
+          }
+        },
+        "required": ["requestedAt", "acceptUnpushedWork"]
+      },
+      "SessionCloseRefusalResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The runner’s catalog code, e.g. `GIT_003` for a branch that could not be pushed.",
+            "example": "GIT_003"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Git’s or the runner’s own words, verbatim.",
+            "nullable": true
+          }
+        },
+        "required": ["code"]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -21662,6 +22169,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "closeRequest": {
+            "nullable": true,
+            "description": "A close owed to the host and not yet answered. Null when none is.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRequestResponseDto"
+              }
+            ]
+          },
+          "closeRefusal": {
+            "nullable": true,
+            "description": "Why the host refused the last close. Null when it did not, or it was asked again.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionCloseRefusalResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "format": "date-time",
@@ -22497,7 +23024,14 @@
           },
           "pausedReason": {
             "type": "string",
-            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access", null],
+            "enum": [
+              "user",
+              "project_archived",
+              "host_unpaired",
+              "owner_lost_access",
+              "bot_provider_missing",
+              null
+            ],
             "nullable": true
           },
           "nextRunAt": {
@@ -22561,6 +23095,85 @@
           "version",
           "runCount",
           "lastRuns",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BotRoutineResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that runs it."
+          },
+          "name": {
+            "type": "string",
+            "example": "Morning PR digest"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "What the bot is told each time it runs."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "running"],
+            "description": "`running` while a run is queued or its turn runs, else `active` or `paused`."
+          },
+          "pausedReason": {
+            "type": "string",
+            "enum": [
+              "user",
+              "project_archived",
+              "host_unpaired",
+              "owner_lost_access",
+              "bot_provider_missing",
+              null
+            ],
+            "nullable": true
+          },
+          "nextRunAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "The earliest next slot of its schedules. Null when paused or event-only."
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationTriggerResponseDto"
+            }
+          },
+          "lastRun": {
+            "nullable": true,
+            "description": "Its latest run over the listed window; null when it has none.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "name",
+          "prompt",
+          "status",
+          "triggers",
           "createdAt",
           "updatedAt"
         ]
@@ -23215,7 +23828,9 @@
           },
           "projectId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which belongs to no project."
           },
           "status": {
             "type": "string",
@@ -23267,7 +23882,9 @@
             "type": "number"
           },
           "agent": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a bot routine’s run: the bot’s own provider runs it."
           },
           "model": {
             "type": "string",
@@ -23275,7 +23892,9 @@
           },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null for a bot routine’s run, which starts no session."
           },
           "createdAt": {
             "format": "date-time",
@@ -23518,6 +24137,15 @@
             "nullable": true
           }
         }
+      },
+      "UpdateBotRoutineRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["enabled"]
       },
       "TaskSessionLinkResponseDto": {
         "type": "object",
@@ -24184,6 +24812,11 @@
             "type": "string",
             "nullable": true,
             "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "meetingUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one."
           }
         },
         "required": ["id", "source", "title", "notes", "date", "allDay", "busy"]
@@ -24371,6 +25004,11 @@
             "type": "string",
             "nullable": true,
             "description": "Where a Google event opens in Google Calendar; null for a personal one."
+          },
+          "meetingUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one."
           },
           "connectionId": {
             "type": "string",
@@ -25122,6 +25760,10 @@
           "baseRef": {
             "type": "string"
           },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit this read saw. A merge that names it is refused once newer commits land."
+          },
           "fromFork": {
             "type": "boolean",
             "description": "Whether the head branch is in another repository (a fork), which a session cannot check out yet."
@@ -25183,6 +25825,7 @@
           "htmlUrl",
           "body",
           "baseRef",
+          "headSha",
           "fromFork",
           "state",
           "changedFiles",
@@ -25849,9 +26492,13 @@
             "type": "string",
             "nullable": true,
             "format": "date-time"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is."
           }
         },
-        "required": ["provider", "configured", "keyHint", "updatedAt"]
+        "required": ["provider", "configured", "keyHint", "updatedAt", "isDefault"]
       },
       "PutModelProviderCredentialRequest": {
         "type": "object",
@@ -25912,6 +26559,116 @@
         },
         "required": ["status"]
       },
+      "BotApprovalEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["approval"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["approved", "denied", "failed"]
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool the decided call was for."
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card's line: what the call does, in words."
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the approved call started; null when it started none."
+          }
+        },
+        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
+      },
+      "BotRoutineEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["routine"]
+          },
+          "activity": {
+            "type": "string",
+            "enum": ["saved", "changed", "paused", "resumed", "deleted", "ran", "failed"]
+          },
+          "automationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The routine."
+          },
+          "runId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The run, for an activity that has one (`ran`, `failed`)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name at the time."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`."
+          }
+        },
+        "required": ["kind", "activity", "automationId", "runId", "name", "reason"]
+      },
+      "BotPeerMessageEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_message"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The sending bot's name when it sent it."
+          },
+          "expectsReply": {
+            "type": "boolean",
+            "description": "Sent with ask_bot, so this bot answers it."
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "expectsReply"]
+      },
+      "BotPeerReplyEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["bot_reply"]
+          },
+          "fromBotId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that answered; null once that bot is deleted."
+          },
+          "fromBotName": {
+            "type": "string",
+            "description": "The answering bot's name when it answered."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["answered", "failed", "cancelled"]
+          }
+        },
+        "required": ["kind", "fromBotId", "fromBotName", "outcome"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -25933,31 +26690,15 @@
           },
           "isError": {
             "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the call started (`start_session`); null for any other call."
           }
         },
-        "required": ["callId", "name", "input", "output", "isError"]
-      },
-      "BotMessageEventResponseDto": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["approval"]
-          },
-          "outcome": {
-            "type": "string",
-            "enum": ["approved", "denied", "failed"]
-          },
-          "tool": {
-            "type": "string",
-            "description": "The tool the decided call was for."
-          },
-          "summary": {
-            "type": "string",
-            "description": "The card's line: what the call does, in words."
-          }
-        },
-        "required": ["kind", "outcome", "tool", "summary"]
+        "required": ["callId", "name", "input", "output", "isError", "sessionId"]
       },
       "BotMessageResponseDto": {
         "type": "object",
@@ -25968,7 +26709,9 @@
           },
           "turnId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true,
+            "description": "The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed)."
           },
           "role": {
             "type": "string",
@@ -25985,14 +26728,23 @@
             }
           },
           "event": {
-            "nullable": true,
-            "description": "What an event says happened; null on every other role.",
             "type": "object",
-            "allOf": [
+            "oneOf": [
               {
-                "$ref": "#/components/schemas/BotMessageEventResponseDto"
+                "$ref": "#/components/schemas/BotApprovalEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotRoutineEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerMessageEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPeerReplyEventResponseDto"
               }
-            ]
+            ],
+            "nullable": true,
+            "description": "What an event says happened, by `kind`; null on every other role."
           },
           "createdAt": {
             "type": "string",

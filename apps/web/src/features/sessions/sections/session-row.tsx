@@ -11,6 +11,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { useSessionPin } from '../hooks/use-session-pins';
 import { sessionGlyph } from '../lib/session-glyph';
 import { projectsForMove } from '../lib/session-groups';
 
@@ -19,7 +20,9 @@ import { projectsForMove } from '../lib/session-groups';
  * because it is organised by what needs you, not what a process is doing
  * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
  * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
- * that is the **lifecycle**, and {@link dotFor} combines the two.
+ * that is the **lifecycle**, and {@link dotFor} combines the two. A delete its
+ * host has not carried out pulses the same way, and one its host refused is
+ * red: both say so in the row's status word, since the row is not what it was.
  */
 const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
   working: 'running',
@@ -31,7 +34,8 @@ const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'com
 };
 
 function dotFor(session: SessionEntity) {
-  return session.isProvisioning ? 'pending' : DOT[session.state];
+  if (session.closeRefusal) return 'failed';
+  return session.isProvisioning || session.isClosing ? 'pending' : DOT[session.state];
 }
 
 /**
@@ -43,9 +47,10 @@ function dotFor(session: SessionEntity) {
  * and move writes), so one row's keystroke redraws no other row. What it cannot
  * own goes up as one call each: the delete and share dialogs, which must outlive the row,
  * and a failed write, which the sidebar shows because a menu closes on its pick
- * and the row has no room. It subscribes to one boolean for being the open
- * session, not the route, so a navigation re-renders only the two rows whose
- * highlight moved; `now` is its group's one-minute clock. The row drags, up
+ * and the row has no room. Its pin is the sidebar's (`SessionPinsContext`),
+ * which draws a pinned row under Pinned. It subscribes to one boolean for being
+ * the open session, not the route, so a navigation re-renders only the two rows
+ * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
  * or down its project or into another; the sidebar keeps where it lands.
  */
 export function SessionRow({
@@ -70,6 +75,7 @@ export function SessionRow({
     select: (state) => state.location.pathname === `/sessions/${session.id}`,
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const pin = useSessionPin(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
   // that needs them, it is drawn only while the menu is up (and opening it
@@ -99,6 +105,17 @@ export function SessionRow({
   });
   const age = compactAge(session.createdAt, now);
   const glyph = sessionGlyph(session);
+  // A deleted row back in the list is never back as it was (`useCloseSession`).
+  const status = session.closeRefusal
+    ? t('sessions.sidebar.notDeleted')
+    : session.isClosing
+      ? t('sessions.sidebar.deleting')
+      : undefined;
+  const statusHint = session.closeRefusal
+    ? t('sessions.sidebar.notDeletedHint')
+    : session.isClosing
+      ? t('sessions.sidebar.deletingHint')
+      : undefined;
 
   function commitRename() {
     const name = draft?.trim();
@@ -123,6 +140,8 @@ export function SessionRow({
       disabled={dragDisabled}
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
+      status={status}
+      title={statusHint}
       state={dotFor(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
@@ -134,6 +153,8 @@ export function SessionRow({
         <SessionRowMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          pinned={pin.pinned}
+          onPinChange={pin.setPinned}
           onRename={() => setDraft(session.name)}
           onMove={(projectId) => move.mutate({ id: session.id, projectId })}
           onShare={() => onShare(session)}

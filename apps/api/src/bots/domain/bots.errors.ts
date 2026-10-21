@@ -129,4 +129,10 @@ export const BotErrors = {
     message: 'The bot has a turn queued or running',
     httpStatus: 409,
   },
+  /** Only a provider the workspace has a key for can be the one new bots start on. */
+  DEFAULT_PROVIDER_KEY_MISSING: {
+    code: 'BOTS_023',
+    message: 'That model provider has no key',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

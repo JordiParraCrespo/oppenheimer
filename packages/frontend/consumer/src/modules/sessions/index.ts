@@ -5,6 +5,8 @@ export {
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,
+  type SessionCloseRefusal,
+  type SessionCloseRequest,
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,

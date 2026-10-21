@@ -1,11 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_REPLY_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
+  type BotMessageEvent,
+  type BotMessageRole,
+} from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
-import { BotMessageResponseDto } from './dtos/bot-message.response.dto';
+import {
+  BotApprovalEventResponseDto,
+  type BotMessageEventResponseDto,
+  BotMessageResponseDto,
+  BotPeerMessageEventResponseDto,
+  BotPeerReplyEventResponseDto,
+  BotRoutineEventResponseDto,
+} from './dtos/bot-message.response.dto';
 
 @Injectable()
 export class BotMessageMapper
@@ -25,6 +38,7 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -61,13 +75,17 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
     }));
-    dto.event = entity.event ? { ...entity.event } : null;
+    dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
 
-  /** A stored message as the summary weighs it, with whether its turn (in `turnStatus`) has ended. */
+  /**
+   * A stored message as the summary weighs it, with whether its turn (in
+   * `turnStatus`) has ended; a line outside any turn has none to wait for.
+   */
   toSummarizable(record: BotMessageOrmEntity, turnStatus: unknown): SummarizableMessage {
     const message = this.toDomain(record);
     return {
@@ -75,7 +93,8 @@ export class BotMessageMapper
       role: message.role,
       content: message.content,
       createdAt: message.createdAt,
-      turnEnded: ENDED_TURN_STATUSES.some((status) => status === turnStatus),
+      turnEnded:
+        message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
   }
 }
@@ -88,18 +107,67 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     input: raw.input ?? null,
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
+    sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
   };
+}
+
+/** An event as the response carries it: the kind it is, with that kind's fields only. */
+function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
+  switch (event.kind) {
+    case 'approval':
+      return Object.assign(new BotApprovalEventResponseDto(), event);
+    case 'routine':
+      return Object.assign(new BotRoutineEventResponseDto(), event);
+    case 'bot_message':
+      return Object.assign(new BotPeerMessageEventResponseDto(), event);
+    case 'bot_reply':
+      return Object.assign(new BotPeerReplyEventResponseDto(), event);
+  }
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
-  if (raw?.kind !== 'approval') return null;
-  const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
-  if (!outcome) return null;
-  return {
-    kind: 'approval',
-    outcome,
-    tool: String(raw.tool ?? ''),
-    summary: String(raw.summary ?? ''),
-  };
+  if (!raw) return null;
+  if (raw.kind === 'approval') {
+    const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'approval',
+      outcome,
+      tool: String(raw.tool ?? ''),
+      summary: String(raw.summary ?? ''),
+      sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    };
+  }
+  if (raw.kind === 'routine') {
+    const activity = BOT_ROUTINE_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.automationId !== 'string') return null;
+    return {
+      kind: 'routine',
+      activity,
+      automationId: raw.automationId,
+      runId: typeof raw.runId === 'string' ? raw.runId : null,
+      name: String(raw.name ?? ''),
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'bot_message') {
+    return {
+      kind: 'bot_message',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      expectsReply: raw.expectsReply === true,
+    };
+  }
+  if (raw.kind === 'bot_reply') {
+    const outcome = BOT_REPLY_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'bot_reply',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      outcome,
+    };
+  }
+  return null;
 }

@@ -4,25 +4,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
 /**
- * A decided approval's trace line. What breaks this: the line read from the
- * event's words (which are the bot's, in English, and may change), so a
- * denial draws as an approval or a translated line never appears.
+ * A decided approval's trace line, a routine's, and another bot's message
+ * or answer as a card naming the bot Oppenheimer recorded. What breaks this:
+ * the line read from the event's words (which are the bot's, in English, and
+ * may change), so a denial draws as an approval, a routine as an approval, or
+ * a translated line never appears; or a bot's message drawn as a trace line
+ * that hides what it said.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, values?: { summary?: string }) => `${key}|${values?.summary ?? ''}`,
+    t: (key: string, values?: { summary?: string; name?: string; reason?: string }) =>
+      [key, values?.summary ?? values?.name ?? '', values?.reason].filter(Boolean).join('|'),
   }),
+  Trans: ({ i18nKey, values }: { i18nKey: string; values?: { name?: string } }) =>
+    `${i18nKey}|${values?.name ?? ''}`,
 }));
 
 afterEach(cleanup);
 
-const event = (outcome: 'approved' | 'denied' | 'failed', content = 'Ana approved: x') =>
+const event = (
+  outcome: 'approved' | 'denied' | 'failed',
+  content = 'Ana approved: x',
+  sessionId: string | null = null,
+) =>
   ({
     id: 'e1',
     role: 'event',
     content,
-    event: { kind: 'approval', outcome, tool: 'start_session', summary: 'Start it' },
+    event: { kind: 'approval', outcome, tool: 'start_session', summary: 'Start it', sessionId },
   }) as unknown as BotMessageEntity;
 
 describe('BotEventLine', () => {
@@ -34,5 +44,112 @@ describe('BotEventLine', () => {
   it('draws a failed call apart from one that ran', () => {
     render(<BotEventLine message={event('failed')} />);
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
+  });
+
+  it('names the routine that woke the bot, not the words it was told', () => {
+    const message = {
+      id: 'e2',
+      role: 'event',
+      content: 'Your routine "Morning PR digest" is running now…',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: 'a-1',
+        runId: 'r-1',
+        name: 'Morning PR digest',
+        reason: null,
+      },
+    } as unknown as BotMessageEntity;
+    render(<BotEventLine message={message} />);
+    expect(screen.getByText('bots.chat.event.routine|Morning PR digest')).toBeTruthy();
+  });
+
+  const routine = (activity: string, reason: string | null) =>
+    ({
+      id: 'e3',
+      turnId: null,
+      role: 'event',
+      content: 'Your routine "Morning PR digest" was paused.',
+      event: {
+        kind: 'routine',
+        activity,
+        automationId: 'a-1',
+        runId: null,
+        name: 'Morning PR digest',
+        reason,
+      },
+    }) as unknown as BotMessageEntity;
+
+  // What breaks this: a pause the owner made drawn as an alarm, or a pause
+  // the owner must fix, or a run that never happened, drawn as a quiet line.
+  it('draws what the owner did as a line, and what needs them as a notice that says why', () => {
+    render(<BotEventLine message={routine('paused', 'user')} action={<a href="/x">open</a>} />);
+    expect(screen.getByText('bots.chat.event.routinePaused|Morning PR digest')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('open')).toBeNull();
+    cleanup();
+
+    render(
+      <BotEventLine
+        message={routine('paused', 'bot_provider_missing')}
+        action={<a href="/x">open</a>}
+      />,
+    );
+    expect(screen.getByRole('status').getAttribute('data-tone')).toBe('warning');
+    expect(
+      screen.getByText(
+        'bots.chat.event.routinePausedBecause|Morning PR digest|bots.chat.routineReason.bot_provider_missing',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText('open')).toBeTruthy();
+    cleanup();
+
+    render(<BotEventLine message={routine('failed', 'something-new')} />);
+    expect(screen.getByRole('status').getAttribute('data-tone')).toBe('danger');
+    expect(
+      screen.getByText(
+        'bots.chat.event.routineFailed|Morning PR digest|bots.chat.routineReason.unknown',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('links the session an approved call started, in a new tab', () => {
+    render(<BotEventLine message={event('approved', 'Ana approved: x', 's-1')} />);
+    const link = screen.getByRole('link', { name: /bots\.chat\.openSession/ });
+    expect(link.getAttribute('href')).toBe('/sessions/s-1');
+    expect(link.getAttribute('target')).toBe('_blank');
+  });
+
+  it('offers no link when the call started no session', () => {
+    render(<BotEventLine message={event('approved')} />);
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('draws another bot’s ask as a card naming the recorded sender, with what it asked', () => {
+    const asked = {
+      id: 'e2',
+      role: 'event',
+      content: 'Which task is PR 412?\nThanks.',
+      event: { kind: 'bot_message', fromBotId: 'b1', fromBotName: 'Ada', expectsReply: true },
+    } as unknown as BotMessageEntity;
+    const { container } = render(<BotEventLine message={asked} />);
+    expect(screen.getByText('bots.chat.event.peerAsk|Ada')).toBeTruthy();
+    expect(container.textContent).toContain('Which task is PR 412?\nThanks.');
+    expect(container.querySelector('[data-slot="bot-exchange"]')).toBeTruthy();
+  });
+
+  it('draws an answer by how it came back: replied, or could not answer', () => {
+    const reply = (outcome: 'answered' | 'failed') =>
+      ({
+        id: 'e3',
+        role: 'event',
+        content: 'Task 7.',
+        event: { kind: 'bot_reply', fromBotId: 'b2', fromBotName: 'Grace', outcome },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={reply('answered')} />);
+    expect(screen.getByText('bots.chat.event.peerAnswered|Grace')).toBeTruthy();
+    cleanup();
+    render(<BotEventLine message={reply('failed')} />);
+    expect(screen.getByText('bots.chat.event.peerFailed|Grace')).toBeTruthy();
   });
 });

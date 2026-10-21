@@ -242,6 +242,9 @@
     "newSessionHere": "New session in {{name}}",
     "projectSettings": "{{name}} settings",
     "unfiled": "Other sessions",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
     "actions": "Session actions",
     "rename": "Rename",
     "renameLabel": "Session name",
@@ -251,17 +254,23 @@
     "delete": "Delete",
     "writeFailed": "That change did not land. Try again.",
     "loadFailed": "Could not load your sessions.",
-    "share": "Share…"
+    "share": "Share…",
+    "deleting": "Deleting…",
+    "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
+    "notDeleted": "Not deleted",
+    "notDeletedHint": "Its host refused to delete it. Delete it again to see why."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
-    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote. Deleting stops if the session has work that is not pushed.",
     "confirm": "Delete session",
     "deleting": "Deleting…",
     "failed": "The session could not be deleted.",
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
-    "descriptionFolder": "Ends the terminal. The folder stays as it is."
+    "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+    "refused": "Its host did not delete it",
+    "refusedUnknown": "The host refused to remove the session."
   },
   "filters": {
     "label": "Filter sessions",

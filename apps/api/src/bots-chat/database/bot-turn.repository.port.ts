@@ -1,7 +1,15 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
+
+/** How queuing a turn another bot asked for went. */
+export type BotPeerEnqueueOutcome =
+  | { outcome: 'staged' | 'waiting' | 'missing' }
+  /** The chain's first turn is gone (its chat was cleared): nothing more is queued for it. */
+  | { outcome: 'chain_gone' }
+  | { outcome: 'refused'; refusal: string };
 
 export interface BotTurnRepositoryPort {
   /**
@@ -14,6 +22,43 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing'>;
+
+  /**
+   * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
+   * (a routine's run): a key already queued answers that turn instead, so a
+   * run dispatched twice queues one turn. With `busyPrefix`, a queued or
+   * running turn of the bot whose key begins with it, other than this one,
+   * answers `busy` and queues nothing. Both are read under the bot's lock, so
+   * two dispatches cannot both miss what the other queued.
+   */
+  enqueueOnce(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
+
+  /**
+   * `enqueue` for a turn another bot's call queues: under a lock on its
+   * chain's first turn, so two asks of one chain decide in turn, `decide`
+   * reads what the chain holds and the turn is queued only when it allows.
+   */
+  enqueueFromBot(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    decide: (state: BotChainState) => BotChainVerdict,
+  ): Promise<BotPeerEnqueueOutcome>;
+
+  /**
+   * `enqueue` for the answer to an ask. `duplicate`, and nothing written,
+   * when that ask's answer is already queued (`UQ_bot_turn_answers`).
+   */
+  enqueueAnswer(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+  ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'>;
 
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
@@ -33,9 +78,10 @@ export interface BotTurnRepositoryPort {
 
   /**
    * Stores how it ended, conditioned on the status it was loaded in, and
-   * stages the job of the bot's oldest queued turn, under the same lock on
+   * stages the job of the bot's next queued turn, under the same lock on
    * the bot `enqueue` takes, so a message sent meanwhile is never left
-   * queued with no job. Whether this write won.
+   * queued with no job; an ask also stages the job that queues its answer
+   * on the asker. Whether this write won.
    */
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean>;
 

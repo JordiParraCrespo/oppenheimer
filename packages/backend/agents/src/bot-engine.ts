@@ -7,6 +7,19 @@ export type BotProvider = 'anthropic' | 'glm' | 'openai' | 'chatgpt';
 /** How hard the model thinks. Each engine maps it to what its SDK takes. */
 export type BotEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
+/**
+ * What a call made, as data beside its words (the session it started): the
+ * model never reads it, and `tool.finished` hands it back to the caller.
+ */
+export type BotToolData = Readonly<Record<string, string>>;
+
+/** What one of our tools answers: the words the model reads, and what it made. */
+export interface BotEngineToolResult {
+  content: string;
+  isError?: boolean;
+  data?: BotToolData;
+}
+
 /** One tool the model may call during a turn, described by JSON Schema. */
 export interface BotEngineTool {
   /** snake_case; the name the model sees and every event carries. */
@@ -15,10 +28,7 @@ export interface BotEngineTool {
   /** JSON Schema of an object: the tool's input. */
   inputSchema: Record<string, unknown>;
   /** A throw is reported to the model as an error result; it never ends the turn. */
-  run(
-    input: unknown,
-    context: { signal: AbortSignal },
-  ): Promise<{ content: string; isError?: boolean }>;
+  run(input: unknown, context: { signal: AbortSignal }): Promise<BotEngineToolResult>;
 }
 
 export interface BotTurnRequest {
@@ -57,7 +67,15 @@ export type BotEngineEvent =
   | { type: 'text.delta'; text: string }
   | { type: 'text.done'; text: string }
   | { type: 'tool.started'; callId: string; name: string; input: unknown }
-  | { type: 'tool.finished'; callId: string; name: string; output: string; isError: boolean }
+  | {
+      type: 'tool.finished';
+      callId: string;
+      name: string;
+      output: string;
+      isError: boolean;
+      /** What one of our tools said the call made; absent for the engine's own tools. */
+      data?: BotToolData;
+    }
   | { type: 'usage'; inputTokens: number; outputTokens: number }
   | {
       type: 'done';

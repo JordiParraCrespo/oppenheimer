@@ -31,6 +31,12 @@ export interface BotToolCallContext {
   permission: BotPermission;
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+  /**
+   * The scopes of the credential the turn was sent with; null for a browser
+   * session. What a tool saves to act later (a routine) keeps them, so a
+   * token reaches no further through the bot than through a message.
+   */
+  credentialScopes: readonly Scope[] | null;
 }
 
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
@@ -45,6 +51,22 @@ export interface BotToolContext extends BotToolCallContext {
  */
 export interface ApprovedCallContext extends BotToolCallContext {
   approvalId: string;
+}
+
+/**
+ * A tool's answer with the session its call started, apart from its words:
+ * the chat links to the session from this, never from the words.
+ */
+export interface BotToolAnswer {
+  content: string;
+  sessionId: string;
+}
+
+/** What a call ended with: the words the model reads, and the session it started, if any. */
+export interface BotToolResult {
+  content: string;
+  isError: boolean;
+  sessionId?: string;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -96,14 +118,15 @@ export interface BotToolSpec<Input extends z.ZodType> {
     context: BotToolCallContext,
   ): Promise<z.output<Input>> | z.output<Input>;
   /**
-   * Answers labelled text, ids inline; a throw becomes an error result the
-   * model reads. `context.approvalId` is set when it carries out an approval.
+   * Answers labelled text, ids inline, or a `BotToolAnswer` when the call
+   * started a session; a throw becomes an error result the model reads.
+   * `context.approvalId` is set when it carries out an approval.
    */
   run(
     input: z.output<Input>,
     context: BotToolCallContext & { approvalId?: string },
     signal: AbortSignal,
-  ): Promise<string>;
+  ): Promise<string | BotToolAnswer>;
 }
 
 /** A declared tool, ready to be bound to a turn. */
@@ -122,7 +145,7 @@ export interface BotToolDefinition {
     input: Record<string, unknown>,
     context: ApprovedCallContext,
     signal: AbortSignal,
-  ): Promise<{ content: string; isError: boolean }>;
+  ): Promise<BotToolResult>;
 }
 
 /** What an area of the API offers bots: one class per area, each a list of tools. */
@@ -145,9 +168,15 @@ export function defineBotTool<Input extends z.ZodType>(
     input: z.output<Input>,
     context: BotToolCallContext & { approvalId?: string },
     signal: AbortSignal,
-  ) => {
+  ): Promise<BotToolResult> => {
     try {
-      return { content: fitToolOutput(await spec.run(input, context, signal)), isError: false };
+      const answer = await spec.run(input, context, signal);
+      if (typeof answer === 'string') return { content: fitToolOutput(answer), isError: false };
+      return {
+        content: fitToolOutput(answer.content),
+        isError: false,
+        sessionId: answer.sessionId,
+      };
     } catch (error) {
       return { content: describeToolFailure(error), isError: true };
     }
@@ -167,7 +196,8 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          return call(parsed.data, context, signal);
+          const { sessionId, ...result } = await call(parsed.data, context, signal);
+          return sessionId ? { ...result, data: { sessionId } } : result;
         },
       };
       return spec.asks && context.permission !== 'full' ? askingFirst(tool, spec, context) : tool;

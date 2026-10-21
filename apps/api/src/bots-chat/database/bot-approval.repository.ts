@@ -111,6 +111,7 @@ export class BotApprovalRepository
         .set({
           status: approval.status,
           result: approval.result,
+          sessionId: approval.sessionId,
           note: approval.note,
           decidedByUserId: approval.decidedByUserId,
           decidedWithScopes: approval.decidedWithScopes ? [...approval.decidedWithScopes] : null,

@@ -41,11 +41,20 @@ export function approvalEvent(approval: BotApprovalEntity, by: string): string {
   return `${who} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
 }
 
-/** What the chat draws for a decided approval, without reading the event's words. */
+/**
+ * What the chat draws for a decided approval, without reading the event's
+ * words: with the session the approved call started, so the line links to it.
+ */
 export function approvalEventOf(approval: BotApprovalEntity): BotMessageEvent {
   const outcome =
     approval.status === 'denied' ? 'denied' : approval.status === 'failed' ? 'failed' : 'approved';
-  return { kind: 'approval', outcome, tool: approval.tool, summary: approval.summary };
+  return {
+    kind: 'approval',
+    outcome,
+    tool: approval.tool,
+    summary: approval.summary,
+    sessionId: approval.sessionId,
+  };
 }
 
 /**
@@ -74,7 +83,7 @@ export function decisionTurn(
   approval: BotApprovalEntity,
   by: string,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
-  const turn = BotTurnEntity.queue(props);
+  const turn = BotTurnEntity.queue({ ...props, origin: 'approval' });
   const opening = BotMessageEntity.createNew({
     organizationId: props.organizationId,
     botId: props.botId,

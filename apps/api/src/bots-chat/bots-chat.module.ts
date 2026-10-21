@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
+import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
@@ -11,15 +12,20 @@ import { BotAutomationToolsFactory } from './application/bot-automation-tools.fa
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
+import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
+import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
+import { BotPullRequestToolsFactory } from './application/bot-pull-request-tools.factory';
+import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
@@ -42,10 +48,12 @@ import { ClearBotConversationCommandHandler } from './commands/clear-bot-convers
 import { ClearBotConversationHttpController } from './commands/clear-bot-conversation/clear-bot-conversation.http.controller';
 import { DecideBotApprovalCommandHandler } from './commands/decide-bot-approval/decide-bot-approval.command-handler';
 import { DecideBotApprovalHttpController } from './commands/decide-bot-approval/decide-bot-approval.http.controller';
+import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/deliver-bot-answer.command-handler';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
 import { SendBotMessageCommandHandler } from './commands/send-bot-message/send-bot-message.command-handler';
 import { SendBotMessageHttpController } from './commands/send-bot-message/send-bot-message.http.controller';
+import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-message/send-bot-peer-message.command-handler';
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
@@ -57,6 +65,7 @@ import { BotMessageRepository } from './database/bot-message.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
+import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
@@ -86,6 +95,8 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   SendBotMessageCommandHandler,
+  SendBotPeerMessageCommandHandler,
+  DeliverBotAnswerCommandHandler,
   CancelBotTurnCommandHandler,
   ClearBotConversationCommandHandler,
   RunBotTurnCommandHandler,
@@ -126,6 +137,9 @@ const queryHandlers: Provider[] = [
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
     BotsModule,
+    // A routine is an automation whose run is a turn of its bot: this module
+    // contributes that run target (`BotRoutineTarget`).
+    AutomationsModule,
     // A turn acts as the bot's owner, who must still be a member.
     OrganizationsModule,
   ],
@@ -143,16 +157,22 @@ const queryHandlers: Provider[] = [
     BotApprovalRequestFactory,
     BotApprovedCallResolver,
     BotOwnerScopeResolver,
+    BotOwnerPermissionsResolver,
     BotToolboxFactory,
     BotHostToolsFactory,
     BotSessionToolsFactory,
     BotSelfToolsFactory,
     BotPlanToolsFactory,
     BotGithubToolsFactory,
+    BotPullRequestToolsFactory,
+    BotIssueToolsFactory,
     BotAutomationToolsFactory,
+    BotRoutineToolsFactory,
     BotPeerToolsFactory,
     BotWebToolsFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
+    ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
+    BotRoutineActivityDomainEventHandler,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     BotApprovalsProcessor,

@@ -117,6 +117,8 @@ test.describe('Hosts', () => {
   });
 
   test('a machine pairs, appears online-aware, and unpairs itself', async () => {
+    // Registering waits out the pairing throttle when the suite has spent it.
+    test.slow();
     const { api, userId } = await signedUpContext('hostowner');
 
     const minted = await mintPairingToken(api, 'Pairing flow');
@@ -217,6 +219,8 @@ test.describe('Hosts', () => {
   });
 
   test('a host credential cannot reach a route meant for a person', async () => {
+    // Registering waits out the pairing throttle when the suite has spent it.
+    test.slow();
     const { api } = await signedUpContext('hostscope');
     const minted = await mintPairingToken(api);
     test.skip(minted.status === 503, 'this deployment has no runner release configured');
@@ -248,6 +252,8 @@ test.describe('Hosts', () => {
   });
 
   test('a made-up registration token is refused, and says no more than that', async () => {
+    // Registering waits out the pairing throttle when the suite has spent it.
+    test.slow();
     // Registration refuses an unconfigured deployment before it looks at a
     // token, so the guard is read from minting, as every other pairing test
     // here reads it (`GET /health/capabilities` reports the same `hosts`
@@ -286,6 +292,8 @@ test.describe('Hosts', () => {
   });
 
   test("a user cannot see another user's hosts", async () => {
+    // Registering waits out the pairing throttle when the suite has spent it.
+    test.slow();
     const { api: owner } = await signedUpContext('hostvictim');
     const minted = await mintPairingToken(owner, 'victim box');
     test.skip(minted.status === 503, 'this deployment has no runner release configured');

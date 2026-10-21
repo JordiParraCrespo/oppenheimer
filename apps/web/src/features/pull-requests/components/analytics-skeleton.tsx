@@ -1,4 +1,5 @@
 import { ChartHero, Panel, PanelGrid, Skeleton } from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DELTA_PLACEHOLDER, StatCardSkeleton } from './stat-card-skeleton';
 
@@ -47,9 +48,7 @@ export function AnalyticsSkeleton({ rangeWord }: { rangeWord: string }) {
   const vsPrevious = t('pullRequests.analytics.vsPrevious', { range: rangeWord });
   return (
     <div aria-busy className="contents">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
+      <LoadingStatus />
       <Panel>
         <div className="flex flex-wrap items-start gap-7">
           {(

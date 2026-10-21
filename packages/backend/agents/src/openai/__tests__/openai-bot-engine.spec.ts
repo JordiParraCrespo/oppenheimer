@@ -244,6 +244,34 @@ describe('OpenAiBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: 'Started it.', data: { sessionId: 's-1' } }),
+    };
+    let modelRead: string | undefined;
+    scripted(async function* (seen) {
+      const [tool] = seen.agent.tools;
+      yield toolCalled('call_1', 'start_session', '{}');
+      modelRead = await execute(tool, {}, 'call_1');
+      yield toolOutput('call_1', 'start_session', modelRead);
+    });
+
+    const events = await collect(new OpenAiBotEngine().run(request({ tools: [start] })));
+
+    expect(modelRead).toBe('Started it.');
+    expect(events.find((event) => event.type === 'tool.finished')).toEqual({
+      type: 'tool.finished',
+      callId: 'call_1',
+      name: 'start_session',
+      output: 'Started it.',
+      isError: false,
+      data: { sessionId: 's-1' },
+    });
+  });
+
   it('sends the key, endpoint, history as native input items, then this message', async () => {
     const run = scripted(async function* () {});
 

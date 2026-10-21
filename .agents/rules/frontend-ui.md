@@ -24,7 +24,7 @@ multi-line, so a grep for `export` misses most of them.
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
 | A section that draws a read's loading and failure — every such read in the console | the kit's `QueryState` around it: `Pending`, `Error`, and a `Data` whose child is the section that calls the product package's `useSuspense…` hook, whose `data` is never `undefined`; an empty answer is the section's own branch. A first failure lands on `Error`, with Try again (a function child takes `(error, retry)` and wires its own button to `retry`); a later one is the hook's `error`, drawn by the section as an `ErrorAlert` beside the data, with no retry (`pnpm check:structure` fails a Suspense read with no `ErrorAlert`, unless a `// A refetch that fails is not drawn here: <why>` comment says the failure changes nothing on screen — a form seeded once, facets beside a list that says it). The boundary sits in the parent that already renders the section, so no prop is threaded through a wrapper; two swapped by a URL view take a `key` each. A key the URL moves (a scope, a range, a filter, a page) is read through `useDeferredValue` (`useMemo` it in its `hooks/` file when it is an object), so the page on screen stays while the next one loads; several reads one section draws are one `useSuspenseQueries` hook in the product package, so they fetch side by side | a hand-written ternary ladder, `useQuery` with its own `isPending` branch, a `<Suspense>` or an `ErrorBoundary` of the feature's own, a second retry in the rows, two `useSuspense…` calls in one component (they fetch one after the other). A read that draws no loading or failure of its own (a count in a head, a name in a row, a snapshot read in a handler) and a picker chip's options (below) stay `useQuery` |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
-| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
+| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog`, written the way its doc comment says (title, description, buttons, `ConfirmDialog.Option` for a choice) | a hand-built `Dialog` with its own Cancel, a `Checkbox` of the dialog's own |
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
 | One "2 hours ago" line that has to keep moving | the kit's `RelativeTime`, which owns its tick | `useNow` in the row around it |
 | A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
@@ -348,8 +348,12 @@ is the reference.
   shapes (a terminal or the panel that starts one), choose from what is
   already cached; when nothing tells, draw the quieter one.
 - **Quiet for assistive technology.** `Skeleton` is `aria-hidden` and pulses
-  only under `motion-safe`; the placeholder's root carries `aria-busy` and one
-  `<span role="status" className="sr-only">{t('common.loading')}</span>`.
+  only under `motion-safe`; the placeholder's root carries `aria-busy` and the
+  kit's `<LoadingStatus />`, the one "Loading…" a screen reader hears.
+- **A design-system record owns its placeholder.** When the row or card a list
+  draws is a design-system component, its placeholder sits beside it in the
+  same file on the same frame (`HostCardSkeleton` shares `HostCard`'s
+  `FRAME`; `PullRequestRowSkeleton` its row's grid), so the two cannot drift.
 - **Named and placed.** More than a bar or two is a `<View>Skeleton` in the
   feature's `components/` (or a `sections/` one when it must read a cache to
   pick its shape), one component per file.
@@ -358,10 +362,10 @@ is the reference.
 `Skeleton`s with a slab among them: a block 64px tall or more, or one that
 fills its frame (`scripts/skeleton-shape.mjs`). A pane that really is one block
 until it answers says so inside the slot,
-`{/* A block stands in here: <why> */}`. The files that held slabs when the
-check landed are `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
-with its count: debt, held to that count (one more slab fails), and the list
-only shrinks. Whether a named placeholder has the right shape is
+`{/* A block stands in here: <why> */}`. The thirteen files that held slabs when
+the check landed were `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
+held to its count; all are redrawn and the list is empty. Nothing is added
+to it: a new slab is fixed where it is written. Whether a named placeholder has the right shape is
 `/frontend-audit`'s `U7`. Before a pull request, photograph each placeholder
 held beside its loaded page (`/local-stack`, "Show a visual change").
 

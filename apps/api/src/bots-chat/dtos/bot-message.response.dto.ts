@@ -1,9 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
   BOT_MESSAGE_ROLES,
+  BOT_REPLY_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
   type BotEventOutcome,
   type BotMessageRole,
+  type BotReplyOutcome,
+  type BotRoutineActivity,
 } from '@oppenheimer/shared';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
@@ -27,10 +31,18 @@ export class BotToolStepResponseDto {
 
   @ApiProperty()
   isError!: boolean;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The session the call started (`start_session`); null for any other call.',
+  })
+  sessionId!: string | null;
 }
 
-/** What an event says happened: an approval decided, how, and the card's line. */
-export class BotMessageEventResponseDto {
+/** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
+export class BotApprovalEventResponseDto {
   @ApiProperty({ enum: ['approval'] })
   kind!: 'approval';
 
@@ -42,15 +54,112 @@ export class BotMessageEventResponseDto {
 
   @ApiProperty({ description: "The card's line: what the call does, in words." })
   summary!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The session the approved call started; null when it started none.',
+  })
+  sessionId!: string | null;
 }
 
+/** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
+export class BotRoutineEventResponseDto {
+  @ApiProperty({ enum: ['routine'] })
+  kind!: 'routine';
+
+  @ApiProperty({ enum: BOT_ROUTINE_ACTIVITIES })
+  activity!: BotRoutineActivity;
+
+  @ApiProperty({ format: 'uuid', description: 'The routine.' })
+  automationId!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The run, for an activity that has one (`ran`, `failed`).',
+  })
+  runId!: string | null;
+
+  @ApiProperty({ description: 'Its name at the time.' })
+  name!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'Why, as a code, for a pause or a failure: the pause reason for `paused`, the skip reason or `expired` for `failed`.',
+  })
+  reason!: string | null;
+}
+
+/** A message another bot sent this one through `message_bot` or `ask_bot` (`25-bots.md` §4.6). */
+export class BotPeerMessageEventResponseDto {
+  @ApiProperty({ enum: ['bot_message'] })
+  kind!: 'bot_message';
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The bot that sent it, as Oppenheimer recorded it; null once that bot is deleted.',
+  })
+  fromBotId!: string | null;
+
+  @ApiProperty({ description: "The sending bot's name when it sent it." })
+  fromBotName!: string;
+
+  @ApiProperty({ description: 'Sent with ask_bot, so this bot answers it.' })
+  expectsReply!: boolean;
+}
+
+/** The answer to an `ask_bot` call, delivered to the bot that asked. */
+export class BotPeerReplyEventResponseDto {
+  @ApiProperty({ enum: ['bot_reply'] })
+  kind!: 'bot_reply';
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The bot that answered; null once that bot is deleted.',
+  })
+  fromBotId!: string | null;
+
+  @ApiProperty({ description: "The answering bot's name when it answered." })
+  fromBotName!: string;
+
+  @ApiProperty({ enum: BOT_REPLY_OUTCOMES })
+  outcome!: BotReplyOutcome;
+}
+
+export type BotMessageEventResponseDto =
+  | BotApprovalEventResponseDto
+  | BotRoutineEventResponseDto
+  | BotPeerMessageEventResponseDto
+  | BotPeerReplyEventResponseDto;
+
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
+@ApiExtraModels(
+  BotApprovalEventResponseDto,
+  BotRoutineEventResponseDto,
+  BotPeerMessageEventResponseDto,
+  BotPeerReplyEventResponseDto,
+)
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  turnId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The turn it belongs to; null for an event outside any turn (a routine changed on its tab, paused or failed).',
+  })
+  turnId!: string | null;
 
   @ApiProperty({ enum: BOT_MESSAGE_ROLES })
   role!: BotMessageRole;
@@ -62,9 +171,14 @@ export class BotMessageResponseDto {
   steps!: BotToolStepResponseDto[];
 
   @ApiProperty({
-    type: BotMessageEventResponseDto,
+    oneOf: [
+      { $ref: getSchemaPath(BotApprovalEventResponseDto) },
+      { $ref: getSchemaPath(BotRoutineEventResponseDto) },
+      { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
+      { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
+    ],
     nullable: true,
-    description: 'What an event says happened; null on every other role.',
+    description: 'What an event says happened, by `kind`; null on every other role.',
   })
   event!: BotMessageEventResponseDto | null;
 

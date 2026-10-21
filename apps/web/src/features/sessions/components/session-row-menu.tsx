@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 export function SessionRowMenu({
   open,
   onOpenChange,
+  pinned,
+  onPinChange,
   onRename,
   onMove,
   onShare,
@@ -31,6 +33,8 @@ export function SessionRowMenu({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  pinned: boolean;
+  onPinChange: (pinned: boolean) => void;
   onRename: () => void;
   onMove: (projectId: string) => void;
   onShare: () => void;
@@ -56,6 +60,9 @@ export function SessionRowMenu({
       <DropdownMenuContent align="end" className="min-w-47.5">
         {pane === 'root' ? (
           <>
+            <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
+              {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}

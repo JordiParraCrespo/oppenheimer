@@ -36,6 +36,16 @@ export {
   useSuspenseBotConversation,
   useSuspenseBotHistory,
 } from './bot-chat.queries';
+export {
+  type BotRoutineVariables,
+  type RunBotRoutineVariables,
+  type SetBotRoutineEnabledVariables,
+  useDeleteBotRoutine,
+  useRunBotRoutine,
+  useSetBotRoutineEnabled,
+  useSuspenseAllBotRoutines,
+  useSuspenseBotRoutines,
+} from './bot-routines.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
@@ -55,10 +65,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
-  useModelProviders,
-  usePutModelProviderKey,
   useReloadBotDocuments,
-  useRemoveModelProviderKey,
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
@@ -68,7 +75,6 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
-  useSuspenseModelProviders,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -113,6 +119,13 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export {
+  useModelProviders,
+  usePutModelProviderKey,
+  useRemoveModelProviderKey,
+  useSetDefaultModelProvider,
+  useSuspenseModelProviders,
+} from './model-providers.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
   useCheckSlug,

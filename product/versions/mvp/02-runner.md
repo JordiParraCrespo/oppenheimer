@@ -63,6 +63,8 @@ user-facing diagnostics are the same artifact and the same version.
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
 | `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
+| `agents install <name>` | install an agent CLI the host lacks, user-level, with the catalog's installer (§10) |
+| `tools [ls]` / `tools install gh` | the host tools and how to get a missing one; installs `gh`, prints the package manager's command for `git` and `tmux` (§10) |
 | `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (09 §5) |
 | `version` | version, commit, build date, protocol range |
 
@@ -352,6 +354,19 @@ Then, in order:
    tab does not inherit it. First launch and Restart build the line the
    same way.
 
+   **A launch nobody approves starts in a trusted folder.** Claude Code
+   asks "do you trust the files in this folder?" the first time it opens
+   one, before any permission mode applies, and a session's folder is
+   always new to it. For a launch at Approve for me or Full access (a
+   bot's session, a review, a plan's task) nobody is expected at the
+   terminal to answer, so before First launch and Restart the runner
+   sets `projects[<folder>].hasTrustDialogAccepted` in Claude Code's own
+   `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json` when set), leaving
+   every other key as the CLI wrote it and swapping the file in with a
+   rename. Ask leaves the question on the screen for the person who is
+   there. It is best-effort: a launch whose folder could not be marked
+   still starts (decided 2026-10-18).
+
    **The first task is the last argument, not something typed at a
    running process.** Every CLI here takes it on its command line and
    says so in its own help — `claude [options] [command] [prompt]`
@@ -375,7 +390,12 @@ Then, in order:
    database under `~/.local/share/opencode/`),
    never scraped from the PTY, and sent once as `prompt.first`, at most
    2 KB. The control plane names the session from it (10); the transcript
-   itself never leaves the host.
+   itself never leaves the host. Claude Code's is the transcript read
+   today (`sessions/adapters/transcript`, found as
+   `projects/*/<session id>.jsonl` because the session id is the
+   conversation's name), on each poll until one is reported; the other
+   agents report nothing yet, so their sessions keep the slug until
+   renamed.
 
    **When the launch carried one, the runner reports nothing.** It
    already knows the first message — it put it there — and the control
@@ -552,8 +572,8 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 ### 10. Host facts and health
 
 Collected at register, on `host.preflight`, and summarised in every
-heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode` and
-`grok` presence and version (one list, `ProbedTools`), free disk on the
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode`,
+`grok` and `gh` presence and version (one list, `ProbedTools`), free disk on the
 workspaces filesystem, load, runner version and channel. Only `git` and
 `tmux` are required. A missing agent is a hint on the engine button, not
 a refusal — a session still opens and the shell's own "command not
@@ -575,11 +595,68 @@ waits for its update. A CLI one release behind is refused by its vendor the day 
 ships that needs the newer one, and the person would find out in the
 session's terminal. A running session keeps the binary it started with;
 the next session starts the new one. An agent that is not installed is
-left alone, and so is one whose updater cannot run without asking
-(OpenCode's asks whenever it cannot tell how it was installed): the catalog
-gives it no `update`. A failure is logged and retried; `runner agents
+left alone, and so is one whose updater cannot run without asking.
+OpenCode's asks whenever it cannot tell how it was installed; it takes the
+method as a flag, so the catalog spells its updater with `<method>` and lists
+how to tell the method from where the executable really lives (`brew`, `bun`,
+`pnpm`, `npm`). An OpenCode none of them matches is left alone. *(Changed
+2026-10-12: until then OpenCode had no `update` and was never kept current.)*
+That includes one from `opencode.ai/install`, told apart by its
+`~/.opencode/bin`: its method, `curl`, reruns that script, which checks
+nothing, so it keeps OpenCode's own launch-time autoupdate and no more.
+*(Changed 2026-10-18: until then `curl` was a method and the runner ran the
+script hourly.)* An npm-installed CLI updates itself with `npm install -g`,
+which writes under npm's configured prefix rather than the one the running
+copy lives under, so the runner points npm at the prefix the executable
+resolves under (`npm_config_prefix`, from `<prefix>/lib/node_modules/`);
+for one it installed that is `~/.local`. A failure is logged and retried;
+`runner agents
 update` runs the round by hand (09 open question 4 says what to do when it
 fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
+
+**Installing tools** (decided 2026-10-12). Updating is ours; installing is
+the person's choice, made by asking: `runner agents install <name>` for an
+agent CLI and `runner tools install gh` for GitHub's CLI. Both run the
+catalog's `install` entry (`packages/shared/src/agents/catalog.ts` for
+agents, `host-tools.ts` for `git`, `tmux` and `gh`), generated into the
+runner's `host_tools.gen.go`: a POSIX `sh` script per platform family,
+run as the runner's account with no terminal and nothing on stdin, under the
+same per-agent lock as an update, bounded at ten minutes. Every script
+installs to a user-level destination and none uses `sudo`. Where the
+vendor publishes release binaries with checksums, the script takes the
+latest release and checks it against the vendor's published SHA-256
+(`sha256sum` on Linux, `shasum -a 256` on macOS) before anything from it is
+unpacked or run, and a checksum that is missing, malformed or different
+stops the install (`release-install.ts`). Claude Code reads the version
+`downloads.claude.ai/claude-code-releases/latest` names, takes that
+version's `manifest.json`, downloads the binary for its platform (musl
+told from glibc, Rosetta from Intel, as `claude.ai/install.sh` does),
+verifies it against the manifest's checksum, and runs the verified
+binary's own `claude install <version>`, which links `~/.local/bin/claude`;
+`gh` on Linux is its release tarball, checked against the release's
+`checksums.txt`, and Homebrew on macOS. That trusts the vendor's release
+over HTTPS: it catches a download cut short, corrupted, or swapped on a
+mirror or CDN, not a compromised vendor. *(Changed 2026-10-17: until then
+Claude Code and OpenCode ran their vendors' install scripts, fetched to a
+file first, which nothing checked.)* Codex, OpenCode and Grok use their npm
+packages (`@openai/codex`, `opencode-ai`, `@xai-official/grok`) under a
+`~/.local` prefix, because that is a destination the catalog can name, and
+npm checks each package against the registry's integrity hash; OpenCode's
+platform binary comes the same way, as the package's optional dependency
+(`opencode-<platform>`). No agent install runs a script it downloaded.
+*(Changed 2026-10-18: until then OpenCode ran `opencode.ai/install`, because
+its GitHub releases publish no checksum for the CLI archives; open question
+11.)* Each entry names the directory it installs into, and the runner
+appends every such directory to its own `PATH` at start, so a tool it
+installed is found by the next probe and by the sessions' tmux server
+without the person editing a shell profile the service never reads. An
+install of a tool already on `PATH` does nothing. `git` and `tmux` stay with
+the package manager: the runner never takes root, so it answers `HOST_010`
+with the exact command (`brew install git tmux`, `sudo apt-get install -y
+git tmux`), and `runner tools` and `runner status` print the one line that
+gets each missing tool onto the host. Asking for the install from the
+console — a session for an agent the host lacks offering to install it —
+needs a link message and is open question 10.
 
 ### 11. State on disk
 
@@ -680,3 +757,24 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    measured and **not** taken: a create sees its base as it is now, and the
    fetch costs about half a second. A treeless clone was measured slower
    than shallow (13.4 s against 9.3 s to a ready spare on vscode).
+10. **Installing from the console.** The runner installs agent CLIs and `gh`
+   when asked on the host (§10). The console's half is still missing: a
+   `host.install` link command answered with the install's outcome, an API
+   route under the host that sends it, and New session offering "Install
+   Codex on this host" when the inventory has no `codex` instead of starting
+   a session whose terminal says "command not found". The host facts already
+   carry every tool and version the console needs to show what each host can
+   run.
+11. ~~**Installing OpenCode without its script.**~~ Decided 2026-10-18
+   (§10): the npm package `opencode-ai`, under `~/.local` as Codex and Grok
+   are, so every agent installs through something that checks what it
+   downloaded. `opencode.ai/install` checks nothing, and OpenCode's GitHub
+   releases (`anomalyco/opencode`) publish no checksum for the CLI archives
+   (`latest.json` and `latest.yml` cover the desktop app only); the package
+   and the platform binary it resolves to (`opencode-<platform>`) are
+   checked against the registry's integrity hash. Its executable moves to
+   `~/.local/bin` and its `upgrade --method` to `npm`, with npm pointed at
+   `~/.local`. Not taken: the SHA-256 GitHub's release API reports per
+   asset, which is GitHub's digest rather than the vendor's and costs an API
+   call under the unauthenticated rate limit. An OpenCode already in
+   `~/.opencode/bin` is left to its own autoupdate.

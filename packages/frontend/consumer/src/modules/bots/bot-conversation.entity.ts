@@ -15,6 +15,8 @@ export interface BotToolStep {
   /** What it answered, cut short; `null` while it runs. */
   output: string | null;
   isError: boolean;
+  /** The session the call started (`start_session`), for the chat to open; `null` for any other. */
+  sessionId: string | null;
 }
 
 /**
@@ -25,7 +27,8 @@ export interface BotToolStep {
 export class BotMessageEntity {
   constructor(
     public readonly id: string,
-    public readonly turnId: string,
+    /** The turn it belongs to; `null` for an event outside any turn (a routine changed, paused or failed). */
+    public readonly turnId: string | null,
     public readonly role: BotMessageRole,
     /** The text; empty for an activity line. */
     public readonly content: string,

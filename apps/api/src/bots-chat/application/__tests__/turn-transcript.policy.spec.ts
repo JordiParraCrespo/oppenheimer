@@ -66,8 +66,49 @@ describe('TurnTranscript', () => {
       ['activity', 3],
     ]);
     expect(messages[0].steps).toEqual([
-      { callId: 'a', name: 'web_search', input: { q: 'x' }, output: 'found', isError: false },
-      { callId: 'b', name: 'web_fetch', input: { url: 'u' }, output: 'nope', isError: true },
+      {
+        callId: 'a',
+        name: 'web_search',
+        input: { q: 'x' },
+        output: 'found',
+        isError: false,
+        sessionId: null,
+      },
+      {
+        callId: 'b',
+        name: 'web_fetch',
+        input: { url: 'u' },
+        output: 'nope',
+        isError: true,
+        sessionId: null,
+      },
+    ]);
+  });
+
+  it('keeps the session a call says it started on its step, never read from its words', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'start_session', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'start_session',
+        output: 'The agent is on it.',
+        isError: false,
+        data: { sessionId: 's-1' },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'start_session',
+        output: 'Started session s-2 on host h-1.',
+        isError: false,
+      },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps.map((step) => [step.callId, step.sessionId])).toEqual([
+      ['a', 's-1'],
+      ['b', null],
     ]);
   });
 

@@ -7,25 +7,31 @@ import {
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
   type BotResponseDto,
+  type BotRoutineResponseDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
-import type {
-  BotApprovalDecision,
-  BotDocumentName,
-  BotProvider,
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_REPLY_OUTCOMES,
+  type BotApprovalDecision,
+  type BotDocumentName,
+  type BotMessageEvent,
+  type BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
+import { triggerOf } from '../automations/automations.repository';
 import {
   BotDocumentEntity,
   BotDocumentRevisionEntity,
   BotEntity,
   BotGroupEntity,
   BotMemoryFactEntity,
+  BotRoutineEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
   ModelProviderEntity,
@@ -70,6 +76,7 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.configured,
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
+    dto.isDefault,
   );
 }
 
@@ -110,6 +117,21 @@ function toRevision(dto: BotDocumentRevisionResponseDto): BotDocumentRevisionEnt
   );
 }
 
+function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
+  return new BotRoutineEntity(
+    dto.id,
+    dto.botId,
+    dto.name,
+    dto.prompt,
+    dto.status,
+    dto.pausedReason != null,
+    dto.nextRunAt ? new Date(dto.nextRunAt) : null,
+    dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
+    dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
+    new Date(dto.updatedAt),
+  );
+}
+
 function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
   return new BotMemoryFactEntity(
     dto.id,
@@ -129,8 +151,58 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.content,
     steps,
     new Date(dto.createdAt),
-    dto.event ? { ...dto.event } : null,
+    dto.event ? toEvent(dto.event) : null,
   );
+}
+
+/**
+ * The wire's event as the union the chat draws from, kind by kind: an
+ * approval, a routine's activity, a message from another bot, or the answer
+ * to an ask. An outcome this client does not know reads as no event, and the
+ * chat falls back to the message's first line.
+ */
+function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent | null {
+  switch (dto.kind) {
+    case 'approval': {
+      const outcome = BOT_EVENT_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'approval',
+            outcome,
+            tool: dto.tool,
+            summary: dto.summary,
+            sessionId: dto.sessionId ?? null,
+          }
+        : null;
+    }
+    case 'routine':
+      return {
+        kind: 'routine',
+        activity: dto.activity,
+        automationId: dto.automationId,
+        runId: dto.runId ?? null,
+        name: dto.name,
+        reason: dto.reason ?? null,
+      };
+    case 'bot_message':
+      return {
+        kind: 'bot_message',
+        fromBotId: dto.fromBotId ?? null,
+        fromBotName: dto.fromBotName,
+        expectsReply: dto.expectsReply,
+      };
+    case 'bot_reply': {
+      const outcome = BOT_REPLY_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'bot_reply',
+            fromBotId: dto.fromBotId ?? null,
+            fromBotName: dto.fromBotName,
+            outcome,
+          }
+        : null;
+    }
+  }
 }
 
 function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
@@ -296,7 +368,10 @@ export class BotsRepository {
     return toBot(data);
   }
 
-  /** A blank bot: the next free first name ("Juno", "Milo"…), ungrouped. */
+  /**
+   * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
+   * the workspace's default provider.
+   */
   @MapApiError(BotsErrors.SAVE_FAILED)
   async create(): Promise<BotEntity> {
     const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
@@ -395,6 +470,52 @@ export class BotsRepository {
     return toDocument(data);
   }
 
+  /** A bot's routines, oldest first (`26-bot-routines.md` §7). */
+  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
+  async findRoutines(id: string): Promise<BotRoutineEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotRoutines({ path: { id } }),
+      BotsErrors.FETCH_ROUTINES_FAILED,
+    );
+    return data.map(toRoutine);
+  }
+
+  /** Every bot's routines in the workspace, oldest first, for `/automations`. */
+  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
+  async findAllRoutines(): Promise<BotRoutineEntity[]> {
+    const data = await unwrapBody(heyApiSdk.findRoutines(), BotsErrors.FETCH_ROUTINES_FAILED);
+    return data.map(toRoutine);
+  }
+
+  /** The tab's switch: off pauses the routine's triggers, on resumes them from now. */
+  @MapApiError(BotsErrors.SAVE_ROUTINE_FAILED)
+  async setRoutineEnabled(id: string, routineId: string, enabled: boolean): Promise<void> {
+    await unwrap(
+      heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: { enabled } }),
+      BotsErrors.SAVE_ROUTINE_FAILED,
+    );
+  }
+
+  /** Run now: one run, paused or not. */
+  @MapApiError(BotsErrors.RUN_ROUTINE_FAILED)
+  async runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.runBotRoutine({
+        path: { id, routineId },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      BotsErrors.RUN_ROUTINE_FAILED,
+    );
+  }
+
+  @MapApiError(BotsErrors.DELETE_ROUTINE_FAILED)
+  async deleteRoutine(id: string, routineId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotRoutine({ path: { id, routineId } }),
+      BotsErrors.DELETE_ROUTINE_FAILED,
+    );
+  }
+
   @MapApiError(BotsErrors.FETCH_MEMORY_FAILED)
   async findMemory(id: string): Promise<BotMemoryFactEntity[]> {
     const data = await unwrapBody(
@@ -450,6 +571,15 @@ export class BotsRepository {
     await unwrap(
       heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
       BotsErrors.SAVE_PROVIDER_KEY_FAILED,
+    );
+  }
+
+  /** Makes `provider`, which must have a key, the one new bots start on. */
+  @MapApiError(BotsErrors.SET_DEFAULT_PROVIDER_FAILED)
+  async setDefaultModelProvider(provider: BotProvider): Promise<void> {
+    await unwrap(
+      heyApiSdk.setDefaultModelProvider({ path: { provider } }),
+      BotsErrors.SET_DEFAULT_PROVIDER_FAILED,
     );
   }
 

@@ -1,5 +1,6 @@
 import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
+import { routineEventText } from './routine-event';
 import { toolAction } from './tool-activity';
 
 /**
@@ -34,16 +35,21 @@ function stepLine(step: BotToolStep, t: TFunction): string {
   return `- ${said}${step.isError ? ` (${t('bots.chat.activity.stepFailed')})` : ''}`;
 }
 
+/** Who said it: you, the bot, another bot that messaged or answered it, or Oppenheimer. */
 function author(message: BotMessageEntity, botName: string, t: TFunction): string {
   if (message.role === 'user') return t('bots.settings.profile.you');
+  const { event } = message;
+  if (event?.kind === 'bot_message' || event?.kind === 'bot_reply') return event.fromBotName;
   if (message.role === 'event') return t('bots.settings.profile.oppenheimer');
   return botName;
 }
 
 function body(message: BotMessageEntity, t: TFunction): string {
   if (message.role === 'activity') return message.steps.map((step) => stepLine(step, t)).join('\n');
-  if (message.role === 'event' && message.event) {
-    return t(`bots.chat.event.${message.event.outcome}`, { summary: message.event.summary });
+  const { event } = message;
+  if (message.role === 'event' && event?.kind === 'routine') return routineEventText(event, t);
+  if (message.role === 'event' && event?.kind === 'approval') {
+    return t(`bots.chat.event.${event.outcome}`, { summary: event.summary });
   }
   return message.content.trim();
 }

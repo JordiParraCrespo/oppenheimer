@@ -7,7 +7,7 @@ import type { AutomationRepositoryPort } from '../../database/automation.reposit
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import { AutomationRunEntity } from '../../domain/automation-run.entity';
 import { AutomationErrors } from '../../domain/automations.errors';
-import { manualCauseSummary } from '../../domain/run-launch.policy';
+import { manualFiring } from '../../domain/run-launch.policy';
 import { RunAutomationCommand } from './run-automation.command';
 
 /**
@@ -32,18 +32,7 @@ export class RunAutomationCommandHandler
       AutomationErrors.NOT_FOUND,
     );
     const run = AutomationRunEntity.fire(
-      {
-        organizationId: automation.organizationId,
-        automationId: automation.id,
-        revisionId: automation.revision.id,
-        triggerId: null,
-        cause: 'manual',
-        causeKey: `manual:${command.idempotencyKey ?? command.id}`,
-        causeSummary: manualCauseSummary(),
-        inboundEventId: null,
-        scheduledFor: null,
-        requestedByUserId: command.scope.userId,
-      },
+      manualFiring(automation, command.scope.userId, command.idempotencyKey ?? command.id),
       new Date(),
     );
     return (await this.runs.insertFiring(run, command.metadata.correlationId)).runId;

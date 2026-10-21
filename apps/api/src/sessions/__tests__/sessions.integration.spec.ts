@@ -14,6 +14,7 @@ import { WorkSessionOrmEntity } from '../database/work-session.orm-entity';
 import { WorkSessionRepository } from '../database/work-session.repository';
 import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import { mintSessionSlug } from '../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { WorkSessionMapper } from '../work-session.mapper';
@@ -68,7 +69,9 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       projectId,
       createdByUserId: userId,
       hostId,
-      slug: overrides.slug ?? `bold-otter-${randomUUID().slice(0, 6)}`,
+      // Minted the way a real session's is: six hex digits of a UUID collide
+      // inside the 250-session walk often enough to fail a run.
+      slug: overrides.slug ?? mintSessionSlug(),
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
       folder: overrides.folder,
@@ -347,6 +350,49 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         permission: 'auto',
         effort: 'high',
       });
+    });
+
+    /**
+     * The close a session is owed is what the hello reconciliation reads to send it
+     * again. Regression: it was never folded, so a close lost with the link was
+     * never sent again and the deleted session sat stopped for good.
+     */
+    it('persists a close owed and the host’s refusal of it, and reads them back for the hello', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const ask = (acceptUnpushedWork: boolean) => ({
+        idempotencyKey: `session.close_requested:${randomUUID()}`,
+        source: 'api' as const,
+        kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED,
+        payload: { acceptUnpushedWork },
+      });
+
+      await repository.appendEvents(work, [ask(true)]);
+      const [owed] = await dataSource.query(`SELECT * FROM "work_session" WHERE "id" = $1`, [
+        work.id,
+      ]);
+      expect(owed.closeRequestedAt).toBeInstanceOf(Date);
+      expect(owed.closeAcceptsUnpushedWork).toBe(true);
+      const [row] = await repository
+        .findUnresolvedForHostForMachine(hostId)
+        .then((rows) => rows.filter((candidate) => candidate.session.id === work.id));
+      expect(row.session.closeRequest?.acceptUnpushedWork).toBe(true);
+
+      await repository.appendEvents(work, [
+        {
+          idempotencyKey: `refused-${randomUUID()}:1`,
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.COMMAND_FAILED,
+          payload: { command: 'session.close', code: 'GIT_003', detail: 'rejected' },
+        },
+      ]);
+      const [refused] = await dataSource.query(`SELECT * FROM "work_session" WHERE "id" = $1`, [
+        work.id,
+      ]);
+      expect(refused.closeRequestedAt).toBeNull();
+      expect(refused.closeAcceptsUnpushedWork).toBe(false);
+      expect(refused.closeRefusalCode).toBe('GIT_003');
+      expect(refused.closeRefusalDetail).toBe('rejected');
     });
 
     it('lets two sessions with no idempotency key both land', async () => {
@@ -825,7 +871,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           projectId,
           createdByUserId: other,
           hostId,
-          slug: `quiet-heron-${randomUUID().slice(0, 6)}`,
+          slug: mintSessionSlug(),
           agent: 'shell',
           folder: '/home/ana',
         }),

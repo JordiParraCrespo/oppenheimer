@@ -9,21 +9,32 @@ import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
+import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
-import type { BotTurnRepositoryPort } from './bot-turn.repository.port';
+import type { BotPeerEnqueueOutcome, BotTurnRepositoryPort } from './bot-turn.repository.port';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
+/** The job that queues an ask's answer on the bot that asked; its payload is `{ turnId }`, the asked turn. */
+export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
+
+/** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
+const LANE_ORDER = `CASE "lane" WHEN 'owner' THEN 0 WHEN 'bots' THEN 1 ELSE 2 END`;
+
 /** The claim broke `UQ_bot_turn_running`: another turn of the bot is running. */
 function isRunningTaken(error: unknown): boolean {
+  return isUniqueViolation(error, 'UQ_bot_turn_running');
+}
+
+function isUniqueViolation(error: unknown, constraint: string): boolean {
   const own = error as { code?: string; constraint?: string };
   const driver = (error as { driverError?: typeof own }).driverError ?? own;
-  return driver.code === '23505' && driver.constraint === 'UQ_bot_turn_running';
+  return driver.code === '23505' && driver.constraint === constraint;
 }
 
 @Injectable()
@@ -54,6 +65,89 @@ export class BotTurnRepository
     return this.outbox.transaction((manager) =>
       enqueueWithin(manager, this.outbox, this.mapper, this.messages, turn, message, correlationId),
     );
+  }
+
+  enqueueOnce(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    busyPrefix: string | null,
+  ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }> {
+    if (!turn.sourceKey) throw new Error('A turn queued once carries its source key');
+    return this.outbox.transaction(async (manager) => {
+      if (!(await lockBot(manager, turn))) return { outcome: 'missing' as const, turnId: turn.id };
+      // UQ_bot_turn_source; read under the bot's lock, so two dispatches of one
+      // run cannot both miss it.
+      const [existing]: { id: string }[] = await manager.query(
+        `SELECT id FROM bot_turn WHERE "botId" = $1 AND "sourceKey" = $2`,
+        [turn.botId, turn.sourceKey],
+      );
+      if (existing) return { outcome: 'existing' as const, turnId: existing.id };
+      if (busyPrefix !== null) {
+        // IDX_bot_turn_active: a bot's queued and running turns are a handful.
+        const [active]: unknown[] = await manager.query(
+          `SELECT 1 FROM bot_turn
+            WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')
+              AND starts_with("sourceKey", $3)
+            LIMIT 1`,
+          [turn.organizationId, turn.botId, busyPrefix],
+        );
+        if (active) return { outcome: 'busy' as const, turnId: turn.id };
+      }
+      const outcome = await enqueueLocked(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
+      return { outcome, turnId: turn.id };
+    });
+  }
+
+  enqueueFromBot(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    decide: (state: BotChainState) => BotChainVerdict,
+  ): Promise<BotPeerEnqueueOutcome> {
+    const chainId = turn.chainId;
+    if (!chainId) throw new Error('A turn a bot queues belongs to a chain');
+    return this.outbox.transaction(async (manager) => {
+      // The chain's lock: two asks of one chain decide one after the other.
+      const root: unknown[] = await manager.query(
+        `SELECT id FROM bot_turn WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
+        [turn.organizationId, chainId],
+      );
+      if (root.length === 0) return { outcome: 'chain_gone' };
+      const verdict = decide(await chainStateWithin(manager, turn.organizationId, chainId));
+      if (!verdict.allowed) return { outcome: 'refused', refusal: verdict.refusal };
+      const queued = await enqueueWithin(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
+      return { outcome: queued };
+    });
+  }
+
+  async enqueueAnswer(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+  ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'> {
+    try {
+      return await this.enqueue(turn, message, correlationId);
+    } catch (error) {
+      if (isUniqueViolation(error, 'UQ_bot_turn_answers')) return 'duplicate';
+      throw error;
+    }
   }
 
   async findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>> {
@@ -123,6 +217,16 @@ export class BotTurnRepository
       if (result.affected !== 1) return false;
       turn.markPersisted();
       await stageNext(this.outbox, manager, turn, correlationId);
+      if (turn.replyRequested && turn.askedByTurnId) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: DELIVER_BOT_ANSWER_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} answers turn ${turn.askedByTurnId}`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
       return true;
     });
   }
@@ -185,6 +289,19 @@ export async function enqueueWithin(
   correlationId: string | null,
 ): Promise<'staged' | 'waiting' | 'missing'> {
   if (!(await lockBot(manager, turn))) return 'missing';
+  return enqueueLocked(manager, outbox, turns, messages, turn, message, correlationId);
+}
+
+/** `enqueueWithin` once the bot is locked. */
+async function enqueueLocked(
+  manager: EntityManager,
+  outbox: OutboxService,
+  turns: BotTurnMapper,
+  messages: BotMessageMapper,
+  turn: BotTurnEntity,
+  message: BotMessageEntity,
+  correlationId: string | null,
+): Promise<'staged' | 'waiting'> {
   // IDX_bot_turn_active.
   const [{ active }]: { active: number }[] = await manager.query(
     `SELECT count(*)::int AS active FROM bot_turn
@@ -234,8 +351,10 @@ async function stageRun(
 }
 
 /**
- * After a turn ends, the bot's oldest queued turn is due, unless another of
- * its turns is running (that one stages the next when it ends).
+ * After a turn ends, the bot's next queued turn is due, unless another of its
+ * turns is running (that one stages the next when it ends): the oldest of the
+ * first lane that has one (`BotQueueLanes`), so your messages go before what
+ * other bots sent.
  */
 async function stageNext(
   outbox: OutboxService,
@@ -251,8 +370,35 @@ async function stageNext(
           SELECT 1 FROM bot_turn r
            WHERE r."organizationId" = $1 AND r."botId" = $2 AND r."status" = 'running'
         )
-      ORDER BY "createdAt", id LIMIT 1`,
+      ORDER BY ${LANE_ORDER}, "createdAt", id LIMIT 1`,
     [turn.organizationId, turn.botId],
   );
   if (next[0]) await stageRun(outbox, manager, turn.botId, next[0].id, correlationId);
+}
+
+/**
+ * What a chain holds, read under its lock (`BotChainPolicy`): the bots of its
+ * turns, the first one's included, and how many turns bots queued on other
+ * bots in it, answers to asks not counted.
+ */
+async function chainStateWithin(
+  manager: EntityManager,
+  organizationId: string,
+  chainId: string,
+): Promise<BotChainState> {
+  // PK_bot_turn for the first turn, IDX_bot_turn_chain for the rest; an OR
+  // of the two would scan the workspace's turns instead.
+  const bots: { botId: string }[] = await manager.query(
+    `SELECT "botId" FROM bot_turn WHERE id = $2 AND "organizationId" = $1
+     UNION
+     SELECT "botId" FROM bot_turn WHERE "organizationId" = $1 AND "chainId" = $2`,
+    [organizationId, chainId],
+  );
+  // IDX_bot_turn_chain.
+  const [{ asks }]: { asks: number }[] = await manager.query(
+    `SELECT count(*)::int AS asks FROM bot_turn
+      WHERE "organizationId" = $1 AND "chainId" = $2 AND "lane" = 'bots' AND "answersTurnId" IS NULL`,
+    [organizationId, chainId],
+  );
+  return { bots: bots.map((row) => row.botId), asks };
 }

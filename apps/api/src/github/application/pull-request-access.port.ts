@@ -21,10 +21,14 @@ export interface WorkspaceRepository {
   private: boolean;
 }
 
-/** The address of one pull request. */
-export interface PullRequestAddress {
+/** The address of one repository: the installation that reaches it, and GitHub's id for it. */
+export interface RepositoryAddress {
   installationId: string;
   githubRepoId: number;
+}
+
+/** The address of one pull request. */
+export interface PullRequestAddress extends RepositoryAddress {
   number: number;
 }
 
@@ -177,12 +181,17 @@ export interface PullRequestAccessPort {
     address: PullRequestAddress,
     comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void>;
-  /** Merges the head the caller last saw; GitHub's refusal is `GITHUB_014`. */
+  /**
+   * Merges the head the caller last saw; GitHub's refusal is `GITHUB_014`.
+   * With `expectedHead`, a head that has moved on since is `GITHUB_014` too,
+   * and GitHub is not asked.
+   */
   merge(
     scope: AccessScope,
     userId: string,
     address: PullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
+    expectedHead?: string,
   ): Promise<void>;
   /** Asks GitHub to merge it, in the caller's name, once what it requires passes; false when GitHub will not. */
   enableAutoMerge(

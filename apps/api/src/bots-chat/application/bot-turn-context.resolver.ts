@@ -24,6 +24,7 @@ import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
+import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -62,6 +63,7 @@ export class BotTurnContextResolver {
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
+    private readonly permissions: BotOwnerPermissionsResolver,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -96,9 +98,11 @@ export class BotTurnContextResolver {
             timeZone: turn.timeZone ?? 'UTC',
             permission: bot.permission,
             budget: new BotTurnBudget(),
+            credentialScopes: turn.credentialScopes,
             approvals: this.approvals,
           },
           turn.credentialScopes,
+          () => this.permissions.heldScopes(owner),
         )
       : [];
     const documentText = (name: string) =>

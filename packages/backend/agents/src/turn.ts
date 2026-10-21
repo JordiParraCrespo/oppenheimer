@@ -1,4 +1,4 @@
-import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from './bot-engine';
+import type { BotEngineEvent, BotEngineTool, BotToolData, BotTurnRequest } from './bot-engine';
 
 type DoneEvent = Extract<BotEngineEvent, { type: 'done' }>;
 
@@ -111,7 +111,13 @@ function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEv
     case 'tool.started':
       return { ...event, input: scrubInput(event.input, request) };
     case 'tool.finished':
-      return { ...event, output: scrubTurnText(event.output, request) };
+      return event.data
+        ? {
+            ...event,
+            output: scrubTurnText(event.output, request),
+            data: scrubInput(event.data, request) as BotToolData,
+          }
+        : { ...event, output: scrubTurnText(event.output, request) };
     default:
       return event;
   }
@@ -147,24 +153,54 @@ export function resetFromHeaders(
  * contract's shape, becomes an error result the model reads; it never ends
  * the turn. The result is what both the model and `tool.finished` see, so
  * the request's key is redacted from it here, before either does: a tool
- * failure can echo a key the way a provider error can.
+ * failure can echo a key the way a provider error can. Its `data` is kept
+ * only when it is strings by name.
  */
 export async function runTool(
   tool: BotEngineTool,
   input: unknown,
   context: { signal: AbortSignal; apiKey: string },
-): Promise<{ content: string; isError: boolean }> {
+): Promise<{ content: string; isError: boolean; data?: BotToolData }> {
   let content: string;
   let isError: boolean;
+  let data: BotToolData | undefined;
   try {
     const result = await tool.run(input, { signal: context.signal });
     content = typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
     isError = result?.isError === true;
+    data = toolData(result?.data);
   } catch (error) {
     content = describeError(error) || 'The tool failed.';
     isError = true;
   }
-  return { content: redactSecret(content, context.apiKey), isError };
+  const redacted = redactSecret(content, context.apiKey);
+  return data ? { content: redacted, isError, data } : { content: redacted, isError };
+}
+
+function toolData(raw: unknown): BotToolData | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const entries = Object.entries(raw).filter(([, value]) => typeof value === 'string');
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/**
+ * What our tools' calls made, by call id, from the run of each call until
+ * the engine reports its end: an SDK's own report of a call carries only
+ * its words, so the adapter records the data as it runs the tool.
+ */
+export class ToolCallData {
+  private readonly byCall = new Map<string, BotToolData>();
+
+  record(callId: unknown, data: BotToolData | undefined): void {
+    if (typeof callId === 'string' && data) this.byCall.set(callId, data);
+  }
+
+  /** The call's data, handed out once. */
+  take(callId: string): BotToolData | undefined {
+    const data = this.byCall.get(callId);
+    this.byCall.delete(callId);
+    return data;
+  }
 }
 
 /**

@@ -1,0 +1,13 @@
+# The toolchain a contributor needs, pinned to what CI uses. `mise install`
+# here installs all of it user-level; `scripts/dev/bootstrap.sh` runs it for
+# you and checks the rest (Docker, Playwright's browsers, gh's login).
+#
+# Each pin follows a file that already decides it: node from `.nvmrc` and
+# `engines`, pnpm from `packageManager`, go from `apps/runner/go.mod`'s
+# toolchain, golangci-lint from `.github/workflows/ci.yml`. Change both.
+[tools]
+node = "22"
+pnpm = "9.15.4"
+go = "1.24.7"
+golangci-lint = "2.5.0"
+gh = "latest"

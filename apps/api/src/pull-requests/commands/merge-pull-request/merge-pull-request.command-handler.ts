@@ -17,7 +17,12 @@ export class MergePullRequestCommandHandler
     private readonly access: PullRequestAccessPort,
   ) {}
 
-  async execute({ scope, address, method }: MergePullRequestCommand): Promise<void> {
-    await this.access.merge(scope, scope.userId, address, method);
+  async execute({
+    scope,
+    address,
+    method,
+    expectedHeadSha,
+  }: MergePullRequestCommand): Promise<void> {
+    await this.access.merge(scope, scope.userId, address, method, expectedHeadSha);
   }
 }

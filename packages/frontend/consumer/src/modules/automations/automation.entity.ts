@@ -163,7 +163,8 @@ export class AutomationRunEntity {
     public readonly automationId: string,
     public readonly automationName: string,
     public readonly automationDeleted: boolean,
-    public readonly projectId: string,
+    /** Null for a bot routine's run, which belongs to no project. */
+    public readonly projectId: string | null,
     public readonly status: AutomationRunStatus,
     public readonly outcome: AutomationRunOutcome,
     public readonly skipReason: AutomationSkipReason | null,
@@ -173,9 +174,10 @@ export class AutomationRunEntity {
     public readonly sessionId: string | null,
     public readonly branch: string | null,
     public readonly revisionNumber: number,
-    public readonly agent: string,
+    /** Null for a bot routine's run, as `hostId` is: its bot runs it. */
+    public readonly agent: string | null,
     public readonly model: string | null,
-    public readonly hostId: string,
+    public readonly hostId: string | null,
     public readonly createdAt: Date,
     public readonly startedAt: Date | null,
     public readonly endedAt: Date | null,
