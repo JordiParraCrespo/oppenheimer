@@ -13,7 +13,7 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import { botSections, firstBot } from '../lib/bot-groups';
+import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
 import { revisionNote } from '../lib/revision-note';
 
 /**
@@ -51,6 +51,25 @@ describe('botSections', () => {
     expect(ids(sections)).toEqual([
       ['engineering', ['release']],
       ['research', []],
+    ]);
+  });
+
+  it('draws a dropped bot in the section and place the drag put it, the others closing up', () => {
+    const sections = botSections(bots, groups, '');
+    expect(sectionOrder(sections)).toEqual({
+      engineering: ['release', 'quota'],
+      research: ['scholar'],
+      ungrouped: ['fresh'],
+    });
+    const dropped = inOrder(sections, {
+      engineering: ['release'],
+      research: ['quota', 'scholar'],
+      ungrouped: ['fresh'],
+    });
+    expect(ids(dropped)).toEqual([
+      ['engineering', ['release']],
+      ['research', ['quota', 'scholar']],
+      [null, ['fresh']],
     ]);
   });
 
