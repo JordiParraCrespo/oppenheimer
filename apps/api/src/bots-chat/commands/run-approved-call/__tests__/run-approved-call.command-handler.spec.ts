@@ -5,6 +5,7 @@ import { z } from 'zod/v4';
 import type { BotRepositoryPort } from '../../../../bots/database/bot.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import { BotApprovedCallResolver } from '../../../application/bot-approved-call.resolver';
+import type { BotOwnerPermissionsResolver } from '../../../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
 import { type BotToolArea, defineBotTool } from '../../../application/bot-tool.factory';
 import { BotToolboxFactory } from '../../../application/bot-toolbox.factory';
@@ -114,7 +115,10 @@ function setup(
     bots as unknown as BotRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    new BotApprovedCallResolver(owners, toolbox),
+    new BotApprovedCallResolver(owners, toolbox, {
+      // The owner's roles cover the tool: what runs is the scopes' call.
+      heldScopes: async () => new Set<Scope>(['sessions:read', 'sessions:write']),
+    } as unknown as BotOwnerPermissionsResolver),
   );
   const execute = () =>
     handler.execute(new RunApprovedCallCommand({ approvalId: approval.id, by: 'Ana' }));

@@ -14,6 +14,7 @@ import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
+import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './application/bot-pull-request-tools.factory';
@@ -156,6 +157,7 @@ const queryHandlers: Provider[] = [
     BotApprovalRequestFactory,
     BotApprovedCallResolver,
     BotOwnerScopeResolver,
+    BotOwnerPermissionsResolver,
     BotToolboxFactory,
     BotHostToolsFactory,
     BotSessionToolsFactory,
