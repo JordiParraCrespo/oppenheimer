@@ -12,7 +12,11 @@ export type SessionSelectionStore = {
   pick: (id: string, how: SelectionPick) => void;
   /** The rows as drawn, top to bottom: what a Shift-click spans. */
   setOrder: (order: readonly string[]) => void;
-  /** Leaves exactly `ids` picked: what a bulk write left to try again. */
+  /**
+   * Leaves exactly `ids` picked: what a bulk write left to try again. The
+   * anchor goes with the rest, so the next Shift-click spans from a row the
+   * reader toggles, never one the write took away.
+   */
   keep: (ids: readonly string[]) => void;
   clear: () => void;
 };
@@ -36,8 +40,7 @@ function createSelectionStore(): SessionSelectionStore {
     setOrder: (next) => {
       order = next;
     },
-    keep: (ids) =>
-      set(ids.length === 0 ? NO_SELECTION : { ids: [...ids], anchor: selection.anchor }),
+    keep: (ids) => set(ids.length === 0 ? NO_SELECTION : { ids: [...ids], anchor: null }),
     clear: () => set(NO_SELECTION),
   };
 }

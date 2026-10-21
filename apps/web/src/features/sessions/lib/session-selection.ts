@@ -54,3 +54,19 @@ export function clickPick(
   if (event.metaKey || event.ctrlKey || selecting) return 'toggle';
   return null;
 }
+
+/**
+ * A bulk action over the picked rows: `act` runs on each of them side by
+ * side, and what comes back is the rows it failed on, which stay picked to
+ * try again, and the first reason, which the caller shows. One policy for
+ * every bulk write, so a partial failure reads the same wherever it happens.
+ */
+export async function settleEach<T>(
+  items: readonly T[],
+  act: (item: T) => Promise<unknown>,
+): Promise<{ failed: T[]; reason: unknown }> {
+  const results = await Promise.allSettled(items.map(act));
+  const failed = items.filter((_, index) => results[index]?.status === 'rejected');
+  const first = results.find((result) => result.status === 'rejected');
+  return { failed, reason: first ? first.reason : null };
+}

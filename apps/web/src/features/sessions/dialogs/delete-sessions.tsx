@@ -4,6 +4,7 @@ import { ConfirmDialog, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSessionSelectionActions } from '../hooks/use-session-selection';
+import { settleEach } from '../lib/session-selection';
 
 /**
  * Delete the sessions picked in the sidebar: `DeleteSessionDialog` for several
@@ -34,23 +35,19 @@ export function DeleteSessionsDialog({
 
   async function confirm() {
     setPending(true);
-    const results = await Promise.allSettled(
-      left.map((session) =>
-        close.mutateAsync({
-          id: session.id,
-          acceptUnpushedWork: session.isFolder ? false : discard,
-        }),
-      ),
+    const { failed, reason } = await settleEach(left, (session) =>
+      close.mutateAsync({
+        id: session.id,
+        acceptUnpushedWork: session.isFolder ? false : discard,
+      }),
     );
     setPending(false);
-    const failed = left.filter((_, index) => results[index]?.status === 'rejected');
     if (failed.length === 0) {
       clear();
       onClose();
       return;
     }
-    const first = results.find((result) => result.status === 'rejected');
-    setFailure(first?.reason ?? null);
+    setFailure(reason);
     setLeft(failed);
     keep(failed.map((session) => session.id));
   }
@@ -65,19 +62,17 @@ export function DeleteSessionsDialog({
       onClose={onClose}
       onConfirm={() => void confirm()}
     >
-      {failure || anyWorktree ? (
-        <>
-          <ErrorAlert
-            title={t('sessions.deleteSessions.partial', { count: left.length })}
-            error={failure}
-            fallback={t('sessions.deleteSession.failed')}
-          />
-          {anyWorktree ? (
-            <ConfirmDialog.Option checked={discard} onCheckedChange={setDiscard} disabled={pending}>
-              {t('sessions.deleteSession.discard')}
-            </ConfirmDialog.Option>
-          ) : null}
-        </>
+      {failure ? (
+        <ErrorAlert
+          title={t('sessions.deleteSessions.partial', { count: left.length })}
+          error={failure}
+          fallback={t('sessions.deleteSession.failed')}
+        />
+      ) : null}
+      {anyWorktree ? (
+        <ConfirmDialog.Option checked={discard} onCheckedChange={setDiscard} disabled={pending}>
+          {t('sessions.deleteSession.discard')}
+        </ConfirmDialog.Option>
       ) : null}
     </ConfirmDialog>
   );

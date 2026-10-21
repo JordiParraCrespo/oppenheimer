@@ -16,6 +16,7 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionPinsContext } from '../hooks/use-session-pins';
 import { useSelectedSessionIds, useSessionSelectionActions } from '../hooks/use-session-selection';
+import { settleEach } from '../lib/session-selection';
 
 /**
  * The sidebar's head while rows are picked, in the Projects line's place: how
@@ -57,12 +58,10 @@ export function SessionsSelectionBar({
 
   async function moveTo(project: ProjectEntity) {
     const moving = picked.filter((session) => session.projectId !== project.id);
-    const results = await Promise.allSettled(
-      moving.map((session) => move.mutateAsync({ id: session.id, projectId: project.id })),
+    const { failed, reason } = await settleEach(moving, (session) =>
+      move.mutateAsync({ id: session.id, projectId: project.id }),
     );
-    const failed = moving.filter((_, index) => results[index]?.status === 'rejected');
-    const failure = results.find((result) => result.status === 'rejected');
-    onWrite(failure ? (failure.reason as Error) : null);
+    onWrite(reason ? (reason as Error) : null);
     keep(failed.map((session) => session.id));
     const moved = moving.length - failed.length;
     if (moved === 0) return;

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useSessionSelectionStore } from '../hooks/use-session-selection';
-import { clickPick, NO_SELECTION, pickSession } from '../lib/session-selection';
+import { clickPick, NO_SELECTION, pickSession, settleEach } from '../lib/session-selection';
 
 /**
  * Picking rows the way a file list does: ⌘/Ctrl toggles one, Shift spans from
@@ -76,5 +76,37 @@ describe('useSessionSelectionStore', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
     expect(store.ids()).toEqual([]);
+  });
+});
+
+describe('settleEach', () => {
+  it('runs every action and hands back the ones that failed, with the first reason', async () => {
+    const refused = new Error('refused');
+    const ran: string[] = [];
+    const { failed, reason } = await settleEach(['a', 'b', 'c', 'd'], async (id) => {
+      ran.push(id);
+      if (id === 'b') throw refused;
+      if (id === 'd') throw new Error('later');
+    });
+    expect(ran).toEqual(['a', 'b', 'c', 'd']);
+    expect(failed).toEqual(['b', 'd']);
+    expect(reason).toBe(refused);
+  });
+
+  it('reports no reason when everything lands', async () => {
+    expect(await settleEach(['a'], async () => {})).toEqual({ failed: [], reason: null });
+  });
+});
+
+describe('keep', () => {
+  /** A bulk write's leftovers are not a range: the next Shift-click needs a fresh toggle. */
+  it('drops the anchor, so a Shift-click after a partial write picks one row', () => {
+    const { result } = renderHook(() => useSessionSelectionStore(['a', 'b', 'c', 'd']));
+    const store = result.current;
+    act(() => store.pick('a', 'toggle'));
+    act(() => store.pick('c', 'range'));
+    act(() => store.keep(['b']));
+    act(() => store.pick('d', 'range'));
+    expect(store.ids()).toEqual(['b', 'd']);
   });
 });
