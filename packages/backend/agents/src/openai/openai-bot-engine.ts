@@ -45,8 +45,25 @@ function inputItems(request: BotTurnRequest): AgentInputItem[] {
               content: [{ type: 'output_text', text }],
             },
     ),
-    { type: 'message', role: 'user', content: request.message },
+    userMessage(request),
   ];
+}
+
+/** This turn's message: its text, or its images then its text as input parts. */
+function userMessage(request: BotTurnRequest): AgentInputItem {
+  const images = request.images ?? [];
+  if (images.length === 0) return { type: 'message', role: 'user', content: request.message };
+  return {
+    type: 'message',
+    role: 'user',
+    content: [
+      ...images.map((image) => ({
+        type: 'input_image' as const,
+        image: `data:${image.mimeType};base64,${image.data}`,
+      })),
+      ...(request.message ? [{ type: 'input_text' as const, text: request.message }] : []),
+    ],
+  };
 }
 
 /**

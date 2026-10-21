@@ -9,6 +9,7 @@ import {
   type BotReplyOutcome,
   type BotRoutineActivity,
 } from '@oppenheimer/shared';
+import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
 /** One tool call in an activity line. */
@@ -181,6 +182,14 @@ export class BotMessageResponseDto {
     description: 'What an event says happened, by `kind`; null on every other role.',
   })
   event!: BotMessageEventResponseDto | null;
+
+  @ApiProperty({
+    type: BotAttachmentResponseDto,
+    isArray: true,
+    description:
+      'The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.',
+  })
+  attachments!: BotAttachmentResponseDto[];
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

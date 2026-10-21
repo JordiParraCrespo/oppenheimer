@@ -31,6 +31,14 @@ export interface BotEngineTool {
   run(input: unknown, context: { signal: AbortSignal }): Promise<BotEngineToolResult>;
 }
 
+/** An image the turn's message carries, as the person sent it. */
+export interface BotTurnImage {
+  /** `image/png`, `image/jpeg`, `image/gif` or `image/webp`: the formats every engine here reads. */
+  mimeType: string;
+  /** The bytes, base64-encoded. */
+  data: string;
+}
+
 export interface BotTurnRequest {
   provider: BotProvider;
   /**
@@ -50,6 +58,11 @@ export interface BotTurnRequest {
   history: { role: 'user' | 'assistant'; text: string }[];
   /** This turn's user message. */
   message: string;
+  /**
+   * Images sent with `message`, in the order they were attached; none when
+   * absent. The caller sends them only to a provider whose models read them.
+   */
+  images?: readonly BotTurnImage[];
   tools: BotEngineTool[];
   /**
    * Whether the engine offers its own tools (the Claude engine's web search

@@ -83,7 +83,10 @@ export function replyText(block: ChatTurnBlock): string {
 export function retryContent(blocks: readonly ChatTurnBlock[]): string | null {
   const last = newestTurn(blocks);
   if (!last?.turn || last.turn.isActive) return null;
-  return last.asked.at(-1)?.content ?? null;
+  const asked = last.asked.at(-1);
+  // An image is sent once; a message that carried some is written again, not retried.
+  if (!asked?.content || asked.attachments.length > 0) return null;
+  return asked.content;
 }
 
 /** The newest block that is a turn: a routine's line after it does not take Retry away. */

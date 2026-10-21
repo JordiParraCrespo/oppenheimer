@@ -630,3 +630,7 @@ earlier note:
   owner asked for every session to start pre-trusted: the runner marks
   the folder before every launch and restart, whatever the permission
   (02, "Every launch starts in a trusted folder").
+- `versions/mvp/25-bots.md` §7 listed attachments as not built. On
+  2026-10-21 (issue #426) images were built (§3.1): a bot on Anthropic,
+  OpenAI or ChatGPT reads PNG, JPEG, GIF and WebP sent with a message; GLM
+  refuses them. Other files stay unbuilt.

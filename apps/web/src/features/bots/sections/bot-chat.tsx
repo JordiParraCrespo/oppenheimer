@@ -80,6 +80,7 @@ export function BotChat({ botId }: { botId: string }) {
             botId={bot.id}
             name={bot.name}
             provider={bot.provider}
+            model={bot.model}
             tools={
               <BotPermissionChip
                 value={bot.permission}

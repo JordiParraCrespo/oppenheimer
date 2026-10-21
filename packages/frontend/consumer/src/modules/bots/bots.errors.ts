@@ -50,4 +50,6 @@ export const BotsErrors = {
   SAVE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_030', message: 'Failed to change the routine' },
   RUN_ROUTINE_FAILED: { code: 'BOTS_CLIENT_031', message: 'Failed to run the routine' },
   DELETE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_032', message: 'Failed to delete the routine' },
+  UPLOAD_IMAGE_FAILED: { code: 'BOTS_CLIENT_033', message: 'Failed to add the image' },
+  READ_IMAGE_FAILED: { code: 'BOTS_CLIENT_034', message: 'Failed to load the image' },
 } as const satisfies Record<string, ErrorDefinition>;

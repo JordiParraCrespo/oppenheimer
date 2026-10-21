@@ -37,6 +37,29 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
   return driver.code === '23505' && driver.constraint === constraint;
 }
 
+/** Another send claimed one of the message's images first: the enqueue rolls back. */
+class AttachmentsTaken extends Error {}
+
+/**
+ * Marks the message's images as carried by it, each only if no message
+ * carries it yet; whether every one was claimed. The message is inserted
+ * first, in the same transaction, for the foreign key.
+ */
+async function claimAttachments(
+  manager: EntityManager,
+  message: BotMessageEntity,
+): Promise<boolean> {
+  const ids = message.attachments.map((attachment) => attachment.id);
+  if (ids.length === 0) return true;
+  // PK_bot_attachment.
+  const [, affected]: [unknown[], number] = await manager.query(
+    `UPDATE bot_attachment SET "messageId" = $1, "updatedAt" = now()
+      WHERE id = ANY($2::uuid[]) AND "organizationId" = $3 AND "botId" = $4 AND "messageId" IS NULL`,
+    [message.id, ids, message.organizationId, message.botId],
+  );
+  return affected === ids.length;
+}
+
 @Injectable()
 export class BotTurnRepository
   extends ScopedRepositoryBase<BotTurnOrmEntity>
@@ -57,14 +80,31 @@ export class BotTurnRepository
     super();
   }
 
-  enqueue(
+  async enqueue(
     turn: BotTurnEntity,
     message: BotMessageEntity,
     correlationId: string | null,
-  ): Promise<'staged' | 'waiting' | 'missing'> {
-    return this.outbox.transaction((manager) =>
-      enqueueWithin(manager, this.outbox, this.mapper, this.messages, turn, message, correlationId),
-    );
+  ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'> {
+    try {
+      return await this.outbox.transaction(async (manager) => {
+        const outcome = await enqueueWithin(
+          manager,
+          this.outbox,
+          this.mapper,
+          this.messages,
+          turn,
+          message,
+          correlationId,
+        );
+        if (outcome !== 'missing' && !(await claimAttachments(manager, message))) {
+          throw new AttachmentsTaken();
+        }
+        return outcome;
+      });
+    } catch (error) {
+      if (error instanceof AttachmentsTaken) return 'attachments_taken';
+      throw error;
+    }
   }
 
   enqueueOnce(
@@ -143,7 +183,17 @@ export class BotTurnRepository
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'> {
     try {
-      return await this.enqueue(turn, message, correlationId);
+      return await this.outbox.transaction((manager) =>
+        enqueueWithin(
+          manager,
+          this.outbox,
+          this.mapper,
+          this.messages,
+          turn,
+          message,
+          correlationId,
+        ),
+      );
     } catch (error) {
       if (isUniqueViolation(error, 'UQ_bot_turn_answers')) return 'duplicate';
       throw error;

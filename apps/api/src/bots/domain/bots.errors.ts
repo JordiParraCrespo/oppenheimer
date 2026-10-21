@@ -135,4 +135,34 @@ export const BotErrors = {
     message: 'That model provider has no key',
     httpStatus: 409,
   },
+  /** An upload that is not a PNG, JPEG, GIF or WebP image (`BOT_IMAGE_MIME_TYPES`). */
+  ATTACHMENT_TYPE_UNSUPPORTED: {
+    code: 'BOTS_024',
+    message: 'That file is not an image a bot takes',
+    httpStatus: 415,
+  },
+  /** An upload past `BOT_IMAGE_MAX_BYTES`. */
+  ATTACHMENT_TOO_LARGE: {
+    code: 'BOTS_025',
+    message: 'The image is too large',
+    httpStatus: 413,
+  },
+  /** Also an image of another bot, in another workspace, or someone else's upload not sent yet. */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'BOTS_026',
+    message: 'Image not found',
+    httpStatus: 404,
+  },
+  /** An image a message already carries: an upload is sent once. */
+  ATTACHMENT_SENT: {
+    code: 'BOTS_027',
+    message: 'The image was already sent',
+    httpStatus: 409,
+  },
+  /** An image for a bot whose provider's models read none (GLM). */
+  MODEL_TAKES_NO_IMAGES: {
+    code: 'BOTS_028',
+    message: "The bot's model does not read images",
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

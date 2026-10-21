@@ -76,6 +76,7 @@ export {
 } from './components/chat-cards';
 export type { ChatComposerLabels } from './components/chat-composer';
 export { ChatComposer } from './components/chat-composer';
+export { ChatImage, ChatImageRemove } from './components/chat-image';
 export type { DictationSlot } from './components/chat-composer-extras';
 export {
   ComposerContextMeter,

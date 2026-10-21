@@ -57,6 +57,21 @@
     "tokens_one": "{{tokens}} token",
     "tokens_many": "{{tokens}} tokens",
     "tokens_other": "{{tokens}} tokens",
+    "images": {
+      "attach": "Añadir imágenes",
+      "remove": "Quitar {{name}}",
+      "open": "Abrir {{name}}",
+      "pasted": "Imagen pegada",
+      "notSupported": "{{name}} no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
+      "tooLarge": "{{name}} ocupa más de 5 MB.",
+      "tooMany": "Un mensaje puede llevar hasta {{max}} imágenes.",
+      "noVision": "{{model}} no puede leer imágenes. Cambia el modelo del bot para enviarlas.",
+      "noVisionHeld": "{{model}} no puede leer imágenes. Quítalas o cambia de modelo para enviar este mensaje.",
+      "uploading": "Espera a que terminen de añadirse las imágenes.",
+      "failedHeld": "Quita la imagen que no se pudo añadir.",
+      "uploadFailed": "No se pudo añadir {{name}}.",
+      "unavailable": "No se pudo cargar esta imagen."
+    },
     "turn": {
       "queued": "Esperando",
       "thinking": "Pensando",

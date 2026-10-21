@@ -7,6 +7,8 @@ export interface HistoryMessage {
   content: string;
   /** What an event says happened; null or absent on every other role. */
   event?: BotMessageEvent | null;
+  /** The images a message of yours carried; only how many is read back. */
+  attachments?: readonly unknown[];
 }
 
 /** One entry of the history a turn is sent, oldest first. */
@@ -58,7 +60,11 @@ export function botHistory(
   let left =
     BOT_HISTORY_TOKEN_BUDGET - opening.reduce((sum, entry) => sum + estimateTokens(entry.text), 0);
   const entries = messages
-    .filter((message) => message.role !== 'activity' && message.content.trim())
+    .filter(
+      (message) =>
+        message.role !== 'activity' &&
+        (message.content.trim() || (message.attachments?.length ?? 0) > 0),
+    )
     .map(historyEntry);
   let first = entries.length;
   while (first > 0) {
@@ -73,7 +79,23 @@ export function botHistory(
 /** One stored message as the history entry a turn is sent. */
 export function historyEntry(message: HistoryMessage): HistoryEntry {
   if (message.role === 'event') return { role: 'user', text: eventText(message) };
-  return { role: message.role === 'user' ? 'user' : 'assistant', text: message.content };
+  if (message.role !== 'user') return { role: 'assistant', text: message.content };
+  const images = message.attachments?.length ?? 0;
+  if (images === 0) return { role: 'user', text: message.content };
+  return {
+    role: 'user',
+    text: [message.content.trim(), imagesNote(images)].filter(Boolean).join('\n\n'),
+  };
+}
+
+/**
+ * Where an earlier message's images were: a turn is sent only its own
+ * message's images (`25-bots.md` §3.1), so the bot knows they were there and
+ * that it cannot see them now.
+ */
+export function imagesNote(count: number): string {
+  const [images, them] = count === 1 ? ['an image', 'it'] : [`${count} images`, 'them'];
+  return `[Oppenheimer: this message came with ${images}. Only a turn's own images are sent, so you cannot see ${them} now; if you need ${them} again, ask the person to send ${them} again.]`;
 }
 
 /**

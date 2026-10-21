@@ -44,6 +44,10 @@ export class BotMessageOrmEntity {
   @Column({ type: 'integer', default: 0 })
   position!: number;
 
+  /** The images a message of yours carries (`BotAttachment`), read whole; empty on anything else. */
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  attachments!: Record<string, unknown>[];
+
   /** What an event says happened (`BotMessageEvent`), read whole; null on anything else. */
   @Column({ type: 'jsonb', nullable: true })
   event!: Record<string, unknown> | null;

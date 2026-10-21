@@ -3291,6 +3291,19 @@ export type BotToolStepResponseDto = {
     sessionId: string | null;
 };
 
+export type BotAttachmentResponseDto = {
+    id: string;
+    mimeType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+    /**
+     * Its size in bytes.
+     */
+    sizeBytes: number;
+    /**
+     * The file name it was uploaded with; may be empty.
+     */
+    name: string;
+};
+
 export type BotMessageResponseDto = {
     id: string;
     /**
@@ -3307,6 +3320,10 @@ export type BotMessageResponseDto = {
      * What an event says happened, by `kind`; null on every other role.
      */
     event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | null;
+    /**
+     * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
+     */
+    attachments: Array<BotAttachmentResponseDto>;
     createdAt: string;
 };
 
@@ -3349,7 +3366,8 @@ export type BotConversationResponseDto = {
 };
 
 export type SendBotMessageRequest = {
-    content: string;
+    content?: string;
+    attachmentIds?: Array<string>;
     timeZone?: string;
 };
 
@@ -11844,13 +11862,21 @@ export type SendBotMessageErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * BOTS_026 — Image not found
+     *
      * BOTS_001 — Bot not found
      */
     404: ProblemDetailsDto;
     /**
+     * BOTS_027 — The image was already sent
+     *
      * BOTS_013 — The bot's model provider has no key
      */
     409: ProblemDetailsDto;
+    /**
+     * BOTS_028 — The bot's model does not read images
+     */
+    422: ProblemDetailsDto;
     /**
      * BOTS_011 — Model providers are not configured on this server
      */
@@ -11864,6 +11890,92 @@ export type SendBotMessageResponses = {
 };
 
 export type SendBotMessageResponse = SendBotMessageResponses[keyof SendBotMessageResponses];
+
+export type UploadBotAttachmentData = {
+    body: {
+        file: Blob | File;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/attachments';
+};
+
+export type UploadBotAttachmentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_025 — Image too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * BOTS_024 — Not an image a bot takes
+     */
+    415: ProblemDetailsDto;
+    /**
+     * BOTS_028 — The bot's model does not read images
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type UploadBotAttachmentError = UploadBotAttachmentErrors[keyof UploadBotAttachmentErrors];
+
+export type UploadBotAttachmentResponses = {
+    201: BotAttachmentResponseDto;
+};
+
+export type UploadBotAttachmentResponse = UploadBotAttachmentResponses[keyof UploadBotAttachmentResponses];
+
+export type ReadBotAttachmentData = {
+    body?: never;
+    path: {
+        id: string;
+        attachmentId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/attachments/{attachmentId}/content';
+};
+
+export type ReadBotAttachmentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_026 — Image not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ReadBotAttachmentError = ReadBotAttachmentErrors[keyof ReadBotAttachmentErrors];
+
+export type ReadBotAttachmentResponses = {
+    /**
+     * The image’s bytes
+     */
+    200: unknown;
+};
 
 export type CancelBotTurnData = {
     body?: never;

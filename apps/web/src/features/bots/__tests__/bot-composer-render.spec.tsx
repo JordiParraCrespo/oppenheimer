@@ -27,6 +27,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: idle,
+  useUploadBotImage: () => ({ mutateAsync: async () => ({ id: 'a1' }) }),
   useCancelBotTurn: idle,
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
 }));
@@ -48,6 +49,7 @@ describe('BotComposer', () => {
         botId="b1"
         name="Ada"
         provider="anthropic"
+        model={null}
         tools={<Chip onRender={onTool} label="tools" />}
         engine={<Chip onRender={onEngine} label="engine" />}
       />,

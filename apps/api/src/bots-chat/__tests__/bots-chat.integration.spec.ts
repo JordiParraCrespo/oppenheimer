@@ -27,15 +27,20 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
+import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
+import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
 import { BotApprovalMapper } from '../bot-approval.mapper';
+import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
+import { BotAttachmentOrmEntity } from '../database/bot-attachment.orm-entity';
+import { BotAttachmentRepository } from '../database/bot-attachment.repository';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
@@ -44,6 +49,7 @@ import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
+import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import {
@@ -79,6 +85,7 @@ describe('bots chat (integration)', () => {
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
   let summaries: BotConversationSummaryRepository;
+  let attachments: BotAttachmentRepository;
   let organizationId: string;
   let userId: string;
 
@@ -118,6 +125,7 @@ describe('bots chat (integration)', () => {
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
         BotConversationSummaryOrmEntity,
+        BotAttachmentOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -168,6 +176,10 @@ describe('bots chat (integration)', () => {
       dataSource.getRepository(BotConversationSummaryOrmEntity),
       new OutboxService(dataSource),
       new BotConversationSummaryMapper(),
+    );
+    attachments = new BotAttachmentRepository(
+      dataSource.getRepository(BotAttachmentOrmEntity),
+      new BotAttachmentMapper(),
     );
   }, 180000);
 
@@ -510,6 +522,12 @@ describe('bots chat (integration)', () => {
       hosts,
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
+      { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
+      new BotTurnOpeningResolver(messages, attachments, {
+        store: async () => undefined,
+        read: async (key) => Buffer.from(key),
+        remove: async () => undefined,
+      }),
     );
   }
 
@@ -536,7 +554,7 @@ describe('bots chat (integration)', () => {
       model: 'glm-5.3',
       effort: null,
     });
-    await expect(contextResolver().resolve(stray, 'Hi', new Date())).rejects.toMatchObject({
+    await expect(contextResolver().resolve(stray, new Date())).rejects.toMatchObject({
       code: 'BOTS_001',
     });
     expect((await bots.findForTurn(organizationId, theirs.id)).isNone()).toBe(true);
@@ -545,7 +563,7 @@ describe('bots chat (integration)', () => {
 
     const mine = await create('Mine');
     const { turn } = sent(mine, 'Hi');
-    const context = await contextResolver().resolve(turn, 'Hi', new Date());
+    const context = await contextResolver().resolve(turn, new Date());
     expect(context.apiKey).toBe('my-key-1234');
     expect(context.systemPrompt).toContain('You are Mine.');
     expect(context.systemPrompt).not.toContain('their secret');
@@ -1325,5 +1343,88 @@ describe('bots chat (integration)', () => {
       fromBotName: 'Ada',
       expectsReply: true,
     });
+  });
+
+  async function uploaded(bot: BotEntity): Promise<BotAttachmentEntity> {
+    const image = BotAttachmentEntity.upload(
+      {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        uploadedByUserId: userId,
+        mimeType: 'image/png',
+        sizeBytes: 1024,
+        name: 'screenshot.png',
+      },
+      'png',
+    );
+    await attachments.insert(image);
+    return image;
+  }
+
+  function sentWith(bot: BotEntity, images: BotAttachmentEntity[]) {
+    const { turn, message } = sent(bot, '');
+    const withImages = BotMessageEntity.createNew({
+      ...message.getProps(),
+      content: 'What is this?',
+      attachments: images.map((image) => image.toMessageAttachment()),
+    });
+    return { turn, message: withImages };
+  }
+
+  it('sends an image with one message only: a second send of it writes nothing', async () => {
+    const bot = await create('Vision');
+    const image = await uploaded(bot);
+    const first = sentWith(bot, [image]);
+    const second = sentWith(bot, [image]);
+
+    expect(await turns.enqueue(first.turn, first.message, null)).toBe('staged');
+    expect(await turns.enqueue(second.turn, second.message, null)).toBe('attachments_taken');
+
+    const [stored] = await attachments.findForMessage(organizationId, first.message.id);
+    expect(stored).toMatchObject({ id: image.id, messageId: first.message.id });
+    const rows: { id: string }[] = await dataSource.query(
+      `SELECT id FROM bot_turn WHERE "botId" = $1`,
+      [bot.id],
+    );
+    expect(rows.map((row) => row.id)).toEqual([first.turn.id]);
+    const [read] = await messages.findConversation(scope(), bot.id, 10);
+    expect(read.attachments).toEqual([image.toMessageAttachment()]);
+  });
+
+  it('claims none of a message’s images when one is already taken', async () => {
+    const bot = await create('Vision');
+    const [kept, taken] = [await uploaded(bot), await uploaded(bot)];
+    const earlier = sentWith(bot, [taken]);
+    await turns.enqueue(earlier.turn, earlier.message, null);
+    const later = sentWith(bot, [kept, taken]);
+
+    expect(await turns.enqueue(later.turn, later.message, null)).toBe('attachments_taken');
+
+    const [still] = await attachments.findManyForBot(organizationId, bot.id, [kept.id]);
+    expect(still.messageId).toBeNull();
+  });
+
+  it('frees a sent image when its chat is cleared or its bot deleted, for the sweep to delete', async () => {
+    const cleared = await create('Cleared');
+    const deleted = await create('Deleted');
+    const images = [await uploaded(cleared), await uploaded(deleted)];
+    for (const [bot, image] of [
+      [cleared, images[0]],
+      [deleted, images[1]],
+    ] as const) {
+      const { turn, message } = sentWith(bot, [image]);
+      await turns.enqueue(turn, message, null);
+    }
+    // Clear history refuses while a turn is queued: end the cleared bot's.
+    await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1`, [
+      cleared.id,
+    ]);
+    expect(await turns.clearConversation(organizationId, cleared.id)).toBe('cleared');
+    await bots.delete(deleted);
+
+    const later = new Date(Date.now() + 60_000);
+    const unclaimed = await attachments.findUnclaimedBefore(later, 100);
+    expect(unclaimed.map((image) => image.id).sort()).toEqual(images.map((i) => i.id).sort());
+    expect(await attachments.deleteUnclaimed(images.map((image) => image.id))).toBe(2);
   });
 });

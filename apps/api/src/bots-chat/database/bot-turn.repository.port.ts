@@ -15,13 +15,15 @@ export interface BotTurnRepositoryPort {
   /**
    * Stores a sent message as a queued turn and its first message, under a
    * lock on the bot, and stages the turn's job when the bot has no other
-   * turn queued or running. `missing` when the bot is gone.
+   * turn queued or running. `missing` when the bot is gone. The images the
+   * message carries are claimed in the same transaction; `attachments_taken`,
+   * and nothing written, when another message claimed one first.
    */
   enqueue(
     turn: BotTurnEntity,
     message: BotMessageEntity,
     correlationId: string | null,
-  ): Promise<'staged' | 'waiting' | 'missing'>;
+  ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'>;
 
   /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`

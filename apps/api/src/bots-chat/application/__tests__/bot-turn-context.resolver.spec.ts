@@ -17,6 +17,7 @@ import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resol
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
+import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
  * How a turn's moment is read and where it goes: the owner's hosts in their
@@ -67,6 +68,7 @@ function setup(
     { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
     {} as BotApprovalRequestFactory,
     { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
+    { resolve: async () => ({ prompt: 'Hi', images: [] }) } as unknown as BotTurnOpeningResolver,
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
@@ -80,7 +82,7 @@ function setup(
     });
   return {
     resolve: (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
-      resolver.resolve(turnFrom(timeZone), 'Hi', at),
+      resolver.resolve(turnFrom(timeZone), at),
   };
 }
 

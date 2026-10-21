@@ -27,6 +27,7 @@ import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 import { BotToolboxFactory } from './bot-toolbox.factory';
+import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -45,10 +46,11 @@ export const BOT_TURN_MAX_STEPS = 20;
  * to turn while they are), the conversation before this turn (its summary,
  * then the newest messages after it that fit the history budget), the
  * credential the turn's provider runs on (a key, or a refreshed sign-in),
- * and this turn's message, opened by the moment it runs in: the sender's
- * time, the bot's home host and the owner's hosts, read in the owner's
- * scope. The bot's own rows are read by the turn's workspace; what the owner
- * can reach is read as the owner, so the bot sees no more than they do.
+ * and this turn's message with its images, its words opened by the moment
+ * it runs in: the sender's time, the bot's home host and the owner's hosts,
+ * read in the owner's scope. The bot's own rows are read by the turn's
+ * workspace; what the owner can reach is read as the owner, so the bot sees
+ * no more than they do.
  */
 @Injectable()
 export class BotTurnContextResolver {
@@ -64,11 +66,13 @@ export class BotTurnContextResolver {
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
+    private readonly opening: BotTurnOpeningResolver,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
-  async resolve(turn: BotTurnEntity, message: string, now: Date): Promise<BotTurnContext> {
+  async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnContext> {
+    const { prompt, images } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
@@ -129,8 +133,9 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
         }),
-        message,
+        prompt,
       ),
+      images,
       tools,
       maxSteps: BOT_TURN_MAX_STEPS,
     };

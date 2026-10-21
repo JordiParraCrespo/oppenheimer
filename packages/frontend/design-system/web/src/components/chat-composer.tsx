@@ -1,15 +1,20 @@
 'use client';
 
-import { ArrowUpIcon } from 'lucide-react';
+import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
+import { IconButton } from './icon-button';
 
-type ChatComposerLabels = { send: string; stop: string };
+type ChatComposerLabels = { send: string; stop: string; attach: string };
 
-const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = { send: 'Send', stop: 'Stop' };
+const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
+  send: 'Send',
+  stop: 'Stop',
+  attach: 'Add images',
+};
 
 /**
  * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
@@ -28,6 +33,10 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = { send: 'Send', stop: '
  * `dictation` (`DictationSlot`) works as in `Composer`: the mic before send,
  * the recorder in the foot row's place while dictating, the notice under the
  * box.
+ *
+ * Images ride a message here. `onAttach` puts the paperclip first in the foot
+ * row, before `tools`; `attachments` are the message's `ChatImage` tiles, in a
+ * row over the text; `allowEmpty` lets a message of images alone be sent.
  */
 function ChatComposer({
   value,
@@ -41,6 +50,9 @@ function ChatComposer({
   tools,
   engine,
   above,
+  attachments,
+  onAttach,
+  allowEmpty = false,
   inputRef,
   dictation,
   labels,
@@ -62,9 +74,15 @@ function ChatComposer({
   engine?: React.ReactNode;
   /** A notice or an approval, fused to the field's top edge. */
   above?: React.ReactNode;
+  /** The images the message carries (`ChatImage`s), in a row over the text. */
+  attachments?: React.ReactNode;
+  /** Present: shows the paperclip, first in the foot row. */
+  onAttach?: () => void;
+  /** Send with nothing written: what is attached is the message. */
+  allowEmpty?: boolean;
   inputRef?: React.Ref<HTMLTextAreaElement>;
   dictation?: DictationSlot;
-  /** The send button's accessible names; any left out stay in English. */
+  /** The icon buttons' accessible names; any left out stay in English. */
   labels?: Partial<ChatComposerLabels>;
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
@@ -73,6 +91,7 @@ function ChatComposer({
     busy,
     disabled,
     sendBlockedReason,
+    allowEmpty,
     onSubmit,
     onStop,
   });
@@ -89,6 +108,11 @@ function ChatComposer({
         )}
         {...props}
       >
+        {attachments ? (
+          <div data-slot="chat-composer-attachments" className="flex flex-wrap gap-2.5 px-5 pt-4">
+            {attachments}
+          </div>
+        ) : null}
         <textarea
           ref={inputRef}
           data-slot="chat-composer-input"
@@ -109,7 +133,31 @@ function ChatComposer({
             {dictation.recorder}
           </div>
         ) : (
-          <ComposerFoot data-slot="chat-composer-foot" className="gap-1 px-3 pb-3" leading={tools} engine={engine}>
+          <ComposerFoot
+            data-slot="chat-composer-foot"
+            className="gap-1 px-3 pb-3"
+            leading={
+              onAttach ? (
+                <>
+                  <IconButton
+                    aria-label={label.attach}
+                    title={label.attach}
+                    size="sm"
+                    shape="square"
+                    onClick={onAttach}
+                    disabled={disabled}
+                    className="size-7.5"
+                  >
+                    <PaperclipIcon className="size-3.75" />
+                  </IconButton>
+                  {tools}
+                </>
+              ) : (
+                tools
+              )
+            }
+            engine={engine}
+          >
             {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
             <ComposerSendButton
               busy={busy}

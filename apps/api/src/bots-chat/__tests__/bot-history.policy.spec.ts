@@ -3,6 +3,7 @@ import {
   botHistory,
   estimateTokens,
   type HistoryMessage,
+  imagesNote,
 } from '../domain/bot-history.policy';
 
 /**
@@ -88,6 +89,24 @@ describe('botHistory', () => {
   it('sends no summary entry when there is none, or it is blank', () => {
     expect(botHistory([user('Hi')], null)).toEqual([{ role: 'user', text: 'Hi' }]);
     expect(botHistory([user('Hi')], '  ')).toEqual([{ role: 'user', text: 'Hi' }]);
+  });
+
+  it('says where your earlier images were, without sending them, image-only messages included', () => {
+    expect(
+      botHistory(
+        [
+          { role: 'user', content: 'What is this?', attachments: [{}] },
+          { role: 'assistant', content: 'A cat.' },
+          { role: 'user', content: '', attachments: [{}, {}] },
+        ],
+        null,
+      ),
+    ).toEqual([
+      { role: 'user', text: `What is this?\n\n${imagesNote(1)}` },
+      { role: 'assistant', text: 'A cat.' },
+      { role: 'user', text: imagesNote(2) },
+    ]);
+    expect(imagesNote(2)).toContain('2 images');
   });
 
   it('reads an event back on the person’s side, marked as Oppenheimer’s, never as their words', () => {

@@ -107,8 +107,12 @@ describe('turnPhase', () => {
   });
 });
 
-const said = (id: string, role: BotMessageEntity['role'], content: string) =>
-  ({ id, turnId: 't', role, content }) as BotMessageEntity;
+const said = (
+  id: string,
+  role: BotMessageEntity['role'],
+  content: string,
+  attachments: BotMessageEntity['attachments'] = [],
+) => ({ id, turnId: 't', role, content, attachments }) as BotMessageEntity;
 const block = (
   status: BotTurnEntity['status'] | undefined,
   asked: BotMessageEntity[],
@@ -152,6 +156,14 @@ describe('retryContent', () => {
     // A routine's line after the turn does not take Retry away.
     const line: ChatTurnBlock = { key: 'r1', turnId: null, turn: undefined, asked: [], answer: [] };
     expect(retryContent([block('failed', asked), line])).toBe('what about bun?');
+  });
+
+  it('offers no Retry for a message that carried images: an image is sent once', () => {
+    const image = { id: 'a1', mimeType: 'image/png' as const, sizeBytes: 10, name: 'shot.png' };
+    expect(retryContent([block('failed', [said('q1', 'user', 'what is this?', [image])])])).toBe(
+      null,
+    );
+    expect(retryContent([block('failed', [said('q1', 'user', '', [image])])])).toBeNull();
   });
 });
 

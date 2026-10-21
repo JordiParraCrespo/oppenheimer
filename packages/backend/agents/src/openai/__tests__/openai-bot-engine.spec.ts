@@ -312,6 +312,34 @@ describe('OpenAiBotEngine', () => {
     });
   });
 
+  it('sends this message’s images before its text, as data URLs, and leaves the history text', async () => {
+    const run = scripted(async function* () {});
+
+    await collect(
+      new OpenAiBotEngine().run(
+        request({
+          message: 'What is in these?',
+          images: [
+            { mimeType: 'image/png', data: 'cG5n' },
+            { mimeType: 'image/webp', data: 'd2VicA==' },
+          ],
+        }),
+      ),
+    );
+
+    expect(run.seen.input).toEqual([
+      {
+        type: 'message',
+        role: 'user',
+        content: [
+          { type: 'input_image', image: 'data:image/png;base64,cG5n' },
+          { type: 'input_image', image: 'data:image/webp;base64,d2VicA==' },
+          { type: 'input_text', text: 'What is in these?' },
+        ],
+      },
+    ]);
+  });
+
   it('ends with max_steps when the SDK stops at the turn limit', async () => {
     const maxTurns = Object.assign(new Error('Max turns (4) exceeded'), {
       name: 'MaxTurnsExceededError',
