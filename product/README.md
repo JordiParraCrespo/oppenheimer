@@ -624,3 +624,9 @@ earlier note:
   pull request writes, the owner's live roles are checked on every call
   and every approved run; a tool they lack stays offered and its call is
   refused, naming the permission to ask for (25 §4).
+- `versions/mvp/02-runner.md` §5 (2026-10-18) marked a session's folder
+  trusted in Claude Code only for a launch at Approve for me or Full
+  access, leaving Ask on "do you trust this folder?". On 2026-10-20 the
+  owner asked for every session to start pre-trusted: the runner marks
+  the folder before every launch and restart, whatever the permission
+  (02, "Every launch starts in a trusted folder").
