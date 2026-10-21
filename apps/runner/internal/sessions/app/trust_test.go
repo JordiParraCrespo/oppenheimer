@@ -17,15 +17,12 @@ func (r *recordedTrust) Trust(_ domain.Agent, dir string) error {
 	return nil
 }
 
-// A launch nobody approves (a bot's session, a review) must find its folder
-// already trusted, or Claude Code stops on "do you trust this folder?" in a
-// terminal no one is watching. A launch at `ask` keeps that question.
-func TestCreateTrustsTheFolderOnlyForALaunchWithoutApprovals(t *testing.T) {
-	for _, tc := range []struct {
-		permission string
-		trusted    bool
-	}{{"auto", true}, {"full", true}, {"ask", false}} {
-		t.Run(tc.permission, func(t *testing.T) {
+// Every launch must find its folder already trusted, whatever its permission
+// level, or Claude Code opens on "do you trust this folder?" for a folder the
+// runner made for it (and stops there in a terminal no one is watching).
+func TestCreateTrustsTheFolderAtEveryPermission(t *testing.T) {
+	for _, permission := range []string{"auto", "full", "ask"} {
+		t.Run(permission, func(t *testing.T) {
 			trust := &recordedTrust{}
 			svc, err := app.New(app.Options{
 				Terminals: fake.NewTerminals(), Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
@@ -36,19 +33,13 @@ func TestCreateTrustsTheFolderOnlyForALaunchWithoutApprovals(t *testing.T) {
 				t.Fatal(err)
 			}
 			in := createInput()
-			in.Launch.Permission = tc.permission
+			in.Launch.Permission = permission
 
 			session, err := svc.Create(context.Background(), in)
 			if err != nil {
 				t.Fatalf("create: %v", err)
 			}
 
-			if !tc.trusted {
-				if len(trust.dirs) != 0 {
-					t.Fatalf("trusted %v for a launch that asks", trust.dirs)
-				}
-				return
-			}
 			if len(trust.dirs) != 1 || trust.dirs[0] != session.Cwd() {
 				t.Fatalf("trusted %v, want [%s]", trust.dirs, session.Cwd())
 			}

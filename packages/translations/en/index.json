@@ -1938,7 +1938,10 @@
       "bar": "review · {{repository}} #{{number}}",
       "close": "Show the pull request",
       "loadFailed": "Could not load the review session.",
-      "listFailed": "Could not load your review sessions."
+      "listFailed": "Could not load your review sessions.",
+      "delete": "Delete review session",
+      "deleteTitle": "Delete the review session of #{{number}}?",
+      "deleteDescription": "The session stops, its worktree of {{branch}} is removed from the host, and the transcript is gone. The pull request is not touched. Deleting stops if the session has work that is not pushed."
     }
   },
   "tasks": {

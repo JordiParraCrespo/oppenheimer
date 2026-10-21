@@ -159,11 +159,13 @@ export {
 } from './projects.queries';
 export {
   type AddCommentVariables,
+  type CloseReviewSessionVariables,
   type MergePullRequestVariables,
   type SetRepositoryWatchVariables,
   type StartReviewSessionVariables,
   type SubmitReviewVariables,
   useAddPullRequestComment,
+  useCloseReviewSession,
   useMergePullRequest,
   usePullRequest,
   usePullRequestComments,

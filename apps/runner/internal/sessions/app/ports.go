@@ -233,9 +233,10 @@ type LaunchGate interface {
 }
 
 // Trust answers an agent's "do you trust this folder?" question before it is
-// asked, for a launch nobody is expected to watch (Launch.TrustsFolder). It
-// is best-effort: a launch whose folder could not be marked still starts, and
-// the question is then on the screen for whoever opens it.
+// asked, for every launch: the folder is one the runner made or the person
+// picked for the session, so the question only stands between them and the
+// agent. It is best-effort: a launch whose folder could not be marked still
+// starts, and the question is then on the screen for whoever opens it.
 type Trust interface {
 	Trust(agent domain.Agent, dir string) error
 }
