@@ -21,3 +21,10 @@ export const GITHUB_PULLS = Symbol('GITHUB_PULLS');
  * installations and written in the caller's own name.
  */
 export const PULL_REQUEST_ACCESS = Symbol('PULL_REQUEST_ACCESS');
+/** `GithubIssuesPort`: GitHub's issue endpoints, with a token the caller supplies. */
+export const GITHUB_ISSUES = Symbol('GITHUB_ISSUES');
+/**
+ * `IssueAccessPort`: a workspace's GitHub issues, read through its
+ * installations and written in the caller's own name.
+ */
+export const ISSUE_ACCESS = Symbol('ISSUE_ACCESS');

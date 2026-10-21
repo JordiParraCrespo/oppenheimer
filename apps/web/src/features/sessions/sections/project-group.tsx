@@ -1,25 +1,22 @@
 import {
   IconButton,
-  SessionList,
   SidebarEmptyRow,
   SidebarProjectGroup,
   SidebarProjectHeader,
   SortableGroup,
   SortableSidebarProjectGroup,
-  useNow,
 } from '@oppenheimer/design-system-web';
 import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { SessionRow } from './session-row';
+import { SessionRows } from './session-rows';
 
 /**
  * One project's group in the sidebar; `project` is null for sessions whose
- * project the list does not hold, which get a header with no actions. It owns
- * its ages' clock, and is a section rather than a component because the
- * header's "one of mine is open" mark subscribes to the route, a boolean per
+ * project the list does not hold, which get a header with no actions. Its
+ * rows (`SessionRows`) own their ages' clock. It is a section rather than a
+ * component because the header's "one of mine is open" mark subscribes to the route, a boolean per
  * group, so a navigation re-renders only the groups whose mark moved.
  *
  * A project's group drags by its header among the others, and its rows are a
@@ -58,10 +55,6 @@ export function ProjectGroup({
   onWrite: (error: Error | null) => void;
 }) {
   const { t } = useTranslation();
-  // One clock for the group's ages, ticking once a minute: every row redraws
-  // on the tick, because every age may have moved, and the sidebar around the
-  // groups — its head, its filters — does not.
-  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const label = project
     ? project.isUnassigned
       ? t('projects.unassigned')
@@ -122,19 +115,13 @@ export function ProjectGroup({
           ) : null}
         </SidebarEmptyRow>
       ) : (
-        <SessionList>
-          {sessions.map((session) => (
-            <SessionRow
-              key={session.id}
-              session={session}
-              now={now}
-              onShare={onShare}
-              dragDisabled={!project || narrowed}
-              onDelete={onDelete}
-              onWrite={onWrite}
-            />
-          ))}
-        </SessionList>
+        <SessionRows
+          sessions={sessions}
+          dragDisabled={!project || narrowed}
+          onShare={onShare}
+          onDelete={onDelete}
+          onWrite={onWrite}
+        />
       )}
     </SortableGroup>
   );

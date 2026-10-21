@@ -271,6 +271,12 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
 
   @ApiProperty({
     description:
+      'The head commit this read saw. A merge that names it is refused once newer commits land.',
+  })
+  headSha!: string;
+
+  @ApiProperty({
+    description:
       'Whether the head branch is in another repository (a fork), which a session cannot check out yet.',
   })
   fromFork!: boolean;
