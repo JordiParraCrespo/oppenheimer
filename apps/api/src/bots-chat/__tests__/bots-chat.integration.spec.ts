@@ -1530,7 +1530,9 @@ describe('bots chat (integration)', () => {
       );
     });
 
-    it('records one of two racing wakes and ends a subscription once', async () => {
+    // What breaks this: an input-needed wake recorded just before the task's
+    // end, keeping a finished one-task subscription alive.
+    it('records one of two racing wakes, and ends a subscription whatever was recorded since', async () => {
       const bot = await create('Racer');
       const stored = await subscriptions.subscribe(watching(bot));
       const a = (await subscriptions.findForWake(stored.id)) as BotSubscriptionEntity;
@@ -1539,8 +1541,8 @@ describe('bots chat (integration)', () => {
       b.recordWake(1, 'completed');
       expect(await subscriptions.recordWake(a)).toBe(true);
       expect(await subscriptions.recordWake(b)).toBe(false);
-      expect(await subscriptions.end(b)).toBe(false);
-      expect(await subscriptions.end(a)).toBe(true);
+      expect(await subscriptions.end(b)).toBe(true);
+      expect(await subscriptions.end(a)).toBe(false);
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 

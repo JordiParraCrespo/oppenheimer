@@ -7,10 +7,13 @@ import { BotSubscriptionEntity } from './domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTION_UNTIL,
   BOT_SUBSCRIPTION_WAKE_LIMIT,
+  type BotSubscriptionUntil,
+  knownStateOf,
   type SessionWake,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
+  watchedTurnFor,
 } from './domain/bot-subscription.policy';
 import { formatToolTime } from './domain/bot-tool-text.policy';
 
@@ -64,6 +67,40 @@ export class BotSubscriptionMapper {
         version: record.version,
       },
     });
+  }
+
+  /**
+   * A new subscription from the turn that asked for it and the session as it
+   * stands. One the bot made by starting the session follows its first task
+   * and knows none of it yet, however far it got before the watch was
+   * stored; one made later follows the live task, or the next, and counts
+   * what the bot can already read as told.
+   */
+  toSubscribeProps(
+    asker: {
+      organizationId: string;
+      botId: string;
+      turnId: string;
+      credentialScopes: readonly Scope[] | null;
+      timeZone: string;
+    },
+    session: WorkSessionEntity,
+    options: { until: BotSubscriptionUntil; purpose: string | null; from: 'first_task' | 'now' },
+  ): Parameters<typeof BotSubscriptionEntity.subscribe>[0] {
+    const latest = session.latestTurn;
+    const first = options.from === 'first_task';
+    return {
+      organizationId: asker.organizationId,
+      botId: asker.botId,
+      sessionId: session.id,
+      originTurnId: asker.turnId,
+      purpose: options.purpose,
+      until: options.until,
+      watchedTurn: first ? 1 : watchedTurnFor(latest),
+      credentialScopes: asker.credentialScopes,
+      timeZone: asker.timeZone,
+      known: first ? null : knownStateOf(latest),
+    };
   }
 
   /**

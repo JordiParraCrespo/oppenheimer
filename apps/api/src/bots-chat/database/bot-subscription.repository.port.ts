@@ -26,7 +26,11 @@ export interface BotSubscriptionRepositoryPort {
    * at. Whether this write won; a loser writes nothing.
    */
   recordWake(subscription: BotSubscriptionEntity): Promise<boolean>;
-  /** Ends it, conditioned on the version it was loaded at. Whether it was still there. */
+  /**
+   * Ends it, whatever was recorded since it was loaded: an end is final, so a
+   * wake that recorded meanwhile (input needed, read before the task ended)
+   * never keeps a finished subscription alive. Whether it was still there.
+   */
   end(subscription: BotSubscriptionEntity): Promise<boolean>;
   /** The bot stops following the session. Whether it was following it. */
   unsubscribe(organizationId: string, botId: string, sessionId: string): Promise<boolean>;

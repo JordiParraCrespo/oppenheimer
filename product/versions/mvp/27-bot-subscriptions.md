@@ -67,7 +67,7 @@ permission prompts would otherwise wake it on every tool call.
 
 | How | Watches | Ends |
 |---|---|---|
-| `start_session` (subscribes by default; `watch: false` opts out) | the session's first task | when that task ends |
+| `start_session` (subscribes by default; `watch: false` opts out) | the session's first task, even one that ended before the watch was stored: the wake is asked for once at once, so a launch that failed straight away is told | when that task ends |
 | `watch_session` with `until: "task"` (the default) | the live task, or the next one if none is live | when that task ends |
 | `watch_session` with `until: "closed"` | every task of the session | when the session is closed, or after the wake limit |
 | `unwatch_session` | — | now |
@@ -111,6 +111,14 @@ permission prompts would otherwise wake it on every tool call.
    (`lastTurnSeq`, `lastState`, `wakes`, and the end when it ends). A
    process that dies between the two re-runs both on redelivery:
    `enqueueOnce` finds the turn it queued, and the record is written.
+   The record is conditioned on the version the wake loaded; the end is
+   not, since an end is final: an input-needed wake recorded a moment
+   before must not keep a finished task's subscription alive.
+
+The listener sets `suppressErrors: false`, as the outbox's other
+at-least-once listeners do, so a wake that throws is delivered again
+rather than marked done; the wakes of one session run side by side, and
+one failing does not hold back the others.
 
 The turn opens with an `event` message of kind `session`: the session's id,
 name, the task's number and state, and the subscription's purpose. Its

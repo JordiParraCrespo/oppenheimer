@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
+import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
+import { WakeSubscribedBotCommand } from '../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTIONS_PER_BOT,
   type BotSubscriptionUntil,
-  knownStateOf,
-  watchedTurnFor,
 } from '../domain/bot-subscription.policy';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
@@ -31,17 +31,29 @@ export class BotSessionWatchResolver {
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)
     private readonly subscriptions: BotSubscriptionRepositoryPort,
     private readonly queries: QueryBus,
+    private readonly commands: CommandBus,
+    private readonly mapper: BotSubscriptionMapper,
   ) {}
 
   /**
-   * Follows a session the bot just started, until its first task ends, and
-   * says so in words for `start_session`'s answer. The session exists
-   * whatever happens here, so a watch that cannot be stored is said, never
-   * thrown: the start stays a start.
+   * Follows a session the bot just started, from its first task, and says so
+   * in words for `start_session`'s answer. The task may already have ended
+   * by the time the watch is stored (a launch that failed at once), and its
+   * event then found nobody, so the wake is asked for once now: it reads the
+   * session and wakes the bot if there is news, and does nothing otherwise.
+   * The session exists whatever happens here, so a watch that cannot be
+   * stored is said, never thrown: the start stays a start.
    */
   async watchStarted(context: BotToolCallContext, sessionId: string): Promise<string> {
     try {
-      await this.watch(context, sessionId, { until: 'task', purpose: null });
+      const { subscription } = await this.watch(context, sessionId, {
+        until: 'task',
+        purpose: null,
+        from: 'first_task',
+      });
+      await this.commands.execute(
+        new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
+      );
       return 'You are subscribed to it and will be woken when its task needs input or ends: end your turn now, and report when you are.';
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -52,7 +64,7 @@ export class BotSessionWatchResolver {
   async watch(
     context: BotToolCallContext,
     sessionId: string,
-    options: { until: BotSubscriptionUntil; purpose: string | null; watchedTurn?: number },
+    options: { until: BotSubscriptionUntil; purpose: string | null; from: 'first_task' | 'now' },
   ): Promise<SessionWatch> {
     const session = await this.queries.execute<FindSessionQuery, WorkSessionEntity>(
       new FindSessionQuery({ scope: context.owner, sessionId }),
@@ -71,20 +83,8 @@ export class BotSessionWatchResolver {
         `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions. Unwatch one you no longer need (list_watches shows them) first.`,
       );
     }
-    const latest = session.latestTurn;
     const subscription = await this.subscriptions.subscribe(
-      BotSubscriptionEntity.subscribe({
-        organizationId: context.organizationId,
-        botId: context.botId,
-        sessionId,
-        originTurnId: context.turnId,
-        purpose: options.purpose,
-        until: options.until,
-        watchedTurn: options.watchedTurn ?? watchedTurnFor(latest),
-        credentialScopes: context.credentialScopes,
-        timeZone: context.timeZone,
-        known: knownStateOf(latest),
-      }),
+      BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, options)),
     );
     return { subscription, session };
   }

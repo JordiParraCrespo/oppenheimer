@@ -119,10 +119,7 @@ export class BotSubscriptionRepository
   }
 
   async end(subscription: BotSubscriptionEntity): Promise<boolean> {
-    const result = await this.repository.delete({
-      id: subscription.id,
-      version: subscription.versionAtLoad,
-    });
+    const result = await this.repository.delete({ id: subscription.id });
     return result.affected === 1;
   }
 

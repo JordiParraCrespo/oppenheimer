@@ -53,6 +53,7 @@ export class BotWatchToolsFactory implements BotToolArea {
         const { subscription, session } = await this.watches.watch(context, input.session_id, {
           until: input.until ?? 'task',
           purpose: input.purpose ?? null,
+          from: 'now',
         });
         return this.mapper.toWatchAnswer(subscription, session);
       },

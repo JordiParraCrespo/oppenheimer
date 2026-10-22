@@ -24,7 +24,10 @@ export class BotSessionWakeDomainEventHandler {
     private readonly commands: CommandBus,
   ) {}
 
-  @OnEvent(SessionTurnChangedDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // resolves, so the outbox would mark the event delivered and a wake that
+  // failed would never be tried again.
+  @OnEvent(SessionTurnChangedDomainEvent.name, { suppressErrors: false })
   async onTurn(
     event: Pick<SessionTurnChangedDomainEvent, 'aggregateId' | 'organizationId' | 'to'>,
   ): Promise<void> {
@@ -32,7 +35,7 @@ export class BotSessionWakeDomainEventHandler {
     await this.wake(event.organizationId, event.aggregateId);
   }
 
-  @OnEvent(SessionStateChangedDomainEvent.name)
+  @OnEvent(SessionStateChangedDomainEvent.name, { suppressErrors: false })
   async onState(
     event: Pick<SessionStateChangedDomainEvent, 'aggregateId' | 'organizationId' | 'to'>,
   ): Promise<void> {

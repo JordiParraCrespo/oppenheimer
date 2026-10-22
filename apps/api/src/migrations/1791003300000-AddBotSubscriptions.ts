@@ -24,7 +24,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   ends by itself (its task ended, the session closed, the owner lost
  *   access, the wake limit) is deleted by the wake that ended it.
  * - `"version"` guards the wake's record against a second wake of the same
- *   subscription written meanwhile.
+ *   subscription written meanwhile. The end is not guarded: it is final.
  *
  * Access patterns:
  * - the wake: a session's subscriptions in the event's workspace,

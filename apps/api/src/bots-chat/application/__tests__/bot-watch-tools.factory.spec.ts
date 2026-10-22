@@ -5,13 +5,14 @@
  * only the bot's own subscriptions. The upsert itself is the integration
  * suite's.
  */
-import type { QueryBus } from '@nestjs/cqrs';
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { SessionErrors } from '../../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../../bot-subscription.mapper';
+import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../../domain/bot-subscription.entity';
 import { BOT_SUBSCRIPTIONS_PER_BOT } from '../../domain/bot-subscription.policy';
@@ -77,7 +78,13 @@ function setup(
     }),
   };
   const repository = subscriptions as unknown as BotSubscriptionRepositoryPort;
-  const resolver = new BotSessionWatchResolver(repository, queries as unknown as QueryBus);
+  const commands = { execute: vi.fn(async () => undefined) };
+  const resolver = new BotSessionWatchResolver(
+    repository,
+    queries as unknown as QueryBus,
+    commands as unknown as CommandBus,
+    new BotSubscriptionMapper(),
+  );
   const factory = new BotWatchToolsFactory(resolver, repository, new BotSubscriptionMapper());
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
   const context: BotToolContext = {
@@ -97,7 +104,7 @@ function setup(
     if (!definition) throw new Error(`no tool ${name}`);
     return definition.bind(context).run(input, { signal: new AbortController().signal });
   };
-  return { subscriptions, queries, approvals, call, resolver, context };
+  return { subscriptions, queries, commands, approvals, call, resolver, context };
 }
 
 describe('BotWatchToolsFactory', () => {
@@ -181,17 +188,32 @@ describe('BotWatchToolsFactory', () => {
 
   // What breaks this: a session started on the host that the bot is told
   // was not, because storing its watch failed.
-  it("words start_session's watch, and says when it could not be stored rather than throw", async () => {
-    const { resolver, context, subscriptions } = setup();
+  // What breaks this: a session whose launch failed before the watch was
+  // stored, so its one event found nobody, and the bot never hears of it.
+  it('follows a started session from its first task, however far it got, and reconciles it at once', async () => {
+    const { resolver, context, subscriptions, commands } = setup({
+      read: liveSession('failed', 1),
+    });
     expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
     expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
       until: 'task',
       purpose: null,
+      watchedTurn: 1,
+      lastTurn: null,
+      lastState: null,
     });
+    const [wake] = commands.execute.mock.calls[0] as unknown as [WakeSubscribedBotCommand];
+    expect(wake).toBeInstanceOf(WakeSubscribedBotCommand);
+    expect(wake.subscriptionId).toBe(subscriptions.subscribe.mock.calls[0][0].id);
+  });
+
+  it("says when start_session's watch could not be stored rather than throw", async () => {
+    const { resolver, context, subscriptions, commands } = setup();
 
     subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
     expect(await resolver.watchStarted(context, SESSION)).toBe(
       'It could not be watched (connection reset); read it later with get_session.',
     );
+    expect(commands.execute).not.toHaveBeenCalled();
   });
 });
