@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { rememberFolder } from '../lib/folder-memory';
-import { initialDraft, rememberDraft } from '../lib/new-session-draft';
+import { initialDraft, rememberDraft, unrememberedDefaults } from '../lib/new-session-draft';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
- * What New session remembers between visits. The permission level opens on
- * `auto` and then on the last level picked. Scope never comes back, and
+ * What New session remembers between visits: every chip's last choice. The
+ * permission level opens on `auto` and then on the last level picked, and
  * anything in storage the catalog does not recognise is ignored.
  */
 
@@ -61,15 +61,19 @@ describe('initialDraft', () => {
   });
 
   it.each(['ask', 'auto', 'full'] as const)(
-    'restores the last permission level picked, never a scope (%s)',
+    'restores the last permission level picked (%s)',
     (permission) => {
-      store({ permission, scope: [{ id: 'inst:1', branch: 'main' }] });
+      store({ permission });
 
-      const draft = initialDraft();
-      expect(draft.permission).toBe(permission);
-      expect(draft.scope).toEqual([]);
+      expect(initialDraft().permission).toBe(permission);
     },
   );
+
+  it('restores the last repository and branch, dropping entries of another shape', () => {
+    store({ scope: [{ id: 'inst:1', branch: 'main' }, { id: 7 }, 'inst:2'] });
+
+    expect(initialDraft().scope).toEqual([{ id: 'inst:1', branch: 'main' }]);
+  });
 
   it('opens on auto when storage holds a level the catalog does not have', () => {
     store({ permission: 'yolo' });
@@ -100,18 +104,19 @@ describe('initialDraft', () => {
 });
 
 describe('rememberDraft', () => {
-  it('writes only the seven choices worth carrying, and they read back', () => {
+  it('writes every chip but the folder, and they read back', () => {
     rememberDraft({
       where: 'folder',
       projectId: 'p1',
       hostId: 'h1',
+      scope: [{ id: 'x', branch: 'y' }],
       agent: 'codex',
       model: 'gpt-6-astra',
       permission: 'ask',
       efforts: { codex: 'low' },
-      // A caller holding the whole draft passes it; the scope and the folder
-      // must not be written: the folder is remembered per host, on its own.
-      ...({ scope: [{ id: 'x', branch: 'y' }], folder: '/tmp' } as object),
+      // A caller holding the whole draft passes it; the folder must not be
+      // written: it is remembered per host, on its own.
+      ...({ folder: '/tmp' } as object),
     });
 
     expect(Object.keys(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).sort()).toEqual([
@@ -121,11 +126,13 @@ describe('rememberDraft', () => {
       'model',
       'permission',
       'projectId',
+      'scope',
       'where',
     ]);
     expect(initialDraft()).toMatchObject({
       where: 'folder',
       projectId: 'p1',
+      scope: [{ id: 'x', branch: 'y' }],
       agent: 'codex',
       permission: 'ask',
       efforts: { codex: 'low' },
@@ -142,6 +149,7 @@ describe('rememberDraft', () => {
         where: 'worktree',
         projectId: null,
         hostId: null,
+        scope: [],
         agent: 'claude-code',
         model: null,
         permission: 'auto',
@@ -195,5 +203,34 @@ describe('where and the folder', () => {
 
   it('opens on an absolute path the address names', () => {
     expect(initialDraft({ where: 'folder', path: '/srv/app' }).folder).toBe('/srv/app');
+  });
+});
+
+/**
+ * The project a visit lands on fills only the chips the last visit left empty;
+ * the last choice outranks its defaults.
+ */
+describe('unrememberedDefaults', () => {
+  const defaults = {
+    hostId: 'h-project',
+    scope: [{ id: 'inst:9', branch: 'develop' }],
+    agent: 'codex' as const,
+    model: defaultModelFor('codex'),
+  };
+
+  it('keeps every remembered chip over the project default', () => {
+    store({ hostId: 'h1', scope: [{ id: 'inst:1', branch: 'main' }], agent: 'claude-code' });
+
+    expect(unrememberedDefaults(defaults)).toEqual({});
+  });
+
+  it('applies every default when nothing is remembered', () => {
+    expect(unrememberedDefaults(defaults)).toEqual(defaults);
+  });
+
+  it('fills an empty remembered scope from the project', () => {
+    store({ hostId: 'h1', scope: [], agent: 'claude-code' });
+
+    expect(unrememberedDefaults(defaults)).toEqual({ scope: defaults.scope });
   });
 });
