@@ -292,9 +292,9 @@ These keep tmux, the runner and the per-host login exactly as they are:
 
 ### B. Cloud sessions: a session whose place is the vendor's cloud
 
-A new **place** beside New worktree, Folder on host and Blank terminal
-(`versions/mvp/24-session-places.md` §3): **Cloud**, with a provider of
-Claude, Codex or Cursor. A cloud session has no PTY. It has a status, a
+A third **place** beside `worktree` and `folder`
+(`versions/mvp/24-session-places.md`; the blank terminal is an agent, not
+a place): **Cloud**, with a provider of Claude, Codex or Cursor. A cloud session has no PTY. It has a status, a
 chat when the vendor gives one, a branch, a pull request, and a link to
 the vendor's own page.
 
@@ -343,15 +343,25 @@ opt-in SessionStart and Stop hook in the repository that POSTs
 Its network level must allow our host. This is an inbound event, and
 `inbound-events` already exists for that. It is not in the first cut.
 
-**Data.** `work_session` gains:
+**Data.** Cloud extends the place model that note 24 owns. It is not a
+parallel set of columns:
 
-- `place = 'cloud'`;
-- `cloud_provider`, `cloud_external_id`, `cloud_url`;
-- `dispatch_host_id`, null for Cursor.
+- `SESSION_PLACES` and `CHK_work_session_place` gain `cloud`.
+- The cloud fields are the payload of that place, held to it the way
+  `folderPath` is held to `folder` (`CHK_work_session_folder_path`):
+  - the provider;
+  - the vendor's id and URL;
+  - the dispatching host (none for Cursor).
+- A check makes them present exactly when `place = 'cloud'`, so a session
+  can never be two places at once. The place writer that sets `folder`
+  sets them too.
+- Note 24 is where the place and its payload get written down, once this
+  is decided.
 
-Its state maps onto the existing states: working, waiting on you, done,
-failed. The Pull requests area (0.2) already tracks a branch to its PR.
-That is where Claude and Codex cloud sessions get their "done".
+The session's state maps onto the existing states: working, waiting on
+you, done, failed. The Pull requests area (0.2) already tracks a branch to
+its PR, and that is where Claude and Codex cloud sessions get their
+"done".
 
 **Order.**
 
