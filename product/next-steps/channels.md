@@ -32,28 +32,37 @@ does its transport where one does the job. The shape is OpenClaw's
 
 ```ts
 // channels/application/channel.port.ts
-export interface ChannelPort<TConfig, TSecret> {
+interface ChannelBase<TConfig, TSecret> {
   readonly kind: ChannelKind; // 'whatsapp' | 'slack' | 'email'
   readonly capabilities: ChannelCapabilities;
 
   /** How an account is connected: a QR to scan, an OAuth install, a form. */
   readonly link: ChannelLink<TConfig, TSecret>;
 
-  /**
-   * Long-lived channels (WhatsApp's socket, IMAP IDLE) run here until the
-   * signal aborts, handing each message to `sink`. Webhook channels omit it.
-   */
-  connect?(account: ChannelAccountRef<TConfig, TSecret>, sink: ChannelInboundSink, signal: AbortSignal): Promise<void>;
-
-  /** Webhook channels (Slack): verify the signature, then parse. */
-  receive?(request: ChannelWebhookRequest): Promise<ChannelInbound[]>;
-
   send(account: ChannelAccountRef<TConfig, TSecret>, message: ChannelOutbound): Promise<ChannelSentRef>;
-  typing?(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelAddress, on: boolean): Promise<void>;
-  react?(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelMessageRef, emoji: string): Promise<void>;
+  /** Called only when `capabilities.typing` is true. */
+  typing(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelAddress, on: boolean): Promise<void>;
+  /** Called only when `capabilities.reactions` is true. */
+  react(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelMessageRef, emoji: string): Promise<void>;
 
   status(account: ChannelAccountRef<TConfig, TSecret>): Promise<ChannelHealth>;
 }
+
+/** Holds a connection per account (WhatsApp's socket, IMAP IDLE). */
+export interface StreamingChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
+  readonly transport: 'stream';
+  /** Runs until the signal aborts, handing each message to `sink`. */
+  connect(account: ChannelAccountRef<TConfig, TSecret>, sink: ChannelInboundSink, signal: AbortSignal): Promise<void>;
+}
+
+/** Is called by the provider (Slack's events). */
+export interface WebhookChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
+  readonly transport: 'webhook';
+  /** Verifies the signature, then parses. */
+  receive(request: ChannelWebhookRequest): Promise<ChannelInbound[]>;
+}
+
+export type ChannelPort<TConfig, TSecret> = StreamingChannel<TConfig, TSecret> | WebhookChannel<TConfig, TSecret>;
 
 export interface ChannelCapabilities {
   textLimit: number; // a reply longer than this is split
@@ -84,6 +93,13 @@ export interface ChannelInbound {
   occurredAt: Date;
 }
 ```
+
+The transport is the union's tag, not an optional method: the gateway
+(§8) starts every `transport: 'stream'` channel's accounts, the webhook
+route dispatches to `transport: 'webhook'` ones, and neither checks
+whether a method exists. Capabilities say what a channel's messages can
+do; the core reads them before calling `typing` or `react`, which every
+channel implements.
 
 The core around the port (§3 to §6) owns intake, conversations, access,
 the turn, the reply, approvals and limits, so a fourth channel is a class,
