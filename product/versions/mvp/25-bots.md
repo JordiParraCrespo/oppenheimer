@@ -482,7 +482,7 @@ one.
 ### 4.7 Work and the web
 | Tool | Does | Default |
 |------|------|---------|
-| `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message. Ours, not the engine's: Claude Code's subagents are off | auto |
+| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's). 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `ask_user` | A question card with options | auto |
@@ -583,11 +583,11 @@ limits (§2); the tools that run without asking, as the owner: itself
 `review_pull_request`, `merge_pull_request`, `start_review_session`,
 `create_issue`, `comment_on_issue`, §4.4), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
-(`list_bots`, `get_bot`) and `web_fetch`; `start_session`,
+(`list_bots`, `get_bot`), `web_fetch` and, since 2026-10-22, `delegate` (§4.7); `start_session`,
 `stop_session` and `create_bot`, which ask; and the Needs input card
 (§5): Approve, Deny with a note, the bot told either way. Next:
 Settings → Permissions and *Always allow*, then the asking tools of each
-area, `ask_bot` and `delegate`.
+area and `ask_bot`.
 
 ## 7. Not built yet
 
@@ -753,3 +753,12 @@ The decisions it produced:
   by the message that sends them; a turn is sent only its own message's
   images, and GLM, whose models read none, refuses them with the words
   kept. Other files (PDFs, text) stay in §7.
+- 2026-10-22: **`delegate` runs subagents inside the turn, read-only**
+  (§4.7, issue #444). It replaces "a subagent for a long job; the bot
+  keeps talking and the result arrives as a message": what people asked
+  for was a bot that splits a question into parallel lookups and answers
+  from all of them in the same reply, and long work already has its place
+  in a session on a host. Children are bounded (4 tasks, 3 at once, 90 s,
+  one level deep), offered only the turn's read-only tools behind the
+  owner's permissions, and what they say is data the bot checks. Children
+  that change things wait until this lifecycle has proven itself.

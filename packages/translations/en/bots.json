@@ -97,7 +97,22 @@
       "groupSearched_one": "Searched the web {{count}} time",
       "groupSearched_other": "Searched the web {{count}} times",
       "groupFailed_one": "{{count}} failed",
-      "groupFailed_other": "{{count}} failed"
+      "groupFailed_other": "{{count}} failed",
+      "delegated_one": "Ran {{count}} subagent",
+      "delegated_other": "Ran {{count}} subagents",
+      "delegating_one": "Running {{count}} subagent",
+      "delegating_other": "Running {{count}} subagents",
+      "seconds_one": "{{count}}s",
+      "seconds_other": "{{count}}s",
+      "subagent": {
+        "completed": "completed",
+        "failed": "failed",
+        "cancelled": "stopped",
+        "timed_out": "timed out"
+      },
+      "subagentSilent": "It said nothing.",
+      "subagentUsage": "Used {{tools}} · {{tokens}} tokens",
+      "subagentNoTools": "no tools"
     },
     "suggest": {
       "task": {

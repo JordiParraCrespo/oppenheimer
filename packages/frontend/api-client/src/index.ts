@@ -52,6 +52,7 @@ export type {
   BotResponseDto,
   BotRoutineEventResponseDto,
   BotRoutineResponseDto,
+  BotSubagentRunResponseDto,
   BotToolStepResponseDto,
   BotTurnResponseDto,
   CalendarEventResponseDto,

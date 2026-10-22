@@ -37,6 +37,10 @@ describe('toolAction', () => {
 
   it('reads the to-do list as the plan, and any other tool by its name in words', () => {
     expect(toolAction(call('TodoWrite', { todos: [] }))).toEqual({ kind: 'plan' });
+    expect(toolAction(call('delegate', { tasks: [{ task: 'a' }, { task: 'b' }] }))).toEqual({
+      kind: 'delegate',
+      tasks: 2,
+    });
     expect(toolAction(call('mcp__oppenheimer__read_document', { name: 'notes.md' }))).toEqual({
       kind: 'tool',
       label: 'Read document',

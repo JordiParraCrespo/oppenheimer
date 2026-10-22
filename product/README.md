@@ -663,3 +663,8 @@ earlier note:
   `terminal_direct_path` and `session_chat_view` now serve on until
   targeting turns them off or narrows them. `scripts/evals/feature-flags/`
   checks that an agent launching a feature follows it.
+- `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
+  long job whose result arrived later as a message. On 2026-10-22 (issue
+  #444) it was built as subagents inside the turn: up to 4 read-only
+  children in parallel, bounded and stopped with the turn, whose answers
+  the bot reads as data and answers from in the same reply (25, "Decided").

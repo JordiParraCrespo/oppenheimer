@@ -8,11 +8,12 @@ import {
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, Wrench } from '@oppenheimer/design-system-web/icons';
+import { Globe, ListTodo, Split, Wrench } from '@oppenheimer/design-system-web/icons';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotSubagents } from '@/features/bots/components/bot-subagents';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
@@ -105,6 +106,20 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
             {items.map((item) => `${PLAN_MARK[item.state]} ${item.text}`).join('\n')}
           </TraceNote>
         ),
+      };
+    },
+  },
+  delegate: {
+    icon: <Split />,
+    title: (t, action) => ({ title: t('bots.chat.activity.delegated', { count: action.tasks }) }),
+    // Each child's line, read from the runs the call stored.
+    detail: (step, t, labels) => {
+      const runs = step.subagents ?? [];
+      if (runs.length === 0) return rawDetail(step, t, labels);
+      const failed = runs.filter((run) => run.status !== 'completed').length;
+      return {
+        meta: failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined,
+        body: <BotSubagents runs={runs} />,
       };
     },
   },

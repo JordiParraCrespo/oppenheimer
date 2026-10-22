@@ -15,6 +15,8 @@ export type ToolAction =
   | { kind: 'search'; query: string | undefined }
   /** The bot's to-do list, written again. */
   | { kind: 'plan' }
+  /** Subagents run in parallel (`delegate`); `tasks` is how many it handed out. */
+  | { kind: 'delegate'; tasks: number }
   /** Any other tool, by its name in words ("Read document") and what it was given. */
   | { kind: 'tool'; label: string; target: string | undefined };
 
@@ -71,6 +73,12 @@ export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolActio
     return { kind: 'search', query: query === undefined ? undefined : oneLine(query) };
   }
   if (PLAN_TOOLS.has(key)) return { kind: 'plan' };
+  if (key === 'delegate') {
+    return {
+      kind: 'delegate',
+      tasks: Array.isArray(step.input.tasks) ? step.input.tasks.length : 0,
+    };
+  }
   return { kind: 'tool', label: humaniseToolName(step.name), target: toolTarget(step.input) };
 }
 

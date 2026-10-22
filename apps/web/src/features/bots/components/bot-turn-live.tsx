@@ -33,11 +33,13 @@ export function BotTurnLive({
         : t('bots.chat.activity.searching')
       : action?.kind === 'plan'
         ? t('bots.chat.activity.planning')
-        : action
-          ? t('bots.chat.activity.using', { name: action.label })
-          : writing
-            ? t('bots.chat.turn.writing')
-            : t('bots.chat.turn.thinking');
+        : action?.kind === 'delegate'
+          ? t('bots.chat.activity.delegating', { count: action.tasks })
+          : action
+            ? t('bots.chat.activity.using', { name: action.label })
+            : writing
+              ? t('bots.chat.turn.writing')
+              : t('bots.chat.turn.thinking');
   return (
     <TraceLive elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}>
       {label}

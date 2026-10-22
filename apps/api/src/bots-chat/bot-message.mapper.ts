@@ -11,6 +11,7 @@ import {
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
+import { subagentRunsOf } from './domain/bot-subagent.policy';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
@@ -42,6 +43,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
       sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -81,6 +83,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
       sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -116,6 +119,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    subagents: subagentRunsOf(raw.subagents),
   };
 }
 
