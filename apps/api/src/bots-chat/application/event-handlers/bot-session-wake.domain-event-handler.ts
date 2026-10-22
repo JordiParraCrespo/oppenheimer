@@ -1,0 +1,49 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
+import { OnEvent } from '@nestjs/event-emitter';
+import { SessionStateChangedDomainEvent } from '../../../sessions/domain/events/session-state-changed.domain-event';
+import { SessionTurnChangedDomainEvent } from '../../../sessions/domain/events/session-turn-changed.domain-event';
+import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
+import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
+import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
+import { wakeStateOf } from '../../domain/bot-subscription.policy';
+
+/**
+ * Where a session's news reaches the bots that follow it
+ * (`27-bot-subscriptions.md` §1). The outbox delivers each event at least
+ * once, so this only asks: each subscription's wake reads the session again
+ * and is keyed so that asking twice queues one turn. A task that moved to a
+ * state that wakes nobody (`queued`, `in_progress`) is not looked at; a
+ * session closed is, so the subscriptions that follow it end.
+ */
+@Injectable()
+export class BotSessionWakeDomainEventHandler {
+  constructor(
+    @Inject(BOT_SUBSCRIPTION_REPOSITORY)
+    private readonly subscriptions: BotSubscriptionRepositoryPort,
+    private readonly commands: CommandBus,
+  ) {}
+
+  @OnEvent(SessionTurnChangedDomainEvent.name)
+  async onTurn(
+    event: Pick<SessionTurnChangedDomainEvent, 'aggregateId' | 'organizationId' | 'to'>,
+  ): Promise<void> {
+    if (!wakeStateOf(event.to)) return;
+    await this.wake(event.organizationId, event.aggregateId);
+  }
+
+  @OnEvent(SessionStateChangedDomainEvent.name)
+  async onState(
+    event: Pick<SessionStateChangedDomainEvent, 'aggregateId' | 'organizationId' | 'to'>,
+  ): Promise<void> {
+    if (event.to !== 'resolved') return;
+    await this.wake(event.organizationId, event.aggregateId);
+  }
+
+  private async wake(organizationId: string, sessionId: string): Promise<void> {
+    const ids = await this.subscriptions.findIdsForSession(organizationId, sessionId);
+    for (const subscriptionId of ids) {
+      await this.commands.execute(new WakeSubscribedBotCommand({ subscriptionId }));
+    }
+  }
+}

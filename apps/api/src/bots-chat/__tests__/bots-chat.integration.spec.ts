@@ -36,6 +36,7 @@ import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
+import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
@@ -46,6 +47,8 @@ import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-su
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotSubscriptionOrmEntity } from '../database/bot-subscription.orm-entity';
+import { BotSubscriptionRepository } from '../database/bot-subscription.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
@@ -58,6 +61,8 @@ import {
   routineSourceKey,
   routineTurn,
 } from '../domain/bot-routine.policy';
+import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
+import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -72,7 +77,10 @@ import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
  * event that opens a decision's turn, and the cascade; a conversation's
  * summary: one write of two racing ones wins, the cutoff never moves back,
  * and a turn's history and the summarizer's read start after it to the
- * microsecond. The schema is the migrations'.
+ * microsecond; a bot's subscriptions to sessions: one per bot and session,
+ * a wake recorded once of two racing ones, gone with the bot, outliving a
+ * cleared chat, and one turn per wake however often it is delivered. The
+ * schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
   let pg: StartedTestContainer;
@@ -86,6 +94,7 @@ describe('bots chat (integration)', () => {
   let approvals: BotApprovalRepository;
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
+  let subscriptions: BotSubscriptionRepository;
   let organizationId: string;
   let userId: string;
 
@@ -126,6 +135,7 @@ describe('bots chat (integration)', () => {
         BotApprovalOrmEntity,
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
+        BotSubscriptionOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -180,6 +190,10 @@ describe('bots chat (integration)', () => {
     attachments = new BotAttachmentRepository(
       dataSource.getRepository(BotAttachmentOrmEntity),
       new BotAttachmentMapper(),
+    );
+    subscriptions = new BotSubscriptionRepository(
+      dataSource.getRepository(BotSubscriptionOrmEntity),
+      new BotSubscriptionMapper(),
     );
   }, 180000);
 
@@ -1465,5 +1479,146 @@ describe('bots chat (integration)', () => {
       expect.arrayContaining(images.map((i) => i.id)),
     );
     expect(await attachments.deleteUnclaimed(images.map((image) => image.id))).toBe(2);
+  });
+  describe('subscriptions (27-bot-subscriptions.md)', () => {
+    const SESSION = '7b1c4f9e-0000-4000-8000-0000000000aa';
+
+    function watching(
+      bot: BotEntity,
+      overrides: Partial<Parameters<typeof BotSubscriptionEntity.subscribe>[0]> = {},
+    ) {
+      return BotSubscriptionEntity.subscribe({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        sessionId: SESSION,
+        originTurnId: null,
+        purpose: 'research',
+        until: 'task',
+        watchedTurn: 1,
+        credentialScopes: ['sessions:read'],
+        timeZone: 'Europe/Madrid',
+        known: null,
+        ...overrides,
+      });
+    }
+
+    it('holds one subscription per bot and session: a second subscribe keeps its id, wakes and newest state', async () => {
+      const bot = await create('Watcher');
+      const first = await subscriptions.subscribe(watching(bot));
+      first.recordWake(1, 'requires_action');
+      expect(await subscriptions.recordWake(first)).toBe(true);
+
+      const again = await subscriptions.subscribe(
+        watching(bot, { purpose: null, until: 'closed', watchedTurn: null }),
+      );
+      expect(again).toMatchObject({
+        id: first.id,
+        purpose: 'research',
+        until: 'closed',
+        watchedTurn: null,
+        wakes: 1,
+        lastTurn: 1,
+        lastState: 'requires_action',
+        credentialScopes: ['sessions:read'],
+      });
+      expect(await subscriptions.findIdsForSession(bot.organizationId, SESSION)).toEqual([
+        first.id,
+      ]);
+      // Another workspace's event never reads this bot's subscription.
+      expect(await subscriptions.findIdsForSession(await insertOrganization(), SESSION)).toEqual(
+        [],
+      );
+    });
+
+    it('records one of two racing wakes and ends a subscription once', async () => {
+      const bot = await create('Racer');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const a = (await subscriptions.findForWake(stored.id)) as BotSubscriptionEntity;
+      const b = (await subscriptions.findForWake(stored.id)) as BotSubscriptionEntity;
+      a.recordWake(1, 'requires_action');
+      b.recordWake(1, 'completed');
+      expect(await subscriptions.recordWake(a)).toBe(true);
+      expect(await subscriptions.recordWake(b)).toBe(false);
+      expect(await subscriptions.end(b)).toBe(false);
+      expect(await subscriptions.end(a)).toBe(true);
+      expect(await subscriptions.findForWake(stored.id)).toBeNull();
+    });
+
+    it('refuses what the table does not hold, goes with its bot, and outlives a cleared chat', async () => {
+      const bot = await create('Cascade');
+      await expect(
+        dataSource.query(
+          `INSERT INTO bot_subscription ("organizationId", "botId", "resourceKind", "resourceId", "until") VALUES ($1, $2, 'session', $3, 'task')`,
+          [bot.organizationId, bot.id, SESSION],
+        ),
+      ).rejects.toMatchObject({ constraint: 'CHK_bot_subscription_watched_turn' });
+
+      const { turn, message } = sent(bot, 'Research this');
+      await turns.enqueue(turn, message, null);
+      const stored = await subscriptions.subscribe(watching(bot, { originTurnId: turn.id }));
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('busy');
+      await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE id = $1`, [turn.id]);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await subscriptions.findForWake(stored.id)).toMatchObject({ originTurnId: null });
+
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [bot.id]);
+      expect(await subscriptions.findForWake(stored.id)).toBeNull();
+    });
+
+    // What breaks this: the same session news, delivered again after the API
+    // restarted, telling the person twice.
+    it('queues one turn per task and state, however often and by whichever process the wake is built', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Wakes');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const news: SessionWake = {
+        subscriptionId: stored.id,
+        sessionId: SESSION,
+        sessionName: 'Research',
+        purpose: 'research',
+        task: {
+          seq: 1,
+          state: 'completed',
+          prompt: 'Research',
+          result: 'Done',
+          failureDetail: null,
+        },
+        state: 'completed',
+        ends: true,
+      };
+      const props = {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        requestedByUserId: userId,
+        provider: 'glm' as const,
+        model: 'glm-5.3',
+        effort: null,
+      };
+      const first = sessionWakeTurn(props, news);
+      const redelivered = sessionWakeTurn(props, news);
+      expect(await turns.enqueueOnce(first.turn, first.opening, null, null)).toEqual({
+        outcome: 'staged',
+        turnId: first.turn.id,
+      });
+      expect(await turns.enqueueOnce(redelivered.turn, redelivered.opening, null, null)).toEqual({
+        outcome: 'existing',
+        turnId: first.turn.id,
+      });
+      expect(await stagedTurns()).toEqual([first.turn.id]);
+      const opening = await messages.findOpening(bot.organizationId, first.turn.id);
+      expect(opening?.event).toEqual({
+        kind: 'session',
+        subscriptionId: stored.id,
+        sessionId: SESSION,
+        sessionName: 'Research',
+        turn: 1,
+        state: 'completed',
+      });
+      const [row]: { origin: string }[] = await dataSource.query(
+        `SELECT origin FROM bot_turn WHERE id = $1`,
+        [first.turn.id],
+      );
+      expect(row.origin).toBe('subscription');
+    });
   });
 });

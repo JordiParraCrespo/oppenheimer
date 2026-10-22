@@ -663,3 +663,11 @@ earlier note:
   `terminal_direct_path` and `session_chat_view` now serve on until
   targeting turns them off or narrows them. `scripts/evals/feature-flags/`
   checks that an agent launching a feature follows it.
+- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that "when a
+  session ends" reaches a bot only as a routine's trigger, with no watch
+  table. On 2026-10-22 (issue #445) the owner asked for a bot to subscribe
+  to the sessions it delegates, as Grok Bot's watchers do, and to be woken
+  when they finish, fail, are stopped or need input. A
+  `bot_subscription` now follows one session for the bot that started or
+  watched it, and every wake is still a queued turn
+  (`versions/mvp/27-bot-subscriptions.md`, 26 §5).

@@ -5,8 +5,12 @@ import {
   TranscriptDivider,
 } from '@oppenheimer/design-system-web';
 import {
+  Ban,
   Check,
   CircleAlert,
+  CircleCheck,
+  Clock,
+  Hand,
   Pause,
   Pencil,
   Play,
@@ -31,6 +35,14 @@ const ROUTINE_ICONS = {
   failed: <CircleAlert />,
 } as const;
 
+const SESSION_ICONS = {
+  requires_action: <Hand />,
+  completed: <CircleCheck />,
+  failed: <CircleAlert />,
+  cancelled: <Ban />,
+  expired: <Clock />,
+} as const;
+
 /**
  * What Oppenheimer told the bot, in the chat. For you: a trace line (the AI
  * Elements export's decided Confirmation), "You approved: Start Claude Code
@@ -42,7 +54,8 @@ const ROUTINE_ICONS = {
  * owner did not make, is a notice instead, with `action` (Open routines)
  * beside it. From another bot: its message, or its answer to one this bot
  * asked, as a `BotExchange` card naming the bot Oppenheimer recorded as the
- * sender. Read from the event's own fields, never its words, which are the
+ * sender. A session the bot follows that woke it (`27-bot-subscriptions.md`):
+ * "Session Research finished" with Open session, in red when it failed. Read from the event's own fields, never its words, which are the
  * bot's. Never a bubble from you: you did not write it.
  */
 export function BotEventLine({
@@ -70,6 +83,19 @@ export function BotEventLine({
       <TranscriptDivider icon={ROUTINE_ICONS[event.activity]}>
         <span className="max-w-xl truncate" title={event.name}>
           {text}
+        </span>
+      </TranscriptDivider>
+    );
+  }
+  if (event.kind === 'session') {
+    return (
+      <TranscriptDivider
+        icon={SESSION_ICONS[event.state]}
+        tone={event.state === 'failed' ? 'danger' : 'default'}
+        action={<OpenSessionButton sessionId={event.sessionId} />}
+      >
+        <span className="max-w-xl truncate" title={event.sessionName}>
+          {t(`bots.chat.event.session.${event.state}`, { name: event.sessionName })}
         </span>
       </TranscriptDivider>
     );

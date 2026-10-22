@@ -12,6 +12,7 @@ import type { WorkSessionEntity } from '../../sessions/domain/work-session.entit
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { planSession, sessionHostId, sessionSummary } from '../bot-session-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
+import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -32,6 +33,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly watches: BotSessionWatchResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -44,7 +46,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       scope: 'sessions:write',
       asks: true,
       description:
-        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. Check its progress later with get_session. The host defaults to the project's default host, then your home host.",
+        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. You are subscribed to it: when its task needs input, finishes, fails or is stopped you are woken with a turn of your own to read the result and report, so end your turn instead of waiting (watch: false opts out). The host defaults to the project's default host, then your home host.",
       input: z.object({
         task: z
           .string()
@@ -73,6 +75,10 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe('Which coding agent; claude-code when omitted.'),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        watch: z
+          .boolean()
+          .optional()
+          .describe('Be woken when its task needs input or ends (default true).'),
       }),
       summarize: async (input, context) => {
         // A project the owner cannot read still gets a card, naming it by id: the call says why.
@@ -100,8 +106,9 @@ export class BotSessionToolsFactory implements BotToolArea {
         const offline = result.hints.includes('host_offline')
           ? ' The host is offline: the session is queued and starts when it comes back.'
           : '';
+        const watched = input.watch === false ? null : await this.watch(context, result.sessionId);
         return {
-          content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own; read it later with get_session.`,
+          content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own. ${watched ?? 'You are not watching it; read it later with get_session.'}`,
           sessionId: result.sessionId,
         };
       },
@@ -131,6 +138,21 @@ export class BotSessionToolsFactory implements BotToolArea {
         return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
       },
     });
+  }
+
+  /**
+   * Subscribes the bot to the session it just started, in words for its
+   * answer. The session exists whatever happens here, so a watch that
+   * cannot be stored is said, not thrown.
+   */
+  private async watch(context: BotToolCallContext, sessionId: string): Promise<string> {
+    try {
+      await this.watches.watch(context, sessionId, { until: 'task', purpose: null });
+      return "You are subscribed to it: you will be woken when its task needs input or ends, so end your turn now and report when you are; don't poll it.";
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return `It could not be watched (${reason}); read it later with get_session.`;
+    }
   }
 
   /** The host's name as the owner sees it; its id when they cannot read it. */

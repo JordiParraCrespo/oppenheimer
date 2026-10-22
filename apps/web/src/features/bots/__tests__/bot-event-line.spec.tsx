@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
 /**
- * A decided approval's trace line, a routine's, and another bot's message
- * or answer as a card naming the bot Oppenheimer recorded. What breaks this:
+ * A decided approval's trace line, a routine's, a followed session's, and
+ * another bot's message or answer as a card naming the bot Oppenheimer
+ * recorded. What breaks this:
  * the line read from the event's words (which are the bot's, in English, and
  * may change), so a denial draws as an approval, a routine as an approval, or
  * a translated line never appears; or a bot's message drawn as a trace line
@@ -151,5 +152,33 @@ describe('BotEventLine', () => {
     cleanup();
     render(<BotEventLine message={reply('failed')} />);
     expect(screen.getByText('bots.chat.event.peerFailed|Grace')).toBeTruthy();
+  });
+  // What breaks this: a session that failed drawn like one that finished,
+  // or a wake with no way to the session the person has to look at.
+  it('draws a followed session that woke the bot by its state, with the session to open', () => {
+    const woke = (state: 'completed' | 'failed') =>
+      ({
+        id: 'e4',
+        role: 'event',
+        content: 'The session "Research" (s-2) you follow: its task #1 finished.',
+        event: {
+          kind: 'session',
+          subscriptionId: 'sub-1',
+          sessionId: 's-2',
+          sessionName: 'Research',
+          turn: 1,
+          state,
+        },
+      }) as unknown as BotMessageEntity;
+    const { container } = render(<BotEventLine message={woke('completed')} />);
+    expect(screen.getByText('bots.chat.event.session.completed|Research')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /bots\.chat\.openSession/ }).getAttribute('href')).toBe(
+      '/sessions/s-2',
+    );
+    expect(container.querySelector('.text-danger')).toBeNull();
+    cleanup();
+    const failed = render(<BotEventLine message={woke('failed')} />);
+    expect(screen.getByText('bots.chat.event.session.failed|Research')).toBeTruthy();
+    expect(failed.container.querySelector('.text-danger')).toBeTruthy();
   });
 });

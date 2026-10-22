@@ -17352,7 +17352,7 @@
             }
           },
           "409": {
-            "description": "BOTS_027 — The image was already sent\n\nBOTS_013 — The bot's model provider has no key",
+            "description": "BOTS_027 — The image can no longer be sent\n\nBOTS_013 — The bot's model provider has no key",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -26867,6 +26867,38 @@
         },
         "required": ["kind", "fromBotId", "fromBotName", "outcome"]
       },
+      "BotSessionEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["session"]
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription that woke the bot."
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sessionName": {
+            "type": "string",
+            "description": "The session's name at the wake."
+          },
+          "turn": {
+            "type": "number",
+            "description": "Which of the session's tasks: its turn's number, from 1."
+          },
+          "state": {
+            "type": "string",
+            "enum": ["requires_action", "completed", "failed", "cancelled", "expired"],
+            "description": "What became of the task."
+          }
+        },
+        "required": ["kind", "subscriptionId", "sessionId", "sessionName", "turn", "state"]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -26961,6 +26993,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotPeerReplyEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotSessionEventResponseDto"
               }
             ],
             "nullable": true,

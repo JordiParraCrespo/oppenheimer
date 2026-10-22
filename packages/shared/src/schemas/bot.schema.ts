@@ -361,8 +361,9 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
  * and the card's line; a routine that changed, ran or failed
- * (`26-bot-routines.md` §4); or a message from another bot, or its answer
- * (`25-bots.md` §4.6). The words stay in the message for the bot.
+ * (`26-bot-routines.md` §4); a message from another bot, or its answer
+ * (`25-bots.md` §4.6); or a session the bot follows that needs it
+ * (`27-bot-subscriptions.md`). The words stay in the message for the bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
@@ -406,8 +407,37 @@ export interface BotRoutineEvent {
   reason: string | null;
 }
 
-/** Why a bot turn exists: a message (yours or another bot's), an approval's decision, or a routine's run. */
-export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine'] as const;
+/**
+ * A session a bot is subscribed to woke it (`27-bot-subscriptions.md` §4):
+ * the task it delegated needs input, ended, failed, was stopped or expired.
+ * The ids and names are Oppenheimer's record, never the session's words.
+ */
+export const BOT_SESSION_WAKE_STATES = [
+  'requires_action',
+  'completed',
+  'failed',
+  'cancelled',
+  'expired',
+] as const;
+export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
+
+export interface BotSessionEvent {
+  kind: 'session';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  sessionId: string;
+  /** The session's name at the wake. */
+  sessionName: string;
+  /** Which of the session's tasks (its turn's number). */
+  turn: number;
+  state: BotSessionWakeState;
+}
+
+/**
+ * Why a bot turn exists: a message (yours or another bot's), an approval's
+ * decision, a routine's run, or a session the bot is subscribed to.
+ */
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription'] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
@@ -445,10 +475,17 @@ export type BotMessageEvent =
   | BotApprovalEvent
   | BotRoutineEvent
   | BotPeerMessageEvent
-  | BotPeerReplyEvent;
+  | BotPeerReplyEvent
+  | BotSessionEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
-export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'routine', 'bot_message', 'bot_reply'] as const;
+export const BOT_MESSAGE_EVENT_KINDS = [
+  'approval',
+  'routine',
+  'bot_message',
+  'bot_reply',
+  'session',
+] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */

@@ -324,6 +324,7 @@ that did not cover the tool never runs.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
+| `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27 | auto |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |

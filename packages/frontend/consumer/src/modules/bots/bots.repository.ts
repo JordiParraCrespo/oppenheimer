@@ -18,6 +18,7 @@ import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend
 import {
   BOT_EVENT_OUTCOMES,
   BOT_REPLY_OUTCOMES,
+  BOT_SESSION_WAKE_STATES,
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
@@ -165,8 +166,9 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask. An outcome this client does not know reads as no event, and the
- * chat falls back to the message's first line.
+ * to an ask, or a session the bot follows waking it. An outcome or a state
+ * this client does not know reads as no event, and the chat falls back to
+ * the message's first line.
  */
 function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent | null {
   switch (dto.kind) {
@@ -206,6 +208,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             fromBotId: dto.fromBotId ?? null,
             fromBotName: dto.fromBotName,
             outcome,
+          }
+        : null;
+    }
+    case 'session': {
+      const state = BOT_SESSION_WAKE_STATES.find((candidate) => candidate === dto.state);
+      return state
+        ? {
+            kind: 'session',
+            subscriptionId: dto.subscriptionId,
+            sessionId: dto.sessionId,
+            sessionName: dto.sessionName,
+            turn: dto.turn,
+            state,
           }
         : null;
     }

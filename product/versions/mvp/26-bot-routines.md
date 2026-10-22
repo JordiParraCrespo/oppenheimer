@@ -209,6 +209,11 @@ key `session-turn:<sessionId>:<seq>`. A bot that wants to hear about the
 sessions it starts holds a routine with `startedBy = itself`; there is no
 watch table and no second consumer of the event.
 
+**Changed 2026-10-22** (issue #445, note 27): a bot that wants to hear
+back from a session it delegated holds a **subscription** to it, not a
+routine: one delegation, ended with the work, waking on input needed too.
+The trigger above stays for automations; its wake is still a queued turn.
+
 ## 6. The heartbeat, and trust
 
 **A heartbeat is a routine** on a schedule whose prompt is "check in":

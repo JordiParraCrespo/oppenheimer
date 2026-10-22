@@ -6,6 +6,7 @@ import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
+import type { BotSessionWatchResolver, SessionWatch } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
@@ -67,9 +68,13 @@ function setup(permission: BotToolContext['permission']) {
   const commandBus = {
     execute: vi.fn(async () => ({ sessionId: 'session-1', hints: [] as string[] })),
   };
+  const watches = {
+    watch: vi.fn<BotSessionWatchResolver['watch']>(async () => ({}) as SessionWatch),
+  };
   const factory = new BotSessionToolsFactory(
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    watches as unknown as BotSessionWatchResolver,
   );
   const call = (name: string, input: unknown) => {
     const definition = factory.definitions().find((candidate) => candidate.name === name);
@@ -78,7 +83,7 @@ function setup(permission: BotToolContext['permission']) {
       .bind(context(permission, approvals))
       .run(input, { signal: new AbortController().signal });
   };
-  return { queryBus, commandBus, approvals, call };
+  return { queryBus, commandBus, approvals, watches, call };
 }
 
 describe('BotSessionToolsFactory', () => {
@@ -91,7 +96,8 @@ describe('BotSessionToolsFactory', () => {
       turnId: 'turn-1',
       tool: 'start_session',
       input: { task: 'Fix the test', project_id: PROJECT },
-      summary: 'Start Claude Code on build-02 in acme/xrp-mobile: Fix the test',
+      summary:
+        'Start Claude Code on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the test',
     });
     expect(result.content).toContain('End your turn now');
     expect(commandBus.execute).not.toHaveBeenCalled();
@@ -105,7 +111,7 @@ describe('BotSessionToolsFactory', () => {
     });
     await call('start_session', { task: 'Upgrade', project_id: PROJECT });
     expect(approvals.request.mock.calls[0][0].summary).toBe(
-      `Start Claude Code on build-02 in project ${PROJECT}: Upgrade`,
+      `Start Claude Code on build-02 in project ${PROJECT}, and hear back when it ends: Upgrade`,
     );
   });
 
@@ -130,6 +136,33 @@ describe('BotSessionToolsFactory', () => {
     expect(result.content).toContain('Started session session-1');
     // The chat links to the session from this, not from the words.
     expect(result.data).toEqual({ sessionId: 'session-1' });
+  });
+
+  it('subscribes the bot to the session it started, so it is woken when the task ends', async () => {
+    const { watches, call } = setup('full');
+    const result = await call('start_session', { task: 'Research', project_id: PROJECT });
+    expect(watches.watch).toHaveBeenCalledWith(
+      expect.objectContaining({ turnId: 'turn-1' }),
+      'session-1',
+      {
+        until: 'task',
+        purpose: null,
+      },
+    );
+    expect(result.content).toContain('You are subscribed to it');
+  });
+
+  it('starts without a watch when asked not to, and still starts when the watch cannot be stored', async () => {
+    const { watches, commandBus, call } = setup('full');
+    const unwatched = await call('start_session', { task: 'A', project_id: PROJECT, watch: false });
+    expect(watches.watch).not.toHaveBeenCalled();
+    expect(unwatched.content).toContain('You are not watching it');
+
+    watches.watch.mockRejectedValueOnce(new Error('You already follow 50 sessions.'));
+    const refused = await call('start_session', { task: 'B', project_id: PROJECT });
+    expect(commandBus.execute).toHaveBeenCalledTimes(2);
+    expect(refused.isError).toBe(false);
+    expect(refused.content).toContain('could not be watched (You already follow 50 sessions.)');
   });
 
   it('gives the same call in the same turn the same idempotency key', async () => {

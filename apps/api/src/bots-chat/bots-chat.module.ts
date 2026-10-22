@@ -22,17 +22,21 @@ import { BotPullRequestToolsFactory } from './application/bot-pull-request-tools
 import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
+import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
+import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
+import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotMessageMapper } from './bot-message.mapper';
+import { BotSubscriptionMapper } from './bot-subscription.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
 import {
   BOT_APPROVAL_REPOSITORY,
@@ -43,6 +47,7 @@ import {
   BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
   BOT_STREAM,
+  BOT_SUBSCRIPTION_REPOSITORY,
   BOT_TURN_REPOSITORY,
   OWNER_HOSTS,
   WEB_PAGE,
@@ -62,6 +67,7 @@ import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-messa
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
+import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
 import { BotAttachmentOrmEntity } from './database/bot-attachment.orm-entity';
@@ -71,6 +77,8 @@ import { BotConversationSummaryOrmEntity } from './database/bot-conversation-sum
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
+import { BotSubscriptionOrmEntity } from './database/bot-subscription.orm-entity';
+import { BotSubscriptionRepository } from './database/bot-subscription.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
@@ -120,6 +128,7 @@ const commandHandlers: Provider[] = [
   DecideBotApprovalCommandHandler,
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
+  WakeSubscribedBotCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -139,7 +148,8 @@ const queryHandlers: Provider[] = [
  * `@oppenheimer/backend-agents`, the conversation they leave, the live
  * stream a chat follows, the Needs input cards an asking tool raises and the
  * owner answers, and the summary that stands in for a long conversation's
- * oldest messages, written by the `bot-summaries` worker. It reads the bot,
+ * oldest messages, written by the `bot-summaries` worker; and the sessions
+ * a bot follows, whose news wakes it (`27-bot-subscriptions.md`). It reads the bot,
  * its documents, its memory and the workspace's provider key through the
  * ports `BotsModule` exports, and serves routes under `/bots/:id` whose last
  * segment no route of that module has.
@@ -153,6 +163,7 @@ const queryHandlers: Provider[] = [
       BotApprovalOrmEntity,
       BotConversationSummaryOrmEntity,
       BotAttachmentOrmEntity,
+      BotSubscriptionOrmEntity,
     ]),
     // The `bot-turns` queue the outbox stages each due turn on.
     QueueModule,
@@ -172,6 +183,7 @@ const queryHandlers: Provider[] = [
     BotApprovalMapper,
     BotConversationSummaryMapper,
     BotAttachmentMapper,
+    BotSubscriptionMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
     BotMessageAttachmentsResolver,
@@ -184,6 +196,8 @@ const queryHandlers: Provider[] = [
     BotToolboxFactory,
     BotHostToolsFactory,
     BotSessionToolsFactory,
+    BotSessionWatchResolver,
+    BotWatchToolsFactory,
     BotSelfToolsFactory,
     BotPlanToolsFactory,
     BotGithubToolsFactory,
@@ -196,6 +210,7 @@ const queryHandlers: Provider[] = [
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     BotRoutineActivityDomainEventHandler,
+    BotSessionWakeDomainEventHandler,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     BotApprovalsProcessor,
@@ -208,6 +223,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
+    { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.

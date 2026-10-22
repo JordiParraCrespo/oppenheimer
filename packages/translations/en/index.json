@@ -1192,7 +1192,14 @@
         "peerAsk": "<bot>{{name}}</bot> asked",
         "peerAnswered": "<bot>{{name}}</bot> replied",
         "peerFailed": "<bot>{{name}}</bot> could not answer",
-        "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
+        "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered",
+        "session": {
+          "requires_action": "Session “{{name}}” needs input",
+          "completed": "Session “{{name}}” finished",
+          "failed": "Session “{{name}}” failed",
+          "cancelled": "Session “{{name}}” was stopped",
+          "expired": "Session “{{name}}” expired before it ran"
+        }
       },
       "routineReason": {
         "expired": "it waited too long to start",
