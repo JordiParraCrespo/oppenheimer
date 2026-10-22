@@ -24,16 +24,27 @@ export function useChatFollow(): {
     const scroller = scrollerRef.current;
     const content = contentRef.current;
     if (!scroller || !content) return;
+    let lastTop = scroller.scrollTop;
+    const near = () =>
+      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < NEAR_END_PX;
     const toEnd = () => {
       if (followingRef.current) scroller.scrollTop = scroller.scrollHeight;
+      setAway(!followingRef.current && !near());
     };
+    // Only the reader moving up leaves the latest: a smooth scroll down to it
+    // passes through positions far from the end, and a turn may have grown
+    // past the margin by the time this hook's own scroll is reported.
     const onScroll = () => {
-      const near = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < NEAR_END_PX;
-      followingRef.current = near;
-      setAway(!near);
+      if (scroller.scrollTop < lastTop) followingRef.current = near();
+      else if (near()) followingRef.current = true;
+      lastTop = scroller.scrollTop;
+      setAway(!followingRef.current && !near());
     };
+    // The content grows with each turn; the scroller shrinks when the
+    // composer grows a line or the window does.
     const resize = new ResizeObserver(toEnd);
     resize.observe(content);
+    resize.observe(scroller);
     scroller.addEventListener('scroll', onScroll, { passive: true });
     toEnd();
     return () => {
