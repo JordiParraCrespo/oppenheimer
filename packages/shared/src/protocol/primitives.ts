@@ -6,7 +6,7 @@ import {
   SESSION_PERMISSIONS,
 } from '../agents/catalog.js';
 import { loginUrlPattern } from '../agents/login.js';
-import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives.js';
+import { FIELD_BOUNDS, fitsPromptBound, HOST_PLATFORMS } from '../schemas/primitives.js';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
@@ -107,7 +107,7 @@ export const promptTextSchema = z
   .min(FIELD_BOUNDS.prompt.min)
   // Documentable upper bound, then the rule; see the DTO schema's note.
   .max(FIELD_BOUNDS.prompt.maxBytes)
-  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes);
+  .refine(fitsPromptBound);
 
 /**
  * Every catalog login target, as one anchored expression.

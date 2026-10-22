@@ -1,7 +1,7 @@
 'use client';
 
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
-import { GitBranchIcon } from 'lucide-react';
+import { CheckIcon, GitBranchIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
@@ -43,6 +43,11 @@ type SessionRename = {
  * age's place (a deleted session its host has not removed yet).
  * 30px is the floor; tighter and the pointer target gets unreliable in a long
  * list. Rows sit 1px apart in a `SessionList`.
+ *
+ * While the list is picking rows to act on together, every row takes
+ * `selected`: the glyph gives its place to a box, ticked and on the active
+ * wash for a picked row, so the list reads as a set of checkboxes without
+ * moving a name.
  */
 function SessionItem({
   name,
@@ -54,6 +59,8 @@ function SessionItem({
   action,
   menuOpen,
   rename,
+  selected,
+  selectedLabel = 'Selected',
   rowProps,
   className,
   render,
@@ -82,6 +89,13 @@ function SessionItem({
   /** Keeps the row lit and the action visible while its menu is open. */
   menuOpen?: boolean;
   rename?: SessionRename;
+  /**
+   * Whether the row is picked, while the list is selecting; left out when it
+   * is not, so the row draws its glyph.
+   */
+  selected?: boolean;
+  /** What a screen reader hears on a picked row. */
+  selectedLabel?: string;
   /** Props for the row's list item, the box around the button: a sortable row's node (`SortableSessionItem`). */
   rowProps?: React.ComponentProps<'div'>;
 }) {
@@ -92,6 +106,7 @@ function SessionItem({
       data-slot="session-item"
       data-state={state}
       data-active={active || undefined}
+      data-selected={selected || undefined}
       role={inRow ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       // A row rendered as a router link is an anchor, not a <button>: Base UI
@@ -99,24 +114,39 @@ function SessionItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-selected:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
     >
-      <span
-        aria-hidden
-        className={cn(
-          'flex shrink-0 text-fg-subtle',
-          state === 'running' && 'text-success',
-          state === 'needs-input' && 'text-warning',
-          state === 'failed' && 'text-danger',
-          state === 'pending' && 'motion-safe:animate-pulse',
-        )}
-      >
-        {icon ?? <GitBranchIcon />}
-      </span>
+      {selected !== undefined ? (
+        <span
+          data-slot="session-item-check"
+          data-checked={selected || undefined}
+          className="flex size-3.5 shrink-0 items-center justify-center rounded-xs border-[1.5px] border-border-strong text-white data-checked:border-accent-blue data-checked:bg-accent-blue"
+        >
+          {selected ? (
+            <>
+              <CheckIcon aria-hidden className="size-2.5! stroke-[3.5]" />
+              <span className="sr-only">{selectedLabel}</span>
+            </>
+          ) : null}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className={cn(
+            'flex shrink-0 text-fg-subtle',
+            state === 'running' && 'text-success',
+            state === 'needs-input' && 'text-warning',
+            state === 'failed' && 'text-danger',
+            state === 'pending' && 'motion-safe:animate-pulse',
+          )}
+        >
+          {icon ?? <GitBranchIcon />}
+        </span>
+      )}
       {rename ? (
         <input
           type="text"

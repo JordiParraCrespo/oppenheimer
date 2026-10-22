@@ -1131,6 +1131,35 @@ const BOOT = [
   ['agent', 'Starting Claude Code', 'tmux attach…'],
 ] as const;
 
+/** Rows picked to act on together: each glyph is a box, a picked one ticked on the active wash. */
+export function SessionSelectionDemo() {
+  const [picked, setPicked] = React.useState(['peersyst', 'atlas-api']);
+  const rows = [
+    { id: 'peersyst', name: 'Peersyst landing page', state: 'running' as const },
+    { id: 'atlas-api', name: 'Atlas API rate limits', state: 'needs-input' as const },
+    { id: 'bump-rn', name: 'Bump RN to 0.76', state: 'idle' as const },
+  ];
+  return (
+    <div className="w-60">
+      <SessionList>
+        {rows.map((row) => (
+          <SessionItem
+            key={row.id}
+            name={row.name}
+            state={row.state}
+            selected={picked.includes(row.id)}
+            onClick={() =>
+              setPicked((current) =>
+                current.includes(row.id) ? current.filter((id) => id !== row.id) : [...current, row.id],
+              )
+            }
+          />
+        ))}
+      </SessionList>
+    </div>
+  );
+}
+
 export function StepperDemo() {
   const [step, setStep] = React.useState(1);
   const [t, setT] = React.useState(0);

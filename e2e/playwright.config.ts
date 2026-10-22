@@ -60,6 +60,9 @@ function fleetProjects() {
             testDir: './tests/netsim',
             testMatch: /\.spec\.ts/,
             dependencies: ['fleet-setup'],
+            // One simulator per machine (`support/netsim.ts`'s state and
+            // control address), and each spec starts its own: one at a time.
+            workers: 1,
             use: { ...chromium, baseURL: API_URL },
           },
         ]

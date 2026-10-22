@@ -21,6 +21,7 @@ there.
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
 | — | [Channels](channels.md) | Bots on WhatsApp, Slack and email: one interface per channel, WhatsApp first on a number the owner links; version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
+| — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
 
 ## What this list does not place yet
 
@@ -94,3 +95,6 @@ where these land is the first open question below.
 - 2026-10-22, in review: the WhatsApp socket is held by the runner on the
   owner's host, so its keys never leave it and the API holds no long-lived
   connection; email is polled. 0.4 now covers only sessions in Slack.
+- 2026-10-22: cloud agents added, version not yet set: a Cloud place for
+  sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
+  API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
