@@ -33,7 +33,14 @@ describe('the runs list tenant predicate', () => {
     });
   });
 
-  it('adds nothing for a bypass scope', () => {
+  it('keeps a bypass scope inside its active workspace', () => {
+    expect(runTenantPredicate(scope({ bypass: true }), 2)).toEqual({
+      clause: 'run."organizationId" = $2',
+      values: ['org-1'],
+    });
+  });
+
+  it('adds nothing for a bypass scope with no workspace', () => {
     expect(runTenantPredicate(scope({ bypass: true, organizationId: null }), 2)).toBeNull();
   });
 

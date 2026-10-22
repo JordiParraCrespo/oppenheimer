@@ -18,7 +18,10 @@ export interface AccessScope {
    * type within the organization; a set means exactly those ids.
    */
   grants: ReadonlyMap<string, ReadonlySet<string> | 'all'>;
-  /** Skip scoping entirely: the platform tier, or a `manage all` holder. */
+  /**
+   * Skip the slice within the tenant (team, own, grant): the platform tier, or a
+   * `manage all` holder. The tenant still holds while `organizationId` is set.
+   */
   bypass: boolean;
 }
 
