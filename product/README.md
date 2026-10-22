@@ -663,3 +663,8 @@ earlier note:
   `terminal_direct_path` and `session_chat_view` now serve on until
   targeting turns them off or narrows them. `scripts/evals/feature-flags/`
   checks that an agent launching a feature follows it.
+- `next-steps/0.4-slack.md` was the Slack integration on its own. On
+  2026-10-22 bots gained channels (`next-steps/channels.md`): WhatsApp,
+  Slack and email behind one interface, with WhatsApp first as a linked
+  device of a number the owner has. Slack as a way to reach a bot is now
+  that note's Slack channel; 0.4 keeps its questions about sessions.
