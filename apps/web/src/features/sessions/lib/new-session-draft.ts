@@ -100,7 +100,7 @@ export interface DraftSeed {
  * visit remembered, overlaid with what the address asks for.
  */
 export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
-  const stored = remembered();
+  const stored = rememberedChoices();
   // A model belongs to one agent, so an address naming another agent takes its default.
   const engine =
     seed.agent && seed.agent !== stored.agent
@@ -151,7 +151,10 @@ export function rememberDraft({
   }
 }
 
-function remembered(): Partial<RememberedChoices> {
+export type { RememberedChoices };
+
+/** What the last visit left in storage, each field checked against the catalog. */
+export function rememberedChoices(): Partial<RememberedChoices> {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
@@ -183,11 +186,13 @@ function remembered(): Partial<RememberedChoices> {
  * the last visit left nothing in. On arrival the memory outranks the project,
  * so the screen opens on what was picked last; a project picked on the screen,
  * or named by the address, applies all of its defaults.
+ *
+ * `stored` is the memory as the visit opened (`rememberedChoices`), read
+ * before this visit's own picks start writing over it.
  */
 export function unrememberedDefaults<
   T extends Partial<Pick<NewSessionDraft, 'hostId' | 'scope' | 'agent' | 'model'>>,
->(defaults: T): Partial<T> {
-  const stored = remembered();
+>(defaults: T, stored: Partial<RememberedChoices>): Partial<T> {
   const patch: Partial<T> = { ...defaults };
   if (stored.hostId) delete patch.hostId;
   if (stored.scope?.length) delete patch.scope;

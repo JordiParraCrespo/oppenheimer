@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { rememberFolder } from '../lib/folder-memory';
-import { initialDraft, rememberDraft, unrememberedDefaults } from '../lib/new-session-draft';
+import {
+  initialDraft,
+  rememberDraft,
+  rememberedChoices,
+  unrememberedDefaults,
+} from '../lib/new-session-draft';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
@@ -221,16 +226,16 @@ describe('unrememberedDefaults', () => {
   it('keeps every remembered chip over the project default', () => {
     store({ hostId: 'h1', scope: [{ id: 'inst:1', branch: 'main' }], agent: 'claude-code' });
 
-    expect(unrememberedDefaults(defaults)).toEqual({});
+    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual({});
   });
 
   it('applies every default when nothing is remembered', () => {
-    expect(unrememberedDefaults(defaults)).toEqual(defaults);
+    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual(defaults);
   });
 
   it('fills an empty remembered scope from the project', () => {
     store({ hostId: 'h1', scope: [], agent: 'claude-code' });
 
-    expect(unrememberedDefaults(defaults)).toEqual({ scope: defaults.scope });
+    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual({ scope: defaults.scope });
   });
 });

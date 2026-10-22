@@ -10,7 +10,7 @@ import { ProjectSelect } from '../components/project-select';
 import { useLandingPick } from '../hooks/use-landing-pick';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
-import { unrememberedDefaults } from '../lib/new-session-draft';
+import { rememberedChoices, unrememberedDefaults } from '../lib/new-session-draft';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
@@ -28,6 +28,9 @@ export function NewSessionProject() {
   const { field } = useController({ control, name: 'projectId' });
   const dialogs = useConsoleDialog();
   const [created, setCreated] = useState<string | undefined>();
+  // The memory as the visit opened: the draft writes every change back to
+  // storage, the landing pick's own included, so it cannot be read later.
+  const [memory] = useState(rememberedChoices);
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const resolveError = useErrorMessage();
@@ -55,7 +58,7 @@ export function NewSessionProject() {
       next,
       (hosts() ?? []).map((host) => host.id),
     );
-    const prefill = landing ? unrememberedDefaults(defaults) : defaults;
+    const prefill = landing ? unrememberedDefaults(defaults, memory) : defaults;
     if (prefill.hostId !== undefined) setValue('hostId', prefill.hostId);
     if (prefill.scope !== undefined) setValue('scope', prefill.scope);
     if (prefill.agent !== undefined) setValue('agent', prefill.agent);
