@@ -6,6 +6,7 @@ import {
   planItems,
   readableOutput,
   runningStep,
+  sharedKind,
   toolAction,
   toolTarget,
 } from '../lib/tool-activity';
@@ -108,5 +109,13 @@ describe('groupSummary', () => {
     expect(groupSummary([search, tool])).toBe('bots.chat.activity.group');
     expect(groupSummary([tool, tool])).toBe('bots.chat.activity.group');
     expect(groupSummary([{ kind: 'plan' }, { kind: 'plan' }])).toBe('bots.chat.activity.group');
+  });
+});
+
+describe('sharedKind', () => {
+  it('names the kind a run shares, and nothing for a mix, so a mixed group takes the tool glyph', () => {
+    const search = { kind: 'search', query: 'x' } as const;
+    expect(sharedKind([search, search])).toBe('search');
+    expect(sharedKind([search, { kind: 'plan' }])).toBeUndefined();
   });
 });

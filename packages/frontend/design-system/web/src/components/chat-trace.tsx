@@ -51,6 +51,15 @@ const TRACE_LINE = cn(LINE_METRICS, 'gap-2.5 data-[tone=danger]:text-danger');
  */
 const GROUP_RAIL = 'ml-1.75 flex flex-col border-l border-border-subtle pl-4.5';
 
+/** A line's glyph, at 16px: the width `GROUP_RAIL`'s indent is measured from. */
+function TraceGlyph({ children }: { children: React.ReactNode }) {
+  return (
+    <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+      {children}
+    </span>
+  );
+}
+
 function TraceGroup({
   icon,
   summary,
@@ -75,9 +84,7 @@ function TraceGroup({
       <FoldTrigger
         className={cn(LINE_METRICS, 'gap-2.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
       >
-        <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
-          {icon}
-        </span>
+        <TraceGlyph>{icon}</TraceGlyph>
         <span className="min-w-0 truncate">{summary}</span>
         {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
       </FoldTrigger>
@@ -118,9 +125,7 @@ function TraceStep({
 }) {
   const line = (
     <>
-      <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
-        {icon}
-      </span>
+      <TraceGlyph>{icon}</TraceGlyph>
       <span className="min-w-0 truncate">
         {title}
         {target ? <span className={tone === 'danger' ? undefined : 'text-fg'}> {target}</span> : null}

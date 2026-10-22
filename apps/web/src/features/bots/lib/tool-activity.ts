@@ -83,14 +83,20 @@ const GROUP_SUMMARY = {
   search: 'bots.chat.activity.groupSearched',
 } as const satisfies Partial<Record<ToolAction['kind'], string>>;
 
+/** The one kind every call in a group shares; nothing for a mix or no calls. */
+export function sharedKind(actions: readonly ToolAction[]): ToolAction['kind'] | undefined {
+  const kinds = new Set(actions.map((action) => action.kind));
+  return kinds.size === 1 ? [...kinds][0] : undefined;
+}
+
 /** The translation key for a group of calls' folded line; its `count` is the number of calls. */
 export function groupSummary(
   actions: readonly ToolAction[],
 ): (typeof GROUP_SUMMARY)[keyof typeof GROUP_SUMMARY] | 'bots.chat.activity.group' {
-  const kinds = new Set(actions.map((action) => action.kind));
-  const [kind] = kinds;
-  const same = kinds.size === 1 && kind !== undefined && kind in GROUP_SUMMARY;
-  return same ? GROUP_SUMMARY[kind as keyof typeof GROUP_SUMMARY] : 'bots.chat.activity.group';
+  const kind = sharedKind(actions);
+  return kind !== undefined && kind in GROUP_SUMMARY
+    ? GROUP_SUMMARY[kind as keyof typeof GROUP_SUMMARY]
+    : 'bots.chat.activity.group';
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */

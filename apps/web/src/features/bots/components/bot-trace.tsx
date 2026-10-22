@@ -19,6 +19,7 @@ import {
   groupSummary,
   planItems,
   readableOutput,
+  sharedKind,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
@@ -159,11 +160,9 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   if (lines.length === 1) return <Trace>{lines}</Trace>;
   const failed = done.filter((step) => step.isError).length;
   const actions = done.map(toolAction);
-  const [first] = actions;
-  const shared = first && actions.every((action) => action.kind === first.kind) ? first : null;
   return (
     <TraceGroup
-      icon={shared ? viewOf(shared).icon : STEP_VIEWS.tool.icon}
+      icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
       summary={t(groupSummary(actions), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
