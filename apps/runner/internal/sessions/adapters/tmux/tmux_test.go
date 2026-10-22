@@ -242,6 +242,17 @@ func TestRedrawPaintsTheWholeScreenAgain(t *testing.T) {
 	if _, err := io.WriteString(attachment, "printf 'on-%s-screen\\n' the\n"); err != nil {
 		t.Fatal(err)
 	}
+	// A shell slow to start under load stays quiet for longer than settled
+	// waits, so wait for the first marker before counting.
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); {
+		mu.Lock()
+		arrived := strings.Contains(seen.String(), "on-the-screen")
+		mu.Unlock()
+		if arrived {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 	before := settled()
 	if before == 0 {
 		t.Fatal("the command's output never came through the PTY")
