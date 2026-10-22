@@ -461,6 +461,13 @@ earlier note:
   permission level every visit and never remembered it. On 2026-10-14 the
   owner made it open on `auto` and remember the last level picked, like
   the other chips.
+- `versions/mvp/05-screens.md` never remembered New session's repository
+  and branch, and let the landing project's default host, agent and
+  repository replace the last visit's choices. On 2026-10-22 the owner made
+  every chip open on its last choice: the scope is remembered, and the
+  landing project fills only the chips the memory left empty. Picking a
+  project on the screen, or naming one in the address, still applies all
+  its defaults.
 - `versions/mvp/00-scope.md` made every session a worktree, the blank
   terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
   2026-10-14 the owner made the place a choice, a new worktree or a folder
