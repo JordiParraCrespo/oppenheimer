@@ -528,10 +528,8 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 		_, err := c.run(ctx, quick, "worktree", "prune")
 		return err
 	}
-	if force {
-		if record, err := c.recordAt(ctx, store, path); err != nil || record == nil {
-			return c.removeUnregistered(ctx, store, path, err)
-		}
+	if force && c.unregistered(ctx, store, path) {
+		return c.removeUnregistered(ctx, store, path)
 	}
 	args := []string{"worktree", "remove"}
 	if force {
@@ -539,10 +537,8 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 	}
 	args = append(args, path)
 	if _, err := c.run(ctx, quick, args...); err != nil {
-		if force {
-			if record, listErr := c.recordAt(ctx, store, path); listErr == nil && record == nil {
-				return c.removeUnregistered(ctx, store, path, nil)
-			}
+		if force && c.unregistered(ctx, store, path) {
+			return c.removeUnregistered(ctx, store, path)
 		}
 		return err
 	}
@@ -550,12 +546,15 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 	return err
 }
 
-// removeUnregistered deletes a worktree directory git has no record of. A
-// listing that failed (listErr) decides nothing and is returned as it is.
-func (c *Client) removeUnregistered(ctx context.Context, store, path string, listErr error) error {
-	if listErr != nil {
-		return listErr
-	}
+// unregistered reports a path git has no worktree record of. A listing that
+// fails says nothing, so it is not unregistered and git decides as usual.
+func (c *Client) unregistered(ctx context.Context, store, path string) bool {
+	record, err := c.recordAt(ctx, store, path)
+	return err == nil && record == nil
+}
+
+// removeUnregistered deletes a worktree directory git has no record of.
+func (c *Client) removeUnregistered(ctx context.Context, store, path string) error {
 	if err := os.RemoveAll(path); err != nil {
 		return domain.ErrWorktree.WithDetail("remove %s: %v", path, err).WithCause(err)
 	}
