@@ -10,6 +10,7 @@
   "emailResent": "Email sent again.",
   "sessionRenamed": "Renamed to “{{name}}”.",
   "sessionMoved": "“{{name}}” moved to {{project}}.",
+  "sessionsMoved": "{{n}} sessions moved to {{project}}.",
   "projectCreated": "“{{name}}” created.",
   "projectSaved": "“{{name}}” saved.",
   "projectDeleted": "“{{name}}” deleted.",

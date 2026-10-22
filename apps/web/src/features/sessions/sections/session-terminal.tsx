@@ -121,7 +121,10 @@ export function SessionTerminal({
           padded host overflows its own box and paints over the rows below it.
           xterm owns everything inside the inner element, scrollbar included. */}
         <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
-          <div ref={containerRef} className="size-full" />
+          {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
+            the latency readout, each with a z-index) inside the grid, so the
+            covers below paint over all of them rather than under some. */}
+          <div ref={containerRef} className="isolate size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
             older one replaying its scrollback that this tab has no kept

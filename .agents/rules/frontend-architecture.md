@@ -229,8 +229,9 @@ name the jobs and split *those*.
   asserts that a pick renders only the chip that was picked.
 - **Generic React hooks live in the design system's `hooks/`.** `useControlled`
   (the `value` / `defaultValue` / `onChange` triple), `useDebouncedValue`,
-  `useDebouncedCallback` and `useNow` are exported from `@oppenheimer/design-system-web`, the
-  lowest React package the kit, the apps and the design system's own
+  `useDebouncedCallback`, `useNow` and `useStickToBottom` (a chat that
+  follows its latest line) are exported from `@oppenheimer/design-system-web`,
+  the lowest React package the kit, the apps and the design system's own
   components all share. A hook there knows nothing of the product or of a
   query; one that does belongs in a product package or a feature's `hooks/`.
   Before writing a timer, a controlled/uncontrolled pair or a latest-ref,

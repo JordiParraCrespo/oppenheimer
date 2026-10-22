@@ -74,4 +74,10 @@ describe('planSession', () => {
       refusal: expect.stringContaining('folder'),
     });
   });
+
+  it('names a rejected prompt as the tool’s task, the field the model wrote', () => {
+    expect(planSession({ task: 'a'.repeat(5_000) }, project(), HOME)).toMatchObject({
+      refusal: expect.stringContaining('(task)'),
+    });
+  });
 });
