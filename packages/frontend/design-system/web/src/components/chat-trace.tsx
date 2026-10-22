@@ -13,8 +13,9 @@ import { cn } from '../lib/utils';
  *
  * - `Trace`: the steps of one run of work, a list.
  * - `TraceGroup`: several steps a bot ran together, folded into one quiet
- *   line ("Used 5 tools", "1 failed" in red after it); open, its
- *   `TraceStep`s hang from a hairline under it, each as it reads alone.
+ *   line with a step's 16px glyph ("Used 5 tools", "1 failed" in red after
+ *   it); open, its `TraceStep`s hang from a hairline under that glyph, each
+ *   as it reads alone, their glyphs under the summary's first letter.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated)
  *   with its `target` after it in full ink, a mono meta ("14 results", "2
  *   failed"), and, when it has children, the chevron that opens them. `tone="danger"` sets the line in red (a
@@ -45,18 +46,21 @@ const LINE_METRICS =
 const TRACE_LINE = cn(LINE_METRICS, 'gap-2.5 data-[tone=danger]:text-danger');
 
 /**
- * Where a group's steps hang: a hairline under the summary's first letter
- * (7px in), the steps' glyphs 14px past it.
+ * Where a group's steps hang: a hairline under the summary's glyph (7px in),
+ * the steps' glyphs 18px past it, under the summary's first letter (26px).
  */
-const GROUP_RAIL = 'ml-1.75 flex flex-col border-l border-border-subtle pl-3.5';
+const GROUP_RAIL = 'ml-1.75 flex flex-col border-l border-border-subtle pl-4.5';
 
 function TraceGroup({
+  icon,
   summary,
   failed,
   defaultOpen = false,
   className,
   children,
 }: {
+  /** The group's glyph, drawn at 16px like a step's. */
+  icon: React.ReactNode;
   /** "Used 5 tools", "Searched the web 3 times". */
   summary: React.ReactNode;
   /** "1 failed", in red after the summary. */
@@ -69,8 +73,11 @@ function TraceGroup({
   return (
     <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
       <FoldTrigger
-        className={cn(LINE_METRICS, 'gap-1.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
+        className={cn(LINE_METRICS, 'gap-2.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
       >
+        <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+          {icon}
+        </span>
         <span className="min-w-0 truncate">{summary}</span>
         {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
       </FoldTrigger>
@@ -80,7 +87,6 @@ function TraceGroup({
     </Fold>
   );
 }
-
 
 function TraceStep({
   icon,
