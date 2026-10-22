@@ -8,7 +8,7 @@ import {
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, Split, Wrench } from '@oppenheimer/design-system-web/icons';
+import { Globe, ListTodo, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
@@ -110,7 +110,7 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
     },
   },
   delegate: {
-    icon: <Split />,
+    icon: <UsersIcon />,
     title: (t, action) => ({ title: t('bots.chat.activity.delegated', { count: action.tasks }) }),
     // Each child's line, read from the runs the call stored.
     detail: (step, t, labels) => {

@@ -1137,17 +1137,14 @@
         "delegated_other": "Ejecutó {{count}} subagentes",
         "delegating_one": "Ejecutando {{count}} subagente",
         "delegating_other": "Ejecutando {{count}} subagentes",
-        "seconds_one": "{{count}} s",
-        "seconds_other": "{{count}} s",
+        "seconds": "{{count}} s",
         "subagent": {
           "completed": "completado",
           "failed": "con error",
           "cancelled": "detenido",
           "timed_out": "sin tiempo"
         },
-        "subagentSilent": "No dijo nada.",
-        "subagentUsage": "Usó {{tools}} · {{tokens}} tokens",
-        "subagentNoTools": "ninguna herramienta"
+        "subagentTokens": "{{tokens}} tokens"
       },
       "suggest": {
         "task": {
