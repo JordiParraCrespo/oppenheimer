@@ -11,12 +11,12 @@ import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { BotEntity } from '../../../../bots/domain/bot.entity';
-import { BotErrors } from '../../../../bots/domain/bots.errors';
 import { SessionErrors } from '../../../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../../sessions/queries/find-session/find-session.query';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
+import { BotSubscriptionSubjectResolver } from '../../../application/bot-subscription-subject.resolver';
 import { BotSubscriptionMapper } from '../../../bot-subscription.mapper';
 import type { BotSubscriptionRepositoryPort } from '../../../database/bot-subscription.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
@@ -74,7 +74,7 @@ function setup(options: {
   stored?: BotSubscriptionEntity | null;
   read?: WorkSessionEntity | Error;
   owner?: typeof owner | null;
-  bot?: Partial<BotEntity> | Error;
+  bot?: Partial<BotEntity> | null;
   queued?: 'staged' | 'waiting' | 'existing' | 'missing';
 }) {
   const stored = options.stored === undefined ? subscription() : options.stored;
@@ -90,18 +90,18 @@ function setup(options: {
     })),
   } satisfies Partial<BotTurnRepositoryPort>;
   const stream = { publish: vi.fn<BotStreamPort['publish']>(async () => undefined) };
-  const bot = options.bot ?? {
-    id: 'bot-1',
-    createdByUserId: 'owner-1',
-    provider: 'anthropic',
-    model: 'claude-sonnet-5-5',
-    effort: null,
-  };
+  const bot =
+    options.bot !== undefined
+      ? options.bot
+      : {
+          id: 'bot-1',
+          createdByUserId: 'owner-1',
+          provider: 'anthropic',
+          model: 'claude-sonnet-5-5',
+          effort: null,
+        };
   const access = {
-    bot: vi.fn(async () => {
-      if (bot instanceof Error) throw bot;
-      return bot as BotEntity;
-    }),
+    findBot: vi.fn<BotModelAccessResolver['findBot']>(async () => bot as BotEntity | null),
   };
   const owners = {
     resolve: vi.fn(async () => (options.owner === undefined ? owner : options.owner)),
@@ -118,9 +118,11 @@ function setup(options: {
     subscriptions as unknown as BotSubscriptionRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    access as unknown as BotModelAccessResolver,
-    owners as unknown as BotOwnerScopeResolver,
-    queries as unknown as QueryBus,
+    new BotSubscriptionSubjectResolver(
+      access as unknown as BotModelAccessResolver,
+      owners as unknown as BotOwnerScopeResolver,
+      queries as unknown as QueryBus,
+    ),
     new BotSubscriptionMapper(),
   );
   const run = () => handler.execute(new WakeSubscribedBotCommand({ subscriptionId: 'sub-1' }));
@@ -218,10 +220,19 @@ describe('WakeSubscribedBotCommandHandler', () => {
     expect(left.turns.enqueueOnce).not.toHaveBeenCalled();
     expect(left.subscriptions.end).toHaveBeenCalledTimes(1);
 
-    const gone = setup({ bot: new AppError(BotErrors.NOT_FOUND) });
+    const gone = setup({ bot: null });
     await gone.run();
     expect(gone.turns.enqueueOnce).not.toHaveBeenCalled();
     expect(gone.subscriptions.end).toHaveBeenCalledTimes(1);
+  });
+
+  // What breaks this: a database blip read as "the owner lost access", which
+  // would end the subscription for good.
+  it('throws on a fault reading the session, ending nothing, for the outbox to retry', async () => {
+    const { subscriptions, turns, run } = setup({ read: new Error('connection reset') });
+    await expect(run()).rejects.toThrow('connection reset');
+    expect(subscriptions.end).not.toHaveBeenCalled();
+    expect(turns.enqueueOnce).not.toHaveBeenCalled();
   });
 
   it('ends at the wake limit, and when the session closed with nothing new to tell', async () => {

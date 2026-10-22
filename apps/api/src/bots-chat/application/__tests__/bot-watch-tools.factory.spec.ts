@@ -77,11 +77,8 @@ function setup(
     }),
   };
   const repository = subscriptions as unknown as BotSubscriptionRepositoryPort;
-  const factory = new BotWatchToolsFactory(
-    new BotSessionWatchResolver(repository, queries as unknown as QueryBus),
-    repository,
-    new BotSubscriptionMapper(),
-  );
+  const resolver = new BotSessionWatchResolver(repository, queries as unknown as QueryBus);
+  const factory = new BotWatchToolsFactory(resolver, repository, new BotSubscriptionMapper());
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
   const context: BotToolContext = {
     owner,
@@ -100,7 +97,7 @@ function setup(
     if (!definition) throw new Error(`no tool ${name}`);
     return definition.bind(context).run(input, { signal: new AbortController().signal });
   };
-  return { subscriptions, queries, approvals, call };
+  return { subscriptions, queries, approvals, call, resolver, context };
 }
 
 describe('BotWatchToolsFactory', () => {
@@ -180,5 +177,21 @@ describe('BotWatchToolsFactory', () => {
     );
     expect(listed.content).toContain(`session ${SESSION} [task #1; woke you 2 of 20 times;`);
     expect(listed.content).toContain('— research');
+  });
+
+  // What breaks this: a session started on the host that the bot is told
+  // was not, because storing its watch failed.
+  it("words start_session's watch, and says when it could not be stored rather than throw", async () => {
+    const { resolver, context, subscriptions } = setup();
+    expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      until: 'task',
+      purpose: null,
+    });
+
+    subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
+    expect(await resolver.watchStarted(context, SESSION)).toBe(
+      'It could not be watched (connection reset); read it later with get_session.',
+    );
   });
 });

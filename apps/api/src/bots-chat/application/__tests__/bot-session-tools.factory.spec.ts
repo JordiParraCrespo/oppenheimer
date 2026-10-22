@@ -6,7 +6,7 @@ import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
-import type { BotSessionWatchResolver, SessionWatch } from '../bot-session-watch.resolver';
+import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
@@ -69,7 +69,9 @@ function setup(permission: BotToolContext['permission']) {
     execute: vi.fn(async () => ({ sessionId: 'session-1', hints: [] as string[] })),
   };
   const watches = {
-    watch: vi.fn<BotSessionWatchResolver['watch']>(async () => ({}) as SessionWatch),
+    watchStarted: vi.fn<BotSessionWatchResolver['watchStarted']>(
+      async () => 'You are subscribed to it.',
+    ),
   };
   const factory = new BotSessionToolsFactory(
     queryBus as unknown as QueryBus,
@@ -138,31 +140,21 @@ describe('BotSessionToolsFactory', () => {
     expect(result.data).toEqual({ sessionId: 'session-1' });
   });
 
-  it('subscribes the bot to the session it started, so it is woken when the task ends', async () => {
+  it('subscribes the bot to the session it started, and says so in its answer', async () => {
     const { watches, call } = setup('full');
     const result = await call('start_session', { task: 'Research', project_id: PROJECT });
-    expect(watches.watch).toHaveBeenCalledWith(
+    expect(watches.watchStarted).toHaveBeenCalledWith(
       expect.objectContaining({ turnId: 'turn-1' }),
       'session-1',
-      {
-        until: 'task',
-        purpose: null,
-      },
     );
-    expect(result.content).toContain('You are subscribed to it');
+    expect(result.content).toContain('You are subscribed to it.');
   });
 
-  it('starts without a watch when asked not to, and still starts when the watch cannot be stored', async () => {
-    const { watches, commandBus, call } = setup('full');
+  it('starts without a watch when asked not to', async () => {
+    const { watches, call } = setup('full');
     const unwatched = await call('start_session', { task: 'A', project_id: PROJECT, watch: false });
-    expect(watches.watch).not.toHaveBeenCalled();
+    expect(watches.watchStarted).not.toHaveBeenCalled();
     expect(unwatched.content).toContain('You are not watching it');
-
-    watches.watch.mockRejectedValueOnce(new Error('You already follow 50 sessions.'));
-    const refused = await call('start_session', { task: 'B', project_id: PROJECT });
-    expect(commandBus.execute).toHaveBeenCalledTimes(2);
-    expect(refused.isError).toBe(false);
-    expect(refused.content).toContain('could not be watched (You already follow 50 sessions.)');
   });
 
   it('gives the same call in the same turn the same idempotency key', async () => {

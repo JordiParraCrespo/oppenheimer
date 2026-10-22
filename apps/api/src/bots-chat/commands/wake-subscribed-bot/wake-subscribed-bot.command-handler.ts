@@ -1,12 +1,6 @@
 import { Inject, Logger } from '@nestjs/common';
-import { CommandHandler, type ICommandHandler, QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
-import type { BotEntity } from '../../../bots/domain/bot.entity';
-import type { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
-import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
-import { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
-import { BotOwnerScopeResolver } from '../../application/bot-owner-scope.resolver';
+import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { BotSubscriptionSubjectResolver } from '../../application/bot-subscription-subject.resolver';
 import { BotSubscriptionMapper } from '../../bot-subscription.mapper';
 import {
   BOT_STREAM,
@@ -40,29 +34,24 @@ export class WakeSubscribedBotCommandHandler
     private readonly subscriptions: BotSubscriptionRepositoryPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
-    private readonly access: BotModelAccessResolver,
-    private readonly owners: BotOwnerScopeResolver,
-    private readonly queries: QueryBus,
+    private readonly subjects: BotSubscriptionSubjectResolver,
     private readonly mapper: BotSubscriptionMapper,
   ) {}
 
   async execute({ subscriptionId, metadata }: WakeSubscribedBotCommand): Promise<void> {
     const subscription = await this.subscriptions.findForWake(subscriptionId);
     if (!subscription) return;
-    const bot = await this.botOrNull(subscription);
-    const owner = bot
-      ? await this.owners.resolve(subscription.organizationId, bot.createdByUserId)
-      : null;
-    const session = bot && owner ? await this.sessionOrNull(owner, subscription) : null;
-    if (!bot?.createdByUserId || !session) return this.end(subscription, 'access_lost');
+    const subject = await this.subjects.resolve(subscription);
+    if (!subject) return this.end(subscription, 'access_lost');
 
+    const { bot, ownerUserId, session } = subject;
     const task = session.latestTurn;
     const decision = wakeFor(subscription.wakeSubject, task, session.isResolved);
     if (decision.kind === 'end') return this.end(subscription, decision.reason);
     if (decision.kind === 'skip' || !task) return;
 
     const { turn, opening } = sessionWakeTurn(
-      this.mapper.toWakeTurnProps(subscription, bot, bot.createdByUserId),
+      this.mapper.toWakeTurnProps(subscription, bot, ownerUserId),
       this.mapper.toWake(subscription, session, task, decision),
     );
     const queued = await this.turns.enqueueOnce(turn, opening, metadata.correlationId, null);
@@ -85,28 +74,5 @@ export class WakeSubscribedBotCommandHandler
       sessionId: subscription.resourceId,
       reason,
     });
-  }
-
-  /** The workspace's bot, or null once it is deleted. */
-  private async botOrNull(subscription: BotSubscriptionEntity): Promise<BotEntity | null> {
-    return this.access.bot(subscription.organizationId, subscription.botId).catch((error) => {
-      if (error instanceof AppError) return null;
-      throw error;
-    });
-  }
-
-  /** The session as the owner may read it now; null when they cannot or it is gone. */
-  private async sessionOrNull(
-    owner: AccessScope,
-    subscription: BotSubscriptionEntity,
-  ): Promise<WorkSessionEntity | null> {
-    return this.queries
-      .execute<FindSessionQuery, WorkSessionEntity>(
-        new FindSessionQuery({ scope: owner, sessionId: subscription.resourceId }),
-      )
-      .catch((error) => {
-        if (error instanceof AppError) return null;
-        throw error;
-      });
   }
 }

@@ -50,4 +50,20 @@ describe('BotSessionWakeDomainEventHandler', () => {
     await handler.onState({ aggregateId: 'session-1', organizationId: 'org-1', to: 'resolved' });
     expect(commands.execute).toHaveBeenCalledTimes(1);
   });
+
+  // What breaks this: one subscription whose wake fails keeping every other
+  // bot that follows the session from hearing about it.
+  it('wakes the others when one wake fails, then throws so the event is delivered again', async () => {
+    const { commands, handler } = setup(['sub-1', 'sub-2', 'sub-3']);
+    commands.execute.mockImplementation(async (command: unknown) => {
+      if ((command as WakeSubscribedBotCommand).subscriptionId === 'sub-1') {
+        throw new Error('connection reset');
+      }
+      return undefined;
+    });
+    await expect(
+      handler.onTurn({ aggregateId: 'session-1', organizationId: 'org-1', to: 'failed' }),
+    ).rejects.toThrow('connection reset');
+    expect(commands.execute).toHaveBeenCalledTimes(3);
+  });
 });

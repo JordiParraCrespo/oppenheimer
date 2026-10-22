@@ -134,6 +134,39 @@ describe('events from Oppenheimer', () => {
     expect(prompt).toContain('do not try the same thing another way');
   });
 
+  // What breaks this: a routine's turn told to report on "the approval card
+  // you raised", which it never raised.
+  it('reads a routine run as the note it is, and a followed session by its state', () => {
+    const routine = botTurnPrompt({
+      role: 'event',
+      content: 'Your routine "Digest" is running now',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: 'a-1',
+        runId: 'r-1',
+        name: 'Digest',
+        reason: null,
+      },
+    });
+    expect(routine).toContain('Your routine "Digest" is running now');
+    expect(routine).not.toContain('approval card');
+    const session = botTurnPrompt({
+      role: 'event',
+      content: 'its task #1 failed.',
+      event: {
+        kind: 'session',
+        subscriptionId: 's-1',
+        sessionId: 'session-1',
+        sessionName: 'x',
+        turn: 1,
+        state: 'failed',
+      },
+    });
+    expect(session).toContain('tell the person it failed');
+    expect(session).not.toContain('approval card');
+  });
+
   it('asks a turn your message opened exactly what you wrote', () => {
     expect(botTurnPrompt({ role: 'user', content: 'Ship it' })).toBe('Ship it');
     expect(botTurnPrompt(null)).toBe('');

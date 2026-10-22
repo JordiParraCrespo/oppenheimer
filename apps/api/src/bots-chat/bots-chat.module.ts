@@ -23,6 +23,7 @@ import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory'
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
+import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
@@ -197,6 +198,7 @@ const queryHandlers: Provider[] = [
     BotHostToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,
+    BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,
     BotSelfToolsFactory,
     BotPlanToolsFactory,

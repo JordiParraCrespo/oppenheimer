@@ -1,3 +1,4 @@
+import type { BotMessageEvent } from '@oppenheimer/shared';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { sessionWakePrompt } from './bot-subscription.policy';
@@ -171,20 +172,44 @@ function firstSentence(text: string): string {
   return end === -1 ? trimmed : trimmed.slice(0, end + 1);
 }
 
+/** What an approval's decision turn is asked: the outcome, then what to tell the person. */
+function approvalPrompt(content: string): string {
+  return `${eventNote(content)}\n\n${APPROVAL_ASK}`;
+}
+
+const APPROVAL_ASK =
+  'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
+
+type EventPrompts = {
+  [Kind in BotMessageEvent['kind']]: (
+    event: Extract<BotMessageEvent, { kind: Kind }>,
+    content: string,
+  ) => string;
+};
+
+/**
+ * The prompt of a turn an event opened, one entry per kind, so a new kind
+ * is a row the compiler asks for. A routine's opening already says what to
+ * do (`routineOpening`), so it is read as the note it is.
+ */
+const EVENT_PROMPTS: EventPrompts = {
+  approval: (_event, content) => approvalPrompt(content),
+  routine: (_event, content) => eventNote(content),
+  bot_message: peerMessagePrompt,
+  bot_reply: peerReplyPrompt,
+  session: sessionWakePrompt,
+};
+
 /**
  * What a turn is asked: your message as you wrote it, or, for a turn an event
- * opened, the event with what to do about it: an approval's outcome, a
- * message from another bot, the answer to an ask, or a session the bot
- * follows.
+ * opened, the event with what to do about it (`EVENT_PROMPTS`). An event
+ * this version cannot read is told as an approval's, as it always was.
  */
 export function botTurnPrompt(opening: HistoryMessage | null): string {
   if (!opening) return '';
   if (opening.role !== 'event') return opening.content;
-  if (opening.event?.kind === 'bot_message')
-    return peerMessagePrompt(opening.event, opening.content);
-  if (opening.event?.kind === 'bot_reply') return peerReplyPrompt(opening.event, opening.content);
-  if (opening.event?.kind === 'session') return sessionWakePrompt(opening.event, opening.content);
-  return `${eventNote(opening.content)}
-
-This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.`;
+  const event = opening.event;
+  if (!event) return approvalPrompt(opening.content);
+  const prompt = EVENT_PROMPTS[event.kind] as (event: BotMessageEvent, content: string) => string;
+  return prompt(event, opening.content);
 }

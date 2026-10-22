@@ -33,6 +33,22 @@ export class BotSessionWatchResolver {
     private readonly queries: QueryBus,
   ) {}
 
+  /**
+   * Follows a session the bot just started, until its first task ends, and
+   * says so in words for `start_session`'s answer. The session exists
+   * whatever happens here, so a watch that cannot be stored is said, never
+   * thrown: the start stays a start.
+   */
+  async watchStarted(context: BotToolCallContext, sessionId: string): Promise<string> {
+    try {
+      await this.watch(context, sessionId, { until: 'task', purpose: null });
+      return 'You are subscribed to it and will be woken when its task needs input or ends: end your turn now, and report when you are.';
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return `It could not be watched (${reason}); read it later with get_session.`;
+    }
+  }
+
   async watch(
     context: BotToolCallContext,
     sessionId: string,

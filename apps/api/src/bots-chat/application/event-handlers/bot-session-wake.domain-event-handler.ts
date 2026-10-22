@@ -40,10 +40,20 @@ export class BotSessionWakeDomainEventHandler {
     await this.wake(event.organizationId, event.aggregateId);
   }
 
+  /**
+   * Each wake reads and decides on its own, so they run together, and one
+   * that fails does not hold back the others. A failure is then thrown, for
+   * the outbox to deliver the event again: the wakes that went through
+   * queue nothing new the second time.
+   */
   private async wake(organizationId: string, sessionId: string): Promise<void> {
     const ids = await this.subscriptions.findIdsForSession(organizationId, sessionId);
-    for (const subscriptionId of ids) {
-      await this.commands.execute(new WakeSubscribedBotCommand({ subscriptionId }));
-    }
+    const settled = await Promise.allSettled(
+      ids.map((subscriptionId) =>
+        this.commands.execute(new WakeSubscribedBotCommand({ subscriptionId })),
+      ),
+    );
+    const failed = settled.find((result) => result.status === 'rejected');
+    if (failed) throw failed.reason;
   }
 }
