@@ -15,6 +15,7 @@
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",
+        "scripts/evals/feature-flags",
         ".agents/skills/frontend-audit",
         ".agents/skills/scaffold-feature/evals",
         "knip.json",

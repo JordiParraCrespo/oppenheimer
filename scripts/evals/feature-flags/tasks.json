@@ -1,0 +1,23 @@
+{
+  "preamble": "You are working in the Oppenheimer monorepo. Make the change the way this codebase already does this kind of thing. When you are done, what you changed must typecheck and `pnpm check:flags` must pass. Do not commit and do not open a pull request.",
+  "tasks": [
+    {
+      "id": "host-copy-id",
+      "title": "A new console action behind a flag",
+      "prompt": "Bring back **Copy host ID** in the ellipsis menu of a host card on Settings → Hosts (`apps/web/src/features/hosts`), between Rename and Update runner. It copies the host's ID to the clipboard. We left it out on 2026-09-26 because we were not sure people want it, so launch it behind a new feature flag that we can switch off for a workspace if it confuses people. English and Spanish copy.",
+      "surfaces": ["client"]
+    },
+    {
+      "id": "host-timeline-beta",
+      "title": "A beta endpoint behind a server-only flag",
+      "prompt": "The host timeline endpoint (`GET /v1/hosts/{id}/timeline`, `apps/api/src/hosts/queries/find-host-timeline`) is still in beta and nothing in the console calls it yet. Put it behind a new feature flag on the server, so we can pull it for a workspace if it misbehaves. Server only; the console comes later.",
+      "surfaces": ["server"]
+    },
+    {
+      "id": "session-rename-rollout",
+      "title": "A gradual rollout, server and console",
+      "prompt": "We want to roll session renaming out gradually, starting with our own workspace, after a couple of complaints about renamed sessions. Gate it behind a new feature flag: the endpoint (`PATCH /v1/sessions/{id}`, `apps/api/src/sessions/commands/rename-session`) and the Rename item in a session row's menu in the console (`apps/web/src/features/sessions`). Where the flag is off, the console does not offer Rename and the API refuses the call.",
+      "surfaces": ["client", "server"]
+    }
+  ]
+}

@@ -9,6 +9,8 @@
  *    deliberately in a reviewed diff
  *  - a flag the catalog declares but no code reads fails too: it can only be
  *    a flag whose feature was deleted and whose entry was not
+ *  - a boolean flag whose `defaultValue` is not `true` fails: every feature
+ *    ships on, and its flag is how it is turned off or narrowed
  *  - a temporary flag expiring within two weeks is a warning, so the owner
  *    hears about it before the build breaks
  *
@@ -45,6 +47,13 @@ export function checkFeatureFlags({ catalog, today, sources }) {
 
   for (const [key, definition] of Object.entries(catalog)) {
     const temporary = definition.kind !== 'ops';
+
+    if (definition.type === 'boolean' && definition.defaultValue !== true) {
+      errors.push(
+        `${key}: a boolean flag defaulting to ${definition.defaultValue}. Every flag ships on: ` +
+          'set defaultValue: true, and turn it off or narrow it with targeting.',
+      );
+    }
 
     if (temporary && definition.expiresAt) {
       const left = daysBetween(today, definition.expiresAt);
@@ -106,6 +115,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exit(1);
   }
   console.log(
-    `Feature flags: ${Object.keys(FEATURE_FLAGS).length} declared, all read, none expired.`,
+    `Feature flags: ${Object.keys(FEATURE_FLAGS).length} declared, all on by default, all read, none expired.`,
   );
 }

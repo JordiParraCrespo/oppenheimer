@@ -14,12 +14,13 @@ import type { FlagDefinition, FlagValue } from './types.js';
  *
  * 1. Add the entry. Pick the `kind` honestly — a `release` flag is debt with a
  *    due date (`expiresAt`), and `pnpm check:flags` fails CI once it passes.
- * 2. Choose `defaultValue` as the *safe* answer: what every user gets before
- *    anyone saves targeting and whenever the flag service cannot answer. For a
- *    new feature that is `false`; for a kill switch guarding something already
- *    live, `true` — an outage should not take the feature down with it.
- *    Switching a flag *off* is different: it serves `false` (or the default
- *    variant), so a pulled kill switch goes dark whatever its default.
+ * 2. A boolean flag's `defaultValue` is `true`, always: a feature ships on,
+ *    for everyone, before anyone saves targeting and whenever the flag service
+ *    cannot answer, and the flag is how it is turned off or narrowed — the
+ *    console has no flags screen to switch one on from. `pnpm check:flags`
+ *    fails a boolean flag that defaults to `false`. Switching a flag *off*
+ *    serves `false` (or the default variant) whatever its default, so a
+ *    pulled flag goes dark.
  * 3. Set `client: false` unless a client renders something differently for it.
  *    A server-only flag never goes over the wire.
  *
@@ -46,7 +47,8 @@ export const FEATURE_FLAGS = {
    * tab holds one Server-Sent Events stream and refetches what a change
    * names as it happens; off, the API refuses the stream (`FLAG_003`). While
    * a stream is live, the polls whose facts it carries stand down; they poll
-   * again the moment it drops. Rolled out by workspace. A tab that is
+   * again the moment it drops. On by default, like every flag; targeting
+   * narrows it by workspace. A tab that is
    * already streaming closes it the next time it reads the flag off (a
    * refocus refetches flags); until then the API keeps serving the open one.
    */
@@ -56,7 +58,7 @@ export const FEATURE_FLAGS = {
     kind: 'release',
     owner: 'console',
     type: 'boolean',
-    defaultValue: false,
+    defaultValue: true,
     client: true,
     expiresAt: '2027-01-31',
   },
@@ -67,10 +69,9 @@ export const FEATURE_FLAGS = {
    * and dropped the moment the host disagrees. Drawn only once the measured
    * keystroke round trip is above 30 ms.
    *
-   * Default `true`, the exception to "new feature: `false`": it is the
-   * terminal's intended behaviour rather than an experiment, the console has
-   * no flags screen to switch it on from, and a wrong guess costs one frame of
-   * overlay. Switching it off returns panes to the host's echo at their next
+   * Default `true`, like every flag: it is the terminal's intended
+   * behaviour, and a wrong guess costs one frame of overlay. Switching it off
+   * returns panes to the host's echo at their next
    * mount. The latency readout (`localStorage['oppenheimer.terminal.latency']`)
    * is a measuring tool for whoever tunes this, not a second switch: it shows
    * the round trip and changes nothing.
@@ -89,9 +90,10 @@ export const FEATURE_FLAGS = {
    * a session's terminal moves from the relay to a WebRTC data channel between
    * the browser and its host once one connects, and falls back to the relay if
    * it cannot. Read by the console, which offers only while it is on, and by
-   * the relay, which offers a direct path only to someone it is on for. Off by
-   * default while it is new; bucketed by person, since it is a per-reader
-   * choice of path, not a workspace's product.
+   * the relay, which offers a direct path only to someone it is on for. On by
+   * default, like every flag, and falls back to the relay wherever WebRTC
+   * cannot connect; bucketed by person, since it is a per-reader choice of
+   * path, not a workspace's product.
    */
   terminal_direct_path: {
     description:
@@ -99,7 +101,7 @@ export const FEATURE_FLAGS = {
     kind: 'release',
     owner: 'console',
     type: 'boolean',
-    defaultValue: false,
+    defaultValue: true,
     client: true,
     bucketBy: 'user',
     expiresAt: '2027-04-30',
@@ -110,8 +112,8 @@ export const FEATURE_FLAGS = {
    * conversation read off the agent's own transcript, which the host follows
    * while the terminal is attached, drawn as prompts, replies and tool cards.
    * The agent still runs in its terminal; typing in the chat types into it.
-   * A proof of concept, so off by default; bucketed by person, since the view
-   * is a reader's choice.
+   * A proof of concept, on by default like every flag; bucketed by person,
+   * since the view is a reader's choice.
    */
   session_chat_view: {
     description:
@@ -119,7 +121,7 @@ export const FEATURE_FLAGS = {
     kind: 'release',
     owner: 'console',
     type: 'boolean',
-    defaultValue: false,
+    defaultValue: true,
     client: true,
     bucketBy: 'user',
     expiresAt: '2027-04-30',
@@ -131,9 +133,9 @@ export const FEATURE_FLAGS = {
    * before sending. Read by the console, which shows the mic only while it is
    * on, and by `POST /v1/voice/transcriptions`.
    *
-   * Default `true`, like `terminal_typeahead`: dictation is live in every
-   * prose field, the console has no flags screen, and nothing happens without
-   * a provider (the mic shows only where one can hear the workspace). The
+   * Default `true`, like every flag: dictation is live in every prose field,
+   * and nothing happens without a provider (the mic shows only where one can
+   * hear the workspace). The
    * flag is its kill switch: a deployment turns it off through the flag
    * admin API.
    */
