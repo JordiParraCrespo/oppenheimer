@@ -1367,10 +1367,9 @@ describe('bots chat (integration)', () => {
   }
 
   function sentWith(bot: BotEntity, images: BotAttachmentEntity[]) {
-    const { turn, message } = sent(bot, '');
+    const { turn, message } = sent(bot, 'What is this?');
     const withImages = BotMessageEntity.createNew({
       ...message.getProps(),
-      content: 'What is this?',
       attachments: images.map((image) => image.toMessageAttachment()),
     });
     return { turn, message: withImages };
@@ -1461,7 +1460,10 @@ describe('bots chat (integration)', () => {
 
     const later = new Date(Date.now() + 60_000);
     const unclaimed = await attachments.findUnclaimedBefore(later, 100);
-    expect(unclaimed.map((image) => image.id).sort()).toEqual(images.map((i) => i.id).sort());
+    // Earlier specs leave unclaimed uploads of their own; this one's two must be among them.
+    expect(unclaimed.map((image) => image.id)).toEqual(
+      expect.arrayContaining(images.map((i) => i.id)),
+    );
     expect(await attachments.deleteUnclaimed(images.map((image) => image.id))).toBe(2);
   });
 });

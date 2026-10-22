@@ -641,3 +641,10 @@ earlier note:
   2026-10-21 (issue #426) images were built (§3.1): a bot on Anthropic,
   OpenAI or ChatGPT reads PNG, JPEG, GIF and WebP sent with a message; GLM
   refuses them. Other files stay unbuilt.
+- `versions/mvp/25-bots.md` §1 (2026-10-15) gave a bot a closed list
+  ending "no shell, no files … say so and stop", so a bot asked to run a
+  build turned it down though `start_session` would do it. On 2026-10-21
+  a turn that may start a session gets a "Working on code through
+  sessions" section: code work goes to a coding agent on a host, the
+  closed list points there, and a turn without the tool keeps the plain
+  refusal (25 §1, "Decided").
