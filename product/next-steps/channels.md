@@ -34,45 +34,39 @@ does its transport where one does the job. The shape is OpenClaw's
 // channels/application/channel.port.ts
 interface ChannelBase<TConfig, TSecret> {
   readonly kind: ChannelKind; // 'whatsapp' | 'slack' | 'email'
-  readonly capabilities: ChannelCapabilities;
 
   /** How an account is connected: a QR to scan, an OAuth install, a form. */
   readonly link: ChannelLink<TConfig, TSecret>;
 
+  /** Pure: the bot's markdown as this channel's messages, split at its limit, in its dialect. */
+  render(markdown: string): string[];
+
   send(account: ChannelAccountRef<TConfig, TSecret>, message: ChannelOutbound): Promise<ChannelSentRef>;
-  /** Called only when `capabilities.typing` is true. */
+  /** A channel with no typing indicator or reactions resolves at once. */
   typing(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelAddress, on: boolean): Promise<void>;
-  /** Called only when `capabilities.reactions` is true. */
   react(account: ChannelAccountRef<TConfig, TSecret>, to: ChannelMessageRef, emoji: string): Promise<void>;
 
   status(account: ChannelAccountRef<TConfig, TSecret>): Promise<ChannelHealth>;
 }
 
-/** Holds a connection per account (WhatsApp's socket, IMAP IDLE). */
-export interface StreamingChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
-  readonly transport: 'stream';
-  /** Runs until the signal aborts, handing each message to `sink`. */
-  connect(account: ChannelAccountRef<TConfig, TSecret>, sink: ChannelInboundSink, signal: AbortSignal): Promise<void>;
+/**
+ * Messages are handed to us: Slack's signed events, or the frames a host's
+ * runner sends over its link (WhatsApp, §7.1).
+ */
+export interface PushedChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
+  readonly transport: 'pushed';
+  /** Verifies the delivery (signature, or the host's link), then parses. */
+  receive(delivery: ChannelDelivery): Promise<ChannelInbound[]>;
 }
 
-/** Is called by the provider (Slack's events). */
-export interface WebhookChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
-  readonly transport: 'webhook';
-  /** Verifies the signature, then parses. */
-  receive(request: ChannelWebhookRequest): Promise<ChannelInbound[]>;
+/** We fetch, in short calls from a repeating job (IMAP, §7.3). */
+export interface PolledChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
+  readonly transport: 'polled';
+  /** One short session: what arrived after the cursor, and the new cursor. */
+  poll(account: ChannelAccountRef<TConfig, TSecret>, cursor: string | null): Promise<{ inbound: ChannelInbound[]; cursor: string }>;
 }
 
-export type ChannelPort<TConfig, TSecret> = StreamingChannel<TConfig, TSecret> | WebhookChannel<TConfig, TSecret>;
-
-export interface ChannelCapabilities {
-  textLimit: number; // a reply longer than this is split
-  dialect: 'whatsapp' | 'slack-mrkdwn' | 'email-html';
-  threads: boolean;
-  reactions: boolean;
-  typing: boolean;
-  edits: boolean;
-  media: boolean;
-}
+export type ChannelPort<TConfig, TSecret> = PushedChannel<TConfig, TSecret> | PolledChannel<TConfig, TSecret>;
 ```
 
 Every channel produces the same inbound shape, and nothing past the
@@ -94,12 +88,21 @@ export interface ChannelInbound {
 }
 ```
 
-The transport is the union's tag, not an optional method: the gateway
-(§8) starts every `transport: 'stream'` channel's accounts, the webhook
-route dispatches to `transport: 'webhook'` ones, and neither checks
-whether a method exists. Capabilities say what a channel's messages can
-do; the core reads them before calling `typing` or `react`, which every
-channel implements.
+The transport is the union's tag, not an optional method: the webhook
+route and the runner's link lane dispatch to `transport: 'pushed'`
+channels, a repeating job polls each account of a `transport: 'polled'`
+one, and neither checks whether a method exists. **No long-lived
+connection lives in the API**: a socket that must stay open is held by a
+runner on the owner's host (§7.1), so the API keeps the one process model
+it has.
+
+The core never asks a channel what it can do. Everything that varies by
+channel is the adapter's to decide, as data it produces or a pure function
+it supplies: the split and the dialect are `render`; whether the bot was
+mentioned is `mentionsBot` on the inbound; whether a sender is who they
+say (Slack's signed user, a passing DMARC, the phone's own number) is
+`sender.verified`. A channel without typing or reactions implements them
+as nothing. There are no capability flags to switch on.
 
 The core around the port (§3 to §6) owns intake, conversations, access,
 the turn, the reply, approvals and limits, so a fourth channel is a class,
@@ -112,35 +115,35 @@ bot's turn queue stay the record.
 ## 3. From message to turn
 
 ```
- WhatsApp socket ─┐                       ┌─ owner or allowed? ─ no ─► held for the owner (§5)
- IMAP IDLE ───────┼─► channel_inbound ────┤
+ WhatsApp (runner)┐                       ┌─ owner or allowed? ─ no ─► held for the owner (§5)
+ IMAP poll ───────┼─► channel_inbound ────┤
  Slack webhook ───┘   (unique per account │  yes
                        and externalId)    ▼
-                                    conversation (§4) ─► debounce ─► bot_turn (origin 'channel')
+                                    conversation (§4) ─► bot_turn (origin 'channel', delayed)
                                                                           │
-                                         channel-replies queue ◄── turn ends
-                                                 │
-                                         port.send, split by capabilities
+                                                       turn ends ─► port.render ─► port.send
 ```
+
+The turn is the one unit of work; there is no queue of the channels' own.
 
 - **Intake first.** A message is a `channel_inbound` row before anything
   else, unique on `(accountId, externalId)`, so a reconnect that replays a
   message, or Slack's twin `message` and `app_mention`, is one row. This is
-  the inbound-events hub's rule: store what was authenticated, then
-  process it from a job.
-- **Debounce per conversation.** Three messages typed in a row are one
-  turn: a delayed job per conversation, pushed back by each new message
-  (a short default, per channel).
-- **A turn like any other.** It queues through the same `enqueueWithin` a
-  console message uses, with `bot_turn."origin" = 'channel'` and
-  `sourceKey = channel-inbound:<id>`, so a retried job finds the turn it
-  already queued. One turn at a time per bot stays true; a WhatsApp message
-  while the bot works waits its turn.
-- **The reply** is a `channel-replies` job keyed by the turn, written when
-  the turn ends: the bot's final text, split at the channel's limit and
-  turned into its dialect. A send is recorded with its sent id; a retry
-  that finds one does not send again.
-- **Typing** shows while the turn runs, where the channel has it.
+  the inbound-events hub's rule: store what was authenticated before
+  anything acts on it. The same transaction queues the turn.
+- **Debounce is the turn's start.** The turn queues through the same
+  `enqueueWithin` a console message uses, with `bot_turn."origin" =
+  'channel'` and `sourceKey = channel-inbound:<id>` of the message that
+  opened it, held until a short delay after the last message. A new
+  message whose conversation already has a turn queued and not started
+  pushes that turn's start back instead of queuing another, so three messages typed in a row are one turn, which reads every
+  inbound row of its conversation it has not answered. One turn at a time
+  per bot stays true; a message while the bot works waits its turn.
+- **The reply is the turn's last step.** The worker renders the final text
+  with `port.render` and sends it before the turn ends; each sent part is
+  recorded with its id on the turn, so a retried turn sends only what is
+  missing.
+- **Typing** shows while the turn runs.
 
 ## 4. Conversations
 
@@ -150,10 +153,14 @@ email thread:
 
 - `channel_conversation`: account, conversation kind and id, thread id,
   the bot. Its key is `(accountId, conversationId, threadId)`.
-- `bot_turn` and `bot_message` gain a nullable `conversationId`; null is
-  the console chat. History handed to a turn is that conversation's; what
-  the bot **remembers** (`bot_memory_fact`) and its documents are shared
-  by every conversation, as dots does.
+- **The console chat is a conversation too**: `bot_conversation` holds one
+  row per bot of kind `console`, created with the bot (and backfilled for
+  bots that exist), and one per channel conversation, which
+  `channel_conversation` points at. `bot_turn` and `bot_message` gain a
+  **non-null** `conversationId`, so history is always "this conversation's
+  messages" and nothing branches on console against channel. What the bot
+  **remembers** (`bot_memory_fact`) and its documents are shared by every
+  conversation, as dots does.
 - The console shows a bot's conversations under its chat, read-only to
   begin with, with the channel's icon and the other side's name.
 - The bot is told where it is: a line of the turn context names the
@@ -196,29 +203,46 @@ email thread:
 
 ## 7. The three channels
 
-### 7.1 WhatsApp: a linked device of a number you own
+### 7.1 WhatsApp: a linked device of a number you own, held on your host
 
-OpenClaw's route. The owner's spare number is a WhatsApp account on a
-phone; Oppenheimer joins it as a linked device, like WhatsApp Web.
+OpenClaw's route — the owner's spare number is a WhatsApp account on a
+phone, and we join it as a linked device, like WhatsApp Web — with the
+socket held where a session's terminal is: **by the runner on a host the
+owner chose**, not by the API.
 
-- **Library:** Baileys (`baileys` on npm), the WhatsApp Web multi-device
-  protocol, as OpenClaw uses it.
-- **Link:** Settings → Channels → WhatsApp shows a QR, streamed while it
-  is valid; scanning it from the phone's Linked devices finishes the link.
-- **Auth state** is the account's whole identity: Baileys' keys stored in
-  Postgres, encrypted like a model provider's key, written one at a time
-  per account. Unlinking deletes it and logs the device out.
-- **One holder.** A linked device must have exactly one open socket. The
-  sockets live in one process (§8), and each account is held under a lease,
-  so a second replica or a restart overlap cannot open it twice.
-- **Reconnect** with backoff and a silence watchdog. Logged out (401) marks
-  the account *unlinked* and says so in Settings, instead of retrying.
+- **Library:** whatsmeow, the Go implementation of the WhatsApp Web
+  multi-device protocol (mautrix-whatsapp's), in the runner. OpenClaw uses
+  Baileys, its TypeScript twin; the protocol and the linked device are the
+  same.
+- **Link:** Settings → Channels → WhatsApp asks which host holds it. The
+  API asks that runner, over its link, to start pairing; the QR comes back
+  the same way and the console shows it while it is valid. Scanning it
+  from the phone's Linked devices finishes the link.
+- **The keys stay on the host,** in the runner's state directory, readable
+  by the runner's user only; the API never sees them. Unlinking from the
+  console asks the runner to log the device out and delete them.
+- **One holder** is the runner itself: one account, one host, one socket.
+  Moving it to another host is unlink and link again.
+- **Inbound:** the runner turns each message into the `ChannelInbound`
+  shape and sends it as a frame on a `channels` lane of its link; the API's
+  WhatsApp adapter (`transport: 'pushed'`) writes the intake row and
+  acknowledges, and the runner keeps a small outbox of unacknowledged
+  frames on disk, so a dropped link loses nothing.
+- **Outbound:** `send` asks the runner over the link and waits for the
+  sent message's id. While the host is offline the reply part stays unsent
+  on the turn and goes when the host returns; Settings shows the account
+  as *host offline*.
+- **Reconnect** to WhatsApp with backoff and a silence watchdog, in the
+  runner. Logged out marks the account *unlinked* in Settings instead of
+  retrying.
 - **Behaviour that keeps a number safe:** never shown as online, no history
   sync, no reply to messages from before the link or from long ago, read
   receipts off by default, the send budget of §6.
 - **Media:** text first. Images go to the bot as images (note 25 §3.1);
   voice notes are transcribed through voice's provider list; documents
   wait.
+- **The cost:** the bot answers on WhatsApp only while that host is up. A
+  host that sleeps (later versions) wakes for nothing on WhatsApp's behalf.
 - **The risk is written down:** an unofficial client can get a number
   banned. That is why it is a number you can lose, not your main one.
 
@@ -247,9 +271,11 @@ and answers from it.
 
 - **Link:** host, port, user and password (an app password) for IMAP and
   SMTP, tested on save. Stored encrypted.
-- **Libraries:** imapflow (IDLE, polling where the server has none),
-  mailparser, mailauth (DMARC, SPF, DKIM) and nodemailer, which
-  `@oppenheimer/backend-email` already uses.
+- **Libraries:** imapflow, in short sessions: a repeating job per account
+  (every minute) logs in, fetches what arrived after the stored UID, and
+  logs out. No IDLE connection is held. Then mailparser, mailauth (DMARC,
+  SPF, DKIM) and nodemailer, which `@oppenheimer/backend-email` already
+  uses.
 - **Inbound** starts at the end of the mailbox, never on old mail. Plain
   text only; HTML is reduced to text, links are not followed.
 - **Trust:** a sender counts as the owner or a contact only with a passing
@@ -263,25 +289,30 @@ and answers from it.
 - **API module `channels`.** `channel_account` (workspace, bot, kind,
   config, encrypted secret, status), `channel_contact`, `channel_inbound`,
   `channel_conversation`; the `ChannelPort` and its registry, contributed
-  the way `InboundEventsModule.contributeSources` is; the queues
-  `channel-inbound`, `channel-replies`. Scopes `channels:read` and
+  the way `InboundEventsModule.contributeSources` is. No queue of its own:
+  work is the bot's turn. Scopes `channels:read` and
   `channels:write`, the `Channel` policy subject.
 - **Each channel** is `channels/infrastructure/<kind>/`, the only code that
   imports its library.
-- **The long-lived connections** (WhatsApp sockets, IMAP IDLE) run in a
-  `channel-gateway` role of the API image: the same code, started alone,
-  holding a lease per account. In development it runs inside the API
-  process. Webhook channels need no gateway.
-- **bots-chat** owns the turn: `origin 'channel'`, the conversation on a
-  turn, the reply job, `send_message`.
+- **No new process.** Slack is a webhook, email a repeating job on the
+  existing queue, WhatsApp a lane of the runner's link. The API runs as it
+  does today.
+- **Runner:** `internal/channels/whatsapp` holds the socket, the keys and
+  the outbox; the link gains a `channels` lane (`../versions/mvp/01-protocol.md`
+  owns its frames). The runner's arch test keeps whatsmeow inside that
+  package.
+- **bots-chat** owns the turn and the conversation: `bot_conversation`,
+  `origin 'channel'`, the delayed start, the reply as the turn's last step,
+  `send_message`.
 - **Console:** Settings → Channels per bot (link, status, contacts,
   waiting senders), the conversations under the bot's chat.
 
 ## 9. Slices
 
 1. **The core and WhatsApp.** The module, the port, intake, conversations,
-   the owner-only rule, the reply, and WhatsApp with QR linking: the
-   owner's number reaches one bot.
+   the owner-only rule, the reply; the runner's WhatsApp package and the
+   link's `channels` lane, with QR linking from the console: the owner's
+   number, held on their host, reaches one bot.
 2. **Contacts and groups.** Allowed contacts, held senders, groups with a
    mention.
 3. **Email.**
@@ -295,9 +326,6 @@ and answers from it.
    chosen by name? This design binds an account to one bot.
 2. Does the console chat show channel conversations in one timeline, or
    each on its own?
-3. Should the WhatsApp link also be offered to run on the owner's host,
-   through the runner, so the session's keys never leave their machine?
-   Go has a mature WhatsApp Web library (whatsmeow).
 
 ## Decided
 
@@ -308,3 +336,10 @@ and answers from it.
   channel's transport where one does the job.
 - 2026-10-22: no hosted bridge or Novu-style layer between the channels
   and us.
+- 2026-10-22, in review: the WhatsApp socket lives on the owner's host, in
+  the runner (whatsmeow), and the keys never leave it; the API holds no
+  long-lived connection, so email is polled in short sessions. The port is
+  a union tagged by transport (`pushed`, `polled`), with no optional
+  methods and no capability flags. The console chat is a conversation like
+  the others, and a channel's work is the bot's turn, with no queue of its
+  own.

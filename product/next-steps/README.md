@@ -91,3 +91,6 @@ where these land is the first open question below.
   it), Slack and email, each channel one implementation of one interface,
   libraries for the transports, no hosted bridge. 0.4 Slack becomes its
   Slack channel (`channels.md`).
+- 2026-10-22, in review: the WhatsApp socket is held by the runner on the
+  owner's host, so its keys never leave it and the API holds no long-lived
+  connection; email is polled. 0.4 now covers only sessions in Slack.
