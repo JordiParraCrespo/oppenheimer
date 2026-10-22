@@ -100,6 +100,17 @@ export interface DraftSeed {
  * visit remembered, overlaid with what the address asks for.
  */
 export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
+  return openDraft(seed).draft;
+}
+
+/**
+ * The draft a visit opens with and the chips its landing project may still
+ * fill, both from one read of the memory, taken before the visit writes to it.
+ */
+export function openDraft(seed: DraftSeed = {}): {
+  draft: NewSessionDraft;
+  fillable: readonly ProjectFilled[];
+} {
   const stored = rememberedChoices();
   // A model belongs to one agent, so an address naming another agent takes its default.
   const engine =
@@ -110,7 +121,7 @@ export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
           model: stored.model ?? (stored.agent ? defaultModelFor(stored.agent) : FALLBACK.model),
         };
   const hostId = seed.hostId ?? stored.hostId ?? FALLBACK.hostId;
-  return {
+  const draft: NewSessionDraft = {
     ...FALLBACK,
     where: seed.where ?? stored.where ?? FALLBACK.where,
     projectId: stored.projectId ?? FALLBACK.projectId,
@@ -121,6 +132,7 @@ export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
   };
+  return { draft, fillable: landingFillable(stored) };
 }
 
 /** An absolute path is the folder; one under `~` waits for the host's home; none takes the host's last. */
@@ -151,10 +163,8 @@ export function rememberDraft({
   }
 }
 
-export type { RememberedChoices };
-
 /** What the last visit left in storage, each field checked against the catalog. */
-export function rememberedChoices(): Partial<RememberedChoices> {
+function rememberedChoices(): Partial<RememberedChoices> {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
@@ -181,26 +191,34 @@ export function rememberedChoices(): Partial<RememberedChoices> {
   }
 }
 
+/** The chips a project's defaults fill. */
+export const PROJECT_FILLED = ['hostId', 'scope', 'agent', 'model'] as const;
+export type ProjectFilled = (typeof PROJECT_FILLED)[number];
+
 /**
- * The project defaults the landing project may still apply: those for a chip
- * the last visit left nothing in. On arrival the memory outranks the project,
- * so the screen opens on what was picked last; a project picked on the screen,
- * or named by the address, applies all of its defaults.
- *
- * `stored` is the memory as the visit opened (`rememberedChoices`), read
- * before this visit's own picks start writing over it.
+ * The chips the landing project may still fill: those the last visit left
+ * nothing in. On arrival the memory outranks the project, so the screen opens
+ * on what was picked last; a project picked on the screen, or named by the
+ * address, fills them all. A model belongs to its agent, so it goes with it.
  */
-export function unrememberedDefaults<
-  T extends Partial<Pick<NewSessionDraft, 'hostId' | 'scope' | 'agent' | 'model'>>,
->(defaults: T, stored: Partial<RememberedChoices>): Partial<T> {
-  const patch: Partial<T> = { ...defaults };
-  if (stored.hostId) delete patch.hostId;
-  if (stored.scope?.length) delete patch.scope;
-  if (stored.agent) {
-    delete patch.agent;
-    delete patch.model;
-  }
-  return patch;
+function landingFillable(stored: Partial<RememberedChoices>): readonly ProjectFilled[] {
+  const remembers: Record<ProjectFilled, boolean> = {
+    hostId: Boolean(stored.hostId),
+    scope: Boolean(stored.scope?.length),
+    agent: Boolean(stored.agent),
+    model: Boolean(stored.agent),
+  };
+  return PROJECT_FILLED.filter((field) => !remembers[field]);
+}
+
+/** A project's defaults, kept to the chips named. */
+export function onlyFields<T extends Partial<Record<ProjectFilled, unknown>>>(
+  defaults: T,
+  fields: readonly ProjectFilled[],
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(defaults).filter(([field]) => fields.includes(field as ProjectFilled)),
+  ) as Partial<T>;
 }
 
 /** The repositories and branches a stored draft holds, each a row id and a branch. */

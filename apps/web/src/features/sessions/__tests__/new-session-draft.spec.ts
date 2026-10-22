@@ -1,11 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { rememberFolder } from '../lib/folder-memory';
-import {
-  initialDraft,
-  rememberDraft,
-  rememberedChoices,
-  unrememberedDefaults,
-} from '../lib/new-session-draft';
+import { initialDraft, onlyFields, openDraft, rememberDraft } from '../lib/new-session-draft';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
@@ -213,29 +208,32 @@ describe('where and the folder', () => {
 
 /**
  * The project a visit lands on fills only the chips the last visit left empty;
- * the last choice outranks its defaults.
+ * the last choice outranks its defaults. Decided once, as the draft opens.
  */
-describe('unrememberedDefaults', () => {
-  const defaults = {
-    hostId: 'h-project',
-    scope: [{ id: 'inst:9', branch: 'develop' }],
-    agent: 'codex' as const,
-    model: defaultModelFor('codex'),
-  };
-
+describe('the chips the landing project may fill', () => {
   it('keeps every remembered chip over the project default', () => {
     store({ hostId: 'h1', scope: [{ id: 'inst:1', branch: 'main' }], agent: 'claude-code' });
 
-    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual({});
+    expect(openDraft().fillable).toEqual([]);
   });
 
-  it('applies every default when nothing is remembered', () => {
-    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual(defaults);
+  it('lets the project fill every chip when nothing is remembered', () => {
+    expect(openDraft().fillable).toEqual(['hostId', 'scope', 'agent', 'model']);
   });
 
-  it('fills an empty remembered scope from the project', () => {
+  it('lets the project fill an empty remembered scope', () => {
     store({ hostId: 'h1', scope: [], agent: 'claude-code' });
 
-    expect(unrememberedDefaults(defaults, rememberedChoices())).toEqual({ scope: defaults.scope });
+    expect(openDraft().fillable).toEqual(['scope']);
+  });
+
+  it('keeps a project default to the chips named', () => {
+    const defaults = {
+      hostId: 'h-project',
+      scope: [{ id: 'inst:9', branch: 'develop' }],
+      agent: 'codex' as const,
+    };
+
+    expect(onlyFields(defaults, ['scope', 'model'])).toEqual({ scope: defaults.scope });
   });
 });
