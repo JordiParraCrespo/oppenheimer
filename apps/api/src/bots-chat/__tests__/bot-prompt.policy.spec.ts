@@ -68,6 +68,30 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('Never try to discover other capabilities');
   });
 
+  describe('code work through sessions', () => {
+    const sessions = {
+      ...base,
+      tools: [
+        { name: 'list_hosts', description: 'Lists your hosts.' },
+        { name: 'start_session', description: 'Starts a coding agent on a host with a task.' },
+      ],
+    };
+
+    it('tells a bot that may start a session to delegate code work there instead of refusing it', () => {
+      const prompt = composeBotSystemPrompt(sessions);
+      expect(prompt).toContain('# Working on code through sessions');
+      expect(prompt).toContain('goes to a session on a host');
+    });
+
+    it('promises no code work to a turn that cannot start a session, and keeps the plain refusal', () => {
+      // An API token without sessions:write gets a catalog with no start_session.
+      const prompt = composeBotSystemPrompt({ ...sessions, tools: sessions.tools.slice(0, 1) });
+      expect(prompt).not.toContain('# Working on code through sessions');
+      expect(prompt).not.toContain('goes to a session on a host');
+      expect(prompt).toContain('When a request needs something no tool here does');
+    });
+  });
+
   it('promises only what the engine and the tools give', () => {
     expect(composeBotSystemPrompt(base)).toContain('- Search the web (web search).');
     const bare = composeBotSystemPrompt({ ...base, engineCapabilities: [] });
