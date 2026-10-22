@@ -20,6 +20,7 @@ there.
 | 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
+| — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
 
 ## What this list does not place yet
 
@@ -85,3 +86,6 @@ where these land is the first open question below.
 - 2026-10-17: voice's providers are one `SpeechProvider` interface and an
   ordered list; the console reads `GET /v1/voice/status` instead of
   deciding availability itself (`voice.md`).
+- 2026-10-22: cloud agents added, version not yet set: a Cloud place for
+  sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
+  API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
