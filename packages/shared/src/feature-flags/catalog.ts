@@ -110,19 +110,24 @@ export const FEATURE_FLAGS = {
    * conversation read off the agent's own transcript, which the host follows
    * while the terminal is attached, drawn as prompts, replies and tool cards.
    * The agent still runs in its terminal; typing in the chat types into it.
-   * A proof of concept, so off by default; bucketed by person, since the view
-   * is a reader's choice.
+   * Read by the console, which offers Terminal / Chat only while it is on,
+   * and by the relay, which forwards the transcript only to someone it is on
+   * for. Bucketed by person, since the view is a reader's choice.
+   *
+   * Default `true` since 2026-10-22, like `terminal_typeahead`: the owner
+   * turned the view on everywhere, and the console has no flags screen. The
+   * flag is its kill switch: a deployment turns it off through the flag
+   * admin API, and the relay then drops the transcript again.
    */
   session_chat_view: {
     description:
       "Offer a chat view of a Claude Code session beside its terminal, read off the agent's transcript.",
-    kind: 'release',
+    kind: 'ops',
     owner: 'console',
     type: 'boolean',
-    defaultValue: false,
+    defaultValue: true,
     client: true,
     bucketBy: 'user',
-    expiresAt: '2027-04-30',
   },
   /**
    * Dictation in the console (`product/next-steps/voice.md`): the composer's

@@ -637,6 +637,11 @@ earlier note:
   agent's own transcript, which the runner follows while a browser is
   attached; nothing drives the agent but the PTY
   (`next-steps/0.7-terminal-and-chat.md`, "Proof of concept").
+- `next-steps/0.7-terminal-and-chat.md` (2026-10-21) put the chat view
+  behind `session_chat_view`, off by default. On 2026-10-22 the owner
+  turned it on for everyone: the flag is now an `ops` kill switch
+  defaulting to `true`, and the security checklist says what crosses the
+  relay (07, F30).
 - `versions/mvp/25-bots.md` §7 listed attachments as not built. On
   2026-10-21 (issue #426) images were built (§3.1): a bot on Anthropic,
   OpenAI or ChatGPT reads PNG, JPEG, GIF and WebP sent with a message; GLM

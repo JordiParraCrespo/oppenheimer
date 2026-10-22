@@ -39,6 +39,15 @@ feature lands.
       and binds the channel to the DTLS fingerprint that offer named; a
       watcher's input is dropped by the runner on the channel as on the link,
       and nothing listens for a peer it was not told about
+- [ ] F30 the chat view (`../../next-steps/0.7-terminal-and-chat.md`) sends
+      a Claude Code conversation across the relay as text, which is no more
+      than the terminal bytes already carry: the runner follows the
+      transcript only while a browser is attached, compacts each line on the
+      host (a pasted image is named and never sent, thinking signatures are
+      dropped, tool output and written files are cut), and the relay hands it
+      only to the attachment's own reader while `session_chat_view` is on
+      for them, never through a share link. Nothing reads or relays the
+      person's Claude credentials
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
