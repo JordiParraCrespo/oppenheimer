@@ -35,6 +35,15 @@ const ROUTINE_ICONS = {
   failed: <CircleAlert />,
 } as const;
 
+/** The line's words by the task's state; `requires_action` reads as input needed. */
+const SESSION_KEYS = {
+  requires_action: 'bots.chat.event.session.needsInput',
+  completed: 'bots.chat.event.session.completed',
+  failed: 'bots.chat.event.session.failed',
+  cancelled: 'bots.chat.event.session.cancelled',
+  expired: 'bots.chat.event.session.expired',
+} as const;
+
 const SESSION_ICONS = {
   requires_action: <Hand />,
   completed: <CircleCheck />,
@@ -95,7 +104,7 @@ export function BotEventLine({
         action={<OpenSessionButton sessionId={event.sessionId} />}
       >
         <span className="max-w-xl truncate" title={event.sessionName}>
-          {t(`bots.chat.event.session.${event.state}`, { name: event.sessionName })}
+          {t(SESSION_KEYS[event.state], { name: event.sessionName })}
         </span>
       </TranscriptDivider>
     );
