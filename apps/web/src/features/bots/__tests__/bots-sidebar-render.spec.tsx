@@ -11,7 +11,7 @@ import { BotsSidebar } from '../sections/bots-sidebar';
  * open), the minute its ages move by, and the search box, whose keystrokes
  * must reach no row until the search settles.
  *
- * The rows are counted at `BotItem`, the design system's row.
+ * The rows are counted at `SortableBotItem`, the design system's row.
  */
 
 vi.mock('react-i18next', () => ({
@@ -41,7 +41,7 @@ const world = vi.hoisted(() => {
 
 vi.mock('@oppenheimer/design-system-web', async (original) => ({
   ...(await original<typeof import('@oppenheimer/design-system-web')>()),
-  BotItem: ({ name, age, active }: { name: string; age?: string; active?: boolean }) => {
+  SortableBotItem: ({ name, age, active }: { name: string; age?: string; active?: boolean }) => {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return (
       <div data-active={active ? '' : undefined}>
@@ -118,6 +118,13 @@ function rendered(): string[] {
 }
 
 beforeEach(() => {
+  // The drag layer asks whether the reader prefers reduced motion; jsdom has no media queries.
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
   world.set({ bots: ROWS, pathname: '/bots/alpha', now: START });
   render(<BotsSidebar />);
   rendered();
