@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { FIELD_BOUNDS, promptByteLength } from '@oppenheimer/shared';
+import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
@@ -47,14 +47,15 @@ export class BotSessionToolsFactory implements BotToolArea {
       description:
         "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. Check its progress later with get_session. The host defaults to the project's default host, then your home host.",
       input: z.object({
-        // The session's first prompt, held to the same byte bound here so a
-        // task too long is the tool's own error, before any card is raised.
+        // The session's first prompt, held to the same rule here so a task
+        // too long is the tool's own error, before any card is raised. Only
+        // the message is the tool's: it is written for the model.
         task: z
           .string()
           .trim()
-          .min(1)
+          .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
-          .refine((task) => promptByteLength(task) <= FIELD_BOUNDS.prompt.maxBytes, {
+          .refine(fitsPromptBound, {
             message: `Too long: at most ${FIELD_BOUNDS.prompt.maxBytes} bytes (UTF-8). Write a shorter brief; the agent can read files and the repository for the rest.`,
           })
           .describe(

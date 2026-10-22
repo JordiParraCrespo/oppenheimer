@@ -68,12 +68,18 @@ export function planSession(
 }
 
 /**
- * A rejected field of the session's body, named as `start_session`'s input
- * names it: the model never sees `prompt`, it wrote `task`.
+ * The session body's fields that `start_session`'s input names otherwise, so
+ * a refusal names the field the model wrote: it never sees `prompt`.
  */
+const TOOL_FIELD_OF: Readonly<Record<string, keyof StartSessionInput>> = {
+  prompt: 'task',
+  hostId: 'host_id',
+  projectId: 'project_id',
+};
+
+/** A rejected field of the session's body, as the tool's input names it. */
 function toolField(path: string): string {
-  if (path === 'prompt') return 'task';
-  return path || 'input';
+  return TOOL_FIELD_OF[path] ?? (path || 'input');
 }
 
 /** How much of the task a Needs input card shows. */
