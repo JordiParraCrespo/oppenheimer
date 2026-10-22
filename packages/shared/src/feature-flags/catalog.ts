@@ -90,9 +90,10 @@ export const FEATURE_FLAGS = {
    * a session's terminal moves from the relay to a WebRTC data channel between
    * the browser and its host once one connects, and falls back to the relay if
    * it cannot. Read by the console, which offers only while it is on, and by
-   * the relay, which offers a direct path only to someone it is on for. Off by
-   * default while it is new; bucketed by person, since it is a per-reader
-   * choice of path, not a workspace's product.
+   * the relay, which offers a direct path only to someone it is on for. On by
+   * default, like every flag, and falls back to the relay wherever WebRTC
+   * cannot connect; bucketed by person, since it is a per-reader choice of
+   * path, not a workspace's product.
    */
   terminal_direct_path: {
     description:
