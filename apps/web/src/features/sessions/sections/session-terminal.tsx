@@ -23,6 +23,7 @@ import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { takeFilePaste } from '../lib/terminal-files';
 import { HostLinkFix } from './host-link-fix';
 import { SessionShareButton } from './session-share-button';
 
@@ -49,7 +50,8 @@ const AGENT_WINDOW = 0;
  * sends the agent's transcript the status bar offers Terminal / Chat; Chat
  * draws the pane's `cover` over the grid, which stays mounted under it at its
  * size, so tmux is never resized. What the cover is, is the pane's: this
- * section owns the terminal and only makes room. While it shows, the terminal
+ * section owns the terminal and only makes room, and takes the files pasted
+ * on it as it takes the grid's. While it shows, the terminal
  * paints no ground of its own, so its status bar sits on the cover's.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
@@ -140,7 +142,16 @@ export function SessionTerminal({
             </div>
           ) : null}
           {chatShown ? (
-            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">{cover}</div>
+            // Typing in the chat moves focus off the grid, so a paste there
+            // never reaches the grid's listener: the cover takes its files
+            // the same way, and they land in the agent's prompt. On the way
+            // down, as the grid does, so nothing in the chat can swallow it.
+            <div
+              className="absolute inset-0 bg-chat-ground font-sans text-fg"
+              onPasteCapture={(event) => takeFilePaste(event, upload.send)}
+            >
+              {cover}
+            </div>
           ) : null}
         </div>
 
