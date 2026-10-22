@@ -59,12 +59,21 @@ export function planSession(
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
   if (!parsed.success) {
-    const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
+    const fields = parsed.error.issues.map((issue) => toolField(issue.path.join('.')));
     return {
       refusal: `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`,
     };
   }
   return { body: parsed.data, hostId };
+}
+
+/**
+ * A rejected field of the session's body, named as `start_session`'s input
+ * names it: the model never sees `prompt`, it wrote `task`.
+ */
+function toolField(path: string): string {
+  if (path === 'prompt') return 'task';
+  return path || 'input';
 }
 
 /** How much of the task a Needs input card shows. */
