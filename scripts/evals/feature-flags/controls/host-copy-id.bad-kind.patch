@@ -1,0 +1,13 @@
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index df8ee5f0..1fc9ade3 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -153,7 +153,7 @@ export const FEATURE_FLAGS = {
+    */
+   host_copy_id: {
+     description: "Offer Copy host ID in a host card's menu.",
+-    kind: 'release',
++    kind: 'beta',
+     owner: 'console',
+     type: 'boolean',
+     defaultValue: true,

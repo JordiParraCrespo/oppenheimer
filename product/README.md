@@ -461,6 +461,13 @@ earlier note:
   permission level every visit and never remembered it. On 2026-10-14 the
   owner made it open on `auto` and remember the last level picked, like
   the other chips.
+- `versions/mvp/05-screens.md` never remembered New session's repository
+  and branch, and let the landing project's default host, agent and
+  repository replace the last visit's choices. On 2026-10-22 the owner made
+  every chip open on its last choice: the scope is remembered, and the
+  landing project fills only the chips the memory left empty. Picking a
+  project on the screen, or naming one in the address, still applies all
+  its defaults.
 - `versions/mvp/00-scope.md` made every session a worktree, the blank
   terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
   2026-10-14 the owner made the place a choice, a new worktree or a folder
@@ -641,3 +648,18 @@ earlier note:
   2026-10-21 (issue #426) images were built (§3.1): a bot on Anthropic,
   OpenAI or ChatGPT reads PNG, JPEG, GIF and WebP sent with a message; GLM
   refuses them. Other files stay unbuilt.
+- `versions/mvp/25-bots.md` §1 (2026-10-15) gave a bot a closed list
+  ending "no shell, no files … say so and stop", so a bot asked to run a
+  build turned it down though `start_session` would do it. On 2026-10-21
+  a turn that may start a session gets a "Working on code through
+  sessions" section: code work goes to a coding agent on a host, the
+  closed list points there, and a turn without the tool keeps the plain
+  refusal (25 §1, "Decided").
+- `.agents/rules/feature-flags.md` and the catalog had a new feature's flag
+  default to `false`, with `true` only for a kill switch over something
+  live. On 2026-10-22 the owner asked for every flag to be on by default:
+  every boolean flag's `defaultValue` is `true` and `pnpm check:flags`
+  fails one that is not, so `workspace_event_stream`,
+  `terminal_direct_path` and `session_chat_view` now serve on until
+  targeting turns them off or narrows them. `scripts/evals/feature-flags/`
+  checks that an agent launching a feature follows it.

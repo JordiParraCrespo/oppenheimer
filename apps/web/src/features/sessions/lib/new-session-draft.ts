@@ -11,9 +11,10 @@ import { rememberedFolder } from './folder-memory';
 import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
- * What New session has been set to and remembers between visits, the
- * permission level included: it opens on `auto` (Claude Code's own default for
- * a session nobody watches line by line) and then on the last level picked.
+ * What New session has been set to and remembers between visits, every chip
+ * included: the permission level opens on `auto` (Claude Code's own default for
+ * a session nobody watches line by line) and then on the last level picked, and
+ * the repository and branch open on the last ones picked.
  * Nothing here is validated against the lists; the chips do that once their queries answer,
  * when "that host is gone" is a fact rather than a list not yet loaded.
  */
@@ -59,13 +60,12 @@ const FALLBACK: NewSessionDraft = {
 };
 
 /**
- * What is worth carrying between visits: where, the project, the host, the
- * engine and the permission level, never the scope. The folder is remembered
- * per host, on its own (`folder-memory.ts`).
+ * What is carried between visits: every chip's last choice. The folder is
+ * remembered per host, on its own (`folder-memory.ts`).
  */
 type RememberedChoices = Pick<
   NewSessionDraft,
-  'where' | 'projectId' | 'hostId' | 'agent' | 'model' | 'permission' | 'efforts'
+  'where' | 'projectId' | 'hostId' | 'scope' | 'agent' | 'model' | 'permission' | 'efforts'
 >;
 
 /** The fields `rememberDraft` writes out, for the form's subscription to name. */
@@ -73,6 +73,7 @@ export const REMEMBERED_FIELDS = [
   'where',
   'projectId',
   'hostId',
+  'scope',
   'agent',
   'model',
   'permission',
@@ -97,12 +98,20 @@ export interface DraftSeed {
 /**
  * The draft a visit opens with: the fallback, overlaid with what the last
  * visit remembered, overlaid with what the address asks for.
- *
- * `scope` is never restored, because it names repositories this visit may not
- * be about.
  */
 export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
-  const stored = remembered();
+  return openDraft(seed).draft;
+}
+
+/**
+ * The draft a visit opens with and the chips its landing project may still
+ * fill, both from one read of the memory, taken before the visit writes to it.
+ */
+export function openDraft(seed: DraftSeed = {}): {
+  draft: NewSessionDraft;
+  fillable: readonly ProjectFilled[];
+} {
+  const stored = rememberedChoices();
   // A model belongs to one agent, so an address naming another agent takes its default.
   const engine =
     seed.agent && seed.agent !== stored.agent
@@ -112,16 +121,18 @@ export function initialDraft(seed: DraftSeed = {}): NewSessionDraft {
           model: stored.model ?? (stored.agent ? defaultModelFor(stored.agent) : FALLBACK.model),
         };
   const hostId = seed.hostId ?? stored.hostId ?? FALLBACK.hostId;
-  return {
+  const draft: NewSessionDraft = {
     ...FALLBACK,
     where: seed.where ?? stored.where ?? FALLBACK.where,
     projectId: stored.projectId ?? FALLBACK.projectId,
     hostId,
+    scope: stored.scope ?? FALLBACK.scope,
     folder: seedFolder(seed.path, hostId),
     ...engine,
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
   };
+  return { draft, fillable: landingFillable(stored) };
 }
 
 /** An absolute path is the folder; one under `~` waits for the host's home; none takes the host's last. */
@@ -135,6 +146,7 @@ export function rememberDraft({
   where,
   projectId,
   hostId,
+  scope,
   agent,
   model,
   permission,
@@ -143,7 +155,7 @@ export function rememberDraft({
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ where, projectId, hostId, agent, model, permission, efforts }),
+      JSON.stringify({ where, projectId, hostId, scope, agent, model, permission, efforts }),
     );
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
@@ -151,7 +163,8 @@ export function rememberDraft({
   }
 }
 
-function remembered(): Partial<RememberedChoices> {
+/** What the last visit left in storage, each field checked against the catalog. */
+function rememberedChoices(): Partial<RememberedChoices> {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
@@ -161,6 +174,7 @@ function remembered(): Partial<RememberedChoices> {
       where: SESSION_PLACES.find((place) => place === stored.where),
       projectId: typeof stored.projectId === 'string' ? stored.projectId : undefined,
       hostId: typeof stored.hostId === 'string' ? stored.hostId : undefined,
+      scope: scopePicks(stored.scope),
       agent,
       // A model is only meaningful for the agent it belongs to.
       model:
@@ -175,6 +189,50 @@ function remembered(): Partial<RememberedChoices> {
     // is a convenience; failing to read one is not worth an error on screen.
     return {};
   }
+}
+
+/** The chips a project's defaults fill. */
+export const PROJECT_FILLED = ['hostId', 'scope', 'agent', 'model'] as const;
+export type ProjectFilled = (typeof PROJECT_FILLED)[number];
+
+/**
+ * The chips the landing project may still fill: those the last visit left
+ * nothing in. On arrival the memory outranks the project, so the screen opens
+ * on what was picked last; a project picked on the screen, or named by the
+ * address, fills them all. A model belongs to its agent, so it goes with it.
+ */
+function landingFillable(stored: Partial<RememberedChoices>): readonly ProjectFilled[] {
+  const remembers: Record<ProjectFilled, boolean> = {
+    hostId: Boolean(stored.hostId),
+    scope: Boolean(stored.scope?.length),
+    agent: Boolean(stored.agent),
+    model: Boolean(stored.agent),
+  };
+  return PROJECT_FILLED.filter((field) => !remembers[field]);
+}
+
+/** A project's defaults, kept to the chips named. */
+export function onlyFields<T extends Partial<Record<ProjectFilled, unknown>>>(
+  defaults: T,
+  fields: readonly ProjectFilled[],
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(defaults).filter(([field]) => fields.includes(field as ProjectFilled)),
+  ) as Partial<T>;
+}
+
+/** The repositories and branches a stored draft holds, each a row id and a branch. */
+function scopePicks(stored: unknown): RepositoryScope[] | undefined {
+  if (!Array.isArray(stored)) return undefined;
+  return stored
+    .filter(
+      (entry): entry is RepositoryScope =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof entry.id === 'string' &&
+        typeof entry.branch === 'string',
+    )
+    .map(({ id, branch }) => ({ id, branch }));
 }
 
 /**

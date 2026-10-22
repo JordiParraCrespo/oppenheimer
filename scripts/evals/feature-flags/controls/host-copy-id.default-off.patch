@@ -1,0 +1,13 @@
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index df8ee5f0..2e73a2b8 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -156,7 +156,7 @@ export const FEATURE_FLAGS = {
+     kind: 'release',
+     owner: 'console',
+     type: 'boolean',
+-    defaultValue: true,
++    defaultValue: false,
+     client: true,
+     expiresAt: '2027-03-31',
+   },

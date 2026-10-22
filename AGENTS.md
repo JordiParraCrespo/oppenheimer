@@ -197,7 +197,7 @@ the global `AllExceptionsFilter`; the catalog message is the stable problem
 `title` and per-request specifics go in `AppError`'s `detail`. New error codes
 need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
 
-- `feature-flags.md` — the flag catalog, kinds and safe defaults,
+- `feature-flags.md` — the flag catalog, kinds, every boolean flag on by default,
   `useFeatureFlag` / `@RequireFlag`, what is not a flag
 - `go.md` — the Go service template (`apps/runner`): layout, ports, errors,
   auth, what to reach for instead of a framework
@@ -226,8 +226,10 @@ the root barrel); `apps/api/src/feature-flags/` holds each deployment's
 targeting, segments and audit trail, evaluates everything in memory and serves
 the caller's values at `GET /v1/feature-flags`; clients read them with
 `useFeatureFlag('key')` from `@oppenheimer/frontend-core/react`, and a route
-gates the same capability with `@RequireFlag('key')`. Temporary flags carry an
-expiry that `pnpm check:flags` enforces in CI. The guide is
+gates the same capability with `@RequireFlag('key')`. Every boolean flag
+defaults to `true`: a feature launches on, and the flag is how it is turned
+off or narrowed. Temporary flags carry an expiry. `pnpm check:flags` enforces
+both in CI. The guide is
 `.agents/rules/feature-flags.md`.
 
 #### Scopes (API tokens and OAuth clients)

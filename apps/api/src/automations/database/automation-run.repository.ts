@@ -254,8 +254,9 @@ export async function countRecentByWorkspaceWithin(
  * planner bounds it by the window on IDX_automation_run_organization_created
  * instead of semi-joining every run the workspace kept. It restates what
  * `applyAccessScope` (packages/backend/authz/src/scope/apply-access-scope.ts)
- * does for an organization-only resource — a bypass reaches every workspace
- * (audited upstream), a scope with no organization reaches nothing — and is
+ * does for an organization-only resource — a bypass with no organization
+ * reaches every workspace (audited upstream), any other scope with no
+ * organization reaches nothing — and is
  * right only while `AutomationResource.scopes` is `['organization']`; a test
  * pins that. `null` is no clause at all.
  */
@@ -263,8 +264,7 @@ export function runTenantPredicate(
   scope: AccessScope,
   parameterIndex: number,
 ): { clause: string; values: unknown[] } | null {
-  if (scope.bypass) return null;
-  if (!scope.organizationId) return { clause: 'FALSE', values: [] };
+  if (!scope.organizationId) return scope.bypass ? null : { clause: 'FALSE', values: [] };
   return { clause: `run."organizationId" = $${parameterIndex}`, values: [scope.organizationId] };
 }
 
