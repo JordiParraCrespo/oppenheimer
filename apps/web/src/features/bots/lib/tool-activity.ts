@@ -101,6 +101,27 @@ export function groupSummary(
   return same ? GROUP_SUMMARY[kind as keyof typeof GROUP_SUMMARY] : 'bots.chat.activity.group';
 }
 
+/**
+ * What a running call is doing, as the turn's live line says it: the
+ * translation key for its kind and what the words take ("Searching the web
+ * for …", "Running 3 subagents", "Using Get session"). A new kind's words
+ * are a case here.
+ */
+export function liveWords(action: ToolAction) {
+  switch (action.kind) {
+    case 'search':
+      return action.query
+        ? ({ key: 'bots.chat.activity.searchingFor', values: { query: action.query } } as const)
+        : ({ key: 'bots.chat.activity.searching', values: {} } as const);
+    case 'plan':
+      return { key: 'bots.chat.activity.planning', values: {} } as const;
+    case 'delegate':
+      return { key: 'bots.chat.activity.delegating', values: { count: action.tasks } } as const;
+    case 'tool':
+      return { key: 'bots.chat.activity.using', values: { name: action.label } } as const;
+  }
+}
+
 /** The call still running in a turn's work, if one is: the last with no output yet. */
 export function runningStep(answer: readonly BotMessageEntity[]): BotToolStep | undefined {
   const steps = answer.flatMap((message) => (message.role === 'activity' ? message.steps : []));

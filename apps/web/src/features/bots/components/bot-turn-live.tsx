@@ -2,7 +2,7 @@ import { TraceLive } from '@oppenheimer/design-system-web';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { toolAction } from '@/features/bots/lib/tool-activity';
+import { liveWords, toolAction } from '@/features/bots/lib/tool-activity';
 
 /**
  * The turn in flight, after what it has done so far (the Bots frame's live
@@ -24,22 +24,14 @@ export function BotTurnLive({
   since: Date | null;
 }) {
   const { t } = useTranslation();
-  const action = step ? toolAction(step) : null;
+  const words = step ? liveWords(toolAction(step)) : null;
   const label = queued
     ? t('bots.chat.turn.queued')
-    : action?.kind === 'search'
-      ? action.query
-        ? t('bots.chat.activity.searchingFor', { query: action.query })
-        : t('bots.chat.activity.searching')
-      : action?.kind === 'plan'
-        ? t('bots.chat.activity.planning')
-        : action?.kind === 'delegate'
-          ? t('bots.chat.activity.delegating', { count: action.tasks })
-          : action
-            ? t('bots.chat.activity.using', { name: action.label })
-            : writing
-              ? t('bots.chat.turn.writing')
-              : t('bots.chat.turn.thinking');
+    : words
+      ? t(words.key, words.values)
+      : writing
+        ? t('bots.chat.turn.writing')
+        : t('bots.chat.turn.thinking');
   return (
     <TraceLive elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}>
       {label}
