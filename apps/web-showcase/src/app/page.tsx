@@ -92,6 +92,7 @@ import {
   ScopeChips,
   RepositoryRowListDemo,
   DisclosureDemo,
+  SessionSelectionDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -1093,6 +1094,12 @@ export default function Page() {
             <SidebarDemo empty />
           </div>
         </div>
+        <p className="mt-6 mb-3 text-[13px] text-fg-muted">
+          Selecting: ⌘-, Ctrl- or Shift-click (or Select in a row&apos;s menu) picks rows to act on together. Every glyph turns into a box, a picked row is ticked on the active wash, and the list&apos;s head becomes the selection bar.
+        </p>
+        <ThemePair>
+          <SessionSelectionDemo />
+        </ThemePair>
       </Spec>
 
       <Spec
