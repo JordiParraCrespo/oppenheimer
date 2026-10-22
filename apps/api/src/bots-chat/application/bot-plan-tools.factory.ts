@@ -67,6 +67,7 @@ export class BotPlanToolsFactory implements BotToolArea {
   private listProjects(): BotToolDefinition {
     return defineBotTool({
       name: 'list_projects',
+      readOnly: true,
       scope: 'projects:read',
       description:
         "Lists the workspace's projects with their ids, how many repositories each holds, and the host and agent a new session is offered. Archived projects are left out unless include_archived is true. Use get_project for one project's repositories.",
@@ -95,6 +96,7 @@ export class BotPlanToolsFactory implements BotToolArea {
   private getProject(): BotToolDefinition {
     return defineBotTool({
       name: 'get_project',
+      readOnly: true,
       scope: 'projects:read',
       description:
         'Reads one project: its name, its repositories with their base branches (the default marked), and the host and agent a new session is offered. Use plan_summary for how its tasks stand.',
@@ -125,6 +127,7 @@ export class BotPlanToolsFactory implements BotToolArea {
   private listTasks(): BotToolDefinition {
     return defineBotTool({
       name: 'list_tasks',
+      readOnly: true,
       scope: 'tasks:read',
       description: `Lists tasks on the plan's board with their column, version, project, milestone, due date and blocked reason, filtered by project, milestone, column or due dates; at most ${TASKS_LIMIT_MAX} per call. Use get_task for a task's notes and sessions, and plan_summary for progress and what needs the person. No tasks means none match the filters, not that the board is empty.`,
       input: z
@@ -168,6 +171,7 @@ export class BotPlanToolsFactory implements BotToolArea {
   private getTask(): BotToolDefinition {
     return defineBotTool({
       name: 'get_task',
+      readOnly: true,
       scope: 'tasks:read',
       description:
         'Reads one task: its title, column, version, project, milestone, due date, blocked reason, notes, and the sessions working on it. Read it again before update_task or move_task when your version may be old.',
@@ -182,6 +186,7 @@ export class BotPlanToolsFactory implements BotToolArea {
   private planSummary(): BotToolDefinition {
     return defineBotTool({
       name: 'plan_summary',
+      readOnly: true,
       scope: 'tasks:read',
       description:
         "Says where each project stands: tasks done of total, what is in progress, what needs the person (blocked, or past its due date in the person's zone), the next task due, and each milestone's progress and target date. Pass project_id for one project. Projects with no task and no milestone are not listed.",

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
   humaniseToolName,
+  liveWords,
   planItems,
   readableOutput,
   runningStep,
@@ -37,10 +38,35 @@ describe('toolAction', () => {
 
   it('reads the to-do list as the plan, and any other tool by its name in words', () => {
     expect(toolAction(call('TodoWrite', { todos: [] }))).toEqual({ kind: 'plan' });
+    expect(toolAction(call('delegate', { tasks: [{ task: 'a' }, { task: 'b' }] }))).toEqual({
+      kind: 'delegate',
+      tasks: 2,
+    });
     expect(toolAction(call('mcp__oppenheimer__read_document', { name: 'notes.md' }))).toEqual({
       kind: 'tool',
       label: 'Read document',
       target: 'notes.md',
+    });
+  });
+});
+
+describe('liveWords', () => {
+  it('says what a running call is doing, by its kind, with what it was pointed at', () => {
+    expect(liveWords({ kind: 'search', query: 'bun' })).toEqual({
+      key: 'bots.chat.activity.searchingFor',
+      values: { query: 'bun' },
+    });
+    expect(liveWords({ kind: 'search', query: undefined }).key).toBe(
+      'bots.chat.activity.searching',
+    );
+    expect(liveWords({ kind: 'plan' }).key).toBe('bots.chat.activity.planning');
+    expect(liveWords({ kind: 'delegate', tasks: 3 })).toEqual({
+      key: 'bots.chat.activity.delegating',
+      values: { count: 3 },
+    });
+    expect(liveWords({ kind: 'tool', label: 'Get session', target: 'x' })).toEqual({
+      key: 'bots.chat.activity.using',
+      values: { name: 'Get session' },
     });
   });
 });

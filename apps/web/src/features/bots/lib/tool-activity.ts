@@ -15,6 +15,8 @@ export type ToolAction =
   | { kind: 'search'; query: string | undefined }
   /** The bot's to-do list, written again. */
   | { kind: 'plan' }
+  /** Subagents run in parallel (`delegate`); `tasks` is how many it handed out. */
+  | { kind: 'delegate'; tasks: number }
   /** Any other tool, by its name in words ("Read document") and what it was given. */
   | { kind: 'tool'; label: string; target: string | undefined };
 
@@ -71,6 +73,12 @@ export function toolAction(step: Pick<BotToolStep, 'name' | 'input'>): ToolActio
     return { kind: 'search', query: query === undefined ? undefined : oneLine(query) };
   }
   if (PLAN_TOOLS.has(key)) return { kind: 'plan' };
+  if (key === 'delegate') {
+    return {
+      kind: 'delegate',
+      tasks: Array.isArray(step.input.tasks) ? step.input.tasks.length : 0,
+    };
+  }
   return { kind: 'tool', label: humaniseToolName(step.name), target: toolTarget(step.input) };
 }
 
@@ -91,6 +99,27 @@ export function groupSummary(
   const [kind] = kinds;
   const same = kinds.size === 1 && kind !== undefined && kind in GROUP_SUMMARY;
   return same ? GROUP_SUMMARY[kind as keyof typeof GROUP_SUMMARY] : 'bots.chat.activity.group';
+}
+
+/**
+ * What a running call is doing, as the turn's live line says it: the
+ * translation key for its kind and what the words take ("Searching the web
+ * for …", "Running 3 subagents", "Using Get session"). A new kind's words
+ * are a case here.
+ */
+export function liveWords(action: ToolAction) {
+  switch (action.kind) {
+    case 'search':
+      return action.query
+        ? ({ key: 'bots.chat.activity.searchingFor', values: { query: action.query } } as const)
+        : ({ key: 'bots.chat.activity.searching', values: {} } as const);
+    case 'plan':
+      return { key: 'bots.chat.activity.planning', values: {} } as const;
+    case 'delegate':
+      return { key: 'bots.chat.activity.delegating', values: { count: action.tasks } } as const;
+    case 'tool':
+      return { key: 'bots.chat.activity.using', values: { name: action.label } } as const;
+  }
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */

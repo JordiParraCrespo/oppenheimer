@@ -668,3 +668,8 @@ earlier note:
   Slack and email behind one interface, with WhatsApp first as a linked
   device of a number the owner has. Slack as a way to reach a bot is now
   that note's Slack channel; 0.4 keeps its questions about sessions.
+- `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
+  long job whose result arrived later as a message. On 2026-10-22 (issue
+  #444) it was built as subagents inside the turn: up to 4 read-only
+  children in parallel, bounded and stopped with the turn, whose answers
+  the bot reads as data and answers from in the same reply (25, "Decided").

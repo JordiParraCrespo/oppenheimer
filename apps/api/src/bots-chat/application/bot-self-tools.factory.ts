@@ -79,6 +79,7 @@ export class BotSelfToolsFactory implements BotToolArea {
   private getSelf(): BotToolDefinition {
     return defineBotTool({
       name: 'get_self',
+      readOnly: true,
       scope: 'bots:read',
       description: `Reads your own profile, settings, SOUL.md and INSTRUCTIONS.md (with the revision each is at) and how many facts you remember. Each document is cut to ${DOCUMENT_PREVIEW_MAX} characters unless you name it in \`document\`; read it in full before edit_soul or edit_instructions, which need its revision. Use recall to read your memory.`,
       input: z.strictObject({
@@ -273,6 +274,7 @@ export class BotSelfToolsFactory implements BotToolArea {
   private recall(): BotToolDefinition {
     return defineBotTool({
       name: 'recall',
+      readOnly: true,
       scope: 'bots:read',
       description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
       input: z.strictObject({

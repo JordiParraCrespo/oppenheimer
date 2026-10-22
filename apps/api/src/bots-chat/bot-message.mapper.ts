@@ -5,9 +5,11 @@ import {
   BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
+  BOT_SUBAGENT_STATUSES,
   type BotAttachment,
   type BotMessageEvent,
   type BotMessageRole,
+  type BotSubagentRun,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
@@ -42,6 +44,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
       sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -81,6 +84,7 @@ export class BotMessageMapper
       output: step.output,
       isError: step.isError,
       sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -116,7 +120,50 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    subagents: toSubagentRuns(raw.subagents),
   };
+}
+
+/**
+ * The runs a `delegate` step holds, narrowed once: from the step's stored
+ * column, or from the JSON its call's data carried (a tool's data is
+ * strings only). Anything else reads as none, and a run it cannot read is
+ * dropped.
+ */
+export function toSubagentRuns(raw: unknown): BotSubagentRun[] | null {
+  let parsed: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed)) return null;
+  return parsed.flatMap((item): BotSubagentRun[] => {
+    if (!item || typeof item !== 'object') return [];
+    const row = item as Record<string, unknown>;
+    const status = BOT_SUBAGENT_STATUSES.find((known) => known === row.status);
+    if (!status || typeof row.task !== 'string') return [];
+    return [
+      {
+        task: row.task,
+        status,
+        result: typeof row.result === 'string' ? row.result : '',
+        toolCalls: Array.isArray(row.toolCalls)
+          ? row.toolCalls.filter((name): name is string => typeof name === 'string')
+          : [],
+        inputTokens: count(row.inputTokens),
+        outputTokens: count(row.outputTokens),
+        durationMs: count(row.durationMs),
+      },
+    ];
+  });
+}
+
+/** A stored count: a whole, non-negative number, else zero. */
+function count(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
 }
 
 /** A stored attachment, narrowed once; one the mapper did not write is dropped. */
