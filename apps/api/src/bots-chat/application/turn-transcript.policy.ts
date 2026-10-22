@@ -1,11 +1,12 @@
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { toSubagentRuns } from '../bot-message.mapper';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
-import { SUBAGENT_DATA_KEY, subagentRunsOf } from '../domain/bot-subagent.policy';
+import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { BOT_TURN_TIME_LIMIT_MS, type BotTurnEntity } from '../domain/bot-turn.entity';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
@@ -130,7 +131,7 @@ export class TurnTranscript {
       output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
-    step.subagents = isError ? null : subagentRunsOf(data?.[SUBAGENT_DATA_KEY]);
+    step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;

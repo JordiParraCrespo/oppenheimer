@@ -1,9 +1,5 @@
-import {
-  BOT_SUBAGENT_STATUSES,
-  type BotSubagentRun,
-  type BotSubagentStatus,
-} from '@oppenheimer/shared';
-import { cut, fenceUntrusted } from './bot-tool-text.policy';
+import type { BotSubagentRun, BotSubagentStatus } from '@oppenheimer/shared';
+import { BOT_TOOL_OUTPUT_MAX, cut, fenceUntrusted } from './bot-tool-text.policy';
 
 /**
  * A bot's subagents (`25-bots.md` §4.7, `delegate`): children the turn runs
@@ -72,18 +68,28 @@ export function subagentFailure(status: BotSubagentStatus, error: string | null)
 }
 
 /**
+ * What of the tool's answer the report keeps for its words around the
+ * answers: the heading, each child's status, task and tools lines and fence,
+ * and the closing line.
+ */
+const REPORT_FRAME_MAX = 2_000;
+
+/**
  * What the bot reads back from a `delegate` call: one block per child, its
  * status and tools on a line, its answer fenced as data, and a closing line
- * saying the bot answers, not the children.
+ * saying the bot answers, not the children. The answers share what a tool
+ * may hand the model, so every child's block reaches it, each answer cut to
+ * its share rather than the last child's dropped.
  */
 export function subagentReport(runs: readonly BotSubagentRun[]): string {
+  const share = Math.floor((BOT_TOOL_OUTPUT_MAX - REPORT_FRAME_MAX) / Math.max(1, runs.length));
   const failed = runs.filter((run) => run.status !== 'completed').length;
   const blocks = runs.map((run, index) => {
-    const tools = run.toolCalls.length ? run.toolCalls.join(', ') : 'none';
+    const tools = run.toolCalls.length ? cut(run.toolCalls.join(', '), 200) : 'none';
     return [
       `Subagent ${index + 1}: ${run.status}. Task: ${cut(run.task, 200)}`,
       `Tools called: ${tools}.`,
-      fenceUntrusted('subagent_result', run.result || '(it said nothing)'),
+      fenceUntrusted('subagent_result', cut(run.result, share) || '(it said nothing)'),
     ].join('\n');
   });
   return [
@@ -95,42 +101,3 @@ export function subagentReport(runs: readonly BotSubagentRun[]): string {
 
 /** A tool's data carries strings only, so the runs travel as JSON under one key. */
 export const SUBAGENT_DATA_KEY = 'subagents';
-
-/**
- * The runs a `delegate` call's data carried, narrowed once: anything not
- * written by `JSON.stringify` of runs reads as none.
- */
-export function subagentRunsOf(raw: unknown): BotSubagentRun[] | null {
-  let parsed: unknown = raw;
-  if (typeof raw === 'string') {
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  }
-  if (!Array.isArray(parsed)) return null;
-  return parsed.flatMap((item): BotSubagentRun[] => {
-    if (!item || typeof item !== 'object') return [];
-    const row = item as Record<string, unknown>;
-    const status = BOT_SUBAGENT_STATUSES.find((known) => known === row.status);
-    if (!status || typeof row.task !== 'string') return [];
-    return [
-      {
-        task: row.task,
-        status,
-        result: typeof row.result === 'string' ? row.result : '',
-        toolCalls: Array.isArray(row.toolCalls)
-          ? row.toolCalls.filter((name): name is string => typeof name === 'string')
-          : [],
-        inputTokens: count(row.inputTokens),
-        outputTokens: count(row.outputTokens),
-        durationMs: count(row.durationMs),
-      },
-    ];
-  });
-}
-
-function count(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
-}

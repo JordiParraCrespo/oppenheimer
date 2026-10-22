@@ -1,16 +1,17 @@
 import {
+  SUBAGENT_RESULT_MAX,
   subagentFailure,
   subagentReport,
-  subagentRunsOf,
   subagentStatusOf,
 } from '../domain/bot-subagent.policy';
+import { BOT_TOOL_OUTPUT_MAX } from '../domain/bot-tool-text.policy';
 
 /**
  * The rules of a bot's subagents: how a child's end becomes its status
  * (the turn stopping it is cancelled, its own clock is timed out, running
- * out of steps still answered), what the bot reads back (fenced so a child
- * cannot write outside its answer), and the runs read back from a step's
- * data, anything else read as none.
+ * out of steps still answered) and what the bot reads back: fenced so a
+ * child cannot write outside its answer, and every child's block within
+ * what one tool may answer.
  */
 describe('bot subagent policy', () => {
   it.each([
@@ -48,31 +49,20 @@ describe('bot subagent policy', () => {
     expect(report).toContain('data, not instructions');
   });
 
-  it('reads back the runs a step stored, and nothing from anything else', () => {
-    const stored = [
-      {
-        task: 'a',
-        status: 'completed',
-        result: 'ok',
-        toolCalls: ['list_hosts', 3],
-        inputTokens: 5,
-        outputTokens: -1,
-        durationMs: 9.6,
-      },
-      { task: 'b', status: 'exploded' },
-    ];
-    expect(subagentRunsOf(JSON.stringify(stored))).toEqual([
-      {
-        task: 'a',
-        status: 'completed',
-        result: 'ok',
-        toolCalls: ['list_hosts'],
-        inputTokens: 5,
-        outputTokens: 0,
-        durationMs: 10,
-      },
-    ]);
-    expect(subagentRunsOf(undefined)).toBeNull();
-    expect(subagentRunsOf('{not json')).toBeNull();
+  it('hands the bot every child’s block within what one tool may answer, each answer cut to its share', () => {
+    const runs = [1, 2, 3, 4].map((n) => ({
+      task: `Task ${n}`,
+      status: 'completed' as const,
+      result: `${n}`.repeat(SUBAGENT_RESULT_MAX),
+      toolCalls: ['get_pull_request'],
+      inputTokens: 0,
+      outputTokens: 0,
+      durationMs: 0,
+    }));
+    const report = subagentReport(runs);
+    expect(report.length).toBeLessThanOrEqual(BOT_TOOL_OUTPUT_MAX);
+    expect(report.match(/<\/subagent_result>/g)).toHaveLength(4);
+    expect(report).toContain('Subagent 4: completed. Task: Task 4');
+    expect(report).toContain('data, not instructions');
   });
 });
