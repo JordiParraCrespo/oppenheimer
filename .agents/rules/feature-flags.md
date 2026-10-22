@@ -19,7 +19,8 @@ kill switch is a data change, not a deploy.
 | The evaluator (pure, shared) | `packages/shared/src/feature-flags/evaluate.ts` |
 | Targeting, segments, audit trail, `@RequireFlag` | `apps/api/src/feature-flags/` |
 | Client reads (`useFeatureFlag`) | `packages/frontend/core/src/react/feature-flags.queries.ts` |
-| Hygiene check (expired / unread flags) | `pnpm check:flags` (CI) |
+| Hygiene check (expired / unread / default-off flags) | `pnpm check:flags` (CI) |
+| Whether an agent launches a flag on | `scripts/evals/feature-flags/` (not CI) |
 
 ## Adding a flag
 

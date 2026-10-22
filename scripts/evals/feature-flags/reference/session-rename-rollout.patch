@@ -1,0 +1,98 @@
+diff --git a/apps/api/src/sessions/commands/rename-session/rename-session.http.controller.ts b/apps/api/src/sessions/commands/rename-session/rename-session.http.controller.ts
+index bd6ea368..13ac7b1f 100644
+--- a/apps/api/src/sessions/commands/rename-session/rename-session.http.controller.ts
++++ b/apps/api/src/sessions/commands/rename-session/rename-session.http.controller.ts
+@@ -18,6 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+ import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
++import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
+ import type { SessionCommandResult } from '../../domain/session-command.types';
+ import type { WorkSessionEntity } from '../../domain/work-session.entity';
+ import { SessionResponseDto } from '../../dtos/session.response.dto';
+@@ -43,6 +44,7 @@ export class RenameSessionHttpController {
+   @Version('1')
+   @CheckPolicies({ action: 'update', subject: 'Session' })
+   @RequireScopes('sessions:write')
++  @RequireFlag('session_rename')
+   @ApiOperation({
+     summary: 'Rename a session',
+     description:
+diff --git a/apps/web/src/features/sessions/components/session-row-menu.tsx b/apps/web/src/features/sessions/components/session-row-menu.tsx
+index 53a0c80d..8473aa9d 100644
+--- a/apps/web/src/features/sessions/components/session-row-menu.tsx
++++ b/apps/web/src/features/sessions/components/session-row-menu.tsx
+@@ -35,7 +35,8 @@ export function SessionRowMenu({
+   onOpenChange: (open: boolean) => void;
+   pinned: boolean;
+   onPinChange: (pinned: boolean) => void;
+-  onRename: () => void;
++  /** Absent while `session_rename` is off. */
++  onRename?: () => void;
+   onMove: (projectId: string) => void;
+   onShare: () => void;
+   onDelete: () => void;
+@@ -63,7 +64,9 @@ export function SessionRowMenu({
+             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
+               {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
+             </DropdownMenuItem>
+-            <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
++            {onRename ? (
++              <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
++            ) : null}
+             <DropdownMenuPaneItem onClick={() => setPane('move')}>
+               {t('sessions.sidebar.move')}
+             </DropdownMenuPaneItem>
+diff --git a/apps/web/src/features/sessions/sections/session-row.tsx b/apps/web/src/features/sessions/sections/session-row.tsx
+index 40f45c53..72e161eb 100644
+--- a/apps/web/src/features/sessions/sections/session-row.tsx
++++ b/apps/web/src/features/sessions/sections/session-row.tsx
+@@ -6,6 +6,7 @@ import {
+   useProjectsSnapshot,
+   useRenameSession,
+ } from '@oppenheimer/frontend-consumer/react';
++import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
+ import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
+ import { Link, useRouterState } from '@tanstack/react-router';
+ import { type ComponentProps, useState } from 'react';
+@@ -87,6 +88,7 @@ export function SessionRow({
+   // another group, and the row that asked unmounts before the write settles.
+   // A renamed or moved row can land anywhere in a long, grouped list, so both
+   // say where it went.
++  const canRename = useFeatureFlag('session_rename');
+   const rename = useRenameSession({
+     onSuccess: (renamed) => {
+       onWrite(null);
+@@ -155,7 +157,7 @@ export function SessionRow({
+           onOpenChange={setMenuOpen}
+           pinned={pin.pinned}
+           onPinChange={pin.setPinned}
+-          onRename={() => setDraft(session.name)}
++          onRename={canRename ? () => setDraft(session.name) : undefined}
+           onMove={(projectId) => move.mutate({ id: session.id, projectId })}
+           onShare={() => onShare(session)}
+           onDelete={() => onDelete(session)}
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index 63f9ea3f..dbe18fbd 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -147,6 +147,19 @@ export const FEATURE_FLAGS = {
+     client: true,
+     bucketBy: 'user',
+   },
++  /**
++   * Renaming a session: `PATCH /v1/sessions/{id}` and Rename in a session
++   * row's menu. On by default; targeting narrows it while it rolls out.
++   */
++  session_rename: {
++    description: 'Let people rename a session from its row and through the API.',
++    kind: 'release',
++    owner: 'console',
++    type: 'boolean',
++    defaultValue: true,
++    client: true,
++    expiresAt: '2027-03-31',
++  },
+ } as const satisfies Record<string, FlagDefinition>;
+ 
+ export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

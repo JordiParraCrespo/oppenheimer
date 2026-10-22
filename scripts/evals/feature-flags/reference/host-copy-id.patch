@@ -1,0 +1,155 @@
+diff --git a/apps/web/src/features/hosts/components/host-actions-menu.tsx b/apps/web/src/features/hosts/components/host-actions-menu.tsx
+index 1e1621fe..25c1d068 100644
+--- a/apps/web/src/features/hosts/components/host-actions-menu.tsx
++++ b/apps/web/src/features/hosts/components/host-actions-menu.tsx
+@@ -19,12 +19,15 @@ export function HostActionsMenu({
+   name,
+   online,
+   onRename,
++  onCopyId,
+   onUpdate,
+   onRemove,
+ }: {
+   name: string;
+   online: boolean;
+   onRename: () => void;
++  /** Absent while `host_copy_id` is off. */
++  onCopyId?: () => void;
+   onUpdate: () => void;
+   onRemove: () => void;
+ }) {
+@@ -44,6 +47,9 @@ export function HostActionsMenu({
+       </DropdownMenuTrigger>
+       <DropdownMenuContent align="end" sideOffset={6}>
+         <DropdownMenuItem onClick={onRename}>{t('hosts.settings.rename')}</DropdownMenuItem>
++        {onCopyId ? (
++          <DropdownMenuItem onClick={onCopyId}>{t('hosts.settings.copyId')}</DropdownMenuItem>
++        ) : null}
+         <DropdownMenuItem disabled={!online} onClick={onUpdate}>
+           {t('hosts.settings.updateRunner')}
+         </DropdownMenuItem>
+diff --git a/apps/web/src/features/hosts/sections/host-row.tsx b/apps/web/src/features/hosts/sections/host-row.tsx
+index 85f785cb..69bf8a6e 100644
+--- a/apps/web/src/features/hosts/sections/host-row.tsx
++++ b/apps/web/src/features/hosts/sections/host-row.tsx
+@@ -2,7 +2,7 @@ import { Button, HostCard } from '@oppenheimer/design-system-web';
+ import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
+ import type { HostEntity } from '@oppenheimer/frontend-consumer';
+ import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
+-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
++import { useErrorMessage, useFeatureFlag } from '@oppenheimer/frontend-core/react';
+ import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+ import { Link } from '@tanstack/react-router';
+ import { useState } from 'react';
+@@ -34,6 +34,7 @@ export function HostRow({ host }: { host: HostEntity }) {
+   const [removing, setRemoving] = useState(false);
+   const [updating, setUpdating] = useState(false);
+   const resolveError = useErrorMessage();
++  const copyId = useFeatureFlag('host_copy_id');
+   const rename = useRenameHost({
+     onSuccess: (renamed) => {
+       setRenaming(false);
+@@ -125,6 +126,7 @@ export function HostRow({ host }: { host: HostEntity }) {
+               name={host.name}
+               online={host.online}
+               onRename={() => setRenaming(true)}
++              onCopyId={copyId ? () => void navigator.clipboard.writeText(host.id) : undefined}
+               onUpdate={() => setUpdating(true)}
+               onRemove={() => setRemoving(true)}
+             />
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index 63f9ea3f..df8ee5f0 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -147,6 +147,19 @@ export const FEATURE_FLAGS = {
+     client: true,
+     bucketBy: 'user',
+   },
++  /**
++   * Copy host ID in a host card's menu on Settings → Hosts. On for everyone;
++   * turn it off if it confuses people.
++   */
++  host_copy_id: {
++    description: "Offer Copy host ID in a host card's menu.",
++    kind: 'release',
++    owner: 'console',
++    type: 'boolean',
++    defaultValue: true,
++    client: true,
++    expiresAt: '2027-03-31',
++  },
+ } as const satisfies Record<string, FlagDefinition>;
+ 
+ export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;
+diff --git a/packages/translations/en/browser.json b/packages/translations/en/browser.json
+index 5e37bebd..734c66b0 100644
+--- a/packages/translations/en/browser.json
++++ b/packages/translations/en/browser.json
+@@ -2263,6 +2263,7 @@
+       },
+       "actions": "{{name}} actions",
+       "rename": "Rename",
++      "copyId": "Copy host ID",
+       "updateRunner": "Update runner",
+       "updateTitle": "Update the runner on “{{name}}”?",
+       "updateDescription": "The runner installs the newest release on its channel and restarts. Its sessions keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
+diff --git a/packages/translations/en/hosts.json b/packages/translations/en/hosts.json
+index e6ec6959..feb11613 100644
+--- a/packages/translations/en/hosts.json
++++ b/packages/translations/en/hosts.json
+@@ -57,6 +57,7 @@
+     },
+     "actions": "{{name}} actions",
+     "rename": "Rename",
++    "copyId": "Copy host ID",
+     "updateRunner": "Update runner",
+     "updateTitle": "Update the runner on “{{name}}”?",
+     "updateDescription": "The runner installs the newest release on its channel and restarts. Its sessions keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
+diff --git a/packages/translations/en/index.json b/packages/translations/en/index.json
+index 9fe6510a..a1cf32cb 100644
+--- a/packages/translations/en/index.json
++++ b/packages/translations/en/index.json
+@@ -2263,6 +2263,7 @@
+       },
+       "actions": "{{name}} actions",
+       "rename": "Rename",
++      "copyId": "Copy host ID",
+       "updateRunner": "Update runner",
+       "updateTitle": "Update the runner on “{{name}}”?",
+       "updateDescription": "The runner installs the newest release on its channel and restarts. Its sessions keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
+diff --git a/packages/translations/es/browser.json b/packages/translations/es/browser.json
+index 13147646..0c059adc 100644
+--- a/packages/translations/es/browser.json
++++ b/packages/translations/es/browser.json
+@@ -2274,6 +2274,7 @@
+         "runner": "runner {{version}}"
+       },
+       "actions": "Acciones de {{name}}",
++      "copyId": "Copiar ID del host",
+       "updateRunner": "Actualizar runner",
+       "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+       "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+diff --git a/packages/translations/es/hosts.json b/packages/translations/es/hosts.json
+index fe1daf42..1f6fcf52 100644
+--- a/packages/translations/es/hosts.json
++++ b/packages/translations/es/hosts.json
+@@ -57,6 +57,7 @@
+       "runner": "runner {{version}}"
+     },
+     "actions": "Acciones de {{name}}",
++    "copyId": "Copiar ID del host",
+     "updateRunner": "Actualizar runner",
+     "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+     "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+diff --git a/packages/translations/es/index.json b/packages/translations/es/index.json
+index e4c4d00f..94dfbbb0 100644
+--- a/packages/translations/es/index.json
++++ b/packages/translations/es/index.json
+@@ -2274,6 +2274,7 @@
+         "runner": "runner {{version}}"
+       },
+       "actions": "Acciones de {{name}}",
++      "copyId": "Copiar ID del host",
+       "updateRunner": "Actualizar runner",
+       "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+       "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",

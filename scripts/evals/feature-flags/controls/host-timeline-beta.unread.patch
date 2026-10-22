@@ -1,0 +1,20 @@
+diff --git a/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts b/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
+index 2b40ecb3..54e36459 100644
+--- a/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
++++ b/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
+@@ -18,7 +18,6 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+ import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+-import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
+ import type { TimelinePage } from '../../database/host-metadata.repository.port';
+ import { HostTimelinePageResponseDto } from '../../dtos/host-metadata.response.dto';
+ import { HostMapper } from '../../host.mapper';
+@@ -41,7 +40,6 @@ export class FindHostTimelineHttpController {
+   @Version('1')
+   @CheckPolicies({ action: 'read', subject: 'Host' })
+   @RequireScopes('hosts:read')
+-  @RequireFlag('host_timeline')
+   @ApiOperation({
+     summary: 'A host’s timeline, newest first',
+     description:
