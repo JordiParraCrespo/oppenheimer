@@ -648,3 +648,11 @@ earlier note:
   sessions" section: code work goes to a coding agent on a host, the
   closed list points there, and a turn without the tool keeps the plain
   refusal (25 §1, "Decided").
+- `.agents/rules/feature-flags.md` and the catalog had a new feature's flag
+  default to `false`, with `true` only for a kill switch over something
+  live. On 2026-10-22 the owner asked for every flag to be on by default:
+  every boolean flag's `defaultValue` is `true` and `pnpm check:flags`
+  fails one that is not, so `workspace_event_stream`,
+  `terminal_direct_path` and `session_chat_view` now serve on until
+  targeting turns them off or narrows them. `scripts/evals/feature-flags/`
+  checks that an agent launching a feature follows it.

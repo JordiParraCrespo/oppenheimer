@@ -12,7 +12,7 @@ import { getFlagDefinition, isValidFlagValue } from '@oppenheimer/shared/feature
  * The default covers every case where the server's answer is missing: flags
  * not loaded yet, the API unreachable on a cold start, or a value this build
  * does not recognise (a variant added after it shipped). All three want the
- * same thing — the safe answer the catalog declares — so they collapse to one
+ * same thing — the default the catalog declares — so they collapse to one
  * rule instead of three call-site checks.
  */
 export function resolveFlagValue<K extends ClientFeatureFlagKey>(
