@@ -5,6 +5,7 @@ import type * as React from 'react';
 
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
+import { DictationFrame, type DictationSlot } from './chat-composer-extras';
 import { Button } from './button';
 import { IconButton } from './icon-button';
 import { RadioGroup, RadioGroupItem } from './radio-group';
@@ -43,6 +44,7 @@ function ReviewDecision({
   onDiscard,
   onClose,
   submitDisabled = false,
+  dictation,
   labels = {},
   className,
 }: {
@@ -62,6 +64,8 @@ function ReviewDecision({
   onDiscard?: () => void;
   onClose?: () => void;
   submitDisabled?: boolean;
+  /** Dictation for the comment (`DictationFrame`). */
+  dictation?: DictationSlot;
   labels?: { title?: string; comment?: string; optional?: string; placeholder?: string; discard?: string; close?: string };
   className?: string;
 }) {
@@ -81,14 +85,16 @@ function ReviewDecision({
           <span className="flex-1" />
           <span className="text-xs text-fg-subtle">{labels.optional ?? 'Optional'}</span>
         </span>
-        <CommentField
-          value={comment}
-          onValueChange={onCommentChange}
-          placeholder={labels.placeholder ?? 'Anything to add for the author'}
-          onSubmit={onSubmit}
-          onCancel={onClose}
-          canSubmit={!submitDisabled}
-        />
+        <DictationFrame dictation={dictation}>
+          <CommentField
+            value={comment}
+            onValueChange={onCommentChange}
+            placeholder={labels.placeholder ?? 'Anything to add for the author'}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+            canSubmit={!submitDisabled}
+          />
+        </DictationFrame>
         {agentNote ? (
           <span className="flex items-start gap-1.5 text-xs leading-[1.45] text-fg-muted">
             <BotIcon className="mt-px size-3 shrink-0" aria-hidden />

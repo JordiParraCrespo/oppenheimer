@@ -1,0 +1,19 @@
+[
+  {
+    "id": "es-login-loop",
+    "clip": "clips/es-login-loop.wav",
+    "language": "es",
+    "expected": "Arregla el bucle de redirección del login en `src/auth/login.ts`. Cuando el usuario no tiene workspace, lo manda a /onboarding y vuelve atrás.",
+    "vocabulary": ["oppenheimer", "src/auth/login.ts"],
+    "names": ["src/auth/login.ts"],
+    "wispr": "Arregla el bucle de redirección del login en src/auth/login.ts. Cuando el usuario no tiene workspace, lo manda a onboarding y vuelve atrás."
+  },
+  {
+    "id": "mixed-review",
+    "clip": "clips/mixed-review.wav",
+    "language": "mixed",
+    "expected": "Revisa la pull request de Claude Code y dime si el test de `useDictation` cubre el caso del micrófono denegado.",
+    "vocabulary": ["Claude Code", "useDictation"],
+    "names": ["Claude Code", "useDictation"]
+  }
+]

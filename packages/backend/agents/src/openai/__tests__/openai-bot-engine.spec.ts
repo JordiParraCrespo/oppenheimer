@@ -244,6 +244,34 @@ describe('OpenAiBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: 'Started it.', data: { sessionId: 's-1' } }),
+    };
+    let modelRead: string | undefined;
+    scripted(async function* (seen) {
+      const [tool] = seen.agent.tools;
+      yield toolCalled('call_1', 'start_session', '{}');
+      modelRead = await execute(tool, {}, 'call_1');
+      yield toolOutput('call_1', 'start_session', modelRead);
+    });
+
+    const events = await collect(new OpenAiBotEngine().run(request({ tools: [start] })));
+
+    expect(modelRead).toBe('Started it.');
+    expect(events.find((event) => event.type === 'tool.finished')).toEqual({
+      type: 'tool.finished',
+      callId: 'call_1',
+      name: 'start_session',
+      output: 'Started it.',
+      isError: false,
+      data: { sessionId: 's-1' },
+    });
+  });
+
   it('sends the key, endpoint, history as native input items, then this message', async () => {
     const run = scripted(async function* () {});
 
@@ -282,6 +310,34 @@ describe('OpenAiBotEngine', () => {
         { type: 'message', role: 'user', content: 'What is my name?' },
       ],
     });
+  });
+
+  it('sends this message’s images before its text, as data URLs, and leaves the history text', async () => {
+    const run = scripted(async function* () {});
+
+    await collect(
+      new OpenAiBotEngine().run(
+        request({
+          message: 'What is in these?',
+          images: [
+            { mimeType: 'image/png', data: 'cG5n' },
+            { mimeType: 'image/webp', data: 'd2VicA==' },
+          ],
+        }),
+      ),
+    );
+
+    expect(run.seen.input).toEqual([
+      {
+        type: 'message',
+        role: 'user',
+        content: [
+          { type: 'input_image', image: 'data:image/png;base64,cG5n' },
+          { type: 'input_image', image: 'data:image/webp;base64,d2VicA==' },
+          { type: 'input_text', text: 'What is in these?' },
+        ],
+      },
+    ]);
   });
 
   it('ends with max_steps when the SDK stops at the turn limit', async () => {

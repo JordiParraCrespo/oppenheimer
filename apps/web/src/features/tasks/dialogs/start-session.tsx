@@ -4,11 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { StartSessionSkeleton } from '../components/start-session-skeleton';
 import { StartSessionDraft } from '../sections/start-session-draft';
 
 const board = getRouteApi('/_authenticated/plan/');
@@ -37,7 +37,7 @@ export function StartSessionDialog() {
           <div className="pb-6">
             <QueryState>
               <QueryState.Pending>
-                <Skeleton className="h-40 w-full" />
+                <StartSessionSkeleton />
               </QueryState.Pending>
               <QueryState.Error fallback={t('tasks.start.loadFailed')} />
               <QueryState.Data>

@@ -27,8 +27,27 @@ it lives.
 | What it remembers | Rows, one fact each, with where it came from | Settings → Memory |
 | Its provider, model and effort | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
-| Where its sessions run by default | `bot.homeHostId` | Settings → Works on |
-| The conversation | Turns and messages | The chat |
+| Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
+| The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
+
+**A new bot.** Created blank, a bot takes the next of twenty first names
+the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
+no two with the same initial, so neighbours' avatars differ), on the next
+colour, with a `SOUL.md` that says its name and an empty
+`INSTRUCTIONS.md`. A name says who it is; the description says its job,
+and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
+its prompt carries a **Getting started** section instead (2026-10-16): take
+the job from the first message or ask for it, with examples that fit
+Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
+never to do without asking, how to report); one focused job, a bot per
+unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
+asking, How I report), set the description to the job, remember what it
+learned about the person, and say in two or three lines what it set up and
+the first task it could do now. The steps that need a tool are the tools'
+own (`setupStep` on the tool's spec), listed only when the turn offers the
+tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
+person to paste in Settings. Names are given first-free, so a deleted
+bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change
@@ -52,10 +71,23 @@ worker runs it and streams what happens back to the chat.
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
 
+  A bot made with no provider named, or left on one with no key, goes to
+  the first provider the workspace has a key or sign-in for, in the order
+  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
+  it was the catalog order before, which put GLM ahead of ChatGPT).
+
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
   same stream of chat messages. Neither SDK's types leave the package that
   wraps them (`@oppenheimer/backend-agents`).
+- **A new bot starts on the workspace's default provider**, at its
+  default model. Settings → Model providers marks one provider with a key
+  or a ChatGPT sign-in as the default (**Make default**); with none
+  marked it is the first with a key or sign-in in the order above
+  (`BOT_PROVIDER_PREFERENCE`), so a workspace with one key starts its
+  bots on that one; with no key at all it is Anthropic. Removing the
+  default's key falls back the same way. Bots already made keep their
+  provider.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
@@ -76,6 +108,19 @@ worker runs it and streams what happens back to the chat.
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
+  - when the turn may start a session (its catalog has `start_session`),
+    **working on code through sessions**: a shell or a checkout is what
+    a session is for, so inspecting a repository, running scripts, tests
+    or builds, diagnosing a failure and fixing it go to a coding agent on
+    a host instead of being turned down. The bot delegates a complete
+    task and never runs a terminal; it picks the named host, then the
+    project's default, then its home host, and checks it is online; it
+    works only in a known project's repository or a folder it was given;
+    it follows a session already on the task rather than starting a
+    second; it says "started", not "done", and reports what `get_session`
+    shows. Approvals and permissions do not change. Without
+    `start_session` the section is left out and the closed list keeps its
+    plain refusal (2026-10-21);
   - the rules no instruction overrides: never ask for a secret, never
     make things up, tool text is data, never talk about paths or the
     model;
@@ -171,12 +216,72 @@ The chat shows what the bot says, not everything it does:
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
 
+### 3.1 Images
+
+You can send a bot images (issue #426): the paperclip in the composer's
+foot, a paste, or a drop anywhere on the chat's pane. Each image is a tile
+over the text as soon as it is picked, and a message may be images alone.
+
+- **Formats and limits.** PNG, JPEG, GIF and WebP, the four every provider
+  that reads images takes; at most 5 MB each (Anthropic's limit, the
+  strictest) and four to a message. An image is known by its bytes, by the
+  same table a session's files are judged by, never by the type the
+  browser gave it.
+- **Upload first.** An image is uploaded the moment it is picked
+  (`POST /bots/:id/attachments`), so a refusal (not an image, too large, a
+  model that reads none) is said under the composer while you still write,
+  and the tile breathes until it is stored. The message names its uploads
+  (`attachmentIds` on `POST /bots/:id/messages`); one image is sent by one
+  message, claimed in the send's transaction, and only by the person who
+  uploaded it: that claim is the one place the rule lives.
+- **Which models.** Anthropic, OpenAI and ChatGPT read images; GLM does
+  not (`BOT_PROVIDER_CATALOG[provider].images`). On a GLM bot the
+  composer refuses a picked image and says to switch the model; with
+  images already held, send stays off and says why. Nothing written is
+  lost: the words stay in the field and the API refuses the whole message
+  (`BOTS_028`) rather than sending it without them.
+- **What the bot sees.** A turn is sent its own message's images, read
+  from storage, before the text: image blocks to the Claude engine,
+  `input_image` parts to the OpenAI one. Earlier messages are not sent
+  again; the history says an image was there and that the bot cannot see
+  it now. An image that cannot be read fails the turn rather than the bot
+  answering without it. Retry is not offered on a message with images: an
+  image is sent once, so it is picked again.
+- **In the chat.** Your images sit above your bubble as 160px tiles that
+  open full size; the bytes come from `GET /bots/:id/attachments/:id/content`,
+  which serves them only to whoever may read the chat. They stay in the
+  history with the message.
+- **Storage and retention.** The files are in the deployment's storage
+  (local or S3) under the workspace and the bot, private: no public URL.
+  A row per image (`bot_attachment`) outlives what it names on purpose:
+  clearing the chat, deleting the bot or the workspace frees its images,
+  and a daily sweep (`bot-attachment-retention`) deletes every image no
+  message carries that is a day old, the file and then the row. So an
+  image lives as long as its message, and an upload never sent for a day.
+  An upload can be sent for 23 hours, an hour short of the sweep, so a
+  send never claims an image whose file the sweep is deleting.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
 has, run as **the bot's owner**: a bot can never do more than the person
 who owns it may do, the rule that already governs API tokens. Tools are
 defined once, as an in-process MCP server both engines use.
+
+That rule is checked, not assumed (built 2026-10-20, from a review of
+§4.4's writes): at every tool call, and again when an approved call runs,
+the owner's live roles in the bot's workspace are read as the scopes they
+could grant a token (`grantableScopes`, built as an ordinary account, never
+the platform tier). A tool whose scope they lack **stays offered**, and its
+call is refused before it runs or raises a card, in words that name the
+permission ("Pull requests: Review", `pulls:write`) and tell the bot to say
+the person needs it granted. Hiding the tool instead was considered and
+not taken: a bot that does not know a tool exists cannot tell its owner
+why it cannot help. A role removed while a card waits stops the call when
+it runs, and one removed mid-turn stops the turn's next call. The read
+is the ability's own cache behind the role version counters, so a call
+costs no more than a request's guard. The workspace owner's role covers every tool's scope, so a
+personal workspace's bot loses nothing.
 
 **Default** is the catalog's: *auto* runs, *ask* shows a Needs input card,
 *never* is not given to a bot at all. The owner changes any of them (§5).
@@ -218,7 +323,7 @@ that did not cover the tool never runs.
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state | auto |
-| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` | ask |
+| `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `send_to_session` | Type a message into a running session | ask |
 | `read_session` | A session's recent output | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
@@ -241,7 +346,27 @@ that did not cover the tool never runs.
 | `list_pull_requests` / `get_pull_request` | With files, comments and activity | auto |
 | `comment_on_pull_request` / `review_pull_request` | Post a line comment, or submit a review: approve, request changes or comment | ask |
 | `start_review_session` | Review it in a session | ask |
-| `merge_pull_request` | Merge it, squash by default | ask |
+| `merge_pull_request` | Merge it, squash by default, pinned to the head the card showed | ask |
+| `list_issues` / `get_issue` | A repository's issues, one with its comments | auto |
+| `create_issue` / `comment_on_issue` | Open an issue, or comment on one | ask |
+
+Built 2026-10-20, after a bot told its owner it could not merge a pull
+request it had just reported ready. Every write is made with the owner's
+own GitHub user token through the pull-requests and github modules'
+commands, so GitHub records the person and its branch rules stay the gate.
+`comment_on_pull_request` posts on the conversation, or on a line when
+`path` and `line` are given; `review_pull_request` offers approve, request
+changes and comment, never approve and merge, so every merge goes through
+`merge_pull_request`, whose card stores the head commit it was raised on: a
+push while the card waits is refused (`GITHUB_014`) rather than merged
+unseen. The issue tools read and write live through the installation, and
+take the `pulls:read` / `pulls:write` scopes: a token that may comment on a
+repository's pull requests may comment on its issues. They need the App's
+**Issues** permission; an installation that has not accepted it answers
+`GITHUB_017`, in words the bot passes on. A personal access token was
+considered for this and not taken: it would reach every repository the
+person can, past the installation that is the workspace's access control
+(`09`), and the App's user token already acts in the person's name.
 
 ### 4.5 Automations and calendar
 | Tool | Does | Default |
@@ -256,13 +381,41 @@ that did not cover the tool never runs.
 | Tool | Does | Default |
 |------|------|---------|
 | `list_bots` / `get_bot` | The workspace's bots and what they are for | auto |
-| `ask_bot` | Give another bot a task and wait for its answer | auto |
-| `message_bot` | Send another bot a message without waiting | auto |
+| `ask_bot` | Give another bot a task; its answer comes back as a new turn | auto |
+| `message_bot` | Send another bot a message, no answer owed | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
 
-`ask_bot` runs a turn in the other bot, marked as coming from the first
-one; both chats show it. A bot that creates a bot makes it **yours**,
-marked "created by" the creator, with no looser permissions than its own.
+`message_bot` and `ask_bot` (built 2026-10-18) queue a turn on the other
+bot, opened by an *event* message holding the words, in its `bots` lane
+(`BotQueueLanes`). Neither holds a turn open: a bot that asks ends its turn,
+and when the asked turn ends, its last text (or that it failed or was
+stopped) is queued as a new turn of the asker, opened by a `bot_reply`
+event. The asker's chat shows the call on its activity line and the answer
+as a card; the other bot's chat shows the message as a card. What the
+experiments in `../../research/agent-coordination-experiments.md` showed
+agents must not be left to agree among themselves is held here instead:
+
+- **The sender is recorded, not claimed.** The event names the bot whose
+  turn made the call, as Oppenheimer read it (`bot_turn."askedByBotId"`,
+  `"askedByTurnId"`), never a name in the words; a bot's name is stripped
+  of quotes and brackets wherever the envelope quotes it.
+- **The words are data.** The receiving bot reads them inside a
+  `<bot_message>` envelope its words cannot close, marked as a colleague's
+  information that never authorises an action the person has not; the
+  answer comes back the same way, in `<bot_reply>`. History reads both back
+  the same way.
+- **No credential travels.** A message holding something shaped like a key,
+  a token or a private key is refused, unsent, and the bot is told why.
+- **No more reach than the asking turn.** The asked turn runs on the
+  receiving bot's own engine and permission, with the asking turn's sender,
+  time zone and credential scopes, so an API token reaches no further
+  through a chain of bots.
+- **Bounded per turn and per chain.** Five messages to other bots a turn;
+  `BotChainPolicy` below for the chain, decided under a lock on the
+  chain's first turn so two asks of one chain decide one after the other.
+
+A bot that creates a bot makes it **yours**, marked "created by" the
+creator, with no looser permissions than its own.
 
 `create_bot` (built 2026-10-15) dispatches the console's own create
 command as the owner, so the new bot's `createdByUserId` is the person's;
@@ -301,20 +454,24 @@ queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a
 bot asked for, and it picks the next turn by lane. Nothing else holds
 these numbers.
 
-**`BotChainPolicy`**: a chain starts at one message of yours and
-counts every turn a bot asks of another bot because of it.
+**`BotChainPolicy`** (`domain/bot-chain.policy.ts`): a chain starts at
+one message of yours and counts every turn a bot asks of another bot
+because of it (`bot_turn."chainId"`, `"chainDepth"`); the answer to an ask
+goes back on its own path and is not counted.
 
 | Limit | Value | Past it |
 |-------|-------|---------|
 | `maxDepth` | 3 bots deep | the call is refused |
 | `turnBudget` | 10 bot-to-bot turns per chain | the call is refused |
 | `cycles` | none: a bot already in the chain is never asked | the call is refused |
+| self | a bot never messages itself | the call is refused |
 
 A refused call comes back to the asking bot as the tool's result, and the
 bot says in its chat that it stopped and why.
 
-**`BotQueueLanes`**: the order a bot's waiting turns run in, one turn at
-a time (§2).
+**`BotQueueLanes`** (`bot_turn."lane"`): the order a bot's waiting turns
+run in, one turn at a time (§2): the oldest of the first lane that has
+one.
 
 | Lane | Holds |
 |------|-------|
@@ -325,7 +482,7 @@ a time (§2).
 ### 4.7 Work and the web
 | Tool | Does | Default |
 |------|------|---------|
-| `delegate` | A subagent for a long job; the bot keeps talking and the result arrives as a message. Ours, not the engine's: Claude Code's subagents are off | auto |
+| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's). 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `ask_user` | A question card with options | auto |
@@ -421,13 +578,16 @@ limits (§2); the tools that run without asking, as the owner: itself
 `list_sessions`, `get_session`), the plan (`list_projects`,
 `get_project`, `list_tasks`, `get_task`, `plan_summary`, `create_task`,
 `update_task`, `move_task`), GitHub (`list_repositories`,
-`list_pull_requests`, `get_pull_request`), automations
+`list_pull_requests`, `get_pull_request`; since 2026-10-20 also
+`list_issues`, `get_issue`, and the asking `comment_on_pull_request`,
+`review_pull_request`, `merge_pull_request`, `start_review_session`,
+`create_issue`, `comment_on_issue`, §4.4), automations
 (`list_automations`, `get_automation`, `run_history`), other bots
-(`list_bots`, `get_bot`) and `web_fetch`; `start_session`,
+(`list_bots`, `get_bot`), `web_fetch` and, since 2026-10-22, `delegate` (§4.7); `start_session`,
 `stop_session` and `create_bot`, which ask; and the Needs input card
 (§5): Approve, Deny with a note, the bot told either way. Next:
 Settings → Permissions and *Always allow*, then the asking tools of each
-area, `ask_bot` and `delegate`.
+area and `ask_bot`.
 
 ## 7. Not built yet
 
@@ -435,8 +595,12 @@ Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
 Routines, Notifications, plain-language permission rules ("always ask
 before touching the payments repo"), daily caps, slash commands, voice,
-attachments, the context meter, project and user memory, a bot's engine
-running on a host of its own with the full Claude Code toolset.
+attachments other than images (§3.1), the context meter, project and
+user memory, a bot's engine running on a host of its own with the full
+Claude Code toolset.
+
+Routines, a bot waking on a schedule, an event or finished work, are
+designed in [26](26-bot-routines.md).
 
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
@@ -448,7 +612,8 @@ eight colours (`AV_COLORS`).
   `bot_document_revision` (append-only, author you or the bot),
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
-  `bot_approval`; for long conversations `bot_conversation_summary`.
+  `bot_approval`; for long conversations `bot_conversation_summary`; for
+  images `bot_attachment` (§3.1).
   Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
@@ -462,7 +627,8 @@ eight colours (`AV_COLORS`).
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
   now (beside it `bot-approvals`, an approved call, and `bot-summaries`, a
   conversation's summary); the same image can run it alone when turns need their own
-  container. It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
+  container. The daily `bot-attachment-retention` job sweeps images no
+  message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
@@ -480,6 +646,9 @@ The decisions it produced:
   (`BotQueueLanes`, `BotChainPolicy`, §4.6).
 - **Revisions for its documents** (§1, §8), where Grok Bot keeps none.
 - **The owner's own permissions as the ceiling** (§4, §5).
+- **A first chat that sets the bot up** (§1), from Grok Bot's guide: one
+  focused job per bot, a description of what it owns and must never do
+  without approval, a first concrete task.
 
 ## Decided
 
@@ -504,6 +673,9 @@ The decisions it produced:
 - 2026-10-15: **the owner chooses the permissions**, tool by tool, within
   their own; the approval chip is a preset over them. It replaces
   2026-10-14's "*Ask for approval* comes with slice 4".
+- 2026-10-15: **a new bot starts on the workspace's default provider**:
+  the one marked in Settings → Model providers, else the first with a
+  key in `BOT_PROVIDER_PREFERENCE` (§2).
 - 2026-10-15: bots **talk to each other and create bots**, within the
   limits of `BotChainPolicy` (§4.6).
 - 2026-10-15: **ChatGPT is a fourth provider**, on the OpenAI engine,
@@ -539,3 +711,54 @@ The decisions it produced:
   card waits; a new message from you expires the card. From Grok Bot's
   parked turns (`research/lessons-from-grok-bot.md`), which BullMQ cannot
   park.
+- 2026-10-16: **the page is Home host, and bot settings save with Save.**
+  Read as "Runs on", the page looked like where the bot runs, which is
+  always Oppenheimer; it is where `start_session` puts a session when no
+  machine is named, and *No home host* has the bot ask. A pick, on Home
+  host or Profile (colour and sidebar group included), is a draft until
+  Save. It replaces slice 3's "Settings → Runs on becomes Works on"; the
+  old address redirects.
+- 2026-10-21: **the prompt tells a bot it works on code through
+  sessions** (§1). The closed list said "no shell, no files" and to stop
+  when no tool fits, so a bot asked to run the tests turned it down unless
+  its INSTRUCTIONS.md said a session would do it. A turn whose catalog has
+  `start_session` now gets a static "Working on code through sessions"
+  section, and the closed list points code work there rather than at a
+  refusal. It refines 2026-10-15's closed list: the bot still has no
+  shell, and a turn that cannot start a session still says "I can't".
+- 2026-10-18: **an ask's answer comes back as a turn, not by waiting.**
+  It replaces "give another bot a task and wait for its answer": one turn
+  per bot runs at a time and a turn has four minutes, so an ask that held
+  its turn open would wait behind the other bot's queue and could time out
+  or deadlock two bots asking each other. The asker ends its turn and the
+  answer opens a new one (`bot_reply`), the way a decided card does. The
+  sender is recorded rather than claimed, a message holding a credential
+  is refused, and the chain is decided under a lock, from
+  `../../research/agent-coordination-experiments.md`.
+- 2026-10-16: **chat history is exported and cleared from Profile.**
+  Export downloads the whole chat as Markdown (`GET
+  /bots/:id/conversation/export`, every message as a line of NDJSON, read
+  and written a page at a time);
+  Clear history (`DELETE /bots/:id/conversation`) erases the turns,
+  messages, cards and summary in one transaction, keeps the soul,
+  instructions and memory, and is refused while a turn works (`BOTS_022`).
+- 2026-10-16: **a blank bot is born with a first name and sets itself up
+  in its first chat** (§1). It replaces "New Bot" and a one-line "ask
+  what job": a sidebar of "New Bot 2, New Bot 3" told bots apart by
+  nothing, and a bot left to the person to find Settings rarely got
+  instructions. It keeps 2026-10-14's "created blank": no template is
+  applied, the person's answer is.
+- 2026-10-21: **a bot reads images** (§3.1, issue #426): PNG, JPEG, GIF
+  and WebP up to 5 MB, four to a message, uploaded when picked and claimed
+  by the message that sends them; a turn is sent only its own message's
+  images, and GLM, whose models read none, refuses them with the words
+  kept. Other files (PDFs, text) stay in §7.
+- 2026-10-22: **`delegate` runs subagents inside the turn, read-only**
+  (§4.7, issue #444). It replaces "a subagent for a long job; the bot
+  keeps talking and the result arrives as a message": what people asked
+  for was a bot that splits a question into parallel lookups and answers
+  from all of them in the same reply, and long work already has its place
+  in a session on a host. Children are bounded (4 tasks, 3 at once, 90 s,
+  one level deep), offered only the turn's read-only tools behind the
+  owner's permissions, and what they say is data the bot checks. Children
+  that change things wait until this lifecycle has proven itself.

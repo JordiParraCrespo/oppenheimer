@@ -17,6 +17,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  *   SCREENS="/sessions,/settings/profile" pnpm --filter @oppenheimer/e2e screens
  *
  * - `anon:/login` photographs a route signed out.
+ * - `spec:<name>` is a throwaway spec in `local/` the config runs beside this
+ *   one; it is not a route, so it is skipped here.
  * - `SCREENS_GITHUB=1` connects a stub GitHub installation first, so the
  *   composer and the project screens have repositories to show.
  * - `SCREENS_WIDTHS` (default `1440`) is a comma list; `390` is a phone.
@@ -44,7 +46,7 @@ interface Shot {
 function shots(): Shot[] {
   return (process.env.SCREENS ?? '')
     .split(/[\s,]+/)
-    .filter(Boolean)
+    .filter((entry) => entry && !entry.startsWith('spec:'))
     .map((entry) =>
       entry.startsWith('anon:')
         ? { route: entry.slice('anon:'.length), signedIn: false }
@@ -65,16 +67,25 @@ function git(...args: string[]): string {
   }
 }
 
-/** The page has drawn: no request in flight, fonts loaded, no skeleton left. */
-async function settle(page: Page): Promise<void> {
+/**
+ * The page has drawn in `theme`: the app mounted, no request in flight, no
+ * skeleton left, fonts loaded, the theme applied. The mount comes first:
+ * `theme-init.js` sets the theme class before React runs, and "no skeleton"
+ * holds trivially on an empty `#root`, so without it a slow machine
+ * photographs a blank page in the right colours.
+ */
+async function settle(page: Page, theme: (typeof THEMES)[number]): Promise<void> {
+  await expect(page.locator('#root')).toHaveText(/\S/, { timeout: 30_000 });
   await page.waitForLoadState('networkidle');
-  await page.evaluate(() => document.fonts.ready);
   await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 15_000 });
+  await page.evaluate(() => document.fonts.ready);
+  // The console follows the OS appearance unless the account chose one.
+  await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`));
 }
 
 test('photographs the screens a change touches', async ({ browser }) => {
+  // No route (only `spec:` entries) still writes the manifest the guard reads.
   const list = shots();
-  test.skip(list.length === 0, 'SCREENS names no route');
   test.setTimeout(60_000 + list.length * WIDTHS.length * 30_000);
   mkdirSync(OUT, { recursive: true });
 
@@ -99,9 +110,7 @@ test('photographs the screens a change touches', async ({ browser }) => {
         if (owner && group[0].signedIn) await signInAs(page, owner.user);
         for (const shot of group) {
           await page.goto(shot.route);
-          await settle(page);
-          // The console follows the OS appearance unless the account chose one.
-          await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`));
+          await settle(page, theme);
           const file = join(OUT, `${slug(shot)}-${width}-${theme}.png`);
           await page.screenshot({ path: file, fullPage: true });
           files.push({ ...shot, width, theme, file: relative(ROOT, file) });

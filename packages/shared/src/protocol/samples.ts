@@ -121,6 +121,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     reason: 'too many direct peers on this host',
   },
   'attachment.path': { type: 'attachment.path', attachmentId: 7, offset: 1_048_576 },
+  'attachment.chat': {
+    type: 'attachment.chat',
+    attachmentId: 7,
+    reset: true,
+    entries: [
+      '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
+    ],
+  },
   'session.create': {
     type: 'session.create',
     commandId,

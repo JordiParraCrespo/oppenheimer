@@ -78,4 +78,6 @@ export const QUEUE_NAMES = {
   BOT_APPROVALS: 'bot-approvals',
   /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */
   BOT_SUMMARIES: 'bot-summaries',
+  /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
+  BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
 } as const;

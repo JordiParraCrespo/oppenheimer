@@ -23,7 +23,7 @@ import {
   SettingsListRow,
 } from '@oppenheimer/design-system-web/settings-group';
 import { SettingsTopBar } from '@oppenheimer/design-system-web/settings-shell';
-import { SidebarEmptyCard, SidebarProjectHeader } from '@oppenheimer/design-system-web/sidebar';
+import { SidebarEmptyCard, SidebarProjectGroup, SidebarProjectHeader } from '@oppenheimer/design-system-web/sidebar';
 import { Switch } from '@oppenheimer/design-system-web/switch';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
@@ -39,7 +39,7 @@ const BUILT_IN = [
 function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string) => void }) {
   const [open, setOpen] = React.useState(true);
   return (
-    <>
+    <SidebarProjectGroup>
       <SidebarProjectHeader
         tone="eyebrow"
         name="Built-in"
@@ -49,13 +49,13 @@ function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string)
         marker={<LockIcon aria-label="Built-in bots cannot be moved or renamed" />}
       />
       {open ? (
-        <div className="px-1.5"><BotList>
+        <BotList>
           {BUILT_IN.map((bot) => (
             <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => onPick(bot.id)} />
           ))}
-        </BotList></div>
+        </BotList>
       ) : null}
-    </>
+    </SidebarProjectGroup>
   );
 }
 
@@ -71,14 +71,16 @@ export function BotItemsDemo() {
   return (
     <div className="flex flex-wrap items-start gap-6">
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
-        <SidebarProjectHeader tone="eyebrow" name="Engineering" count={bots.length} open={open} onOpenChange={setOpen} />
-        {open ? (
-          <div className="px-1.5"><BotList>
-            {bots.map((bot) => (
-              <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => setActive(bot.id)} />
-            ))}
-          </BotList></div>
-        ) : null}
+        <SidebarProjectGroup>
+          <SidebarProjectHeader tone="eyebrow" name="Engineering" count={bots.length} open={open} onOpenChange={setOpen} />
+          {open ? (
+            <BotList>
+              {bots.map((bot) => (
+                <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => setActive(bot.id)} />
+              ))}
+            </BotList>
+          ) : null}
+        </SidebarProjectGroup>
         <BuiltInGroup active={active} onPick={setActive} />
       </div>
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar pb-1.5">
@@ -185,6 +187,7 @@ export function RoutineCardsDemo() {
         next="Tomorrow 09:00"
         active={on.digest}
         onActiveChange={(v) => setOn((s) => ({ ...s, digest: v }))}
+        onRun={() => {}}
         onEdit={() => {}}
         onDelete={() => {}}
       />
@@ -197,6 +200,8 @@ export function RoutineCardsDemo() {
         next="—"
         active={on.triage}
         onActiveChange={(v) => setOn((s) => ({ ...s, triage: v }))}
+        onRun={() => {}}
+        running
         onEdit={() => {}}
         onDelete={() => {}}
       />
@@ -386,7 +391,7 @@ export function EmployeesSection() {
         title="RoutineCard"
         meta="routine-card.tsx"
         desc="Something a bot does on its own, read in full on its settings: the name, the Switch (Pause / Resume) and the edit and delete buttons; the trigger as a glyph and a line; the prompt in muted ink; the last and next run in mono. A paused card fades to 60%. Editing, the caller's form replaces the read view inside the same card. The sidebar's workspace automations stay RoutineItem."
-        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onEdit={edit} onDelete={remove} />`}
+        code={`<RoutineCard name="Morning digest" icon={<ClockIcon />} trigger="Schedule · Weekdays at 09:00" prompt="…" last="Today 09:00" next="Tomorrow 09:00" active={on} onActiveChange={setOn} onRun={run} running={live} onEdit={edit} onDelete={remove} />`}
       >
         <RoutineCardsDemo />
       </Spec>

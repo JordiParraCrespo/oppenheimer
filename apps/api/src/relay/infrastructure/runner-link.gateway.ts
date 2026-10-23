@@ -395,6 +395,10 @@ export class RunnerLinkGateway {
         // The direct path's signalling (22) is its browser's, by attachment.
         link.attachment(message.attachmentId)?.signal(message);
         return;
+      case 'attachment.chat':
+        // The chat view's entries (0.7) are the attachment's browser's.
+        link.attachment(message.attachmentId)?.chat(message);
+        return;
       case 'attachment.closed':
         link.attachment(message.attachmentId)?.closed('runner_closed', message.reason);
         link.closeAttachment(message.attachmentId);

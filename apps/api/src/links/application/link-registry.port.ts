@@ -1,4 +1,5 @@
 import type {
+  AttachmentChatMessage,
   AttachmentDirectAnswerMessage,
   AttachmentDirectRefusedMessage,
   AttachmentPathMessage,
@@ -19,6 +20,11 @@ export interface AttachmentSink {
    * browser's offer, its refusal, or the output offset the path moved at.
    */
   signal(message: AttachmentSignal): void;
+  /**
+   * Entries of the session's agent transcript for the chat view beside the
+   * terminal (0.7), as the runner compacted them. Relayed, never read here.
+   */
+  chat(message: AttachmentChatMessage): void;
 }
 
 /** What the runner says about an attachment's direct path. */

@@ -20,6 +20,8 @@ import {
   launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
+  type SessionCloseRefusalFold,
+  type SessionCloseRequestFold,
   type SessionFold,
   type SessionLaunchFold,
   type SessionLogEntry,
@@ -277,6 +279,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.state === 'resolved';
   }
 
+  /** The close owed to the host, which the hello reconciliation sends again. */
+  get closeRequest(): SessionCloseRequestFold | null {
+    return this.props.closeRequest;
+  }
+
+  get closeRefusal(): SessionCloseRefusalFold | null {
+    return this.props.closeRefusal;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -323,6 +334,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       ackedReportHash: this.props.ackedReportHash,
       launch: this.props.launch,
       projectId: this.props.projectId,
+      closeRequest: this.props.closeRequest,
+      closeRefusal: this.props.closeRefusal,
     };
   }
 
@@ -350,6 +363,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.ackedReportHash = fold.ackedReportHash;
     this.props.launch = fold.launch;
     this.props.projectId = fold.projectId ?? this.props.projectId;
+    this.props.closeRequest = fold.closeRequest;
+    this.props.closeRefusal = fold.closeRefusal;
   }
 
   /**

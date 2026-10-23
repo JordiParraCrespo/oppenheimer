@@ -2,18 +2,22 @@ import {
   ChatSource,
   ChatSources,
   Trace,
+  TraceGroup,
   TraceNote,
   TraceOutput,
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, Wrench } from '@oppenheimer/design-system-web/icons';
+import { Globe, ListTodo, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotSubagents } from '@/features/bots/components/bot-subagents';
+import { OpenSessionButton } from '@/features/bots/components/open-session-button';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
+  groupSummary,
   planItems,
   readableOutput,
   type ToolAction,
@@ -30,8 +34,11 @@ type Kind = ToolAction['kind'];
 /** What a step's line and its fold draw for one kind of call. */
 interface StepView<K extends Kind> {
   icon: ReactNode;
-  /** The line: "Searched the web for “x”", "Updated its plan". */
-  title: (t: TFunction, action: Extract<ToolAction, { kind: K }>) => string;
+  /** The line: "Searched the web for “x”", "Updated its plan", "Read document" + "notes.md". */
+  title: (
+    t: TFunction,
+    action: Extract<ToolAction, { kind: K }>,
+  ) => { title: string; target?: string };
   /** What it returned, readable first, and the figure for the line's meta. */
   detail: (
     step: BotToolStep,
@@ -58,10 +65,11 @@ function rawDetail(step: BotToolStep, _t: TFunction, labels: TraceOutputLabels) 
 const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   search: {
     icon: <Globe />,
-    title: (t, action) =>
-      action.query
+    title: (t, action) => ({
+      title: action.query
         ? t('bots.chat.activity.searchedFor', { query: action.query })
         : t('bots.chat.activity.searched'),
+    }),
     // The pages the output carries as data, then the raw output behind a button.
     detail: (step, t, labels) => {
       const pages = searchResults(step.output ?? '');
@@ -87,7 +95,7 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   },
   plan: {
     icon: <ListTodo />,
-    title: (t) => t('bots.chat.activity.planned'),
+    title: (t) => ({ title: t('bots.chat.activity.planned') }),
     // The to-do list it wrote, read from its input.
     detail: (step, t, labels) => {
       const items = planItems(step.input);
@@ -101,9 +109,23 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
       };
     },
   },
+  delegate: {
+    icon: <UsersIcon />,
+    title: (t, action) => ({ title: t('bots.chat.activity.delegated', { count: action.tasks }) }),
+    // Each child's line, read from the runs the call stored.
+    detail: (step, t, labels) => {
+      const runs = step.subagents ?? [];
+      if (runs.length === 0) return rawDetail(step, t, labels);
+      const failed = runs.filter((run) => run.status !== 'completed').length;
+      return {
+        meta: failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined,
+        body: <BotSubagents runs={runs} />,
+      };
+    },
+  },
   tool: {
     icon: <Wrench />,
-    title: (_t, action) => (action.target ? `${action.label} ${action.target}` : action.label),
+    title: (_t, action) => ({ title: action.label, target: action.target }),
     detail: rawDetail,
   },
 };
@@ -116,8 +138,11 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
 /**
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
- * returned, drawn by its kind's entry in `STEP_VIEWS`. A call still running
- * is not drawn here: the turn's live line says what it is doing.
+ * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
+ * fold into one line ("Used 5 tools") that opens to those same lines.
+ * A call still running is not drawn here: the turn's live line says
+ * what it is doing. A call that started a session carries Open session on
+ * its own line.
  */
 export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   const { t } = useTranslation();
@@ -128,24 +153,31 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   };
   const done = steps.filter((step) => step.output !== null);
   if (done.length === 0) return null;
+  const lines = done.map((step) => {
+    const action = toolAction(step);
+    const view = viewOf(action);
+    const { meta, body } = view.detail(step, t, labels);
+    return (
+      <TraceStep
+        key={step.callId}
+        icon={view.icon}
+        {...view.title(t, action)}
+        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        tone={step.isError ? 'danger' : 'default'}
+        action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
+      >
+        {body}
+      </TraceStep>
+    );
+  });
+  if (lines.length === 1) return <Trace>{lines}</Trace>;
+  const failed = done.filter((step) => step.isError).length;
   return (
-    <Trace>
-      {done.map((step) => {
-        const action = toolAction(step);
-        const view = viewOf(action);
-        const { meta, body } = view.detail(step, t, labels);
-        return (
-          <TraceStep
-            key={step.callId}
-            icon={view.icon}
-            title={view.title(t, action)}
-            meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
-            tone={step.isError ? 'danger' : 'default'}
-          >
-            {body}
-          </TraceStep>
-        );
-      })}
-    </Trace>
+    <TraceGroup
+      summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
+      failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
+    >
+      {lines}
+    </TraceGroup>
   );
 }

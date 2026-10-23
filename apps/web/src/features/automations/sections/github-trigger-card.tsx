@@ -7,7 +7,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useTriggerPreview } from '@oppenheimer/frontend-consumer/react';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { formatShortDuration } from '@oppenheimer/frontend-web';
+import { eventLabel, formatShortDuration } from '@oppenheimer/frontend-web';
 import {
   externalEventDefinition,
   GITHUB_EVENT_TYPES,
@@ -18,7 +18,6 @@ import { ChoiceToken } from '../components/choice-token';
 import { FilterToken } from '../components/filter-token';
 import { MultiToken } from '../components/multi-token';
 import { defaultFilter, type GithubCard } from '../lib/automation-draft';
-import { eventLabel } from '../lib/trigger-text';
 
 /** The word before the filter, by the attribute the event narrows on. */
 const FILTER_WORD = {

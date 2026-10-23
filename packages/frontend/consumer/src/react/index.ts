@@ -22,15 +22,32 @@ export {
   useDecideBotApproval,
 } from './bot-approvals.queries';
 export {
+  type BotHistory,
   type BotLiveText,
   type CancelBotTurnVariables,
+  type ExportBotConversationVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
+  useBotImage,
   useBotLiveText,
   useCancelBotTurn,
+  useClearBotConversation,
+  useExportBotConversation,
   useSendBotMessage,
   useSuspenseBotConversation,
+  useSuspenseBotHistory,
+  useUploadBotImage,
 } from './bot-chat.queries';
+export {
+  type BotRoutineVariables,
+  type RunBotRoutineVariables,
+  type SetBotRoutineEnabledVariables,
+  useDeleteBotRoutine,
+  useRunBotRoutine,
+  useSetBotRoutineEnabled,
+  useSuspenseAllBotRoutines,
+  useSuspenseBotRoutines,
+} from './bot-routines.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
@@ -50,10 +67,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
-  useModelProviders,
-  usePutModelProviderKey,
   useReloadBotDocuments,
-  useRemoveModelProviderKey,
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
@@ -63,7 +77,6 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
-  useSuspenseModelProviders,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -96,6 +109,7 @@ export {
   useRenameHost,
   useSuspenseHostPresence,
   useSuspenseHosts,
+  useUpdateHostRunner,
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
@@ -107,6 +121,13 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export {
+  useModelProviders,
+  usePutModelProviderKey,
+  useRemoveModelProviderKey,
+  useSetDefaultModelProvider,
+  useSuspenseModelProviders,
+} from './model-providers.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
   useCheckSlug,
@@ -140,11 +161,13 @@ export {
 } from './projects.queries';
 export {
   type AddCommentVariables,
+  type CloseReviewSessionVariables,
   type MergePullRequestVariables,
   type SetRepositoryWatchVariables,
   type StartReviewSessionVariables,
   type SubmitReviewVariables,
   useAddPullRequestComment,
+  useCloseReviewSession,
   useMergePullRequest,
   usePullRequest,
   usePullRequestComments,
@@ -216,4 +239,8 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
+export {
+  useVoiceDictation,
+  type VoiceDictation,
+} from './voice.queries';
 export { useWorkspaceEvents } from './workspace-events';

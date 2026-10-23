@@ -123,4 +123,46 @@ export const BotErrors = {
     message: 'The ChatGPT sign-in is being refreshed',
     httpStatus: 409,
   },
+  /** Clear history while a turn is queued or running: the turn would write into a conversation that is gone. */
+  CONVERSATION_BUSY: {
+    code: 'BOTS_022',
+    message: 'The bot has a turn queued or running',
+    httpStatus: 409,
+  },
+  /** Only a provider the workspace has a key for can be the one new bots start on. */
+  DEFAULT_PROVIDER_KEY_MISSING: {
+    code: 'BOTS_023',
+    message: 'That model provider has no key',
+    httpStatus: 409,
+  },
+  /** An upload that is not a PNG, JPEG, GIF or WebP image (`BOT_IMAGE_MIME_TYPES`). */
+  ATTACHMENT_TYPE_UNSUPPORTED: {
+    code: 'BOTS_024',
+    message: 'That file is not an image a bot takes',
+    httpStatus: 415,
+  },
+  /** An upload past `BOT_IMAGE_MAX_BYTES`. */
+  ATTACHMENT_TOO_LARGE: {
+    code: 'BOTS_025',
+    message: 'The image is too large',
+    httpStatus: 413,
+  },
+  /** Also an image of another bot, in another workspace, or someone else's upload not sent yet. */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'BOTS_026',
+    message: 'Image not found',
+    httpStatus: 404,
+  },
+  /** An image another message carries, someone else's upload, or one past the send window. */
+  ATTACHMENT_UNSENDABLE: {
+    code: 'BOTS_027',
+    message: 'The image can no longer be sent',
+    httpStatus: 409,
+  },
+  /** An image for a bot whose provider's models read none (GLM). */
+  MODEL_TAKES_NO_IMAGES: {
+    code: 'BOTS_028',
+    message: "The bot's model does not read images",
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

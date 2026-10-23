@@ -1,9 +1,9 @@
 import { RunHistory } from '@oppenheimer/design-system-web';
 import { useSuspenseRunHistory } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useLocale, viewerTimeZone } from '@oppenheimer/frontend-web';
 import { RUN_HISTORY_DAYS } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
-import { monthDay, viewerTimeZone } from '../lib/time';
+import { monthDay } from '../lib/time';
 
 /** A `YYYY-MM-DD` local day as the axis prints it ("Sep 28"). */
 function dayLabel(date: string | undefined, locale: string): string {

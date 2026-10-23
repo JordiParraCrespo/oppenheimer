@@ -10,6 +10,7 @@ import {
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
+import { invalidateModelProviders } from './model-providers.queries';
 
 /** What a surface running the ChatGPT sign-in is showing. */
 export interface ChatgptLoginFlow {
@@ -55,7 +56,7 @@ export function useChatgptLogin({ enabled = true }: { enabled?: boolean } = {}):
           try {
             const state = await app.bots.pollChatgptLogin(login.flowId);
             if (state === 'connected') {
-              await queryClient.invalidateQueries({ queryKey: botsKeys.providers() });
+              await invalidateModelProviders(queryClient);
             }
             return state;
           } catch (error) {

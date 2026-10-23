@@ -1,4 +1,9 @@
-import { ChatMarker, ChatTranscript, TranscriptDivider } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  ChatMarker,
+  ChatTranscript,
+  TranscriptDivider,
+} from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
   useBotLiveText,
@@ -7,10 +12,20 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { dateFormatter, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { botModelOf } from '@oppenheimer/shared/schemas/bot';
+import { Link } from '@tanstack/react-router';
 import { Fragment } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
-import { chatTurns, markersBefore, retryContent } from '@/features/bots/lib/chat-turns';
+import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
+import {
+  chatTurns,
+  markersBefore,
+  newestSentId,
+  newestTurn,
+  retryContent,
+} from '@/features/bots/lib/chat-turns';
+import { BotMessageImage } from '@/features/bots/sections/bot-message-image';
 import { BotHello } from './bot-hello';
 
 /**
@@ -20,6 +35,7 @@ import { BotHello } from './bot-hello';
  * hello. It keeps the bot's stream open while it is on screen, so text
  * arrives as the bot writes it and each stored message the moment it lands.
  * Once the newest turn has ended, Retry sends your last message again.
+ * What you send glides to the top of the pane, the answer beneath it.
  */
 export function BotTranscript({ botId, name }: { botId: string; name: string }) {
   const { t } = useTranslation();
@@ -29,7 +45,8 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const retry = useSendBotMessage();
   const blocks = chatTurns(conversation);
   const again = retryContent(blocks);
-  const newest = blocks.at(-1)?.turnId;
+  const newest = newestTurn(blocks)?.turnId;
+  useSentGlide(newestSentId(blocks));
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (
@@ -42,7 +59,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
           {blocks.map((block, index) => {
             const markers = markersBefore(blocks, index);
             return (
-              <Fragment key={block.turnId}>
+              <Fragment key={block.key}>
                 {markers.day ? (
                   <TranscriptDivider>{day.format(markers.day)}</TranscriptDivider>
                 ) : null}
@@ -59,16 +76,37 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                     />
                   </ChatMarker>
                 ) : null}
-                <BotTurn
-                  block={block}
-                  live={live[block.turnId]}
-                  onRetry={
-                    again !== null && block.turnId === newest
-                      ? () => retry.mutate({ id: botId, content: again })
-                      : undefined
-                  }
-                  retrying={retry.isPending}
-                />
+                {block.turnId === null ? (
+                  block.asked.map((message) => (
+                    <BotEventLine
+                      key={message.id}
+                      message={message}
+                      action={
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          render={<Link to="/bots/$botId/settings/routines" params={{ botId }} />}
+                        >
+                          {t('bots.chat.event.openRoutines')}
+                        </Button>
+                      }
+                    />
+                  ))
+                ) : (
+                  <BotTurn
+                    block={block}
+                    live={live[block.turnId]}
+                    image={(attachment) => (
+                      <BotMessageImage key={attachment.id} botId={botId} attachment={attachment} />
+                    )}
+                    onRetry={
+                      again !== null && block.turnId === newest
+                        ? () => retry.mutate({ id: botId, content: again })
+                        : undefined
+                    }
+                    retrying={retry.isPending}
+                  />
+                )}
               </Fragment>
             );
           })}

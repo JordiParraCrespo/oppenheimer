@@ -2,9 +2,10 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
-import type { BotPermission, Scope } from '@oppenheimer/shared';
+import type { BotPermission, BotSubagentRun, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
+import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
@@ -31,6 +32,29 @@ export interface BotToolCallContext {
   permission: BotPermission;
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+  /**
+   * The scopes of the credential the turn was sent with; null for a browser
+   * session. What a tool saves to act later (a routine) keeps them, so a
+   * token reaches no further through the bot than through a message.
+   */
+  credentialScopes: readonly Scope[] | null;
+  /**
+   * Runs `delegate`'s children inside this turn (`BotSubagentRunnerFactory`).
+   * Absent where no child may start: a child's own tools, and an approved
+   * call carried out after its turn, so delegation is one level deep.
+   */
+  subagents?: BotSubagentRunner;
+}
+
+/** One task a `delegate` call hands a child, with the context the bot chose to give it. */
+export interface BotSubagentTask {
+  task: string;
+  context?: string;
+}
+
+/** Runs a turn's children, in parallel and bounded, each to an end it reports. */
+export interface BotSubagentRunner {
+  run(tasks: readonly BotSubagentTask[], signal: AbortSignal): Promise<BotSubagentRun[]>;
 }
 
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
@@ -47,6 +71,25 @@ export interface ApprovedCallContext extends BotToolCallContext {
   approvalId: string;
 }
 
+/**
+ * A tool's answer with the session its call started, apart from its words:
+ * the chat links to the session from this, never from the words.
+ */
+export interface BotToolAnswer {
+  content: string;
+  sessionId?: string;
+  /** The children a `delegate` call ran, for the chat to show under its line. */
+  subagents?: readonly BotSubagentRun[];
+}
+
+/** What a call ended with: the words the model reads, and the session it started, if any. */
+export interface BotToolResult {
+  content: string;
+  isError: boolean;
+  sessionId?: string;
+  subagents?: readonly BotSubagentRun[];
+}
+
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
 export interface BotToolSpec<Input extends z.ZodType> {
   /** snake_case, from the catalog in `25-bots.md` §4. */
@@ -57,6 +100,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * empty answer does and does not mean.
    */
   description: string;
+  /**
+   * What the tool does in a new bot's first chat, as one step of the prompt's
+   * Getting started list (`composeBotSystemPrompt`). Only a tool that sets
+   * the bot up has one; the list shows the steps of the tools a turn offers.
+   */
+  setupStep?: string;
   input: Input;
   /**
    * The credential scope a call needs, as the route the tool stands in for
@@ -71,6 +120,11 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * to end its turn, and the call runs only when the owner approves it.
    */
   asks?: boolean;
+  /**
+   * The tool only reads: it starts, changes and sends nothing, so a
+   * `delegate` child may be offered it. Never set beside `asks`.
+   */
+  readOnly?: boolean;
   /**
    * What the card says the call will do, in words, from its input: "Start
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
@@ -90,21 +144,25 @@ export interface BotToolSpec<Input extends z.ZodType> {
     context: BotToolCallContext,
   ): Promise<z.output<Input>> | z.output<Input>;
   /**
-   * Answers labelled text, ids inline; a throw becomes an error result the
-   * model reads. `context.approvalId` is set when it carries out an approval.
+   * Answers labelled text, ids inline, or a `BotToolAnswer` when the call
+   * started a session; a throw becomes an error result the model reads.
+   * `context.approvalId` is set when it carries out an approval.
    */
   run(
     input: z.output<Input>,
     context: BotToolCallContext & { approvalId?: string },
     signal: AbortSignal,
-  ): Promise<string>;
+  ): Promise<string | BotToolAnswer>;
 }
 
 /** A declared tool, ready to be bound to a turn. */
 export interface BotToolDefinition {
   readonly name: string;
   readonly description: string;
+  readonly setupStep?: string;
   readonly scope: Scope;
+  /** Whether it only reads, so a child may be offered it. */
+  readonly readOnly: boolean;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
   /**
@@ -115,7 +173,7 @@ export interface BotToolDefinition {
     input: Record<string, unknown>,
     context: ApprovedCallContext,
     signal: AbortSignal,
-  ): Promise<{ content: string; isError: boolean }>;
+  ): Promise<BotToolResult>;
 }
 
 /** What an area of the API offers bots: one class per area, each a list of tools. */
@@ -133,14 +191,24 @@ export interface BotToolArea {
 export function defineBotTool<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
 ): BotToolDefinition {
+  if (spec.asks && spec.readOnly) {
+    throw new Error(`${spec.name} cannot both ask first and be read-only.`);
+  }
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
   const call = async (
     input: z.output<Input>,
     context: BotToolCallContext & { approvalId?: string },
     signal: AbortSignal,
-  ) => {
+  ): Promise<BotToolResult> => {
     try {
-      return { content: fitToolOutput(await spec.run(input, context, signal)), isError: false };
+      const answer = await spec.run(input, context, signal);
+      if (typeof answer === 'string') return { content: fitToolOutput(answer), isError: false };
+      return {
+        content: fitToolOutput(answer.content),
+        isError: false,
+        ...(answer.sessionId ? { sessionId: answer.sessionId } : {}),
+        ...(answer.subagents ? { subagents: answer.subagents } : {}),
+      };
     } catch (error) {
       return { content: describeToolFailure(error), isError: true };
     }
@@ -148,7 +216,9 @@ export function defineBotTool<Input extends z.ZodType>(
   return {
     name: spec.name,
     description: spec.description,
+    setupStep: spec.setupStep,
     scope: spec.scope,
+    readOnly: spec.readOnly === true,
     bind: (context) => {
       const tool: BotEngineTool = {
         name: spec.name,
@@ -159,7 +229,12 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          return call(parsed.data, context, signal);
+          const { sessionId, subagents, ...result } = await call(parsed.data, context, signal);
+          const data = {
+            ...(sessionId ? { sessionId } : {}),
+            ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
+          };
+          return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
       };
       return spec.asks && context.permission !== 'full' ? askingFirst(tool, spec, context) : tool;

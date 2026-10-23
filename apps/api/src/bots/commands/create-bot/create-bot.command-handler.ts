@@ -3,9 +3,10 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { BOT_DEFAULT_NAME, type BotPermission } from '@oppenheimer/shared';
+import type { BotPermission } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import { NewBotProviderResolver } from '../../application/new-bot-provider.resolver';
 import { BOT_GROUP_REPOSITORY, BOT_REPOSITORY } from '../../bots.di-tokens';
 import type { BotCreatorCheck, BotRepositoryPort } from '../../database/bot.repository.port';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
@@ -16,16 +17,15 @@ import {
   permissionForBotMadeBy,
 } from '../../domain/bot-creation.policy';
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
-import { avatarColorFor, uniqueBotName } from '../../domain/bot-naming.policy';
+import { avatarColorFor, nameForNewBot } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
 import { CreateBotCommand } from './create-bot.command';
 
 /**
- * A blank bot (`product/versions/mvp/25-bots.md` §2): "New Bot" unless named,
- * numbered when the workspace already has the name, on the next avatar colour,
- * last in its group. It is born with a `SOUL.md` that says its name and an
- * empty `INSTRUCTIONS.md`, both at revision 1, so its history starts with its
- * creation. A home host, when given, is one the caller may use.
+ * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`,
+ * on the next avatar colour, last in its group. It is born with a `SOUL.md`
+ * that says its name and an empty `INSTRUCTIONS.md`, both at revision 1, so
+ * its history starts with its creation. A home host, when given, is one the caller may use.
  *
  * The optional fields set what the form does not: the engine, the level,
  * both documents, a creating bot and an idempotency key (`create_bot`,
@@ -42,6 +42,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     private readonly groups: BotGroupRepositoryPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
+    private readonly providers: NewBotProviderResolver,
   ) {}
 
   async execute(command: CreateBotCommand): Promise<AggregateID> {
@@ -59,17 +60,16 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
     }
     const homeHostId = input.homeHostId ?? null;
     if (homeHostId) await this.hosts.assertUsable(scope, homeHostId);
-
     const taken = await this.bots.namesIn(scope);
     const bot = BotEntity.createNew({
       organizationId: scope.organizationId,
       createdByUserId: scope.userId,
-      name: uniqueBotName(input.name ?? BOT_DEFAULT_NAME, taken),
+      name: nameForNewBot(input.name, taken),
       description: input.description ?? '',
       avatarColor: input.avatarColor ?? avatarColorFor(taken.length),
       groupId,
       homeHostId,
-      provider: input.provider ?? 'anthropic',
+      provider: await this.providers.providerFor(scope, input.provider, command.model),
       model: command.model,
       effort: command.effort,
       permission: command.permission,

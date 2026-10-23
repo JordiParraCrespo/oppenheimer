@@ -1,6 +1,6 @@
 import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
 import type { BotEngineEvent } from '../bot-engine';
-import { failed } from '../turn';
+import { failed, type ToolCallData } from '../turn';
 import { botToolName } from './claude-tool-server';
 
 type ContentBlock = { type: string; [key: string]: unknown };
@@ -41,6 +41,9 @@ export class ClaudeEventTranslator {
   private lastError: string | undefined;
   private rateLimited = false;
   private resetAt: Date | null = null;
+
+  /** `made`: what our tools' calls made, recorded by the tool server as they ran. */
+  constructor(private readonly made: ToolCallData) {}
 
   translate(message: SDKMessage): BotEngineEvent[] {
     switch (message.type) {
@@ -202,12 +205,14 @@ export class ClaudeEventTranslator {
       const name = this.toolNames.get(block.tool_use_id);
       if (name === undefined) continue;
       this.toolNames.delete(block.tool_use_id);
+      const data = this.made.take(block.tool_use_id);
       events.push({
         type: 'tool.finished',
         callId: block.tool_use_id,
         name,
         output: resultText(block.content),
         isError: block.is_error === true,
+        ...(data ? { data } : {}),
       });
     }
     return events;

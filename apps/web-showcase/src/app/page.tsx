@@ -92,6 +92,7 @@ import {
   ScopeChips,
   RepositoryRowListDemo,
   DisclosureDemo,
+  SessionSelectionDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -1079,7 +1080,7 @@ export default function Page() {
         id="sidebar"
         title="Rail · Sidebar · SessionItem"
         meta="rail.tsx · sidebar.tsx · session-item.tsx"
-        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses. The rail's items and the sessions reorder by dragging, on one DragProvider for the shell: SortableRailItem in the rail's SortableGroup, and SortableSessionItem in a SortableGroup per project, so a session moves up or down in its project or into another one, the empty Client sites included. The projects reorder too: each is a SortableSidebarProjectGroup in a SortableGroup that takes projects, picked up by its header (a click still folds it, its actions never pick it up). Move to project… writes the same order. A click or Enter opens the item; a drag past 5px or Space picks it up. A search hides the rows it does not match and leaves the order whole. Drag Plan to the top, a session into Client sites, or Atlas above XRP Mobile."
+        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses. A row waiting on something says so in a status word that stays in the age's place: a session deleted while its host was offline reads Deleting… with the pulsing glyph, one its host refused to delete reads Not deleted in red. The rail's items and the sessions reorder by dragging, on one DragProvider for the shell: SortableRailItem in the rail's SortableGroup, and SortableSessionItem in a SortableGroup per project, so a session moves up or down in its project or into another one, the empty Client sites included. The projects reorder too: each is a SortableSidebarProjectGroup in a SortableGroup that takes projects, picked up by its header (a click still folds it, its actions never pick it up). Move to project… writes the same order. A click or Enter opens the item; a drag past 5px or Space picks it up. A search hides the rows it does not match and leaves the order whole. Drag Plan to the top, a session into Client sites, or Atlas above XRP Mobile."
         bare
       >
         <div className="flex flex-wrap gap-6">
@@ -1093,6 +1094,12 @@ export default function Page() {
             <SidebarDemo empty />
           </div>
         </div>
+        <p className="mt-6 mb-3 text-[13px] text-fg-muted">
+          Selecting: ⌘-, Ctrl- or Shift-click (or Select in a row&apos;s menu) picks rows to act on together. Every glyph turns into a box, a picked row is ticked on the active wash, and the list&apos;s head becomes the selection bar.
+        </p>
+        <ThemePair>
+          <SessionSelectionDemo />
+        </ThemePair>
       </Spec>
 
       <Spec
@@ -1329,7 +1336,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="milestones"
         title="MilestoneTimeline · MilestoneGlyph"
         meta="milestone-timeline.tsx"
-        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to ten days past its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
+        desc="Milestones on time, one row per project, scrolling sideways and opening on today. Months in uppercase at their first day with a hairline down the rows, week numbers in mono, today an inverted pill with a line through every row. Each project is its name and done share over a track from three weeks before its first milestone to the day of its last; each milestone a diamond at its due day, filled muted when done. Point at one and it fills in ink and shows the share done, the task count and the due day. MilestoneGlyph is the same diamond, 8px, for the sidebar row and the filter pill."
         code={`<MilestoneTimeline rows={rows} today={today} onOpenMilestone={edit} onOpenRow={openProject} />`}
       >
         <MilestoneTimelineDemo />

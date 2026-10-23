@@ -8,15 +8,17 @@ import {
 import { ChevronLeft, SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { usePullRequest } from '@oppenheimer/frontend-consumer/react';
+import { SidebarToggle } from '@oppenheimer/frontend-web';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
 
 /**
- * The bar over a pull request, its one header: back to the queue and its
- * three views, GitHub, and Submit review. The views stay the same on every
- * view; Changes adds the diff's layout beside them. Submit review is the screen's, which holds the
+ * The bar over a pull request, its one header and the page's bar (the
+ * route's `bar: 'own'`): the sidebar toggle, back to the queue and its three views, GitHub,
+ * and Submit review. The views stay the same on every view; Changes adds
+ * the diff's layout beside them. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
  */
 export function PullRequestToolbar({
@@ -41,6 +43,7 @@ export function PullRequestToolbar({
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
+      <SidebarToggle />
       <IconButton
         size="sm"
         aria-label={t('pullRequests.detail.back')}
@@ -65,6 +68,7 @@ export function PullRequestToolbar({
       </SegmentedControl>
       {view === 'changes' ? (
         <SegmentedControl
+          size="md"
           value={layout}
           onValueChange={(next) => onLayoutChange(next as DiffLayout)}
           aria-label={t('pullRequests.changes.layout')}

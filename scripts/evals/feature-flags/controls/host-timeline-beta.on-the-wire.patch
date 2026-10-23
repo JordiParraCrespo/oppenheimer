@@ -1,0 +1,13 @@
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index cd567e66..dcbc4152 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -158,7 +158,7 @@ export const FEATURE_FLAGS = {
+     owner: 'platform',
+     type: 'boolean',
+     defaultValue: true,
+-    client: false,
++    client: true,
+     expiresAt: '2027-03-31',
+   },
+ } as const satisfies Record<string, FlagDefinition>;

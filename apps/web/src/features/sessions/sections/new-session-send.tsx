@@ -1,8 +1,10 @@
 import {
   useCreateSession,
   useHosts,
+  useHostsSnapshot,
   useProjectsSnapshot,
   useUploadSessionAttachment,
+  useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -13,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { dictationVocabulary } from '../lib/dictation-vocabulary';
 import { hasPlace, toCreateInput } from '../lib/session-options';
 
 /**
@@ -58,6 +61,8 @@ export function NewSessionSend({
   // Needed only to send a remembered project the workspace no longer has as
   // none.
   const projects = useProjectsSnapshot();
+  const hosts = useHostsSnapshot();
+  const voice = useVoiceDictation(() => dictationVocabulary(projects(), hosts()));
 
   /**
    * The key that makes a second press of send safe, and the request it was
@@ -122,6 +127,7 @@ export function NewSessionSend({
         scope={scope}
         tools={tools}
         engine={engine}
+        voice={voice}
       />
 
       <ErrorAlert error={lastFailure([upload, create]).error} fallback={t('sessions.new.failed')} />

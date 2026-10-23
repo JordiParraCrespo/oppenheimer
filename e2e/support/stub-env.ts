@@ -68,6 +68,11 @@ const lines = [
   'LLM_MODEL=a-stub-model',
   `LLM_BASE_URL=${NAMER_STUB}/v1`,
   '',
+  "# The deployment's speech-to-text server, for dictation: the same stub, which",
+  '# hears one fixed sentence in every clip (`STUB_TRANSCRIPT`).',
+  `VOICE_STT_BASE_URL=${NAMER_STUB}/v1`,
+  'VOICE_STT_MODEL=a-stub-transcriber',
+  '',
 ].join('\n');
 
 process.stdout.write(lines);

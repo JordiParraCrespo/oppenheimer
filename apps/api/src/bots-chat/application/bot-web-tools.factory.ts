@@ -24,6 +24,7 @@ export class BotWebToolsFactory implements BotToolArea {
     return [
       defineBotTool({
         name: 'web_fetch',
+        readOnly: true,
         scope: 'bots:write',
         description: `Reads a public web page (http or https) and returns its text. Use it after web search to read a result, or on a link the person gave. At most ${WEB_FETCHES_PER_TURN} pages per turn; addresses on private networks or the machine itself are refused. A 403 or 404 is the site's answer, not proof the page does not exist.`,
         input: z.object({ url: z.url().max(2_000).describe('The full URL, with https://.') }),

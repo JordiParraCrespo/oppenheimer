@@ -74,6 +74,10 @@ type Tool struct {
 	Path     string `json:"path,omitempty"`
 	Version  string `json:"version,omitempty"`
 	Required bool   `json:"required"`
+	// Resolved is Path with every symlink followed: where the executable
+	// really lives, which is how an updater that needs the install method is
+	// told it. Not on the wire.
+	Resolved string `json:"-"`
 }
 
 // Found reports whether the tool is on PATH.
@@ -95,10 +99,13 @@ const (
 	ToolCodex    = "codex"
 	ToolOpenCode = "opencode"
 	ToolGrok     = "grok"
+	// ToolGH is GitHub's CLI: not an agent and not required, reported so the
+	// console can show which hosts can open a pull request from a session.
+	ToolGH = "gh"
 )
 
 // ProbedTools are the tools every inventory reports, required or not.
-var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode, ToolGrok}
+var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode, ToolGrok, ToolGH}
 
 // RequiredTools are the ones whose absence stops sessions.
 var RequiredTools = []string{ToolGit, ToolTmux}

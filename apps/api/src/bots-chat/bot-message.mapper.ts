@@ -1,11 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { BOT_EVENT_OUTCOMES, type BotMessageEvent, type BotMessageRole } from '@oppenheimer/shared';
+import {
+  BOT_EVENT_OUTCOMES,
+  BOT_IMAGE_MIME_TYPES,
+  BOT_REPLY_OUTCOMES,
+  BOT_ROUTINE_ACTIVITIES,
+  BOT_SUBAGENT_STATUSES,
+  type BotAttachment,
+  type BotMessageEvent,
+  type BotMessageRole,
+  type BotSubagentRun,
+} from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
-import { BotMessageResponseDto } from './dtos/bot-message.response.dto';
+import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
+import {
+  BotApprovalEventResponseDto,
+  type BotMessageEventResponseDto,
+  BotMessageResponseDto,
+  BotPeerMessageEventResponseDto,
+  BotPeerReplyEventResponseDto,
+  BotRoutineEventResponseDto,
+} from './dtos/bot-message.response.dto';
 
 @Injectable()
 export class BotMessageMapper
@@ -25,9 +43,12 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
+    record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     return record;
   }
 
@@ -45,6 +66,7 @@ export class BotMessageMapper
         steps: (record.steps ?? []).map(toStep),
         position: record.position,
         event: toEvent(record.event),
+        attachments: (record.attachments ?? []).flatMap(toAttachment),
       },
     });
   }
@@ -61,13 +83,21 @@ export class BotMessageMapper
       input: step.input,
       output: step.output,
       isError: step.isError,
+      sessionId: step.sessionId,
+      subagents: step.subagents,
     }));
-    dto.event = entity.event ? { ...entity.event } : null;
+    dto.event = entity.event ? toEventResponse(entity.event) : null;
+    dto.attachments = entity.attachments.map((attachment) =>
+      Object.assign(new BotAttachmentResponseDto(), attachment),
+    );
     dto.createdAt = entity.createdAt.toISOString();
     return dto;
   }
 
-  /** A stored message as the summary weighs it, with whether its turn (in `turnStatus`) has ended. */
+  /**
+   * A stored message as the summary weighs it, with whether its turn (in
+   * `turnStatus`) has ended; a line outside any turn has none to wait for.
+   */
   toSummarizable(record: BotMessageOrmEntity, turnStatus: unknown): SummarizableMessage {
     const message = this.toDomain(record);
     return {
@@ -75,7 +105,8 @@ export class BotMessageMapper
       role: message.role,
       content: message.content,
       createdAt: message.createdAt,
-      turnEnded: ENDED_TURN_STATUSES.some((status) => status === turnStatus),
+      turnEnded:
+        message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
   }
 }
@@ -88,18 +119,124 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     input: raw.input ?? null,
     output: typeof raw.output === 'string' ? raw.output : null,
     isError: raw.isError === true,
+    sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    subagents: toSubagentRuns(raw.subagents),
   };
+}
+
+/**
+ * The runs a `delegate` step holds, narrowed once: from the step's stored
+ * column, or from the JSON its call's data carried (a tool's data is
+ * strings only). Anything else reads as none, and a run it cannot read is
+ * dropped.
+ */
+export function toSubagentRuns(raw: unknown): BotSubagentRun[] | null {
+  let parsed: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed)) return null;
+  return parsed.flatMap((item): BotSubagentRun[] => {
+    if (!item || typeof item !== 'object') return [];
+    const row = item as Record<string, unknown>;
+    const status = BOT_SUBAGENT_STATUSES.find((known) => known === row.status);
+    if (!status || typeof row.task !== 'string') return [];
+    return [
+      {
+        task: row.task,
+        status,
+        result: typeof row.result === 'string' ? row.result : '',
+        toolCalls: Array.isArray(row.toolCalls)
+          ? row.toolCalls.filter((name): name is string => typeof name === 'string')
+          : [],
+        inputTokens: count(row.inputTokens),
+        outputTokens: count(row.outputTokens),
+        durationMs: count(row.durationMs),
+      },
+    ];
+  });
+}
+
+/** A stored count: a whole, non-negative number, else zero. */
+function count(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+}
+
+/** A stored attachment, narrowed once; one the mapper did not write is dropped. */
+function toAttachment(raw: Record<string, unknown>): BotAttachment[] {
+  const mimeType = BOT_IMAGE_MIME_TYPES.find((known) => known === raw.mimeType);
+  if (!mimeType || typeof raw.id !== 'string') return [];
+  return [
+    {
+      id: raw.id,
+      mimeType,
+      sizeBytes: typeof raw.sizeBytes === 'number' ? raw.sizeBytes : 0,
+      name: typeof raw.name === 'string' ? raw.name : '',
+    },
+  ];
+}
+
+/** An event as the response carries it: the kind it is, with that kind's fields only. */
+function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
+  switch (event.kind) {
+    case 'approval':
+      return Object.assign(new BotApprovalEventResponseDto(), event);
+    case 'routine':
+      return Object.assign(new BotRoutineEventResponseDto(), event);
+    case 'bot_message':
+      return Object.assign(new BotPeerMessageEventResponseDto(), event);
+    case 'bot_reply':
+      return Object.assign(new BotPeerReplyEventResponseDto(), event);
+  }
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
-  if (raw?.kind !== 'approval') return null;
-  const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
-  if (!outcome) return null;
-  return {
-    kind: 'approval',
-    outcome,
-    tool: String(raw.tool ?? ''),
-    summary: String(raw.summary ?? ''),
-  };
+  if (!raw) return null;
+  if (raw.kind === 'approval') {
+    const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'approval',
+      outcome,
+      tool: String(raw.tool ?? ''),
+      summary: String(raw.summary ?? ''),
+      sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    };
+  }
+  if (raw.kind === 'routine') {
+    const activity = BOT_ROUTINE_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.automationId !== 'string') return null;
+    return {
+      kind: 'routine',
+      activity,
+      automationId: raw.automationId,
+      runId: typeof raw.runId === 'string' ? raw.runId : null,
+      name: String(raw.name ?? ''),
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'bot_message') {
+    return {
+      kind: 'bot_message',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      expectsReply: raw.expectsReply === true,
+    };
+  }
+  if (raw.kind === 'bot_reply') {
+    const outcome = BOT_REPLY_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'bot_reply',
+      fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
+      fromBotName: String(raw.fromBotName ?? ''),
+      outcome,
+    };
+  }
+  return null;
 }

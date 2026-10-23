@@ -19,7 +19,8 @@ kill switch is a data change, not a deploy.
 | The evaluator (pure, shared) | `packages/shared/src/feature-flags/evaluate.ts` |
 | Targeting, segments, audit trail, `@RequireFlag` | `apps/api/src/feature-flags/` |
 | Client reads (`useFeatureFlag`) | `packages/frontend/core/src/react/feature-flags.queries.ts` |
-| Hygiene check (expired / unread flags) | `pnpm check:flags` (CI) |
+| Hygiene check (expired / unread / default-off flags) | `pnpm check:flags` (CI) |
+| Whether an agent launches a flag on | `scripts/evals/feature-flags/` (not CI) |
 
 ## Adding a flag
 
@@ -28,9 +29,14 @@ kill switch is a data change, not a deploy.
    - `experiment` — splits traffic between variants. **Needs `expiresAt`**;
      reading it records an exposure.
    - `ops` — a kill switch or knob. Permanent.
-2. `defaultValue` is the **safe** answer — what everyone gets before targeting
-   is saved and whenever the flag service cannot answer. New feature: `false`.
-   Kill switch over something already live: `true`.
+2. **`defaultValue: true`, for every boolean flag.** A feature launches on,
+   for everyone: the default is what everyone gets before targeting is saved
+   and whenever the flag service cannot answer, and the console has no flags
+   screen to switch a flag on from. The flag is how the feature is turned
+   *off* or narrowed — a toggle or targeting through the API. That holds for
+   a `release` flag hiding new work as much as for an `ops` kill switch.
+   `pnpm check:flags` fails a boolean flag that defaults to `false`. A
+   variant flag defaults to the variant everyone should see.
 3. `client: false` unless a client renders something differently for it.
 4. Read it. `pnpm check:flags` fails on a flag nothing reads.
 
@@ -71,8 +77,8 @@ client reports, so gate on flags that target identity.
 ## Semantics that are easy to get wrong
 
 - **Off means off.** A disabled flag serves `false` (or the default variant),
-  whatever its `defaultValue` — that is what lets a kill switch whose default
-  is `true` go dark. The default is for "not configured" and "unreachable".
+  whatever its `defaultValue` — that is what lets a flag whose default is
+  `true` go dark. The default is for "not configured" and "unreachable".
 - **Rollouts bucket by organization**, falling back to the user
   (`bucketBy: 'user'` to change it), so a workspace sees one product. The hash
   is MurmurHash3 over `key.salt.unit` — stable across replicas and languages.

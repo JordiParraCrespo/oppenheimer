@@ -1,8 +1,26 @@
 import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
-import { BOT_PERMISSIONS, type BotPermission } from '@oppenheimer/shared';
+import {
+  BOT_PERMISSIONS,
+  BOT_PROVIDER_PREFERENCE,
+  type BotPermission,
+  type BotProvider,
+  preferredKeyedProvider,
+} from '@oppenheimer/shared';
 
 /** The level a bot made in the console starts at: Approve for me. */
 export const BOT_DEFAULT_PERMISSION: BotPermission = 'auto';
+
+/** The provider a bot made with none named starts on when no provider has a key: Anthropic. */
+const BOT_DEFAULT_PROVIDER: BotProvider = BOT_PROVIDER_PREFERENCE[0];
+
+/**
+ * The provider a bot made with none named starts on: the first, in
+ * `BOT_PROVIDER_PREFERENCE`, that has a key, else the head of that order,
+ * so a new bot never sits on a provider with no key while another has one.
+ */
+export function providerForNewBot(keyed: readonly BotProvider[]): BotProvider {
+  return preferredKeyedProvider(keyed) ?? BOT_DEFAULT_PROVIDER;
+}
 
 /**
  * How loose a level is: its place in `BOT_PERMISSIONS`, which lists them

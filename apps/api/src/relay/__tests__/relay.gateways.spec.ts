@@ -171,7 +171,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
 
   const registry = new InProcessLinkRegistry(() => 0);
   const reconciliation: SessionReconciliationPort = {
-    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
+    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [], reclosed: [] }),
   };
   const scopes: ScopeResolverPort = {
     resolve: vi.fn(async ({ userId, organizationId }) => ({
@@ -1479,6 +1479,54 @@ describe('browser attach socket', () => {
       const second = nextMessage(invited.browser);
       invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await second).text).toMatchObject({ type: 'direct.unavailable' });
+    });
+  });
+
+  describe('the chat view (0.7)', () => {
+    async function attached() {
+      const runner = await runnerUp(h, { capabilities: ['attachment.chat'] });
+      sockets.push(runner);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+      sockets.push(browser);
+      await opened(browser);
+      const attach = nextMessage(runner);
+      const told = nextMessage(browser);
+      browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+      await attach;
+      await told;
+      return { runner, browser };
+    }
+
+    const entry = '{"type":"user","message":{"role":"user","content":"fix it"}}';
+
+    it("relays a runner's transcript entries as they came to a person the flag is on for", async () => {
+      vi.mocked(h.flags.isEnabled).mockImplementation((key) => key === 'session_chat_view');
+      const { runner, browser } = await attached();
+
+      const chat = nextMessage(browser);
+      runner.send(
+        JSON.stringify({ type: 'attachment.chat', attachmentId: 1, reset: true, entries: [entry] }),
+      );
+      expect((await chat).text).toEqual({ type: 'chat', reset: true, entries: [entry] });
+
+      // An attachment that is not open has nobody to read it.
+      const next = nextMessage(browser);
+      runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 9, entries: [entry] }));
+      runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 1, entries: [] }));
+      expect((await next).text).toEqual({ type: 'chat', entries: [] });
+    });
+
+    it('drops them for a person the flag is off for', async () => {
+      const { runner, browser } = await attached();
+      const next = nextMessage(browser);
+      runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 1, entries: [entry] }));
+      // The next thing this browser hears is the runner closing the attachment, not the chat.
+      runner.send(JSON.stringify({ type: 'attachment.closed', attachmentId: 1 }));
+      const heard = await Promise.race([
+        next.then((message) => message.text),
+        new Promise((resolve) => setTimeout(() => resolve('nothing'), 300)),
+      ]);
+      expect(heard).not.toMatchObject({ type: 'chat' });
     });
   });
 

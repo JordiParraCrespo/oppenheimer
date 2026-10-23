@@ -1,6 +1,6 @@
 'use client';
 
-import { PencilIcon, XIcon } from 'lucide-react';
+import { PencilIcon, PlayIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -11,6 +11,8 @@ type RoutineCardLabels = {
   active: string;
   pause: string;
   resume: string;
+  run: string;
+  running: string;
   edit: string;
   delete: string;
   last: string;
@@ -21,6 +23,8 @@ const DEFAULT_LABELS: RoutineCardLabels = {
   active: 'Active',
   pause: 'Pause',
   resume: 'Resume',
+  run: 'Run now',
+  running: 'Running…',
   edit: 'Edit routine',
   delete: 'Delete routine',
   last: 'Last',
@@ -34,7 +38,8 @@ const DEFAULT_LABELS: RoutineCardLabels = {
  * read in full.
  *
  * Read: the name at 14.5px, the `Switch` (Pause / Resume as its title) and
- * the edit and delete buttons on the right; the trigger as a 12px glyph and
+ * the run, edit and delete buttons on the right (run is held while
+ * `running`, its label saying so); the trigger as a 12px glyph and
  * "Schedule · Weekdays at 09:00"; what it is told to do in muted ink; when
  * it last and next ran in mono. A paused card fades to 60%.
  *
@@ -51,6 +56,8 @@ function RoutineCard({
   next,
   active,
   onActiveChange,
+  onRun,
+  running = false,
   onEdit,
   onDelete,
   labels,
@@ -68,6 +75,10 @@ function RoutineCard({
   next?: React.ReactNode;
   active: boolean;
   onActiveChange?: (active: boolean) => void;
+  /** Run it once now, paused or not. */
+  onRun?: () => void;
+  /** A run is going: Run now waits for it. */
+  running?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   labels?: Partial<RoutineCardLabels>;
@@ -99,6 +110,17 @@ function RoutineCard({
                 aria-label={label.active}
                 title={active ? label.pause : label.resume}
               />
+            ) : null}
+            {onRun ? (
+              <IconButton
+                size="sm"
+                aria-label={running ? label.running : label.run}
+                title={running ? label.running : label.run}
+                disabled={running}
+                onClick={onRun}
+              >
+                <PlayIcon />
+              </IconButton>
             ) : null}
             {onEdit ? (
               <IconButton size="sm" aria-label={label.edit} onClick={onEdit}>

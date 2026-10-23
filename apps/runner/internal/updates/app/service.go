@@ -90,6 +90,10 @@ type ApplyOptions struct {
 	// respect a pin. It is what the console's Update now button and the CLI
 	// `--force` mean; it never skips a signature or a digest.
 	Force bool
+	// KeepPin narrows Force to the safe window: a pinned host still refuses.
+	// It is what a console request that names no version means — "the newest
+	// now", not "past the pin someone set on this host".
+	KeepPin bool
 }
 
 // Apply performs the update: stage, verify, self-check, promote, activate,
@@ -113,7 +117,7 @@ func (s *Service) Apply(ctx context.Context, opts ApplyOptions) (domain.Plan, er
 	case domain.ActionNone:
 		return plan, nil
 	case domain.ActionBlocked:
-		if !opts.Force {
+		if !opts.Force || opts.KeepPin {
 			return plan, domain.ErrBlocked.WithDetail("%s", plan.Reason)
 		}
 	case domain.ActionUpdate:

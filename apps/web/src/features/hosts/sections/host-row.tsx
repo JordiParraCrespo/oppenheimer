@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HostActionsMenu } from '../components/host-actions-menu';
 import { RemoveHostDialog } from '../dialogs/remove-host';
+import { UpdateRunnerDialog } from '../dialogs/update-runner';
 import { RenameHostForm } from '../forms/rename-host';
 import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
 
@@ -20,7 +21,10 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
  * the host's home with the blank terminal, started on arrival
  * (`product/versions/mvp/24-session-places.md` §3).
  *
- * The row owns what its menu opens — the inline rename and the remove dialog —
+ * Update runner asks first, in its own dialog; the row's runner version moves
+ * once the runner reconnects on the new release, through the presence poll.
+ *
+ * The row owns what its menu opens — the inline rename and the two dialogs —
  * because the menu's content unmounts when it closes, and nothing above a row
  * reads either.
  */
@@ -28,6 +32,7 @@ export function HostRow({ host }: { host: HostEntity }) {
   const { t } = useTranslation();
   const [renaming, setRenaming] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const resolveError = useErrorMessage();
   const rename = useRenameHost({
     onSuccess: (renamed) => {
@@ -118,12 +123,15 @@ export function HostRow({ host }: { host: HostEntity }) {
             ) : null}
             <HostActionsMenu
               name={host.name}
+              online={host.online}
               onRename={() => setRenaming(true)}
+              onUpdate={() => setUpdating(true)}
               onRemove={() => setRemoving(true)}
             />
           </span>
         }
       />
+      {updating ? <UpdateRunnerDialog host={host} onClose={() => setUpdating(false)} /> : null}
       {removing ? <RemoveHostDialog host={host} onClose={() => setRemoving(false)} /> : null}
     </>
   );

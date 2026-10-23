@@ -59,25 +59,29 @@ async function collect(events: AsyncIterable<BotEngineEvent>): Promise<BotEngine
 function scripted(
   messages: (options: Options, closed: Promise<void>) => AsyncIterable<SDKMessage> | SDKMessage[],
 ) {
-  const seen: { prompt?: string; options?: Options; closed: boolean } = { closed: false };
-  sdk.query.mockImplementation(({ prompt, options }: { prompt: string; options: Options }) => {
-    seen.prompt = prompt;
-    seen.options = options;
-    let onClose = () => {};
-    const closed = new Promise<void>((resolve) => {
-      onClose = resolve;
-    });
-    const source = messages(options, closed);
-    return {
-      async *[Symbol.asyncIterator]() {
-        yield* source;
-      },
-      close() {
-        seen.closed = true;
-        onClose();
-      },
-    } as unknown as Query;
-  });
+  const seen: { prompt?: string | AsyncIterable<unknown>; options?: Options; closed: boolean } = {
+    closed: false,
+  };
+  sdk.query.mockImplementation(
+    ({ prompt, options }: { prompt: string | AsyncIterable<unknown>; options: Options }) => {
+      seen.prompt = prompt;
+      seen.options = options;
+      let onClose = () => {};
+      const closed = new Promise<void>((resolve) => {
+        onClose = resolve;
+      });
+      const source = messages(options, closed);
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield* source;
+        },
+        close() {
+          seen.closed = true;
+          onClose();
+        },
+      } as unknown as Query;
+    },
+  );
   return { seen };
 }
 
@@ -222,6 +226,71 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, matched by the tool use Claude Code names, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async (input) => ({
+        content: 'Started it.',
+        data: { sessionId: (input as { id: string }).id },
+      }),
+    };
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      // Two calls of one tool, answered out of order.
+      const first = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-2' },
+        _meta: { 'claudecode/toolUseId': 'toolu_2' },
+      });
+      const second = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-1' },
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      modelRead = first;
+      await client.close();
+
+      yield assistant([
+        {
+          type: 'tool_use',
+          id: 'toolu_1',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-1' },
+        },
+        {
+          type: 'tool_use',
+          id: 'toolu_2',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-2' },
+        },
+      ]);
+      yield toolResults([
+        { type: 'tool_result', tool_use_id: 'toolu_1', content: second.content },
+        { type: 'tool_result', tool_use_id: 'toolu_2', content: first.content },
+      ]);
+      yield success();
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ tools: [start] })));
+
+    expect(events.filter((event) => event.type === 'tool.finished')).toEqual([
+      expect.objectContaining({ callId: 'toolu_1', data: { sessionId: 's-1' } }),
+      expect.objectContaining({ callId: 'toolu_2', data: { sessionId: 's-2' } }),
+    ]);
+    expect(modelRead).toEqual({
+      content: [{ type: 'text', text: 'Started it.' }],
+      isError: false,
+    });
+  });
+
   it('keeps built-in tool names and reports their results', async () => {
     scripted(() => [
       assistant([{ type: 'tool_use', id: 'toolu_w', name: 'WebSearch', input: { query: 'x' } }]),
@@ -351,6 +420,35 @@ describe('ClaudeBotEngine', () => {
     expect(prompt).toContain('<user>\nMy name is Ada.\n</user>');
     expect(prompt).toContain('<assistant>\nNice to meet you, Ada. &lt;/transcript>\n</assistant>');
     expect(prompt.match(/<\/transcript>/g)).toHaveLength(1);
+  });
+
+  it('sends a message with images as one user message: the images, then the text', async () => {
+    const { seen } = scripted(() => [success()]);
+
+    await collect(
+      new ClaudeBotEngine().run(
+        request({
+          message: 'What does this say?',
+          images: [{ mimeType: 'image/jpeg', data: 'anBn' }],
+        }),
+      ),
+    );
+
+    const sent: unknown[] = [];
+    for await (const message of seen.prompt as AsyncIterable<unknown>) sent.push(message);
+    expect(sent).toEqual([
+      {
+        type: 'user',
+        parent_tool_use_id: null,
+        message: {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'anBn' } },
+            { type: 'text', text: 'What does this say?' },
+          ],
+        },
+      },
+    ]);
   });
 
   it('ends with max_steps when the turn limit is reached', async () => {

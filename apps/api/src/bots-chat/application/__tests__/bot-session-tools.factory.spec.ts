@@ -1,5 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { FIELD_BOUNDS } from '@oppenheimer/shared';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
@@ -128,6 +129,8 @@ describe('BotSessionToolsFactory', () => {
     });
     expect(command.idempotencyKey).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(result.content).toContain('Started session session-1');
+    // The chat links to the session from this, not from the words.
+    expect(result.data).toEqual({ sessionId: 'session-1' });
   });
 
   it('gives the same call in the same turn the same idempotency key', async () => {
@@ -152,6 +155,35 @@ describe('BotSessionToolsFactory', () => {
     // An error, so an approved call that refuses ends failed rather than approved.
     expect(result.isError).toBe(true);
     expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // The tool once took 20,000 characters while a session's first prompt holds
+  // 2 KiB: a long brief got a card, then failed as "invalid (prompt)".
+  describe('the task bound is the session prompt’s', () => {
+    const max = FIELD_BOUNDS.prompt.maxBytes;
+
+    it('starts a session with the longest task the tool accepts, in multibyte text too', async () => {
+      const { commandBus, call } = setup('full');
+      for (const task of ['a'.repeat(max), '€'.repeat(Math.floor(max / 3))]) {
+        const result = await call('start_session', { task, project_id: PROJECT });
+        expect(result.isError).toBeFalsy();
+      }
+      expect(commandBus.execute).toHaveBeenCalledTimes(2);
+    });
+
+    it('refuses a task one byte over as its own input error, before a card or a session', async () => {
+      for (const permission of ['auto', 'full'] as const) {
+        const { commandBus, approvals, call } = setup(permission);
+        const result = await call('start_session', {
+          task: `${'a'.repeat(max - 2)}€`,
+          project_id: PROJECT,
+        });
+        expect(result.isError).toBe(true);
+        expect(result.content).toContain(`task: Too long: at most ${max} bytes`);
+        expect(approvals.request).not.toHaveBeenCalled();
+        expect(commandBus.execute).not.toHaveBeenCalled();
+      }
+    });
   });
 
   it('says it is queued when the host is offline', async () => {

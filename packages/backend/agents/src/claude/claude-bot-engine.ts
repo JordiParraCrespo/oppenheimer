@@ -1,12 +1,40 @@
 import { mkdir } from 'node:fs/promises';
-import type { Query } from '@anthropic-ai/claude-agent-sdk';
+import type { Query, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { BotEngine, type BotEngineEvent, type BotTurnRequest } from '../bot-engine';
-import { describeError, guardTurn } from '../turn';
+import { describeError, guardTurn, messageParts, ToolCallData } from '../turn';
 import { ClaudeEventTranslator } from './claude-events';
 import { claudeOptions, scratchDirs } from './claude-options';
 import { createToolServer } from './claude-tool-server';
 
 const STDERR_TAIL = 2_000;
+
+/**
+ * The turn's message as Claude Code takes it: the text alone, or, with
+ * images, one user message of its parts (`messageParts`) as content blocks.
+ * The stream ends after it; the SDK keeps the subprocess's input open until
+ * the turn's result, for our tool server.
+ */
+function claudePrompt(request: BotTurnRequest): string | AsyncIterable<SDKUserMessage> {
+  if (!request.images?.length) return request.message;
+  const message: SDKUserMessage = {
+    type: 'user',
+    parent_tool_use_id: null,
+    message: {
+      role: 'user',
+      content: messageParts(request).map((part) =>
+        part.type === 'image'
+          ? {
+              type: 'image' as const,
+              source: { type: 'base64' as const, media_type: part.mimeType, data: part.data },
+            }
+          : { type: 'text' as const, text: part.text },
+      ),
+    },
+  };
+  return (async function* () {
+    yield message;
+  })();
+}
 
 /**
  * Providers `anthropic` and `glm`, on the Claude Agent SDK: Claude Code as
@@ -43,13 +71,14 @@ export class ClaudeBotEngine extends BotEngine {
     const onStderr = (data: string) => {
       stderr = (stderr + data).slice(-STDERR_TAIL);
     };
-    const translator = new ClaudeEventTranslator();
-    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey });
+    const made = new ToolCallData();
+    const translator = new ClaudeEventTranslator(made);
+    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey }, made);
     try {
       // Loaded on the first turn, so importing the package starts nothing.
       const { query } = await import('@anthropic-ai/claude-agent-sdk');
       run = query({
-        prompt: request.message,
+        prompt: claudePrompt(request),
         options: claudeOptions(request, dirs, toolServer, onStderr),
       });
       if (signal.aborted) close();

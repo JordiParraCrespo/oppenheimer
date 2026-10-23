@@ -843,7 +843,6 @@
       "required": [
         "type",
         "commandId",
-        "version",
         "channel"
       ]
     },
@@ -1164,6 +1163,35 @@
         "attachmentId",
         "offset"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.chat"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "reset": {
+          "type": "boolean"
+        },
+        "entries": {
+          "maxItems": 256,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          }
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "entries"
+      ]
     }
   ],
   "$defs": {
@@ -1476,6 +1504,9 @@
       "UNPAIRED": 4410,
       "PROTOCOL_MISMATCH": 4426
     },
+    "closeReasons": {
+      "WIPE": "host-unpaired-wipe"
+    },
     "refusalHeader": "X-Oppenheimer-Refusal",
     "refusals": {
       "UNPAIRED": "host-unpaired"
@@ -1490,8 +1521,11 @@
       "repository.prepare",
       "attachment.direct",
       "session.folder",
-      "fs.list"
+      "fs.list",
+      "attachment.chat"
     ],
-    "maxEventPayloadBytes": 8192
+    "maxEventPayloadBytes": 8192,
+    "chatEntryMaxBytes": 65536,
+    "chatBatchMaxEntries": 256
   }
 }

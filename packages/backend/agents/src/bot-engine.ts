@@ -7,6 +7,19 @@ export type BotProvider = 'anthropic' | 'glm' | 'openai' | 'chatgpt';
 /** How hard the model thinks. Each engine maps it to what its SDK takes. */
 export type BotEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
+/**
+ * What a call made, as data beside its words (the session it started): the
+ * model never reads it, and `tool.finished` hands it back to the caller.
+ */
+export type BotToolData = Readonly<Record<string, string>>;
+
+/** What one of our tools answers: the words the model reads, and what it made. */
+export interface BotEngineToolResult {
+  content: string;
+  isError?: boolean;
+  data?: BotToolData;
+}
+
 /** One tool the model may call during a turn, described by JSON Schema. */
 export interface BotEngineTool {
   /** snake_case; the name the model sees and every event carries. */
@@ -15,10 +28,15 @@ export interface BotEngineTool {
   /** JSON Schema of an object: the tool's input. */
   inputSchema: Record<string, unknown>;
   /** A throw is reported to the model as an error result; it never ends the turn. */
-  run(
-    input: unknown,
-    context: { signal: AbortSignal },
-  ): Promise<{ content: string; isError?: boolean }>;
+  run(input: unknown, context: { signal: AbortSignal }): Promise<BotEngineToolResult>;
+}
+
+/** An image the turn's message carries, as the person sent it. */
+export interface BotTurnImage {
+  /** The formats every engine here reads. */
+  mimeType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+  /** The bytes, base64-encoded. */
+  data: string;
 }
 
 export interface BotTurnRequest {
@@ -40,6 +58,11 @@ export interface BotTurnRequest {
   history: { role: 'user' | 'assistant'; text: string }[];
   /** This turn's user message. */
   message: string;
+  /**
+   * Images sent with `message`, in the order they were attached; none when
+   * absent. The caller sends them only to a provider whose models read them.
+   */
+  images?: readonly BotTurnImage[];
   tools: BotEngineTool[];
   /**
    * Whether the engine offers its own tools (the Claude engine's web search
@@ -57,7 +80,15 @@ export type BotEngineEvent =
   | { type: 'text.delta'; text: string }
   | { type: 'text.done'; text: string }
   | { type: 'tool.started'; callId: string; name: string; input: unknown }
-  | { type: 'tool.finished'; callId: string; name: string; output: string; isError: boolean }
+  | {
+      type: 'tool.finished';
+      callId: string;
+      name: string;
+      output: string;
+      isError: boolean;
+      /** What one of our tools said the call made; absent for the engine's own tools. */
+      data?: BotToolData;
+    }
   | { type: 'usage'; inputTokens: number; outputTokens: number }
   | {
       type: 'done';

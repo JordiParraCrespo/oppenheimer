@@ -140,7 +140,7 @@ refetch keeps the last good answer. The one exposure event analytics still
 records is `feature_flag_exposed`, sent once per variant per session when an
 `experiment` flag is read, so a result can be attributed to the arm people saw.
 
-The whole system — kinds, safe defaults, `@RequireFlag`, targeting and the
+The whole system — kinds, defaults (every boolean flag on), `@RequireFlag`, targeting and the
 audit trail — is described in `.agents/rules/feature-flags.md`.
 
 ## Failure behavior

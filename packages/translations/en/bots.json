@@ -8,7 +8,7 @@
     "noMatch": "No bots match “{{query}}”.",
     "ungrouped": "Ungrouped",
     "emptyTitle": "No bots yet",
-    "emptyBody": "Bots you create appear here. Make one, tell it the job, and shape it in its settings.",
+    "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
     "emptyGroup": "No bots in this group yet.",
     "noMessages": "No messages yet",
     "newGroup": "New group",
@@ -28,8 +28,7 @@
   },
   "landing": {
     "titleEmpty": "Make your first bot.",
-    "title": "Pick a bot, or make a new one.",
-    "note": "A new bot starts blank. Tell it the job, and shape it in its settings."
+    "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
   },
   "chat": {
     "toggleSidebar": "Toggle sidebar",
@@ -57,6 +56,21 @@
     "switchedModel": "Switched to <model>{{model}}</model>",
     "tokens_one": "{{tokens}} token",
     "tokens_other": "{{tokens}} tokens",
+    "images": {
+      "attach": "Add images",
+      "remove": "Remove {{name}}",
+      "open": "Open {{name}}",
+      "pasted": "Pasted image",
+      "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+      "tooLarge": "{{name}} is larger than 5 MB.",
+      "tooMany": "A message can carry up to {{max}} images.",
+      "noVision": "{{model}} can't read images. Switch the bot's model to send them.",
+      "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
+      "uploading": "Wait for the images to finish adding.",
+      "failedHeld": "Remove the image that couldn't be added.",
+      "uploadFailed": "{{name}} couldn't be added.",
+      "unavailable": "This image couldn't be loaded."
+    },
     "turn": {
       "queued": "Waiting",
       "thinking": "Thinking",
@@ -77,7 +91,25 @@
       "rawOutput": "Show raw output",
       "moreLines_one": "Show {{count}} more line",
       "moreLines_other": "Show {{count}} more lines",
-      "lessOutput": "Show less"
+      "lessOutput": "Show less",
+      "group_one": "Used {{count}} tool",
+      "group_other": "Used {{count}} tools",
+      "groupSearched_one": "Searched the web {{count}} time",
+      "groupSearched_other": "Searched the web {{count}} times",
+      "groupFailed_one": "{{count}} failed",
+      "groupFailed_other": "{{count}} failed",
+      "delegated_one": "Ran {{count}} subagent",
+      "delegated_other": "Ran {{count}} subagents",
+      "delegating_one": "Running {{count}} subagent",
+      "delegating_other": "Running {{count}} subagents",
+      "seconds": "{{count}}s",
+      "subagent": {
+        "completed": "completed",
+        "failed": "failed",
+        "cancelled": "stopped",
+        "timed_out": "timed out"
+      },
+      "subagentTokens": "{{tokens}} tokens"
     },
     "suggest": {
       "task": {
@@ -153,8 +185,33 @@
     "event": {
       "approved": "You approved: {{summary}}",
       "denied": "You denied: {{summary}}",
-      "failed": "You approved, and it failed: {{summary}}"
-    }
+      "failed": "You approved, and it failed: {{summary}}",
+      "routine": "Routine · {{name}}",
+      "routineSaved": "Created routine “{{name}}”",
+      "routineChanged": "Changed routine “{{name}}”",
+      "routinePaused": "Paused routine “{{name}}”",
+      "routinePausedBecause": "Paused routine “{{name}}”: {{reason}}",
+      "routineResumed": "Resumed routine “{{name}}”",
+      "routineDeleted": "Deleted routine “{{name}}”",
+      "routineFailed": "Routine “{{name}}” did not run: {{reason}}",
+      "openRoutines": "Open routines",
+      "peerMessage": "From <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> asked",
+      "peerAnswered": "<bot>{{name}}</bot> replied",
+      "peerFailed": "<bot>{{name}}</bot> could not answer",
+      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
+    },
+    "routineReason": {
+      "expired": "it waited too long to start",
+      "automation_rate_limited": "it reached its hourly run limit",
+      "workspace_rate_limited": "the workspace reached its hourly run limit",
+      "missed": "its time passed while it could not run",
+      "agent_unavailable": "the agent could not start",
+      "bot_provider_missing": "the bot’s model provider has no key or sign-in",
+      "owner_lost_access": "its owner can no longer run it",
+      "unknown": "something went wrong"
+    },
+    "openSession": "Open session"
   },
   "settings": {
     "back": "Back to the chat",
@@ -165,7 +222,8 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
-      "runsOn": "Runs on"
+      "routines": "Routines",
+      "homeHost": "Home host"
     },
     "profile": {
       "title": "Profile",
@@ -192,6 +250,17 @@
       "created": "Created",
       "history": "Chat history",
       "noMessages": "No messages yet.",
+      "messages_one": "{{count}} message · last {{date}}",
+      "messages_other": "{{count}} messages · last {{date}}",
+      "exporting": "Exporting…",
+      "exportFailed": "Could not export the chat.",
+      "exportedAt": "Exported {{date}}",
+      "you": "You",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "Clear the chat history?",
+      "clearBody": "Every message of this chat is erased, with any request still waiting on you. The bot keeps its soul, instructions and memory.",
+      "clearing": "Clearing…",
+      "clearFailed": "Could not clear the chat history.",
       "export": "Export",
       "clear": "Clear history",
       "discard": "Discard",
@@ -258,21 +327,53 @@
       "forgetFailed": "Could not forget the fact.",
       "loadFailed": "Could not load what the bot remembers."
     },
-    "runsOn": {
-      "title": "Runs on",
-      "subtitle": "The machine the bot works on.",
-      "homeHost": "Home host",
+    "routines": {
+      "title": "Routines",
+      "subtitle": "Work the bot does on a schedule or when something happens.",
+      "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+      "askInChat": "Ask in chat",
+      "schedule": "Schedule · {{when}}",
+      "github": "GitHub · {{when}}",
+      "last": "Last",
+      "next": "Next",
+      "never": "Never",
+      "switch": "Run “{{name}}” on its own",
+      "pause": "Pause",
+      "resume": "Resume",
+      "run": "Run now",
+      "running": "Running…",
+      "edit": "Edit in chat",
+      "delete": "Delete routine",
+      "editPrompt": "Edit your routine: {{name}}",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteBody": "This deletes the routine and stops its future runs. This can't be undone.",
+      "deleting": "Deleting…",
+      "deleteFailed": "Could not delete the routine.",
+      "switchFailed": "Could not change the routine.",
+      "runFailed": "Could not run the routine.",
+      "loadFailed": "Could not load the bot's routines."
+    },
+    "homeHost": {
+      "title": "Home host",
+      "subtitle": "Your bot always runs in Oppenheimer. When it starts a coding session and you haven't named a machine, the session runs here.",
+      "machines": "Machines",
+      "none": "No home host",
+      "noneHint": "The bot asks which machine to use each time it starts a session.",
       "online": "Online",
       "offline": "Offline",
       "noHosts": "No hosts yet",
-      "noHostsBody": "A bot runs on a machine you own. Add one, then pick it here.",
+      "noHostsBody": "A bot starts its coding sessions on a machine you own. Add one, then pick it here.",
       "addHost": "Add a host",
+      "discard": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
       "failed": "Could not change the home host.",
       "hostsFailed": "Could not load your hosts."
     }
   },
   "delete": {
-    "title": "Delete {{name}}?",
+    "title": "Delete “{{name}}”?",
     "description": "The bot, its instructions, its memory and its conversation are removed for good.",
     "confirm": "Delete bot",
     "pending": "Deleting…",

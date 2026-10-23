@@ -10,7 +10,7 @@ export class BotDocumentResponseDto {
   @ApiProperty({ enum: BOT_DOCUMENT_NAMES, description: '`SOUL.md` or `INSTRUCTIONS.md`.' })
   name!: BotDocumentName;
 
-  @ApiProperty({ example: '# Soul\n\nYou are New Bot.' })
+  @ApiProperty({ example: '# Soul\n\nYou are Juno.' })
   content!: string;
 
   @ApiProperty({

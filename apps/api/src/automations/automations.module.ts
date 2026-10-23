@@ -1,4 +1,4 @@
-import { Module, type Provider } from '@nestjs/common';
+import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
@@ -12,6 +12,9 @@ import { UsersModule } from '../users/user.module';
 import { AutomationAccountErasure } from './application/automation-account-erasure.resolver';
 import { AutomationLimitsResolver } from './application/automation-limits.resolver';
 import { AutomationPlanFactory } from './application/automation-plan.factory';
+import type { AutomationRunTargetPort } from './application/automation-run-target.port';
+import { AutomationRunTargetRegistry } from './application/automation-run-target.registry';
+import { BotRoutineResolver } from './application/bot-routine.resolver';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
@@ -29,6 +32,10 @@ import { CreateAutomationCommandHandler } from './commands/create-automation/cre
 import { CreateAutomationHttpController } from './commands/create-automation/create-automation.http.controller';
 import { DeleteAutomationCommandHandler } from './commands/delete-automation/delete-automation.command-handler';
 import { DeleteAutomationHttpController } from './commands/delete-automation/delete-automation.http.controller';
+import { DeleteBotRoutineCommandHandler } from './commands/delete-bot-routine/delete-bot-routine.command-handler';
+// Static routes before parameterized ones: `automation-runs/history` before
+// `automation-runs/:id`.
+import { DeleteBotRoutineHttpController } from './commands/delete-bot-routine/delete-bot-routine.http.controller';
 import { DispatchAutomationRunCommandHandler } from './commands/dispatch-automation-run/dispatch-automation-run.command-handler';
 import { DuplicateAutomationCommandHandler } from './commands/duplicate-automation/duplicate-automation.command-handler';
 import { DuplicateAutomationHttpController } from './commands/duplicate-automation/duplicate-automation.http.controller';
@@ -41,10 +48,14 @@ import { ResumeAutomationCommandHandler } from './commands/resume-automation/res
 import { ResumeAutomationHttpController } from './commands/resume-automation/resume-automation.http.controller';
 import { RunAutomationCommandHandler } from './commands/run-automation/run-automation.command-handler';
 import { RunAutomationHttpController } from './commands/run-automation/run-automation.http.controller';
+import { RunBotRoutineCommandHandler } from './commands/run-bot-routine/run-bot-routine.command-handler';
+import { RunBotRoutineHttpController } from './commands/run-bot-routine/run-bot-routine.http.controller';
+import { SaveBotRoutineCommandHandler } from './commands/save-bot-routine/save-bot-routine.command-handler';
 import { UpdateAutomationCommandHandler } from './commands/update-automation/update-automation.command-handler';
 import { UpdateAutomationHttpController } from './commands/update-automation/update-automation.http.controller';
 import { UpdateAutomationSettingsCommandHandler } from './commands/update-automation-settings/update-automation-settings.command-handler';
 import { UpdateAutomationSettingsHttpController } from './commands/update-automation-settings/update-automation-settings.http.controller';
+import { UpdateBotRoutineHttpController } from './commands/update-bot-routine/update-bot-routine.http.controller';
 import { AutomationOrmEntity } from './database/automation.orm-entity';
 import { AutomationRepository } from './database/automation.repository';
 import { AutomationRevisionOrmEntity } from './database/automation-revision.orm-entity';
@@ -57,6 +68,7 @@ import { AutomationTriggerSubjectOrmEntity } from './database/automation-trigger
 import { AutomationRetentionProcessor } from './infrastructure/automation-retention.processor';
 import { AutomationRunsProcessor } from './infrastructure/automation-runs.processor';
 import { AutomationSchedulesProcessor } from './infrastructure/automation-schedules.processor';
+import { SessionRunTarget } from './infrastructure/session-run-target.adapter';
 import { FindAutomationHttpController } from './queries/find-automation/find-automation.http.controller';
 import { FindAutomationQueryHandler } from './queries/find-automation/find-automation.query-handler';
 import { FindAutomationRunHttpController } from './queries/find-automation-run/find-automation-run.http.controller';
@@ -67,15 +79,20 @@ import { FindAutomationSettingsHttpController } from './queries/find-automation-
 import { FindAutomationSettingsQueryHandler } from './queries/find-automation-settings/find-automation-settings.query-handler';
 import { FindAutomationsHttpController } from './queries/find-automations/find-automations.http.controller';
 import { FindAutomationsQueryHandler } from './queries/find-automations/find-automations.query-handler';
+import { FindBotRoutineRefQueryHandler } from './queries/find-bot-routine-ref/find-bot-routine-ref.query-handler';
+import { FindBotRoutinesHttpController } from './queries/find-bot-routines/find-bot-routines.http.controller';
+import { FindBotRoutinesQueryHandler } from './queries/find-bot-routines/find-bot-routines.query-handler';
+import { FindRoutinesHttpController } from './queries/find-routines/find-routines.http.controller';
+import { FindRoutinesQueryHandler } from './queries/find-routines/find-routines.query-handler';
 import { FindRunHistoryHttpController } from './queries/find-run-history/find-run-history.http.controller';
 import { FindRunHistoryQueryHandler } from './queries/find-run-history/find-run-history.query-handler';
 import { PreviewTriggerHttpController } from './queries/preview-trigger/preview-trigger.http.controller';
 import { PreviewTriggerQueryHandler } from './queries/preview-trigger/preview-trigger.query-handler';
 
-// Static routes before parameterized ones: `automation-runs/history` before
-// `automation-runs/:id`.
 const httpControllers = [
   FindAutomationsHttpController,
+  // Before `:id`, so `routines` is not read as an automation's id.
+  FindRoutinesHttpController,
   CreateAutomationHttpController,
   PreviewTriggerHttpController,
   FindAutomationHttpController,
@@ -90,9 +107,15 @@ const httpControllers = [
   FindAutomationRunHttpController,
   FindAutomationSettingsHttpController,
   UpdateAutomationSettingsHttpController,
+  FindBotRoutinesHttpController,
+  UpdateBotRoutineHttpController,
+  RunBotRoutineHttpController,
+  DeleteBotRoutineHttpController,
 ];
 
 const commandHandlers: Provider[] = [
+  RunBotRoutineCommandHandler,
+  DeleteBotRoutineCommandHandler,
   CreateAutomationCommandHandler,
   UpdateAutomationCommandHandler,
   PauseAutomationCommandHandler,
@@ -105,6 +128,7 @@ const commandHandlers: Provider[] = [
   FireDueSchedulesCommandHandler,
   EnforceRunLimitsCommandHandler,
   DispatchAutomationRunCommandHandler,
+  SaveBotRoutineCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -115,6 +139,9 @@ const queryHandlers: Provider[] = [
   FindAutomationRunQueryHandler,
   PreviewTriggerQueryHandler,
   FindAutomationSettingsQueryHandler,
+  FindBotRoutinesQueryHandler,
+  FindBotRoutineRefQueryHandler,
+  FindRoutinesQueryHandler,
 ];
 
 /**
@@ -157,9 +184,12 @@ const queryHandlers: Provider[] = [
     AutomationMapper,
     AutomationRunMapper,
     AutomationPlanFactory,
+    BotRoutineResolver,
     AutomationLimitsResolver,
     OwnerScopeResolver,
     RunDispatchResolver,
+    AutomationRunTargetRegistry,
+    ...runTargetProviders([SessionRunTarget]),
     ExternalEventReceivedDomainEventHandler,
     HostUnpairedPausesAutomationsDomainEventHandler,
     ProjectArchivedPausesAutomationsDomainEventHandler,
@@ -171,7 +201,38 @@ const queryHandlers: Provider[] = [
     { provide: AUTOMATION_RUN_REPOSITORY, useClass: AutomationRunRepository },
     { provide: AUTOMATION_SETTINGS_REPOSITORY, useClass: AutomationSettingsRepository },
   ],
-  // The run a session was started for, so the workspace feed can say that run moved.
-  exports: [AUTOMATION_RUN_REPOSITORY],
+  // The run a session was started for, so the workspace feed can say that run
+  // moved; the registry, for the targets other modules contribute.
+  exports: [AUTOMATION_RUN_REPOSITORY, AutomationRunTargetRegistry],
 })
-export class AutomationsModule {}
+export class AutomationsModule {
+  /**
+   * The providers a module adds to carry out runs of its own kind
+   * (`26-bot-routines.md` §3):
+   *
+   * ```ts
+   * providers: [...AutomationsModule.contributeRunTargets([BotRoutineTarget])]
+   * ```
+   *
+   * Constructed in the contributing module's injector, so the adapter injects
+   * that module's own ports, as `InboundEventsModule.contributeSources` does;
+   * the registry refuses a second adapter for a kind at boot.
+   */
+  static contributeRunTargets(targets: Type<AutomationRunTargetPort>[]): Provider[] {
+    return runTargetProviders(targets);
+  }
+}
+
+function runTargetProviders(targets: Type<AutomationRunTargetPort>[]): Provider[] {
+  return targets.flatMap((target) => [
+    target,
+    {
+      provide: Symbol.for(`AUTOMATION_RUN_TARGET:${target.name}`),
+      inject: [AutomationRunTargetRegistry, target],
+      useFactory: (registry: AutomationRunTargetRegistry, adapter: AutomationRunTargetPort) => {
+        registry.registerAll([adapter]);
+        return adapter;
+      },
+    },
+  ]);
+}

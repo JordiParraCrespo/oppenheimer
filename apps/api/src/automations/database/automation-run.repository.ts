@@ -54,13 +54,15 @@ const LIVE_WHERE = `(ws."stoppedAt" IS NULL AND (turn."state" IN ${LIVE_TURN}
 /**
  * A run's status, derived once, here (§Q4): the firing's own outcome until it
  * is dispatched, then the session's first turn — and, for a session whose turn
- * has not been folded yet, the session's lifecycle.
+ * has not been folded yet, the session's lifecycle. A bot routine's run is its
+ * bot turn's status, which names the same five states.
  */
 const STATUS_SQL = `
   CASE
     WHEN run."outcome" = 'pending' THEN 'queued'
     WHEN run."outcome" = 'skipped' THEN 'skipped'
     WHEN run."outcome" = 'expired' THEN 'expired'
+    WHEN run."botTurnId" IS NOT NULL THEN bt."status"
     WHEN turn."state" IS NULL THEN
       CASE ws."state" WHEN 'failed' THEN 'failed' WHEN 'resolved' THEN 'completed' ELSE 'running' END
     WHEN turn."state" = 'queued' THEN 'queued'
@@ -93,7 +95,8 @@ const READ_MODEL_SQL = `
   JOIN "automation" a ON a."id" = run."automationId"
   JOIN "automation_revision" rev ON rev."id" = run."revisionId"
   LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
-  LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
+  LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1
+  LEFT JOIN "bot_turn" bt ON bt."id" = run."botTurnId"`;
 
 /** Insert a firing and, when it is pending, stage its dispatch — inside the caller's transaction. */
 export async function insertRunWithin(
@@ -251,8 +254,9 @@ export async function countRecentByWorkspaceWithin(
  * planner bounds it by the window on IDX_automation_run_organization_created
  * instead of semi-joining every run the workspace kept. It restates what
  * `applyAccessScope` (packages/backend/authz/src/scope/apply-access-scope.ts)
- * does for an organization-only resource — a bypass reaches every workspace
- * (audited upstream), a scope with no organization reaches nothing — and is
+ * does for an organization-only resource — a bypass with no organization
+ * reaches every workspace (audited upstream), any other scope with no
+ * organization reaches nothing — and is
  * right only while `AutomationResource.scopes` is `['organization']`; a test
  * pins that. `null` is no clause at all.
  */
@@ -260,8 +264,7 @@ export function runTenantPredicate(
   scope: AccessScope,
   parameterIndex: number,
 ): { clause: string; values: unknown[] } | null {
-  if (scope.bypass) return null;
-  if (!scope.organizationId) return { clause: 'FALSE', values: [] };
+  if (!scope.organizationId) return scope.bypass ? null : { clause: 'FALSE', values: [] };
   return { clause: `run."organizationId" = $${parameterIndex}`, values: [scope.organizationId] };
 }
 
@@ -379,7 +382,8 @@ export class AutomationRunRepository
       await manager.query(
         `UPDATE "automation_run"
             SET "outcome" = $2, "skipReason" = $3, "availableAt" = $4, "attempts" = $5,
-                "sessionId" = $6, "dispatchedAt" = $7, "revisionId" = $8, "updatedAt" = now()
+                "sessionId" = $6, "dispatchedAt" = $7, "revisionId" = $8, "botTurnId" = $9,
+                "updatedAt" = now()
           WHERE "id" = $1`,
         [
           record.id,
@@ -390,6 +394,7 @@ export class AutomationRunRepository
           record.sessionId,
           record.dispatchedAt,
           record.revisionId,
+          record.botTurnId,
         ],
       );
       // A deferral owes another look later; the delay rides the outbox row.
@@ -512,7 +517,11 @@ export class AutomationRunRepository
    * the counts read. The tenant clause and the window sit on the run itself,
    * so the scan starts at the window, not at the workspace's first run.
    */
-  private scopedRuns(scope: AccessScope, filters: Omit<RunFilters, 'statuses'>) {
+  private scopedRuns(
+    scope: AccessScope,
+    filters: Omit<RunFilters, 'statuses'>,
+    of: 'sessions' | 'any' = 'sessions',
+  ) {
     const values: unknown[] = [filters.since];
     const where = [`run."createdAt" >= $1`];
     const tenant = runTenantPredicate(scope, values.length + 1);
@@ -528,6 +537,9 @@ export class AutomationRunRepository
       values.push(filters.projectId);
       where.push(`a."projectId" = $${values.length}`);
     }
+    // The console's run lists are session automations'; a routine's runs are
+    // read through its bot, by id (`digests`).
+    if (of === 'sessions') where.push(`a."runTarget" = 'session'`);
     return { cte: `WITH runs AS (${READ_MODEL_SQL} WHERE ${where.join(' AND ')})`, values };
   }
 
@@ -613,7 +625,7 @@ export class AutomationRunRepository
   ): Promise<Map<string, AutomationRunDigest>> {
     const digests = new Map<string, AutomationRunDigest>();
     if (automationIds.length === 0) return digests;
-    const { cte, values } = this.scopedRuns(scope, { since });
+    const { cte, values } = this.scopedRuns(scope, { since }, 'any');
     const rows: Record<string, unknown>[] = await this.dataSource.query(
       `${cte}
        SELECT * FROM (

@@ -4,8 +4,9 @@ import {
   type RunCheckoutRule,
   SCHEDULE_FREQUENCY_CATALOG,
 } from '@oppenheimer/shared/automations';
+import type { AutomationEntity } from './automation.entity';
 import type { AutomationRepository, AutomationTriggerProps } from './automation.types';
-import type { RunCauseSummary } from './automation-run.entity';
+import type { NewRunProps, RunCauseSummary } from './automation-run.entity';
 
 /**
  * What a run is launched with, decided from what fired it: the words its
@@ -62,6 +63,30 @@ export function scheduleCauseSummary(
 
 export function manualCauseSummary(): RunCauseSummary {
   return { label: 'Manual run', text: 'Started from the automation page', eventType: 'manual' };
+}
+
+/**
+ * Run now as a firing: the automation's current revision, no trigger, the
+ * person who asked, and a cause key a retried request repeats, so it is the
+ * same run. It works while paused: a person asking is not a trigger.
+ */
+export function manualFiring(
+  automation: AutomationEntity,
+  requestedByUserId: string,
+  attemptKey: string,
+): NewRunProps {
+  return {
+    organizationId: automation.organizationId,
+    automationId: automation.id,
+    revisionId: automation.revision.id,
+    triggerId: null,
+    cause: 'manual',
+    causeKey: `manual:${attemptKey}`,
+    causeSummary: manualCauseSummary(),
+    inboundEventId: null,
+    scheduledFor: null,
+    requestedByUserId,
+  };
 }
 
 export interface RunCheckout {

@@ -58,9 +58,23 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
 }
 
 describe('applyAccessScope', () => {
-  it('leaves the query untouched for a bypass scope', () => {
+  it('keeps a bypass scope inside its active organization, and drops only the slice', () => {
+    // An admin's console listed every workspace's projects, one Unassigned each,
+    // when the bypass skipped the tenant clause too.
     const qb = fakeQueryBuilder();
     applyAccessScope(qb, TeamScoped, scope({ bypass: true }));
+
+    expect(qb.calls).toEqual([
+      {
+        clause: 'project.organizationId = :authzOrganizationId',
+        parameters: { authzOrganizationId: 'org-1' },
+      },
+    ]);
+  });
+
+  it('leaves the query untouched for a bypass scope with no active organization', () => {
+    const qb = fakeQueryBuilder();
+    applyAccessScope(qb, TeamScoped, scope({ bypass: true, organizationId: null }));
     expect(qb.calls).toHaveLength(0);
   });
 

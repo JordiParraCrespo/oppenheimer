@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { automationsKeys } from './automations.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
+import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';
 import { setWorkspaceStream } from './workspace-stream-status';
@@ -19,8 +20,15 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
   switch (event.type) {
     case 'session.changed':
       // The detail's prefix holds its start log. A host's status and running
-      // count are read from its sessions, so the host list moves with them.
-      return [sessionsKeys.detail(event.id), sessionsKeys.lists(), hostsKeys.lists()];
+      // count are read from its sessions, so the host list moves with them,
+      // and so does For review: a review session is a session, and a close
+      // its host refused puts it back there.
+      return [
+        sessionsKeys.detail(event.id),
+        sessionsKeys.lists(),
+        hostsKeys.lists(),
+        pullRequestsKeys.reviewSessions(),
+      ];
     case 'host.changed':
       return [hostsKeys.lists()];
     case 'pairing.spent':
@@ -53,6 +61,7 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
  * - Pairing lists: `pairing.spent` is the token being spent.
  * - The host list catches up but keeps its poll: presence is a heartbeat the
  *   stream does not carry.
+ * - For review catches up; it has no poll to stand down.
  * - Automations catch up but keep the run poll: a run's status follows its
  *   session, and `session.changed` does not name automation reads.
  * - Plan's tasks and milestones: every write raises `task.changed` or
@@ -63,6 +72,7 @@ const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
   { key: sessionsKeys.details(), pollStandsDown: true },
   { key: hostsKeys.pairingLists(), pollStandsDown: true },
   { key: hostsKeys.lists(), pollStandsDown: false },
+  { key: pullRequestsKeys.reviewSessions(), pollStandsDown: false },
   { key: automationsKeys.lists(), pollStandsDown: false },
   { key: automationsKeys.details(), pollStandsDown: false },
   { key: automationsKeys.runs(), pollStandsDown: false },

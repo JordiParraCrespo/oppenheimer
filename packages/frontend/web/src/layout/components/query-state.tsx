@@ -37,11 +37,15 @@ const DATA: Rung = { rung: 'data' };
  *
  * ```tsx
  * <QueryState>
- *   <QueryState.Pending><Skeleton className="h-18 w-full" /></QueryState.Pending>
+ *   <QueryState.Pending><HostListSkeleton /></QueryState.Pending>
  *   <QueryState.Error fallback={t('settings.hosts.failed')} />
  *   <QueryState.Data><HostListRows /></QueryState.Data>
  * </QueryState>
  * ```
+ *
+ * `Pending` draws the section's shape (its container, its labels, a bar per
+ * line), not a slab: `.agents/rules/frontend-ui.md`, "A placeholder has the
+ * shape of what replaces it".
  *
  * TanStack's recipe: `react-error-boundary` inside `QueryErrorResetBoundary`.
  * The children draw three times — under `<Suspense>`, as its placeholder, and

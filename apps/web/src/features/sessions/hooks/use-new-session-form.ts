@@ -3,8 +3,9 @@ import { type UseFormReturn, useForm } from 'react-hook-form';
 import { rememberedFolder } from '../lib/folder-memory';
 import {
   type DraftSeed,
-  initialDraft,
   type NewSessionDraft,
+  openDraft,
+  type ProjectFilled,
   REMEMBERED_FIELDS,
   rememberDraft,
 } from '../lib/new-session-draft';
@@ -24,11 +25,21 @@ export type NewSessionDraftForm = UseFormReturn<NewSessionDraft>;
 export const NewSessionFormContext = createContext<NewSessionDraftForm | null>(null);
 
 /**
+ * The chips the landing project may still fill, decided as the draft opened:
+ * the draft writes every change back to storage, so the memory cannot be read
+ * again once the visit has started. Fixed for the form's life, like the form.
+ */
+export const NewSessionLandingContext = createContext<readonly ProjectFilled[]>([]);
+
+/**
  * Create the draft's store, seeded from the last visit (and from the address,
  * when it names a place, a host or an agent) and remembering this one.
  */
-export function useNewSessionForm(seed?: DraftSeed): NewSessionDraftForm {
-  const [defaultValues] = useState(() => initialDraft(seed));
+export function useNewSessionForm(seed?: DraftSeed): {
+  form: NewSessionDraftForm;
+  fillable: readonly ProjectFilled[];
+} {
+  const [{ draft: defaultValues, fillable }] = useState(() => openDraft(seed));
   const form = useForm<NewSessionDraft>({ defaultValues });
 
   // `localStorage`: the remembered fields are written out as they change.
@@ -61,11 +72,16 @@ export function useNewSessionForm(seed?: DraftSeed): NewSessionDraftForm {
     });
   }, [subscribe, getValues, setValue]);
 
-  return form;
+  return { form, fillable };
 }
 
 export function useNewSessionDraft(): NewSessionDraftForm {
   const form = useContext(NewSessionFormContext);
   if (!form) throw new Error('useNewSessionDraft must be used inside NewSessionForm.');
   return form;
+}
+
+/** The chips the landing project may still fill (`NewSessionLandingContext`). */
+export function useLandingFillable(): readonly ProjectFilled[] {
+  return useContext(NewSessionLandingContext);
 }

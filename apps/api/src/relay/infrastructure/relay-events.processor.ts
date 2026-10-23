@@ -66,8 +66,9 @@ export class RelayEventsProcessor {
       );
     }
     // The snapshot is what the runner holds; the rows are what it should hold.
-    // A launch that never arrived goes out again, and a pane tmux lost is
-    // recorded stopped — reconciled, never replayed from a queue.
+    // A launch that never arrived goes out again, so does a close still owed,
+    // and a pane tmux lost is recorded stopped — reconciled, never replayed
+    // from a queue.
     const outcome = await this.reconciliation.reconcile(
       link.hostId,
       link.runId,
@@ -82,6 +83,7 @@ export class RelayEventsProcessor {
       sessions: hello.sessions.length,
       redispatched: outcome.redispatched.length,
       stopped: outcome.stopped.length,
+      reclosed: outcome.reclosed.length,
     });
   }
 

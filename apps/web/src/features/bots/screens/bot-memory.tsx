@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { BotMemorySkeleton } from '@/features/bots/components/bot-memory-skeleton';
 import { BotLearning } from '@/features/bots/sections/bot-learning';
 import { BotMemory } from '@/features/bots/sections/bot-memory';
 
@@ -36,7 +37,7 @@ export function BotMemoryScreen({ botId }: { botId: string }) {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <Skeleton shape="lg" className="h-40 w-full" />
+          <BotMemorySkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.memory.loadFailed')} />
         <QueryState.Data>

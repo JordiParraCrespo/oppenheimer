@@ -43,6 +43,17 @@ describe('planSession', () => {
     });
   });
 
+  // Nobody sits at a bot's terminal: left to the API's default (`ask`), the
+  // agent would wait on its first approval forever.
+  it('starts every session at auto, in a worktree or a folder', () => {
+    expect(planSession({ task: 'Fix it' }, project(), HOME)).toMatchObject({
+      body: { launch: { permission: 'auto' } },
+    });
+    expect(planSession({ task: 'Fix it', folder: '/srv/app' }, null, HOME)).toMatchObject({
+      body: { launch: { permission: 'auto' } },
+    });
+  });
+
   it('asks for a project or a folder, and for a host when there is no default', () => {
     expect(planSession({ task: 'x' }, null, HOME)).toEqual({
       refusal: 'Give a project_id (to work in one of its repositories) or a folder on the host.',
@@ -61,6 +72,12 @@ describe('planSession', () => {
   it('refuses a session the sessions’ schema would refuse, naming the field', () => {
     expect(planSession({ task: 'x', folder: 'relative/path' }, null, HOME)).toMatchObject({
       refusal: expect.stringContaining('folder'),
+    });
+  });
+
+  it('names a rejected prompt as the tool’s task, the field the model wrote', () => {
+    expect(planSession({ task: 'a'.repeat(5_000) }, project(), HOME)).toMatchObject({
+      refusal: expect.stringContaining('(task)'),
     });
   });
 });

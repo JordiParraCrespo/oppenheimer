@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import {
   pullRequestPane,
   pullRequestSearchSchema,
@@ -15,18 +14,21 @@ import { SessionScreen } from '@/features/sessions/screens/session';
  * view alike, while the sidebar stays on Pull requests. Each view is a page at
  * its own measure (`pullRequestPane`), read off `?view=`. The Chat view is the
  * pull request's review session; its terminal is the sessions feature's, so
- * the route composes the two.
+ * the route composes the two. The pull request's toolbar is the page's bar
+ * (`bar: 'own'`), led by the sidebar toggle.
  */
 export const Route = createFileRoute(
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number',
 )({
   validateSearch: pullRequestSearchSchema,
   component: PullRequestRoute,
-  staticData: { pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view) },
+  staticData: {
+    pane: (search) => pullRequestPane(pullRequestSearchSchema.parse(search).view),
+    bar: 'own',
+  },
 });
 
 function PullRequestRoute() {
-  const { t } = useTranslation();
   const { installationId, githubRepoId, number } = Route.useParams();
   const { view } = Route.useSearch();
   const address = { installationId, githubRepoId: Number(githubRepoId), number: Number(number) };
@@ -35,13 +37,7 @@ function PullRequestRoute() {
       key={`${installationId}/${githubRepoId}/${number}`}
       address={address}
       view={resolvePullRequestView(view)}
-      terminal={(sessionId) => (
-        <SessionScreen
-          key={sessionId}
-          sessionId={sessionId}
-          composer={t('pullRequests.reviewSession.composer')}
-        />
-      )}
+      terminal={(sessionId) => <SessionScreen key={sessionId} sessionId={sessionId} />}
     />
   );
 }

@@ -479,7 +479,7 @@ func TestStopsDiallingWhenTheHandshakeSaysUnpaired(t *testing.T) {
 		Handler:         &recorder{},
 		Logger:          slog.New(slog.NewTextHandler(testWriter{t}, nil)),
 		Ladder:          []time.Duration{time.Millisecond},
-		OnUnpaired:      func() { unpaired++ },
+		OnUnpaired:      func(bool) { unpaired++ },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -525,6 +525,52 @@ func TestStopsDiallingWhenALiveLinkIsClosedAsUnpaired(t *testing.T) {
 	}
 }
 
+// The owner ticked "also clean up this machine": the close says so, and
+// OnUnpaired is told to wipe. A plain unpair is not.
+func TestAnUnpairedCloseSaysWhetherToWipe(t *testing.T) {
+	for _, tc := range []struct {
+		reason string
+		wipe   bool
+	}{{"host unpaired", false}, {link.CloseReasonWipe, true}} {
+		t.Run(tc.reason, func(t *testing.T) {
+			cp := newControlPlane(t)
+			var wiped []bool
+			c, err := link.New(link.Options{
+				ControlPlaneURL: cp.server.URL,
+				Token:           func(context.Context) (string, error) { return "good", nil },
+				Fingerprint:     cp.fingerprint,
+				Handler:         &recorder{},
+				Logger:          slog.New(slog.NewTextHandler(testWriter{t}, nil)),
+				Ladder:          []time.Duration{time.Millisecond},
+				OnUnpaired:      func(wipe bool) { wiped = append(wiped, wipe) },
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			done := make(chan error, 1)
+			go func() { done <- c.Run(ctx) }()
+
+			conn := <-cp.conns
+			eventually(t, "the link to come up", c.Live)
+			conn.Close(link.CloseUnpaired, tc.reason)
+
+			select {
+			case err := <-done:
+				if !errors.Is(err, link.ErrUnpaired) || errors.Is(err, link.ErrWipe) != tc.wipe {
+					t.Fatalf("Run = %v, want ErrUnpaired with wipe %v", err, tc.wipe)
+				}
+			case <-ctx.Done():
+				t.Fatal("Run kept dialling after the link was closed as unpaired")
+			}
+			if len(wiped) != 1 || wiped[0] != tc.wipe {
+				t.Fatalf("OnUnpaired got %v, want [%v]", wiped, tc.wipe)
+			}
+		})
+	}
+}
+
 func TestKeepsDiallingThroughAProxysBare410(t *testing.T) {
 	cp := newControlPlane(t)
 	cp.strangerGone = true
@@ -536,7 +582,7 @@ func TestKeepsDiallingThroughAProxysBare410(t *testing.T) {
 		Handler:         &recorder{},
 		Logger:          slog.New(slog.NewTextHandler(testWriter{t}, nil)),
 		Ladder:          []time.Duration{time.Millisecond},
-		OnUnpaired:      func() { unpaired++ },
+		OnUnpaired:      func(bool) { unpaired++ },
 	})
 	if err != nil {
 		t.Fatal(err)

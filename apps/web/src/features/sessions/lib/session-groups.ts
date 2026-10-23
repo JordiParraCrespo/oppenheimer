@@ -1,4 +1,5 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { TFunction } from 'i18next';
 
 /**
  * The sidebar's groups: one per project, in the order given (the reader's,
@@ -29,6 +30,32 @@ export function groupByProject(
   }));
   if (orphans.length) groups.push({ project: null, sessions: orphans });
   return groups;
+}
+
+/**
+ * The groups worth drawing. While a filter or the search narrows the list, a
+ * group left with no session is noise, so it goes; the one exception is the
+ * project the project filter picked, which stays to say it has no match.
+ */
+export function shownGroups<T extends ProjectGroup>(
+  groups: readonly T[],
+  narrowed: boolean,
+  pickedProject: string | null,
+): T[] {
+  if (!narrowed) return [...groups];
+  return groups.filter(
+    (group) => group.sessions.length > 0 || (group.project && group.project.id === pickedProject),
+  );
+}
+
+/**
+ * What an empty list or group says: nothing yet, or nothing that matches the
+ * search, or nothing that matches the filters.
+ */
+export function emptyMessage(t: TFunction, narrowed: boolean, query: string): string {
+  const term = query.trim();
+  if (!narrowed) return t('sessions.sidebar.emptyProject');
+  return term ? t('sessions.sidebar.noMatches', { query: term }) : t('sessions.filters.noMatches');
 }
 
 /**

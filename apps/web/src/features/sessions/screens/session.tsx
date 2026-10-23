@@ -20,14 +20,8 @@ export function SessionScreen({
   sessionId,
   closed,
   statusItem,
-  composer,
 }: {
   sessionId: string;
-  /**
-   * An input row under the terminal, with this placeholder: a pull request's
-   * review session has one. The route composes it, as `statusItem`.
-   */
-  composer?: string;
   /**
    * A chip at the head of the terminal's status bar: the task this session is
    * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
@@ -75,12 +69,12 @@ export function SessionScreen({
         <SessionPane
           sessionId={sessionId}
           closed={closed}
-          terminal={(session) => (
+          terminal={(session, reading) => (
             <SessionTerminal
               sessionId={session.id}
               hostId={session.hostId}
               statusItem={statusItem}
-              composer={composer}
+              reading={reading}
             />
           )}
         />

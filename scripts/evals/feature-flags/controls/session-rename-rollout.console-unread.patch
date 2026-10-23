@@ -1,0 +1,21 @@
+diff --git a/apps/web/src/features/sessions/sections/session-row.tsx b/apps/web/src/features/sessions/sections/session-row.tsx
+index 72e161eb..3ab1d660 100644
+--- a/apps/web/src/features/sessions/sections/session-row.tsx
++++ b/apps/web/src/features/sessions/sections/session-row.tsx
+@@ -6,7 +6,6 @@ import {
+   useProjectsSnapshot,
+   useRenameSession,
+ } from '@oppenheimer/frontend-consumer/react';
+-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
+ import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
+ import { Link, useRouterState } from '@tanstack/react-router';
+ import { type ComponentProps, useState } from 'react';
+@@ -88,7 +87,7 @@ export function SessionRow({
+   // another group, and the row that asked unmounts before the write settles.
+   // A renamed or moved row can land anywhere in a long, grouped list, so both
+   // say where it went.
+-  const canRename = useFeatureFlag('session_rename');
++  const canRename = true;
+   const rename = useRenameSession({
+     onSuccess: (renamed) => {
+       onWrite(null);

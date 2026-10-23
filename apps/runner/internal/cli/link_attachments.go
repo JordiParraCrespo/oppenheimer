@@ -8,7 +8,9 @@ package cli
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -51,6 +53,22 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	}
 	go h.pump(readCtx, att)
 	go h.inputPump(readCtx, att)
+	go h.chat(readCtx, att)
+}
+
+// chat follows the attached session's conversation for the console's chat
+// view while the attachment is open, as `attachment.chat`. It rides the
+// control queue, so a full one holds the batch for the next check rather
+// than dropping it. An agent with no transcript to follow sends nothing.
+func (h *linkHandler) chat(ctx context.Context, att *attachment) {
+	err := h.app.Sessions.FollowChat(ctx, att.sessionID, link.ChatEntryMaxBytes, link.ChatBatchMaxEntries, func(batch sessionsapp.ChatBatch) error {
+		return h.client.Send(link.AttachmentChat{
+			Type: link.TypeAttachmentChat, AttachmentID: att.id, Reset: batch.Reset, Entries: batch.Entries,
+		})
+	})
+	if err != nil && !errors.Is(err, sessionsapp.ErrNoChat) {
+		h.logger.Debug("could not follow the session's transcript", slog.String("session", att.sessionID), slog.Any("error", err))
+	}
 }
 
 // inputPump is the one goroutine writing an attachment's keystrokes to its

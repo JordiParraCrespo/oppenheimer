@@ -38,4 +38,12 @@ export class CalendarEventResponseDto {
     description: 'Where a Google event opens in Google Calendar; null for a personal one.',
   })
   url!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description:
+      'Where to join a Google event’s video meeting (Meet, Zoom, Teams, Webex), from its conference or a join link written in its location or description; null when it has none, and for a personal one.',
+  })
+  meetingUrl!: string | null;
 }

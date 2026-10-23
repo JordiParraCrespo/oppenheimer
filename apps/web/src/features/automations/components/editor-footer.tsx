@@ -75,7 +75,7 @@ export function EditorFooter({
           {t('automations.editor.next')}
         </Button>
       ) : (
-        <Button key="save" type="submit" disabled={!ready || saving}>
+        <Button key="save" type="submit" disabled={!ready} pending={saving}>
           {editing ? t('automations.editor.save') : t('automations.editor.create')}
         </Button>
       )}

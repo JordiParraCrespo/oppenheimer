@@ -11,7 +11,7 @@ Authorization answers four separate questions, and all of them have to pass:
 
 | #      | Question                     | Mechanism                                        |
 | ------ | ---------------------------- | ------------------------------------------------ |
-| **Q0** | Is this a platform operator? | Better Auth admin role — a short-circuit         |
+| **Q0** | Is this a platform operator? | Better Auth admin role — skips Q2, never Q1      |
 | **Q1** | Which tenant's data?         | `organizationId` + the active-org context        |
 | **Q2** | Which slice within it?       | `AccessScope`: team membership ∪ explicit grants |
 | **Q3** | What may you do to it?       | Dynamic CASL RBAC, org-scoped roles              |

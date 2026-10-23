@@ -197,7 +197,7 @@ the global `AllExceptionsFilter`; the catalog message is the stable problem
 `title` and per-request specifics go in `AppError`'s `detail`. New error codes
 need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
 
-- `feature-flags.md` — the flag catalog, kinds and safe defaults,
+- `feature-flags.md` — the flag catalog, kinds, every boolean flag on by default,
   `useFeatureFlag` / `@RequireFlag`, what is not a flag
 - `go.md` — the Go service template (`apps/runner`): layout, ports, errors,
   auth, what to reach for instead of a framework
@@ -205,6 +205,8 @@ need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
   limit: the budget written down first, then every call through one
   `UpstreamLimiter.exchange` (`@oppenheimer/backend-core`), with buckets named
   for what the provider counts and a `429` code of its own
+- `provider-integrations.md` — a third-party service is a capability behind
+  one interface, each vendor a provider in one ordered list
 - `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
 - `scopes-and-credentials.md` — the scope catalog, `@RequireScopes`/`ScopesGuard`, API tokens, OAuth for MCP clients
 
@@ -224,8 +226,10 @@ the root barrel); `apps/api/src/feature-flags/` holds each deployment's
 targeting, segments and audit trail, evaluates everything in memory and serves
 the caller's values at `GET /v1/feature-flags`; clients read them with
 `useFeatureFlag('key')` from `@oppenheimer/frontend-core/react`, and a route
-gates the same capability with `@RequireFlag('key')`. Temporary flags carry an
-expiry that `pnpm check:flags` enforces in CI. The guide is
+gates the same capability with `@RequireFlag('key')`. Every boolean flag
+defaults to `true`: a feature launches on, and the flag is how it is turned
+off or narrowed. Temporary flags carry an expiry. `pnpm check:flags` enforces
+both in CI. The guide is
 `.agents/rules/feature-flags.md`.
 
 #### Scopes (API tokens and OAuth clients)
@@ -368,6 +372,7 @@ pnpm check:unused       # Unused files, exports and dependencies in the frontend
 pnpm check:singletons   # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
 # oppenheimer:end web
 pnpm docker:dev         # Start Postgres + Redis
+pnpm monitoring:up      # Grafana on :3030, Prometheus on :9090, over the local API (needs METRICS_TOKEN)
 pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
@@ -395,6 +400,8 @@ pnpm changeset          # Create a changeset for versioning
   scope they are unreachable by API tokens and OAuth clients. Afterwards run
   `pnpm generate:api-client`
 - Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
+- Integrating a third-party service (an LLM, speech, email, SMS, a calendar,
+  any vendor API) is the `/integrate-provider` skill
 - New translations go in `packages/translations/{locale}/index.json`
 - Where frontend code goes — kernel, product package, platform kit, or a
   feature's kind directory — is `.agents/rules/frontend-architecture.md`;
@@ -425,6 +432,11 @@ pnpm changeset          # Create a changeset for versioning
   arguments, the skill ports every export sync since the last port
   (`last-port.json` in the skill) end to end, captures and pull request
   included
+- A read's loading placeholder has the shape of what replaces it: the
+  data's own container, static labels written, a bar per line, never a `0`
+  for a value not given (`.agents/rules/frontend-ui.md`). `pnpm
+  check:structure` fails a `QueryState.Pending` that is only a slab, and
+  `/frontend-audit` reports the rest as `U7`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up

@@ -14,6 +14,12 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
+import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
+import {
+  SessionSelectionContext,
+  useSelecting,
+  useSessionSelectionStore,
+} from '../hooks/use-session-selection';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import {
   ALL,
@@ -27,8 +33,11 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { matchesQuery } from '../lib/session-groups';
+import { emptyMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { splitPinned } from '../lib/session-pins';
+import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
+import { SessionsSelectionBar } from './sessions-selection-bar';
 
 /**
  * The dialog loads when first opened: the sidebar is on every authenticated
@@ -36,6 +45,9 @@ import { ProjectGroup } from './project-group';
  */
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
+);
+const DeleteSessionsDialog = lazy(() =>
+  import('../dialogs/delete-sessions').then((module) => ({ default: module.DeleteSessionsDialog })),
 );
 
 /**
@@ -52,7 +64,14 @@ const DeleteSessionDialog = lazy(() =>
  * session, and a filter must not change which one that is.
  *
  * The projects and their sessions drag into the reader's own order
- * (`useSidebarOrder`), on the sidebar's own `DragProvider`.
+ * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
+ * reader pinned (`useSessionPins`) are drawn above the projects instead of in
+ * them, still filtered and searched like the rest.
+ *
+ * Rows can be picked to act on together (`useSessionSelectionStore`): the
+ * store is the sidebar's, each row subscribes to its own pick, and the sidebar
+ * reads only whether anything is picked, which swaps the Projects line for
+ * the selection bar. A Shift-click spans the rows as drawn here.
  */
 export function SessionsSidebarBody() {
   const { t } = useTranslation();
@@ -63,6 +82,7 @@ export function SessionsSidebarBody() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
+  const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
@@ -88,108 +108,162 @@ export function SessionsSidebarBody() {
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
+  const pins = useSessionPins();
+  const { pinned, rest } = splitPinned(visible, pins.pins);
   const { groups, handlers } = useSidebarOrder({
     projects,
-    sessions: visible,
+    sessions: rest,
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
+  const shown = shownGroups(groups, narrowed, filters.project === ALL ? null : filters.project);
+  // A folded group's rows are not drawn, so a Shift-click does not reach them.
+  const drawn = [
+    ...pinned,
+    ...shown.flatMap(({ project, sessions: members }) =>
+      closed.includes(project?.id ?? 'unfiled') ? [] : members,
+    ),
+  ];
+  const selection = useSessionSelectionStore(drawn.map((session) => session.id));
+  const selecting = useSelecting(selection);
 
   return (
-    <>
-      <SessionsSidebarHead
-        projectCount={projects.length}
-        filters={filters}
-        options={options}
-        dirty={dirty}
-        chips={activeFilters(filters, options)}
-        onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
-        onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
-        onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
-        onQueryChange={setQuery}
-        onNewProject={() =>
-          dialogs.open({
-            kind: 'project',
-            // A project made from here lands on New session with it picked,
-            // which is what a person who just made one wants next.
-            onSaved: (project) =>
-              navigate({ to: '/sessions/new', search: { project: project.id } }),
-          })
-        }
-      />
+    <SessionSelectionContext value={selection}>
+      {/* The pins reach the head too: the selection bar pins what is picked. */}
+      <SessionPinsContext value={pins}>
+        <SessionsSidebarHead
+          projectCount={projects.length}
+          filters={filters}
+          options={options}
+          dirty={dirty}
+          chips={activeFilters(filters, options)}
+          onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+          onFiltersClear={() =>
+            setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
+          }
+          onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onQueryChange={setQuery}
+          selectionBar={
+            selecting ? (
+              <SessionsSelectionBar
+                sessions={visible}
+                projects={projects}
+                onDelete={setDeletingMany}
+                onWrite={setFailure}
+              />
+            ) : undefined
+          }
+          onNewProject={() =>
+            dialogs.open({
+              kind: 'project',
+              // A project made from here lands on New session with it picked,
+              // which is what a person who just made one wants next.
+              onSaved: (project) =>
+                navigate({ to: '/sessions/new', search: { project: project.id } }),
+            })
+          }
+        />
 
-      <ErrorAlert error={error} fallback={t('sessions.sidebar.loadFailed')} className="mx-3 mb-2" />
+        <ErrorAlert
+          error={error}
+          fallback={t('sessions.sidebar.loadFailed')}
+          className="mx-3 mb-2"
+        />
 
-      <ErrorAlert
-        error={failure}
-        fallback={t('sessions.sidebar.writeFailed')}
-        onDismiss={() => setFailure(null)}
-        className="mx-3 mb-2"
-      />
+        <ErrorAlert
+          error={failure}
+          fallback={t('sessions.sidebar.writeFailed')}
+          onDismiss={() => setFailure(null)}
+          className="mx-3 mb-2"
+        />
 
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-        {/* No project at all: the way to one is the plus above and the chip
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+          {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
             pane. */}
-        {groups.length === 0 ? (
-          <div className="px-3 pt-2">
-            <EmptyState compact>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </div>
-        ) : (
-          <DragProvider
-            {...handlers}
-            labels={dragLabels}
-            overlay={(active) => <SidebarDragCopy item={active} />}
-          >
-            <SortableGroup
-              id={PROJECTS_GROUP}
-              items={groups.flatMap(({ project }) =>
-                project ? [sortableProjectId(project.id)] : [],
-              )}
-              accepts={['project']}
+          {groups.length === 0 ? (
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          ) : shown.length === 0 && pinned.length === 0 ? (
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{emptyMessage(t, true, query)}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          ) : (
+            <DragProvider
+              {...handlers}
+              labels={dragLabels}
+              overlay={(active) => <SidebarDragCopy item={active} />}
             >
-              {groups.map(({ project, sessions: members }) => {
-                const key = project?.id ?? 'unfiled';
-                return (
-                  <ProjectGroup
-                    key={key}
-                    project={project}
-                    sessions={members}
-                    open={!closed.includes(key)}
-                    onOpenChange={(next) =>
-                      setClosed((current) =>
-                        next ? current.filter((id) => id !== key) : [...current, key],
-                      )
-                    }
-                    narrowed={narrowed}
-                    query={query}
-                    onNewSessionHere={(target) =>
-                      navigate({ to: '/sessions/new', search: { project: target.id } })
-                    }
-                    onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
-                    onShare={(target) =>
-                      dialogs.open({ kind: 'share-session', sessionId: target.id })
-                    }
-                    onDelete={setDeleting}
-                    onWrite={setFailure}
-                  />
-                );
-              })}
-            </SortableGroup>
-          </DragProvider>
-        )}
-      </div>
+              {pinned.length > 0 ? (
+                <PinnedGroup
+                  sessions={pinned}
+                  onShare={(target) =>
+                    dialogs.open({ kind: 'share-session', sessionId: target.id })
+                  }
+                  onDelete={setDeleting}
+                  onWrite={setFailure}
+                />
+              ) : null}
+              <SortableGroup
+                id={PROJECTS_GROUP}
+                items={shown.flatMap(({ project }) =>
+                  project ? [sortableProjectId(project.id)] : [],
+                )}
+                accepts={['project']}
+              >
+                {shown.map(({ project, sessions: members }) => {
+                  const key = project?.id ?? 'unfiled';
+                  return (
+                    <ProjectGroup
+                      key={key}
+                      project={project}
+                      sessions={members}
+                      open={!closed.includes(key)}
+                      onOpenChange={(next) =>
+                        setClosed((current) =>
+                          next ? current.filter((id) => id !== key) : [...current, key],
+                        )
+                      }
+                      narrowed={narrowed}
+                      query={query}
+                      onNewSessionHere={(target) =>
+                        navigate({ to: '/sessions/new', search: { project: target.id } })
+                      }
+                      onSettings={(target) =>
+                        dialogs.open({ kind: 'project', projectId: target.id })
+                      }
+                      onShare={(target) =>
+                        dialogs.open({ kind: 'share-session', sessionId: target.id })
+                      }
+                      onDelete={setDeleting}
+                      onWrite={setFailure}
+                    />
+                  );
+                })}
+              </SortableGroup>
+            </DragProvider>
+          )}
+        </div>
 
-      <Suspense fallback={null}>
-        {deleting ? (
-          <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
-        ) : null}
-      </Suspense>
-    </>
+        <Suspense fallback={null}>
+          {deleting ? (
+            <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
+          ) : null}
+          {deletingMany ? (
+            <DeleteSessionsDialog sessions={deletingMany} onClose={() => setDeletingMany(null)} />
+          ) : null}
+        </Suspense>
+      </SessionPinsContext>
+    </SessionSelectionContext>
   );
 }

@@ -19,6 +19,15 @@ export interface StartSessionInput {
   name?: string;
 }
 
+/**
+ * The level every session a bot starts runs at. Nobody sits at a bot's
+ * terminal, so the API's own default (`ask`) would leave the agent waiting on
+ * its first approval forever; `auto` lets it work while still checking each
+ * action, and the runner marks its folder trusted for the same reason. An
+ * agent with no approvals records no level whatever is sent.
+ */
+export const BOT_SESSION_PERMISSION = 'auto' as const;
+
 export function planSession(
   input: StartSessionInput,
   project: ProjectEntity | null,
@@ -44,17 +53,33 @@ export function planSession(
     projectId: project?.id,
     name: input.name,
     prompt: input.task,
+    launch: { permission: BOT_SESSION_PERMISSION },
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
   if (!parsed.success) {
-    const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
+    const fields = parsed.error.issues.map((issue) => toolField(issue.path.join('.')));
     return {
       refusal: `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`,
     };
   }
   return { body: parsed.data, hostId };
+}
+
+/**
+ * The session body's fields that `start_session`'s input names otherwise, so
+ * a refusal names the field the model wrote: it never sees `prompt`.
+ */
+const TOOL_FIELD_OF: Readonly<Record<string, keyof StartSessionInput>> = {
+  prompt: 'task',
+  hostId: 'host_id',
+  projectId: 'project_id',
+};
+
+/** A rejected field of the session's body, as the tool's input names it. */
+function toolField(path: string): string {
+  return TOOL_FIELD_OF[path] ?? (path || 'input');
 }
 
 /** How much of the task a Needs input card shows. */

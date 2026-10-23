@@ -5,6 +5,7 @@ import { z } from 'zod/v4';
 import type { BotRepositoryPort } from '../../../../bots/database/bot.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import { BotApprovedCallResolver } from '../../../application/bot-approved-call.resolver';
+import type { BotOwnerPermissionsResolver } from '../../../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
 import { type BotToolArea, defineBotTool } from '../../../application/bot-tool.factory';
 import { BotToolboxFactory } from '../../../application/bot-toolbox.factory';
@@ -26,9 +27,11 @@ import { RunApprovedCallCommandHandler } from '../run-approved-call.command-hand
  * credential's scopes cover the tool; the answer and the turn that reports it
  * are one write, and that turn gets the same intersection. A token limited to
  * `bots:write` approving a card raised in the browser runs nothing. A job
- * retried after the result landed does nothing.
+ * retried after the result landed does nothing. The session the call says
+ * it started is kept as data, beside words that never name it.
  */
 const OWNER = 'owner-1';
+const SESSION = '0b6c3f0e-5a7d-4c1e-9f2a-1d2e3f4a5b6c';
 
 function setup(
   options: {
@@ -72,7 +75,7 @@ function setup(
 
   const run = vi.fn(async (input: { task: string }) => {
     if (options.fails) throw new Error('boom');
-    return `Started session for ${input.task}.`;
+    return { content: `Started session for ${input.task}.`, sessionId: SESSION };
   });
   const area: BotToolArea = {
     definitions: () => [
@@ -91,7 +94,7 @@ function setup(
     BotToolboxFactory as unknown as new (
       ...areas: BotToolArea[]
     ) => BotToolboxFactory
-  )(area, none, none, none, none, none, none, none);
+  )(area, none, none, none, none, none, none, none, none, none, none, none);
   const owners = {
     resolve: vi.fn(async () => emptyScope(OWNER, 'org-1')),
   } as unknown as BotOwnerScopeResolver;
@@ -112,7 +115,10 @@ function setup(
     bots as unknown as BotRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    new BotApprovedCallResolver(owners, toolbox),
+    new BotApprovedCallResolver(owners, toolbox, {
+      // The owner's roles cover the tool: what runs is the scopes' call.
+      heldScopes: async () => new Set<Scope>(['sessions:read', 'sessions:write']),
+    } as unknown as BotOwnerPermissionsResolver),
   );
   const execute = () =>
     handler.execute(new RunApprovedCallCommand({ approvalId: approval.id, by: 'Ana' }));
@@ -121,7 +127,7 @@ function setup(
 }
 
 describe('RunApprovedCallCommandHandler', () => {
-  it('runs exactly the stored call, keyed by the approval, and reports it in the same write', async () => {
+  it('runs exactly the stored call, keyed by the approval, and reports it and its session in the same write', async () => {
     const { approval, run, execute, effects } = setup();
     await execute();
     expect(run).toHaveBeenCalledOnce();
@@ -133,6 +139,7 @@ describe('RunApprovedCallCommandHandler', () => {
     expect(approval).toMatchObject({
       status: 'approved',
       result: 'Started session for Fix the test.',
+      sessionId: SESSION,
     });
     const { continuation } = effects();
     expect(continuation?.turn).toMatchObject({
@@ -142,7 +149,7 @@ describe('RunApprovedCallCommandHandler', () => {
     });
     expect(continuation?.opening).toMatchObject({
       role: 'event',
-      event: { outcome: 'approved', tool: 'start_session' },
+      event: { outcome: 'approved', tool: 'start_session', sessionId: SESSION },
       content:
         'Ana approved: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
     });
@@ -155,6 +162,7 @@ describe('RunApprovedCallCommandHandler', () => {
     expect(approval).toMatchObject({
       status: 'failed',
       result: 'Not run: your credential does not cover sessions:write.',
+      sessionId: null,
     });
     expect(effects().continuation?.turn.credentialScopes).toEqual(['bots:write']);
     expect(effects().continuation?.opening.event).toMatchObject({ outcome: 'failed' });

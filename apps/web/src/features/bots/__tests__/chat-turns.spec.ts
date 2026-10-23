@@ -17,7 +17,7 @@ import {
 
 /** How the chat reads the stored conversation: as turns, each your message and the bot's work. */
 
-const message = (id: string, turnId: string, role: BotMessageEntity['role']) =>
+const message = (id: string, turnId: string | null, role: BotMessageEntity['role']) =>
   ({ id, turnId, role }) as BotMessageEntity;
 const turn = (id: string) => ({ id }) as BotTurnEntity;
 const conversation = (messages: BotMessageEntity[], turns: BotTurnEntity[]) =>
@@ -49,6 +49,29 @@ describe('chatTurns', () => {
     ).toEqual([
       ['t1', ['m1'], ['m2', 'm3']],
       ['t2', ['m4'], []],
+    ]);
+  });
+
+  // What breaks this: a routine's line outside any turn folded into the turn
+  // beside it, or dropped, or two such lines merged into one.
+  it('draws each line outside any turn as a block of its own, where it happened', () => {
+    const blocks = chatTurns(
+      conversation(
+        [
+          message('m1', 't1', 'user'),
+          message('r1', null, 'event'),
+          message('r2', null, 'event'),
+          message('m2', 't1', 'assistant'),
+        ],
+        [turn('t1')],
+      ),
+    );
+    expect(
+      blocks.map((block) => [block.key, block.turnId, block.asked.map((row) => row.id)]),
+    ).toEqual([
+      ['t1', 't1', ['m1']],
+      ['r1', null, ['r1']],
+      ['r2', null, ['r2']],
     ]);
   });
 
@@ -84,13 +107,18 @@ describe('turnPhase', () => {
   });
 });
 
-const said = (id: string, role: BotMessageEntity['role'], content: string) =>
-  ({ id, turnId: 't', role, content }) as BotMessageEntity;
+const said = (
+  id: string,
+  role: BotMessageEntity['role'],
+  content: string,
+  attachments: BotMessageEntity['attachments'] = [],
+) => ({ id, turnId: 't', role, content, attachments }) as BotMessageEntity;
 const block = (
   status: BotTurnEntity['status'] | undefined,
   asked: BotMessageEntity[],
   answer: BotMessageEntity[] = [],
 ): ChatTurnBlock => ({
+  key: 't',
   turnId: 't',
   turn: status
     ? ({ id: 't', status, isActive: status === 'queued' || status === 'running' } as BotTurnEntity)
@@ -125,6 +153,17 @@ describe('retryContent', () => {
     expect(retryContent([block('failed', asked), block('running', asked)])).toBeNull();
     expect(retryContent([block(undefined, asked)])).toBeNull();
     expect(retryContent([])).toBeNull();
+    // A routine's line after the turn does not take Retry away.
+    const line: ChatTurnBlock = { key: 'r1', turnId: null, turn: undefined, asked: [], answer: [] };
+    expect(retryContent([block('failed', asked), line])).toBe('what about bun?');
+  });
+
+  it('offers no Retry for a message that carried images: an image is sent once', () => {
+    const image = { id: 'a1', mimeType: 'image/png' as const, sizeBytes: 10, name: 'shot.png' };
+    expect(retryContent([block('failed', [said('q1', 'user', 'what is this?', [image])])])).toBe(
+      null,
+    );
+    expect(retryContent([block('failed', [said('q1', 'user', '', [image])])])).toBeNull();
   });
 });
 
@@ -139,6 +178,7 @@ describe('compactTokens', () => {
 
 describe('markersBefore', () => {
   const at = (iso: string, model: string): ChatTurnBlock => ({
+    key: iso,
     turnId: iso,
     turn: { id: iso, provider: 'glm', model, createdAt: new Date(iso) } as BotTurnEntity,
     asked: [{ createdAt: new Date(iso) } as BotMessageEntity],
