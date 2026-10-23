@@ -20,6 +20,7 @@ import {
   groupSummary,
   planItems,
   readableOutput,
+  sharedKind,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
@@ -139,7 +140,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
- * fold into one line ("Used 5 tools") that opens to those same lines.
+ * fold into one line ("Used 5 tools"), under their kind's glyph when they
+ * share one, that opens to those same lines.
  * A call still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
@@ -172,9 +174,11 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   });
   if (lines.length === 1) return <Trace>{lines}</Trace>;
   const failed = done.filter((step) => step.isError).length;
+  const actions = done.map(toolAction);
   return (
     <TraceGroup
-      summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
+      icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
+      summary={t(groupSummary(actions), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
       {lines}

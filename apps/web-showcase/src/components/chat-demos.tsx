@@ -257,7 +257,7 @@ function ChatWorkBody() {
           }
         />
       </Trace>
-      <TraceGroup summary="Used 4 tools" failed="1 failed" defaultOpen>
+      <TraceGroup icon={<TerminalIcon />} summary="Used 4 tools" failed="1 failed" defaultOpen>
         <TraceStep icon={<TerminalIcon />} title="List pull requests" target="mine">
           <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
         </TraceStep>
