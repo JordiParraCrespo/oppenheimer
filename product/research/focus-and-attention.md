@@ -39,10 +39,6 @@ Sources are in §6.
   established in sleep and only weakly in the day, so this note uses the
   practice data above, not the rhythm.
 
-The shape: plan the day around **one or two blocks of 60–90 minutes** of
-the work only you can do, and expect the rest of the day to be shorter
-stretches.
-
 ### 1.2 Breaks restore energy more than output
 
 - **Micro-breaks (10 minutes or less) help how you feel, a little.** A
@@ -58,11 +54,6 @@ stretches.
   reported more fatigue and distraction; effort and work completed did not
   differ, so fixed breaks finished the same work in less time. Later
   studies are mixed.
-
-The shape: a short break between blocks keeps you fresh; after heavy
-review or design work take a real one (15 minutes or more). Pick a rhythm
-and keep it rather than deciding each time; the evidence does not pick
-25 versus 50 versus 90 minutes for you.
 
 ### 1.3 A switch costs most at the switch, and a written next step removes much of the cost
 
@@ -84,9 +75,6 @@ and keep it rather than deciding each time; the evidence does not pick
   either of two resumption cues (a timeline of recent activity or of
   recent code), developers completed resumed tasks at twice the rate of
   those using notes alone.
-
-The shape: **never leave a task without one line of "next step"**, and
-when you return, start from a cue of what happened, not from memory.
 
 ### 1.4 Interruptions are constant, and many are our own
 
@@ -129,12 +117,6 @@ robots and drones.
   4–5. More autonomy also brought complacency and lost situation
   awareness.
 
-Put in Oppenheimer's terms: a session that works alone for 20 minutes and
-then needs 4 minutes of you has a fan-out of about six; holding yourself
-under 70% busy brings that to about four. A session that asks every five
-minutes supports one or two. **The lever is how long a session can be left
-and how fast you can re-enter it, not how many you open.**
-
 ### 1.7 Overseeing AI is its own kind of tired, and we misjudge our own speed
 
 - **"AI brain fry".** A 2026 BCG study in Harvard Business Review (about
@@ -157,26 +139,30 @@ and how fast you can re-enter it, not how many you open.**
 
 ## 2. Guidance for a person running sessions
 
-What the evidence supports, as a working day. Nothing here is a product
-rule.
+The one place the evidence becomes advice, as a working day. Nothing here
+is a product rule.
 
 1. **Two kinds of time.** One or two *focus blocks* of 60–90 minutes for
    the work only you can do — specifying tasks, design, deep review — and
-   *triage passes* between them where you serve the sessions that are
-   waiting (§1.1).
+   shorter *triage passes* between them where you serve the sessions that
+   are waiting (§1.1).
 2. **Brief well, then leave it.** A session's neglect time is set when it
    starts: a clear goal, how to tell it is done (a test, a check), and a
-   permission mode that does not stop it for routine steps. Five minutes
-   spent here buys more fan-out than another open tab (§1.6).
-3. **Four or so active sessions,** fewer if they ask often, more if they
-   run long alone. If you are busy more than about 70% of an hour with
-   them, you are past your ceiling; close or pause one (§1.6).
-4. **One line before every switch:** where it is, what is next (§1.3).
-5. **Batch the pings.** Look at waiting sessions at set times — between
-   blocks — rather than on every notification; do not turn them off
+   permission mode that does not stop it for routine steps (§1.6).
+3. **Four or so active sessions.** A session that works alone for 20
+   minutes and then needs 4 minutes of you gives a fan-out of about six;
+   staying under 70% busy brings that to about four, and a session that
+   asks every five minutes supports one or two. The lever is how long a
+   session can be left and how fast you re-enter it, not how many you
+   open (§1.6).
+4. **One line before every switch** — where it is, what is next — and on
+   return, start from a cue of what happened, not from memory (§1.3).
+5. **Batch the pings.** Look at waiting sessions at set times, between
+   blocks, rather than on every notification; do not turn them off
    entirely (§1.5).
-6. **Fixed short breaks between blocks; a longer one after heavy review**
-   (§1.2).
+6. **Fixed breaks, kept rather than decided each time:** short between
+   blocks, 15 minutes or more after heavy review or design. The evidence
+   does not pick 25, 50 or 90 minutes for you (§1.2).
 7. **Trust measurements over feelings** about which way of working is
    faster (§1.7).
 
@@ -202,12 +188,10 @@ read.
    toast. *Behind it: §1.4, §1.5.* Channels (`next-steps/channels.md`)
    and mobile push (`next-steps/0.5-mobile.md`) would obey the same
    setting.
-3. **Focus blocks in Plan.** A personal event of kind *focus* on Plan's
-   calendar (`versions/mvp/20-plan-calendar.md` §2), tied to one task.
-   During it the console holds batched notifications (idea 2), opens on
-   that task's session, and at its end shows a triage pass: every
-   session waiting, oldest first, one at a time as 0.2's Triage walks the
-   PR queue. *Behind it: §1.1, §1.2.*
+3. **Focus blocks.** §1.1 and §1.5 suggest a protected block in which
+   batched notifications wait and one task is in front of the person.
+   Open: is that a kind of event on Plan's calendar, and what does the
+   block's end show? Owner: `versions/mvp/20-plan-calendar.md`.
 4. **A fan-out meter.** From session events the control plane can compute,
    per person, each session's neglect time (time running alone before it
    needs input) and interaction time (from opening a waiting session to
@@ -216,19 +200,19 @@ read.
    shows the trend; the sessions rail warns once when utilisation passes
    70%. Purely arithmetic. *Behind it: §1.6, and §1.7's point that
    people misjudge their own load.*
-5. **Longer neglect time by design.** Starting a session from a task
-   (`versions/mvp/19-plan-tasks-and-goals.md` §5) can check the brief
-   for a done-condition and suggest the permission mode the last similar
-   sessions needed least input under. Stats ranks which projects' sessions
-   ask most often, which is where better briefs, hooks or `CLAUDE.md`
-   rules pay. *Behind it: §1.6.*
-6. **Quiet hours.** Sessions and automations keep running out of hours
-   but hold their notifications to the next batch. *Behind it: §1.5, and
-   note 15 §1.7 on work spilling out of hours.*
-7. **Measure the way of working.** Stats can compare, per person, time
-   from task start to merged PR across ways of working — number of
-   sessions in parallel, permission mode, focus blocks used — so a person
-   sees what is faster for them instead of guessing. *Behind it: §1.7.*
+5. **Longer neglect time.** §1.6 says fan-out rises with how long a
+   session can be left alone. Open: what at session start (a
+   done-condition in the brief, a suggested permission mode) lengthens it,
+   and should Stats show which sessions ask most? Owners:
+   `versions/mvp/19-plan-tasks-and-goals.md` §5 and
+   `versions/mvp/23-plan-milestones-stats-accounts.md` §4.
+6. **Out of hours.** §1.5, with note 15 §1.7 on work spilling out of
+   hours. Open: should sessions that keep running out of hours hold their
+   notifications to the next batch?
+7. **Measuring ways of working.** §1.7 says people misjudge their own
+   speed. Open: should Stats compare a person's time from task start to
+   merged PR across ways of working (sessions in parallel, permission
+   mode, focus blocks)? Owner: `versions/mvp/23-plan-milestones-stats-accounts.md` §4.
 
 Ideas 1, 2 and 4 are small, rest on data the runner's state detection
 (`versions/mvp/02-runner.md` §9) and the event log already produce, and
