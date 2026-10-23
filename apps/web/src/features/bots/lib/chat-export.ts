@@ -19,7 +19,10 @@ export interface ChatExportWords {
   t: TFunction;
 }
 
-/** One call, as the chat's trace says it, marked when it failed. */
+/**
+ * One call, as the chat's trace says it, marked when it failed; a
+ * `delegate` call with a line under it per subagent and how it ended.
+ */
 function stepLine(step: BotToolStep, t: TFunction): string {
   const action = toolAction(step);
   const said =
@@ -29,10 +32,15 @@ function stepLine(step: BotToolStep, t: TFunction): string {
         : t('bots.chat.activity.searched')
       : action.kind === 'plan'
         ? t('bots.chat.activity.planned')
-        : action.target
-          ? `${action.label} ${action.target}`
-          : action.label;
-  return `- ${said}${step.isError ? ` (${t('bots.chat.activity.stepFailed')})` : ''}`;
+        : action.kind === 'delegate'
+          ? t('bots.chat.activity.delegated', { count: action.tasks })
+          : action.target
+            ? `${action.label} ${action.target}`
+            : action.label;
+  const children = (step.subagents ?? []).map(
+    (run) => `\n  - ${run.task} (${t(`bots.chat.activity.subagent.${run.status}`)})`,
+  );
+  return `- ${said}${step.isError ? ` (${t('bots.chat.activity.stepFailed')})` : ''}${children.join('')}`;
 }
 
 /** Who said it: you, the bot, another bot that messaged or answered it, or Oppenheimer. */

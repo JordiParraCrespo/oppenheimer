@@ -77,6 +77,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             output: '',
             isError: false,
             sessionId: null,
+            subagents: null,
           },
           {
             callId: 'b',
@@ -85,6 +86,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             output: '',
             isError: false,
             sessionId: null,
+            subagents: null,
           },
           {
             callId: 'c',
@@ -93,6 +95,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             output: 'no',
             isError: true,
             sessionId: null,
+            subagents: null,
           },
         ],
       }),
@@ -107,6 +110,41 @@ describe('chatExportHeader and chatExportChunk', () => {
         '- bots.chat.activity.planned',
         '- Read document soul (bots.chat.activity.stepFailed)',
         '',
+      ].join('\n'),
+    );
+  });
+
+  it('write a delegate call with a line under it per subagent and how it ended', () => {
+    const run = (task: string, status: 'completed' | 'timed_out') => ({
+      task,
+      status,
+      result: '',
+      toolCalls: [],
+      inputTokens: 0,
+      outputTokens: 0,
+      durationMs: 0,
+    });
+    const chunk = chatExportChunk(
+      message('activity', '', 3, {
+        steps: [
+          {
+            callId: 'a',
+            name: 'delegate',
+            input: { tasks: [{ task: 'Check #12' }, { task: 'Check #13' }] },
+            output: '2 subagents ran',
+            isError: false,
+            sessionId: null,
+            subagents: [run('Check #12', 'completed'), run('Check #13', 'timed_out')],
+          },
+        ],
+      }),
+      words,
+    );
+    expect(chunk).toContain(
+      [
+        '- bots.chat.activity.delegated(2)',
+        '  - Check #12 (bots.chat.activity.subagent.completed)',
+        '  - Check #13 (bots.chat.activity.subagent.timed_out)',
       ].join('\n'),
     );
   });

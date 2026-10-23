@@ -663,6 +663,16 @@ earlier note:
   `terminal_direct_path` and `session_chat_view` now serve on until
   targeting turns them off or narrows them. `scripts/evals/feature-flags/`
   checks that an agent launching a feature follows it.
+- `next-steps/0.4-slack.md` was the Slack integration on its own. On
+  2026-10-22 bots gained channels (`next-steps/channels.md`): WhatsApp,
+  Slack and email behind one interface, with WhatsApp first as a linked
+  device of a number the owner has. Slack as a way to reach a bot is now
+  that note's Slack channel; 0.4 keeps its questions about sessions.
+- `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
+  long job whose result arrived later as a message. On 2026-10-22 (issue
+  #444) it was built as subagents inside the turn: up to 4 read-only
+  children in parallel, bounded and stopped with the turn, whose answers
+  the bot reads as data and answers from in the same reply (25, "Decided").
 - `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that "when a
   session ends" reaches a bot only as a routine's trigger, with no watch
   table. On 2026-10-22 (issue #445) the owner asked for a bot to subscribe

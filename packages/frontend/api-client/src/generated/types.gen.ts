@@ -3289,6 +3289,28 @@ export type BotSessionEventResponseDto = {
     state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
 };
 
+export type BotSubagentRunResponseDto = {
+    /**
+     * The task the bot gave it.
+     */
+    task: string;
+    status: 'completed' | 'failed' | 'cancelled' | 'timed_out';
+    /**
+     * Its answer, cut short; on a failure, why. Empty when it said nothing.
+     */
+    result: string;
+    /**
+     * The tools it called, in order.
+     */
+    toolCalls: Array<string>;
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * How long it ran, in milliseconds.
+     */
+    durationMs: number;
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -3310,6 +3332,10 @@ export type BotToolStepResponseDto = {
      * The session the call started (`start_session`); null for any other call.
      */
     sessionId: string | null;
+    /**
+     * The subagents a `delegate` call ran; null for any other call, and while it runs.
+     */
+    subagents: Array<BotSubagentRunResponseDto> | null;
 };
 
 export type BotAttachmentResponseDto = {

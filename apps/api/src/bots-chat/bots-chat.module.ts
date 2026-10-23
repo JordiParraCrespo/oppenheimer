@@ -23,6 +23,8 @@ import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory'
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
+import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
+import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
@@ -209,6 +211,8 @@ const queryHandlers: Provider[] = [
     BotRoutineToolsFactory,
     BotPeerToolsFactory,
     BotWebToolsFactory,
+    BotSubagentToolsFactory,
+    BotSubagentRunnerFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     BotRoutineActivityDomainEventHandler,

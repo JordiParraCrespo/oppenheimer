@@ -43,7 +43,13 @@ const APPS = [
     // strings (`bots.chat.images.*`, `errors.byCode.BOTS_024`–`BOTS_028`);
     // the default catalog is bundled, so every string a screen shows lands
     // here. The upload and image code itself follows the bot's chat route.
-    budgetKB: 442,
+    // Raised to 443KB on 2026-10-22 for a bot's subagents (#444), measured at
+    // 442.1KB on a main that stood at 442.0KB with no headroom: the entry
+    // +0.1KB for the default locale's `bots.chat.activity` strings for
+    // `delegate` (its line, the live line and each subagent's status). The
+    // icon is one the console already ships; the subagent lines follow the
+    // bot's chat route.
+    budgetKB: 443,
   },
   // oppenheimer:end web
 ];

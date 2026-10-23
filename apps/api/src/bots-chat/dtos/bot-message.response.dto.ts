@@ -5,14 +5,42 @@ import {
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_WAKE_STATES,
+  BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
   type BotSessionWakeState,
+  type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
+
+/** One subagent a `delegate` call ran (`25-bots.md` §4.7). */
+export class BotSubagentRunResponseDto {
+  @ApiProperty({ description: 'The task the bot gave it.' })
+  task!: string;
+
+  @ApiProperty({ enum: BOT_SUBAGENT_STATUSES })
+  status!: BotSubagentStatus;
+
+  @ApiProperty({
+    description: 'Its answer, cut short; on a failure, why. Empty when it said nothing.',
+  })
+  result!: string;
+
+  @ApiProperty({ type: [String], description: 'The tools it called, in order.' })
+  toolCalls!: string[];
+
+  @ApiProperty()
+  inputTokens!: number;
+
+  @ApiProperty()
+  outputTokens!: number;
+
+  @ApiProperty({ description: 'How long it ran, in milliseconds.' })
+  durationMs!: number;
+}
 
 /** One tool call in an activity line. */
 export class BotToolStepResponseDto {
@@ -42,6 +70,13 @@ export class BotToolStepResponseDto {
     description: 'The session the call started (`start_session`); null for any other call.',
   })
   sessionId!: string | null;
+
+  @ApiProperty({
+    type: [BotSubagentRunResponseDto],
+    nullable: true,
+    description: 'The subagents a `delegate` call ran; null for any other call, and while it runs.',
+  })
+  subagents!: BotSubagentRunResponseDto[] | null;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */

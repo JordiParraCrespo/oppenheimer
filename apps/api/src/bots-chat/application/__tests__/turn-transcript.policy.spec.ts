@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
 
@@ -73,6 +74,7 @@ describe('TurnTranscript', () => {
         output: 'found',
         isError: false,
         sessionId: null,
+        subagents: null,
       },
       {
         callId: 'b',
@@ -81,6 +83,7 @@ describe('TurnTranscript', () => {
         output: 'nope',
         isError: true,
         sessionId: null,
+        subagents: null,
       },
     ]);
   });
@@ -110,6 +113,45 @@ describe('TurnTranscript', () => {
       ['a', 's-1'],
       ['b', null],
     ]);
+  });
+
+  it('keeps the subagents a delegate call ran on its step, and counts their tokens as the turn’s', () => {
+    const runs = [
+      {
+        task: 'Check build-01',
+        status: 'completed',
+        result: 'Online',
+        toolCalls: ['list_hosts'],
+        inputTokens: 300,
+        outputTokens: 40,
+        durationMs: 2_000,
+      },
+      {
+        task: 'Check build-02',
+        status: 'failed',
+        result: 'model overloaded',
+        toolCalls: [],
+        inputTokens: 50,
+        outputTokens: 0,
+        durationMs: 800,
+      },
+    ];
+    const { writes, transcript } = run([
+      { type: 'tool.started', callId: 'a', name: 'delegate', input: { tasks: [] } },
+      { type: 'usage', inputTokens: 10, outputTokens: 2 },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'delegate',
+        output: '2 subagents ran; 1 did not complete.',
+        isError: false,
+        data: { [SUBAGENT_DATA_KEY]: JSON.stringify(runs) },
+      },
+      { type: 'done', reason: 'completed' },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps[0]?.subagents).toEqual(runs);
+    expect(transcript.result).toMatchObject({ inputTokens: 360, outputTokens: 42 });
   });
 
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {

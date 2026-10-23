@@ -26899,6 +26899,49 @@
         },
         "required": ["kind", "subscriptionId", "sessionId", "sessionName", "turn", "state"]
       },
+      "BotSubagentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The task the bot gave it."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["completed", "failed", "cancelled", "timed_out"]
+          },
+          "result": {
+            "type": "string",
+            "description": "Its answer, cut short; on a failure, why. Empty when it said nothing."
+          },
+          "toolCalls": {
+            "description": "The tools it called, in order.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputTokens": {
+            "type": "number"
+          },
+          "outputTokens": {
+            "type": "number"
+          },
+          "durationMs": {
+            "type": "number",
+            "description": "How long it ran, in milliseconds."
+          }
+        },
+        "required": [
+          "task",
+          "status",
+          "result",
+          "toolCalls",
+          "inputTokens",
+          "outputTokens",
+          "durationMs"
+        ]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -26926,9 +26969,17 @@
             "format": "uuid",
             "nullable": true,
             "description": "The session the call started (`start_session`); null for any other call."
+          },
+          "subagents": {
+            "nullable": true,
+            "description": "The subagents a `delegate` call ran; null for any other call, and while it runs.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotSubagentRunResponseDto"
+            }
           }
         },
-        "required": ["callId", "name", "input", "output", "isError", "sessionId"]
+        "required": ["callId", "name", "input", "output", "isError", "sessionId", "subagents"]
       },
       "BotAttachmentResponseDto": {
         "type": "object",

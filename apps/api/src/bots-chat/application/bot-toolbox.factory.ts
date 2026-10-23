@@ -13,6 +13,7 @@ import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
+import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
 import type {
   ApprovedCallContext,
   BotToolArea,
@@ -45,6 +46,7 @@ export class BotToolboxFactory {
     routines: BotRoutineToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
+    subagents: BotSubagentToolsFactory,
   ) {
     this.areas = [
       self,
@@ -59,6 +61,7 @@ export class BotToolboxFactory {
       routines,
       peers,
       web,
+      subagents,
     ];
   }
 
@@ -87,7 +90,30 @@ export class BotToolboxFactory {
     granted: readonly Scope[] | null,
     held: HeldScopes,
   ): BotEngineTool[] {
-    return this.definitions(granted).map((definition) => {
+    return this.bind(this.definitions(granted), context, held);
+  }
+
+  /**
+   * What a `delegate` child is offered (`25-bots.md` §4.7): the same tools
+   * as its turn, behind the same scopes and the same owner's roles, keeping
+   * only those that read. None asks and none is `delegate`, so a child can
+   * neither raise a card nor start a child of its own.
+   */
+  readOnlyTools(
+    context: BotToolContext,
+    granted: readonly Scope[] | null,
+    held: HeldScopes,
+  ): BotEngineTool[] {
+    const reading = this.definitions(granted).filter((definition) => definition.readOnly);
+    return this.bind(reading, { ...context, subagents: undefined }, held);
+  }
+
+  private bind(
+    definitions: readonly BotToolDefinition[],
+    context: BotToolContext,
+    held: HeldScopes,
+  ): BotEngineTool[] {
+    return definitions.map((definition) => {
       const tool = definition.bind(context);
       // The permission comes before asking: a refused tool raises no card.
       return {

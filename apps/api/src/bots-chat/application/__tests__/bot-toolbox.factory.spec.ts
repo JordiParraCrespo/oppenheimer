@@ -159,4 +159,40 @@ describe('BotToolboxFactory', () => {
     expect(result.isError).toBe(true);
     expect(result.content).toContain('(sessions:write)');
   });
+
+  describe('what a delegate child is offered', () => {
+    const listHosts = vi.fn(async () => 'hosts');
+    const reading = defineBotTool({
+      name: 'list_hosts',
+      scope: 'hosts:read',
+      readOnly: true,
+      description: 'Lists hosts.',
+      input: z.object({}),
+      run: listHosts,
+    });
+    const mixed = toolboxOf(area, { definitions: () => [reading] });
+    const signal = new AbortController().signal;
+
+    it('only the tools that read, never one that asks or delegates', () => {
+      const parent = { ...context, subagents: { run: vi.fn() } };
+      expect(mixed.readOnlyTools(parent, null, EVERYTHING).map((bound) => bound.name)).toEqual([
+        'list_hosts',
+      ]);
+    });
+
+    it('within the turn’s credential scopes', () => {
+      expect(mixed.readOnlyTools(context, ['sessions:read'], EVERYTHING)).toEqual([]);
+    });
+
+    it('behind the owner’s roles, so a child reaches no further than its bot', async () => {
+      listHosts.mockClear();
+      const [bound] = mixed.readOnlyTools(context, null, holding('sessions:read'));
+
+      const result = await bound?.run({}, { signal });
+
+      expect(result?.isError).toBe(true);
+      expect(result?.content).toContain('(hosts:read)');
+      expect(listHosts).not.toHaveBeenCalled();
+    });
+  });
 });

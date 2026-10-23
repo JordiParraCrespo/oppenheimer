@@ -18,13 +18,15 @@ import { useTranslation } from 'react-i18next';
  * (`packages/frontend/design-system/AGENTS.md`); the section computes which
  * projects can take the session, since it holds both lists. No key hints: the
  * export draws R, M and D, but nothing listens for them yet, and a painted key
- * that does nothing is a claim.
+ * that does nothing is a claim. Select starts picking rows to act on
+ * together with this one, the way a touch screen with no ⌘-click gets there.
  */
 export function SessionRowMenu({
   open,
   onOpenChange,
   pinned,
   onPinChange,
+  onSelect,
   onRename,
   onMove,
   onShare,
@@ -35,6 +37,7 @@ export function SessionRowMenu({
   onOpenChange: (open: boolean) => void;
   pinned: boolean;
   onPinChange: (pinned: boolean) => void;
+  onSelect: () => void;
   onRename: () => void;
   onMove: (projectId: string) => void;
   onShare: () => void;
@@ -63,6 +66,7 @@ export function SessionRowMenu({
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
               {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
