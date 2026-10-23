@@ -176,4 +176,10 @@ test('a guest on a view-only link reads the chat, with no composer', async ({ br
   await expect(page.getByText('had no initial value.')).toBeVisible();
   await expectChatOnTop(page);
   await expect(page.getByRole('button', { name: 'Dictate' })).toHaveCount(0);
+
+  // The grid cannot scroll for a watcher (the wheel is tmux's, on a pane they
+  // only watch); the chat is where they read back, so it scrolls as a member's does.
+  await expectChatFollows(page, (lines) => appendTranscript(box.host, sessionId, lines), {
+    composer: false,
+  });
 });
