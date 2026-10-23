@@ -1578,6 +1578,23 @@ describe('browser attach socket', () => {
       expect((await attached).text).toEqual({ type: 'attached', window: 0 });
     });
 
+    it('relays the transcript to a guest when the sharer has the chat view', async () => {
+      shareIs(true);
+      vi.mocked(h.flags.isEnabled).mockImplementation((key) => key === 'session_chat_view');
+      const { runner, browser } = await attachedThrough(shareTicket(true));
+      expect(h.flags.isEnabled).toHaveBeenCalledWith('session_chat_view', {
+        userId: USER,
+        organizationId: ORG,
+      });
+
+      const entry = '{"type":"user","message":{"role":"user","content":"fix it"}}';
+      const chat = nextMessage(browser);
+      runner.send(
+        JSON.stringify({ type: 'attachment.chat', attachmentId: 1, reset: true, entries: [entry] }),
+      );
+      expect((await chat).text).toEqual({ type: 'chat', reset: true, entries: [entry] });
+    });
+
     it('attaches a read share read-only and never forwards its keystrokes', async () => {
       shareIs(true);
       const { runner, browser, attach } = await attachedThrough(shareTicket(true));
