@@ -4,20 +4,19 @@ import {
   DropZone,
   EmptyState,
   HostLinkChrome,
-  SegmentedControl,
-  SegmentedControlItem,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatCover } from '../components/chat-cover';
+import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
-import { useChatAvailable } from '../hooks/use-session-chat';
+import { useChatReading } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
@@ -77,10 +76,7 @@ export function SessionTerminal({
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
   const { chat, view, onViewChange, cover } = reading;
-  const chatAvailable = useChatAvailable(chat);
-  const chatFlag = useFeatureFlag('session_chat_view');
-  const chatOffered = chatAvailable && chatFlag;
-  const chatShown = chatOffered && view === 'chat';
+  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
   const terminal = useTerminal(createStream, {
     chat,
     onEnd: refresh,
@@ -98,16 +94,7 @@ export function SessionTerminal({
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
   const viewToggle = chatOffered ? (
-    <SegmentedControl
-      value={view}
-      onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
-      aria-label={t('sessions.chat.view.label')}
-    >
-      <SegmentedControlItem value="terminal">
-        {t('sessions.chat.view.terminal')}
-      </SegmentedControlItem>
-      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
-    </SegmentedControl>
+    <ChatViewToggle view={view} onViewChange={onViewChange} />
   ) : null;
 
   return (
@@ -149,12 +136,9 @@ export function SessionTerminal({
             // never reaches the grid's listener: the cover takes its files
             // the same way, and they land in the agent's prompt. On the way
             // down, as the grid does, so nothing in the chat can swallow it.
-            <div
-              className="absolute inset-0 bg-chat-ground font-sans text-fg"
-              onPasteCapture={(event) => takeFilePaste(event, upload.send)}
-            >
+            <ChatCover onPasteCapture={(event) => takeFilePaste(event, upload.send)}>
               {cover}
-            </div>
+            </ChatCover>
           ) : null}
         </div>
 
