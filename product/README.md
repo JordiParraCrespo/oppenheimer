@@ -673,3 +673,8 @@ earlier note:
   #444) it was built as subagents inside the turn: up to 4 read-only
   children in parallel, bounded and stopped with the turn, whose answers
   the bot reads as data and answers from in the same reply (25, "Decided").
+- `next-steps/0.7-terminal-and-chat.md` had the relay never send the chat
+  through a share link, so a guest saw only the terminal. On 2026-10-23
+  the owner asked for the shared page to have the chat view too: the
+  relay judges the flag as the sharer, and the guest gets Terminal / Chat,
+  read-only on a read share (0.7, "Wire").
