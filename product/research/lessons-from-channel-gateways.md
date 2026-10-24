@@ -272,8 +272,8 @@ per customer and per channel? The design it fed is
   "usability features, not security boundaries"; people who must not see
   each other's data get separate agents.
 
-What we take: the tiers, routing kept apart from access, `matchedBy`
+What we take: specificity, flattened to one priority list; routing kept apart from access, `matchedBy`
 recorded, one customer across channels like `identityLinks`, and a bot per
 customer as the isolation. What we change: no config order (a unique match
-per tier instead), the route resolved once per conversation, and memory
+per kind of route instead), the route resolved once per conversation, and memory
 tagged by customer for a bot shared by many (`customers-and-routes.md` §5).

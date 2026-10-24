@@ -28,8 +28,12 @@ What an account admits is its **audience**, chosen when it is connected:
 
 - **Owner** (the default, channels.md §5): the owner and their allowed
   contacts; anyone else is held.
-- **Customers**: anyone who writes is admitted, and routes decide what
-  happens, including holding them. A support number or mailbox is this.
+- **Customers**: the owner and every known customer (§2); anyone else is
+  held. A number shared with known clients is this.
+- **Anyone**: everyone who writes is admitted. A public support number or
+  mailbox is this.
+
+Holding a sender is always the audience's call, never a route's.
 
 ```
  inbound ─► intake row ─► admitted? ── no ─► held (channels.md §5)
@@ -41,7 +45,7 @@ What an account admits is its **audience**, chosen when it is connected:
           conversation exists? ── yes ─► its bot (routes apply to new ones)
                               │ no
                               ▼
-                     resolveRoute (§3) ─► bot │ a person (§6) │ held
+                     resolveRoute (§3) ─► bot │ a person (§7)
 ```
 
 ## 2. Customers
@@ -64,8 +68,9 @@ shows up on channels:
   unique on `(workspaceId, kind, identityKind, value)`, so one number
   belongs to one customer. The lookup is the most specific identity that
   matches: an address beats its domain, and a channel beats its team.
-- A sender with no identity is **no customer**. The default route decides
-  what happens to them (§3), and the console offers "Make a customer" on
+- A sender with no identity is **no customer**. Only an account whose
+  audience is anyone admits them, routes skip rows 1 and 2 for them
+  (§3), and the console offers "Make a customer" on
   their conversation, which adds the identity.
 
 One customer across channels is one customer: Acme writing from
@@ -76,56 +81,50 @@ peers. The conversations stay separate, one per chat or thread
 
 ## 3. Routes
 
-A route is a row: what it matches, and what answers.
+A route is a row: what it matches, and what answers. Each route matches
+on exactly one of five combinations, and **the routes form one priority
+list, scanned once from the top**:
 
-| Field | Meaning |
-|---|---|
-| `kind` | The channel kind, or any |
-| `accountId` | One connected account, or any of that kind |
-| `customerId` | One customer, or any, or **none** (a sender who is no customer) |
-| `conversationId` | One conversation (a Slack channel, a WhatsApp group), or any |
-| `target` | `bot` (with `botId`), `person` (straight to the inbox, §6), or `hold` |
-| `instructions` | Optional lines added to the bot's prompt for turns on this route |
+| # | A route that matches | Example |
+|---|---|---|
+| 1 | A customer on a channel kind | Acme on WhatsApp |
+| 2 | A customer on any channel | Acme anywhere |
+| 3 | An account | `billing@` |
+| 4 | A channel kind | All of Slack |
+| 5 | The workspace default | Everything else |
 
-**The most specific route wins**, by a fixed order of tiers, never by the
-order rows were added:
+Besides its match, a route has a `target`, `bot` (with `botId`) or
+`person` (straight to the inbox, §7), and optional `instructions`, lines
+added to the bot's prompt for turns on this route. A check constraint
+holds a row to one combination's columns, and a unique index per
+combination refuses a second route with the same match, so two routes
+never tie. OpenClaw breaks ties by config order, which is how one rule
+silently shadows another; a table with an edit form has no order to lean
+on, so it gets the constraint instead.
 
-1. The conversation.
-2. The customer (or "none") on this channel kind (and account, if set).
-3. The customer (or "none") on any channel.
-4. The account.
-5. The channel kind.
-6. The workspace default.
+A conversation of its own (one Slack channel, one WhatsApp group) is
+reached through a customer: the channel or group is that customer's
+identity (§2), so it needs no route kind of its own.
 
-Within a tier the account narrows before it widens: a route with an
-account beats the same route without one. Two routes in the same tier
-with the same match cannot exist: a unique index on the match columns
-refuses the second, so there is no tie to break. OpenClaw breaks ties by
-config order, which is how one rule silently shadows another; a table
-with an edit form has no order to lean on, so it gets the constraint
-instead.
-
-`resolveRoute(inbound, customer, routes)` is a pure domain policy that
-returns the route and the tier that matched (`matchedBy`, as OpenClaw
-records it), so the console can say why a conversation went where it did.
+`resolveRoute(customer, inbound, routes)` is a pure domain policy that
+returns the route and the row of the list it matched (`matchedBy`, as
+OpenClaw records it), so the console can say why a conversation went where
+it did.
 
 **Your example, as rows:**
 
-| Kind | Account | Customer | Conversation | Target |
-|---|---|---|---|---|
-| WhatsApp | | Acme | | Acme's bot |
-| WhatsApp | | Globex | | Globex's bot |
-| WhatsApp | | | | Milo (front desk) |
-| Slack | | | | Iris (support) |
-| Email | support@ | | | Iris (support) |
-| Email | billing@ | | | person |
-| Email | | none | | hold |
+| # | Match | Target |
+|---|---|---|
+| 1 | Acme on WhatsApp | Acme's bot |
+| 1 | Globex on WhatsApp | Globex's bot |
+| 3 | `support@` | Iris (support) |
+| 3 | `billing@` | person |
+| 4 | WhatsApp | Milo (front desk) |
+| 4 | Slack | Iris (support) |
 
-Acme on WhatsApp reaches its own bot (tier 2); Acme by email reaches Iris
-(tier 4, since Acme has no email route); an unknown WhatsApp number
-reaches Milo (tier 5); an unknown sender by email is held, because
-"none" counts as a customer value and its route (tier 2) beats the
-mailbox's (tier 4).
+Acme on WhatsApp reaches its own bot (1); Acme by email to `support@`
+reaches Iris (3, since Acme has no route for email); an unknown WhatsApp
+number, on a number whose audience is anyone, reaches Milo (4).
 
 **A conversation keeps its bot.** The route is resolved once, when the
 conversation opens, and written on it. Editing a route changes where new
@@ -133,8 +132,8 @@ conversations go; an open one moves only when someone presses **Reroute**
 on it, which resolves again. A customer mid-conversation never finds a
 different bot answering.
 
-**No route, no answer.** A workspace with channels and no default route
-holds what nothing matches, the channels.md default. The console's first
+**No route, no answer.** What an admitted message matches no route for is
+held, the channels.md default. The console's first
 route is offered when the first account is connected: "Send everything on
 this number to Juno", which is the binding channels.md had.
 
@@ -184,13 +183,14 @@ Channels.md §5 has every non-owner's message act inside the owner's
 permissions. With customers that is too much: a customer must not be able
 to start a session on the owner's host or read their pull requests.
 
-- **A customer turn has its own tool set**, narrower than the bot's.
-  By default: answer, read the bot's documents and knowledge, remember (for
-  this customer, or this conversation, §5), look up and update the customer's record, and hand off.
-  Sessions, GitHub, the plan, other bots and `send_message` elsewhere are
-  **blocked** in a customer turn, whatever the bot's permissions say.
-  The owner can allow more per route (a route's tools list), never more
-  than the bot itself has.
+- **A customer turn has one fixed tool set**, narrower than the bot's:
+  answer, read the bot's documents and knowledge, remember (for this
+  customer, or this conversation, §5), look up and update the customer's
+  record, and hand off. Sessions, GitHub, the plan, other bots and
+  `send_message` elsewhere are **blocked** in a customer turn, whatever
+  the bot's permissions say. A route varies only the instructions, never
+  the tools; a customer-facing bot that needs more is a change to the
+  bot, not to a route.
 - **A customer's message is a request, not an instruction**, and is never
   a way to approve anything; the turn context says who is writing and that
   they are a customer, beside the route's `instructions`.
@@ -264,7 +264,7 @@ The three channels keep their design; what changes is who writes in.
 
 These come after channels.md slice 1 (the core and WhatsApp to one bot).
 
-1. **Routes.** `channel_route` with the tiers, the account's `botId` moved
+1. **Routes.** `channel_route` as one priority list, the account's `botId` moved
    to a route, the route resolved when a conversation opens. Customers
    with identities. A bot of a customer's own works from here.
 2. **Customer turns.** The narrow tool set, memory per customer,
@@ -293,4 +293,4 @@ These come after channels.md slice 1 (the core and WhatsApp to one bot).
   WhatsApp and Slack, routed per customer and channel ("when a message
   comes from Slack do this, from WhatsApp the other thing"), with some
   WhatsApp customers each on a bot of their own. Routes replace the
-  account's single bot; the most specific route wins, by tier.
+  account's single bot; one priority list of five match kinds, the first match wins.

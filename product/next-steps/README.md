@@ -99,7 +99,4 @@ where these land is the first open question below.
 - 2026-10-22: cloud agents added, version not yet set: a Cloud place for
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
-- 2026-10-24: customers and routes added after channels: bots for
-  customer support and attending to customers over email, WhatsApp and
-  Slack, with routes choosing the bot per customer and channel and some
-  customers on a bot of their own (`customers-and-routes.md`).
+- 2026-10-24: customers and routes added after channels.

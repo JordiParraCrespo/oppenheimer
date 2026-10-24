@@ -347,8 +347,3 @@ and answers from it.
   methods and no capability flags. The console chat is a conversation like
   the others, and a channel's work is the bot's turn, with no queue of its
   own.
-- 2026-10-24: an account no longer binds one bot: routes choose the bot
-  per channel, account, customer and conversation, and an account's
-  audience can be its customers, who are admitted and routed instead of
-  held (`customers-and-routes.md`). §5 stays the rule for an account whose
-  audience is the owner.
