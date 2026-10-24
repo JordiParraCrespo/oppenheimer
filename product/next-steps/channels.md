@@ -8,7 +8,9 @@ The research is
 [`../research/lessons-from-channel-gateways.md`](../research/lessons-from-channel-gateways.md)
 (OpenClaw, Grok Bot, Codex and dots, read on 2026-10-22). The owner set the
 direction the same day; it is under "Decided" at the end. Version not set;
-0.4 Slack becomes the Slack channel of this design.
+0.4 Slack becomes the Slack channel of this design. Which bot answers, and
+bots that talk to customers, are [Customers and routes](customers-and-routes.md),
+which replaces the one bot per account of this note with routes (2026-10-24).
 
 ## 1. A channel is not a connector
 
@@ -323,7 +325,9 @@ and answers from it.
 ## Open questions
 
 1. One bot per channel account, or several bots behind one number or app,
-   chosen by name? This design binds an account to one bot.
+   chosen by name? This design binds an account to one bot. *Answered
+   2026-10-24 by routes: several bots behind one account, chosen per
+   customer and channel ([`customers-and-routes.md`](customers-and-routes.md) §3).*
 2. Does the console chat show channel conversations in one timeline, or
    each on its own?
 
@@ -343,3 +347,8 @@ and answers from it.
   methods and no capability flags. The console chat is a conversation like
   the others, and a channel's work is the bot's turn, with no queue of its
   own.
+- 2026-10-24: an account no longer binds one bot: routes choose the bot
+  per channel, account, customer and conversation, and an account's
+  audience can be its customers, who are admitted and routed instead of
+  held (`customers-and-routes.md`). §5 stays the rule for an account whose
+  audience is the owner.

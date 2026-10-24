@@ -668,6 +668,13 @@ earlier note:
   Slack and email behind one interface, with WhatsApp first as a linked
   device of a number the owner has. Slack as a way to reach a bot is now
   that note's Slack channel; 0.4 keeps its questions about sessions.
+- `next-steps/channels.md` bound each channel account to one bot and held
+  everyone but the owner and their contacts. On 2026-10-24 the owner asked
+  for bots that talk to customers, routed per customer and channel, with
+  some WhatsApp customers each on a bot of their own: routes now choose
+  the bot (the most specific of conversation, customer, account, channel,
+  default), and an account whose audience is its customers admits them
+  (`next-steps/customers-and-routes.md`).
 - `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only

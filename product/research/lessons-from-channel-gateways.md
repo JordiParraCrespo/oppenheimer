@@ -242,3 +242,38 @@ OpenClaw tells people to use a spare one.
   OpenClaw has no public URL. Our API has one.
 - **Email as a read-only trigger only** (OpenClaw): a bot that cannot
   answer in the thread it was written in is a notifier, not a channel.
+
+## 9. Routing: OpenClaw's bindings (read 2026-10-24)
+
+Read at `openclaw/openclaw` `7f919ca` (2026-10-24): `src/routing/resolve-route.ts`,
+`docs/concepts/agent-bindings.md`, `session.md` and `multi-user.md`, for one
+question the owner asked: how does a message choose which agent answers it,
+per customer and per channel? The design it fed is
+[`next-steps/customers-and-routes.md`](../next-steps/customers-and-routes.md).
+
+- **A binding** is `{ agentId, match: { channel, accountId?, peer?, guildId?,
+  teamId?, roles? } }` in config. Their own docs list "a support inbox routed
+  to a support workspace" and "one direct message or group routed to a
+  specialist" as what it is for.
+- **Precedence is by specificity, in fixed tiers** (`matchedBy`): the peer,
+  the peer's parent (a thread's channel), a wildcard peer, a guild with
+  roles, a guild, a team, the account, the channel, then the default agent.
+  Within a tier the first binding in config order wins, and the docs warn to
+  "put narrow rules before broad ones".
+- **Routing is not access.** "Bindings choose an agent for messages that
+  were already admitted"; pairing and allowlists are separate. An omitted
+  `accountId` means the default account only, `"*"` means all, a trap their
+  docs call out.
+- **The route returns a session key** built from the agent, channel, account
+  and peer with a DM scope (`main`, `per-peer`, `per-channel-peer`);
+  `identityLinks` maps one person's identities on several channels to one
+  peer.
+- **Isolation is the agent.** `multi-user.md`: ownership and visibility are
+  "usability features, not security boundaries"; people who must not see
+  each other's data get separate agents.
+
+What we take: the tiers, routing kept apart from access, `matchedBy`
+recorded, one customer across channels like `identityLinks`, and a bot per
+customer as the isolation. What we change: no config order (a unique match
+per tier instead), the route resolved once per conversation, and memory
+tagged by customer for a bot shared by many (`customers-and-routes.md` §5).
