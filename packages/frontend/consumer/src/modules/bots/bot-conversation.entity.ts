@@ -4,6 +4,7 @@ import type {
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
+  BotSubagentRun,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 
@@ -18,6 +19,8 @@ export interface BotToolStep {
   isError: boolean;
   /** The session the call started (`start_session`), for the chat to open; `null` for any other. */
   sessionId: string | null;
+  /** The subagents a `delegate` call ran, as they ended; `null` for any other call, and while it runs. */
+  subagents: readonly BotSubagentRun[] | null;
 }
 
 /**

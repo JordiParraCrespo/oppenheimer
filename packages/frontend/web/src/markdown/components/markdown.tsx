@@ -17,12 +17,14 @@ type Heading = 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
  * What every node is rendered with: the page relative links resolve
  * against, and the write head for text still being written, which goes
  * after the last words (`tail`, the innermost block that ends the source).
+ * `line` reads the source as one line of words (`MarkdownLine`).
  */
 type Context = {
   base: string | undefined;
   tail: MarkdownToken | null;
   caret: ReactNode;
   code: ((block: MarkdownCodeBlock) => ReactNode) | undefined;
+  line: boolean;
 };
 
 /** A fenced block, for a caller that draws its own (`code`). */
@@ -99,7 +101,42 @@ function table(token: Tokens.Table, ctx: Context, key: string): ReactNode {
   );
 }
 
+/**
+ * A token on one line, where that differs from the page: a block is its
+ * words, a link its text (the line sits inside a link of its own), and what
+ * has no words is dropped. `undefined` leaves the token to `node`.
+ */
+function lineNode(token: MarkdownToken, ctx: Context, key: string): ReactNode | undefined {
+  switch (token.type) {
+    case 'heading':
+    case 'paragraph':
+    case 'blockquote':
+    case 'details':
+    case 'link':
+      return render(token.tokens as MarkdownToken[], ctx, key);
+    case 'list':
+      return token.items.map((item, index) =>
+        render(item.tokens as MarkdownToken[], ctx, `${key}-${index}`),
+      );
+    case 'image':
+      return decodeEntities(token.text);
+    case 'code':
+      return <code key={key}>{token.text}</code>;
+    case 'table':
+    case 'hr':
+    case 'html':
+    case 'br':
+      return null;
+    default:
+      return undefined;
+  }
+}
+
 function node(token: MarkdownToken, ctx: Context, key: string): ReactNode {
+  if (ctx.line) {
+    const flat = lineNode(token, ctx, key);
+    if (flat !== undefined) return flat;
+  }
   const children = () =>
     'tokens' in token && token.tokens ? render(token.tokens as MarkdownToken[], ctx, key) : null;
   const caret = token === ctx.tail ? ctx.caret : null;
@@ -232,8 +269,22 @@ export function Markdown({
   const tail = caret ? tailOf(tokens) : null;
   return (
     <>
-      {render(tokens, { base, tail, caret, code }, 'md')}
+      {render(tokens, { base, tail, caret, code, line: false }, 'md')}
       {caret && !tail ? caret : null}
     </>
   );
+}
+
+/**
+ * The start of something written in markdown (a bot's last message) on one
+ * line, the way a chat list previews it: `Markdown`'s bold, italics, struck
+ * text and code spans, a link as its words, a block as its words and what
+ * has no words dropped, never the syntax. It draws inline elements alone:
+ * the caller sets the line's type and truncation. A mark the source leaves
+ * open (a preview cut inside a bold) stays as written.
+ */
+export function MarkdownLine({ source }: { source: string }) {
+  const tokens = parseMarkdown(source.replace(/\s+/g, ' ').trim());
+  const ctx = { base: undefined, tail: null, caret: null, code: undefined, line: true };
+  return <>{render(tokens, ctx, 'line')}</>;
 }

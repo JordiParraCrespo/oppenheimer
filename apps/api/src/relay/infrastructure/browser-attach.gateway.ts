@@ -225,11 +225,13 @@ export class BrowserAttachGateway {
   /**
    * Whether this attachment's browser is handed the agent's transcript
    * entries for the chat view (0.7): for a person the `session_chat_view`
-   * flag is on for, and not through a share link, whose pane has no chat.
-   * Otherwise the runner's `attachment.chat` is dropped here.
+   * flag is on for. Through a share link that person is the sharer, whose
+   * judgement the rest of the attachment already is; the transcript is what
+   * the shared terminal draws, read another way, so a guest who may watch the
+   * grid may read the chat. Otherwise the runner's `attachment.chat` is
+   * dropped here.
    */
   private chatFor(claim: AttachTicket): boolean {
-    if (claim.share) return false;
     return this.flags.isEnabled('session_chat_view', {
       userId: claim.userId,
       organizationId: claim.organizationId,

@@ -1,6 +1,7 @@
 import { type ChatState, SessionChat } from '@oppenheimer/frontend-consumer';
-import { shareEntities } from '@oppenheimer/frontend-core/react';
+import { shareEntities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useState, useSyncExternalStore } from 'react';
+import type { PaneReading } from '../lib/chat-blocks';
 
 /**
  * One terminal pane's chat view (0.7): the store the pane's stream feeds
@@ -51,7 +52,20 @@ export function useChatState(chat: SessionChat): ChatState {
 }
 
 /** Whether the host sends this session's chat at all, for the toggle that offers it. */
-export function useChatAvailable(chat: SessionChat): boolean {
+function useChatAvailable(chat: SessionChat): boolean {
   const available = () => chat.snapshot().available;
   return useSyncExternalStore(chat.subscribe, available, available);
+}
+
+/**
+ * What a terminal does with the pane's reading: whether it offers Terminal /
+ * Chat (the host sends the transcript and `session_chat_view` is on) and
+ * whether the chat is the view on screen. One decision for every terminal
+ * that hosts a chat, a member's and a guest's.
+ */
+export function useChatReading(reading: PaneReading): { offered: boolean; shown: boolean } {
+  const available = useChatAvailable(reading.chat);
+  const flag = useFeatureFlag('session_chat_view');
+  const offered = available && flag;
+  return { offered, shown: offered && reading.view === 'chat' };
 }

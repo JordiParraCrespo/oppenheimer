@@ -8,17 +8,19 @@ import {
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, Wrench } from '@oppenheimer/design-system-web/icons';
+import { Globe, ListTodo, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotSubagents } from '@/features/bots/components/bot-subagents';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
   groupSummary,
   planItems,
   readableOutput,
+  sharedKind,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
@@ -108,6 +110,20 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
       };
     },
   },
+  delegate: {
+    icon: <UsersIcon />,
+    title: (t, action) => ({ title: t('bots.chat.activity.delegated', { count: action.tasks }) }),
+    // Each child's line, read from the runs the call stored.
+    detail: (step, t, labels) => {
+      const runs = step.subagents ?? [];
+      if (runs.length === 0) return rawDetail(step, t, labels);
+      const failed = runs.filter((run) => run.status !== 'completed').length;
+      return {
+        meta: failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined,
+        body: <BotSubagents runs={runs} />,
+      };
+    },
+  },
   tool: {
     icon: <Wrench />,
     title: (_t, action) => ({ title: action.label, target: action.target }),
@@ -124,7 +140,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * A run of the bot's tool calls, as the trace the Bots frame draws: a quiet
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
- * fold into one line ("Used 5 tools") that opens to those same lines.
+ * fold into one line ("Used 5 tools"), under their kind's glyph when they
+ * share one, that opens to those same lines.
  * A call still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
@@ -157,9 +174,11 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
   });
   if (lines.length === 1) return <Trace>{lines}</Trace>;
   const failed = done.filter((step) => step.isError).length;
+  const actions = done.map(toolAction);
   return (
     <TraceGroup
-      summary={t(groupSummary(done.map(toolAction)), { count: done.length })}
+      icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
+      summary={t(groupSummary(actions), { count: done.length })}
       failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
     >
       {lines}

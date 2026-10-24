@@ -90,7 +90,7 @@ export interface FeatureFlagReadOptions {
  * union of its variants for a multivariate one.
  *
  * Before the first answer arrives — and if it never does — this is the
- * catalog's `defaultValue`, the safe branch. Reading an `experiment` flag
+ * catalog's `defaultValue` (`true` for every boolean flag). Reading an `experiment` flag
  * records an exposure once the server's answer is in, so experiment results
  * are attributed to the arm people actually saw.
  */

@@ -1,6 +1,10 @@
 import { useSearch } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { NewSessionFormContext, useNewSessionForm } from '../hooks/use-new-session-form';
+import {
+  NewSessionFormContext,
+  NewSessionLandingContext,
+  useNewSessionForm,
+} from '../hooks/use-new-session-form';
 import { NewSessionAgent } from './new-session-agent';
 import { NewSessionEffort } from './new-session-effort';
 import { NewSessionPermission } from './new-session-permission';
@@ -26,7 +30,7 @@ import { NewSessionSubtitle } from './new-session-subtitle';
  */
 export function NewSessionForm({ heading }: { heading?: ReactNode }) {
   const search = useSearch({ from: '/_authenticated/sessions/new' });
-  const form = useNewSessionForm({
+  const { form, fillable } = useNewSessionForm({
     where: search.where,
     hostId: search.host,
     agent: search.agent,
@@ -35,26 +39,28 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
 
   return (
     <NewSessionFormContext.Provider value={form}>
-      <NewSessionPrepare />
-      {heading ? (
-        <div>
-          {heading}
-          <NewSessionSubtitle />
-        </div>
-      ) : null}
-      <NewSessionSend
-        // Pending is `loading`, settled-and-empty is the empty line plus the
-        // chip's own foot action, and `disabled` is only for a chip this
-        // screen forbids — which none of these are.
-        scope={<NewSessionScope />}
-        tools={<NewSessionPermission />}
-        engine={
-          <>
-            <NewSessionAgent />
-            <NewSessionEffort />
-          </>
-        }
-      />
+      <NewSessionLandingContext.Provider value={fillable}>
+        <NewSessionPrepare />
+        {heading ? (
+          <div>
+            {heading}
+            <NewSessionSubtitle />
+          </div>
+        ) : null}
+        <NewSessionSend
+          // Pending is `loading`, settled-and-empty is the empty line plus the
+          // chip's own foot action, and `disabled` is only for a chip this
+          // screen forbids — which none of these are.
+          scope={<NewSessionScope />}
+          tools={<NewSessionPermission />}
+          engine={
+            <>
+              <NewSessionAgent />
+              <NewSessionEffort />
+            </>
+          }
+        />
+      </NewSessionLandingContext.Provider>
     </NewSessionFormContext.Provider>
   );
 }

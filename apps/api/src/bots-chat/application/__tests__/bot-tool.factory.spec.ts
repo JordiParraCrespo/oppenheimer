@@ -45,6 +45,23 @@ function setup(options: { waiting?: boolean; summarize?: () => string } = {}) {
   return { run, approvals, call };
 }
 
+describe('defineBotTool, a read-only tool', () => {
+  it('cannot also ask first: a child offered it would raise a card no one asked for', () => {
+    expect(() =>
+      defineBotTool({
+        name: 'peek',
+        scope: 'sessions:read',
+        description: 'Peeks.',
+        input: z.object({}),
+        readOnly: true,
+        asks: true,
+        summarize: () => 'peek',
+        run: async () => 'ok',
+      }),
+    ).toThrow('cannot both ask first and be read-only');
+  });
+});
+
 describe('defineBotTool, an asking tool', () => {
   it('raises a card for a valid call under Approve for me, runs nothing, and tells the model to end its turn', async () => {
     const { run, approvals, call } = setup();

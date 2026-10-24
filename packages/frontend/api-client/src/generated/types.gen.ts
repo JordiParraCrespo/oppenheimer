@@ -3268,6 +3268,28 @@ export type BotPeerReplyEventResponseDto = {
     outcome: 'answered' | 'failed' | 'cancelled';
 };
 
+export type BotSubagentRunResponseDto = {
+    /**
+     * The task the bot gave it.
+     */
+    task: string;
+    status: 'completed' | 'failed' | 'cancelled' | 'timed_out';
+    /**
+     * Its answer, cut short; on a failure, why. Empty when it said nothing.
+     */
+    result: string;
+    /**
+     * The tools it called, in order.
+     */
+    toolCalls: Array<string>;
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * How long it ran, in milliseconds.
+     */
+    durationMs: number;
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -3289,6 +3311,10 @@ export type BotToolStepResponseDto = {
      * The session the call started (`start_session`); null for any other call.
      */
     sessionId: string | null;
+    /**
+     * The subagents a `delegate` call ran; null for any other call, and while it runs.
+     */
+    subagents: Array<BotSubagentRunResponseDto> | null;
 };
 
 export type BotAttachmentResponseDto = {
@@ -11868,7 +11894,7 @@ export type SendBotMessageErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * BOTS_027 — The image was already sent
+     * BOTS_027 — The image can no longer be sent
      *
      * BOTS_013 — The bot's model provider has no key
      */

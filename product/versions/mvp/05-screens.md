@@ -161,9 +161,11 @@
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
   project a visit starts on — named in the address, remembered, or
-  Unassigned — offers the same defaults a pick does: its default
-  repository is in the repository chip when it names one, and its host
-  and agent win over the last visit's choice when it names them. The
+  Unassigned — offers its defaults: one named in the address applies them
+  as a pick does, and a remembered one or Unassigned fills only the chips
+  the last visit left empty, so a visit opens on the last choices
+  (changed 2026-10-22; the project's host, agent and repository used to
+  win over them). The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a slider over the
@@ -262,13 +264,15 @@
   opened on `full` and never remembered the level). The console always sends the level; a request that
   names none (an API token, an automation) is launched on `ask`, the
   API's reading of "unspecified" (`launchPermissionFor`), so omission
-  never escalates. The memory is the browser's — the host, the agent, the
-  model, the permission level and each agent's effort, in `localStorage`, on the device that chose
-  them. It is a convenience, not a record: the scope is never
-  remembered, because the repositories one visit is about are not the
-  next visit's. The project a visit starts on outranks the memory where it
-  names a default: its host or agent replaces the remembered one, and a
-  chip it names nothing for keeps the last choice.
+  never escalates. The memory is the browser's — where, the project, the
+  host, the repository and branch, the agent, the model, the permission
+  level and each agent's effort, in `localStorage`, on the device that
+  chose them. It is a convenience, not a record. Every chip opens on its
+  last choice, over the landing project's defaults; a project's defaults
+  fill a chip only when the memory left it empty, or when the project is
+  picked on the screen or named in the address (changed 2026-10-22: the
+  scope was never remembered, and the landing project's host and agent
+  outranked the memory).
 - The pane beside the sidebar is a URL: `/sessions/new` (the composer),
   `/sessions/{id}` (the terminal, or the provisioning pane while the
   session is starting, or a closed session), and anything else (a 404
