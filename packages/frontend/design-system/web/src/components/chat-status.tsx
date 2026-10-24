@@ -24,7 +24,9 @@ import { IconButton } from './icon-button';
  *   provider reconnecting), on the card at the 14px radius: a glyph or a
  *   dot in its tone, the line, at most one action or the dismiss.
  * - `FloatingChip`: a 28px pill that floats over the transcript while what
- *   it points to is scrolled away ("2 running ↑", Jump to latest); its
+ *   it points to is scrolled away ("2 running ↑", Jump to latest), on the
+ *   popover surface with the full border so it lifts off the transcript in
+ *   dark, where the card sits within a few percent of the ground; its
  *   `notice` form is a quiet wash with no shadow ("Watching CI on #668");
  *   its `round` form is a bot chat's way back to the latest turn, a 34px
  *   circle around one glyph (Bots), named by its `aria-label`.
@@ -225,7 +227,7 @@ function FloatingChip({
       type="button"
       data-slot="floating-chip"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border-subtle bg-card px-2.5 text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-card-hover focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
+        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border bg-popover px-3 font-medium text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-3.25',
         className,
       )}
       {...props}

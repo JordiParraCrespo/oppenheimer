@@ -62,9 +62,27 @@ describe('BotDocumentEditor', () => {
     });
   });
 
-  it('offers no save while the text is what it opened on', () => {
+  it('shows the saved revision and a disabled save while the text is what it opened on', () => {
     render(<BotDocumentEditor botId="bot-1" document={document} />);
-    expect(screen.queryByRole('button', { name: 'bots.settings.instructions.save' })).toBeNull();
+    const button = screen.getByRole('button', { name: 'bots.settings.instructions.save' });
+
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('bots.settings.instructions.saved:{"revision":2}')).toBeTruthy();
+    fireEvent.keyDown(screen.getByLabelText('INSTRUCTIONS.md'), { key: 's', ctrlKey: true });
+    expect(save.mutate).not.toHaveBeenCalled();
+  });
+
+  it('saves the draft on Ctrl+S or ⌘S in the box', () => {
+    render(<BotDocumentEditor botId="bot-1" document={document} />);
+    const box = screen.getByLabelText('INSTRUCTIONS.md');
+    fireEvent.change(box, { target: { value: '# Job\n- Watch the builds' } });
+    fireEvent.keyDown(box, { key: 's', metaKey: true });
+
+    expect(save.mutate).toHaveBeenCalledWith({
+      id: 'bot-1',
+      name: 'instructions',
+      input: { content: '# Job\n- Watch the builds', baseRevision: 2 },
+    });
   });
 
   it('names the revision the file is at after a conflict, and Reload reads it again', () => {

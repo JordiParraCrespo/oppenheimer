@@ -36,37 +36,39 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
 
   return (
     <div className="relative flex size-full flex-col">
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-4">
-        <div ref={content} className="flex min-h-full flex-col">
-          {state.turns.length === 0 ? (
-            <EmptyState className="flex-1">
-              <EmptyState.Header>
-                <EmptyState.Media>
-                  <AgentMark agent="claude-code" className="size-10" />
-                </EmptyState.Media>
-                <EmptyState.Title>{t('sessions.chat.empty.title')}</EmptyState.Title>
-                <EmptyState.Description>
-                  {t('sessions.chat.empty.description')}
-                </EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          ) : (
-            <ChatTranscript>
-              {state.turns.map((turn) => (
-                <ChatTurn key={turn.id} turn={turn} latest={turn === last} />
-              ))}
-            </ChatTranscript>
-          )}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-4">
+          <div ref={content} className="flex min-h-full flex-col">
+            {state.turns.length === 0 ? (
+              <EmptyState className="flex-1">
+                <EmptyState.Header>
+                  <EmptyState.Media>
+                    <AgentMark agent="claude-code" className="size-10" />
+                  </EmptyState.Media>
+                  <EmptyState.Title>{t('sessions.chat.empty.title')}</EmptyState.Title>
+                  <EmptyState.Description>
+                    {t('sessions.chat.empty.description')}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            ) : (
+              <ChatTranscript>
+                {state.turns.map((turn) => (
+                  <ChatTurn key={turn.id} turn={turn} latest={turn === last} />
+                ))}
+              </ChatTranscript>
+            )}
+          </div>
         </div>
+        {atLatest ? null : (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-linear-to-t from-chat-ground via-chat-ground/85 to-transparent pt-12 pb-3">
+            <FloatingChip className="pointer-events-auto" onClick={toLatest}>
+              <ArrowDown />
+              {t('sessions.chat.latest')}
+            </FloatingChip>
+          </div>
+        )}
       </div>
-      {atLatest ? null : (
-        <div className="pointer-events-none absolute inset-x-0 bottom-24 flex justify-center">
-          <FloatingChip className="pointer-events-auto" onClick={toLatest}>
-            <ArrowDown />
-            {t('sessions.chat.latest')}
-          </FloatingChip>
-        </div>
-      )}
       {readOnly ? null : (
         <div className="px-5 pb-3">
           <div className="mx-auto w-full max-w-190">

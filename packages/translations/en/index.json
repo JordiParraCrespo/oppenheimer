@@ -1310,6 +1310,8 @@
         "discard": "Discard",
         "save": "Save revision",
         "saving": "Saving…",
+        "saved": "Saved · revision {{revision}}",
+        "unsaved": "Unsaved changes",
         "saveFailed": "Could not save the revision.",
         "conflict": "{{file}} was saved somewhere else while you edited it, and is at revision {{revision}} now. Reload to see it; copy your text first if you want to keep it.",
         "reload": "Reload",

@@ -1322,6 +1322,8 @@
         "discard": "Descartar",
         "save": "Guardar revisión",
         "saving": "Guardando…",
+        "saved": "Guardado · revisión {{revision}}",
+        "unsaved": "Cambios sin guardar",
         "saveFailed": "No se ha podido guardar la revisión.",
         "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
         "reload": "Recargar",
