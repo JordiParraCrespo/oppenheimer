@@ -146,9 +146,15 @@ export function SessionPane({
        `border-radius: 0`): rounded, it reads as a widget tucked into a card
        rather than the console surface `terminal.css` asks for. It is the
        terminal's colour, as the artboard's is, so frame and pane read as one
-       surface in dark mode. `data-pane-ground` asks the shell's page bar
-       above it for the same colour. Read as a chat, the frame paints nothing:
-       the chat, the bar and the frame are all the shell's own ground. */
+       surface in dark mode. Read as a chat, the frame paints nothing: the
+       chat, the bar and the frame are all the shell's own ground.
+
+       `data-pane-ground` is the pane's **public contract** with whatever
+       frames it, not a detail of this file: `terminal` or `chat`, the ground
+       on screen. An ancestor matches it with `group-has-[[data-pane-ground=…]]`
+       to stand on the same colour — the shell's page bar (`app-shell.tsx`)
+       and a pull request's review bar (`pull-request-chat.tsx`). Renaming it,
+       or setting it anywhere but the pane's root, changes both. */
     <div
       data-pane-ground={chatShown ? 'chat' : 'terminal'}
       className={cn('flex min-h-0 flex-1 flex-col p-3.5', !chatShown && 'bg-term-bg')}

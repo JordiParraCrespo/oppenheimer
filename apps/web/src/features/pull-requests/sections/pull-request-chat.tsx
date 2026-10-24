@@ -23,8 +23,9 @@ import { ReviewSessionStart } from './review-session-start';
  *
  * The bar stands on whatever ground the session's pane shows: the terminal's
  * while it is a terminal, the chat's own, the console's, once the pane reads
- * as a chat (`data-pane-ground`), so bar and chat are one surface rather
- * than a chat set in a terminal-coloured box.
+ * as a chat, so bar and chat are one surface rather than a chat set in a
+ * terminal-coloured box. It reads the pane's `data-pane-ground`, the contract
+ * the shell's page bar reads too (`session-pane.tsx`).
  */
 export function PullRequestChat({
   address,
