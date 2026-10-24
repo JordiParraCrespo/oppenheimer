@@ -88,6 +88,7 @@ export async function expectChatOnTop(page: Page): Promise<void> {
 export async function expectChatFollows(
   page: Page,
   append: (lines: string[]) => void,
+  { composer: withComposer = true }: { composer?: boolean } = {},
 ): Promise<void> {
   append(longTurns('history', 12));
   await expect(page.getByText('history answer 11.')).toBeInViewport({ timeout: 30_000 });
@@ -110,6 +111,9 @@ export async function expectChatFollows(
   append(longTurns('after', 2));
   await expect(page.getByText('after answer 1.')).toBeInViewport({ timeout: 30_000 });
   await expect.poll(() => distanceFromEnd(page)).toBeLessThan(96);
+
+  // A view-only chat has no composer to grow.
+  if (!withComposer) return;
 
   // A draft that grows the composer shrinks the column; the end stays in view.
   const composer = page.getByPlaceholder('Message Claude');

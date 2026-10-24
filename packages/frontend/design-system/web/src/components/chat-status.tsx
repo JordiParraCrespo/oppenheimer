@@ -225,7 +225,7 @@ function FloatingChip({
       type="button"
       data-slot="floating-chip"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border-subtle bg-card px-2.5 text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
+        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border-subtle bg-card px-2.5 text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-card-hover focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
         className,
       )}
       {...props}

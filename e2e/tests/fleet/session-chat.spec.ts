@@ -75,7 +75,9 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   await expect(toggle).toBeVisible({ timeout: 120_000 });
   await toggle.getByRole('button', { name: 'Chat' }).click();
 
-  await expect(page.getByText('Fix the empty wallet')).toBeVisible();
+  await expect(
+    page.locator('[data-slot="chat-user-message"]').getByText('Fix the empty wallet'),
+  ).toBeVisible();
   await expect(page.getByText('pnpm test wallet')).toBeVisible();
   await expect(page.getByText('had no initial value.')).toBeVisible();
 
@@ -134,4 +136,50 @@ test('the chat covers a WebGL grid, and takes clicks over it', async ({ page }) 
 
   await expectChatOnTop(page);
   await expectComposerClickable(page);
+});
+
+test('a guest on a view-only link reads the chat, with no composer', async ({ browser }) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const owner = await signedUpContext('chatsharer');
+  await turnOnForEveryone(owner.api, 'session_chat_view');
+  const installationId = await connectInstallation(owner.api);
+  const [box] = await pairedHosts(owner.api, 1, 'chatshare');
+  const sessionId = await createSession(owner.api, box.id, installationId);
+  appendTranscript(box.host, sessionId, [
+    entry('user', 'u1', 'Fix the empty wallet'),
+    entry('assistant', 'a1', [{ type: 'text', text: 'Found it: `reduce` had no initial value.' }]),
+  ]);
+  const put = await owner.api.put(`/api/v1/sessions/${sessionId}/share`, {
+    data: { audience: 'link', access: 'read', lifetime: '1h' },
+    failOnStatusCode: false,
+  });
+  expect(put.status(), await put.text()).toBe(200);
+  const { slug } = (await put.json()) as { slug: string };
+
+  // Once the chat was never sent through a share, so a guest had the grid alone.
+  const guest = await signedUpContext('chatguest');
+  const page = await (await browser.newContext({ baseURL: WEB_URL })).newPage();
+  await signInAs(page, guest.user);
+  await page.goto(`/s/${slug}`);
+  await expect(page.getByText('View only', { exact: true })).toBeVisible();
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  await expect(
+    page.locator('[data-slot="chat-user-message"]').getByText('Fix the empty wallet'),
+  ).toBeVisible();
+  await expect(page.getByText('had no initial value.')).toBeVisible();
+  await expectChatOnTop(page);
+  await expect(page.getByRole('button', { name: 'Dictate' })).toHaveCount(0);
+
+  // The grid cannot scroll for a watcher (the wheel is tmux's, on a pane they
+  // only watch); the chat is where they read back, so it scrolls as a member's does.
+  await expectChatFollows(page, (lines) => appendTranscript(box.host, sessionId, lines), {
+    composer: false,
+  });
 });

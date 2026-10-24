@@ -681,3 +681,8 @@ earlier note:
   `bot_subscription` now follows one session for the bot that started or
   watched it, and every wake is still a queued turn
   (`versions/mvp/27-bot-subscriptions.md`, 26 §5).
+- `next-steps/0.7-terminal-and-chat.md` had the relay never send the chat
+  through a share link, so a guest saw only the terminal. On 2026-10-23
+  the owner asked for the shared page to have the chat view too: the
+  relay judges the flag as the sharer, and the guest gets Terminal / Chat,
+  read-only on a read share (0.7, "Wire").

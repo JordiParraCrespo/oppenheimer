@@ -33,8 +33,9 @@ export type {
   SessionStartStepId,
   SessionStartStepState,
 } from './session-steps';
-export { SessionsModule } from './sessions.module';
+export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export type { LocalTerminals } from './stream/local-first-stream';
 export {
   createResizeCoalescer,
   type ResizeCoalescer,
