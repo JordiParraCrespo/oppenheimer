@@ -1,6 +1,7 @@
 import { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { useChatState } from '../hooks/use-session-chat';
 import { SessionChat } from '../sections/session-chat';
 
 /**
@@ -171,5 +172,38 @@ describe('dictation', () => {
     voiceAvailable = true;
     render(<SessionChat chat={new Chat()} readOnly={false} />);
     expect(screen.getByRole('button', { name: 'common.dictation.dictate' })).toBeTruthy();
+  });
+});
+
+describe('a batch', () => {
+  it('hands an earlier turn back as it was, so only the turn that moved redraws', () => {
+    const chat = new Chat();
+    const first = [
+      entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Fix it' } }),
+      entry({
+        type: 'assistant',
+        uuid: 'a1',
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Fixed.' }] },
+      }),
+      entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Ship it' } }),
+    ];
+    chat.apply({ reset: true, entries: first });
+    const { result } = renderHook(() => useChatState(chat));
+    const [settled, live] = result.current.turns;
+
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'assistant',
+            uuid: 'a2',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Shipped.' }] },
+          }),
+        ],
+      }),
+    );
+
+    expect(result.current.turns[0]).toBe(settled);
+    expect(result.current.turns[1]).not.toBe(live);
   });
 });
