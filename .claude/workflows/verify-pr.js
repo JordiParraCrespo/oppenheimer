@@ -15,6 +15,10 @@ const head = args && args.head
 const lane = (args && args.lane) || 'feature'
 const only = args && args.lanes
 if (!pr || !head) throw new Error('verify-pr needs args { pr, head }')
+const KNOWN = ['gates', 'live', 'audit']
+if (only !== undefined && (!Array.isArray(only) || !only.length || only.some((l) => !KNOWN.includes(l)))) {
+  throw new Error(`args.lanes must be a non-empty subset of ${KNOWN.join(', ')}; got ${JSON.stringify(only)}`)
+}
 const runs = (name) => !only || only.includes(name)
 
 const CHECKOUT = `You did not write this code; you are checking it. Work on pull request ${REPO}#${pr} at exactly ${head}:
@@ -142,7 +146,13 @@ for (const lens of LENSES) {
   })
 }
 
-const lanes = (await parallel(tasks)).filter(Boolean).flat()
+const expected = [
+  ...['gates', 'live'].filter(runs),
+  ...(runs('audit') ? LENSES.map((l) => `audit:${l.key}`) : []),
+]
+const ran = (await parallel(tasks)).filter(Boolean).flat()
+// A lane whose task died never reports; it is a gap, not a pass.
+const lanes = expected.map((name) => ran.find((l) => l.lane === name) || { lane: name, result: null })
 
 const gaps = lanes.filter((l) => !l.result || l.result.verdict === 'BLOCKED' || l.result.sha !== head)
 const issues = lanes.flatMap((l) => (l.result && l.result.verdict === 'ISSUES' ? l.result.issues.map((i) => ({ lane: l.lane, ...i })) : []))
@@ -160,6 +170,7 @@ return {
   head,
   lane,
   verdict,
+  partial: Boolean(only),
   needsPerson: decisions.length > 0,
   claim: scope.claim,
   lanes: lanes.map((l) => ({ lane: l.lane, verdict: l.result ? l.result.verdict : 'BLOCKED', sha: l.result && l.result.sha, evidence: l.result ? l.result.evidence : [] })),
