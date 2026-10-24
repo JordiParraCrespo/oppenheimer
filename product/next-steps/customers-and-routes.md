@@ -161,11 +161,18 @@ Iris answering every Slack customer must not tell Globex what it learned
 from Acme. Note 25 has one memory per bot, shared by every conversation
 (channels.md §4, as dots does). Customer turns change that:
 
-- **Facts carry the customer.** `bot_memory_fact` gains a nullable
-  `customerId`. A fact remembered during a customer's turn carries that
-  customer; a fact remembered in the console or by the owner carries none.
-- **A turn reads** the bot's facts with no customer, plus that customer's.
-  Never another customer's.
+- **Facts carry who they came from.** `bot_memory_fact` gains a nullable
+  `customerId` and a nullable `conversationId`. A fact remembered in a
+  customer's turn carries that customer. A fact remembered in a turn
+  from a sender who is no customer yet (§2) carries the conversation
+  instead, never neither. Only a fact remembered in the console or by
+  the owner carries neither, and only those are the bot's own.
+- **A turn reads** the bot's own facts, plus that customer's, or that
+  conversation's when the sender is no customer. Never another
+  customer's or another stranger's.
+- **Making a customer** from a conversation moves its facts to the
+  customer (`conversationId` cleared, `customerId` set), in the same
+  transaction that adds the identity.
 - **Documents** (`SOUL.md`, `INSTRUCTIONS.md`, knowledge) are the bot's
   and shared: they are what the owner wrote, not what customers said.
 - **Writing to a shared document from a customer turn asks.** A customer
@@ -179,7 +186,7 @@ to start a session on the owner's host or read their pull requests.
 
 - **A customer turn has its own tool set**, narrower than the bot's.
   By default: answer, read the bot's documents and knowledge, remember (for
-  this customer), look up and update the customer's record, and hand off.
+  this customer, or this conversation, §5), look up and update the customer's record, and hand off.
   Sessions, GitHub, the plan, other bots and `send_message` elsewhere are
   **blocked** in a customer turn, whatever the bot's permissions say.
   The owner can allow more per route (a route's tools list), never more
