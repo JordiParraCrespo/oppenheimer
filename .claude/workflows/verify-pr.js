@@ -93,7 +93,7 @@ const LENSES = [
   },
   {
     key: 'lane',
-    brief: `The PR is in the "${lane}" lane. ${lane === 'fix' ? 'A fix only restores behavior. Report as a decision (blocking false, decision true) anything that adds behavior, an endpoint, a schema or migration, a flag or a dependency, or touches auth, scopes, .claude/, .agents/hooks/, .github/ or deploy/.' : 'Report as a decision anything the PR changes that its description does not mention.'} Also report any security concern as blocking.`,
+    brief: `The PR is in the "${lane}" lane. Read "## 2. Pick the lane" and "## Always ask" in .agents/skills/ship/SKILL.md: they are the only statement of the lane rules. Report as a decision (blocking false, decision true) each rule there that puts this PR in a different lane, citing the rule. Report any security concern as blocking.`,
   },
 ]
 

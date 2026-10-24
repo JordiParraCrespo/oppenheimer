@@ -46,7 +46,10 @@ request description:
 - it adds or changes an API endpoint, a schema, a migration, a feature flag,
   a dependency, or what a user can do (a fix restores behavior, it does not
   add it);
-- it is larger than about 300 changed lines outside tests and generated files;
+- it changes more than 300 lines, counted as added plus deleted by
+  `git diff --numstat origin/main...HEAD`, leaving out test files
+  (`*.spec.*`, `*.test.*`, `__tests__/`, `e2e/`) and generated files
+  (`*.gen.ts`, `pnpm-lock.yaml`, `packages/frontend/api-client/src/`);
 - the verdict is `PASS+NOTES` and a note asks a person to decide something.
 
 Name the lane in the description, under `## Lane`, with one line on why.

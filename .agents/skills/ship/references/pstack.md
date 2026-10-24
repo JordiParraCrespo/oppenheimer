@@ -83,14 +83,3 @@ to end; `/maintain-verification-skill` keeps that map honest daily;
   `fix` on the verdict, because Jordi asked for that. The guard is the lane:
   a fix that adds behavior, touches a sensitive path or needs a decision is
   a feature.
-
-## Worth taking next
-
-- A shared bot-triage rubric like `bugbot-triage.md`, for the Grok and
-  Claude Code Review comments: recurring dismissals become patterns instead
-  of being re-argued per PR.
-- A `verify-oppenheimer` feature map in the `local-stack` skill (one file
-  per console feature: how to reach it, how to drive it, what proves it), so
-  the live lane covers every entry point, not the convenient one.
-- `/ketchup`-style status: one message listing every PR waiting on Jordi,
-  with its verdict and the one thing to look at.
