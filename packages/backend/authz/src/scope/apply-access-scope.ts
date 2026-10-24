@@ -7,7 +7,9 @@ import type { AccessScope } from './access-scope';
  * mapping the resource declared.
  *
  * The organization key is applied conjunctively — a tenant boundary is not
- * something another dimension may override. Team / own / grant are applied
+ * something another dimension may override, a bypass included: a platform
+ * operator acting in a workspace sees that workspace, and only a bypass with no
+ * active organization reaches every tenant. Team / own / grant are applied
  * disjunctively: satisfying any one of them makes a row visible.
  *
  * **Fails closed.** If no dimension yields a clause, the caller can reach
@@ -21,18 +23,20 @@ export function applyAccessScope<T extends ObjectLiteral>(
   resource: ResourceDefinition,
   scope: AccessScope,
 ): SelectQueryBuilder<T> {
-  if (scope.bypass) return qb;
-
   const alias = qb.alias;
   const { keys, scopes } = resource;
 
   if (scopes.includes('organization') && keys.organization) {
-    // A caller with no active organization can see no tenant-scoped row.
-    if (!scope.organizationId) return qb.andWhere('1 = 0');
+    // A caller with no active organization can see no tenant-scoped row,
+    // unless it is the platform tier acting globally.
+    if (!scope.organizationId) return scope.bypass ? qb : qb.andWhere('1 = 0');
     qb.andWhere(`${alias}.${keys.organization} = :authzOrganizationId`, {
       authzOrganizationId: scope.organizationId,
     });
   }
+
+  // A bypass skips the slice within the tenant, never the tenant itself.
+  if (scope.bypass) return qb;
 
   // An 'all' grant short-circuits the disjunction: the caller reaches every row
   // of this type within the organization boundary already applied above.

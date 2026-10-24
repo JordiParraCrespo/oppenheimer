@@ -1,10 +1,12 @@
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { toSubagentRuns } from '../bot-message.mapper';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
+import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { BOT_TURN_TIME_LIMIT_MS, type BotTurnEntity } from '../domain/bot-turn.entity';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
@@ -106,6 +108,7 @@ export class TurnTranscript {
       output: null,
       isError: false,
       sessionId: null,
+      subagents: null,
     };
     if (this.activity) {
       this.activity.steps.push(step);
@@ -115,7 +118,11 @@ export class TurnTranscript {
     return [{ kind: 'insert', message: this.activity }];
   }
 
-  /** A call's end: its words, cut, and the session it started, from what the tool said it made. */
+  /**
+   * A call's end: its words, cut, and what the tool said it made: the
+   * session it started, or the children it ran, whose tokens are the turn's
+   * cost too.
+   */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
     const { callId, output, isError, data } = event;
     const step = this.activity?.steps.find((candidate) => candidate.callId === callId);
@@ -124,6 +131,11 @@ export class TurnTranscript {
       output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
+    step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
+    for (const run of step.subagents ?? []) {
+      this.outcome.inputTokens += run.inputTokens;
+      this.outcome.outputTokens += run.outputTokens;
+    }
     return [{ kind: 'steps', message: this.activity }];
   }
 

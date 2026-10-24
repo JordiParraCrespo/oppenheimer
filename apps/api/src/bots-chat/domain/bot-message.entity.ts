@@ -11,6 +11,7 @@ import {
   type BotAttachment,
   type BotMessageEvent,
   type BotMessageRole,
+  type BotSubagentRun,
 } from '@oppenheimer/shared';
 
 /** One tool call in an activity line, as the chat opens it to. */
@@ -24,6 +25,8 @@ export interface BotToolStep {
   isError: boolean;
   /** The session the call started (`start_session`), for the chat to open; null for any other. */
   sessionId: string | null;
+  /** The children a `delegate` call ran, as they ended; null for any other call, and while it runs. */
+  subagents: BotSubagentRun[] | null;
 }
 
 /** How much of a tool's answer a message keeps: enough to read, never a whole page. */

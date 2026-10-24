@@ -1,0 +1,13 @@
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index dbe18fbd..3d8d350b 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -143,7 +143,7 @@ export const FEATURE_FLAGS = {
+     kind: 'ops',
+     owner: 'console',
+     type: 'boolean',
+-    defaultValue: true,
++    defaultValue: false,
+     client: true,
+     bucketBy: 'user',
+   },

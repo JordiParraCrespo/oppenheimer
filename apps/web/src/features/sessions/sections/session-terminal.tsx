@@ -4,25 +4,25 @@ import {
   DropZone,
   EmptyState,
   HostLinkChrome,
-  SegmentedControl,
-  SegmentedControlItem,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatCover } from '../components/chat-cover';
+import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
-import { useChatAvailable } from '../hooks/use-session-chat';
+import { useChatReading } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { takeFilePaste } from '../lib/terminal-files';
 import { HostLinkFix } from './host-link-fix';
 import { SessionShareButton } from './session-share-button';
 
@@ -49,7 +49,8 @@ const AGENT_WINDOW = 0;
  * sends the agent's transcript the status bar offers Terminal / Chat; Chat
  * draws the pane's `cover` over the grid, which stays mounted under it at its
  * size, so tmux is never resized. What the cover is, is the pane's: this
- * section owns the terminal and only makes room. While it shows, the terminal
+ * section owns the terminal and only makes room, and takes the files pasted
+ * on it as it takes the grid's. While it shows, the terminal
  * paints no ground of its own, so its status bar sits on the cover's.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
@@ -75,10 +76,7 @@ export function SessionTerminal({
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
   const { chat, view, onViewChange, cover } = reading;
-  const chatAvailable = useChatAvailable(chat);
-  const chatFlag = useFeatureFlag('session_chat_view');
-  const chatOffered = chatAvailable && chatFlag;
-  const chatShown = chatOffered && view === 'chat';
+  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
   const terminal = useTerminal(createStream, {
     chat,
     onEnd: refresh,
@@ -96,16 +94,7 @@ export function SessionTerminal({
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
   const viewToggle = chatOffered ? (
-    <SegmentedControl
-      value={view}
-      onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
-      aria-label={t('sessions.chat.view.label')}
-    >
-      <SegmentedControlItem value="terminal">
-        {t('sessions.chat.view.terminal')}
-      </SegmentedControlItem>
-      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
-    </SegmentedControl>
+    <ChatViewToggle view={view} onViewChange={onViewChange} />
   ) : null;
 
   return (
@@ -119,7 +108,10 @@ export function SessionTerminal({
           padded host overflows its own box and paints over the rows below it.
           xterm owns everything inside the inner element, scrollbar included. */}
         <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
-          <div ref={containerRef} className="size-full" />
+          {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
+            the latency readout, each with a z-index) inside the grid, so the
+            covers below paint over all of them rather than under some. */}
+          <div ref={containerRef} className="isolate size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
             older one replaying its scrollback that this tab has no kept
@@ -140,7 +132,13 @@ export function SessionTerminal({
             </div>
           ) : null}
           {chatShown ? (
-            <div className="absolute inset-0 bg-chat-ground font-sans text-fg">{cover}</div>
+            // Typing in the chat moves focus off the grid, so a paste there
+            // never reaches the grid's listener: the cover takes its files
+            // the same way, and they land in the agent's prompt. On the way
+            // down, as the grid does, so nothing in the chat can swallow it.
+            <ChatCover onPasteCapture={(event) => takeFilePaste(event, upload.send)}>
+              {cover}
+            </ChatCover>
           ) : null}
         </div>
 

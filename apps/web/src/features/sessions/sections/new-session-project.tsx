@@ -8,8 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
 import { useLandingPick } from '../hooks/use-landing-pick';
-import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { useLandingFillable, useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
+import { onlyFields, PROJECT_FILLED, type ProjectFilled } from '../lib/new-session-draft';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
@@ -27,6 +28,7 @@ export function NewSessionProject() {
   const { field } = useController({ control, name: 'projectId' });
   const dialogs = useConsoleDialog();
   const [created, setCreated] = useState<string | undefined>();
+  const fillable = useLandingFillable();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const resolveError = useErrorMessage();
@@ -45,14 +47,18 @@ export function NewSessionProject() {
     ? field.value
     : (projects.data?.find((project) => project.isUnassigned)?.id ?? null);
 
-  function pick(next: ProjectEntity) {
+  /** File the draft under the project and offer the chips `fields` of its defaults. */
+  function apply(next: ProjectEntity, fields: readonly ProjectFilled[]) {
     field.onChange(next.id);
     // A folder session only files itself under the project: it clones none of
     // its repositories, and its host and agent are already the folder's.
     if (getValues('where') === 'folder') return;
-    const prefill = projectPrefill(
-      next,
-      (hosts() ?? []).map((host) => host.id),
+    const prefill = onlyFields(
+      projectPrefill(
+        next,
+        (hosts() ?? []).map((host) => host.id),
+      ),
+      fields,
     );
     if (prefill.hostId !== undefined) setValue('hostId', prefill.hostId);
     if (prefill.scope !== undefined) setValue('scope', prefill.scope);
@@ -60,17 +66,19 @@ export function NewSessionProject() {
     if (prefill.model !== undefined) setValue('model', prefill.model);
   }
 
+  /** A project picked on the screen or named by the address: all its defaults. */
+  const pick = (next: ProjectEntity) => apply(next, PROJECT_FILLED);
+
   // The sidebar's "New session here" names the project in the address; the
   // dialog names the one it made. Either is picked once the lists can.
   useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
 
   // With neither, the project the chip starts on — remembered, or Unassigned —
-  // offers its defaults on arrival, so the draft a visit opens with is always
-  // the one its project describes. Per chip, a default the project names wins
-  // over the last visit's choice; a chip it names nothing for keeps what
-  // `initialDraft` restored, because `projectPrefill` leaves a missing default
-  // out of the patch.
-  useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), pick);
+  // fills only the chips the last visit left empty: the last choice wins over
+  // the project's default, so a visit opens on what was picked last.
+  useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), (next) =>
+    apply(next, fillable),
+  );
 
   return (
     <ProjectSelect

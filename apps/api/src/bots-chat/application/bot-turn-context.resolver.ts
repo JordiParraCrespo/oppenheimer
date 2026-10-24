@@ -27,6 +27,8 @@ import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
+import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
+import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
@@ -68,6 +70,7 @@ export class BotTurnContextResolver {
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
     private readonly opening: BotTurnOpeningResolver,
+    private readonly subagents: BotSubagentRunnerFactory,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -91,32 +94,38 @@ export class BotTurnContextResolver {
       ),
       this.hostsOf(owner, turn.id),
     ]);
-    // An owner who can no longer act leaves the bot nothing to act through.
-    const tools = owner
-      ? this.toolbox.tools(
-          {
-            owner,
-            organizationId: turn.organizationId,
-            botId: bot.id,
-            turnId: turn.id,
-            homeHostId: bot.homeHostId,
-            timeZone: turn.timeZone ?? 'UTC',
-            permission: bot.permission,
-            budget: new BotTurnBudget(),
-            credentialScopes: turn.credentialScopes,
-            approvals: this.approvals,
-          },
-          turn.credentialScopes,
-          () => this.permissions.heldScopes(owner),
-        )
-      : [];
-    const documentText = (name: string) =>
-      documents.find((document) => document.name === name)?.content ?? '';
-    return {
+    const model = {
       provider: turn.provider,
       ...credential,
       model: turn.model,
       effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
+    };
+    // An owner who can no longer act leaves the bot nothing to act through.
+    let tools: BotTurnContext['tools'] = [];
+    if (owner) {
+      const held = () => this.permissions.heldScopes(owner);
+      const context: BotToolContext = {
+        owner,
+        organizationId: turn.organizationId,
+        botId: bot.id,
+        turnId: turn.id,
+        homeHostId: bot.homeHostId,
+        timeZone: turn.timeZone ?? 'UTC',
+        permission: bot.permission,
+        budget: new BotTurnBudget(),
+        credentialScopes: turn.credentialScopes,
+        approvals: this.approvals,
+      };
+      // A child runs on the turn's model and key, with the turn's read-only
+      // tools and its budget: it reaches no further than the bot does.
+      const childTools = this.toolbox.readOnlyTools(context, turn.credentialScopes, held);
+      const subagents = this.subagents.create(model, bot.name, childTools);
+      tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
+    }
+    const documentText = (name: string) =>
+      documents.find((document) => document.name === name)?.content ?? '';
+    return {
+      ...model,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
         description: bot.description,

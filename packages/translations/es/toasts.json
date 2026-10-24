@@ -10,6 +10,7 @@
   "emailResent": "Correo enviado de nuevo.",
   "sessionRenamed": "Renombrada a «{{name}}».",
   "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+  "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
   "projectCreated": "Se ha creado «{{name}}».",
   "projectSaved": "Se ha guardado «{{name}}».",
   "projectDeleted": "Se ha eliminado «{{name}}».",

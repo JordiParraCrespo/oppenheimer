@@ -744,7 +744,9 @@
       "deleting": "Eliminando…",
       "deletingHint": "Esperando a que su host la elimine. Si el host está desconectado, se eliminará cuando vuelva.",
       "notDeleted": "No eliminada",
-      "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué."
+      "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
+      "select": "Seleccionar",
+      "selected": "Seleccionada"
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -757,6 +759,26 @@
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
       "refused": "Su host no la eliminó",
       "refusedUnknown": "El host se negó a eliminar la sesión."
+    },
+    "selection": {
+      "count_one": "{{count}} seleccionada",
+      "count_many": "{{count}} seleccionadas",
+      "count_other": "{{count}} seleccionadas",
+      "pin": "Fijar las seleccionadas",
+      "unpin": "Desfijar las seleccionadas",
+      "move": "Mover las seleccionadas a un proyecto",
+      "delete": "Eliminar las seleccionadas",
+      "clear": "Quitar la selección"
+    },
+    "deleteSessions": {
+      "title_one": "¿Eliminar {{count}} sesión?",
+      "title_many": "¿Eliminar {{count}} de sesiones?",
+      "title_other": "¿Eliminar {{count}} sesiones?",
+      "description": "Cada sesión se detiene, su worktree se elimina de su host y su transcripción desaparece. Los commits ya enviados se quedan en el remoto. Una sesión con trabajo sin enviar no se elimina.",
+      "confirm": "Eliminar sesiones",
+      "partial_one": "{{count}} sesión no se eliminó",
+      "partial_many": "{{count}} de sesiones no se eliminaron",
+      "partial_other": "{{count}} sesiones no se eliminaron"
     },
     "filters": {
       "label": "Filtrar sesiones",
@@ -1110,7 +1132,19 @@
         "groupSearched_other": "Buscó en la web {{count}} veces",
         "groupFailed_one": "{{count}} con error",
         "groupFailed_many": "{{count}} con error",
-        "groupFailed_other": "{{count}} con error"
+        "groupFailed_other": "{{count}} con error",
+        "delegated_one": "Ejecutó {{count}} subagente",
+        "delegated_other": "Ejecutó {{count}} subagentes",
+        "delegating_one": "Ejecutando {{count}} subagente",
+        "delegating_other": "Ejecutando {{count}} subagentes",
+        "seconds": "{{count}} s",
+        "subagent": {
+          "completed": "completado",
+          "failed": "con error",
+          "cancelled": "detenido",
+          "timed_out": "sin tiempo"
+        },
+        "subagentTokens": "{{tokens}} tokens"
       },
       "suggest": {
         "task": {
@@ -2736,6 +2770,7 @@
     "emailResent": "Correo enviado de nuevo.",
     "sessionRenamed": "Renombrada a «{{name}}».",
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+    "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",
     "projectDeleted": "Se ha eliminado «{{name}}».",

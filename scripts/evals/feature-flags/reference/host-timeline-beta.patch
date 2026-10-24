@@ -1,0 +1,45 @@
+diff --git a/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts b/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
+index 54e36459..2b40ecb3 100644
+--- a/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
++++ b/apps/api/src/hosts/queries/find-host-timeline/find-host-timeline.http.controller.ts
+@@ -18,6 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+ import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
++import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
+ import type { TimelinePage } from '../../database/host-metadata.repository.port';
+ import { HostTimelinePageResponseDto } from '../../dtos/host-metadata.response.dto';
+ import { HostMapper } from '../../host.mapper';
+@@ -40,6 +41,7 @@ export class FindHostTimelineHttpController {
+   @Version('1')
+   @CheckPolicies({ action: 'read', subject: 'Host' })
+   @RequireScopes('hosts:read')
++  @RequireFlag('host_timeline')
+   @ApiOperation({
+     summary: 'A host’s timeline, newest first',
+     description:
+diff --git a/packages/shared/src/feature-flags/catalog.ts b/packages/shared/src/feature-flags/catalog.ts
+index 63f9ea3f..cd567e66 100644
+--- a/packages/shared/src/feature-flags/catalog.ts
++++ b/packages/shared/src/feature-flags/catalog.ts
+@@ -147,6 +147,20 @@ export const FEATURE_FLAGS = {
+     client: true,
+     bucketBy: 'user',
+   },
++  /**
++   * A host's timeline (`GET /v1/hosts/{id}/timeline`), in beta. Served by
++   * default; switching it off refuses the endpoint (`FLAG_003`) for whoever
++   * it is off for.
++   */
++  host_timeline: {
++    description: "Serve a host's timeline from GET /v1/hosts/{id}/timeline.",
++    kind: 'release',
++    owner: 'platform',
++    type: 'boolean',
++    defaultValue: true,
++    client: false,
++    expiresAt: '2027-03-31',
++  },
+ } as const satisfies Record<string, FlagDefinition>;
+ 
+ export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

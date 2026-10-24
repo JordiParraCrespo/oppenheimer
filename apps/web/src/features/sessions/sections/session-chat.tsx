@@ -3,6 +3,7 @@ import {
   ChatTranscript,
   EmptyState,
   FloatingChip,
+  useStickToBottom,
 } from '@oppenheimer/design-system-web';
 import { ArrowDown } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
@@ -10,7 +11,6 @@ import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
 import { ChatTurn } from '../components/chat-turn';
 import { SessionChatComposer } from '../components/session-chat-composer';
-import { useChatFollow } from '../hooks/use-chat-follow';
 import { useChatState } from '../hooks/use-session-chat';
 import { chatVocabulary, latestModel, latestTodos, modelName } from '../lib/chat-blocks';
 
@@ -26,7 +26,7 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
   const { t } = useTranslation();
   const state = useChatState(chat);
   const voice = useVoiceDictation(() => chatVocabulary(chat.snapshot().turns));
-  const { scrollerRef, contentRef, away, toLatest } = useChatFollow();
+  const { scroller, content, atLatest, toLatest } = useStickToBottom();
   const last = state.turns.at(-1);
 
   const submit = (text: string) => {
@@ -36,8 +36,8 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
 
   return (
     <div className="relative flex size-full flex-col">
-      <div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-4">
-        <div ref={contentRef} className="flex min-h-full flex-col">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-4">
+        <div ref={content} className="flex min-h-full flex-col">
           {state.turns.length === 0 ? (
             <EmptyState className="flex-1">
               <EmptyState.Header>
@@ -59,14 +59,14 @@ export function SessionChat({ chat, readOnly }: { chat: Chat; readOnly: boolean 
           )}
         </div>
       </div>
-      {away ? (
+      {atLatest ? null : (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 flex justify-center">
           <FloatingChip className="pointer-events-auto" onClick={toLatest}>
             <ArrowDown />
             {t('sessions.chat.latest')}
           </FloatingChip>
         </div>
-      ) : null}
+      )}
       {readOnly ? null : (
         <div className="px-5 pb-3">
           <div className="mx-auto w-full max-w-190">

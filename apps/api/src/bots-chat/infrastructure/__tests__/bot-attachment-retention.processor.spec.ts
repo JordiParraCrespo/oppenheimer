@@ -57,10 +57,11 @@ describe('BotAttachmentRetentionProcessor', () => {
     const before = Date.now();
 
     await expect(subject.process()).resolves.toEqual({ attachments: 2 });
+    const after = Date.now();
 
     const [cutoff, limit] = attachments.findUnclaimedBefore.mock.calls[0];
-    expect(before - cutoff.getTime()).toBeGreaterThanOrEqual(BOT_ATTACHMENT_UNSENT_TTL_MS);
-    expect(before - cutoff.getTime()).toBeLessThan(BOT_ATTACHMENT_UNSENT_TTL_MS + 1_000);
+    expect(cutoff.getTime()).toBeGreaterThanOrEqual(before - BOT_ATTACHMENT_UNSENT_TTL_MS);
+    expect(cutoff.getTime()).toBeLessThanOrEqual(after - BOT_ATTACHMENT_UNSENT_TTL_MS);
     expect(limit).toBe(retention.batchSize);
     expect(files.remove.mock.calls.map(([key]) => key)).toEqual([
       first.storageKey,

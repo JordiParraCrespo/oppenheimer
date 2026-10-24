@@ -12,6 +12,7 @@ import type {
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
+import { LocalFirstSessionStream, type LocalTerminals } from './stream/local-first-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
@@ -22,6 +23,9 @@ export class SessionsService {
     @inject(TOKENS.ApiBaseUrl)
     @optional()
     private readonly apiBaseUrl: string = '',
+    @inject(TOKENS.LocalTerminals)
+    @optional()
+    private readonly localTerminals?: LocalTerminals,
   ) {}
 
   findAll(): Promise<SessionEntity[]> {
@@ -116,10 +120,15 @@ export class SessionsService {
    * the relay offers one (22); it is asked at each offer.
    */
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
-    return new AttachSessionStream({
-      apiBaseUrl: this.apiBaseUrl,
-      issueTicket: () => this.issueAttachTicket(id, window),
-      direct: options.direct,
-    });
+    const remote = () =>
+      new AttachSessionStream({
+        apiBaseUrl: this.apiBaseUrl,
+        issueTicket: () => this.issueAttachTicket(id, window),
+        direct: options.direct,
+      });
+    // Where the shell can reach this machine's runner, a session on it skips the network.
+    return this.localTerminals
+      ? new LocalFirstSessionStream(this.localTerminals, id, window, remote)
+      : remote();
   }
 }

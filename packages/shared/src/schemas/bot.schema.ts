@@ -418,6 +418,30 @@ export const BOT_REPLY_OUTCOMES = ['answered', 'failed', 'cancelled'] as const;
 export type BotReplyOutcome = (typeof BOT_REPLY_OUTCOMES)[number];
 
 /**
+ * How one of a bot's subagents ended (`25-bots.md` §4.7, `delegate`): it
+ * answered, failed, was stopped with the turn, or ran out of its time.
+ */
+export const BOT_SUBAGENT_STATUSES = ['completed', 'failed', 'cancelled', 'timed_out'] as const;
+export type BotSubagentStatus = (typeof BOT_SUBAGENT_STATUSES)[number];
+
+/**
+ * One subagent a `delegate` call ran inside the turn: the task it was given,
+ * how it ended, what it answered (or why it failed), the tools it called, in
+ * order, and what it cost.
+ */
+export interface BotSubagentRun {
+  task: string;
+  status: BotSubagentStatus;
+  /** Its answer, cut short; on a failure, why. Empty when it said nothing. */
+  result: string;
+  /** The tools it called, by name, in the order it called them. */
+  toolCalls: string[];
+  inputTokens: number;
+  outputTokens: number;
+  durationMs: number;
+}
+
+/**
  * A message another bot sent this one through `message_bot` or `ask_bot`
  * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
  * Oppenheimer recorded it, never a name the message claims; its name is the

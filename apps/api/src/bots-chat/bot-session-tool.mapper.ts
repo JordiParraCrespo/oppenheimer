@@ -59,12 +59,27 @@ export function planSession(
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
   if (!parsed.success) {
-    const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
+    const fields = parsed.error.issues.map((issue) => toolField(issue.path.join('.')));
     return {
       refusal: `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`,
     };
   }
   return { body: parsed.data, hostId };
+}
+
+/**
+ * The session body's fields that `start_session`'s input names otherwise, so
+ * a refusal names the field the model wrote: it never sees `prompt`.
+ */
+const TOOL_FIELD_OF: Readonly<Record<string, keyof StartSessionInput>> = {
+  prompt: 'task',
+  hostId: 'host_id',
+  projectId: 'project_id',
+};
+
+/** A rejected field of the session's body, as the tool's input names it. */
+function toolField(path: string): string {
+  return TOOL_FIELD_OF[path] ?? (path || 'input');
 }
 
 /** How much of the task a Needs input card shows. */

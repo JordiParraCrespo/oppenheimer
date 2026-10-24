@@ -103,7 +103,19 @@
       "groupSearched_other": "Buscó en la web {{count}} veces",
       "groupFailed_one": "{{count}} con error",
       "groupFailed_many": "{{count}} con error",
-      "groupFailed_other": "{{count}} con error"
+      "groupFailed_other": "{{count}} con error",
+      "delegated_one": "Ejecutó {{count}} subagente",
+      "delegated_other": "Ejecutó {{count}} subagentes",
+      "delegating_one": "Ejecutando {{count}} subagente",
+      "delegating_other": "Ejecutando {{count}} subagentes",
+      "seconds": "{{count}} s",
+      "subagent": {
+        "completed": "completado",
+        "failed": "con error",
+        "cancelled": "detenido",
+        "timed_out": "sin tiempo"
+      },
+      "subagentTokens": "{{tokens}} tokens"
     },
     "suggest": {
       "task": {
