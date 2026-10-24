@@ -1,5 +1,89 @@
 # @oppenheimer/frontend-web
 
+## 0.3.0
+
+### Minor Changes
+
+- e711f5c: Add a host leads with the agent prompt, in onboarding and in the console's
+  dialog, as the 2026-10-13 design export draws it.
+
+  - `@oppenheimer/frontend-web`: `PairingChrome` is agent first: the agent
+    prompt in a card with Copy prompt (its text behind a fold), the token line
+    with "Install manually instead" across from it (the install command on
+    one line with its Copy, and the installer's digest), and a Connection
+    list — Runner installed with its version, then Host connected with the
+    machine's name and OS. The two folds are `Disclosure`s; the chrome's
+    root carries `data-layout`, and each part sizes itself from it, so
+    `PairingToken`, `PairingInstruction` and `PairingStatus` lose their
+    `layout` prop. `PairedMachine` gains `runnerVersion`.
+  - `@oppenheimer/web`: the onboarding step puts Continue, Skip for now and
+    its note on one row; the dialog's copy follows the export.
+  - `@oppenheimer/design-system-web`: `Disclosure`'s doc no longer names Add
+    a host.
+  - `@oppenheimer/web-showcase`: the Add a host demo draws the same column.
+  - `@oppenheimer/translations`: `hosts.pairing` gains `manual`,
+    `manualLead`, `connection`, `installWaiting`,
+    `installed` and `connected`; `copyPrompt` reads "Copy prompt";
+    `copyCommand` and `inspect` are removed. `hosts.add.description`,
+    `onboarding.flow.host.description` and `skipNote` follow the export.
+
+- 581c202: Bot settings polish (`product/versions/mvp/25-bots.md`, 2026-10-16).
+
+  - `@oppenheimer/api`: `GET /bots/:id/conversation/export` streams the whole
+    chat as NDJSON, one message per line, a page at a time; `DELETE /bots/:id/conversation` clears it (turns,
+    messages, cards, summary, sidebar line) in one transaction, refused with
+    `BOTS_022` while a turn is queued or running; the conversation read
+    carries `messageCount`.
+  - `@oppenheimer/api-client`: `exportBotConversation`, `clearBotConversation`,
+    `messageCount`.
+  - `@oppenheimer/frontend-consumer`: `useSuspenseBotHistory`,
+    `useExportBotConversation` (reads the NDJSON stream a line at a time),
+    `useClearBotConversation`.
+  - `@oppenheimer/backend-core`: `ndjsonLines` and `NDJSON_CONTENT_TYPE`.
+  - `@oppenheimer/frontend-web`: `SettingsFormSaveRow`, the dirty / pending /
+    saved foot of a settings form.
+  - `@oppenheimer/design-system-web`: `SettingsListRow`'s `kind` tag never wraps;
+    the meta beside it does.
+  - `@oppenheimer/translations`: Home host, chat history, `BOTS_022`, and the
+    shorter ChatGPT sign-in chip.
+
+- 27f034a: The wordmark stands alone: the console's brand row and the auth and public
+  pages show "Oppenheimer" without the "Console" suffix. `Wordmark` loses its
+  `product` prop, `BrandLogo` is gone (the auth and public chrome draw
+  `Wordmark` directly), `AuthLayout` loses its `product` prop, and the
+  `common.product` key is gone from the catalogs.
+
+### Patch Changes
+
+- 231fb59: A form's fields stand at one height. `DatePicker` (28px, though its notes
+  said 34px) and `FieldSelect`'s field look (42px) take a `size` on the control
+  ramp and default to `md`, 34px, the same rung as `Input`, on the same field
+  border and fill. `Chip` takes `size="md"` for a chip that is a form's field,
+  and `TimeField`'s trigger moves to `md` beside the `DatePicker`.
+- Updated dependencies [e711f5c]
+- Updated dependencies [50429c4]
+- Updated dependencies [39dbe36]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [581c202]
+- Updated dependencies [6af341b]
+- Updated dependencies [73ce336]
+- Updated dependencies [663e8ed]
+- Updated dependencies [231fb59]
+- Updated dependencies [a80436f]
+- Updated dependencies [d4606c6]
+- Updated dependencies [6917f62]
+- Updated dependencies [11fa44a]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+- Updated dependencies [27f034a]
+  - @oppenheimer/design-system-web@0.3.0
+  - @oppenheimer/translations@0.4.0
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/frontend-core@0.3.1
+
 ## 0.2.0
 
 ### Minor Changes
