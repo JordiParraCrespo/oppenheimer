@@ -36,6 +36,7 @@ import type {
 import type { SessionEntity } from '../modules/sessions/session.entity';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
+import { watchSessionStart } from './sessions.queries';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -356,9 +357,14 @@ export function useStartReviewSession(
   return useMutation({
     mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
       app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() }),
-    ),
+    ...withCacheOnSuccess(options, (sessionId) => {
+      // The Chat tab draws the session the moment For review lists it, and the
+      // host makes its pane before the checkout: watched, the tab shows the
+      // start's steps until Claude Code runs rather than a shell in an empty
+      // folder.
+      watchSessionStart(queryClient, sessionId);
+      return queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+    }),
   });
 }
 

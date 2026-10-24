@@ -343,6 +343,23 @@ export function useSessionOpening(session: SessionEntity | undefined): boolean {
   return live && data !== undefined && !data.settled;
 }
 
+/**
+ * This console watches the start it sent ({@link useSessionOpening}), so the
+ * session's pane stays on its steps until the agent runs. The row can read
+ * `open` before the start pane ever mounts, since the host makes the pane
+ * first, so the watch begins with the answer to the create and not with the
+ * pane. Stale from the outset, so the first reader fetches the log at once.
+ * Every start a console sends calls it: New session's and a pull request's
+ * review session.
+ */
+export function watchSessionStart(queryClient: QueryClient, sessionId: string): void {
+  queryClient.setQueryData(
+    sessionsKeys.start(sessionId, false),
+    deriveSessionStartProgress([], { failed: false }),
+    { updatedAt: 0 },
+  );
+}
+
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -372,15 +389,7 @@ export function useCreateSession(
       // other session mutation already seeds it ({@link useSessionPatch});
       // create was the one that did not.
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      // This console watches the start it sent ({@link useSessionOpening}).
-      // The row can read `open` before the start pane ever mounts, since the
-      // host makes the pane first, so the watch begins here and not there.
-      // Stale from the outset, so the first reader fetches the log at once.
-      queryClient.setQueryData(
-        sessionsKeys.start(session.id, false),
-        deriveSessionStartProgress([], { failed: false }),
-        { updatedAt: 0 },
-      );
+      watchSessionStart(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
