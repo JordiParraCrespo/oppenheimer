@@ -2006,7 +2006,10 @@
       "listFailed": "No se pudieron cargar tus sesiones de revisión.",
       "delete": "Eliminar sesión de revisión",
       "deleteTitle": "¿Eliminar la sesión de revisión de #{{number}}?",
-      "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir."
+      "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir.",
+      "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
+      "restart": "Reiniciar revisión",
+      "restarting": "Reiniciando…"
     }
   },
   "tasks": {

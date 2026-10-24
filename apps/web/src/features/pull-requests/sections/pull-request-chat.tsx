@@ -20,6 +20,11 @@ import { ReviewSessionStart } from './review-session-start';
  * It reads the pull request and the review sessions under Suspense, side by
  * side. The bar's bin deletes the session; its dialog sits outside both
  * branches, since the delete swaps the terminal for the start panel at once.
+ *
+ * The bar stands on whatever ground the session's pane shows: the terminal's
+ * while it is a terminal, the chat's own, the console's, once the pane reads
+ * as a chat (`data-pane-ground`), so bar and chat are one surface rather
+ * than a chat set in a terminal-coloured box.
  */
 export function PullRequestChat({
   address,
@@ -41,9 +46,9 @@ export function PullRequestChat({
   return (
     <>
       {session ? (
-        <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
-          <div className="flex h-10 shrink-0 items-center gap-2.5 border-b border-term-border pr-3 pl-4 font-mono text-xs text-term-dim">
-            <span className="text-term-fg">
+        <div className="group/review flex min-h-0 flex-1 flex-col bg-term-bg has-[[data-pane-ground=chat]]:bg-transparent">
+          <div className="flex h-10 shrink-0 items-center gap-2.5 border-b border-term-border pr-3 pl-4 font-mono text-xs text-term-dim group-has-[[data-pane-ground=chat]]/review:border-border-subtle group-has-[[data-pane-ground=chat]]/review:text-fg-muted">
+            <span className="text-term-fg group-has-[[data-pane-ground=chat]]/review:text-fg">
               {t('pullRequests.reviewSession.bar', {
                 repository: session.repository.split('/').pop(),
                 number: session.number,
