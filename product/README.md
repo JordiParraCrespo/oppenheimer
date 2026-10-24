@@ -673,6 +673,14 @@ earlier note:
   #444) it was built as subagents inside the turn: up to 4 read-only
   children in parallel, bounded and stopped with the turn, whose answers
   the bot reads as data and answers from in the same reply (25, "Decided").
+- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that "when a
+  session ends" reaches a bot only as a routine's trigger, with no watch
+  table. On 2026-10-22 (issue #445) the owner asked for a bot to subscribe
+  to the sessions it delegates, as Grok Bot's watchers do, and to be woken
+  when they finish, fail, are stopped or need input. A
+  `bot_subscription` now follows one session for the bot that started or
+  watched it, and every wake is still a queued turn
+  (`versions/mvp/27-bot-subscriptions.md`, 26 §5).
 - `next-steps/0.7-terminal-and-chat.md` had the relay never send the chat
   through a share link, so a guest saw only the terminal. On 2026-10-23
   the owner asked for the shared page to have the chat view too: the

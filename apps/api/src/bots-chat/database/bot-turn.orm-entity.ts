@@ -34,7 +34,7 @@ import { BOT_TURN_ERROR_MAX } from '../domain/bot-turn.entity';
   `"status" IN ('queued', 'running', 'completed', 'cancelled', 'failed')`,
 )
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
-@Check('CHK_bot_turn_origin', `"origin" IN ('message', 'approval', 'routine')`)
+@Check('CHK_bot_turn_origin', `"origin" IN ('message', 'approval', 'routine', 'subscription')`)
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
 @Check('CHK_bot_turn_lane', `"lane" IN ('owner', 'bots', 'background')`)
 @Check('CHK_bot_turn_chain_depth', `"chainDepth" >= 0`)
@@ -65,7 +65,7 @@ export class BotTurnOrmEntity {
   @Column({ type: 'varchar', length: 16, default: 'queued' })
   status!: string;
 
-  /** Why it exists: a message, an approval's decision, or a routine's run. */
+  /** Why it exists: a message, an approval's decision, a routine's run, or a subscription's wake. */
   @Column({ type: 'varchar', length: 16, default: 'message' })
   origin!: string;
 

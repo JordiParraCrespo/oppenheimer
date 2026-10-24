@@ -22,7 +22,7 @@ export interface BotTurnProps {
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
-  /** Why it exists: a message of yours, an approval's decision, or a routine's run. */
+  /** Why it exists: a message of yours, an approval's decision, a routine's run, or a subscription's wake. */
   origin: BotTurnOrigin;
   /** What makes it happen once (`automation-run:<runId>`); null for a message. */
   sourceKey: string | null;

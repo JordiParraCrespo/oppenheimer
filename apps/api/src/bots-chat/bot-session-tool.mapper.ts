@@ -17,6 +17,8 @@ export interface StartSessionInput {
   host_id?: string;
   agent?: CodingAgentId;
   name?: string;
+  /** Subscribe the bot to it (`27-bot-subscriptions.md` §3); true when omitted. */
+  watch?: boolean;
 }
 
 /**
@@ -96,8 +98,8 @@ export function sessionHostId(
 
 /**
  * The Needs input card's line for a `start_session` call: "Start Claude Code
- * on build-02 in acme/xrp-mobile: Fix the failing test", the task cut to
- * fit. `hostName` is the host as the owner sees it, or null when none is set.
+ * on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the
+ * failing test", the task cut to fit. `hostName` is the host as the owner sees it, or null when none is set.
  */
 export function sessionSummary(
   input: StartSessionInput,
@@ -117,7 +119,8 @@ export function sessionSummary(
   const task = input.task.replace(/\s+/g, ' ').trim();
   const clipped =
     task.length > TASK_IN_SUMMARY_MAX ? `${task.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : task;
-  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}: ${clipped}`;
+  const hearBack = input.watch === false ? '' : ', and hear back when it ends';
+  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}${hearBack}: ${clipped}`;
 }
 
 function repositoryOf(project: ProjectEntity, name: string | undefined): string | null {

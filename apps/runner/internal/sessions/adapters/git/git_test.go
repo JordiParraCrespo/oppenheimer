@@ -313,6 +313,12 @@ func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
+	// The clone's deepen runs on in the background, and while it does Ensure
+	// takes the refs it brought as current and fetches nothing: on a slow
+	// host the push below landed after the deepen had read origin, and
+	// origin/main never moved. This is a later session's fetch, so the
+	// clone has finished deepening.
+	c.Wait()
 	mirror := layout.Store(repo)
 	before := remoteRef(t, mirror, "main")
 	advance(t, remote, "main")

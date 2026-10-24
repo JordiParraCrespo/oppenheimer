@@ -229,3 +229,78 @@ thresholds, so those stay unknown.
   don't ask again*, then a pause with *resume* or *keep paused*.
 
 Note 26 takes all of it as behaviour, with thresholds of its own.
+
+## 8. How a bot hears back from work it delegated (2026-10-22)
+
+Issue #445 asked how Grok Bot learns that work it handed off has finished,
+so that a bot here could subscribe to the sessions it starts. The
+installer could not be fetched from this environment, so this section
+rests on §7's read of the 0.71.2 client and on the vendors' published
+docs. It separates what was seen from what is inferred. No code is taken.
+
+**Grok Bot, seen in the client (§7's read):**
+
+- A bot that follows a cloud agent **registers a watcher** for it. The
+  watcher is durable or not, and it counts the wakes it caused.
+- Finished background tasks and subagents reach the bot as **a completion
+  carrying a system reminder**. The reminder is a note from the harness,
+  not a message from the person.
+- **Pending wakes live in a ledger that survives a host restart**, and a
+  subagent wakes its parent with `WakeParent`.
+- A bot wakes for five reasons only: a message, a routine, a channel
+  through a routine, another bot, or background work it started finishing.
+
+**Grok Bot, from its docs** (`docs.x.ai/grok-bot/chat-and-collaboration`,
+`docs.x.ai/grok-bot/faq`, `docs.x.ai/build/features/background-tasks`):
+
+- "A Bot can send an asynchronous message to another Bot", and the
+  receiver "wakes, handles the request, and can reply later". This is our
+  `ask_bot` (25 §4.6).
+- Closing the app does not stop a background turn or a routine. The work
+  runs on the vendor's servers.
+- A message from the person "takes priority over background work". Our
+  lanes do the same: the owner's lane first, `background` last.
+- In the coding agent, a monitor's output lines arrive "as a notification
+  in the conversation", and the docs warn that "every output line
+  interrupts the conversation".
+
+**Inferred, not observable:** where a watcher is stored, how the server
+deduplicates a wake delivered twice, whether wakes are ordered, and what a
+watcher does when its target asks for input. The scheduler and the ledger
+run on the vendor's servers. The client shows their schemas and their
+copy, not their rules.
+
+**OpenAI, from its docs** (`developers.openai.com/api/docs/guides/background`,
+`…/guides/webhooks`, `…/reference/resources/webhooks`):
+
+- **A background response** (`background: true`) is `queued` or
+  `in_progress`, then ends `completed`, `failed`, `cancelled` or
+  `incomplete`. Cancelling twice is idempotent, and a stream resumes from a
+  `sequence_number` cursor.
+- **Webhooks are thin.** An event is `id`, `type`, `created_at` and
+  `data: { id }`. The docs then fetch the object (`responses.retrieve(id)`)
+  rather than trust a copy.
+- **Delivery repeats.** Failed deliveries are retried "for up to 72 hours
+  with exponential backoff", and "OpenAI may deliver duplicate copies of
+  the same webhook event". The `webhook-id` header is the idempotency key.
+  The docs promise no ordering.
+- **A terminal event exists for each way work can end**:
+  `response.completed`, `.failed`, `.cancelled`, `.incomplete`, and the
+  same for batches, fine-tuning jobs and eval runs.
+
+**What `versions/mvp/27-bot-subscriptions.md` takes:**
+
+| From | Idea | Ours |
+|---|---|---|
+| Grok Bot | A watcher per delegated resource, counting its wakes | `bot_subscription`, with `wakes` and a wake limit |
+| Grok Bot | The wake is a harness note, not the person's words | an `event` message the bot reads as Oppenheimer's note, with the session's words fenced as untrusted |
+| Grok Bot | The wake survives a restart | the outbox and the turn queue, already durable; there is no separate ledger, as 26 decided |
+| OpenAI | A thin event, then fetch the object | the wake re-reads the session as the owner and wakes for its state as it stands |
+| OpenAI | At-least-once delivery, deduplicated by an id | the outbox delivers at least once; the turn's `sourceKey` makes a wake delivered twice one turn |
+| OpenAI | One terminal event per way to end | wakes on `completed`, `failed`, `cancelled`, `expired`, plus `requires_action` |
+| OpenAI | No ordering promised | the fresh read decides; a stale event wakes nothing new |
+
+**What we do differently:** a wake for input needed too, since a coding
+agent blocked on a permission is the commonest stall; at most one wake per
+state of a task; and the owner's live permissions as the ceiling, re-read
+at every wake, where Grok Bot has no such ceiling.
