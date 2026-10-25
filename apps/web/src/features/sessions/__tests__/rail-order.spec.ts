@@ -2,12 +2,12 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useRailOrder } from '../hooks/use-rail-order';
 import {
-  RAIL,
   RAIL_ORDER_KEY,
+  RAIL_ROUTES,
   railLanding,
   rememberRailOrder,
   storedRailOrder,
-} from '../lib/rail-order';
+} from '../lib/rail-landing';
 
 /**
  * The rail's order a reader dragged comes back on the next visit; anything
@@ -16,7 +16,7 @@ import {
  * its default place. The console opens on whichever item leads that order.
  */
 
-const DEFAULT = RAIL.map((entry) => entry.id);
+const DEFAULT = RAIL_ROUTES.map((item) => item.id);
 const store = (raw: string) => window.localStorage.setItem(RAIL_ORDER_KEY, raw);
 
 afterEach(() => window.localStorage.clear());

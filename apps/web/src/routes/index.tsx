@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { railLanding } from '@/features/sessions/lib/rail-order';
+import { railLanding } from '@/features/sessions/lib/rail-landing';
 
 /**
  * The console's front door, and the landing every "go to the console" points
