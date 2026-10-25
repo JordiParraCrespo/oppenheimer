@@ -18,6 +18,8 @@ import { IconButton } from './icon-button';
  *   would drive (`detail`).
  * - `QuestionPanel`: the agent asks; picking an option advances. Picked rows
  *   fill and take a check; the person may type their own answer instead.
+ *   Where the agent allows several, `value` is the set of picks and each row
+ *   (and its number key) toggles.
  * - `ChoiceRow`: one numbered choice: an 18px ring with the number in mono,
  *   the label at 14px medium and its line in subtle ink. `tone` rings the
  *   number in the action blue (the recommended one) or red (stop).
@@ -277,7 +279,9 @@ function QuestionPanel({
 }: {
   question: React.ReactNode;
   options: readonly Choice[];
-  value: number | null;
+  /** The pick, or the picks when several are allowed. */
+  value: number | readonly number[] | null;
+  /** A row was pressed: the pick, or the pick to toggle. */
   onValueChange: (index: number) => void;
   /** Which question this is, from 0, of `total`; with both the stepper shows. */
   index?: number;
@@ -321,7 +325,7 @@ function QuestionPanel({
             n={i + 1}
             label={o.label}
             description={o.description}
-            selected={value === i}
+            selected={Array.isArray(value) ? value.includes(i) : value === i}
             onClick={() => onValueChange(i)}
           />
         ))}

@@ -36,7 +36,10 @@ const AGENT_WINDOW = 0;
  * Files dropped anywhere on the pane go the way pasted files do: the
  * `DropZone` around the terminal outlines the pane while the drag is over it
  * and hands the drop to the same batch upload as a paste (`useFilePaste`),
- * whose paths land in the agent's prompt.
+ * whose paths land in the agent's prompt. While the chat shows and its
+ * composer takes files (`reading.files`), a drop or a paste goes there
+ * instead, a chip on the next message, since the prompt they would land in
+ * is out of sight under the chat.
  *
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
  * the link is live or blipping, and while the host is away a banner in its
@@ -77,6 +80,7 @@ export function SessionTerminal({
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
   const { chat, view, onViewChange, cover } = reading;
   const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  const takeFiles = chatShown && reading.files ? reading.files.deliver : upload.send;
   const terminal = useTerminal(createStream, {
     chat,
     onEnd: refresh,
@@ -98,7 +102,7 @@ export function SessionTerminal({
   ) : null;
 
   return (
-    <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
+    <DropZone onFiles={takeFiles} className="flex min-h-0 flex-1 flex-col">
       <Terminal
         className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
@@ -134,9 +138,9 @@ export function SessionTerminal({
           {chatShown ? (
             // Typing in the chat moves focus off the grid, so a paste there
             // never reaches the grid's listener: the cover takes its files
-            // the same way, and they land in the agent's prompt. On the way
-            // down, as the grid does, so nothing in the chat can swallow it.
-            <ChatCover onPasteCapture={(event) => takeFilePaste(event, upload.send)}>
+            // for the chat's composer. On the way down, as the grid does, so
+            // nothing in the chat can swallow it.
+            <ChatCover onPasteCapture={(event) => takeFilePaste(event, takeFiles)}>
               {cover}
             </ChatCover>
           ) : null}

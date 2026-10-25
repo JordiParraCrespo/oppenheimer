@@ -950,7 +950,13 @@
         "placeholder": "Escribe a Claude",
         "send": "Enviar",
         "stop": "Detener",
-        "agent": "Claude Code"
+        "agent": "Claude Code",
+        "attach": "Adjuntar archivos",
+        "removeAttachment": "Quitar {{name}}",
+        "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+        "attachTooMany": "Un mensaje lleva como mucho {{max}} archivos.",
+        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
+        "attaching": "Adjuntando archivos…"
       },
       "turn": {
         "working": "Trabajando desde hace",
@@ -1024,7 +1030,23 @@
       "thought": "Pensó",
       "thoughtFor": "Pensó {{seconds}} s",
       "changes_one": "{{count}} archivo cambiado",
-      "changes_other": "{{count}} archivos cambiados"
+      "changes_other": "{{count}} archivos cambiados",
+      "question": {
+        "waiting": "Esperando tu respuesta",
+        "dismissed": "Descartaste las preguntas",
+        "noAnswer": "No se pudo leer la respuesta",
+        "ownAnswer": "O escribe tu propia respuesta…",
+        "ownAnswerLabel": "Tu respuesta",
+        "several": "Elige todas las que apliquen",
+        "one": "Elige una, o responde con tus palabras",
+        "next": "Siguiente",
+        "submit": "Enviar respuestas",
+        "dismiss": "Descartar",
+        "sending": "Enviando tus respuestas…",
+        "previous": "Pregunta anterior",
+        "nextQuestion": "Pregunta siguiente",
+        "of": "{{n}} de {{total}}"
+      }
     }
   },
   "bots": {

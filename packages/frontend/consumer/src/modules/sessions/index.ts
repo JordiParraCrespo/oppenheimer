@@ -1,6 +1,8 @@
+export type { ChatAnswer } from './chat/question-keys';
 export {
   type ChatBatch,
   type ChatPrompt,
+  type ChatQuestion,
   type ChatState,
   type ChatStep,
   type ChatTodo,

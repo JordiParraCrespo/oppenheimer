@@ -14,8 +14,8 @@ import {
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
-/** What a folded turn keeps: its words and its cards. */
-const SETTLED_KINDS = new Set<ChatBlock['kind']>(['reply', 'plan', 'changes']);
+/** What a folded turn keeps: its words and its cards, what was asked and answered among them. */
+const SETTLED_KINDS = new Set<ChatBlock['kind']>(['reply', 'plan', 'question', 'changes']);
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';

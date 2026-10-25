@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
+import { createFileHandOff } from '../lib/file-hand-off';
 import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
 
@@ -66,11 +67,15 @@ export function SessionPane({
   const { t } = useTranslation();
   const [view, setView] = useState<SessionView>(initialView);
   const chat = useSessionChat();
+  // Made once: the terminal delivers the files it catches over the chat, the
+  // chat's composer takes them.
+  const [files] = useState(createFileHandOff);
   const reading: PaneReading = {
     chat,
     view,
     onViewChange: setView,
-    cover: <SessionChat chat={chat} readOnly={false} />,
+    cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
+    files,
   };
   // The ground is the view on screen, not the one picked: a pane opened on
   // Chat shows the terminal until the transcript comes, on the terminal's.

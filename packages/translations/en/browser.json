@@ -945,7 +945,13 @@
         "placeholder": "Message Claude",
         "send": "Send",
         "stop": "Stop",
-        "agent": "Claude Code"
+        "agent": "Claude Code",
+        "attach": "Attach files",
+        "removeAttachment": "Remove {{name}}",
+        "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+        "attachTooMany": "A message carries at most {{max}} files.",
+        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+        "attaching": "Attaching files…"
       },
       "turn": {
         "working": "Working for",
@@ -1019,7 +1025,23 @@
       "thought": "Thought",
       "thoughtFor": "Thought for {{seconds}}s",
       "changes_one": "{{count}} file changed",
-      "changes_other": "{{count}} files changed"
+      "changes_other": "{{count}} files changed",
+      "question": {
+        "waiting": "Waiting for your answer",
+        "dismissed": "You dismissed the questions",
+        "noAnswer": "No answer read",
+        "ownAnswer": "Or type your own answer…",
+        "ownAnswerLabel": "Your answer",
+        "several": "Pick as many as apply",
+        "one": "Pick one, or answer in your own words",
+        "next": "Next",
+        "submit": "Submit answers",
+        "dismiss": "Dismiss",
+        "sending": "Sending your answers…",
+        "previous": "Previous question",
+        "nextQuestion": "Next question",
+        "of": "{{n}} of {{total}}"
+      }
     }
   },
   "bots": {
