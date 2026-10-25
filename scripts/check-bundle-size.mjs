@@ -49,7 +49,13 @@ const APPS = [
     // `delegate` (its line, the live line and each subagent's status). The
     // icon is one the console already ships; the subagent lines follow the
     // bot's chat route.
-    budgetKB: 443,
+    // Raised to 444KB on 2026-10-25 for opening the console on the rail's
+    // first item, measured at 443.4KB on a main that stood at 443.1KB: `/`
+    // reads the reader's rail order to pick its redirect, and that route is
+    // on the first load, so the order's ids, routes and storage read
+    // (`features/sessions/lib/rail-landing.ts`, +0.3KB) land here. The rail's
+    // names and glyphs stay off it.
+    budgetKB: 444,
   },
   // oppenheimer:end web
 ];
