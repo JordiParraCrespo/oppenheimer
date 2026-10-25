@@ -25,6 +25,17 @@ import { SessionChatSend } from './session-chat-send';
 const TURNS_SHOWN = 40;
 
 /**
+ * Grows the chat above what the reader is on without moving it: the update
+ * is drawn at once, so the turns it adds can be measured, and the column
+ * keeps its distance from the end.
+ */
+function keepingPlace(box: HTMLElement | null, grow: () => void): void {
+  const fromEnd = box ? box.scrollHeight - box.scrollTop : 0;
+  flushSync(grow);
+  if (box) box.scrollTop = box.scrollHeight - fromEnd;
+}
+
+/**
  * A Claude Code session read as a chat (0.7): the conversation off the
  * agent's own transcript, turn by turn, kept at its newest turn while the
  * reader is there. The composer types through the chat into the session's
@@ -53,13 +64,7 @@ export function SessionChat({
   const hidden = Math.max(0, state.turns.length - shown);
   const turns = hidden > 0 ? state.turns.slice(hidden) : state.turns;
 
-  function showEarlier() {
-    const box = scroller.current;
-    const fromEnd = box ? box.scrollHeight - box.scrollTop : 0;
-    // Drawn now, so the turns above can be measured and the reader kept where they were.
-    flushSync(() => setShown(shown + TURNS_SHOWN));
-    if (box) box.scrollTop = box.scrollHeight - fromEnd;
-  }
+  const showEarlier = () => keepingPlace(scroller.current, () => setShown(shown + TURNS_SHOWN));
 
   return (
     <div className="relative flex size-full flex-col">
