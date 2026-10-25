@@ -24,9 +24,15 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
+| [`Brain`](version1/Brain.dc.html) | Inbox — the console's new landing page and first rail item: what needs you, suggestions, and what is done |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
 | [`SessionsConsole (where)`](version1/SessionsConsole%20(where).dc.html) | The console with where a session runs as a choice: a new worktree, a folder on the host, or a blank terminal; projects that hold folder sessions only |
 | [`SessionsConsole (cloud)`](version1/SessionsConsole%20(cloud).dc.html) | `SessionsConsole (where)` with Cloud beside Hosts: a session or an automation launched as a cloud agent (Cursor, or Claude Code on claude.ai/code) |
+| [`SessionsConsole (teleport)`](version1/SessionsConsole%20(teleport).dc.html) | `SessionsConsole (cloud)` with Claude Code cloud environments, and Teleport to another host from a session's menu |
+| [`SessionsConsole (preview)`](version1/SessionsConsole%20(preview).dc.html) | `SessionsConsole (teleport)` with a live preview beside the session (a phone simulator for a mobile app) and Claude Code cloud launched from a signed-in host (`claude --cloud`) |
+| [`NewSessionComposer`](version1/NewSessionComposer.dc.html) | New session as one composer: where it runs, up to two repositories with a branch each, permissions, agent and model, and a New environment dialog |
+| [`New Session (final)`](version1/New%20Session%20(final).dc.html) | Canvas comparing two layouts of that composer: a chip per decision, or one workspace chip |
+| [`Cursor Cloud`](version1/Cursor%20Cloud.dc.html) | Canvas handoff for Cursor's cloud agent: connecting Cursor, repository access through its GitHub app, Where with Cloud, a running Cursor session and its failures |
 | [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
@@ -170,6 +176,27 @@ available in cloud. In `Bots` a trace step opens to its output (test
 results, a failed command), and the transcript can jump to the latest
 turn and stop a run.
 
+The 2026-10-25 export adds an Inbox and five frames on where sessions
+run, and touches every console frame. `Brain` is the Inbox, a new first
+rail item with a bell, and where sign-in, Ready and `Flow` now land: what
+needs you (a pull request to merge, questions a bot asked), suggestions,
+and done. `version1/global-search.js` adds a search button and a ⌘K
+palette over pages and items, and `version1/sidebar-toggle.js` folds the
+sidebar away (⌘B); `rail-order.js` loads both and puts Inbox first in a
+saved order. `SessionsConsole` takes Share, Teleport and the preview from
+the new frames, its sidebar gains a search and Group by, and a project
+without repositories holds folder sessions. `SessionsConsole (teleport)`
+moves a session to another host and picks a Claude Code cloud
+environment; `SessionsConsole (preview)` adds a live preview pane (a
+phone simulator for a mobile app, waiting until the host's dev server
+answers) and launches Claude Code cloud from a host signed in to it.
+`NewSessionComposer` and `New Session (final)` fold New session into one
+composer with a row of chips, and `Cursor Cloud` is the handoff for
+Cursor's cloud agent. The built-in Project manager and Merge manager
+become one general bot, Oppenheimer, that merges pull requests, opens
+issues and runs Plan: `Bots`, `BotSettings`, `Tasks` and `PullRequests`
+list it under a Bots heading with the workspace's other bots.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -264,11 +291,15 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   view of its own and counts a waiting pull request as blocked, and the
   Settings policy reads "These apply to every watched repository."
   `explore-oppenheimer-agent.dc.html` is not in that export either and
-  stays as it was. The 2026-10-14 export still lacks all three, and was
-  merged the same way.
+  stays as it was. The 2026-10-14 and 2026-10-25 exports still lack all
+  three, and were merged the same way.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
+- The Inbox (`Brain`), global search, Teleport, the preview pane, the
+  one-composer New session and Cursor Cloud (2026-10-25) are in no note.
+  Teleport and cloud environments run ahead of `../00-scope.md` the same
+  way cloud sessions do.
 - Cloud sessions in `SessionsConsole (cloud)` are in no note either:
   `../00-scope.md` keeps agents beyond the catalog, Cursor among them,
   out of the MVP, and every session in the notes runs on a host.
@@ -317,5 +348,7 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `marker`, `SidebarEmptyCard`, and a centred `ChatEmptyState` over
   `TemplateTiles`. The chat's rows were written for the system, not ported
   from Synara, so its licence does not bear on them.
+- Left out of the 2026-10-25 export, as before: `uploads/`, `github.md`,
+  `assets/prod/` and `version1/assets/scientists/`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
