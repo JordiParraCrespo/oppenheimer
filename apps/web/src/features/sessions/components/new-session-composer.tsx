@@ -11,6 +11,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHeldFiles } from '../hooks/use-held-files';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
+import { refusalText } from '../lib/session-files';
 
 /**
  * The composer of New session. **The task's text and files live here**, the
@@ -127,11 +128,7 @@ export function NewSessionComposer({
       />
       {refusal ? (
         <FieldError className="mx-4.5">
-          {refusal.reason === 'tooMany'
-            ? t('sessions.new.composer.attachTooMany', { max: refusal.max })
-            : refusal.reason === 'tooLarge'
-              ? t('sessions.new.composer.attachTooLarge', { name: refusal.name })
-              : t('sessions.new.composer.attachNotSupported', { name: refusal.name })}
+          {refusalText(refusal, t, 'sessions.new.composer')}
         </FieldError>
       ) : null}
     </div>

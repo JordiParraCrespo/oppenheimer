@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { type HeldFile, useHeldFiles } from '../hooks/use-held-files';
 import { useTakeFiles } from '../hooks/use-take-files';
 import type { FileHandOff } from '../lib/file-hand-off';
-import { CHAT_MESSAGE_MAX_FILES } from '../lib/session-files';
+import { CHAT_MESSAGE_MAX_FILES, refusalText } from '../lib/session-files';
 
 /** How a send went: all of it, or the files that reached the host before one did not. */
 export type ChatSendResult = { sent: true } | { sent: false; landed: readonly string[] };
@@ -60,7 +60,7 @@ export function SessionChatComposer({
   model: string | null;
   /** Where the pane hands the files it catches; present, a message can carry files. */
   files?: FileHandOff;
-  onSend: (text: string, files: HeldFile[]) => ChatSendResult | Promise<ChatSendResult>;
+  onSend: (text: string, files: HeldFile[]) => Promise<ChatSendResult>;
   onStop: () => void;
 }) {
   const { t } = useTranslation();
@@ -95,27 +95,20 @@ export function SessionChatComposer({
       </ComposerStack>
     ) : undefined;
 
-  function settle(carried: HeldFile[], result: ChatSendResult) {
+  async function submit(text: string) {
+    const carried = files;
+    // Only files take long enough to say so; words alone go at once.
+    if (carried.length > 0) setSending(true);
+    const result = await onSend(text, carried);
+    setSending(false);
     if (result.sent) {
-      setDraft('');
+      // What was written while the files uploaded was not sent: it stays.
+      setDraft((current) => (current === text ? '' : current));
       // By id, so a file dropped while these uploaded stays for the next message.
       release(carried.map((file) => file.id));
     } else if (result.landed.length > 0) {
       release(result.landed);
     }
-  }
-
-  async function submit(text: string) {
-    const carried = files;
-    const result = onSend(text, carried);
-    // Words alone go at once, as they always did; only files take a while.
-    if (!(result instanceof Promise)) {
-      settle(carried, result);
-      return;
-    }
-    setSending(true);
-    settle(carried, await result);
-    setSending(false);
   }
 
   return (
@@ -176,11 +169,7 @@ export function SessionChatComposer({
       />
       {refusal ? (
         <FieldError className="mx-4.5">
-          {refusal.reason === 'tooMany'
-            ? t('sessions.chat.composer.attachTooMany', { max: refusal.max })
-            : refusal.reason === 'tooLarge'
-              ? t('sessions.chat.composer.attachTooLarge', { name: refusal.name })
-              : t('sessions.chat.composer.attachNotSupported', { name: refusal.name })}
+          {refusalText(refusal, t, 'sessions.chat.composer')}
         </FieldError>
       ) : null}
     </div>

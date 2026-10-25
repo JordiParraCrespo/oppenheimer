@@ -17,6 +17,16 @@ import {
 import type { FileHandOff } from '../lib/file-hand-off';
 
 /**
+ * How long the words wait after the last file's upload answers. The upload
+ * answers once the host has been told to fetch the file, not once its path
+ * is in the prompt: the host still pulls it and pastes it (in the order sent,
+ * on the session's lane), and words typed before that land ahead of the
+ * paths, or Enter sends without them. The protocol has no frame for "pasted"
+ * yet; when it does, this wait is that frame, and goes.
+ */
+const FILES_SETTLE_MS = 1500;
+
+/**
  * Where the chat's messages leave: the composer, fed the agent's state, and
  * the way a message reaches the agent. Its files go first, one after
  * another, each pasted into the agent's prompt by the host (`upload`), then
@@ -58,7 +68,7 @@ export function SessionChatSend({
     return { sent: true };
   }
 
-  function send(text: string, held: HeldFile[]): ChatSendResult | Promise<ChatSendResult> {
+  async function send(text: string, held: HeldFile[]): Promise<ChatSendResult> {
     setFailure(null);
     return held.length > 0 && upload ? sendWithFiles(text, held, upload) : deliver(text, false);
   }
@@ -78,6 +88,8 @@ export function SessionChatSend({
         return { sent: false, landed };
       }
     }
+    // The paths are on their way, not yet in the prompt: see FILES_SETTLE_MS.
+    await new Promise((settled) => setTimeout(settled, FILES_SETTLE_MS));
     return deliver(text, true);
   }
 

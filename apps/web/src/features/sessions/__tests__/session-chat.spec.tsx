@@ -29,7 +29,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 }));
 
 /** Waits out the pauses before the words and Enter, which only the fake clock can skip. */
-const enterDelay = () => act(() => vi.runAllTimers());
+const enterDelay = () => act(() => vi.runAllTimersAsync());
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -290,6 +290,29 @@ describe('files on a message', () => {
     expect(screen.getByText('trace.png')).toBeTruthy();
     expect((field as HTMLTextAreaElement).value).toBe('Look at this');
     expect(typed).toEqual([]);
+  });
+
+  it('keeps what was written while the files uploaded, which the message did not carry', async () => {
+    let arrive: () => void = () => {};
+    pasteFile.mockReset().mockReturnValue(
+      new Promise<void>((resolve) => {
+        arrive = resolve;
+      }),
+    );
+    const { files, typed } = renderAttaching();
+    act(() => files.deliver([png('trace.png')]));
+    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    fireEvent.change(field, { target: { value: 'Look at this' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    fireEvent.change(field, { target: { value: 'Look at this, and the log' } });
+
+    vi.useFakeTimers();
+    await act(async () => arrive());
+    await act(async () => vi.runAllTimersAsync());
+    expect(typed).toEqual(['Look at this', '\r']);
+    expect((field as HTMLTextAreaElement).value).toBe('Look at this, and the log');
+    expect(screen.queryByText('trace.png')).toBeNull();
+    vi.useRealTimers();
   });
 
   it('says why a file was turned away rather than dropping it', () => {

@@ -1,16 +1,12 @@
 import { SESSION_FILE_MAX_BYTES, sessionFileOffered } from '@oppenheimer/shared/protocol';
 import { useState } from 'react';
+import type { FileRefusal } from '../lib/session-files';
 
 /** One file a composer holds, keyed so two files with one name stay two chips. */
 export interface HeldFile {
   id: string;
   file: File;
 }
-
-/** Why the last file offered was not taken, for the composer to say under its field. */
-export type FileRefusal =
-  | { reason: 'notSupported' | 'tooLarge'; name: string }
-  | { reason: 'tooMany'; max: number };
 
 /**
  * The files a composer holds for its next message, and why the last one

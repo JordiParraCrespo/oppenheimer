@@ -330,19 +330,14 @@ describe('typing into the session', () => {
     vi.useRealTimers();
   });
 
-  it('waits for files handed to the host before its words and Enter, which may come alone', () => {
+  it('sends files already in the prompt with Enter alone, or with words', () => {
     vi.useFakeTimers();
     const chat = new SessionChat();
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.send('', { withFiles: true });
-    // The host still pulls each file and pastes its path; nothing goes before it lands.
-    vi.advanceTimersByTime(1000);
-    expect(typed).toEqual([]);
     vi.runAllTimers();
     chat.send('What is in these?', { withFiles: true });
-    vi.advanceTimersByTime(1000);
-    expect(typed).toEqual(['\r']);
     vi.runAllTimers();
     expect(typed).toEqual(['\r', 'What is in these?', '\r']);
     vi.useRealTimers();
