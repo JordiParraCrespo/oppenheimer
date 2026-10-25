@@ -49,7 +49,14 @@ const APPS = [
     // `delegate` (its line, the live line and each subagent's status). The
     // icon is one the console already ships; the subagent lines follow the
     // bot's chat route.
-    budgetKB: 443,
+    // Raised to 444KB on 2026-10-25 for files on a session chat's messages,
+    // measured at 443.2KB on a main that already stood at 443.1KB, over its
+    // own budget: +0.1KB for the design system's inline chat composer taking
+    // the paperclip and the attachments row, `ComposerFile` (the chip
+    // `Composer` now shares) and the default locale's
+    // `sessions.chat.composer.attach*` strings. The upload and the held
+    // files follow the session's route.
+    budgetKB: 444,
   },
   // oppenheimer:end web
 ];
