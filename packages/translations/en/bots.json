@@ -199,7 +199,14 @@
       "peerAsk": "<bot>{{name}}</bot> asked",
       "peerAnswered": "<bot>{{name}}</bot> replied",
       "peerFailed": "<bot>{{name}}</bot> could not answer",
-      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
+      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered",
+      "session": {
+        "needsInput": "Session “{{name}}” needs input",
+        "completed": "Session “{{name}}” finished",
+        "failed": "Session “{{name}}” failed",
+        "cancelled": "Session “{{name}}” was stopped",
+        "expired": "Session “{{name}}” expired before it ran"
+      }
     },
     "routineReason": {
       "expired": "it waited too long to start",
@@ -279,6 +286,8 @@
       "discard": "Discard",
       "save": "Save revision",
       "saving": "Saving…",
+      "saved": "Saved · revision {{revision}}",
+      "unsaved": "Unsaved changes",
       "saveFailed": "Could not save the revision.",
       "conflict": "{{file}} was saved somewhere else while you edited it, and is at revision {{revision}} now. Reload to see it; copy your text first if you want to keep it.",
       "reload": "Reload",

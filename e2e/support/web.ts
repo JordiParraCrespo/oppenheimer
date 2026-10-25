@@ -36,7 +36,7 @@ export async function signInAs(
   user: { email: string; password: string },
 ): Promise<void> {
   await loginThroughUi(page, user.email, user.password);
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/bots/, { timeout: 30_000 });
 }
 
 export async function createOrganization(

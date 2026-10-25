@@ -12,7 +12,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { type ConsoleList, useConsoleList } from '@/lib/console';
 import { RAIL_GROUP, useRailOrder } from '../hooks/use-rail-order';
-import { type RailItemId, railEntry } from '../lib/rail-order';
+import type { RailItemId } from '../lib/rail-landing';
+import { railEntry } from '../lib/rail-order';
 
 /**
  * The console's rail, switching the sidebar between its lists

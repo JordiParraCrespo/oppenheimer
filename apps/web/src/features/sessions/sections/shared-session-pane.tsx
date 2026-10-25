@@ -1,12 +1,16 @@
-import { Badge, Button, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
+import { Badge, Button, cn, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
 import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseSharedSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SharedEndsIn } from '../components/shared-ends-in';
 import { SharedFrame } from '../components/shared-frame';
+import { useSessionChat } from '../hooks/use-session-chat';
+import type { SessionView } from '../lib/chat-blocks';
 import { shareRefusalOf } from '../lib/share-session';
+import { SessionChat } from './session-chat';
 import { SharedRefusal } from './shared-refusal';
 import { SharedSessionTerminal } from './shared-session-terminal';
 
@@ -22,10 +26,17 @@ import { SharedSessionTerminal } from './shared-session-terminal';
  * Read under Suspense, in `SharedSessionScreen`'s `QueryState.Data`. A
  * refetch the share now refuses says the refusal in the page's place; any
  * other that fails keeps the page and says so above it.
+ *
+ * The chat and how the page reads it are held here, as `SessionPane` holds a
+ * member's: the terminal feeds the chat and draws it over its grid, and this
+ * page paints the ground behind both, the terminal's or the chat's. A `read`
+ * share's chat has no composer.
  */
 export function SharedSessionPane({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const { data: session, error, refetch } = useSuspenseSharedSession(slug);
+  const chat = useSessionChat();
+  const [view, setView] = useState<SessionView>('terminal');
   const refusal = error ? shareRefusalOf(error) : null;
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;
 
@@ -62,12 +73,25 @@ export function SharedSessionPane({ slug }: { slug: string }) {
           </EmptyState>
         </div>
       ) : (
-        <SharedSessionTerminal
-          slug={slug}
-          readOnly={!writing}
-          sharedBy={session.sharedBy}
-          onEnd={() => refetch()}
-        />
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 flex-col',
+            view === 'chat' ? 'bg-chat-ground' : 'bg-term-bg',
+          )}
+        >
+          <SharedSessionTerminal
+            slug={slug}
+            readOnly={!writing}
+            sharedBy={session.sharedBy}
+            onEnd={() => refetch()}
+            reading={{
+              chat,
+              view,
+              onViewChange: setView,
+              cover: <SessionChat chat={chat} readOnly={!writing} />,
+            }}
+          />
+        </div>
       )}
     </SharedFrame>
   );

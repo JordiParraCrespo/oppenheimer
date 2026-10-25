@@ -28,6 +28,7 @@ import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-ent
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
@@ -139,6 +140,7 @@ const dataSource = new DataSource({
     BotTurnOrmEntity,
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
+    BotSubscriptionOrmEntity,
     BotApprovalOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,

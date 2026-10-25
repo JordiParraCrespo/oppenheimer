@@ -950,7 +950,13 @@
         "placeholder": "Escribe a Claude",
         "send": "Enviar",
         "stop": "Detener",
-        "agent": "Claude Code"
+        "agent": "Claude Code",
+        "attach": "Adjuntar archivos",
+        "removeAttachment": "Quitar {{name}}",
+        "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+        "attachTooMany": "Un mensaje lleva como mucho {{max}} archivos.",
+        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
+        "attaching": "Adjuntando archivos…"
       },
       "turn": {
         "working": "Trabajando desde hace",
@@ -1024,7 +1030,23 @@
       "thought": "Pensó",
       "thoughtFor": "Pensó {{seconds}} s",
       "changes_one": "{{count}} archivo cambiado",
-      "changes_other": "{{count}} archivos cambiados"
+      "changes_other": "{{count}} archivos cambiados",
+      "question": {
+        "waiting": "Esperando tu respuesta",
+        "dismissed": "Descartaste las preguntas",
+        "noAnswer": "No se pudo leer la respuesta",
+        "ownAnswer": "O escribe tu propia respuesta…",
+        "ownAnswerLabel": "Tu respuesta",
+        "several": "Elige todas las que apliquen",
+        "one": "Elige una, o responde con tus palabras",
+        "next": "Siguiente",
+        "submit": "Enviar respuestas",
+        "dismiss": "Descartar",
+        "sending": "Enviando tus respuestas…",
+        "previous": "Pregunta anterior",
+        "nextQuestion": "Pregunta siguiente",
+        "of": "{{n}} de {{total}}"
+      }
     }
   },
   "bots": {
@@ -1234,7 +1256,14 @@
         "peerAsk": "<bot>{{name}}</bot> preguntó",
         "peerAnswered": "<bot>{{name}}</bot> respondió",
         "peerFailed": "<bot>{{name}}</bot> no pudo responder",
-        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
+        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder",
+        "session": {
+          "needsInput": "La sesión «{{name}}» necesita una respuesta",
+          "completed": "La sesión «{{name}}» ha terminado",
+          "failed": "La sesión «{{name}}» ha fallado",
+          "cancelled": "La sesión «{{name}}» se detuvo",
+          "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+        }
       },
       "routineReason": {
         "expired": "esperó demasiado para empezar",
@@ -1315,6 +1344,8 @@
         "discard": "Descartar",
         "save": "Guardar revisión",
         "saving": "Guardando…",
+        "saved": "Guardado · revisión {{revision}}",
+        "unsaved": "Cambios sin guardar",
         "saveFailed": "No se ha podido guardar la revisión.",
         "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
         "reload": "Recargar",
@@ -2006,7 +2037,10 @@
       "listFailed": "No se pudieron cargar tus sesiones de revisión.",
       "delete": "Eliminar sesión de revisión",
       "deleteTitle": "¿Eliminar la sesión de revisión de #{{number}}?",
-      "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir."
+      "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir.",
+      "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
+      "restart": "Reiniciar revisión",
+      "restarting": "Reiniciando…"
     }
   },
   "tasks": {

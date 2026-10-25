@@ -75,7 +75,9 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   await expect(toggle).toBeVisible({ timeout: 120_000 });
   await toggle.getByRole('button', { name: 'Chat' }).click();
 
-  await expect(page.getByText('Fix the empty wallet')).toBeVisible();
+  await expect(
+    page.locator('[data-slot="chat-user-message"]').getByText('Fix the empty wallet'),
+  ).toBeVisible();
   await expect(page.getByText('pnpm test wallet')).toBeVisible();
   await expect(page.getByText('had no initial value.')).toBeVisible();
 
@@ -102,6 +104,53 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   await page.keyboard.press('Enter');
   await toggle.getByRole('button', { name: 'Terminal' }).click();
   await expect.poll(() => screenText(page), { timeout: 15_000 }).toContain('chat-42');
+});
+
+/** A one-pixel PNG: the host checks a file's bytes are the type it claims. */
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+test('a chat message carries files: they wait as chips, then reach the prompt ahead of the words', async ({
+  page,
+}) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const { api, user } = await signedUpContext('fleetchatfiles');
+  await turnOnForEveryone(api, 'session_chat_view');
+  const installationId = await connectInstallation(api);
+  const [box] = await pairedHosts(api, 1, 'chatfiles');
+  const sessionId = await createSession(api, box.id, installationId);
+  appendTranscript(box.host, sessionId, [entry('user', 'u1', 'Fix the empty wallet')]);
+
+  await signInAs(page, user);
+  await page.goto(`/sessions/${sessionId}`);
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  const composer = await expectComposerClickable(page);
+
+  // The paperclip's picker: the file waits on the message, nothing is sent yet.
+  await page
+    .locator('input[type="file"][aria-label="Attach files"]')
+    .setInputFiles({ name: 'wallet-error.png', mimeType: 'image/png', buffer: PIXEL_PNG });
+  const chip = page.locator('[data-slot="composer-file"]', { hasText: 'wallet-error.png' });
+  await expect(chip).toBeVisible();
+
+  // The shim's shell is the agent here: the host pastes the file's path into
+  // its prompt, then the words follow on the same line and Enter runs it.
+  await composer.fill('; echo files-$((6*7))');
+  await page.keyboard.press('Enter');
+  await expect(chip).toHaveCount(0, { timeout: 15_000 });
+  await expect(composer).toHaveValue('');
+  await toggle.getByRole('button', { name: 'Terminal' }).click();
+  await expect.poll(() => screenText(page), { timeout: 15_000 }).toMatch(/\.png/);
+  await expect.poll(() => screenText(page), { timeout: 15_000 }).toContain('files-42');
 });
 
 test('the chat covers a WebGL grid, and takes clicks over it', async ({ page }) => {
@@ -134,4 +183,50 @@ test('the chat covers a WebGL grid, and takes clicks over it', async ({ page }) 
 
   await expectChatOnTop(page);
   await expectComposerClickable(page);
+});
+
+test('a guest on a view-only link reads the chat, with no composer', async ({ browser }) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const owner = await signedUpContext('chatsharer');
+  await turnOnForEveryone(owner.api, 'session_chat_view');
+  const installationId = await connectInstallation(owner.api);
+  const [box] = await pairedHosts(owner.api, 1, 'chatshare');
+  const sessionId = await createSession(owner.api, box.id, installationId);
+  appendTranscript(box.host, sessionId, [
+    entry('user', 'u1', 'Fix the empty wallet'),
+    entry('assistant', 'a1', [{ type: 'text', text: 'Found it: `reduce` had no initial value.' }]),
+  ]);
+  const put = await owner.api.put(`/api/v1/sessions/${sessionId}/share`, {
+    data: { audience: 'link', access: 'read', lifetime: '1h' },
+    failOnStatusCode: false,
+  });
+  expect(put.status(), await put.text()).toBe(200);
+  const { slug } = (await put.json()) as { slug: string };
+
+  // Once the chat was never sent through a share, so a guest had the grid alone.
+  const guest = await signedUpContext('chatguest');
+  const page = await (await browser.newContext({ baseURL: WEB_URL })).newPage();
+  await signInAs(page, guest.user);
+  await page.goto(`/s/${slug}`);
+  await expect(page.getByText('View only', { exact: true })).toBeVisible();
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  await expect(
+    page.locator('[data-slot="chat-user-message"]').getByText('Fix the empty wallet'),
+  ).toBeVisible();
+  await expect(page.getByText('had no initial value.')).toBeVisible();
+  await expectChatOnTop(page);
+  await expect(page.getByRole('button', { name: 'Dictate' })).toHaveCount(0);
+
+  // The grid cannot scroll for a watcher (the wheel is tmux's, on a pane they
+  // only watch); the chat is where they read back, so it scrolls as a member's does.
+  await expectChatFollows(page, (lines) => appendTranscript(box.host, sessionId, lines), {
+    composer: false,
+  });
 });

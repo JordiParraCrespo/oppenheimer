@@ -94,7 +94,7 @@ export function OnboardingWorkspaceScreen({
   const submit = () =>
     claim.mutate({ existing, name: name.trim(), slug: address }, { onSuccess: onClaimed });
 
-  if (claimedOnArrival) return <Navigate to="/sessions/new" replace />;
+  if (claimedOnArrival) return <Navigate to="/" replace />;
 
   return (
     <div className="flex flex-col gap-5">

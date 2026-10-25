@@ -3268,6 +3268,27 @@ export type BotPeerReplyEventResponseDto = {
     outcome: 'answered' | 'failed' | 'cancelled';
 };
 
+export type BotSessionEventResponseDto = {
+    kind: 'session';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    sessionId: string;
+    /**
+     * The session's name at the wake.
+     */
+    sessionName: string;
+    /**
+     * Which of the session's tasks: its turn's number, from 1.
+     */
+    turn: number;
+    /**
+     * What became of the task.
+     */
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+};
+
 export type BotSubagentRunResponseDto = {
     /**
      * The task the bot gave it.
@@ -3345,7 +3366,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */

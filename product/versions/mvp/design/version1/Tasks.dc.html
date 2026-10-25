@@ -27,6 +27,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./Brain.dc.html" aria-label="Inbox" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></a>
 <button class="op-rail__btn" type="button" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></button>
 <a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
@@ -37,6 +38,10 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div class="op-sidebar__head">
 <span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
+<div style="padding:0 12px 10px">
+<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button" onClick="{{ sbNewTask }}">New task</button>
+</div>
+<div class="op-sbsearch" data-on="{{ sbQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search tasks" placeholder="Search tasks" value="{{ sbQ }}" onChange="{{ sbQSet }}" onKeyDown="{{ sbQKey }}"><sc-if value="{{ sbQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sbQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-sidebar__scroll">
 <div class="op-sessionlist">
 <button class="op-session" type="button" data-active="{{ navTasks }}" onClick="{{ goTasks }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Tasks</span><span class="op-session__age" style="opacity:1">{{ openN }}</span></button>
@@ -44,18 +49,12 @@ textarea::placeholder{color:var(--fg-subtle)}
 <button class="op-session" type="button" data-active="{{ navCal }}" onClick="{{ goCal }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Calendar</span><span class="op-session__age" style="opacity:1">{{ todayN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navProj }}" onClick="{{ goProj }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Projects</span><span class="op-session__age" style="opacity:1">{{ agProjN }}</span></button>
 </div>
-<sc-if value="{{ isProj }}">
-<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">General</span></div>
+<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
 <div class="op-sessionlist">
-<button class="op-session" type="button" data-active="{{ agPmOn }}" onClick="{{ agOpenPm }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="users" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Project manager</span><sc-if value="{{ agPmLive }}"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span></sc-if></button>
+<button type="button" aria-current="{{ agPmOn }}" onClick="{{ agOpenPm }}" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border:0;border-radius:14px;background:{{ agPmBg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">OP</span><sc-if value="{{ agPmLive }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Oppenheimer</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">1h</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Two tasks are blocked in XRP Mobile</span></span></button>
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border:0;border-radius:14px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">RB</span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Release Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">2m</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Tag the release once runner #131 lands</span></span></a>
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border-radius:14px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">PB</span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Planning Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">20m</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Drafted three tasks for Milestone 4</span></span></a>
 </div>
-<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Project agents</span></div>
-<div class="op-sessionlist">
-<sc-for list="{{ agRows }}" as="p" hint-placeholder-count="3">
-<button class="op-session" type="button" data-active="{{ p.on }}" onClick="{{ p.open }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:7px;height:7px;border-radius:980px;background:{{ p.dot }};animation:{{ p.anim }}"></span></span><span class="op-session__name">{{ p.name }}</span><span class="op-session__age" style="opacity:1;font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ p.pctLabel }}</span></button>
-</sc-for>
-</div>
-</sc-if>
 <sc-if value="{{ isCal }}">
 <div class="op-listhead" style="margin-top:14px">
 <span class="op-listhead__title">Calendars</span>
@@ -94,7 +93,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div style="height:100%;display:flex;flex-direction:column;background:var(--background)">
 <header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
 <span style="flex:none;width:26px;height:26px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agHeadIcon }}" size="14" hint-size="14px,14px"></x-import></span>
-<sc-if value="{{ agIsPm }}"><a href="./BotSettings.dc.html?bot=pm" title="Project manager settings" style="display:inline-flex;align-items:center;gap:6px;height:28px;margin-left:-6px;padding:0 6px;border-radius:10px;color:var(--fg);font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none">{{ agHeadTitle }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import></span></a></sc-if>
+<sc-if value="{{ agIsPm }}"><a href="./BotSettings.dc.html?bot=op" title="Oppenheimer settings" style="display:inline-flex;align-items:center;gap:6px;height:28px;margin-left:-6px;padding:0 6px;border-radius:10px;color:var(--fg);font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none">{{ agHeadTitle }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import></span></a></sc-if>
 <sc-if value="{{ agIsProject }}"><span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span></sc-if>
 <span style="flex:1"></span>
 <sc-if value="{{ agRunning }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>Running</span></sc-if>
@@ -1285,7 +1284,8 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const s = this.state, d = s.drag;
+    const sq = (this.state.sbQ || '').trim().toLowerCase();
+    const s = sq ? { ...this.state, tasks: this.state.tasks.filter(t => (t.title || '').toLowerCase().includes(sq)) } : this.state, d = s.drag;
     PROJECTS = s.projects;
     const stop = e => e.stopPropagation();
     const open = s.tasks.filter(t => t.status !== 'done');
@@ -1629,6 +1629,10 @@ class Component extends DCLogic {
       openN: open.length, doingN: s.tasks.filter(t => t.status === 'doing').length, doneN: s.tasks.filter(t => t.status === 'done').length,
       hasOverdue: overdue.length ? 'true' : undefined, overdueN: overdue.length,
       newTask: e => { if (e) e.stopPropagation(); this.openTask(null); },
+      sbNewTask: e => { if (e) e.stopPropagation(); this.openTask(null); },
+      sbQ: this.state.sbQ || '', sbQOn: sq ? 'true' : undefined,
+      sbQSet: e => this.setState({ sbQ: e.target.value }), sbQClear: () => this.setState({ sbQ: '' }),
+      sbQKey: e => { if (e.key === 'Escape') { this.setState({ sbQ: '' }); e.target.blur(); } },
       newGoal: e => { if (e) e.stopPropagation(); this.openGoal(null); },
       projChips, projCount: PROJECTS.length,
       newProject: e => { e.stopPropagation(); this.openProject(); },
@@ -1731,7 +1735,7 @@ class Component extends DCLogic {
     if (id === 'pm') return [
       { id: 'pm0', role: 'user', time: '08:42', text: 'What needs my attention this week?' },
       { id: 'pm1', role: 'work', label: 'Checked ' + this.state.projects.length + ' projects', steps: this.agSteps('pm') },
-      { id: 'pm2', role: 'assistant', md: this.agReply('pm'), meta: 'Project manager · 1.4k tokens' }];
+      { id: 'pm2', role: 'assistant', md: this.agReply('pm'), meta: 'Oppenheimer · 1.4k tokens' }];
     const p = this.state.projects.find(x => x.id === id);
     return [{ id: id + '0', role: 'assistant', md: 'Morning update. ' + this.agReply(id), meta: (p ? p.name : '') + ' agent · Today 08:00' }];
   }
@@ -1819,7 +1823,7 @@ class Component extends DCLogic {
       if (!this.state.agRun) return;
       if (k < steps.length) { this.setState({ agStep: k }); k++; this._agTo = setTimeout(tick, 700); return; }
       const sid = 's' + Date.now(), secs = Math.max(1, Math.round((Date.now() - this.state.agStart) / 1000));
-      const who = id === 'pm' ? 'Project manager' : (s.projects.find(x => x.id === id) || {}).name + ' agent';
+      const who = id === 'pm' ? 'Oppenheimer' : (s.projects.find(x => x.id === id) || {}).name + ' agent';
       this.agSet(id, ms => [...ms, { id: 'w' + sid, role: 'work', label: id === 'pm' ? 'Checked ' + steps.length + ' projects' : 'Worked for ' + secs + 's', steps },
         { id: sid, role: 'assistant', md: reply, meta: who + ' · ' + this.agModelOf(id).name + ' ' + ({ low: 'Low', medium: 'Medium', high: 'High', extra: 'Extra', max: 'Max' })[(this.state.agEffort || {})[id] || 'medium'] + ' · ' + (0.6 + reply.length / 400).toFixed(1) + 'k tokens', streaming: true }]);
       this.setState({ agStream: sid, agRev: 0 });
@@ -1869,7 +1873,7 @@ class Component extends DCLogic {
       return { isAssistant: true, done: !m.streaming, meta: m.meta, blocks: parse(m.streaming ? m.md.slice(0, s.agRev) : m.md) };
     });
     const steps = this.agSteps(active), ls = steps[Math.min(s.agStep || 0, steps.length - 1)] || { icon: 'activity', label: 'Working' };
-    const name = isPm ? 'Project manager' : cur ? cur.p.name : '';
+    const name = isPm ? 'Oppenheimer' : cur ? cur.p.name : '';
     const sugg = isPm ? ['What slipped this week?', 'Which project is most at risk?', 'Clean up idle sessions'] : ['Where does this stand?', 'Mark the in-progress task as done', 'Delete the oldest idle session'];
     const draft = s.agDraft || '', view = s.agView || 'chat';
     const allMsDone = s.goals.filter(g => { const gt = s.tasks.filter(t => t.goal === g.id); return gt.length && gt.every(t => t.status === 'done'); }).length;
@@ -1877,10 +1881,10 @@ class Component extends DCLogic {
     return {
       isProj: isProj ? 'true' : undefined, notProj: isProj ? undefined : 'true', navProj: isProj ? 'true' : 'false',
       goProj: () => this.setState({ section: 'projects', more: null, compose: null }),
-      agProjN: s.projects.length, agRows, agPmOn: isPm ? 'true' : 'false', agPmLive: s.agRun && isPm, agOpenPm: () => this.agOpen('pm'),
+      agProjN: s.projects.length, agRows, agPmOn: isPm ? 'true' : 'false', agPmBg: isPm ? 'var(--selected-surface)' : 'transparent', agPmLive: s.agRun && isPm, agOpenPm: () => this.agOpen('pm'),
       agIsPm: isPm, agIsProject: !isPm,
-      agHeadIcon: isPm ? 'users' : 'folder', agHeadTitle: isPm ? 'Project manager' : name + ' agent',
-      agHeadRole: isPm ? 'Tracks every project and asks their agents for detail' : 'Tracks tasks, milestones and blockers for ' + name,
+      agHeadIcon: isPm ? 'bot' : 'folder', agHeadTitle: isPm ? 'Oppenheimer' : name + ' agent',
+      agHeadRole: isPm ? 'General bot · tracks every project, opens issues, merges what is done' : 'Tracks tasks, milestones and blockers for ' + name,
       agScope: isPm ? 'All projects' : name,
       agChatOn: view === 'chat', agViewOn: view === 'view', agStatsOn: view === 'stats',
       agGoChat: () => this.setState({ agView: 'chat' }), agGoView: () => this.setState({ agView: 'view' }), agGoStats: () => this.setState({ agView: 'stats' }),
@@ -1938,7 +1942,7 @@ class Component extends DCLogic {
       agOnKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.agSendText(this.state.agDraft); } },
       agOnFocus: () => this.setState({ agFocus: true }), agOnBlur: () => this.setState({ agFocus: false }),
       agBorder: s.agFocus ? 'var(--border)' : 'var(--border-subtle)',
-      agPlaceholder: 'Message ' + (isPm ? 'the project manager' : name + ' agent'),
+      agPlaceholder: 'Message ' + (isPm ? 'Oppenheimer' : name + ' agent'),
       agSend: () => this.agSendText(this.state.agDraft), agStop: this.agStopRun,
       agCantSend: !draft.trim(), agSendOp: draft.trim() ? 1 : 0.4,
       agPmStats: [{ value: all.t ? Math.round(all.d / all.t * 100) + '%' : '0%', label: 'Tasks done' }, { value: String(all.r), label: 'In progress' }, { value: String(all.b), label: 'Need input' }],

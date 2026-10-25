@@ -10,8 +10,9 @@ import { Link } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionClosed } from '../components/session-closed';
-import { useSessionChat } from '../hooks/use-session-chat';
+import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
+import { createFileHandOff } from '../lib/file-hand-off';
 import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
 
@@ -26,10 +27,17 @@ import { SessionProvisioning } from './session-provisioning';
  */
 export function SessionPane({
   sessionId,
+  initialView = 'terminal',
   closed,
   terminal,
 }: {
   sessionId: string;
+  /**
+   * The view the pane opens on. Chat is drawn only once the host sends the
+   * agent's transcript, so a pane that opens on it shows the terminal until
+   * then, and the chat the moment it can.
+   */
+  initialView?: SessionView;
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
@@ -57,8 +65,21 @@ export function SessionPane({
   }) => ReactNode;
 }) {
   const { t } = useTranslation();
-  const [view, setView] = useState<SessionView>('terminal');
+  const [view, setView] = useState<SessionView>(initialView);
   const chat = useSessionChat();
+  // Made once: the terminal delivers the files it catches over the chat, the
+  // chat's composer takes them.
+  const [files] = useState(createFileHandOff);
+  const reading: PaneReading = {
+    chat,
+    view,
+    onViewChange: setView,
+    cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
+    files,
+  };
+  // The ground is the view on screen, not the one picked: a pane opened on
+  // Chat shows the terminal until the transcript comes, on the terminal's.
+  const { shown: chatShown } = useChatReading(reading);
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
@@ -130,20 +151,21 @@ export function SessionPane({
        `border-radius: 0`): rounded, it reads as a widget tucked into a card
        rather than the console surface `terminal.css` asks for. It is the
        terminal's colour, as the artboard's is, so frame and pane read as one
-       surface in dark mode. `data-pane-ground` asks the shell's page bar
-       above it for the same colour. Read as a chat, the frame paints nothing:
-       the chat, the bar and the frame are all the shell's own ground. */
+       surface in dark mode. Read as a chat, the frame paints nothing: the
+       chat, the bar and the frame are all the shell's own ground.
+
+       `data-pane-ground` is the pane's **public contract** with whatever
+       frames it, not a detail of this file: `terminal` or `chat`, the ground
+       on screen. An ancestor matches it with `group-has-[[data-pane-ground=…]]`
+       to stand on the same colour — the shell's page bar (`app-shell.tsx`)
+       and a pull request's review bar (`pull-request-chat.tsx`). Renaming it,
+       or setting it anywhere but the pane's root, changes both. */
     <div
-      data-pane-ground={view}
-      className={cn('flex min-h-0 flex-1 flex-col p-3.5', view === 'terminal' && 'bg-term-bg')}
+      data-pane-ground={chatShown ? 'chat' : 'terminal'}
+      className={cn('flex min-h-0 flex-1 flex-col p-3.5', !chatShown && 'bg-term-bg')}
     >
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        {terminal(session, {
-          chat,
-          view,
-          onViewChange: setView,
-          cover: <SessionChat chat={chat} readOnly={false} />,
-        })}
+        {terminal(session, reading)}
       </div>
     </div>
   );

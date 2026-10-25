@@ -4,20 +4,19 @@ import {
   DropZone,
   EmptyState,
   HostLinkChrome,
-  SegmentedControl,
-  SegmentedControlItem,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatCover } from '../components/chat-cover';
+import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
-import { useChatAvailable } from '../hooks/use-session-chat';
+import { useChatReading } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
@@ -37,7 +36,10 @@ const AGENT_WINDOW = 0;
  * Files dropped anywhere on the pane go the way pasted files do: the
  * `DropZone` around the terminal outlines the pane while the drag is over it
  * and hands the drop to the same batch upload as a paste (`useFilePaste`),
- * whose paths land in the agent's prompt.
+ * whose paths land in the agent's prompt. While the chat shows and its
+ * composer takes files (`reading.files`), a drop or a paste goes there
+ * instead, a chip on the next message, since the prompt they would land in
+ * is out of sight under the chat.
  *
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
  * the link is live or blipping, and while the host is away a banner in its
@@ -77,10 +79,8 @@ export function SessionTerminal({
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
   const { chat, view, onViewChange, cover } = reading;
-  const chatAvailable = useChatAvailable(chat);
-  const chatFlag = useFeatureFlag('session_chat_view');
-  const chatOffered = chatAvailable && chatFlag;
-  const chatShown = chatOffered && view === 'chat';
+  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  const takeFiles = chatShown && reading.files ? reading.files.deliver : upload.send;
   const terminal = useTerminal(createStream, {
     chat,
     onEnd: refresh,
@@ -98,20 +98,11 @@ export function SessionTerminal({
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
   const viewToggle = chatOffered ? (
-    <SegmentedControl
-      value={view}
-      onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
-      aria-label={t('sessions.chat.view.label')}
-    >
-      <SegmentedControlItem value="terminal">
-        {t('sessions.chat.view.terminal')}
-      </SegmentedControlItem>
-      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
-    </SegmentedControl>
+    <ChatViewToggle view={view} onViewChange={onViewChange} />
   ) : null;
 
   return (
-    <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
+    <DropZone onFiles={takeFiles} className="flex min-h-0 flex-1 flex-col">
       <Terminal
         className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
@@ -147,14 +138,11 @@ export function SessionTerminal({
           {chatShown ? (
             // Typing in the chat moves focus off the grid, so a paste there
             // never reaches the grid's listener: the cover takes its files
-            // the same way, and they land in the agent's prompt. On the way
-            // down, as the grid does, so nothing in the chat can swallow it.
-            <div
-              className="absolute inset-0 bg-chat-ground font-sans text-fg"
-              onPasteCapture={(event) => takeFilePaste(event, upload.send)}
-            >
+            // for the chat's composer. On the way down, as the grid does, so
+            // nothing in the chat can swallow it.
+            <ChatCover onPasteCapture={(event) => takeFilePaste(event, takeFiles)}>
               {cover}
-            </div>
+            </ChatCover>
           ) : null}
         </div>
 

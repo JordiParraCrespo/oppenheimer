@@ -22,7 +22,7 @@ function SettingsLayout() {
     // On a phone the nav is a strip over the page (`SettingsNav`).
     <SettingsShell className="flex-col md:flex-row">
       <SettingsSidebar
-        back="/sessions/new"
+        back="/"
         groups={[
           {
             labelKey: 'account',

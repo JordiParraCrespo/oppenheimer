@@ -1,6 +1,8 @@
+export type { ChatAnswer } from './chat/question-keys';
 export {
   type ChatBatch,
   type ChatPrompt,
+  type ChatQuestion,
   type ChatState,
   type ChatStep,
   type ChatTodo,
@@ -33,8 +35,9 @@ export type {
   SessionStartStepId,
   SessionStartStepState,
 } from './session-steps';
-export { SessionsModule } from './sessions.module';
+export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export type { LocalTerminals } from './stream/local-first-stream';
 export {
   createResizeCoalescer,
   type ResizeCoalescer,

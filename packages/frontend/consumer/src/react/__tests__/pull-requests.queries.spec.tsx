@@ -6,7 +6,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { ReviewSession } from '../../modules/pull-requests/pull-request.entity';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { useCloseReviewSession, useReviewSessions } from '../pull-requests.queries';
+import {
+  useCloseReviewSession,
+  useReviewSessions,
+  useStartReviewSession,
+} from '../pull-requests.queries';
+import { useSessionOpening } from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -54,5 +59,45 @@ describe('useCloseReviewSession', () => {
     result.current.close.mutate({ sessionId: 'r-1' });
     await waitFor(() => expect(result.current.close.isError).toBe(true));
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+  });
+});
+
+/**
+ * The host makes a session's pane before the checkout, so a review session
+ * reads `open` while its clone and its agent are still on the way. Unwatched,
+ * the Chat tab drew that pane: a shell in an empty folder, with no Claude
+ * Code and nothing saying it was coming. A start the console sent is watched,
+ * as New session's is, so the tab stays on the start's steps.
+ */
+describe('useStartReviewSession', () => {
+  it('holds the session it started on its start pane until the agent runs', async () => {
+    const live = { id: 'r-1', isLive: true } as SessionEntity;
+    const startProgress = vi.fn().mockResolvedValue({ steps: [], failure: null, settled: false });
+    const app = fakeKernel({
+      [TOKENS.PullRequestsRepository]: {
+        startReviewSession: vi.fn().mockResolvedValue('r-1'),
+        reviewSessions: vi.fn().mockResolvedValue([review]),
+      },
+      [TOKENS.SessionsService]: { startProgress },
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <OppenheimerProvider app={app}>{children}</OppenheimerProvider>
+        </QueryClientProvider>
+      );
+    }
+    const { result: start } = renderHook(() => useStartReviewSession(), { wrapper });
+    await start.current.mutateAsync({
+      address: { installationId: 'i-1', githubRepoId: 1, number: 292 },
+      hostId: 'h-1',
+      idempotencyKey: 'k-1',
+    });
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(true);
+    await waitFor(() => expect(startProgress).toHaveBeenCalled());
   });
 });

@@ -6,9 +6,14 @@ import {
 import { CONSUMER_CONFIG } from '../../../config';
 import type { ChatBatch } from '../chat/session-chat';
 import type { PeerFactory } from './direct-path';
-import { PathSwitch, type StreamPath } from './path-switch';
+import { PathSwitch, type RelayPath } from './path-switch';
 
-export type { StreamPath } from './path-switch';
+/**
+ * Which way a terminal's bytes travel: the relay or a direct channel (22),
+ * which the attach socket decides, or, where the shell reaches this machine's
+ * runner, its local socket, which `LocalFirstSessionStream` decides.
+ */
+export type StreamPath = RelayPath | 'local';
 
 /**
  * The contract between the console and whatever is feeding a terminal.

@@ -52,7 +52,7 @@ import {
   ChatSuggestion,
   ChatSuggestions,
 } from '@oppenheimer/design-system-web/chat-elements';
-import { Composer } from '@oppenheimer/design-system-web/composer';
+import { Composer, ComposerFile } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
   ChatHeader,
@@ -257,7 +257,7 @@ function ChatWorkBody() {
           }
         />
       </Trace>
-      <TraceGroup summary="Used 4 tools" failed="1 failed" defaultOpen>
+      <TraceGroup icon={<TerminalIcon />} summary="Used 4 tools" failed="1 failed" defaultOpen>
         <TraceStep icon={<TerminalIcon />} title="List pull requests" target="mine">
           <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
         </TraceStep>
@@ -329,6 +329,21 @@ function ChatElementsBody() {
             <ChatImage alt="diagram.svg" invalid>
               <ChatImageRemove label="Remove diagram.svg" />
             </ChatImage>
+          </>
+        }
+      />
+      <ChatComposer
+        layout="inline"
+        value="Why does the import fail on these?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        placeholder="Message Claude"
+        engine="Opus 5.5"
+        attachments={
+          <>
+            <ComposerFile name="failing-import.png" removeLabel="Remove failing-import.png" />
+            <ComposerFile name="vendor-export.pdf" removeLabel="Remove vendor-export.pdf" />
           </>
         }
       />
@@ -771,7 +786,34 @@ function ChatDecisionsBody() {
           </>
         }
       />
+      <QuestionPanelSeveralDemo />
     </div>
+  );
+}
+
+function QuestionPanelSeveralDemo() {
+  const [picks, setPicks] = React.useState<number[]>([0, 2]);
+  return (
+    <QuestionPanel
+      question="Which platforms should it target?"
+      index={1}
+      total={2}
+      options={[
+        { label: 'Web', description: 'React' },
+        { label: 'iOS', description: 'SwiftUI' },
+        { label: 'Android', description: 'Compose' },
+      ]}
+      value={picks}
+      onValueChange={(index) =>
+        setPicks((held) => (held.includes(index) ? held.filter((i) => i !== index) : [...held, index]))
+      }
+      foot={
+        <>
+          <span className="flex-1">Pick as many as apply</span>
+          <Button size="sm">Submit answers</Button>
+        </>
+      }
+    />
   );
 }
 
@@ -1069,7 +1111,7 @@ export function ChatSection() {
         id="chatelements"
         title="AI elements"
         meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. FloatingChip round takes the reader back to the latest turn."
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />
@@ -1109,7 +1151,7 @@ export function ChatSection() {
         id="chatdecisions"
         title="Decisions"
         meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card."
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card. Where the agent allows several answers, QuestionPanel takes the set of picks and each row toggles."
         code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
       >
         <ChatDecisionsDemo />

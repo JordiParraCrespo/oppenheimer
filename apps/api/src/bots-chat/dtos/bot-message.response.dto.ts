@@ -4,11 +4,13 @@ import {
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
+  BOT_SESSION_WAKE_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
+  type BotSessionWakeState,
   type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
@@ -171,11 +173,33 @@ export class BotPeerReplyEventResponseDto {
   outcome!: BotReplyOutcome;
 }
 
+/** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
+export class BotSessionEventResponseDto {
+  @ApiProperty({ enum: ['session'] })
+  kind!: 'session';
+
+  @ApiProperty({ format: 'uuid', description: 'The subscription that woke the bot.' })
+  subscriptionId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  sessionId!: string;
+
+  @ApiProperty({ description: "The session's name at the wake." })
+  sessionName!: string;
+
+  @ApiProperty({ description: "Which of the session's tasks: its turn's number, from 1." })
+  turn!: number;
+
+  @ApiProperty({ enum: BOT_SESSION_WAKE_STATES, description: 'What became of the task.' })
+  state!: BotSessionWakeState;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
-  | BotPeerReplyEventResponseDto;
+  | BotPeerReplyEventResponseDto
+  | BotSessionEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -183,6 +207,7 @@ export type BotMessageEventResponseDto =
   BotRoutineEventResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotSessionEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -212,6 +237,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotRoutineEventResponseDto) },
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
+      { $ref: getSchemaPath(BotSessionEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

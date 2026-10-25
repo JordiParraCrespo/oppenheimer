@@ -15,6 +15,7 @@
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./Brain.dc.html" aria-label="Inbox" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></a>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
 <a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
@@ -29,10 +30,15 @@
 <div style="padding:0 12px 10px">
 <button class="op-btn op-btn--sm op-btn--block {{ newBtnVariant }}" type="button" aria-current="{{ isNewPage }}" onClick="{{ openNew }}">New session</button>
 </div>
+<div class="op-sbsearch" data-on="{{ sQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" placeholder="Search sessions" value="{{ sQ }}" onChange="{{ sQSet }}" onKeyDown="{{ sQKey }}"><sc-if value="{{ sQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
+<div class="op-listhead"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
+<div class="op-sessionlist" style="margin-bottom:14px">
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border-radius:14px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">SB</span><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Session Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">4m</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Two sessions are waiting on input</span></span></a>
+</div>
 <div class="op-listhead">
-<span class="op-listhead__title">Projects</span>
-<span class="op-listhead__count">{{ projectCount }}</span>
-<button class="op-iconbtn-sm" type="button" aria-label="New project" title="New project" onClick="{{ newProject }}" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+<span class="op-listhead__title">{{ listHeadTitle }}</span>
+<span class="op-listhead__count">{{ listHeadCount }}</span>
+<button class="op-iconbtn-sm" type="button" aria-label="{{ listHeadAddLabel }}" title="{{ listHeadAddLabel }}" onClick="{{ listHeadAdd }}" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
 <div class="op-filterwrap">
 <button class="op-iconbtn-sm" type="button" aria-label="Filter sessions" data-open="{{ filterOpen }}" data-dirty="{{ filterDirty }}" onClick="{{ toggleFilter }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg></button>
 <sc-if value="{{ filterOpen }}">
@@ -43,7 +49,9 @@
 <button class="op-menu__item" type="button" onClick="{{ openRepoMenu }}"><span class="op-menu__label-text">Repository</span><span class="op-menu__value">{{ repoFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openAgentMenu }}"><span class="op-menu__label-text">Agent</span><span class="op-menu__value">{{ agentFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openHostMenu }}"><span class="op-menu__label-text">Host</span><span class="op-menu__value">{{ hostFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
+<button class="op-menu__item" type="button" onClick="{{ openByMenu }}"><span class="op-menu__label-text">Started by</span><span class="op-menu__value">{{ byFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" onClick="{{ openGroupMenu }}"><span class="op-menu__label-text">Group by</span><span class="op-menu__value">{{ groupByLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openSortMenu }}"><span class="op-menu__label-text">Sort by</span><span class="op-menu__value">{{ sortLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <div class="op-menu__sep"></div>
 <button class="op-menu__item" type="button" onClick="{{ clearFilters }}" data-disabled="{{ filterClean }}"><span class="op-menu__label-text">Clear filters</span></button>
@@ -61,7 +69,6 @@
 </sc-if>
 </div>
 </div>
-<div class="op-sbsearch" data-on="{{ sQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" placeholder="Search sessions" value="{{ sQ }}" onChange="{{ sQSet }}" onKeyDown="{{ sQKey }}"><sc-if value="{{ sQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <sc-if value="{{ filterDirty }}">
 <div class="op-filterchips">
 <sc-for list="{{ activeFilters }}" as="f" hint-placeholder-count="1">
@@ -78,15 +85,16 @@
 <div class="op-phead" data-open="{{ g.openS }}" data-current="{{ g.current }}">
 <button class="op-phead__toggle" type="button" aria-expanded="{{ g.openS }}" onClick="{{ g.toggle }}"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></button>
 <button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New session in {{ g.name }}" title="New session" onClick="{{ g.newHere }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
-<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="{{ g.name }} settings" title="Project settings" onClick="{{ g.settings }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></button>
+<sc-if value="{{ g.hasSettings }}" hint-placeholder-val="{{ true }}"><button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="{{ g.name }} settings" title="Project settings" onClick="{{ g.settings }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></button></sc-if>
 </div>
 <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="3">
 <div class="op-srow" data-menu="{{ s.menuS }}">
 <sc-if value="{{ s.editing }}"><div class="op-session" data-active="{{ s.active }}" data-state="{{ s.state }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><input class="op-srename" aria-label="Session name" value="{{ renameDraft }}" onChange="{{ setRenameDraft }}" onKeyDown="{{ renameKey }}" onBlur="{{ commitRename }}" onClick="{{ stop }}" ref="{{ renameRef }}"></div></sc-if>
-<sc-if value="{{ s.notEditing }}"><button class="op-session" type="button" data-active="{{ s.active }}" data-state="{{ s.state }}" onClick="{{ openTerminal }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">{{ s.name }}</span><span class="op-session__age">{{ s.age }}</span></button>
+<sc-if value="{{ s.notEditing }}"><button class="op-session" type="button" data-active="{{ s.active }}" data-state="{{ s.state }}" onClick="{{ s.open }}" title="{{ s.tip }}"><sc-if value="{{ s.cloud }}"><img class="op-session__glyph" src="{{ s.logo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ s.isTree }}" hint-placeholder-val="{{ true }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg></sc-if><sc-if value="{{ s.isFolder }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></sc-if><span class="op-session__name">{{ s.name }}</span><sc-if value="{{ s.byBot }}"><span title="{{ s.byTip }}" aria-label="{{ s.byTip }}" style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="12" hint-size="12px,12px"></x-import></span></sc-if><sc-if value="{{ s.cloud }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="12" hint-size="12px,12px"></x-import></span></sc-if><span class="op-session__age">{{ s.age }}</span></button>
 <button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Session actions" aria-haspopup="menu" onClick="{{ s.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button></sc-if>
 <sc-if value="{{ s.menuOpen }}"><div class="op-menu" role="menu" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 2px);right:4px;left:auto;bottom:auto;z-index:60;min-width:188px">
+<sc-if value="{{ s.canTp }}"><button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.teleport }}"><span class="op-menu__label-text">{{ tpMenuLabel }}</span><span class="op-menu__shortcut">T</span></button><sc-if value="{{ tpSplit }}"><button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.teleportPick }}"><span class="op-menu__label-text">Teleport to another host…</span></button></sc-if><div class="op-menu__sep"></div></sc-if>
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.rename }}"><span class="op-menu__label-text">Rename</span><span class="op-menu__shortcut">R</span></button>
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.move }}"><span class="op-menu__label-text">Move to project…</span><span class="op-menu__shortcut">M</span></button>
 <div class="op-menu__sep"></div>
@@ -106,13 +114,17 @@
 </sc-if>
 <sc-if value="{{ inRoutines }}">
 <div style="padding:0 12px 10px">
-<button class="op-btn op-btn--sm op-btn--block op-btn--primary" type="button" onClick="{{ newRoutine }}">New automation</button>
+<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button" onClick="{{ newRoutine }}">New automation</button>
+</div>
+<div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search automations" placeholder="Search automations" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
+<div class="op-listhead"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
+<div class="op-sessionlist" style="margin-bottom:14px">
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border-radius:14px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">AB</span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Automation Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">1h</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Nightly e2e failed twice this week</span></span></a>
 </div>
 <div class="op-listhead">
 <span class="op-listhead__title">Projects</span>
 <span class="op-listhead__count">{{ rGroupCount }}</span>
 </div>
-<div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search automations" placeholder="Search automations" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-sidebar__scroll">
 <sc-if value="{{ rQNone }}"><p class="op-emptylist">No automations match “{{ rQ }}”.</p></sc-if>
 <div class="op-sessionlist">
@@ -158,7 +170,7 @@
 <sc-if value="{{ accountRoot }}">
 <div class="op-accountmenu__id">jordiparra99@gmail.com</div>
 <div class="op-menu__sep"></div>
-<a class="op-menu__item" href="./Settings.dc.html" style="text-decoration:none;color:inherit">
+<a class="op-menu__item" href="./Settings (where).dc.html" style="text-decoration:none;color:inherit">
 <span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="15" hint-size="15px,15px"></x-import></span>
 <span class="op-menu__label-text">Settings</span>
 </a>
@@ -208,7 +220,7 @@
 <div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
 <label class="op-field"><span class="op-label">Name</span><span class="op-input op-input--md"><input class="op-input__el" type="text" autoFocus="{{ true }}" placeholder="Name your project" value="{{ projName }}" onChange="{{ setProjName }}"></span></label>
 <div class="op-field">
-<span class="op-label">Repositories</span>
+<span class="op-label" style="display:flex;align-items:baseline;gap:6px">Repositories<span style="font-weight:400;color:var(--fg-subtle)">Optional</span></span>
 <div style="position:relative">
 <label class="op-input op-input--md" style="cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="text" role="combobox" aria-expanded="{{ projAddOpenS }}" aria-label="Add a repository" placeholder="Add a repository…" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" onFocus="{{ openProjAdd }}" onBlur="{{ blurProjAdd }}" onKeyDown="{{ projAddKey }}"></label>
 <sc-if value="{{ projAddOpen }}">
@@ -234,7 +246,7 @@
 </sc-for>
 </div>
 </sc-if>
-<sc-if value="{{ projSelNone }}" hint-placeholder-val="{{ true }}"><span class="op-hint">Sessions in this project can clone these. Add at least one.</span></sc-if>
+<sc-if value="{{ projSelNone }}" hint-placeholder-val="{{ true }}"><span class="op-hint">Sessions in this project can clone these. Without any, the project holds folder sessions only.</span></sc-if>
 </div>
 <div style="display:flex;flex-direction:column">
 <button type="button" aria-expanded="{{ projMoreOpenS }}" onClick="{{ toggleProjMore }}" style="display:flex;align-items:center;gap:8px;width:100%;padding:0;border:0;background:none;font:inherit;color:var(--fg);cursor:pointer;text-align:left"><span class="op-label">Defaults</span><span style="font-size:13px;color:var(--fg-subtle)">optional</span><span style="flex:1"></span><span style="font-size:12.5px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ projMoreSum }}</span><span style="display:flex;color:var(--fg-subtle);transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ projMoreRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="15" hint-size="15px,15px"></x-import></span></button>
@@ -431,7 +443,7 @@
 <div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:18px">
 <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;">
 <span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Host</span>
+<span style="flex:1;min-width:0;font-size:14px">Where</span>
 <div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
 <button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rHostSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rHostSel.openS }}" onClick="{{ rHostSel.toggle }}"><span class="op-fsel__val" key="{{ rHostSel.label }}">{{ rHostSel.label }}</span><span class="op-fsel__meta">{{ rHostSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
 <sc-if value="{{ rHostSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rHostSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
@@ -442,6 +454,19 @@
 </div></sc-if>
 </div></div>
 </div>
+<sc-if value="{{ rIsCC }}">
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-top:1px solid var(--border-subtle);">
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="boxes" size="16" hint-size="16px,16px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-size:14px">Environment</span><span style="font-size:12px;color:var(--fg-subtle)">Claude Code cloud sandbox each run boots into</span></span>
+<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
+<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rEnvSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rEnvSel.openS }}" onClick="{{ rEnvSel.toggle }}"><span class="op-fsel__val" key="{{ rEnvSel.label }}">{{ rEnvSel.label }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rEnvSel.openList }}"><div class="op-listbox" role="listbox" onClick="{{ stop }}" style="left:auto;right:0;min-width:300px;z-index:40;padding:4px">
+<div class="op-tpop__label" style="padding:6px 10px 4px">Cloud environments</div>
+<div class="op-fsel__list"><sc-for list="{{ rEnvSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-option__stack"><span>{{ o.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></span><span class="op-option__check">✓</span></button></sc-for></div>
+</div></sc-if>
+</div></div>
+</div>
+</sc-if>
 <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-top:1px solid var(--border-subtle);">
 <span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="16" hint-size="16px,16px"></x-import></span>
 <span style="flex:1;min-width:0;font-size:14px">Agent</span>
@@ -667,7 +692,13 @@
 <div class="op-runs__head"><span>Run</span><span data-col="auto">Automation</span><span>Time</span></div>
 <sc-for list="{{ runRows }}" as="u" hint-placeholder-count="10">
 <button class="op-runrow" type="button" key="{{ u.key }}" data-state="{{ u.state }}" onClick="{{ u.open }}" style="animation-delay:{{ u.delay }}">
-<span class="op-runrow__run"><span class="op-runrow__st" title="{{ u.stateLabel }}"><sc-if value="{{ u.ok }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.bad }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.live }}"><span class="op-runrow__dot"></span></sc-if></span><span class="op-runrow__title">{{ u.title }}</span></span>
+<span class="op-runrow__run"><span class="op-runrow__st" title="{{ u.stateLabel }}"><sc-if value="{{ u.ok }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.bad }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.live }}"><span class="op-runrow__dot"></span></sc-if><sc-if value="{{ u.unknown }}"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="14" hint-size="14px,14px"></x-import></span></sc-if></span><span class="op-runrow__title">{{ u.title }}</span><sc-if value="{{ u.cloud }}"><span style="display:inline-flex;align-items:center;gap:5px;flex:none;margin-left:8px;font-size:12px;color:var(--fg-subtle)"><img src="{{ u.logo }}" alt="" style="width:12px;height:12px;object-fit:contain">{{ u.provider }}</span></sc-if>
+<sc-if value="{{ u.canTp }}"><span style="margin-left:auto;padding-left:12px;display:inline-flex;flex:none">
+<sc-if value="{{ tpSingle }}" hint-placeholder-val="{{ true }}"><span role="button" tabindex="0" title="Run claude --teleport on a host" onClick="{{ u.tp }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border);background:var(--card);font-size:12px;font-weight:500;color:var(--fg);cursor:pointer;white-space:nowrap;border-radius:980px" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="download" size="13" hint-size="13px,13px"></x-import>Teleport</span></sc-if>
+<sc-if value="{{ tpSplit }}"><span style="display:inline-flex"><span role="button" tabindex="0" onClick="{{ u.tp }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border);background:var(--card);font-size:12px;font-weight:500;color:var(--fg);cursor:pointer;white-space:nowrap;border-radius:980px 0 0 980px;border-right:0;padding-right:10px" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="download" size="13" hint-size="13px,13px"></x-import>{{ tpQuickLabel }}</span><span role="button" tabindex="0" aria-label="Pick another host" title="Pick another host" onClick="{{ u.tpPick }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border);background:var(--card);font-size:12px;font-weight:500;color:var(--fg);cursor:pointer;white-space:nowrap;border-radius:0 980px 980px 0;padding:0 9px 0 8px" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></span></sc-if>
+</span></sc-if>
+<sc-if value="{{ u.tpDone }}"><span style="margin-left:auto;padding-left:12px;display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="13" hint-size="13px,13px"></x-import>{{ u.tpOn }}</span></sc-if>
+</span>
 <span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>{{ u.rname }}</span></span>
 <span class="op-runrow__time"><span>{{ u.date }}</span><span>{{ u.time }}</span></span>
 </button>
@@ -686,275 +717,9 @@
 </sc-if>
 
 <sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
-<div class="op-newsession">
-<div class="op-newsession__inner" data-composer="tabbed">
-<h1 style="margin:0;text-align:center;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:var(--fg);text-wrap:balance">Ready when you are.</h1>
-
-<div class="op-cstack">
-<div class="op-chiprow">
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ projOpen }}" onClick="{{ toggleProj }}"><span class="op-chipselect__icon" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span>{{ projLabel }}</span><span class="op-chipselect__chev">⌄</span></button>
-<sc-if value="{{ projOpen }}">
-<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:none;padding:4px;overflow-x:hidden">
-<sc-for list="{{ projPick }}" as="p" hint-placeholder-count="3">
-<button class="op-option" type="button" role="option" data-selected="{{ p.selected }}" onClick="{{ p.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
-<span class="op-option__stack"><span>{{ p.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ p.desc }}</span></span>
-<span class="op-option__check">✓</span>
-</button>
-</sc-for>
-<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
-<button class="op-option" type="button" onClick="{{ newProject }}" style="padding:6px 10px;gap:10px;font-size:13px"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></span><span class="op-option__stack"><span>New project…</span></span></button>
-</div>
-</div>
-</sc-if>
-</div>
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ hostOpen }}" onClick="{{ toggleHost }}">
-<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg><span>{{ hostLabel }}</span><span class="op-chipselect__chev">⌄</span>
-</button>
-<sc-if value="{{ hostOpen }}">
-<div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search hosts…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<sc-for list="{{ hostOptions }}" as="h" hint-placeholder-count="3">
-<button class="op-option" type="button" role="option" data-selected="{{ h.selected }}" aria-disabled="{{ h.off }}" onClick="{{ h.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35;opacity:{{ h.opacity }};cursor:{{ h.cursor }}">
-<span class="op-option__stack"><span>{{ h.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ h.desc }}</span></span>
-<span class="op-option__check">✓</span>
-</button>
-</sc-for>
-<sc-if value="{{ noHostMatch }}"><div class="op-listbox__empty">{{ hostEmptyText }}</div></sc-if>
-<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
-<button class="op-option" type="button" role="option" onClick="{{ openAddHost }}" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-<span class="op-option__stack"><span>Add host…</span></span>
-<span style="display:flex;align-items:center;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
-</button>
-</div>
-</div>
-</sc-if>
-</div>
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ repoOpen }}" onClick="{{ toggleRepo }}">
-<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>{{ repoShort }}</span><span class="op-chipselect__chev">⌄</span>
-</button>
-<sc-if value="{{ repoOpen }}">
-<div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
-
-<sc-if value="{{ repoListPane }}" hint-placeholder-val="{{ true }}">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search repositories…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<sc-for list="{{ repoOptions }}" as="r" hint-placeholder-count="4">
-<div class="op-option" role="option" data-selected="{{ r.selected }}" style="padding:0;gap:0;align-items:stretch;overflow:hidden">
-<button type="button" onClick="{{ r.pick }}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 10px;border:0;background:none;color:inherit;font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer">
-<span class="op-option__stack"><span>{{ r.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ r.desc }}</span></span>
-<span class="op-option__check">✓</span>
-</button>
-<sc-if value="{{ r.selected }}">
-<button type="button" onClick="{{ r.openBranch }}" aria-label="Change branch" title="Change branch" style="display:flex;align-items:center;justify-content:space-between;gap:4px;flex:none;width:134px;box-sizing:border-box;padding:0 10px;border:0;border-left:1px solid var(--border-subtle);background:none;color:var(--fg-subtle);font:inherit;font-family:var(--font-mono);font-size:11px;letter-spacing:-0.004em;cursor:pointer" style-hover="color:var(--fg)">
-<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.branch }}</span>
-<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.7"><path d="m9 18 6-6-6-6"/></svg>
-</button>
-</sc-if>
-</div>
-</sc-for>
-<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">{{ repoEmptyText }}</div></sc-if>
-<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
-<a class="op-option" role="option" href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px;color:var(--fg)">
-<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)">
-<span class="op-option__stack"><span>Manage repository access</span></span>
-<span style="display:flex;align-items:center;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></span>
-</a>
-</div>
-</sc-if>
-
-<sc-if value="{{ repoBranchPane }}">
-<button type="button" onClick="{{ backToRepos }}" style="display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;margin:0 0 4px;padding:6px 9px;border:0;border-bottom:1px solid var(--border-subtle);background:var(--popover);color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="m15 18-6-6 6-6"/></svg>
-<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Branch for {{ paneRepoName }}</span>
-</button>
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<sc-for list="{{ paneBranchOptions }}" as="b" hint-placeholder-count="6">
-<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
-<span class="op-option__label">{{ b.label }}</span>
-<span class="op-option__check">✓</span>
-</button>
-</sc-for>
-<sc-if value="{{ noBranchMatch }}"><div class="op-listbox__empty">No branch matches.</div></sc-if>
-</sc-if>
-
-</div>
-</sc-if>
-</div>
-<sc-if value="{{ singleRepo }}" hint-placeholder-val="{{ true }}">
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ branchOpen }}" onClick="{{ toggleBranch }}" disabled="{{ bareB }}" style="opacity:{{ branchOpacity }}">
-<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>{{ branchLabel }}</span><span class="op-chipselect__chev">⌄</span>
-</button>
-<sc-if value="{{ branchOpen }}">
-<div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<sc-for list="{{ branchOptions }}" as="b" hint-placeholder-count="8">
-<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
-<span class="op-option__label">{{ b.label }}</span>
-<span class="op-option__check">✓</span>
-</button>
-</sc-for>
-<sc-if value="{{ noBranchMatch }}"><div class="op-listbox__empty">No branch matches.</div></sc-if>
-</div>
-</sc-if>
-</div>
-</sc-if>
-</div>
-
-<div class="op-composer">
-<textarea class="op-composer__input" id="ns-prompt" placeholder="Describe a task or ask a question"></textarea>
-<sc-if value="{{ hasFiles }}">
-<div class="op-attachrow">
-<sc-for list="{{ files }}" as="f" hint-placeholder-count="1">
-<span class="op-attach"><span class="op-attach__name">{{ f.name }}</span><button class="op-attach__x" type="button" aria-label="Remove attachment" onClick="{{ f.remove }}">×</button></span>
-</sc-for>
-</div>
-</sc-if>
-<div class="op-composer__foot">
-<input type="file" multiple style="display:none" ref="{{ fileRef }}" onChange="{{ onFiles }}">
-<button class="op-composer__tool" type="button" aria-label="Attach files" title="Attach files" onClick="{{ pickFiles }}">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-</button>
-
-<div class="op-modelwrap">
-<button class="op-modelbtn op-permbtn" type="button" data-open="{{ permOpen }}" data-perm="{{ permKey }}" onClick="{{ togglePerm }}" style="gap:7px">
-<sc-if value="{{ btnIsAsk }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></sc-if>
-<sc-if value="{{ btnIsAuto }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9.5-2 2 2 2"/><path d="m9.5 9.5 2 2-2 2"/></svg></sc-if>
-<sc-if value="{{ btnIsFull }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></sc-if>
-<span>{{ permLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
-</button>
-<sc-if value="{{ permOpen }}">
-<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="right:auto;left:0;min-width:296px">
-<sc-for list="{{ permOptions }}" as="p" hint-placeholder-count="3">
-<button class="op-menu__item op-permrow" type="button" onClick="{{ p.pick }}" data-perm-row="{{ p.value }}" style="gap:10px;padding:5px 10px">
-<span style="display:flex;padding-top:1px"><sc-if value="{{ p.isAsk }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></sc-if>
-<sc-if value="{{ p.isAuto }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9.5-2 2 2 2"/><path d="m9.5 9.5 2 2-2 2"/></svg></sc-if>
-<sc-if value="{{ p.isFull }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></sc-if></span>
-<span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">{{ p.label }}</span><span class="op-modelopt__desc" style="font-size:11.5px">{{ p.desc }}</span></span>
-<span class="op-menu__tick">{{ p.check }}</span>
-</button>
-</sc-for>
-</div>
-</sc-if>
-</div>
-
-<div class="op-composer__spacer"></div>
-
-<div class="op-modelwrap">
-<button class="op-modelbtn" type="button" data-open="{{ modelOpen }}" onClick="{{ toggleModel }}" style="gap:7px">
-<sc-if value="{{ btnIsClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
-<sc-if value="{{ btnIsOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
-<sc-if value="{{ btnIsCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
-<sc-if value="{{ btnIsShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
-<sc-if value="{{ btnNoIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
-<span>{{ modelLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
-</button>
-<sc-if value="{{ modelOpen }}">
-<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="width:252px;min-width:252px;max-height:none">
-
-<sc-if value="{{ agentPane }}" hint-placeholder-val="{{ true }}">
-<sc-for list="{{ harnessOptions }}" as="h" hint-placeholder-count="4">
-<button class="op-menu__item" type="button" onClick="{{ h.open }}" style="align-items:center;gap:9px;padding:6px 10px;font-size:13px">
-<sc-if value="{{ h.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ h.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ h.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
-<sc-if value="{{ h.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
-<sc-if value="{{ h.noIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
-<span class="op-menu__label-text" style="font-size:13px">{{ h.label }}</span>
-<span class="op-menu__tick">{{ h.check }}</span>
-<span class="op-menu__shortcut">›</span>
-</button>
-</sc-for>
-</sc-if>
-
-<sc-if value="{{ modelPane }}">
-<button class="op-menu__item" type="button" onClick="{{ backToAgents }}" style="align-items:center;gap:8px;padding:3px 10px;font-size:13px">
-<span class="op-menu__shortcut">‹</span>
-<sc-if value="{{ subisClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ subisOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ subisCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
-<sc-if value="{{ subisShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
-<sc-if value="{{ subnoIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
-<span class="op-menu__label-text" style="font-size:13px">{{ subLabel }}</span>
-</button>
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:4px -4px;padding:5px 13px;background:var(--popover);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search models…" aria-label="Search models" value="{{ modelQuery }}" onChange="{{ setModelQuery }}" onClick="{{ stop }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<div style="height:{{ modelListH }};box-sizing:border-box;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
-<sc-for list="{{ subModels }}" as="m" hint-placeholder-count="3">
-<button class="op-menu__item" type="button" onClick="{{ m.pick }}" style="align-items:center;gap:9px;padding:6px 10px;font-size:13px">
-<span class="op-menu__label-text" style="min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.label }}</span>
-<span class="op-menu__tick">{{ m.check }}</span>
-</button>
-</sc-for>
-<sc-if value="{{ noModelMatch }}">
-<p style="margin:0;padding:10px 13px;font-size:12.5px;color:var(--fg-subtle)">No model matches “{{ modelQuery }}”.</p>
-</sc-if>
-</div>
-</sc-if>
-
-</div>
-</sc-if>
-</div>
-
-<sc-if value="{{ hasModel }}" hint-placeholder-val="{{ true }}">
-<div class="op-modelwrap">
-<button class="op-modelbtn" type="button" data-open="{{ effortOpen }}" onClick="{{ toggleEffort }}" style="gap:7px;color:var(--fg-muted)">
-<span>{{ effortBtnLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
-</button>
-<sc-if value="{{ effortOpen }}">
-<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="min-width:268px;max-height:none;padding:13px 14px;display:flex;flex-direction:column;gap:11px">
-<div style="display:flex;align-items:center;gap:8px">
-<span style="font-size:13px;color:var(--fg-muted)">Effort</span>
-<span class="op-effort__value" key="{{ effortKey }}" style="font-size:13px;color:var(--fg)">{{ effortLabel }}</span>
-<span style="flex:1"></span>
-<span style="display:flex;color:var(--fg-subtle)" title="How long the agent may think before it answers. Higher effort costs more and takes longer."><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted)"><span>Faster</span><span>Smarter</span></div>
-<div class="op-effort" data-effort="{{ effortKey }}" ref="{{ effortRef }}" role="slider" tabindex="0" aria-label="Effort" aria-valuemin="1" aria-valuemax="5" aria-valuenow="{{ effortIndex }}" aria-valuetext="{{ effortLabel }}" onPointerDown="{{ effortDown }}" onKeyDown="{{ effortKeyDown }}">
-<div class="op-effort__fill" ref="{{ effortFillRef }}"></div>
-<div class="op-effort__dots">
-<sc-for list="{{ effortStops }}" as="e" hint-placeholder-count="5">
-<span class="op-effort__dot"></span>
-</sc-for>
-</div>
-<span class="op-effort__knob" ref="{{ effortKnobRef }}"></span>
-</div>
-</div>
-</div>
-</sc-if>
-</div>
-</sc-if>
-
-<sc-if value="{{ recording }}">
-<span style="display:flex;align-items:center;gap:6px;margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--danger);font-variant-numeric:tabular-nums"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>{{ recordingTime }}</span>
-</sc-if>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ micLabel }}" aria-pressed="{{ micPressed }}" title="{{ micLabel }}" onClick="{{ toggleMic }}" style="flex:none;color:{{ micFg }}">
-<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="16" hint-size="16px,16px"></x-import>
-</button>
-<button class="op-composer__send" type="button" aria-label="Start session" title="{{ sendTitle }}" disabled="{{ sendOff }}" onClick="{{ startSession }}" style="opacity:{{ sendOpacity }}">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
-</button>
-</div>
-</div>
-</div>
+<div class="op-newsession" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:0;height:100%;padding:0 32px">
+<div class="op-newsession__inner" style="max-width:760px;width:100%;min-width:0;box-sizing:border-box;margin:auto 0 0;padding:0 0 32px;flex:none">
+<dc-import name="NewSessionComposer" on-start="{{ startFromComposer }}" hint-size="100%,190px"></dc-import>
 
 </div>
 </div>
@@ -997,21 +762,97 @@
 
 <sc-if value="{{ isTerminal }}">
 
-<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }};transition:padding 220ms cubic-bezier(.4,0,.2,1)">
-<div style="flex:1;min-height:0;width:100%;max-width:{{ frameMax }};margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
-
-<div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:46px;padding:0 12px 0 14px;border-bottom:1px solid var(--border-subtle)">
+<div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:52px;padding:0 14px 0 10px;border-bottom:1px solid var(--border-subtle);background:var(--card)">
+<button type="button" aria-pressed="{{ sideOpenS }}" aria-label="{{ sideLabel }}" title="{{ sideLabel }}" onClick="{{ toggleSide }}" style="flex:none;display:flex;align-items:center;justify-content:center;width:32px;height:30px;border:0;border-radius:10px;background:transparent;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="flex:none;width:1px;height:18px;background:var(--border-subtle)"></span>
 <sc-if value="{{ fromTask }}">
 <a class="op-btn op-btn--ghost op-btn--sm" href="{{ taskHref }}" title="Back to task" style="flex:none;max-width:240px;gap:6px;text-decoration:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="13" hint-size="13px,13px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ taskTitle }}</span></a>
 <span style="flex:none;color:var(--fg-subtle)">/</span>
 </sc-if>
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ paneDot }}"></span>
-<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:13px">{{ attachName }}</span>
+<span title="{{ paneMeta }}" style="flex:0 1 auto;min-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.011em">{{ attachName }}</span>
 <span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ paneState }}</span>
-<span style="flex:1"></span>
-<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ paneMeta }}</span>
+<span style="flex:1 1 0;min-width:0"></span>
+<div role="radiogroup" aria-label="View" style="flex:none;display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<sc-for list="{{ viewTabs }}" as="t" hint-placeholder-count="2">
+<button type="button" role="radio" aria-checked="{{ t.onS }}" onClick="{{ t.pick }}" style="height:26px;padding:0 11px;border:0;border-radius:980px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:inherit;font-size:12.5px;cursor:pointer">{{ t.label }}</button>
+</sc-for>
 </div>
-<div class="op-term" style="flex:1;min-height:0;position:relative">
+<sc-if value="{{ pvHas }}" hint-placeholder-val="{{ true }}">
+<button type="button" aria-pressed="{{ pvOpenS }}" aria-label="{{ pvToggleLabel }}" title="{{ pvToggleLabel }}" onClick="{{ togglePv }}" style="flex:none;display:flex;align-items:center;justify-content:center;width:32px;height:30px;border:0;border-radius:10px;background:{{ pvToggleBg }};color:{{ pvToggleFg }};cursor:pointer" style-hover="background:var(--hover-surface)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M15 3v18"></path></svg></button>
+</sc-if>
+<sc-if value="{{ pvMenuLegacy }}">
+<div style="position:relative;flex:none">
+<button type="button" aria-haspopup="menu" aria-expanded="{{ pvMenuS }}" onClick="{{ togglePvMenu }}" title="See what the agent is building" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ pvMenuBg }};font:inherit;font-size:13px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><span style="width:6px;height:6px;border-radius:980px;background:{{ pvMenuDot }}"></span>{{ pvMenuLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></button>
+<sc-if value="{{ pvMenuOpen }}">
+<div role="menu" onClick="{{ stopProp }}" style="position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:300px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-effort-in 140ms cubic-bezier(.16,1,.3,1)">
+<div class="op-tpop__label" style="padding:8px 10px 4px">Open beside the session</div>
+<sc-for list="{{ surfaces }}" as="s" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;border-radius:10px;background:{{ s.bg }}" style-hover="background:var(--hover-surface)">
+<button type="button" role="menuitemcheckbox" aria-checked="{{ s.onS }}" onClick="{{ s.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:7px 10px;border:0;background:none;font:inherit;text-align:left;cursor:pointer">
+<span style="flex:none;display:flex;color:var(--fg-muted)"><sc-if value="{{ s.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ s.phone }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-size:13.5px;color:var(--fg)">{{ s.label }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--fg-subtle)">{{ s.desc }}</span></span>
+<sc-if value="{{ s.on }}"><span style="flex:none;font-size:12px;color:var(--primary)">✓</span></sc-if>
+<span style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:11px;color:var(--fg-muted)">{{ s.kbd }}</span>
+</button>
+</div>
+</sc-for>
+<div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)">
+<a href="{{ pvNewTab }}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:10px;font-size:13px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1">Open localhost:5173 in a new tab</span></a>
+<div style="padding:6px 10px 6px;font-size:11.5px;color:var(--fg-subtle)">{{ pvPorts }}</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<div style="position:relative;flex:none">
+<button type="button" onClick="{{ toggleShare }}" aria-haspopup="dialog" title="{{ shareTitle }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ shareBg }};font:inherit;font-size:13px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ shareIcon }}" size="14" hint-size="14px,14px"></x-import>{{ shareLabel }}</button>
+<sc-if value="{{ shareOpen }}">
+<div role="dialog" aria-label="Share session" onClick="{{ stopProp }}" style="position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:340px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-effort-in 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:500;color:var(--fg)">Share session</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">People you share with watch the terminal live. They can't type unless you give them write access.</span></div>
+<sc-if value="{{ notShared }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px"><button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ startShare }}">Create view-only link</button><a class="op-btn op-btn--ghost op-btn--sm" href="./ShareSession.dc.html" target="_blank" rel="noopener" style="text-decoration:none">Share with people…</a></div>
+</sc-if>
+<sc-if value="{{ shared }}">
+<div style="display:flex;align-items:center;gap:6px;height:34px;padding:0 4px 0 12px;border:1px solid var(--border-subtle);border-radius:10px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ shLink }}</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ copyLink }}" style="height:26px">{{ copyLabel }}</button></div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="eye" size="13" hint-size="13px,13px"></x-import>Anyone with the link · view only · ends in 24h</div>
+<div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border-subtle)"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ stopShare }}" style="color:var(--danger)">Stop sharing</button><span style="flex:1"></span><a class="op-btn op-btn--ghost op-btn--sm" href="./ShareSession.dc.html" target="_blank" rel="noopener" style="text-decoration:none">Manage access…</a></div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ pvHidden }}">
+<sc-if value="{{ pvWeb }}">
+<a class="op-btn op-btn--secondary op-btn--sm" href="{{ pvHref }}" target="_blank" rel="noopener" title="{{ pvTitle }}" style="flex:none;gap:7px;text-decoration:none"><span style="width:6px;height:6px;border-radius:980px;background:{{ pvDot }};animation:{{ pvDotAnim }}"></span><span style="font-family:var(--font-mono);font-size:12px">{{ pvUrl }}</span><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></a>
+</sc-if>
+<sc-if value="{{ pvMobile }}" hint-placeholder-val="{{ true }}">
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" aria-pressed="{{ pvOpenS }}" onClick="{{ togglePv }}" style="flex:none;gap:6px;background:{{ pvBtnBg }};color:{{ pvBtnFg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ pvBtnIcon }}" size="13" hint-size="13px,13px"></x-import>Simulator</button>
+</sc-if>
+</sc-if>
+</div>
+<div ref="{{ pvRowRef }}" style="flex:1;min-height:0;display:flex;flex-direction:row;gap:0;padding:0;background:var(--card);transition:padding 220ms cubic-bezier(.4,0,.2,1)">
+<div style="flex:1;min-height:0;width:100%;max-width:{{ termMax }};margin:0 auto;flex:{{ termFlex }};min-width:{{ termMinW }};display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
+
+
+<div class="op-term" onClick="{{ closeMenus }}" style="flex:1;min-height:0;position:relative">
+<sc-if value="{{ chatOn }}">
+<div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;overflow:auto;background:var(--card);font-family:var(--font-sans)">
+<div class="op-term__scroll" style="flex:none;overflow:visible;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+<div style="align-self:flex-end;max-width:80%;padding:10px 14px;border-radius:18px;background:var(--hover-surface);font-size:14.5px;line-height:1.5;color:var(--fg);text-wrap:pretty">{{ chatTitle }}</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<span style="font-size:13px;color:var(--fg-muted)">Working · steps from the terminal</span>
+<sc-for list="{{ chatSteps }}" as="c" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:10px;min-width:0;font-size:13.5px;color:var(--fg)"><span style="flex:none;width:16px;display:flex;justify-content:center;color:var(--fg-subtle)">{{ c.mark }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12.5px">{{ c.text }}</span></div>
+</sc-for>
+</div>
+</div>
+<div style="flex:1"></div>
+<div class="op-term__scroll" style="position:sticky;bottom:0;flex:none;display:flex;flex-direction:column;overflow:visible;width:100%;padding-top:0;box-sizing:border-box;background:var(--card)">
+<div style="display:flex;align-items:center;gap:12px;order:2;padding:8px 18px 0;font-size:12.5px;color:var(--fg-muted)"><img src="./assets/agents/claude.svg" alt="" style="width:14px;height:14px;object-fit:contain"><span>Claude Code</span><span style="margin-left:auto">Opus 5.5</span><span style="color:var(--fg-subtle)">Medium</span></div>
+<div style="display:flex;align-items:center;gap:6px;order:1;padding:6px 6px 6px 18px;border:1px solid var(--border-subtle);border-radius:28px;background:var(--card)"><input type="text" placeholder="Message Claude" style="flex:1;min-width:0;height:32px;border:0;outline:none;background:none;font:inherit;font-size:15px;color:var(--fg)"><button class="op-iconbtn" type="button" aria-label="Dictate" style="width:32px;height:32px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="16" hint-size="16px,16px"></x-import></button><button type="button" aria-label="Send" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--primary);color:#fff;opacity:.4"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="16" hint-size="16px,16px"></x-import></button></div>
+</div>
+</div>
+</sc-if>
 <div class="op-term__scroll" ref="{{ termScrollRef }}" style="opacity:{{ termDim }};transition:opacity 220ms cubic-bezier(.4,0,.2,1)">
 <sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
 <sc-if value="{{ f.you }}">
@@ -1074,7 +915,7 @@
 </div>
 </sc-for>
 </div>
-<a href="./Settings.dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
+<a href="./Settings (where).dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
 </div>
 </sc-if>
 <sc-if value="{{ offCard }}">
@@ -1097,18 +938,125 @@
 </div>
 </div>
 </sc-for>
-<a href="./Settings.dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
+<a href="./Settings (where).dc.html?section=hosts" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;color:var(--link);text-decoration:none" style-hover="text-decoration:underline">Settings → Hosts<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-right" size="13" hint-size="13px,13px"></x-import></a>
 </div>
 </sc-if>
 </div>
 </div>
 </sc-if>
 </div>
+</div>
+<sc-if value="{{ pvOpen }}" hint-placeholder-val="{{ true }}">
+<div style="flex:{{ pvFlex }};position:relative;min-width:0;min-height:0;border-left:1px solid var(--border-subtle);border-radius:0 !important;display:flex;flex-direction:column;overflow:hidden;background:var(--card);border-radius:{{ frameRadius }};animation:op-effort-in 220ms cubic-bezier(.16,1,.3,1)">
+<sc-if value="{{ pvCanResize }}">
+<div role="separator" aria-orientation="vertical" aria-label="Resize preview" title="Drag to resize · double-click to reset" onPointerDown="{{ pvDragDown }}" onPointerMove="{{ pvDragMove }}" onPointerUp="{{ pvDragUp }}" onDoubleClick="{{ pvDragReset }}" style="position:absolute;top:0;bottom:0;left:0;z-index:4;width:8px;cursor:col-resize;touch-action:none;display:flex;justify-content:flex-start" style-hover="background:var(--hover-surface)"><span style="width:2px;height:100%;background:{{ pvHandleBg }}"></span></div>
+</sc-if>
+<div style="flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;min-height:46px;padding:8px;box-sizing:border-box;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Preview" style="flex:none;display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<sc-for list="{{ pvTabs }}" as="t" hint-placeholder-count="2">
+<button type="button" role="tab" aria-selected="{{ t.onS }}" onClick="{{ t.pick }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:0;border-radius:980px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:inherit;font-size:12.5px;cursor:pointer"><sc-if value="{{ t.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="13" hint-size="13px,13px"></x-import></sc-if><sc-if value="{{ t.phone }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if>{{ t.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ pvWebHead }}">
+<div title="{{ pvTitle }}" style="order:10;flex:1 1 100%;min-width:0;display:flex;align-items:center;gap:8px;height:30px;padding:0 2px 0 10px;box-sizing:border-box;border-radius:10px;background:var(--hover-surface)">
+<span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ pvDot }};animation:{{ pvDotAnim }}"></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg)">{{ pvUrl }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Reload preview" title="Reload" onClick="{{ pvReload }}" style="width:24px;height:24px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="refresh" size="13" hint-size="13px,13px"></x-import></button>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-pressed="{{ pvMaxS }}" aria-label="{{ pvMaxLabel }}" title="{{ pvMaxLabel }}" onClick="{{ pvToggleMax }}" style="margin-left:auto;background:{{ pvMaxBg }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="m21 3-7 7"></path><path d="m3 21 7-7"></path><path d="M9 21H3v-6"></path></svg></button>
+<a class="op-iconbtn op-iconbtn--sm" href="{{ pvNewTab }}" target="_blank" rel="noopener" aria-label="Open in a new tab" title="Open in a new tab"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="14" hint-size="14px,14px"></x-import></a>
+</sc-if>
+<sc-if value="{{ pvDevHead }}" hint-placeholder-val="{{ true }}">
+<div title="{{ pvTitle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding-left:6px">
+<span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ pvDot }};animation:{{ pvDotAnim }}"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">iPhone 15 · iOS 18</span>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Reload app" title="Reload app" onClick="{{ pvReload }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="refresh" size="13" hint-size="13px,13px"></x-import></button>
+</sc-if>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close preview" title="Close preview" onClick="{{ togglePv }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+<div ref="{{ pvBodyRef }}" style="flex:1;min-height:0;position:relative;display:flex;overflow-x:hidden;overflow-y:auto;background:var(--bg)">
+<sc-if value="{{ pvStarting }}">
+<div role="status" style="margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;text-align:center">
+<span style="width:7px;height:7px;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+<span style="font-size:13.5px;color:var(--fg)">Waiting for {{ pvUrl }}</span>
+<span style="max-width:30ch;font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">The preview opens when the dev server on {{ pvHost }} answers.</span>
+</div>
+</sc-if>
+<sc-if value="{{ pvPhoneLive }}" hint-placeholder-val="{{ true }}">
+<div style="margin:auto;padding:20px;flex:none">
+<div key="{{ pvKey }}" style="position:relative;width:{{ pvPhoneW }};height:{{ pvPhoneH }};animation:op-effort-in 260ms cubic-bezier(.16,1,.3,1)">
+<div role="img" aria-label="App running on iPhone 15" style="position:absolute;top:0;left:0;width:410px;height:864px;box-sizing:border-box;padding:10px;border-radius:58px;background:#0b0b0c;box-shadow:0 0 0 1px var(--border);transform:scale({{ pvScale }});transform-origin:0 0">
+<div style="position:relative;width:390px;height:844px;overflow:hidden;border-radius:48px;background:var(--background);color:var(--fg);font-family:var(--font-sans)">
+<div style="position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:980px;background:#000"></div>
+<div style="height:54px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 44px;box-sizing:border-box;font-size:16px;font-weight:600">
+<span>9:41</span>
+<span style="display:flex;align-items:center;gap:6px"><svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"></rect><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"></rect><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"></rect></svg><svg width="26" height="13" viewBox="0 0 26 13" aria-hidden="true"><rect x="0.5" y="0.5" width="22" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"></rect><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"></rect><rect x="23.5" y="4.5" width="2" height="4" rx="1" fill="currentColor" opacity=".4"></rect></svg></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;padding:40px 28px 0">
+<span style="font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-0.03em">Oppenheimer</span>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--font-display);font-size:34px;font-weight:600;line-height:1.08;letter-spacing:-0.024em;text-wrap:balance">Every agent, one control plane.</span><span style="font-size:16px;line-height:1.45;color:var(--fg-muted)">Sign in to reach your workspaces.</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="display:flex;align-items:center;justify-content:center;gap:10px;height:50px;border-radius:980px;background:var(--control, var(--hover-surface));font-size:16px;font-weight:500"><img src="./assets/brand/google-color.svg" alt="" style="width:18px;height:18px">Continue with Google</span>
+<span style="display:flex;align-items:center;justify-content:center;gap:10px;height:50px;border-radius:980px;background:var(--control, var(--hover-surface));font-size:16px;font-weight:500"><img src="./assets/brand/github.svg" alt="" style="width:18px;height:18px;filter:var(--brand-glyph-filter,none)">Continue with GitHub</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle)"><span style="flex:1;height:1px;background:var(--border-subtle)"></span>or<span style="flex:1;height:1px;background:var(--border-subtle)"></span></div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="display:flex;align-items:center;height:50px;padding:0 16px;border:1px solid var(--border);border-radius:10px;font-size:16px;color:var(--fg-subtle)">you@company.com</span>
+<span style="display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 16px;border:1px solid var(--border);border-radius:10px;font-size:16px;color:var(--fg-subtle)">Password<span style="font-size:14px;color:var(--link)">Forgot?</span></span>
+<span style="display:flex;align-items:center;justify-content:center;height:50px;margin-top:4px;border-radius:980px;background:var(--primary);font-size:16px;font-weight:500;color:#fff">Sign in</span>
+</div>
+<span style="text-align:center;font-size:14px;color:var(--fg-muted)">No account? <span style="color:var(--link)">Create one</span></span>
+</div>
+<div style="position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:980px;background:var(--fg);opacity:.9"></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ pvDeskLive }}">
+<div style="position:absolute;inset:0;overflow:hidden">
+<iframe key="{{ pvKey }}" src="{{ pvSrc }}" title="Browser preview" style="position:absolute;top:0;left:0;width:1280px;height:{{ pvDeskH }};border:0;background:var(--background);transform:scale({{ pvDeskScale }});transform-origin:0 0"></iframe>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
 </div>
 </div>
 </sc-if>
 
 </div>
+
+<sc-if value="{{ tpDlgOpen }}">
+<div class="op-scrim" onClick="{{ tpClose }}" style="z-index:220">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="tp-title" onClick="{{ stop }}" style="max-width:480px">
+<div class="op-dialog__head"><div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0"><h2 class="op-dialog__title" id="tp-title" style="margin:0">Teleport “{{ tpName }}”</h2><p class="op-dialog__desc" style="margin:0;text-wrap:pretty">We fetch the session’s branch on the host you pick and run the command below. The conversation continues in a terminal here.</p></div><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ tpClose }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button></div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><span class="op-label">Host</span>
+<div role="radiogroup" aria-label="Host" style="display:flex;flex-direction:column;gap:2px;margin:0 -10px">
+<sc-for list="{{ tpHosts }}" as="h" hint-placeholder-count="3">
+<button class="op-option" type="button" role="radio" aria-checked="{{ h.selS }}" data-selected="{{ h.selS }}" disabled="{{ h.offB }}" onClick="{{ h.pick }}" style="padding:8px 10px;gap:10px;font-size:14px;line-height:1.35;opacity:{{ h.opacity }}"><span style="display:flex;flex:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="15" hint-size="15px,15px"></x-import></span><span class="op-option__stack"><span>{{ h.label }}</span><span class="op-option__desc" style="margin-top:1px;font-size:12px;line-height:1.35">{{ h.desc }}</span></span><span class="op-option__check">✓</span></button>
+</sc-for>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span class="op-label">Runs on {{ tpHostLabel }} in {{ tpPath }}</span><div style="display:flex;align-items:center;gap:8px;min-width:0;padding:0 5px 0 12px;height:38px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:13px;color:var(--fg)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ tpCmd }}</span><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ tpCopy }}" style="flex:none;gap:5px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="13" hint-size="13px,13px"></x-import>{{ tpCopyLabel }}</button></div><span style="font-size:12px;color:var(--fg-subtle);font-family:var(--font-mono)">{{ tpBranch }}</span></div>
+</div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ tpClose }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ tpGo }}">Teleport</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tpPopOpen }}">
+<div onClick="{{ tpClose }}" style="position:fixed;inset:0;z-index:220"></div>
+<div class="op-menu" role="menu" aria-label="Teleport to host" onClick="{{ stop }}" style="position:fixed;left:{{ tpPopX }};top:{{ tpPopY }};right:auto;bottom:auto;z-index:221;width:300px;min-width:0">
+<div class="op-tpop__label" style="padding:6px 10px 4px">Teleport to</div>
+<sc-for list="{{ tpHosts }}" as="h" hint-placeholder-count="3">
+<button class="op-menu__item" type="button" role="menuitem" data-disabled="{{ h.offD }}" onClick="{{ h.go }}" style="height:auto;padding:7px 10px;align-items:center;gap:10px;opacity:{{ h.opacity }}"><span style="display:flex;flex:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="14" hint-size="14px,14px"></x-import></span><span style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1"><span class="op-menu__label-text">{{ h.label }}</span><span style="font-size:12px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.desc }}</span></span></button>
+</sc-for>
+<div class="op-menu__sep"></div>
+<div style="padding:4px 4px 2px"><div style="display:flex;align-items:center;gap:8px;min-width:0;padding:0 5px 0 12px;height:38px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12px;color:var(--fg)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ tpCmd }}</span><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ tpCopy }}" style="flex:none;gap:5px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="13" hint-size="13px,13px"></x-import>{{ tpCopyLabel }}</button></div></div>
+</div>
+</sc-if>
 
 <sc-if value="{{ deleting }}">
 <div class="op-scrim" onClick="{{ cancelDelete }}">
@@ -1146,17 +1094,20 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostLink&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;reconnecting&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;'live' | 'reconnecting' | 'offline'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;offlineStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bar&quot;,&quot;card&quot;],&quot;default&quot;:&quot;bar&quot;,&quot;tsType&quot;:&quot;'bar' | 'card'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;firstClone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Host link&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;teleportUI&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dialog&quot;,&quot;menu&quot;,&quot;quick&quot;],&quot;default&quot;:&quot;dialog&quot;,&quot;tsType&quot;:&quot;'dialog' | 'menu' | 'quick'&quot;,&quot;section&quot;:&quot;Teleport&quot;},&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostLink&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;reconnecting&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;'live' | 'reconnecting' | 'offline'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;offlineStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bar&quot;,&quot;card&quot;],&quot;default&quot;:&quot;bar&quot;,&quot;tsType&quot;:&quot;'bar' | 'card'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;firstClone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;projectType&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mobile app&quot;,&quot;website&quot;],&quot;default&quot;:&quot;mobile app&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview&quot;},&quot;ccSignedIn&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;some hosts&quot;,&quot;none&quot;],&quot;default&quot;:&quot;some hosts&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Cloud&quot;},&quot;previewState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;starting&quot;,&quot;none&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Preview&quot;},&quot;previewOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
 const ALL = [
-  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus' },
+  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus', by: 'op' },
   { name: 'nightly ingest', state: 'running', age: '9m', mins: 9, repo: 'atlas', agent: 'claude-code', host: 'fable' },
-  { name: 'invoice triage', state: 'waiting', age: '18m', mins: 18, repo: 'atlas', agent: 'codex', host: 'optimus' },
+  { name: 'invoice triage', state: 'waiting', age: '18m', mins: 18, repo: 'atlas', agent: 'codex', host: 'optimus', by: 'op' },
   { name: 'XRP Mobile API cleanup', state: 'waiting', age: '3h', mins: 180, repo: 'xrp-mobile', agent: 'opencode', host: 'mac-studio' },
   { name: 'retriever eval', state: 'failed', age: '4h', mins: 240, repo: 'atlas', agent: 'claude-code', host: 'fable' },
   { name: 'First version page design', state: 'idle', age: '1d', mins: 1440, repo: 'flama-ai', agent: 'claude-code', host: 'optimus' },
   { name: 'doc summariser', state: 'idle', age: '1d', mins: 1500, repo: 'atlas', agent: 'codex', host: 'optimus' },
-  { name: 'Automatic deployments', state: 'waiting', age: '2w', mins: 20160, repo: 'adri-rodriguez', agent: 'opencode', host: 'fable' },
+  { name: 'Automatic deployments', state: 'waiting', age: '2w', mins: 20160, repo: 'adri-rodriguez', agent: 'opencode', host: 'fable', by: 't1' },
   { name: 'tool router', state: 'idle', age: '3w', mins: 30240, repo: 'xrp-mobile', agent: 'codex', host: 'mac-studio' },
+  { name: 'Fix flaky auth tests', state: 'running', age: '6m', mins: 6, repo: 'xrp-mobile', agent: 'cursor', host: 'cursor', url: 'https://cursor.com/agents', by: 'op' },
+  { name: 'Migrate retriever to pgvector', state: 'unknown', age: '1h', mins: 60, repo: 'atlas', agent: 'claude-code', host: 'claude-cloud', url: 'https://claude.ai/code' },
+  { name: 'Landing copy pass', state: 'waiting', age: '5h', mins: 300, repo: 'flama-ai', agent: 'cursor', host: 'cursor', url: 'https://cursor.com/agents' },
 ];
 
 // A project is a saved scope: the repos a session may clone, the base each one
@@ -1186,11 +1137,27 @@ const AGENT_FILTER = [
   { value: 'opencode', label: 'OpenCode' },
 ];
 
+// Who started the session: you, the built-in general bot, or a bot created on Employees.
+const BY_FILTER = [
+  { value: 'all', label: 'Anyone' },
+  { value: 'me', label: 'You' },
+  { value: 'op', label: 'Oppenheimer' },
+  { value: 't1', label: 'Release Bot' },
+];
+const BOT_NAME = { op: 'Oppenheimer', t1: 'Release Bot' };
+
 const HOST_FILTER = [
-  { value: 'all', label: 'All hosts' },
+  { value: 'all', label: 'Anywhere' },
   { value: 'optimus', label: 'optimus' },
   { value: 'mac-studio', label: 'jordis-mac-studio' },
   { value: 'fable', label: 'fable' },
+  { value: 'cursor', label: 'Cursor' },
+  { value: 'claude-cloud', label: 'Claude Code cloud' },
+];
+
+const GROUP_BY = [
+  { value: 'project', label: 'Project' },
+  { value: 'host', label: 'Host' },
 ];
 
 const SORTS = [
@@ -1204,6 +1171,27 @@ const HOSTS = [
   { value: 'mac-studio', label: 'jordis-mac-studio', desc: 'local · 2 sessions running' },
   { value: 'fable', label: 'fable', desc: '16 vCPU · us-east · idle' },
 ];
+
+// Cloud sessions run with the provider, not on a host: we start them and link
+// out. Cursor reports state back; Claude Code cloud is link-only after launch.
+const CLOUD = [
+  { value: 'cursor', label: 'Cursor', short: 'Cursor', icon: './assets/agents/cursor.png', url: 'https://cursor.com/agents', status: true,
+    desc: 'Cloud agent · opens in Cursor · status synced', adesc: 'Cloud · each run opens a Cursor agent · status synced' },
+  { value: 'claude-cloud', label: 'Claude Code cloud', short: 'Claude Code', icon: './assets/agents/claude.svg', url: 'https://claude.ai/code', status: false,
+    desc: 'Opens in claude.ai/code · teleport to a host later', adesc: 'Cloud · each run opens as a link · teleport to a host later' },
+];
+// Claude Code cloud environments: a named sandbox config (network policy,
+// env vars, setup script) the run boots into. Teleport carries the branch,
+// not the environment, so the host needs its own credentials.
+const CLOUD_ENVS = [
+  { value: 'default', label: 'Default', desc: 'Trusted network · no env vars' },
+  { value: 'xrp-ci', label: 'xrp-mobile CI', desc: 'Full network · 4 env vars · setup script' },
+  { value: 'atlas-db', label: 'atlas + Postgres', desc: 'Trusted network · 6 env vars · pgvector service' },
+  { value: 'offline', label: 'Offline sandbox', desc: 'No network access' },
+];
+const RUN_ON = HOSTS.concat(CLOUD);
+const cloudOf = v => CLOUD.find(c => c.value === v) || null;
+const isCloud = v => !!cloudOf(v);
 
 const REPOS = [
   { value: 'xrp-mobile', label: 'JordiParraCrespo/xrp-mobile', desc: 'updated 3h ago' },
@@ -1322,6 +1310,80 @@ const BOOT_STEPS = [
   },
 ];
 
+// Folder on host: nothing is cloned and no branch is made — the session opens
+// in a directory that already exists, so the trace is short and says so.
+const FOLDER_STEPS = [
+  {
+    label: c => 'Connect to ' + c.hostName(),
+    phase: c => 'Connecting to ' + c.hostName() + '…',
+    doing: 'opening channel…', done: 'runner 0.14.2', ms: 600,
+  },
+  {
+    label: c => 'Open ' + c.pathText(),
+    phase: c => 'Opening ' + c.pathText() + '…',
+    doing: 'resolving path…', done: 'directory found', ms: 450,
+  },
+  {
+    label: c => c.state.agentId === 'shell' ? 'Start shell' : 'Start ' + c.agentName(),
+    phase: c => c.state.agentId === 'shell' ? 'Starting shell…' : 'Starting ' + c.agentName() + '…',
+    doing: 'spawning…', done: 'ready', ms: 700,
+  },
+];
+
+// Teleport: Oppenheimer runs `claude --teleport <id>` on the picked host. The
+// cloud branch is fetched first, then the conversation is restored in place.
+const TELEPORT_STEPS = [
+  { label: c => 'Connect to ' + c.hostName(), phase: c => 'Connecting to ' + c.hostName() + '…', doing: 'opening channel…', done: 'runner 0.14.2', ms: 600 },
+  { label: c => 'Fetch ' + c.state.tpSrc.branch, phase: () => 'Fetching the cloud branch…', doing: 'git fetch origin…', done: 'ahead 3 · 12 files', ms: 1100 },
+  { label: c => 'Check out in ~/code/' + c.state.tpSrc.repo, phase: () => 'Checking out the branch…', doing: 'creating worktree…', done: 'clean worktree', ms: 600 },
+  { label: c => 'claude --teleport ' + c.state.tpSrc.sid, phase: () => 'Restoring the conversation…', doing: 'loading transcript…', done: 'conversation restored', ms: 1300 },
+];
+const B62 = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+const sidOf = k => { let h = 2166136261, out = ''; const s = String(k); for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); for (let i = 0; i < 20; i++) { h = Math.imul(h ^ (h >>> 13), 2654435761); out += B62[(h >>> 0) % B62.length]; } return 'session_011C' + out; };
+const slugOf = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) + '-' + sidOf(s).slice(-4).toLowerCase();
+const hostLbl = v => (HOSTS.find(h => h.value === v) || {}).label || v;
+const tpFeed = (src, h) => [
+  { out: 'true', lines: [
+    { text: '$ claude --teleport ' + src.sid },
+    { text: 'git fetch origin ' + src.branch, tone: 'dim' },
+    { text: '✓ Checked out ' + src.branch + ' in ~/code/' + src.repo, tone: 'success' },
+    { text: '✓ Restored the conversation from Claude Code cloud', tone: 'success' },
+  ] },
+  { agent: 'true', lines: [
+    { text: 'Resumed “' + src.name + '” on ' + hostLbl(h) + '. The branch and the full conversation came across; nothing was left running in the cloud.' },
+    { text: ' ' },
+    { text: 'What next?' },
+  ] },
+];
+
+const WHERE = [
+  { value: 'worktree', label: 'New worktree', desc: 'Clone a project repository onto a fresh branch' },
+  { value: 'folder', label: 'Folder on host', desc: 'Open an existing directory as it is · nothing is cloned' },
+];
+
+// Stand-in for a live directory listing from the host's runner. Folders only —
+// a session opens in a directory, so files would be noise here.
+const HOST_HOME = { optimus: '/home/jordi', 'mac-studio': '/Users/jordi', fable: '/home/jordi' };
+const FS = {
+  '~': ['code', 'notes', 'scratch'],
+  '~/code': ['atlas', 'dotfiles', 'ledger-svc', 'xrp-mobile'],
+  '~/code/atlas': ['apps', 'packages', 'scripts'],
+  '~/code/atlas/apps': ['api', 'web'],
+  '~/code/atlas/apps/api': [], '~/code/atlas/apps/web': [],
+  '~/code/atlas/packages': [], '~/code/atlas/scripts': [],
+  '~/code/dotfiles': [], '~/code/ledger-svc': ['src', 'migrations'],
+  '~/code/ledger-svc/src': [], '~/code/ledger-svc/migrations': [],
+  '~/code/xrp-mobile': ['android', 'ios', 'src'],
+  '~/code/xrp-mobile/android': [], '~/code/xrp-mobile/ios': [], '~/code/xrp-mobile/src': [],
+  '~/notes': [], '~/scratch': ['bench-2026-10', 'tmp'], '~/scratch/bench-2026-10': [], '~/scratch/tmp': [],
+};
+const GIT_DIRS = { '~/code/atlas': 'main', '~/code/dotfiles': 'main', '~/code/ledger-svc': 'release/2.4', '~/code/xrp-mobile': 'port-121' };
+const RECENT_DIRS = {
+  optimus: [['~/code/atlas', '2h'], ['~/scratch/bench-2026-10', '1d']],
+  'mac-studio': [['~/code/xrp-mobile', '20m'], ['~', '3d']],
+  fable: [],
+};
+
 const THEMES = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
@@ -1351,7 +1413,7 @@ const AGENTS = [
   { value: 'claude-code', label: 'Claude Code', desc: 'Anthropic · terminal-native', icon: './assets/agents/claude.svg' },
   { value: 'codex', label: 'Codex', desc: 'OpenAI · fast wide edits' },
   { value: 'opencode', label: 'OpenCode', desc: 'Open source · bring your own model', icon: './assets/agents/opencode.png' },
-  { value: 'shell', label: 'Blank terminal', desc: 'No agent · just a shell in the worktree' },
+  { value: 'shell', label: 'Blank terminal', desc: 'No agent · just a shell' },
 ];
 
 // Routines: a saved prompt plus the triggers that start it. Every run is an
@@ -1462,7 +1524,7 @@ const ROUTINE_SEED = [
       { key: 'a2', state: 'completed', cause: 'PR #123 opened by dependabot', when: '9h ago', dur: '2m 48s' },
       { key: 'a3', state: 'failed', cause: 'PR #119 opened by adri-rdz', when: '3d ago', dur: '0m 41s' },
     ] },
-  { id: 'r2', name: 'Nightly dependency audit', active: true, project: 'atlas', agent: 'codex', model: 'gpt-codex', host: 'fable',
+  { id: 'r2', name: 'Nightly dependency audit', active: true, project: 'atlas', agent: 'claude-code', model: 'sonnet', host: 'cursor',
     prompt: 'Audit every package manifest for known advisories. Open one PR that bumps what is safe to bump, and list anything that needs a human in the PR body.',
     triggers: [{ id: 'rt2', type: 'schedule', freq: 'daily', hour: 2, minute: 0, days: [1], dom: 1 }],
     runs: [
@@ -1477,7 +1539,7 @@ const ROUTINE_SEED = [
       { key: 'c1', state: 'completed', cause: 'Schedule', when: 'Mon 21 Sep, 09:00', dur: '6m 20s' },
       { key: 'c2', state: 'completed', cause: 'Release v2.3.0 published', when: 'Fri 18 Sep, 16:42', dur: '5m 02s' },
     ] },
-  { id: 'r4', name: 'Standup digest', active: true, project: 'mobile', agent: 'claude-code', model: 'haiku', host: 'mac-studio',
+  { id: 'r4', name: 'Standup digest', active: true, project: 'mobile', agent: 'claude-code', model: 'haiku', host: 'claude-cloud',
     prompt: 'Read yesterday’s merged PRs, open PRs and failing checks. Post a five-line digest as a comment on the pinned Standup issue.',
     triggers: [{ id: 'rt5', type: 'schedule', freq: 'weekdays', hour: 8, minute: 30, days: [1], dom: 1 }],
     runs: [
@@ -1610,9 +1672,10 @@ function runTranscript(u, x) {
 
 class Component extends DCLogic {
   state = {
-    view: 'terminal', project: 'all', fProj: 'all', fAgent: 'all', fHost: 'all', sort: 'recent',
+    view: 'terminal', project: 'all', fProj: 'all', fAgent: 'all', fHost: 'all', fBy: 'all', sort: 'recent',
     filterOpen: false, menu: null,
     open: null, host: 'optimus', repos: ['xrp-mobile'], branchOf: { 'xrp-mobile': 'main' },
+    where: 'worktree', path: '~',
     repoPane: null, agentId: 'claude-code', query: '',
     effort: 'medium', effortShown: 'medium', model: 'sonnet', modelQuery: '',
     termDraft: '',
@@ -1657,7 +1720,7 @@ class Component extends DCLogic {
     mine: [],
     renames: {}, deleted: [], sessionMenu: null, editing: null, renameDraft: '', deleting: null,
     section: 'sessions', routines: ROUTINE_SEED, rDraft: null, rMenu: null, rTab: 'routines', tplCat: 'All', runPage: 0, histHover: null, selR: null, rCollapsed: {}, flash: null, runLog: buildLog(Date.now()), now: Date.now(),
-    projects: PROJECT_SEED, collapsed: {}, curProject: 'mobile', moves: {}, moving: null, moveTo: null, projDlg: null, draft: null,
+    projects: PROJECT_SEED, collapsed: {}, groupBy: 'project', curProject: 'mobile', moves: {}, moving: null, moveTo: null, projDlg: null, draft: null,
   };
   _renameRef = React.createRef();
   startRename(key) {
@@ -1678,10 +1741,13 @@ class Component extends DCLogic {
   // ticked (untick to clone fewer), each on its base, with its host and agent.
   applyProjectObj(p) {
     if (!p) return {};
+    // A project without repositories has nothing to clone — it holds folder
+    // sessions only, so picking it lands in Folder on host.
+    if (!p.repos.length) return { where: 'folder', folderProj: p.id, host: p.host, agentId: p.agent };
     const branchOf = {}; p.repos.forEach(r => { branchOf[r.repo] = r.base; });
     const h = HARNESS_MODELS[p.agent] || { primary: [] };
     const defs = p.repos.filter(r => r.def !== false).map(r => r.repo);
-    return { curProject: p.id, repos: defs.length ? defs : [p.repos[0].repo], branchOf, host: p.host, agentId: p.agent, model: h.primary.length ? h.primary[0].value : '', repoPane: null };
+    return { where: 'worktree', curProject: p.id, repos: defs.length ? defs : [p.repos[0].repo], branchOf, host: p.host, agentId: p.agent, model: h.primary.length ? h.primary[0].value : '', repoPane: null };
   }
   applyProject(id) { return this.applyProjectObj(this.state.projects.find(x => x.id === id)); }
   openProjDlg(id) {
@@ -1721,6 +1787,15 @@ class Component extends DCLogic {
         ],
       }));
       if (this.runAttach) this.runAttach();
+    }
+    // Hosts page shortcut: ?where=folder&host=<id>&path=~&agent=shell&start=1
+    if (dq.get('where') === 'folder' && !dq.get('session') && this.props.page !== 'routines') {
+      const qh = dq.get('host'), qa = dq.get('agent');
+      this.setState(s => ({
+        where: 'folder', path: dq.get('path') || '~', view: 'new', open: null,
+        host: HOSTS.some(o => o.value === qh) ? qh : s.host,
+        agentId: AGENTS.some(o => o.value === qa) ? qa : s.agentId,
+      }), () => { if (dq.get('start')) setTimeout(() => this._startFn && this._startFn(), 0); });
     }
     this._away = () => {
       const { open, filterOpen, modelOpen, accountOpen, permOpen, effortOpen } = this.state;
@@ -1872,7 +1947,7 @@ class Component extends DCLogic {
     this._bootClock = setInterval(() => this.setState({ bootMs: Date.now() - t0 }), 100);
     const advance = () => {
       const i = this.state.bootStep;
-      if (i >= BOOT_STEPS.length) {
+      if (i >= this.bootList().length) {
         clearInterval(this._bootClock);
         // Only hand off if the user is still watching. If they walked away —
         // typically to start another session — the session still becomes
@@ -1885,7 +1960,7 @@ class Component extends DCLogic {
         )), 520);
         return;
       }
-      this._boot = setTimeout(() => this.setState({ bootStep: i + 1 }, advance), BOOT_STEPS[i].ms);
+      this._boot = setTimeout(() => this.setState({ bootStep: i + 1 }, advance), this.bootList()[i].ms);
     };
     advance();
   }
@@ -2086,7 +2161,40 @@ class Component extends DCLogic {
   checkoutLabel() {
     return this.state.repos.length > 1 ? 'Check out branches' : 'Check out ' + (this.branchName() || 'branch');
   }
+  bootList() { return this.state.tpSrc ? TELEPORT_STEPS : this.state.where === 'folder' ? FOLDER_STEPS : BOOT_STEPS; }
+  tpOpen(src, e, pick) {
+    const mode = this.props.teleportUI || 'dialog';
+    const full = { ...src, sid: sidOf(src.key), branch: 'claude/' + slugOf(src.name) };
+    const host = this.state.tpLast || 'optimus';
+    if (mode === 'quick' && !pick) { this.teleportTo(full, host); return; }
+    if (mode === 'dialog') { this.setState({ tp: { ...full, host }, sessionMenu: null }); return; }
+    const r = e && e.currentTarget ? e.currentTarget.getBoundingClientRect() : { right: 420, bottom: 200 };
+    const W = 300, H = 260;
+    this.setState({ sessionMenu: null, tp: { ...full, host, pop: { x: Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8)), y: r.bottom + H + 8 > window.innerHeight ? Math.max(8, r.top - H - 6) : r.bottom + 6 } } });
+  }
+  teleportTo(src, hostId) {
+    if (this.offlineHosts().indexOf(hostId) > -1) return;
+    clearInterval(this._tick);
+    const key = 't' + Date.now();
+    const row = { key, name: src.name, state: 'waiting', age: 'now', mins: 0, repo: src.repo, agent: 'claude-code', host: hostId, project: REPO_PROJECT[src.repo] || this.state.curProject, where: 'worktree' };
+    this.setState(s => ({
+      mine: [row].concat(s.mine),
+      deleted: src.from === 'session' ? s.deleted.concat([src.key]) : s.deleted,
+      tpDone: src.runKey ? { ...(s.tpDone || {}), [src.runKey]: { key, host: hostId, name: src.name } } : s.tpDone,
+      tp: null, tpLast: hostId, tpSrc: src, host: hostId, where: 'worktree', agentId: 'claude-code', section: 'sessions',
+      session: { label: src.name, state: 'running', host: hostId, meta: 'Claude Code · teleported from cloud · ' + hostLbl(hostId) + ':~/code/' + src.repo },
+      view: 'terminal', open: null, sessionMenu: null, files: [], recording: false, seconds: 0,
+      feed: tpFeed(src, hostId),
+    }));
+    this.runBoot();
+  }
+  openTp(d) {
+    this.setState({ section: 'sessions', view: 'terminal', tpSrc: null, open: null,
+      session: { label: d.name, state: 'running', host: d.host, meta: 'Claude Code · teleported from cloud · ' + hostLbl(d.host) } });
+  }
+  pathText() { return (this.state.path || '').trim() || '~'; }
   scopeShort() {
+    if (this.state.where === 'folder') return this.pathText() + ' · ' + this.hostName();
     const n = this.state.repos.length;
     const extra = n > 1 ? '  +' + (n - 1) : '';
     return this.repoName() + extra + ' · ' + this.branchName();
@@ -2378,8 +2486,18 @@ class Component extends DCLogic {
     const stateL = { running: 'Running', completed: 'Completed', failed: 'Failed' };
     const runRows = log.slice(pg * PAGE, pg * PAGE + PAGE).map((u, i) => {
       const d = new Date(u.t); const x = list.find(y => y.id === u.rid) || {};
-      return { key: u.key, state: u.state, stateLabel: stateL[u.state], ok: u.state === 'completed' ? 'true' : undefined, bad: u.state === 'failed' ? 'true' : undefined, live: u.state === 'running' ? 'true' : undefined,
-        title: u.title, rname: x.name || 'Deleted automation', date: md(d), time: pad2(d.getHours()) + ':' + pad2(d.getMinutes()), delay: i * 20 + 'ms', open: openRun(u.key) };
+      // Cloud runs live with the provider: the row links out. Claude Code cloud
+      // reports nothing back, so its runs carry no state, only the link.
+      const rc = cloudOf(x.host), unk = !!rc && !rc.status;
+      const tpd = (st.tpDone || {})[u.key], canTp = !!rc && rc.value === 'claude-cloud' && !tpd;
+      const tpSrc = { key: 'run:' + u.key, runKey: u.key, from: 'run', name: u.title, repo: (x.repos && x.repos[0]) || x.repo || 'xrp-mobile' };
+      return { key: u.key, state: unk ? 'unknown' : u.state, stateLabel: unk ? 'No status from ' + rc.label + ' · open to check' : stateL[u.state],
+        ok: !unk && u.state === 'completed' ? 'true' : undefined, bad: !unk && u.state === 'failed' ? 'true' : undefined, live: !unk && u.state === 'running' ? 'true' : undefined,
+        canTp: canTp ? 'true' : undefined, tpDone: tpd ? 'true' : undefined, tpOn: tpd ? 'On ' + hostLbl(tpd.host) : '',
+        tp: e => { if (e) e.stopPropagation(); this.tpOpen(tpSrc, e); }, tpPick: e => { if (e) e.stopPropagation(); this.tpOpen(tpSrc, e, true); },
+        unknown: unk && !tpd ? 'true' : undefined, cloud: rc && !tpd ? 'true' : undefined, provider: rc ? rc.short : '', logo: rc ? rc.icon : '',
+        title: u.title, rname: x.name || 'Deleted automation', date: md(d), time: pad2(d.getHours()) + ':' + pad2(d.getMinutes()), delay: i * 20 + 'ms',
+        open: tpd ? (e => { if (e) e.stopPropagation(); this.openTp(tpd); }) : rc ? (e => { if (e) e.stopPropagation(); window.open(rc.url, '_blank', 'noopener'); }) : openRun(u.key) };
     });
 
     const cat = st.tplCat;
@@ -2521,8 +2639,8 @@ class Component extends DCLogic {
       navSessionsCur: inR ? undefined : 'page', navRoutinesCur: inR ? 'page' : undefined,
       sessionTotal: (bare ? st.mine : st.mine.concat(ALL)).filter(s => st.deleted.indexOf(s.key || s.name) === -1).length,
       routineTotal: list.length,
-      goSessions: e => { if (e) e.stopPropagation(); if (this.props.page === 'routines') { window.location.href = 'SessionsConsole.dc.html'; return; } this.setState(s => ({ section: 'sessions', view: s.view === 'routine' ? 'terminal' : s.view, rMenu: null })); },
-      goRoutines: e => { if (e) e.stopPropagation(); if (this.props.page !== 'routines') { window.location.href = 'Routines.dc.html'; return; } this.setState({ section: 'routines', view: 'routine', selR: null, rMenu: null, open: null }); },
+      goSessions: e => { if (e) e.stopPropagation(); this.setState(s => ({ section: 'sessions', view: s.view === 'routine' ? 'terminal' : s.view, rMenu: null })); },
+      goRoutines: e => { if (e) e.stopPropagation(); this.setState({ section: 'routines', view: 'routine', selR: null, rMenu: null, open: null }); },
       newRoutine: e => { if (e) e.stopPropagation(); this.openRDlg(null); },
       isRoutines: inR && !runSel ? 'true' : undefined,
       ...runVals,
@@ -2717,6 +2835,9 @@ class Component extends DCLogic {
         }) })),
       rS1Done: 'true', rS2Done: r.triggers.length ? 'true' : 'false', rS3Done: r.prompt.trim() ? 'true' : 'false', rS4Done: 'true',
       rS1Sum: '', rS2Sum: '', rS3Sum: '', rS4Sum: '',
+      rIsCC: r.host === 'claude-cloud' ? 'true' : undefined,
+      rEnvSel: listTok('sel:env', findL(CLOUD_ENVS, r.env || 'default'), CLOUD_ENVS.map(o => ({ ...o, selected: (r.env || 'default') === o.value })),
+        v => this.patchR(x => ({ ...x, env: v }))),
       rAgentSel: withQ('sel:agent', 'Search agents', listTok('sel:agent', findL(AGENTS, r.agent), ['claude-code', 'codex', 'opencode'].map(a => ({ value: a, label: findL(AGENTS, a), desc: HARNESS_MODELS[a].primary.length + ' models', selected: a === r.agent })),
         v => this.patchR(x => ({ ...x, agent: v, model: x.agent === v ? x.model : HARNESS_MODELS[v].primary[0].value })))),
       rModelSel: withQ('sel:model', 'Search models', listTok('sel:model', ((HARNESS_MODELS[r.agent] || { primary: [] }).primary.find(m => m.value === r.model) || {}).label || 'Choose a model',
@@ -2724,7 +2845,9 @@ class Component extends DCLogic {
         v => this.patchR(x => ({ ...x, model: v })))),
       // Automations may target an offline host: runs that come due wait as
       // Queued until its runner is back, so the picker says that up front.
-      rHostSel: withQ('sel:host', 'Search hosts', listTok('sel:host', findL(HOSTS, r.host), HOSTS.map(o => ({ ...o, desc: this.offlineHosts().indexOf(o.value) > -1 ? 'Offline · runs queue until it’s back' : o.desc, selected: o.value === r.host })), v => this.patchR(x => ({ ...x, host: v })))),
+      // Cloud providers sit beside hosts; Claude Code cloud only runs Claude Code.
+      rHostSel: withQ('sel:host', 'Search hosts and cloud', listTok('sel:host', findL(RUN_ON, r.host), CLOUD.concat(HOSTS).map(o => ({ ...o, desc: isCloud(o.value) ? o.adesc : this.offlineHosts().indexOf(o.value) > -1 ? 'Offline · runs queue until it’s back' : o.desc, selected: o.value === r.host })),
+        v => this.patchR(x => ({ ...x, host: v, ...(v === 'claude-cloud' && x.agent !== 'claude-code' ? { agent: 'claude-code', model: HARNESS_MODELS['claude-code'].primary[0].value } : {}) })))),
       rReady: valid ? 'true' : 'false',
       rRecap: !r.name.trim() ? 'Name the automation to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.'
         : findL(AGENTS, r.agent) + ' runs in ' + repoL + ', ' + trigL.charAt(0).toLowerCase() + trigL.slice(1) + (r.triggers.length > 1 ? ' and ' + (r.triggers.length - 1) + ' more' : '') + '.',
@@ -2740,12 +2863,104 @@ class Component extends DCLogic {
     };
   }
 
+  ccInfo() {
+    const ccSigned = (this.props.ccSignedIn ?? 'some hosts') === 'none' ? [] : ['optimus', 'mac-studio'];
+    const pick = this.state.ccLauncher && ccSigned.indexOf(this.state.ccLauncher) > -1 ? this.state.ccLauncher : ccSigned[0];
+    return { ccSigned, ccL: HOSTS.find(h => h.value === pick) };
+  }
+
+  pvVals(v) {
+    const st = this.state, p = this.props;
+    const ps = p.previewState ?? 'live', has = ps !== 'none', starting = ps === 'starting';
+    const mobile = (p.projectType ?? 'mobile app') === 'mobile app', dev = (st.pvDevice ?? (mobile ? 'phone' : 'desktop')) === 'phone';
+    const rowW = st.pvRowW || 1200, narrow = rowW < 872;
+    const open = has && (st.pvOpen ?? (narrow ? false : (mobile && (p.previewOpen ?? true))));
+    const maxed = !!st.pvMax && !dev, solo = open && (narrow || maxed);
+    const pvW = Math.max(360, Math.min(st.pvW || 440, rowW - 432));
+    const bodyH = st.pvBodyH || 760, bodyW = st.pvBodyW || 380;
+    const sc = Math.max(0.4, Math.min(0.82, (bodyH - 40) / 864, (bodyW - 40) / 410));
+    if (!this._pvRowRef) {
+      const obs = (key, fn) => el => {
+        if (this[key]) { this[key].disconnect(); this[key] = null; }
+        if (el && window.ResizeObserver) { this[key] = new ResizeObserver(() => fn(el)); this[key].observe(el); fn(el); }
+      };
+      this._pvRowRef = obs('_pvRowObs', el => { const w = Math.round(el.clientWidth); if (w !== this.state.pvRowW) this.setState({ pvRowW: w }); });
+      this._pvBodyRef = obs('_pvBodyObs', el => { const hh = Math.round(el.clientHeight), ww = Math.round(el.clientWidth); if (hh !== this.state.pvBodyH || ww !== this.state.pvBodyW) this.setState({ pvBodyH: hh, pvBodyW: ww }); });
+    }
+    const deploy = false;
+    const url = dev ? 'iPhone 15 · iOS 18' : 'localhost:5173';
+    const host = v.sessHost || ((st.session || {}).host) || 'the host';
+    const T = x => x ? 'true' : undefined;
+    const chat = st.sView === 'chat', sh = st.shared, shLink = 'oppenheimer.dev/s/k7f2-pricing';
+    const stop = e => e && e.stopPropagation && e.stopPropagation();
+    const surf = (id, label, desc, on, icon, kbd) => ({ id, label, desc, globe: T(id === 'browser'), phone: T(id === 'sim'), kbd, on: T(on), onS: on ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent',
+      pick: e => { stop(e); this.setState(on ? { pvOpen: false, pvMenu: false } : { pvDevice: id === 'sim' ? 'phone' : 'desktop', pvOpen: true, pvMenu: false }); } });
+    const browserOn = open && !dev, simOn = open && dev;
+    return {
+      pvDeskScale: String(Math.min(1, (st.pvBodyW || 440) / 1280)), pvDeskH: Math.round((st.pvBodyH || 600) / Math.min(1, (st.pvBodyW || 440) / 1280)) + 'px',
+      pvToggleLabel: open ? 'Hide preview' : 'Show preview', pvToggleBg: open ? 'var(--selected-surface)' : 'transparent', pvToggleFg: open ? 'var(--fg)' : 'var(--fg-muted)',
+      pvTabs: [{ id: 'browser', label: 'Browser' }, { id: 'sim', label: 'Simulator' }].map(t => { const on = t.id === 'sim' ? dev : !dev; return { label: t.label, globe: T(t.id === 'browser'), phone: T(t.id === 'sim'), onS: on ? 'true' : 'false', bg: on ? 'var(--card)' : 'transparent', shadow: on ? '0 0 0 1px var(--border-subtle)' : 'none', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: e => { stop(e); this.setState({ pvDevice: t.id === 'sim' ? 'phone' : 'desktop' }); } }; }),
+      sView: chat ? 'chat' : 'terminal', chatOn: T(chat), termOn: T(!chat),
+      viewTabs: [{ id: 'terminal', label: 'Terminal' }, { id: 'chat', label: 'Chat' }].map(t => { const on = (chat ? 'chat' : 'terminal') === t.id; return { label: t.label, onS: on ? 'true' : 'false', bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', shadow: on ? '0 0 0 1px var(--border-subtle)' : 'none', pick: e => { stop(e); this.setState({ sView: t.id }); } }; }),
+      pvMenuOpen: T(st.pvMenu), pvMenuS: st.pvMenu ? 'true' : 'false', pvMenuBg: st.pvMenu || open ? 'var(--hover-surface)' : 'transparent',
+      togglePvMenu: e => { stop(e); this.setState(s => ({ pvMenu: !s.pvMenu, shareOpen: false })); },
+      pvMenuLabel: browserOn ? 'Browser' : simOn ? 'Simulator' : 'Preview', pvMenuDot: starting ? 'var(--fg-subtle)' : 'var(--success)',
+      surfaces: [surf('browser', 'Browser', starting ? 'Waiting for localhost:5173…' : 'localhost:5173 · Vite dev server', browserOn, 'globe', 'B'), surf('sim', 'Simulator', starting ? 'Booting iPhone 15…' : 'iPhone 15 · iOS 18 · Expo', simOn, 'smartphone', 'M')],
+      pvNewTab: './SignIn.dc.html', pvPorts: 'Ports forwarded from ' + host + ' · 5173, 8081',
+      shareOpen: T(st.shareOpen), shareBg: st.shareOpen ? 'var(--hover-surface)' : 'transparent',
+      shareLabel: sh ? 'Shared' : 'Share', shareTitle: sh ? 'Shared · view only · link' : 'Share this session',
+      chatTitle: ((st.feed || []).find(f => f.you) || {}).text || v.attachName || 'this session',
+      chatSteps: (() => {
+        const ls = [];
+        (st.feed || []).forEach(f => { if (!f.you && f.lines) f.lines.forEach(l => {
+          let t = (l.text || '').trim(); if (!t || /^https?:\/\/\S+$/.test(t) || /^[`$#>]/.test(t)) return;
+          const m = /^([✓✗!●])\s*/.exec(t); ls.push({ text: m ? t.slice(m[0].length) : t, own: m ? m[1] : null });
+        }); });
+        const tail = ls.slice(-5);
+        return tail.map((x, i) => ({ text: x.text, mark: x.own || (i === tail.length - 1 ? '●' : '✓') }));
+      })(), shareIcon: sh ? 'eye' : 'users',
+      toggleShare: e => { stop(e); this.setState(s => ({ shareOpen: !s.shareOpen, pvMenu: false })); },
+      shared: T(sh), notShared: T(!sh), shLink,
+      startShare: e => { stop(e); this.setState({ shared: true }); },
+      stopShare: e => { stop(e); this.setState({ shared: false, shareOpen: false }); },
+      copyLink: e => { stop(e); try { navigator.clipboard.writeText('https://' + shLink); } catch (_) {} this.setState({ copied: true }); clearTimeout(this._cp); this._cp = setTimeout(() => this.setState({ copied: false }), 1600); },
+      copyLabel: st.copied ? 'Copied' : 'Copy',
+      closeMenus: () => (st.pvMenu || st.shareOpen) && this.setState({ pvMenu: false, shareOpen: false }),
+      stopProp: stop,
+      pvHas: T(has), pvOpen: T(open), pvOpenS: open ? 'true' : 'false',
+      pvGap: open && !solo ? '12px' : '0px', termMax: solo ? '0px' : open ? 'none' : v.frameMax,
+      termFlex: solo ? '0 0 0px' : '1 1 0', termMinW: solo ? '0px' : open ? '420px' : '0px',
+      pvFlex: solo ? '1 1 0' : '0 0 ' + pvW + 'px',
+      pvCanResize: T(open && !solo), pvMaxS: maxed ? 'true' : 'false', pvMaxLabel: maxed ? 'Restore beside the terminal' : 'Expand the browser',
+      pvMaxBg: maxed ? 'var(--selected-surface)' : 'transparent',
+      pvToggleMax: e => { if (e) e.stopPropagation(); this.setState(s => ({ pvMax: !s.pvMax })); },
+      pvDragDown: e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); this._pvDrag = { x: e.clientX, w: pvW }; this.setState({ pvDragging: true }); },
+      pvDragMove: e => { if (!this._pvDrag) return; const w = Math.round(this._pvDrag.w + (this._pvDrag.x - e.clientX)); this.setState({ pvW: Math.max(360, Math.min(w, (this.state.pvRowW || 1200) - 432)) }); },
+      pvDragUp: () => { this._pvDrag = null; this.setState({ pvDragging: false }); },
+      pvDragReset: () => this.setState({ pvW: 440 }),
+      pvHandleBg: st.pvDragging ? 'var(--primary)' : 'transparent',
+      pvRowRef: this._pvRowRef, pvBodyRef: this._pvBodyRef,
+      pvScale: String(sc), pvPct: Math.round(sc * 100) + '%',
+      pvPhoneW: Math.round(410 * sc) + 'px', pvPhoneH: Math.round(864 * sc) + 'px', pvDevHead: T(dev), pvWebHead: T(!dev),
+      pvBtnBg: open ? 'var(--selected-surface)' : 'transparent', pvBtnFg: open ? 'var(--fg)' : 'var(--fg-muted)', pvBtnIcon: open ? 'eye' : 'eye-off',
+      pvUrl: url, pvHost: host, pvHref: './SignIn.dc.html', pvSrc: './SignIn.dc.html', pvKey: 'pv' + (st.pvKey || 0),
+      pvWeb: T(has && !mobile), pvMobile: T(has && mobile),
+      pvTitle: mobile ? 'Simulator running on ' + host : starting ? 'Waiting for the dev server on ' + host : 'Open in browser · port 5173 forwarded from ' + host,
+      pvDot: starting ? 'var(--fg-subtle)' : 'var(--success)', pvDotAnim: starting ? 'op-pulse-dot 1.4s ease-in-out infinite' : 'none',
+      pvStarting: T(starting), pvPhoneLive: T(!starting && dev), pvDeskLive: T(!starting && !dev),
+      pvPhoneS: dev ? 'true' : 'false', pvDeskS: dev ? 'false' : 'true',
+      togglePv: () => this.setState({ pvOpen: !open }),
+      pvSetPhone: () => this.setState({ pvDevice: 'phone' }), pvSetDesk: () => this.setState({ pvDevice: 'desktop' }),
+      pvReload: () => this.setState(s => ({ pvKey: (s.pvKey || 0) + 1 })),
+    };
+  }
+
   renderVals() {
     const v = this._renderVals();
     const st = this.state, d = st.draft;
     const hostOn = !!st.addHost, projOn = !!st.projDlg;
     const back = st.section === 'routines' ? 'Automations' : st.view === 'new' ? 'New session' : 'Sessions';
-    const out = { ...v, projPageOpen: projOn ? 'true' : undefined, hostPageOpen: hostOn ? 'true' : undefined, pageBackLabel: back };
+    const out = { ...v, ...this.pvVals(v), projPageOpen: projOn ? 'true' : undefined, hostPageOpen: hostOn ? 'true' : undefined, pageBackLabel: back };
     if (!hostOn && !projOn) return out;
     if (projOn && d) {
       const lab = (list, val) => ((list.find(x => x.value === val) || {}).label || val);
@@ -2757,13 +2972,13 @@ class Component extends DCLogic {
         toggleProjMore: () => this.setState(x => ({ projMore: !x.projMore })),
         projMoreSum: st.projMore ? '' : lab(HOSTS, d.host) + ' · ' + lab(AGENTS, d.agent) + (d.repos.length ? ' · ' + nDef + ' cloned' : ''),
         projSelNone: d.repos.length ? undefined : 'true', projSelAny: d.repos.length ? 'true' : undefined,
-        projS1Done: d.repos.length && nDef ? 'true' : 'false', projS1Sum: s1,
+        projS1Done: !d.repos.length || nDef ? 'true' : 'false', projS1Sum: s1 || 'No repositories',
         projS2Done: d.host ? 'true' : 'false', projS2Sum: lab(HOSTS, d.host),
         projS3Done: d.agent ? 'true' : 'false', projS3Sum: lab(AGENTS, d.agent),
         projReady: v.projSaveBlocked ? 'false' : 'true',
         projRecap: v.projSaveBlocked
-          ? (!d.name.trim() ? 'Name the project, then pick its repositories.' : !d.repos.length ? 'Pick at least one repository.' : 'Mark at least one repository as default.')
-          : s1 + ' · ' + lab(HOSTS, d.host) + ' · ' + lab(AGENTS, d.agent),
+          ? (!d.name.trim() ? 'Name the project.' : 'Mark at least one repository as default.')
+          : (s1 ? s1 + ' · ' : 'No repositories · ') + lab(HOSTS, d.host) + ' · ' + lab(AGENTS, d.agent),
       });
     }
     if (hostOn) Object.assign(out, {
@@ -2815,17 +3030,19 @@ class Component extends DCLogic {
       .filter(s => (fProj === 'all' || s.project === fProj)
         && (project === 'all' || s.repo === project)
         && (fAgent === 'all' || s.agent === fAgent)
-        && (fHost === 'all' || s.host === fHost))
+        && (fHost === 'all' || s.host === fHost)
+        && (this.state.fBy === 'all' || (s.by || 'me') === this.state.fBy))
       .slice()
       .sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name)
         : sort === 'oldest' ? b.mins - a.mins : a.mins - b.mins);
     const find = (list, v) => ((list.find(o => o.value === v) || list[0] || {}).label || '');
-    const dirty = fProj !== 'all' || project !== 'all' || fAgent !== 'all' || fHost !== 'all';
+    const dirty = fProj !== 'all' || project !== 'all' || fAgent !== 'all' || fHost !== 'all' || this.state.fBy !== 'all';
     const activeFilters = [
       fProj !== 'all' && { key: 'fProj', label: find(PROJ_FILTER, fProj) },
       project !== 'all' && { key: 'project', label: find(PROJECTS, project) },
       fAgent !== 'all' && { key: 'fAgent', label: find(AGENT_FILTER, fAgent) },
       fHost !== 'all' && { key: 'fHost', label: find(HOST_FILTER, fHost) },
+      this.state.fBy !== 'all' && { key: 'fBy', label: 'By ' + find(BY_FILTER, this.state.fBy) },
     ].filter(Boolean).map(f => ({
       label: f.label,
       clear: e => { e.stopPropagation(); this.setState({ [f.key]: 'all' }); },
@@ -2837,28 +3054,51 @@ class Component extends DCLogic {
     const start = e => {
       if (e) e.stopPropagation();
       if (this.offlineHosts().indexOf(this.state.host) > -1) return;
+      if (isCloud(host)) {
+        // No terminal here: the session lives with the provider. Record it,
+        // open the provider's page, and leave the composer as it was.
+        const c = cloudOf(host);
+        const row = { key: 'c' + Date.now(), name: this.scopeShort(), state: c.status ? 'running' : 'unknown', age: 'now', mins: 0,
+          repo, agent: agentId, host, project: this.state.curProject, where: 'worktree', url: c.url };
+        this.setState(s => ({ mine: [row].concat(s.mine), open: null }));
+        window.open(c.url, '_blank', 'noopener');
+        return;
+      }
       clearInterval(this._tick);
+      const inFolder = this.state.where === 'folder';
       const row = {
         name: this.scopeShort(),
         state: 'waiting', age: 'now', mins: 0,
-        repo, agent: agentId, host, project: this.state.curProject,
+        repo: inFolder ? null : repo, agent: agentId, host, project: inFolder ? (this.state.folderProj || null) : this.state.curProject,
+        where: inFolder ? 'folder' : 'worktree',
       };
       this.setState(s => ({ mine: [row].concat(s.mine) }));
       this.setState({
         session: {
           label: this.scopeShort(),
           state: 'running',
-          meta: find(AGENTS, agentId) + ' · ' + find(models, this.state.model) + ' · ' + find(HOST_FILTER, host),
+          meta: [find(AGENTS, agentId), find(models, this.state.model), inFolder ? find(HOST_FILTER, host) + ':' + this.pathText() : find(HOST_FILTER, host)].filter(Boolean).join(' · '),
         },
-        view: 'terminal', open: null, files: [], recording: false, seconds: 0,
+        view: 'terminal', open: null, files: [], recording: false, seconds: 0, tpSrc: null,
       });
       this.runBoot();
     };
+    this._startFn = start;
     const itemOf = x => ({
 
         ...x,
 
         active: this.state.session && this.state.session.label === x.name ? 'true' : 'false',
+        isFolder: x.where === 'folder' ? 'true' : undefined,
+        isTree: x.where === 'folder' || isCloud(x.host) ? undefined : 'true',
+        cloud: isCloud(x.host) ? 'true' : undefined,
+        byBot: x.by ? 'true' : undefined, byTip: x.by ? 'Started by ' + BOT_NAME[x.by] : '',
+        logo: isCloud(x.host) ? cloudOf(x.host).icon : '',
+        tip: isCloud(x.host) ? 'Open in ' + cloudOf(x.host).label + (cloudOf(x.host).status ? '' : ' · no status after launch') : undefined,
+        open: e => {
+          if (isCloud(x.host)) { if (e) e.stopPropagation(); window.open(x.url || cloudOf(x.host).url, '_blank', 'noopener'); return; }
+          if (this._openTerm) this._openTerm(e);
+        },
 
         editing: this.state.editing === x.key ? 'true' : undefined,
 
@@ -2876,26 +3116,59 @@ class Component extends DCLogic {
         rename: e => { e.stopPropagation(); this.startRename(x.key); },
 
         move: e => { e.stopPropagation(); this.setState({ sessionMenu: null, moving: x.key, moveTo: x.project }); },
+        canTp: x.host === 'claude-cloud' ? 'true' : undefined,
+        teleport: e => { e.stopPropagation(); this.tpOpen({ key: x.key, from: 'session', name: x.name, repo: x.repo || 'xrp-mobile' }, e); },
+        teleportPick: e => { e.stopPropagation(); this.tpOpen({ key: x.key, from: 'session', name: x.name, repo: x.repo || 'xrp-mobile' }, e, true); },
 
         remove: e => { e.stopPropagation(); this.setState({ sessionMenu: null, deleting: x.key }); },
 
     });
     const cur = this.proj();
     const sq = (this.state.sQ || '').trim().toLowerCase();
-    const groups = this.state.projects.map(p => {
+    const groupsByProject = this.state.projects.map(p => {
       const list = sessions.filter(x => x.project === p.id && (!sq || (x.name || '').toLowerCase().indexOf(sq) !== -1 || (x.repo || '').toLowerCase().indexOf(sq) !== -1 || p.name.toLowerCase().indexOf(sq) !== -1));
       const isOpen = !!sq || !this.state.collapsed[p.id];
       return {
         id: p.id, name: p.name, count: list.length,
         open: isOpen ? 'true' : undefined, openS: isOpen ? 'true' : 'false',
-        current: view === 'new' && cur && cur.id === p.id ? 'true' : 'false',
+        current: view === 'new' && (this.state.where === 'folder' ? this.state.folderProj : cur && cur.id) === p.id ? 'true' : 'false',
         empty: list.length === 0 && !dirty ? 'true' : undefined,
         items: list.map(itemOf),
         toggle: e => { e.stopPropagation(); this.setState(st => ({ collapsed: { ...st.collapsed, [p.id]: !st.collapsed[p.id] } })); },
         newHere: e => { if (e) e.stopPropagation(); this.setState({ ...this.applyProject(p.id), view: 'new', open: null, filterOpen: false, accountOpen: false }); },
         settings: e => { e.stopPropagation(); this.openProjDlg(p.id); },
+        hasSettings: 'true',
       };
-    }).filter(g => !bare && (!(dirty || sq) || g.count > 0));
+    }).concat((() => {
+      // Folder sessions belong to a host, not a project — they get their own
+      // group, shown only once one exists.
+      const list = sessions.filter(x => x.where === 'folder' && !x.project && (!sq || (x.name || '').toLowerCase().indexOf(sq) !== -1));
+      if (!list.length) return [];
+      const isOpen = !!sq || !this.state.collapsed._folders;
+      return [{
+        id: '_folders', name: 'Host folders', count: list.length,
+        open: isOpen ? 'true' : undefined, openS: isOpen ? 'true' : 'false',
+        current: view === 'new' && this.state.where === 'folder' && !this.state.folderProj ? 'true' : 'false',
+        items: list.map(itemOf), hasSettings: undefined,
+        toggle: e => { e.stopPropagation(); this.setState(st => ({ collapsed: { ...st.collapsed, _folders: !st.collapsed._folders } })); },
+        newHere: e => { if (e) e.stopPropagation(); this.setState({ where: 'folder', folderProj: null, view: 'new', open: null, filterOpen: false, accountOpen: false }); },
+      }];
+    })());
+    const groupsByHost = RUN_ON.map(h => {
+      const gid = 'h:' + h.value;
+      const list = sessions.filter(x => x.host === h.value && (!sq || (x.name || '').toLowerCase().indexOf(sq) !== -1 || (x.repo || '').toLowerCase().indexOf(sq) !== -1 || h.label.toLowerCase().indexOf(sq) !== -1));
+      const isOpen = !!sq || !this.state.collapsed[gid];
+      return {
+        id: gid, name: h.label, count: list.length,
+        open: isOpen ? 'true' : undefined, openS: isOpen ? 'true' : 'false',
+        current: view === 'new' && this.state.host === h.value ? 'true' : 'false',
+        empty: list.length === 0 && !dirty ? 'true' : undefined,
+        items: list.map(itemOf), hasSettings: undefined,
+        toggle: e => { e.stopPropagation(); this.setState(st => ({ collapsed: { ...st.collapsed, [gid]: !st.collapsed[gid] } })); },
+        newHere: e => { if (e) e.stopPropagation(); this.setState({ host: h.value, view: 'new', open: null, filterOpen: false, accountOpen: false }); },
+      };
+    });
+    const groups = (this.state.groupBy === 'host' ? groupsByHost : groupsByProject).filter(g => !bare && (!(dirty || sq) || g.count > 0));
     const mv = this.state.moving ? allRows.find(x => x.key === this.state.moving) : null;
     const d = this.state.draft;
     const projSessions = allRows.filter(x => x.project === this.state.projDlg).length;
@@ -2911,12 +3184,89 @@ class Component extends DCLogic {
       bareS: bare && !this.state.mine.length ? 'true' : undefined,
       projectCount: this.state.projects.length,
       newProject: e => { if (e) e.stopPropagation(); this.openProjDlg(null); },
+      isWorktree: this.state.where === 'folder' ? undefined : 'true',
+      isFolder: this.state.where === 'folder' ? 'true' : undefined,
+      whereLabel: find(WHERE, this.state.where),
+      whereOpen: open === 'where',
+      toggleWhere: e => this.toggle('where', e),
+      whereOptions: WHERE.map(w => ({
+        ...w, selected: this.state.where === w.value ? 'true' : 'false',
+        // A cloud sandbox has no folder of yours to open.
+        ...(w.value === 'folder' && isCloud(host) ? { desc: 'Not available in cloud · pick a host' } : {}),
+        pick: e => { if (e) e.stopPropagation(); if (w.value === 'folder' && isCloud(host)) return; this.setState({ where: w.value, open: null }); },
+      })),
+      path: this.state.path,
+      setPath: e => this.setState({ path: e.target.value }),
+      ...(() => {
+        const h = this.state.host, raw = (this.state.path || '').trim();
+        const norm = raw.replace(/\/+$/, '') || '~';
+        // A complete folder path lists its children; anything else is read as
+        // “parent + the start of a name”, so typing filters as you go.
+        let dir = norm, frag = '';
+        if (!FS[norm] || /[^/]$/.test(raw) && !FS[norm]) {
+          const i = norm.lastIndexOf('/');
+          dir = i > 0 ? norm.slice(0, i) : '~';
+          frag = i > 0 ? norm.slice(i + 1) : (norm === '~' ? '' : norm.replace(/^~/, ''));
+        }
+        const exists = !!FS[norm];
+        const kids = (FS[dir] || []).filter(n => n.toLowerCase().indexOf(frag.toLowerCase()) === 0);
+        const recents = RECENT_DIRS[h] || [];
+        const close = () => this.setState({ open: null });
+        const parts = dir.split('/');
+        return {
+          pathText: norm,
+          pathTitle: exists ? norm.replace(/^~/, HOST_HOME[h] || '~') : norm + ' was not found on ' + this.hostName(),
+          pathMissing: exists ? undefined : 'true',
+          pathOpen: open === 'path',
+          togglePath: e => this.toggle('path', e),
+          pathKey: e => { if (e.key === 'Enter') { e.preventDefault(); if (exists) close(); } else if (e.key === 'Escape') close(); },
+          pathHostName: this.hostName(),
+          pathHostShort: '~ = ' + (HOST_HOME[h] || '~'),
+          showRecent: dir === '~' && !frag && recents.length ? 'true' : undefined,
+          recentRows: recents.map(([p, when]) => ({ key: p, path: p, when, pick: e => { e.stopPropagation(); this.setState({ path: p, open: null }); } })),
+          pathUp: dir !== '~' ? 'true' : undefined,
+          goUp: e => { e.stopPropagation(); this.setState({ path: parts.slice(0, -1).join('/') || '~' }); },
+          crumbs: parts.map((name, i) => ({
+            key: parts.slice(0, i + 1).join('/'), name, sep: i ? 'true' : undefined,
+            fg: i === parts.length - 1 ? 'var(--fg)' : 'var(--fg-muted)',
+            go: e => { e.stopPropagation(); this.setState({ path: parts.slice(0, i + 1).join('/') }); },
+          })),
+          pathRows: kids.map(n => {
+            const k = dir + '/' + n;
+            return { key: k, name: n, isRepo: GIT_DIRS[k] ? 'true' : undefined, branch: GIT_DIRS[k] || '', hasKids: (FS[k] || []).length ? 'true' : undefined,
+              pick: e => { e.stopPropagation(); this.setState({ path: k }); } };
+          }),
+          pathEmpty: kids.length ? undefined : 'true',
+          pathEmptyText: !FS[dir] ? 'No folder at ' + dir + ' on ' + this.hostName() + '.'
+            : frag ? 'No folder in ' + dir + ' starts with “' + frag + '”.' : 'No subfolders. Use this one, or go back up.',
+          pathFootNote: !exists ? 'Pick an existing folder. Nothing is created.'
+            : GIT_DIRS[norm] ? 'Git repository on ' + GIT_DIRS[norm] + '. Opened as it is, no new branch.' : 'Opened as it is. Nothing is cloned.',
+          useLabel: exists ? 'Use ' + (norm.split('/').pop() || '~') : 'Use folder',
+          useOff: !exists, useOpacity: exists ? 1 : 0.4,
+          usePath: e => { e.stopPropagation(); if (exists) close(); },
+        };
+      })(),
       projLabel: bare ? 'No project' : cur ? cur.name : 'Project',
       projOpen: open === 'proj',
       toggleProj: e => this.toggle('proj', e),
+      ...(() => {
+        const fp = this.state.projects.find(p => p.id === this.state.folderProj);
+        const pick = id => e => { e.stopPropagation(); this.setState({ folderProj: id, open: null }); };
+        return {
+          fprojLabel: fp ? fp.name : 'No project',
+          fprojFg: fp ? 'var(--fg)' : 'var(--fg-muted)',
+          fprojOpen: open === 'fproj',
+          toggleFproj: e => this.toggle('fproj', e),
+          fprojPick: [{ key: '_none', name: 'No project', desc: 'Listed under Host folders', selected: fp ? undefined : 'true', pick: pick(null) }]
+            .concat(this.state.projects.map(p => ({
+              key: p.id, name: p.name, desc: 'Listed under ' + p.name + ' · nothing is cloned',
+              selected: fp && fp.id === p.id ? 'true' : undefined, pick: pick(p.id),
+            }))),
+        };
+      })(),
       projPick: (bare ? [] : this.state.projects).map(p => ({
         name: p.name,
-        desc: p.repos.length + (p.repos.length === 1 ? ' repository' : ' repositories') + ' · ' + find(HOSTS, p.host),
+        desc: (p.repos.length ? p.repos.length + (p.repos.length === 1 ? ' repository' : ' repositories') : 'No repositories · opens as a folder session') + ' · ' + find(HOSTS, p.host),
         selected: cur && cur.id === p.id ? 'true' : undefined,
         pick: e => { e.stopPropagation(); this.setState({ ...this.applyProject(p.id), open: null }); },
       })),
@@ -3021,7 +3371,7 @@ class Component extends DCLogic {
       setProjInstr: e => this.patchDraft({ instructions: e.target.value }),
       projInstrCount: d ? d.instructions.length.toLocaleString('en-US') : '0',
       projSaveLabel: this.state.projDlg === 'new' ? 'Create project' : 'Save changes',
-      projSaveBlocked: !d || !d.name.trim() || d.repos.length === 0 || d.repos.some(x => !x.base.trim()),
+      projSaveBlocked: !d || !d.name.trim() || (d.repos.length > 0 && !d.repos.some(x => x.def !== false)) || d.repos.some(x => !x.base.trim()),
       projDeleteBlocked: projSessions > 0,
       projDeleteHint: projSessions > 0 ? 'Move or delete its ' + projSessions + (projSessions === 1 ? ' session' : ' sessions') + ' first' : 'Delete this project',
       closeProj: () => this.setState({ projDlg: null, draft: null }),
@@ -3051,28 +3401,45 @@ class Component extends DCLogic {
       isEmpty: view === 'terminal' && !hasSession,
       hasSession,
       startSession: start,
+      startFromComposer: cfg => {
+        const host = cfg.cloud ? (cfg.cloud.indexOf('cur-') === 0 ? 'cursor' : cfg.cloud.indexOf('cx-') === 0 ? 'codex-cloud' : 'claude-cloud') : cfg.host;
+        const name = (cfg.text || '').trim().split('\n')[0].slice(0, 44) || cfg.scope;
+        if (cfg.cloud) {
+          const c = (isCloud(host) && cloudOf(host)) || { url: host === 'codex-cloud' ? 'https://chatgpt.com/codex' : 'https://cursor.com/agents' };
+          const row = { key: 'c' + Date.now(), name, state: c.status ? 'running' : 'unknown', age: 'now', mins: 0, repo: cfg.repo, agent: cfg.agent, host, project: this.state.curProject, where: 'worktree', url: c.url };
+          this.setState(s => ({ mine: [row].concat(s.mine), open: null }));
+          window.open(c.url, '_blank', 'noopener');
+          return;
+        }
+        clearInterval(this._tick);
+        const tree = cfg.where === 'worktree';
+        const row = { name, state: 'waiting', age: 'now', mins: 0, repo: tree ? cfg.repo : null, agent: cfg.agent, host, project: this.state.curProject, where: tree ? 'worktree' : 'folder' };
+        this.setState(s => ({ mine: [row].concat(s.mine) }));
+        this.setState({ session: { label: name, state: 'running', meta: cfg.meta }, view: 'terminal', open: null, files: [], recording: false, seconds: 0, tpSrc: null });
+        this.runBoot();
+      },
 
       // The label names the phase the boot is actually in, so a slow step
       // still says which one is slow — without drawing a chart about it.
-      bootPhase: BOOT_STEPS[this.state.bootStep]
-        ? BOOT_STEPS[this.state.bootStep].phase(this)
+      bootPhase: this.bootList()[this.state.bootStep]
+        ? this.bootList()[this.state.bootStep].phase(this)
         : 'Ready',
       provisionHost: this.hostName(),
       provisionSub: this.scopeShort(),
       bootElapsed: (this.state.bootMs / 1000).toFixed(1) + 's',
-      bootSteps: BOOT_STEPS.map((b, i) => ({
+      bootSteps: this.bootList().map((b, i) => ({
         label: b.label(this),
         meta: i < this.state.bootStep ? b.done : i === this.state.bootStep ? b.doing : '',
         state: i < this.state.bootStep ? 'done' : i === this.state.bootStep ? 'running' : 'pending',
         mark: i < this.state.bootStep ? '✓' : '',
         // The first clone on a host is the one slow step — say so where it
         // happens, and only while it is happening.
-        note: i === 1 && i === this.state.bootStep && this.props.firstClone !== false
+        note: !this.state.tpSrc && this.state.where !== 'folder' && i === 1 && i === this.state.bootStep && this.props.firstClone !== false
           ? 'First session on ' + this.hostName() + ' with this repository, so it downloads in full once. Later sessions here start in about a second.'
           : '',
       })),
       openNew: e => { if (e) e.stopPropagation(); this.setState({ view: 'new', open: null, filterOpen: false, accountOpen: false }); },
-      openTerminal: e => {
+      openTerminal: this._openTerm = e => {
         if (e) e.stopPropagation();
         this.setState(st => ({
           view: 'terminal',
@@ -3094,7 +3461,8 @@ class Component extends DCLogic {
       // sidebar. Expand zooms the pane over the rail, Esc returns.
       zoomed: this.state.zoom,
       notZoomed: !this.state.zoom,
-      sidebarWidth: this.state.zoom ? '0px' : '264px',
+      sidebarWidth: this.state.zoom || this.state.sideHidden ? '0px' : '264px',
+      sideOpenS: this.state.sideHidden ? 'false' : 'true', sideLabel: this.state.sideHidden ? 'Show sidebar' : 'Hide sidebar', toggleSide: () => this.setState(s => ({ sideHidden: !s.sideHidden })),
       framePad: this.state.zoom ? '0px' : '14px',
       // Output is read like prose — the pane caps at a comfortable measure and
       // centres, rather than stretching mono text across a 27" display.
@@ -3130,6 +3498,28 @@ class Component extends DCLogic {
 
       confirmDelete: () => this.setState(st => ({ deleted: st.deleted.concat([st.deleting]), deleting: null })),
       sessionCount: sessions.length,
+      ...(() => {
+        const tp = this.state.tp, mode = this.props.teleportUI || 'dialog', last = this.state.tpLast || 'optimus', off = this.offlineHosts();
+        return {
+          tpSingle: mode === 'quick' ? undefined : 'true', tpSplit: mode === 'quick' ? 'true' : undefined,
+          tpQuickLabel: 'Teleport to ' + hostLbl(last), tpMenuLabel: mode === 'quick' ? 'Teleport to ' + hostLbl(last) : 'Teleport to host…',
+          tpDlgOpen: tp && !tp.pop ? 'true' : undefined, tpPopOpen: tp && tp.pop ? 'true' : undefined,
+          tpPopX: tp && tp.pop ? tp.pop.x + 'px' : '0px', tpPopY: tp && tp.pop ? tp.pop.y + 'px' : '0px',
+          tpName: tp ? tp.name : '', tpCmd: tp ? 'claude --teleport ' + tp.sid : '', tpBranch: tp ? tp.branch : '',
+          tpHostLabel: tp ? hostLbl(tp.host) : '', tpPath: tp ? '~/code/' + tp.repo : '',
+          tpHosts: HOSTS.map(h => {
+            const isOff = off.indexOf(h.value) > -1, sel = !!tp && tp.host === h.value;
+            return { label: h.label, desc: isOff ? 'Offline · last seen 2 days ago' : h.desc, opacity: isOff ? 0.45 : 1,
+              selS: sel ? 'true' : 'false', offB: isOff ? true : undefined, offD: isOff ? 'true' : undefined,
+              pick: e => { if (e) e.stopPropagation(); if (!isOff) this.setState(s => ({ tp: { ...s.tp, host: h.value } })); },
+              go: e => { if (e) e.stopPropagation(); if (!isOff && tp) this.teleportTo(tp, h.value); } };
+          }),
+          tpClose: () => this.setState({ tp: null }),
+          tpGo: e => { if (e) e.stopPropagation(); if (tp) this.teleportTo(tp, tp.host); },
+          tpCopy: e => { if (e) e.stopPropagation(); if (tp && navigator.clipboard) navigator.clipboard.writeText('claude --teleport ' + tp.sid).catch(() => {}); this.setState({ tpCopied: true }); clearTimeout(this._tpc); this._tpc = setTimeout(() => this.setState({ tpCopied: false }), 1400); },
+          tpCopyLabel: this.state.tpCopied ? 'Copied' : 'Copy',
+        };
+      })(),
       noMatches: !bare && dirty && sessions.length === 0,
 
       filterOpen: filterOpen ? 'true' : undefined,
@@ -3143,15 +3533,23 @@ class Component extends DCLogic {
 
       menuRoot: !menu ? 'true' : undefined,
       menuDetail: menu ? 'true' : undefined,
-      menuTitle: menu ? ({ fProj: 'Project', project: 'Repository', fAgent: 'Agent', fHost: 'Host', sort: 'Sort by' })[menu] : '',
-      menuOptions: menu ? this.facet(menu, ({ fProj: PROJ_FILTER, project: PROJECTS, fAgent: AGENT_FILTER, fHost: HOST_FILTER, sort: SORTS })[menu]) : [],
+      menuTitle: menu ? ({ fProj: 'Project', project: 'Repository', fAgent: 'Agent', fHost: 'Host', fBy: 'Started by', sort: 'Sort by', groupBy: 'Group by' })[menu] : '',
+      menuOptions: menu ? this.facet(menu, ({ fProj: PROJ_FILTER, project: PROJECTS, fAgent: AGENT_FILTER, fHost: HOST_FILTER, fBy: BY_FILTER, sort: SORTS, groupBy: GROUP_BY })[menu]) : [],
       backToRoot: e => { e.stopPropagation(); this.setState({ menu: null }); },
       openProjMenu: e => { e.stopPropagation(); this.setState({ menu: 'fProj' }); },
       openRepoMenu: e => { e.stopPropagation(); this.setState({ menu: 'project' }); },
       openAgentMenu: e => { e.stopPropagation(); this.setState({ menu: 'fAgent' }); },
       openHostMenu: e => { e.stopPropagation(); this.setState({ menu: 'fHost' }); },
+      openByMenu: e => { e.stopPropagation(); this.setState({ menu: 'fBy' }); },
+      byFilterLabel: find(BY_FILTER, this.state.fBy),
       openSortMenu: e => { e.stopPropagation(); this.setState({ menu: 'sort' }); },
-      clearFilters: e => { e.stopPropagation(); this.setState({ fProj: 'all', project: 'all', fAgent: 'all', fHost: 'all' }); },
+      openGroupMenu: e => { e.stopPropagation(); this.setState({ menu: 'groupBy' }); },
+      groupByLabel: find(GROUP_BY, this.state.groupBy),
+      listHeadTitle: this.state.groupBy === 'host' ? 'Hosts' : 'Projects',
+      listHeadCount: this.state.groupBy === 'host' ? HOSTS.length : this.state.projects.length,
+      listHeadAddLabel: this.state.groupBy === 'host' ? 'Add host' : 'New project',
+      listHeadAdd: e => { if (e) e.stopPropagation(); if (this.state.groupBy === 'host') window.location.href = './AddHost.dc.html'; else this.openProjDlg(null); },
+      clearFilters: e => { e.stopPropagation(); this.setState({ fProj: 'all', project: 'all', fAgent: 'all', fHost: 'all', fBy: 'all' }); },
 
       projFilterLabel: find(PROJ_FILTER, fProj),
       repoFilterLabel: find(PROJECTS, project),
@@ -3160,7 +3558,17 @@ class Component extends DCLogic {
       sortLabel: find(SORTS, sort),
       activeFilters,
 
-      hostLabel: bare ? 'Add a host' : find(HOSTS, host) + (this.offlineHosts().indexOf(host) > -1 ? ' · offline' : ''),
+      hostLabel: bare ? 'Add a host' : isCloud(host) ? 'Cloud' : find(RUN_ON, host) + (this.offlineHosts().indexOf(host) > -1 ? ' · offline' : ''),
+      hostIsCloud: isCloud(host) ? 'true' : undefined,
+      hostIsHost: isCloud(host) ? undefined : 'true',
+      hostLogo: isCloud(host) ? cloudOf(host).icon : '',
+      cloudOptions: this.options(CLOUD, 'host').map(o => ({ ...o, pick: e => {
+        if (e) e.stopPropagation();
+        this.setState({ host: o.value, open: null, query: '', where: 'worktree',
+          ...(o.value === 'claude-cloud' && this.state.agentId !== 'claude-code' ? { agentId: 'claude-code', model: HARNESS_MODELS['claude-code'].primary[0].value } : {}) });
+      } })),
+      hasCloudOpts: this.options(CLOUD, 'host').length ? 'true' : undefined,
+      hasHostOpts: !bare && this.options(HOSTS, 'host').length ? 'true' : undefined,
       // Offline hosts stay listed so the choice is visible, but can't be
       // picked: a session needs a live runner to start.
       hostOptions: bare ? [] : this.options(HOSTS, 'host').map(o => this.offlineHosts().indexOf(o.value) > -1
@@ -3168,9 +3576,23 @@ class Component extends DCLogic {
         : { ...o, off: undefined, opacity: 1, cursor: 'pointer' }),
       sendOff: this.offlineHosts().indexOf(host) > -1,
       sendOpacity: this.offlineHosts().indexOf(host) > -1 ? 0.4 : 1,
-      sendTitle: this.offlineHosts().indexOf(host) > -1 ? find(HOSTS, host) + ' is offline — pick another host' : 'Start session',
+      sendTitle: this.offlineHosts().indexOf(host) > -1 ? find(HOSTS, host) + ' is offline — pick another host' : isCloud(host) ? 'Start in ' + cloudOf(host).label + ' · opens in a new tab' : 'Start session',
       hostOpen: open === 'host',
       toggleHost: e => this.toggle('host', e),
+      hostIsCC: host === 'claude-cloud' ? 'true' : undefined,
+      envOpen: open === 'env',
+      toggleEnv: e => this.toggle('env', e),
+      envLabel: (CLOUD_ENVS.find(o => o.value === (this.state.env || 'default')) || CLOUD_ENVS[0]).label + (this.ccInfo().ccL ? ' · via ' + this.ccInfo().ccL.label : ' · no host'),
+      ccNoLauncher: this.ccInfo().ccL ? undefined : 'true',
+      ccLaunchers: HOSTS.map(h => {
+        const { ccL, ccSigned } = this.ccInfo();
+        const ok = ccSigned.indexOf(h.value) > -1, sel = !!ccL && ccL.value === h.value;
+        return { label: h.label, desc: ok ? 'Claude Code signed in' : 'Claude Code not signed in', selected: sel ? 'true' : 'false', off: ok ? undefined : 'true',
+          dot: ok ? 'var(--success)' : 'var(--fg-subtle)', opacity: ok ? '1' : '0.5', cursor: ok ? 'pointer' : 'default',
+          pick: e => { if (e) e.stopPropagation(); if (ok) this.setState({ ccLauncher: h.value, open: null }); } };
+      }),
+      envOptions: CLOUD_ENVS.map(o => ({ ...o, selected: (this.state.env || 'default') === o.value ? 'true' : 'false',
+        pick: e => { if (e) e.stopPropagation(); this.setState({ env: o.value, open: null }); } })),
 
       repoLabel: find(REPOS, repo),
       stopClick: e => e.stopPropagation(),

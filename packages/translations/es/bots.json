@@ -205,7 +205,14 @@
       "peerAsk": "<bot>{{name}}</bot> preguntó",
       "peerAnswered": "<bot>{{name}}</bot> respondió",
       "peerFailed": "<bot>{{name}}</bot> no pudo responder",
-      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
+      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder",
+      "session": {
+        "needsInput": "La sesión «{{name}}» necesita una respuesta",
+        "completed": "La sesión «{{name}}» ha terminado",
+        "failed": "La sesión «{{name}}» ha fallado",
+        "cancelled": "La sesión «{{name}}» se detuvo",
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+      }
     },
     "routineReason": {
       "expired": "esperó demasiado para empezar",
@@ -286,6 +293,8 @@
       "discard": "Descartar",
       "save": "Guardar revisión",
       "saving": "Guardando…",
+      "saved": "Guardado · revisión {{revision}}",
+      "unsaved": "Cambios sin guardar",
       "saveFailed": "No se ha podido guardar la revisión.",
       "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
       "reload": "Recargar",

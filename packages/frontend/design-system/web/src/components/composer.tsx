@@ -176,20 +176,12 @@ function Composer({
         {attachments && attachments.length > 0 ? (
           <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
             {attachments.map((file) => (
-              <span
+              <ComposerFile
                 key={file.id}
-                className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.25 text-xs text-fg-muted"
-              >
-                <span className="truncate">{file.name}</span>
-                <button
-                  type="button"
-                  aria-label={label.removeAttachment(file.name)}
-                  onClick={() => onRemoveAttachment?.(file.id)}
-                  className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
-                >
-                  <XIcon className="size-3" />
-                </button>
-              </span>
+                name={file.name}
+                removeLabel={label.removeAttachment(file.name)}
+                onRemove={() => onRemoveAttachment?.(file.id)}
+              />
             ))}
           </div>
         ) : null}
@@ -302,5 +294,47 @@ function ComposerToolButton({
   );
 }
 
-export { Composer, ComposerToolButton };
+/**
+ * ComposerFile — one file a composer holds for the next message, as a 26px
+ * chip on the control fill: its name, truncated past 220px, and the cross
+ * that takes it off. `Composer` draws its attachments with it; a
+ * `ChatComposer` whose files are not all images puts them in its
+ * `attachments` slot.
+ */
+function ComposerFile({
+  name,
+  removeLabel,
+  onRemove,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'span'>, 'children'> & {
+  name: string;
+  /** What a screen reader hears on the cross: "Remove trace.png". */
+  removeLabel: string;
+  onRemove?: () => void;
+}) {
+  return (
+    <span
+      data-slot="composer-file"
+      className={cn(
+        'flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.25 text-xs text-fg-muted',
+        className,
+      )}
+      {...props}
+    >
+      <span className="truncate">{name}</span>
+      <button
+        type="button"
+        aria-label={removeLabel}
+        title={removeLabel}
+        onClick={onRemove}
+        className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
+      >
+        <XIcon className="size-3" />
+      </button>
+    </span>
+  );
+}
+
+export { Composer, ComposerFile, ComposerToolButton };
 export type { ComposerAttachment, ComposerLabels };

@@ -5,6 +5,7 @@ import {
   BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
+  BOT_SESSION_WAKE_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotAttachment,
   type BotMessageEvent,
@@ -23,6 +24,7 @@ import {
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotRoutineEventResponseDto,
+  BotSessionEventResponseDto,
 } from './dtos/bot-message.response.dto';
 
 @Injectable()
@@ -191,6 +193,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerMessageEventResponseDto(), event);
     case 'bot_reply':
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
+    case 'session':
+      return Object.assign(new BotSessionEventResponseDto(), event);
   }
 }
 
@@ -236,6 +240,20 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       fromBotId: typeof raw.fromBotId === 'string' ? raw.fromBotId : null,
       fromBotName: String(raw.fromBotName ?? ''),
       outcome,
+    };
+  }
+  if (raw.kind === 'session') {
+    const state = BOT_SESSION_WAKE_STATES.find((known) => known === raw.state);
+    if (!state || typeof raw.subscriptionId !== 'string' || typeof raw.sessionId !== 'string') {
+      return null;
+    }
+    return {
+      kind: 'session',
+      subscriptionId: raw.subscriptionId,
+      sessionId: raw.sessionId,
+      sessionName: String(raw.sessionName ?? ''),
+      turn: typeof raw.turn === 'number' ? raw.turn : 0,
+      state,
     };
   }
   return null;

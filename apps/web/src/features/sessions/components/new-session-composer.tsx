@@ -5,22 +5,13 @@ import {
   useDictation,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
-import {
-  SESSION_CREATE_MAX_FILES,
-  SESSION_FILE_ACCEPT,
-  SESSION_FILE_MAX_BYTES,
-  sessionFileOffered,
-} from '@oppenheimer/shared/protocol';
+import { SESSION_CREATE_MAX_FILES, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useHeldFiles } from '../hooks/use-held-files';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
-
-/** One file the composer holds, keyed so two files with one name stay two chips. */
-interface HeldFile {
-  id: string;
-  file: File;
-}
+import { refusalText } from '../lib/session-files';
 
 /**
  * The composer of New session. **The task's text and files live here**, the
@@ -29,12 +20,10 @@ interface HeldFile {
  * leave once, on submit.
  *
  * Every way in — the paperclip, a paste, a drop on the screen's pane, which
- * hands its files here (`useReceiveDrops`) — goes through `hold` and one
- * rule, `sessionFileOffered`, shared with the running session's terminal: an
- * image, a PDF or text, or no type at all (a pasted screenshot often has
- * none; the API judges the bytes). A file is refused for that, for size or for count,
- * with the reason under the field, never silently dropped. A paste with no
- * file is left to the field.
+ * hands its files here (`useReceiveDrops`) — goes through `useHeldFiles`,
+ * the rule the chat's composer holds files by too. A file it refuses, for
+ * its type, its size or the count, is said under the field, never silently
+ * dropped. A paste with no file is left to the field.
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
@@ -67,31 +56,12 @@ export function NewSessionComposer({
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
-  const [files, setFiles] = useState<HeldFile[]>([]);
-  const [refusal, setRefusal] = useState<string | null>(null);
+  const { files, refusal, hold, release } = useHeldFiles(SESSION_CREATE_MAX_FILES);
   const picker = useRef<HTMLInputElement>(null);
   const dictation = useDictation({
     voice,
     onText: dictateInto(setDraft),
   });
-
-  function hold(incoming: File[]) {
-    const accepted: HeldFile[] = [];
-    let reason: string | null = null;
-    for (const file of incoming) {
-      if (!sessionFileOffered(file)) {
-        reason = t('sessions.new.composer.attachNotSupported', { name: file.name });
-      } else if (file.size > SESSION_FILE_MAX_BYTES) {
-        reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
-      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_FILES) {
-        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_FILES });
-      } else {
-        accepted.push({ id: crypto.randomUUID(), file });
-      }
-    }
-    setRefusal(reason);
-    if (accepted.length > 0) setFiles((held) => [...held, ...accepted]);
-  }
 
   useReceiveDrops(hold);
 
@@ -136,10 +106,7 @@ export function NewSessionComposer({
           removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
         }}
         attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
-        onRemoveAttachment={(id) => {
-          setRefusal(null);
-          setFiles((held) => held.filter((file) => file.id !== id));
-        }}
+        onRemoveAttachment={(id) => release([id])}
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
         dictation={dictationSlots(dictation)}
@@ -159,7 +126,11 @@ export function NewSessionComposer({
           // and its files where their author can fix them and send again.
         }}
       />
-      {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}
+      {refusal ? (
+        <FieldError className="mx-4.5">
+          {refusalText(refusal, t, 'sessions.new.composer')}
+        </FieldError>
+      ) : null}
     </div>
   );
 }

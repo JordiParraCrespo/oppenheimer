@@ -8,6 +8,7 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
+import type { FileHandOff } from './file-hand-off';
 
 /** How a session pane reads its session: the grid, or the chat (0.7). */
 export type SessionView = 'terminal' | 'chat';
@@ -22,6 +23,18 @@ export interface PaneReading {
   view: SessionView;
   onViewChange: (view: SessionView) => void;
   cover: ReactNode;
+  /**
+   * Where the files the pane catches go while the chat shows, when its
+   * composer takes files: a drop on the pane or a paste on the chat becomes
+   * a chip on the next message rather than a path in the agent's prompt.
+   */
+  files?: FileHandOff;
+}
+
+/** What the chat's composer needs to carry files: the session they go to, and the pane's hand-off. */
+export interface ChatAttach {
+  sessionId: string;
+  files: FileHandOff;
 }
 
 /** A file a turn changed, its line counts summed over every edit to it. */
@@ -35,7 +48,7 @@ export interface ChangedFile {
  * How a turn of the chat view is drawn: its steps in blocks. A run of tool
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
  * commands"), the way Synara and Codex fold work; a plan is a card of its
- * own; a turn that has settled after changing files ends on the card that
+ * own, and so are questions the agent asked, with what was answered; a turn that has settled after changing files ends on the card that
  * lists them, as Codex's does. The task list is not here: the composer keeps
  * it (`latestTodos`), because each `TodoWrite` restates the whole list.
  */
@@ -44,6 +57,7 @@ export type ChatBlock =
   | { kind: 'thinking'; id: string; text: string; seconds: number | null }
   | { kind: 'tools'; id: string; calls: ChatToolCall[] }
   | { kind: 'plan'; id: string; call: ChatToolCall }
+  | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
   | { kind: 'changes'; id: string; files: ChangedFile[] };
 
@@ -82,6 +96,9 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       if (step.call.kind === 'plan' && step.call.plan) {
         return { kind: 'plan', id: step.id, call: step.call };
       }
+      if (step.call.kind === 'question' && step.call.questions?.length) {
+        return { kind: 'question', id: step.id, call: step.call };
+      }
       return { kind: 'tools', id: step.id, calls: [step.call] };
   }
 }
@@ -112,6 +129,22 @@ function changedFiles(steps: readonly ChatStep[]): ChangedFile[] {
     files.set(file.path, file);
   }
   return [...files.values()];
+}
+
+/**
+ * The questions the agent is stopped on, if any: the newest call in the
+ * last turn that asks and has no answer yet. While it waits, Claude Code's
+ * picker holds the terminal's input, so the chat answers it in the
+ * composer's place rather than type a message into the picker.
+ */
+export function pendingQuestion(turn: ChatTurn | undefined): ChatToolCall | null {
+  if (!turn?.working) return null;
+  for (let i = turn.steps.length - 1; i >= 0; i -= 1) {
+    const step = turn.steps[i];
+    if (step?.kind !== 'tool' || step.call.kind !== 'question') continue;
+    return step.call.status === 'running' && step.call.questions?.length ? step.call : null;
+  }
+  return null;
 }
 
 /** The task list the agent last wrote in a turn, which the composer keeps in reach. */
