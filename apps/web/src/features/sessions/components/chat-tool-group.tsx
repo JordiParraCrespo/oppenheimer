@@ -8,10 +8,11 @@ import { ChatToolTarget } from './chat-tool-target';
 import { ElapsedClock } from './elapsed-clock';
 
 /**
- * A run of calls the agent made one after another. Settled, it folds into
- * one line that counts them by verb under the glyph they share, the failures
- * in red; while the agent is still in it, the calls are drawn open, and the
- * one in flight says what it is doing now, in the present tense, with its
+ * A run of calls the agent made one after another, folded into one line that
+ * counts them by verb under the glyph they share, the failures in red; the
+ * line opens to the calls. It stays folded while the agent is still in it,
+ * so a long run never pushes its words off screen: the call in flight is the
+ * line under it, saying what it is doing now, in the present tense, with its
  * clock running.
  */
 export function ChatToolGroup({ calls, live }: { calls: ChatToolCall[]; live: boolean }) {
@@ -32,7 +33,6 @@ export function ChatToolGroup({ calls, live }: { calls: ChatToolCall[]; live: bo
           icon={<Icon />}
           summary={summaryOf(done, t)}
           failed={failed > 0 ? t('sessions.chat.failed', { count: failed }) : undefined}
-          defaultOpen={live}
         >
           {done.map((call) => (
             <ChatToolRow key={call.id} call={call} />

@@ -108,8 +108,9 @@ export function SessionChatSend({
           key={question.id}
           questions={question.questions}
           onAnswer={(answers) => {
-            if (question.questions) chat.answer(question.questions, answers);
-            onSent();
+            const went = question.questions ? chat.answer(question.questions, answers) : false;
+            if (went) onSent();
+            return went;
           }}
           onDismiss={() => chat.interrupt()}
         />

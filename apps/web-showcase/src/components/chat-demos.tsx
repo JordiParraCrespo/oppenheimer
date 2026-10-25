@@ -765,6 +765,7 @@ function ChatDecisionsBody() {
       </div>
       <ComposerApprovalDemo />
       <QuestionPanel
+        header="Base branch"
         question="Which branch should the pull request target?"
         index={0}
         total={2}
@@ -795,6 +796,7 @@ function QuestionPanelSeveralDemo() {
   const [picks, setPicks] = React.useState<number[]>([0, 2]);
   return (
     <QuestionPanel
+      header="Platforms"
       question="Which platforms should it target?"
       index={1}
       total={2}

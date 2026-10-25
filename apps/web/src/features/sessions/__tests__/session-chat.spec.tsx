@@ -447,11 +447,153 @@ describe('questions the agent asks', () => {
     expect(screen.getByText('sessions.chat.question.dismissed')).toBeTruthy();
   });
 
+  const lone = entry({
+    type: 'assistant',
+    uuid: 'a2',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'q2',
+          name: 'AskUserQuestion',
+          input: {
+            questions: [
+              {
+                header: 'Scope',
+                question: 'What should it cover?',
+                multiSelect: false,
+                options: [{ label: 'Tokens' }, { label: 'Components' }],
+              },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  it('answers a lone question with one pick, by its number from where focus lands', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, lone] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    expect(screen.getByText('Scope')).toBeTruthy();
+    // Focus is on the first option, so the number keys answer without a click.
+    const first = screen.getByRole('button', { name: /Tokens/ });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: '2' });
+    act(() => vi.runAllTimers());
+    // The picker sends a lone one-choice question on the pick: no review to confirm.
+    expect(typed).toEqual(['2']);
+    expect(screen.getAllByText('sessions.chat.question.sending').length).toBeGreaterThan(0);
+    vi.useRealTimers();
+  });
+
+  it('moves on with Enter from an answer in the person’s own words', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, lone] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    const own = screen.getByLabelText('sessions.chat.question.ownAnswerLabel');
+    fireEvent.keyDown(own, { key: 'Enter' });
+    expect(typed).toEqual([]);
+    fireEvent.change(own, { target: { value: 'Only icons' } });
+    fireEvent.keyDown(own, { key: 'Enter' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['3', 'Only icons', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('keeps the answers to send again when nothing is there to type them', () => {
+    const chat = new Chat();
+    chat.apply({ reset: true, entries: [prompt, lone] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /Components/ }));
+    expect(screen.queryByText('sessions.chat.question.sending')).toBeNull();
+    const submit = screen.getByRole('button', { name: 'sessions.chat.question.submit' });
+    expect((submit as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('shows a watcher that the agent is waiting, with nothing to answer it with', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt, ask] });
     render(<SessionChat chat={chat} readOnly />);
     expect(screen.getByText('sessions.chat.question.waiting')).toBeTruthy();
     expect(screen.queryByText('What should it cover?')).toBeNull();
+  });
+});
+
+describe('a long conversation', () => {
+  const turn = (n: number) => [
+    entry({ type: 'user', uuid: `u${n}`, message: { role: 'user', content: `Prompt ${n}` } }),
+    entry({
+      type: 'assistant',
+      uuid: `a${n}`,
+      message: { role: 'assistant', content: [{ type: 'text', text: `Reply ${n}` }] },
+    }),
+  ];
+
+  it('draws its latest turns and the earlier ones on asking, a page at a time', () => {
+    const chat = new Chat();
+    chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    expect(screen.getByText('Prompt 90')).toBeTruthy();
+    expect(screen.getByText('Prompt 51')).toBeTruthy();
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":40\}/ }));
+    expect(screen.getByText('Prompt 11')).toBeTruthy();
+    expect(screen.queryByText('Prompt 10')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":10\}/ }));
+    expect(screen.getByText('Prompt 1')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /sessions.chat.earlier/ })).toBeNull();
+  });
+});
+
+describe('the work in a turn', () => {
+  const call = (id: string, file: string) => ({
+    type: 'tool_use',
+    id,
+    name: 'Read',
+    input: { file_path: file },
+  });
+
+  it('keeps a run of calls folded to its summary while the agent is still in it', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Look around' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a',
+          message: {
+            role: 'assistant',
+            content: [call('t1', 'a.ts'), call('t2', 'b.ts'), call('t3', 'c.ts')],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [
+              { type: 'tool_result', tool_use_id: 't1', content: 'a' },
+              { type: 'tool_result', tool_use_id: 't2', content: 'b' },
+            ],
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    // The two done are one folded line; the one in flight says so under it.
+    const summary = screen.getByRole('button', { name: /sessions\.chat\.summary\.read/i });
+    expect(summary.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('a.ts')).toBeNull();
+    expect(screen.getByText('c.ts')).toBeTruthy();
   });
 });

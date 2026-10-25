@@ -141,12 +141,26 @@ const QUESTION_KEY_GAP_MS = 120;
  */
 export class SessionChat {
   private entries: unknown[] = [];
+  /**
+   * The turns a later prompt has closed, built once and kept by identity: a
+   * batch rebuilds only the open turn, so a long conversation costs each
+   * line the length of its last turn, not of the whole transcript.
+   */
+  private closed: ChatTurn[] = [];
+  /** The calls in those turns, to notice a result that lands on one. */
+  private closedCalls = new Set<string>();
+  /** The entry the open turn starts at. */
+  private openFrom = 0;
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
 
   apply(batch: ChatBatch): void {
-    if (batch.reset) this.entries = [];
+    if (batch.reset) {
+      this.entries = [];
+      this.reopen();
+    }
+    const from = this.entries.length;
     for (const raw of batch.entries) {
       try {
         this.entries.push(JSON.parse(raw));
@@ -154,8 +168,36 @@ export class SessionChat {
         // A line the host sent that is not JSON is the host's bug; skip it.
       }
     }
-    this.state = { available: true, turns: toTurns(this.entries) };
+    // A result for a call a closed turn made (a background command that
+    // finished after the next prompt) changes that turn: build them all again.
+    if (this.entries.slice(from).some((entry, i) => this.answersClosed(entry, from + i))) {
+      this.reopen();
+    }
+    const { turns, starts } = buildTurns(this.entries, this.openFrom);
+    const open = turns.length - 1;
+    for (const turn of turns.slice(0, Math.max(0, open))) {
+      this.closed.push(turn);
+      for (const step of turn.steps) if (step.kind === 'tool') this.closedCalls.add(step.call.id);
+    }
+    if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
+    const last = turns[open];
+    this.state = { available: true, turns: last ? [...this.closed, last] : [...this.closed] };
     for (const listener of this.listeners) listener();
+  }
+
+  private reopen(): void {
+    this.closed = [];
+    this.closedCalls.clear();
+    this.openFrom = 0;
+  }
+
+  private answersClosed(entry: unknown, index: number): boolean {
+    if (this.closedCalls.size === 0) return false;
+    const reading = classify(entry, index);
+    return (
+      reading?.kind === 'results' &&
+      reading.results.some((result) => this.closedCalls.has(result.toolUseId))
+    );
   }
 
   /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
@@ -185,14 +227,16 @@ export class SessionChat {
 
   /**
    * Answers the questions the agent is waiting on (`AskUserQuestion`), with
-   * the keys its picker takes (`questionKeys`), one at a time.
+   * the keys its picker takes (`questionKeys`), one at a time. False when
+   * nothing is connected to type them, so the answers were not sent.
    */
-  answer(questions: readonly ChatQuestion[], answers: readonly ChatAnswer[]): void {
+  answer(questions: readonly ChatQuestion[], answers: readonly ChatAnswer[]): boolean {
     const type = this.type;
-    if (!type) return;
+    if (!type) return false;
     questionKeys(questions, answers).forEach((key, index) => {
       setTimeout(() => type(key), index * QUESTION_KEY_GAP_MS);
     });
+    return true;
   }
 
   /** Stops the agent's turn: Escape, as in its terminal. */
@@ -323,30 +367,44 @@ function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | nu
 
 /** The entries in turns: a turn opens at each prompt the person typed. */
 export function toTurns(entries: readonly unknown[]): ChatTurn[] {
+  return buildTurns(entries, 0).turns;
+}
+
+/**
+ * The turns from entry `from` on, with the entry each one starts at. `from`
+ * is where a turn starts (a prompt), or the first entry.
+ */
+function buildTurns(
+  entries: readonly unknown[],
+  from: number,
+): { turns: ChatTurn[]; starts: number[] } {
   const turns: ChatTurn[] = [];
+  const starts: number[] = [];
   const calls = new Map<string, ChatToolCall>();
-  const current = (id: string, at: Date | null): ChatTurn => {
+  const current = (id: string, at: Date | null, index: number): ChatTurn => {
     const last = turns.at(-1);
     if (last) return last;
+    starts.push(index);
     return open(turns, null, id, at);
   };
 
-  entries.forEach((value, index) => {
-    const reading = classify(value, index);
-    if (!reading) return;
+  for (let index = from; index < entries.length; index += 1) {
+    const reading = classify(entries[index], index);
+    if (!reading) continue;
     switch (reading.kind) {
       case 'prompt':
+        starts.push(index);
         open(turns, reading.prompt, reading.prompt.id, reading.prompt.at);
-        return;
+        continue;
       case 'steps': {
-        const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at);
+        const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at, index);
         turn.model = reading.model ?? turn.model;
         if (reading.at) turn.lastAt = reading.at;
         for (const step of reading.steps) {
           if (step.kind === 'tool') calls.set(step.call.id, step.call);
           turn.steps.push(step);
         }
-        return;
+        continue;
       }
       case 'results':
         for (const result of reading.results) {
@@ -358,13 +416,13 @@ export function toTurns(entries: readonly unknown[]): ChatTurn[] {
           call.truncated ||= result.truncated;
           call.finishedAt = reading.at;
         }
-        return;
+        continue;
     }
-  });
+  }
 
   const last = turns.at(-1);
   if (last) last.working = isWorking(last);
-  return turns;
+  return { turns, starts };
 }
 
 function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date | null): ChatTurn {
