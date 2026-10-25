@@ -686,3 +686,8 @@ earlier note:
   the owner asked for the shared page to have the chat view too: the
   relay judges the flag as the sharer, and the guest gets Terminal / Chat,
   read-only on a read share (0.7, "Wire").
+- The console used to open on New session (`/sessions/new`) with Sessions
+  first in the rail. On 2026-10-25 Employees moved to the top of the
+  rail's default order, and the console opens on the rail's first item,
+  so a reader who drags another item to the top opens there instead
+  (`versions/mvp/05-screens.md`, `25-bots.md`).

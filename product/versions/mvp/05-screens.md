@@ -40,7 +40,10 @@
   console's lists — Sessions and Automations, both links, the one under
   the address current, each named with its list's count beside the rail
   the moment it is hovered or focused, and the automations list is the
-  second sidebar (13). A session is shown in the session pane under either
+  second sidebar (13). Since 2026-10-25 the console opens (`/`, and every
+  "go to the console" after sign-in, onboarding or Settings) on the rail's
+  first item: Employees by default, or whichever item the reader dragged
+  to the top. A session is shown in the session pane under either
   list: opened from a run, it keeps the automations list beside it, at
   `/automations/$automationId/sessions/$sessionId` (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
