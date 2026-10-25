@@ -123,6 +123,75 @@ describe('toTurns', () => {
     expect(calls[3]?.plan).toBe('1. Do it');
   });
 
+  it('reads the questions a call asks and, once answered, the answers out of its result', () => {
+    const ask = (id: string) => ({
+      type: 'tool_use',
+      id,
+      name: 'AskUserQuestion',
+      input: {
+        questions: [
+          {
+            header: 'Scope',
+            question: 'What should the design system cover?',
+            multiSelect: false,
+            options: [
+              { label: 'Tokens only', description: 'Colours, type, radii' },
+              { label: 'Everything' },
+            ],
+          },
+          { question: 'Which platforms?', multiSelect: true, options: [{ label: 'Web' }] },
+          { header: 'Empty', options: [] },
+        ],
+      },
+    });
+    // Claude Code's own words for the two outcomes, as its transcript keeps them.
+    const turns = toTurns([
+      user('u1', 'Set it up'),
+      assistant('a1', [ask('q1'), ask('q2')]),
+      user('r1', [
+        {
+          type: 'tool_result',
+          tool_use_id: 'q1',
+          content:
+            'Your questions have been answered: "What should the design system cover?"="Everything", "Which platforms?"="Web, Linux". You can now continue with these answers in mind.',
+        },
+        {
+          type: 'tool_result',
+          tool_use_id: 'q2',
+          is_error: true,
+          content: "The user doesn't want to proceed with this tool use.",
+        },
+      ]),
+    ]);
+    const [answered, declined] = (turns[0]?.steps ?? []).flatMap((step) =>
+      step.kind === 'tool' ? [step.call] : [],
+    );
+    expect(answered?.kind).toBe('question');
+    expect(answered?.questions).toEqual([
+      {
+        header: 'Scope',
+        question: 'What should the design system cover?',
+        multiSelect: false,
+        options: [
+          { label: 'Tokens only', description: 'Colours, type, radii' },
+          { label: 'Everything', description: null },
+        ],
+      },
+      {
+        header: null,
+        question: 'Which platforms?',
+        multiSelect: true,
+        options: [{ label: 'Web', description: null }],
+      },
+    ]);
+    expect(answered?.answers).toEqual({
+      'What should the design system cover?': 'Everything',
+      'Which platforms?': 'Web, Linux',
+    });
+    expect(declined?.status).toBe('failed');
+    expect(declined?.answers).toBeNull();
+  });
+
   it("leaves out the CLI's own lines and subagents, and reads a slash command as typed", () => {
     const turns = toTurns([
       user(
@@ -236,6 +305,28 @@ describe('typing into the session', () => {
     release();
     chat.interrupt();
     expect(typed).toEqual(['Now ship it', '\r', '\u001b[200~One\nTwo\u001b[201~', '\r', '\u001b']);
+    vi.useRealTimers();
+  });
+
+  it('answers a question with the picker’s keys, one at a time, and with nothing before it connects', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    const question = {
+      header: null,
+      question: 'Which?',
+      multiSelect: false,
+      options: [{ label: 'A', description: null }],
+    };
+    chat.answer([question], [{ picks: [0], other: null }]);
+    chat.connect((data) => typed.push(data));
+    chat.answer([question], [{ picks: [], other: 'Mine' }]);
+    vi.advanceTimersByTime(0);
+    expect(typed).toEqual(['2']);
+    vi.advanceTimersByTime(120);
+    expect(typed).toEqual(['2', 'Mine']);
+    vi.runAllTimers();
+    expect(typed).toEqual(['2', 'Mine', '\r']);
     vi.useRealTimers();
   });
 

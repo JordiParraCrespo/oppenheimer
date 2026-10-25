@@ -786,7 +786,34 @@ function ChatDecisionsBody() {
           </>
         }
       />
+      <QuestionPanelSeveralDemo />
     </div>
+  );
+}
+
+function QuestionPanelSeveralDemo() {
+  const [picks, setPicks] = React.useState<number[]>([0, 2]);
+  return (
+    <QuestionPanel
+      question="Which platforms should it target?"
+      index={1}
+      total={2}
+      options={[
+        { label: 'Web', description: 'React' },
+        { label: 'iOS', description: 'SwiftUI' },
+        { label: 'Android', description: 'Compose' },
+      ]}
+      value={picks}
+      onValueChange={(index) =>
+        setPicks((held) => (held.includes(index) ? held.filter((i) => i !== index) : [...held, index]))
+      }
+      foot={
+        <>
+          <span className="flex-1">Pick as many as apply</span>
+          <Button size="sm">Submit answers</Button>
+        </>
+      }
+    />
   );
 }
 
@@ -1124,7 +1151,7 @@ export function ChatSection() {
         id="chatdecisions"
         title="Decisions"
         meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card."
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card. Where the agent allows several answers, QuestionPanel takes the set of picks and each row toggles."
         code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
       >
         <ChatDecisionsDemo />

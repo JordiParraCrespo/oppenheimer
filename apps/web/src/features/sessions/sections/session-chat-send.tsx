@@ -4,9 +4,16 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ChatSendResult, SessionChatComposer } from '../components/session-chat-composer';
+import { SessionChatQuestion } from '../components/session-chat-question';
 import type { HeldFile } from '../hooks/use-held-files';
 import { useChatState } from '../hooks/use-session-chat';
-import { chatVocabulary, latestModel, latestTodos, modelName } from '../lib/chat-blocks';
+import {
+  chatVocabulary,
+  latestModel,
+  latestTodos,
+  modelName,
+  pendingQuestion,
+} from '../lib/chat-blocks';
 import type { FileHandOff } from '../lib/file-hand-off';
 
 /**
@@ -18,6 +25,12 @@ import type { FileHandOff } from '../lib/file-hand-off';
  * not arrive stops the send: it and the rest stay in the composer with the
  * words, the failure is said above it, and nothing is submitted. A reader
  * with no `upload` (a guest on a shared link) sends words only.
+ *
+ * While the agent is stopped on questions (`pendingQuestion`), its picker
+ * holds the terminal's input, so they are answered here instead of a
+ * message: `SessionChatQuestion` takes the composer's place, and the
+ * composer stays mounted under it, keeping a half-written draft and its
+ * files for when the agent goes on.
  */
 export function SessionChatSend({
   chat,
@@ -37,6 +50,7 @@ export function SessionChatSend({
   const voice = useVoiceDictation(() => chatVocabulary(chat.snapshot().turns));
   const [failure, setFailure] = useState<Error | null>(null);
   const last = state.turns.at(-1);
+  const question = pendingQuestion(last);
 
   function deliver(text: string, withFiles: boolean): ChatSendResult {
     chat.send(text, { withFiles });
@@ -77,15 +91,28 @@ export function SessionChatSend({
           onDismiss={() => setFailure(null)}
         />
       ) : null}
-      <SessionChatComposer
-        busy={last?.working ?? false}
-        todos={last ? latestTodos(last) : null}
-        model={modelName(latestModel(state.turns))}
-        voice={voice}
-        files={upload ? files : undefined}
-        onSend={send}
-        onStop={() => chat.interrupt()}
-      />
+      {question?.questions ? (
+        <SessionChatQuestion
+          key={question.id}
+          questions={question.questions}
+          onAnswer={(answers) => {
+            if (question.questions) chat.answer(question.questions, answers);
+            onSent();
+          }}
+          onDismiss={() => chat.interrupt()}
+        />
+      ) : null}
+      <div hidden={question !== null} className={question ? undefined : 'contents'}>
+        <SessionChatComposer
+          busy={last?.working ?? false}
+          todos={last ? latestTodos(last) : null}
+          model={modelName(latestModel(state.turns))}
+          voice={voice}
+          files={upload ? files : undefined}
+          onSend={send}
+          onStop={() => chat.interrupt()}
+        />
+      </div>
     </div>
   );
 }

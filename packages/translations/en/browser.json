@@ -1025,7 +1025,23 @@
       "thought": "Thought",
       "thoughtFor": "Thought for {{seconds}}s",
       "changes_one": "{{count}} file changed",
-      "changes_other": "{{count}} files changed"
+      "changes_other": "{{count}} files changed",
+      "question": {
+        "waiting": "Waiting for your answer",
+        "dismissed": "You dismissed the questions",
+        "noAnswer": "No answer read",
+        "ownAnswer": "Or type your own answer…",
+        "ownAnswerLabel": "Your answer",
+        "several": "Pick as many as apply",
+        "one": "Pick one, or answer in your own words",
+        "next": "Next",
+        "submit": "Submit answers",
+        "dismiss": "Dismiss",
+        "sending": "Sending your answers…",
+        "previous": "Previous question",
+        "nextQuestion": "Next question",
+        "of": "{{n}} of {{total}}"
+      }
     }
   },
   "bots": {

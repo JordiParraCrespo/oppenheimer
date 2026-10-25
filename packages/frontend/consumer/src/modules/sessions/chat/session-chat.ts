@@ -12,6 +12,8 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import { type ChatAnswer, questionKeys } from './question-keys';
+
 /** What a tool call is, for the card it gets; Claude's tools are classified, not listed. */
 export type ChatToolKind =
   | 'command'
@@ -34,6 +36,16 @@ export interface ChatTodo {
   status: ChatTodoStatus;
 }
 
+/** One question `AskUserQuestion` puts to the person, as the agent wrote it. */
+export interface ChatQuestion {
+  /** The chip over it in the terminal ("Scope"). */
+  header: string | null;
+  question: string;
+  /** Several options may be picked. */
+  multiSelect: boolean;
+  options: { label: string; description: string | null }[];
+}
+
 export interface ChatToolCall {
   id: string;
   /** The tool's own name (`Bash`, `Edit`, `mcp__github__get_issue`). */
@@ -51,6 +63,14 @@ export interface ChatToolCall {
   todos: ChatTodo[] | null;
   /** The plan text `ExitPlanMode` proposes. */
   plan: string | null;
+  /** What `AskUserQuestion` asks, in order. */
+  questions: ChatQuestion[] | null;
+  /**
+   * The answers, by question, once they are in: read off the result's text,
+   * since the host sends the words and not the CLI's own record of them.
+   * Empty when the text could not be read; none while it waits.
+   */
+  answers: Record<string, string> | null;
   /** The host cut the call's input or its output to keep the entry small. */
   truncated: boolean;
   /** When the agent made the call, and when its result landed (none while it runs). */
@@ -105,6 +125,11 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/**
+ * The gap between the keys that answer a question: the picker redraws after
+ * each one and reads the next against what it drew.
+ */
+const QUESTION_KEY_GAP_MS = 120;
 /**
  * How long a message waits after its files before its words go. A file's
  * upload answers once the host has been told to fetch it, not once its path
@@ -170,6 +195,18 @@ export class SessionChat {
     };
     if (withFiles) setTimeout(write, FILES_SETTLE_MS);
     else write();
+  }
+
+  /**
+   * Answers the questions the agent is waiting on (`AskUserQuestion`), with
+   * the keys its picker takes (`questionKeys`), one at a time.
+   */
+  answer(questions: readonly ChatQuestion[], answers: readonly ChatAnswer[]): void {
+    const type = this.type;
+    if (!type) return;
+    questionKeys(questions, answers).forEach((key, index) => {
+      setTimeout(() => type(key), index * QUESTION_KEY_GAP_MS);
+    });
   }
 
   /** Stops the agent's turn: Escape, as in its terminal. */
@@ -331,6 +368,7 @@ export function toTurns(entries: readonly unknown[]): ChatTurn[] {
           if (!call) continue;
           call.status = result.failed ? 'failed' : 'done';
           call.output = result.output;
+          if (call.questions && !result.failed) call.answers = answersOf(result.output);
           call.truncated ||= result.truncated;
           call.finishedAt = reading.at;
         }
@@ -450,6 +488,8 @@ function toolCall(block: Loose): ChatToolCall {
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
     plan: kind === 'plan' ? field('plan') : null,
+    questions: kind === 'question' ? questionsOf(input.questions) : null,
+    answers: null,
     truncated: block.truncated === true,
     startedAt: null,
     finishedAt: null,
@@ -469,6 +509,37 @@ function diffOf(name: string, input: Loose): { additions: number; deletions: num
     }),
     { additions: 0, deletions: 0 },
   );
+}
+
+function questionsOf(value: unknown): ChatQuestion[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw) => {
+    const entry = record(raw);
+    const question = text(entry?.question);
+    if (!question) return [];
+    const options = (Array.isArray(entry?.options) ? entry.options : []).flatMap((rawOption) => {
+      const option = record(rawOption);
+      const label = text(option?.label);
+      return label ? [{ label, description: text(option?.description) }] : [];
+    });
+    return [
+      { header: text(entry?.header), question, multiSelect: entry?.multiSelect === true, options },
+    ];
+  });
+}
+
+/**
+ * The answers in an `AskUserQuestion` result: Claude Code words them as
+ * `"<question>"="<answer>"` pairs, several picks joined by commas. A
+ * question with a quote in it can defeat this; it is then left out.
+ */
+function answersOf(output: string | null): Record<string, string> {
+  const answers: Record<string, string> = {};
+  for (const match of (output ?? '').matchAll(/"((?:[^"\\]|\\.)*)"="((?:[^"\\]|\\.)*)"/g)) {
+    const [, question, answer] = match;
+    if (question !== undefined && answer !== undefined) answers[question] = answer;
+  }
+  return answers;
 }
 
 function todosOf(value: unknown): ChatTodo[] {

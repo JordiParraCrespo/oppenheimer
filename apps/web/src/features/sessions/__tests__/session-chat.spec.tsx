@@ -304,3 +304,131 @@ describe('files on a message', () => {
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.attach' })).toBeNull();
   });
 });
+
+describe('questions the agent asks', () => {
+  const ask = entry({
+    type: 'assistant',
+    uuid: 'a1',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'q1',
+          name: 'AskUserQuestion',
+          input: {
+            questions: [
+              {
+                header: 'Scope',
+                question: 'What should it cover?',
+                multiSelect: false,
+                options: [{ label: 'Tokens' }, { label: 'Components' }],
+              },
+              {
+                header: 'Platforms',
+                question: 'Which platforms?',
+                multiSelect: true,
+                options: [{ label: 'Web' }, { label: 'iOS' }, { label: 'Android' }],
+              },
+            ],
+          },
+        },
+      ],
+    },
+  });
+  const prompt = entry({
+    type: 'user',
+    uuid: 'u1',
+    message: { role: 'user', content: 'Set it up' },
+  });
+  const result = (content: string, isError = false) =>
+    entry({
+      type: 'user',
+      uuid: 'r1',
+      message: {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: 'q1', content, is_error: isError }],
+      },
+    });
+
+  it('takes the composer’s place and sends the picker the keys for every answer at once', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, ask] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    // The picker holds the terminal's input: a message typed now would land in it.
+    expect(
+      screen.getByPlaceholderText('sessions.chat.composer.placeholder').closest('[hidden]'),
+    ).not.toBeNull();
+    expect(screen.getByText('What should it cover?')).toBeTruthy();
+
+    // Picking the one choice moves on; the several toggle.
+    fireEvent.click(screen.getByRole('button', { name: /Components/ }));
+    expect(screen.getByText('Which platforms?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Web/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Android/ }));
+    fireEvent.click(screen.getByRole('button', { name: /iOS/ }));
+    fireEvent.click(screen.getByRole('button', { name: /iOS/ }));
+    expect(typed).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.submit' }));
+    act(() => vi.runAllTimers());
+    const down = '\u001b[B';
+    expect(typed).toEqual(['2', '1', '3', down, down, down, down, '\r', '1']);
+    vi.useRealTimers();
+  });
+
+  it('waits for an answer to every question before Submit, and Dismiss is Escape', () => {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, ask] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    fireEvent.change(screen.getByLabelText('sessions.chat.question.ownAnswerLabel'), {
+      target: { value: 'Only icons' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.next' }));
+    const submit = screen.getByRole('button', { name: 'sessions.chat.question.submit' });
+    expect((submit as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.dismiss' }));
+    expect(typed).toEqual(['\u001b']);
+  });
+
+  it('keeps what was answered, says when they were dismissed, and gives the composer back', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        prompt,
+        ask,
+        result(
+          'Your questions have been answered: "What should it cover?"="Components", "Which platforms?"="Web, Linux". You can now continue with these answers in mind.',
+        ),
+      ],
+    });
+    const { unmount } = render(<SessionChat chat={chat} readOnly={false} />);
+    expect(screen.getByText('Components')).toBeTruthy();
+    expect(screen.getByText('Web, Linux')).toBeTruthy();
+    expect(
+      screen.getByPlaceholderText('sessions.chat.composer.placeholder').closest('[hidden]'),
+    ).toBeNull();
+    unmount();
+
+    const declined = new Chat();
+    declined.apply({
+      reset: true,
+      entries: [prompt, ask, result("The user doesn't want to proceed with this tool use.", true)],
+    });
+    render(<SessionChat chat={declined} readOnly={false} />);
+    expect(screen.getByText('sessions.chat.question.dismissed')).toBeTruthy();
+  });
+
+  it('shows a watcher that the agent is waiting, with nothing to answer it with', () => {
+    const chat = new Chat();
+    chat.apply({ reset: true, entries: [prompt, ask] });
+    render(<SessionChat chat={chat} readOnly />);
+    expect(screen.getByText('sessions.chat.question.waiting')).toBeTruthy();
+    expect(screen.queryByText('What should it cover?')).toBeNull();
+  });
+});
