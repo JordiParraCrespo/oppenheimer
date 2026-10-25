@@ -10,6 +10,5 @@ import { createFileRoute } from '@tanstack/react-router';
  * guard, so `onboarding` can sit under the same layout with the opposite one.
  */
 export const Route = createFileRoute('/_auth/_public')({
-  beforeLoad: ({ context, location }) =>
-    redirectSignedIn({ context, location, landing: '/sessions/new' }),
+  beforeLoad: ({ context, location }) => redirectSignedIn({ context, location, landing: '/' }),
 });

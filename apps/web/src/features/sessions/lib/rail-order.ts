@@ -8,18 +8,18 @@ import type { ConsoleList } from '@/lib/console';
  */
 export const RAIL = [
   {
-    id: 'sessions',
-    to: '/sessions/new',
-    lists: ['sessions'],
-    labelKey: 'nav.sessions',
-    Icon: Terminal,
-  },
-  {
     id: 'bots',
     to: '/bots',
     lists: ['bots'],
     labelKey: 'nav.employees',
     Icon: Bot,
+  },
+  {
+    id: 'sessions',
+    to: '/sessions/new',
+    lists: ['sessions'],
+    labelKey: 'nav.sessions',
+    Icon: Terminal,
   },
   {
     id: 'pulls',
@@ -82,6 +82,16 @@ export function storedRailOrder(): RailItemId[] {
     }
   }
   return [...kept, ...RAIL.map((entry) => entry.id).filter((id) => !kept.has(id))];
+}
+
+/**
+ * Where the console opens: the first item of the reader's order, so a
+ * reader who dragged Plan to the top lands on Plan, and one who never
+ * dragged lands on Employees.
+ */
+export function railLanding(): RailEntry['to'] {
+  const [first] = storedRailOrder();
+  return (first && railEntry(first)?.to) ?? RAIL[0].to;
 }
 
 export function rememberRailOrder(order: readonly RailItemId[]) {
