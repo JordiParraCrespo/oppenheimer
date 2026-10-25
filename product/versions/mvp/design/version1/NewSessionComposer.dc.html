@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+@keyframes op-bubble{0%{transform:translate(0,0) scale(.6);opacity:0}20%{opacity:.9}75%{opacity:.75}100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}}
+@keyframes op-shimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
+@keyframes op-rise-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<sc-for list="{{ variants }}" as="v" hint-placeholder-count="1">
+<div onClick="{{ v.onBg }}" style="width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px;font-family:var(--font-sans);color:var(--fg);text-align:left">
+<h2 style="margin:0 0 14px 4px;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em;color:var(--fg)">What should we work on?</h2>
+
+<div style="display:flex;flex-direction:column;gap:6px;padding:6px;border:1px solid {{ v.boxBorder }};border-radius:28px;background:var(--card);transition:border-color 80ms cubic-bezier(.4,0,.2,1)">
+<sc-if value="{{ v.attach }}">
+<div style="display:flex;gap:6px;padding:8px 12px 0"><span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 10px;border-radius:10px;background:var(--hover-surface);font-size:12.5px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="13" hint-size="13px,13px"></x-import>pricing-brief.pdf<button type="button" aria-label="Remove file" onClick="{{ v.onPlus }}" style="display:flex;border:0;background:none;padding:2px;color:var(--fg-subtle);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="12" hint-size="12px,12px"></x-import></button></span></div>
+</sc-if>
+<div style="display:flex;align-items:flex-end;gap:4px">
+<button class="op-iconbtn" type="button" aria-label="Add files" title="Add files" onClick="{{ v.onPlus }}" style="flex:none;width:32px;height:32px;margin:0 0 6px 4px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="17" hint-size="17px,17px"></x-import></button>
+<textarea value="{{ v.text }}" onChange="{{ v.onText }}" onFocus="{{ v.onFocus }}" onBlur="{{ v.onBlur }}" onClick="{{ stop }}" placeholder="{{ v.ph }}" rows="1" style="flex:1;min-width:0;min-height:44px;max-height:208px;padding:10px 6px;border:0;outline:none;resize:none;background:transparent;font:inherit;font-size:15px;line-height:1.55;letter-spacing:-0.011em;color:var(--fg);field-sizing:content"></textarea>
+<span style="flex:none;display:flex;align-items:center;gap:4px;padding:6px">
+<button class="op-iconbtn" type="button" aria-label="Dictate" aria-pressed="{{ v.recS }}" title="Dictate" onClick="{{ v.onMic }}" style="flex:none;width:32px;height:32px;background:{{ v.micBg }};color:{{ v.micFg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="16" hint-size="16px,16px"></x-import></button>
+<button type="button" aria-label="Start session" disabled="{{ v.sendOff }}" onClick="{{ v.onSend }}" style="flex:none;width:32px;height:32px;margin-left:4px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--primary);color:#fff;opacity:{{ v.sendOp }};cursor:{{ v.sendCursor }};transition:opacity 80ms"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="16" hint-size="16px,16px"></x-import></button>
+</span>
+</div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;min-height:34px;padding:0 2px">
+
+<div style="position:relative;flex:none">
+<button type="button" onClick="{{ v.onEnv }}" title="Where it runs" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.envBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)">
+<sc-if value="{{ v.envIsCloud }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
+<sc-if value="{{ v.envIsCursor }}"><img src="{{ v.envLogo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if>
+<sc-if value="{{ v.envIsHost }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ v.envIcon }}" size="14" hint-size="14px,14px"></x-import></sc-if>
+<span>{{ v.envLabel }}</span><sc-if value="{{ v.isB }}"><span style="color:var(--fg-subtle)">·</span><span style="color:var(--fg-muted)">{{ v.wsRepos }}</span></sc-if>
+</button>
+
+<sc-if value="{{ v.envMenu.open }}">
+<div onClick="{{ stop }}" role="dialog" aria-label="Where it runs" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:{{ v.envMenu.w }};box-sizing:border-box;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);overflow:hidden;transition:width 140ms cubic-bezier(.4,0,.2,1);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div style="flex:none;display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-bottom:1px solid var(--border-subtle)">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span>
+<input type="text" value="{{ v.envMenu.q }}" onChange="{{ v.envMenu.onQ }}" placeholder="{{ v.envMenu.ph }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)">
+</div>
+
+<sc-if value="{{ v.envMenu.main }}" hint-placeholder-val="{{ true }}">
+<div role="tablist" aria-label="Where" style="flex:none;display:flex;gap:16px;padding:0 14px;border-bottom:1px solid var(--border-subtle)">
+<sc-for list="{{ v.envMenu.tabs }}" as="t" hint-placeholder-count="2">
+<button type="button" role="tab" aria-selected="{{ t.selS }}" onClick="{{ t.pick }}" style="position:relative;display:flex;align-items:center;gap:6px;height:36px;padding:0;border:0;background:none;font:inherit;font-size:13px;color:{{ t.fg }};cursor:pointer">{{ t.label }}<span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ t.n }}</span><span style="position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:980px;background:{{ t.bar }}"></span></button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ v.envMenu.acct }}">
+<button type="button" onClick="{{ v.envMenu.back }}" style="flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 8px;border:0;border-bottom:1px solid var(--border-subtle);background:none;font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></span>
+<img src="{{ v.envMenu.acctLogo }}" alt="" style="flex:none;width:14px;height:14px;object-fit:contain">
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;color:var(--fg)">{{ v.envMenu.acctName }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ v.envMenu.drill }}">
+<button type="button" onClick="{{ v.envMenu.drillBack }}" style="flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 8px;border:0;border-bottom:1px solid var(--border-subtle);background:none;font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ v.envMenu.drillDot }}"></span>
+<span style="font-size:13px;font-weight:500;color:var(--fg)">{{ v.envMenu.drillName }}</span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--fg-subtle)">{{ v.envMenu.drillMetaShown }}</span>
+</button>
+<sc-if value="{{ v.envMenu.browsing }}">
+<div style="flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:6px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Parent folder" title="Parent folder" disabled="{{ v.envMenu.noUp }}" onClick="{{ v.envMenu.onUp }}" style="flex:none;opacity:{{ v.envMenu.upOp }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="14" hint-size="14px,14px"></x-import></button>
+<label style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid {{ v.envMenu.pathBorder }};border-radius:10px;background:var(--field, var(--hover-surface))">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="13" hint-size="13px,13px"></x-import></span>
+<input type="text" aria-label="Folder path" spellCheck="false" autoComplete="off" value="{{ v.envMenu.path }}" onChange="{{ v.envMenu.onPath }}" onKeyDown="{{ v.envMenu.onPathKey }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font-family:var(--font-mono);font-size:12px;color:var(--fg)">
+<span style="flex:none;font-size:10.5px;color:var(--fg-subtle)">⏎</span>
+</label>
+</div>
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:1px;font-family:var(--font-mono);font-size:11.5px">
+<sc-for list="{{ v.envMenu.crumbs }}" as="c" hint-placeholder-count="2">
+<span style="display:flex;align-items:center;gap:1px"><sc-if value="{{ c.sep }}"><span style="color:var(--fg-subtle)">/</span></sc-if><button type="button" onClick="{{ c.go }}" style="padding:2px 4px;border:0;border-radius:6px;background:none;font:inherit;color:{{ c.fg }};cursor:pointer" style-hover="background:var(--hover-surface)">{{ c.name }}</button></span>
+</sc-for>
+</div>
+<sc-if value="{{ v.envMenu.pathErr }}"><span role="alert" style="font-size:11.5px;color:var(--danger)">No such folder on {{ v.envMenu.drillName }}.</span></sc-if>
+</div>
+</sc-if>
+</sc-if>
+
+<div style="max-height:296px;overflow-y:auto;overflow-x:hidden;padding:4px">
+<sc-if value="{{ v.envMenu.main }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ v.envMenu.showHosts }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ v.envMenu.hosts }}" as="h" hint-placeholder-count="7">
+<button type="button" role="option" aria-selected="{{ h.selS }}" aria-disabled="{{ h.off }}" onClick="{{ h.pick }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 8px 0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:{{ h.cursor }}" style-hover="background:var(--hover-surface)">
+<span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ h.dot }}"></span>
+<span style="flex:none;font-size:13px;color:{{ h.fg }}">{{ h.name }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:12px;color:{{ h.metaFg }}">{{ h.meta }}</span>
+<sc-if value="{{ h.sel }}"><span style="flex:none;font-size:12px;color:var(--primary)">✓</span></sc-if>
+<span style="flex:none;display:flex;color:var(--fg-subtle);opacity:.8"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></span>
+</button>
+</sc-for>
+</sc-if>
+<sc-if value="{{ v.envMenu.showSaved }}">
+<sc-for list="{{ v.envMenu.saved }}" as="x" hint-placeholder-count="5">
+<button type="button" role="option" aria-disabled="{{ x.off }}" title="{{ x.title }}" onClick="{{ x.pick }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:{{ x.cursor }}" style-hover="background:var(--hover-surface)">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:none;font-size:13px;color:{{ x.fg }}">{{ x.name }}</span>
+<span style="flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:5px;overflow:hidden;white-space:nowrap;font-size:12px;color:var(--fg-subtle)"><sc-if value="{{ x.logo }}"><img src="{{ x.logo }}" alt="" style="flex:none;width:12px;height:12px;object-fit:contain"></sc-if><sc-if value="{{ x.hostIcon }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="12" hint-size="12px,12px"></x-import></sc-if><span style="overflow:hidden;text-overflow:ellipsis">{{ x.meta }}</span></span>
+<span style="flex:none;width:12px;font-size:12px;color:var(--primary)"><sc-if value="{{ x.sel }}">✓</sc-if></span>
+</button>
+</sc-for>
+</sc-if>
+<sc-if value="{{ v.envMenu.showClouds }}">
+<sc-for list="{{ v.envMenu.clouds }}" as="c" hint-placeholder-count="6">
+<sc-if value="{{ c.head }}"><div class="op-tpop__label" style="padding:8px 10px 4px">{{ c.head }}</div></sc-if>
+<sc-if value="{{ c.row }}">
+<button type="button" role="option" aria-disabled="{{ c.off }}" onClick="{{ c.pick }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 8px 0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:{{ c.cursor }}" style-hover="background:var(--hover-surface)">
+<sc-if value="{{ c.cloud }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
+<sc-if value="{{ c.logo }}"><img src="{{ c.logo }}" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:{{ c.fg }}">{{ c.name }}</span>
+<span style="flex:none;white-space:nowrap;font-size:12px;color:var(--fg-subtle)">{{ c.meta }}</span>
+<span style="flex:none;width:12px;font-size:12px;color:var(--primary)"><sc-if value="{{ c.sel }}">✓</sc-if></span>
+<span style="flex:none;display:flex;width:13px;color:var(--fg-subtle);opacity:.8"><sc-if value="{{ c.chev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></sc-if></span>
+</button>
+</sc-if>
+</sc-for>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ v.envMenu.acct }}">
+<sc-for list="{{ v.envMenu.acctRows }}" as="r" hint-placeholder-count="3">
+<button type="button" role="option" onClick="{{ r.pick }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+<span style="flex:none;font-size:13px;color:var(--fg)">{{ r.label }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:12px;color:var(--fg-subtle)">{{ r.meta }}</span>
+<span style="flex:none;width:12px;font-size:12px;color:var(--primary)"><sc-if value="{{ r.sel }}">✓</sc-if></span>
+</button>
+</sc-for>
+<div style="padding:8px 10px 4px;font-size:11.5px;color:var(--fg-subtle)">{{ v.envMenu.acctFoot }}</div>
+</sc-if>
+
+<sc-if value="{{ v.envMenu.drill }}">
+<sc-if value="{{ v.envMenu.browsing }}">
+<sc-for list="{{ v.envMenu.dirs }}" as="d" hint-placeholder-count="5">
+<button type="button" onClick="{{ d.pick }}" title="{{ d.title }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 8px 0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--fg)">{{ d.name }}</span>
+<sc-if value="{{ d.isRepo }}"><span style="flex:none;max-width:150px;display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="11" hint-size="11px,11px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.branch }}</span><span style="color:var(--warning)">{{ d.dirty }}</span></span></sc-if>
+<span style="flex:none;display:flex;width:13px;color:var(--fg-subtle)"><sc-if value="{{ d.hasKids }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></sc-if></span>
+</button>
+</sc-for>
+<sc-if value="{{ v.envMenu.dirsEmpty }}"><div style="padding:14px 10px;font-size:12.5px;color:var(--fg-muted)">{{ v.envMenu.dirsEmptyText }}</div></sc-if>
+</sc-if>
+<sc-if value="{{ v.envMenu.notBrowsing }}" hint-placeholder-val="{{ true }}">
+<div class="op-tpop__label" style="padding:8px 10px 4px">{{ v.envMenu.subHead }}</div>
+<sc-for list="{{ v.envMenu.sub }}" as="r" hint-placeholder-count="3">
+<button type="button" role="option" onClick="{{ r.pick }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ r.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:none;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ r.font }};font-size:{{ r.size }};color:var(--fg)">{{ r.label }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ r.meta }}</span>
+<span style="flex:none;width:12px;font-size:12px;color:var(--primary)"><sc-if value="{{ r.sel }}">✓</sc-if></span>
+</button>
+</sc-for>
+<sc-if value="{{ v.envMenu.browse }}">
+<button type="button" onClick="{{ v.envMenu.onBrowse }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 8px 0 10px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;color:var(--fg);text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1">Browse folders…</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></span></button>
+</sc-if>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ v.envMenu.empty }}"><div style="padding:14px 10px;font-size:12.5px;color:var(--fg-muted)">{{ v.envMenu.emptyText }}</div></sc-if>
+</div>
+
+<sc-if value="{{ v.envMenu.browsing }}">
+<div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;border-top:1px solid var(--border-subtle)">
+<span style="flex:1;min-width:0;display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;font-size:11.5px;color:var(--fg-subtle)"><sc-if value="{{ v.envMenu.hereRepo }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="11" hint-size="11px,11px"></x-import></sc-if><span style="overflow:hidden;text-overflow:ellipsis">{{ v.envMenu.hereText }}</span></span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ v.envMenu.onUse }}" style="flex:none;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.envMenu.useLabel }}</button>
+</div>
+</sc-if>
+<div style="flex:none;padding:4px;border-top:1px solid var(--border-subtle);display:{{ v.envMenu.footDisp }}">
+<button type="button" onClick="{{ v.ne.open }}" style="width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;font:inherit;font-size:13px;color:var(--fg);text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></span>New environment</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ v.envMenuOld }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:330px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<label class="op-input op-input--md" style="margin:4px 4px 4px;height:32px"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input class="op-input__el" placeholder="Search environments…" readOnly="{{ true }}"></label>
+<sc-for list="{{ v.envRows }}" as="r" hint-placeholder-count="8">
+<sc-if value="{{ r.head }}"><div class="op-tpop__label" style="padding:10px 10px 4px">{{ r.head }}</div></sc-if>
+<sc-if value="{{ r.row }}">
+<button class="op-option" type="button" role="option" data-selected="{{ r.sel }}" aria-disabled="{{ r.off }}" onClick="{{ r.pick }}" style="padding:6px 10px 6px {{ r.pad }};gap:10px;font-size:13px;opacity:{{ r.op }};cursor:{{ r.cursor }}">
+<sc-if value="{{ r.logo }}"><img src="{{ r.logo }}" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<sc-if value="{{ r.cloud }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-muted)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
+<sc-if value="{{ r.icon }}"><span style="flex:none;display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ r.icon }}" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+<span class="op-option__stack"><span style="font-family:{{ r.font }}">{{ r.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ r.desc }}</span></span>
+<sc-if value="{{ r.chev }}"><span style="margin-left:auto;display:flex;color:var(--fg-subtle);transform:rotate({{ r.rot }});transition:transform 140ms"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+<span class="op-option__check">✓</span>
+</button>
+</sc-if>
+<sc-if value="{{ r.action }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><button class="op-option" type="button" style="padding:7px 10px;gap:10px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>New environment</button></div></sc-if>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ v.wsOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:680px;display:grid;grid-template-columns:300px minmax(0,1fr);border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);overflow:hidden;animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div style="padding:4px;border-right:1px solid var(--border-subtle);max-height:460px;overflow:auto">
+<div class="op-tpop__label" style="padding:10px 10px 2px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--fg)">Run on</div>
+<sc-for list="{{ v.envRows }}" as="r" hint-placeholder-count="8">
+<sc-if value="{{ r.head }}"><div class="op-tpop__label" style="padding:10px 10px 4px">{{ r.head }}</div></sc-if>
+<sc-if value="{{ r.row }}">
+<button class="op-option" type="button" role="option" data-selected="{{ r.sel }}" aria-disabled="{{ r.off }}" onClick="{{ r.pick }}" style="padding:6px 10px 6px {{ r.pad }};gap:10px;font-size:13px;opacity:{{ r.op }};cursor:{{ r.cursor }}">
+<sc-if value="{{ r.logo }}"><img src="{{ r.logo }}" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<sc-if value="{{ r.cloud }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-muted)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
+<sc-if value="{{ r.icon }}"><span style="flex:none;display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ r.icon }}" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+<span class="op-option__stack"><span style="font-family:{{ r.font }}">{{ r.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ r.desc }}</span></span>
+<sc-if value="{{ r.chev }}"><span style="margin-left:auto;display:flex;color:var(--fg-subtle);transform:rotate({{ r.rot }});transition:transform 140ms"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+<span class="op-option__check">✓</span>
+</button>
+</sc-if>
+<sc-if value="{{ r.action }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><button class="op-option" type="button" style="padding:7px 10px;gap:10px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>New environment</button></div></sc-if>
+</sc-for>
+</div>
+<div style="padding:4px;display:flex;flex-direction:column;min-width:0;max-height:460px;overflow:auto">
+<sc-if value="{{ v.wsRepoList }}">
+<div class="op-tpop__label" style="padding:10px 10px 6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--fg)">{{ v.wsRightTitle }}</div>
+<sc-for list="{{ v.slots }}" as="s" hint-placeholder-count="1">
+<div style="display:flex;align-items:center;gap:8px;min-height:40px;padding:2px 6px 2px 10px;border-radius:10px" style-hover="background:var(--hover-surface)">
+<span style="flex:none;display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<button type="button" onClick="{{ s.onRepo }}" disabled="{{ s.locked }}" title="{{ s.full }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:0;background:none;padding:0;font:inherit;text-align:left;color:var(--fg);cursor:{{ s.repoCursor }}"><span style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px">{{ s.full }}</span><sc-if value="{{ s.sub }}"><span style="font-size:11px;color:var(--fg-subtle)">{{ s.sub }}</span></sc-if></button>
+<button type="button" onClick="{{ s.onBr }}" style="flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;max-width:200px;padding:0 10px;border:1px solid var(--border-subtle);border-radius:980px;background:var(--card);font-family:var(--font-mono);font-size:12px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="12" hint-size="12px,12px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.branch }}</span></button>
+<sc-if value="{{ s.canRemove }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove repository" onClick="{{ s.remove }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ v.canAdd }}"><button class="op-option" type="button" onClick="{{ v.onAdd }}" style="padding:8px 10px;gap:10px;font-size:13px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>Add a second repository</button></sc-if>
+<div style="margin-top:auto;padding:12px 10px 8px;font-size:11.5px;line-height:1.45;color:var(--fg-subtle);text-wrap:pretty">{{ v.wsFoot }}</div>
+</sc-if>
+<sc-if value="{{ v.wsPick }}">
+<div style="display:flex;align-items:center;gap:4px;padding:6px 6px 2px"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Back" onClick="{{ v.wsBack }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></button><span style="font-size:12.5px;font-weight:500">{{ v.pick.title }}</span></div>
+<label class="op-input op-input--md" style="margin:6px 6px 4px;height:32px"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input class="op-input__el" placeholder="{{ v.pick.ph }}" readOnly="{{ true }}"></label>
+<sc-for list="{{ v.pick.items }}" as="it" hint-placeholder-count="4">
+<button class="op-option" type="button" role="option" data-selected="{{ it.sel }}" onClick="{{ it.onPick }}" style="padding:6px 10px;gap:10px;font-size:13px"><span class="op-option__stack" style="min-width:0"><span style="font-family:{{ it.font }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span><sc-if value="{{ it.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ it.desc }}</span></sc-if></span><span style="margin-left:auto;flex:none;font-size:11px;color:var(--fg-subtle)">{{ it.meta }}</span><span class="op-option__check">✓</span></button>
+</sc-for>
+<sc-if value="{{ v.pick.foot }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><button class="op-option" type="button" style="padding:7px 10px;gap:10px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>{{ v.pick.foot }}</button></div></sc-if>
+<sc-if value="{{ v.pick.manage }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><a href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" onClick="{{ stop }}" style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:10px;font-size:13px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface)"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:14px;height:14px;filter:var(--brand-glyph-filter,none)"><span style="flex:1">Manage repository access</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></span></a></div></sc-if>
+</sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ v.isA }}">
+<sc-for list="{{ v.slots }}" as="s" hint-placeholder-count="1">
+<div style="position:relative;flex:none;display:flex;align-items:center">
+<button type="button" onClick="{{ s.onRepo }}" disabled="{{ s.locked }}" title="{{ s.full }}" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 4px 0 10px;border:0;border-radius:980px 0 0 980px;background:{{ s.repoBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:{{ s.repoCursor }}" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="14" hint-size="14px,14px"></x-import>{{ s.short }}</button>
+<button type="button" onClick="{{ s.onBr }}" title="Branch" style="display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px 0 4px;border:0;border-radius:0 980px 980px 0;background:{{ s.brBg }};font:inherit;font-size:13.5px;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.branch }}</span></button>
+<sc-if value="{{ s.canRemove }}"><button type="button" aria-label="Remove repository" onClick="{{ s.remove }}" style="display:flex;margin-left:-4px;padding:4px;border:0;border-radius:980px;background:none;color:var(--fg-subtle);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="12" hint-size="12px,12px"></x-import></button></sc-if>
+<sc-if value="{{ s.showPick }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:330px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;height:40px;margin:-4px -4px 4px;padding:0 12px;border-bottom:1px solid var(--border-subtle)"><span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input type="text" placeholder="{{ v.pick.ph }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)"></div>
+<div class="op-tpop__label" style="padding:8px 10px 4px">{{ v.pick.title }}</div>
+<sc-for list="{{ v.pick.items }}" as="it" hint-placeholder-count="4">
+<button class="op-option" type="button" role="option" data-selected="{{ it.sel }}" onClick="{{ it.onPick }}" style="padding:6px 10px;gap:10px;font-size:13px"><span class="op-option__stack" style="min-width:0"><span style="font-family:{{ it.font }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span><sc-if value="{{ it.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ it.desc }}</span></sc-if></span><span style="margin-left:auto;flex:none;font-size:11px;color:var(--fg-subtle)">{{ it.meta }}</span><span class="op-option__check">✓</span></button>
+</sc-for>
+<sc-if value="{{ v.pick.foot }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><button class="op-option" type="button" style="padding:7px 10px;gap:10px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>{{ v.pick.foot }}</button></div></sc-if>
+<sc-if value="{{ v.pick.manage }}"><div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><a href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" onClick="{{ stop }}" style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:10px;font-size:13px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface)"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:14px;height:14px;filter:var(--brand-glyph-filter,none)"><span style="flex:1">Manage repository access</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></span></a></div></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ v.canAdd }}">
+<div style="position:relative;flex:none">
+<button type="button" aria-label="Add a second repository" title="Add a second repository" onClick="{{ v.onAdd }}" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:0;border-radius:980px;background:{{ v.addBg }};color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
+<sc-if value="{{ v.addOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:330px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div class="op-tpop__label" style="padding:8px 10px 4px">{{ v.pick.title }}</div>
+<sc-for list="{{ v.pick.items }}" as="it" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" onClick="{{ it.onPick }}" style="padding:6px 10px;gap:10px;font-size:13px"><span class="op-option__stack"><span>{{ it.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ it.desc }}</span></span></button>
+</sc-for>
+<div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><a href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" onClick="{{ stop }}" style="display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:10px;font-size:13px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface)"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:14px;height:14px;filter:var(--brand-glyph-filter,none)"><span style="flex:1">Manage repository access</span><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></span></a></div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ v.showPerm }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;flex:none">
+<button type="button" onClick="{{ v.onPerm }}" title="Permissions" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.permBg }};font:inherit;font-size:13.5px;color:{{ v.permColor }};cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="14" hint-size="14px,14px"></x-import>{{ v.permLabel }}</button>
+<sc-if value="{{ v.permOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:320px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div class="op-tpop__label" style="padding:8px 10px 4px">Permissions · this session</div>
+<sc-for list="{{ v.perms }}" as="p" hint-placeholder-count="4">
+<sc-if value="{{ p.sep }}"><div style="height:1px;margin:4px 6px;background:var(--border-subtle)"></div></sc-if>
+<button class="op-option" type="button" role="option" data-selected="{{ p.sel }}" onClick="{{ p.pick }}" style="padding:7px 10px;gap:10px;font-size:13.5px"><span class="op-option__stack"><span style="color:{{ p.color }}">{{ p.label }}</span><span class="op-option__desc" style="margin-top:1px;font-size:11.5px">{{ p.desc }}</span></span><span class="op-option__check">✓</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<div style="flex:1"></div>
+
+<div style="position:relative;flex:none">
+<button type="button" onClick="{{ v.onModel }}" title="Agent and model" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.modelBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><sc-if value="{{ v.provImg }}" hint-placeholder-val="{{ true }}"><img src="{{ v.provLogo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ v.provTerm }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></sc-if><span>{{ v.modelLabel }}</span><span style="color:var(--fg-muted)">{{ v.effortLabel }}</span></button>
+<sc-if value="{{ v.modelOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:340px;box-sizing:border-box;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);overflow:hidden;animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div role="tablist" aria-label="Agent" style="display:flex;gap:2px;padding:6px 6px 0;border-bottom:1px solid var(--border-subtle)">
+<sc-for list="{{ v.tabs }}" as="t" hint-placeholder-count="5">
+<button type="button" role="tab" aria-selected="{{ t.selS }}" title="{{ t.label }}" onClick="{{ t.pick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0 0;border:0;background:none;cursor:pointer"><span style="display:flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:10px;color:var(--fg-muted)" style-hover="background:var(--hover-surface)"><sc-if value="{{ t.star }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="opacity:{{ t.op }}"><path d="M11.5 2.4a.6.6 0 0 1 1 0l2.7 5.5 6 .9a.6.6 0 0 1 .4 1l-4.4 4.3 1 6a.6.6 0 0 1-.8.6L12 18l-5.4 2.8a.6.6 0 0 1-.8-.6l1-6-4.4-4.3a.6.6 0 0 1 .3-1l6.1-.9z"></path></svg></sc-if><sc-if value="{{ t.logo }}"><img src="{{ t.logo }}" alt="{{ t.label }}" style="width:18px;height:18px;object-fit:contain;opacity:{{ t.op }}"></sc-if><sc-if value="{{ t.term }}"><span style="display:flex;opacity:{{ t.op }};color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></span></sc-if></span><span style="width:20px;height:2px;border-radius:980px;background:{{ t.bar }}"></span></button>
+</sc-for>
+</div>
+<label class="op-input op-input--md" onClick="{{ stop }}" style="margin:8px 8px 0;height:32px"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input class="op-input__el" placeholder="Search models…" value="{{ v.q }}" onChange="{{ v.onQ }}"></label>
+<div style="padding:4px;max-height:252px;overflow:auto">
+<sc-for list="{{ v.models }}" as="m" hint-placeholder-count="4">
+<div role="option" aria-selected="{{ m.selS }}" onClick="{{ m.pick }}" style="display:flex;align-items:center;gap:10px;min-height:36px;padding:0 6px 0 10px;border-radius:10px;background:{{ m.bg }};cursor:pointer" style-hover="background:var(--hover-surface)">
+<sc-if value="{{ m.logo }}"><img src="{{ m.logo }}" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding:6px 0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;color:var(--fg)">{{ m.label }}</span><sc-if value="{{ m.desc }}"><span style="font-size:11px;color:var(--fg-subtle)">{{ m.desc }}</span></sc-if></span>
+<sc-if value="{{ m.kbd }}"><span style="flex:none;display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:11px;color:var(--fg-muted)">{{ m.kbd }}</span></sc-if>
+<button type="button" aria-label="{{ m.starLabel }}" aria-pressed="{{ m.favS }}" onClick="{{ m.fav }}" style="flex:none;display:flex;padding:5px;border:0;border-radius:980px;background:none;color:{{ m.starColor }};cursor:pointer" style-hover="background:var(--hover-surface)"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{ m.starFill }}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.4a.6.6 0 0 1 1 0l2.7 5.5 6 .9a.6.6 0 0 1 .4 1l-4.4 4.3 1 6a.6.6 0 0 1-.8.6L12 18l-5.4 2.8a.6.6 0 0 1-.8-.6l1-6-4.4-4.3a.6.6 0 0 1 .3-1l6.1-.9z"></path></svg></button>
+</div>
+</sc-for>
+<sc-if value="{{ v.modelsEmpty }}"><div style="padding:16px 10px;font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ v.modelsEmpty }}</div></sc-if>
+</div>
+<sc-if value="{{ v.showEffort }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:11px;padding:13px 14px;border-top:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px">
+<span style="color:var(--fg-muted)">Effort</span>
+<span style="color:var(--fg)">{{ v.effortLabel }}</span>
+<span style="flex:1"></span>
+<span title="How long the agent may think before it answers. Higher effort costs more and takes longer." style="display:flex;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted)"><span>Faster</span><span>Smarter</span></div>
+{{ v.effortEl }}
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{ v.sent }}">
+<div role="status" style="display:flex;align-items:center;gap:8px;padding:0 12px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--success);animation:op-pulse-dot 1.2s ease-in-out infinite"></span>{{ v.sentMsg }}</div>
+</sc-if>
+<sc-if value="{{ v.ne.show }}">
+<div onClick="{{ v.ne.cancel }}" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--overlay, rgba(0,0,0,.45));backdrop-filter:blur(3px)">
+<div role="dialog" aria-modal="true" aria-labelledby="ne-title" onClick="{{ stop }}" style="width:100%;max-width:520px;max-height:calc(100vh - 48px);display:flex;flex-direction:column;border-radius:28px;background:var(--card);box-shadow:var(--shadow-modal);overflow:hidden;animation:op-rise-in 220ms cubic-bezier(.16,1,.3,1);text-align:left">
+<div style="position:relative;display:flex;flex-direction:column;gap:6px;padding:24px 64px 8px 28px">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" title="Close" onClick="{{ v.ne.cancel }}" style="position:absolute;top:18px;right:18px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
+<h2 id="ne-title" style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em;color:var(--fg)">New environment</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">A named setup to start sessions in: where it runs, its variables and a setup script.</p>
+</div>
+<div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:18px;padding:16px 28px 8px">
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:500;color:var(--fg)">Name</span>
+<input type="text" value="{{ v.ne.name }}" onChange="{{ v.ne.onName }}" placeholder="Web preview" autoFocus="{{ true }}" style="height:34px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--field, var(--card));font:inherit;font-size:14px;color:var(--fg);outline:none"></label>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;font-weight:500;color:var(--fg)">Runs on</span>
+<div role="radiogroup" aria-label="Runs on" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface);align-self:flex-start">
+<sc-for list="{{ v.ne.kinds }}" as="k" hint-placeholder-count="2">
+<button type="button" role="radio" aria-checked="{{ k.selS }}" onClick="{{ k.pick }}" style="height:28px;padding:0 14px;border:0;border-radius:980px;background:{{ k.bg }};color:{{ k.fg }};font:inherit;font-size:13px;cursor:pointer">{{ k.label }}</button>
+</sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ v.ne.targets }}" as="t" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{ t.selS }}" aria-disabled="{{ t.off }}" onClick="{{ t.pick }}" title="{{ t.title }}" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border:1px solid {{ t.border }};border-radius:980px;background:{{ t.bg }};font:inherit;font-size:13px;color:{{ t.fg }};opacity:{{ t.op }};cursor:{{ t.cursor }}">
+<sc-if value="{{ t.dot }}"><span style="width:6px;height:6px;border-radius:980px;background:{{ t.dot }}"></span></sc-if>
+<sc-if value="{{ t.logo }}"><img src="{{ t.logo }}" alt="" style="width:13px;height:13px;object-fit:contain"></sc-if>{{ t.label }}</button>
+</sc-for>
+</div>
+<span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ v.ne.hint }}</span>
+</div>
+
+<sc-if value="{{ v.ne.isCloud }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;font-weight:500;color:var(--fg)">Network access</span>
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ v.ne.nets }}" as="n" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{ n.selS }}" onClick="{{ n.pick }}" style="display:flex;align-items:flex-start;gap:10px;padding:7px 10px;border:0;border-radius:10px;background:{{ n.bg }};font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:none;width:14px;height:14px;margin-top:2px;box-sizing:border-box;border-radius:980px;border:{{ n.ring }}"></span>
+<span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:13.5px;color:var(--fg)">{{ n.label }}</span><span style="font-size:12px;color:var(--fg-muted)">{{ n.desc }}</span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<label style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:500;color:var(--fg)">Environment variables<span style="font-weight:400;color:var(--fg-subtle)">Optional · one per line</span></span>
+<textarea value="{{ v.ne.vars }}" onChange="{{ v.ne.onVars }}" rows="3" spellCheck="false" placeholder="API_URL=https://staging.flama.ai" style="padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--field, var(--card));font-family:var(--font-mono);font-size:12.5px;line-height:1.55;color:var(--fg);outline:none;resize:vertical"></textarea></label>
+
+<label style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:500;color:var(--fg)">Setup script<span style="font-weight:400;color:var(--fg-subtle)">Optional · runs before the agent starts</span></span>
+<textarea value="{{ v.ne.setup }}" onChange="{{ v.ne.onSetup }}" rows="3" spellCheck="false" placeholder="pnpm install&#10;pnpm db:migrate" style="padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--field, var(--card));font-family:var(--font-mono);font-size:12.5px;line-height:1.55;color:var(--fg);outline:none;resize:vertical"></textarea></label>
+</div>
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:16px 28px 24px">
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ v.ne.cancel }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ v.ne.createOff }}" onClick="{{ v.ne.create }}" style="opacity:{{ v.ne.createOp }}">Create and use</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const HOSTS = [
+  { id: 'optimus', desc: '32 vCPU · eu-west', st: 'idle', folders: [
+    { p: '~/code/oppenheimer', repo: 'JordiParraCrespo/oppenheimer', br: 'docs/design-export-2026-10-15', dirty: '1 file' },
+    { p: '~/code/flama-web', repo: 'flama-ai/web', br: 'main' },
+    { p: '~/code/flama-api', repo: 'flama-ai/api', br: 'main' }] },
+  { id: 'mac-studio', desc: 'This Mac', st: 'idle', folders: [
+    { p: '~/dev/xrp-mobile', repo: 'flama-ai/xrp-mobile', br: 'feat/expo-54', dirty: '3 files' }] },
+  { id: 'build-01', desc: '16 vCPU · us-east', st: 'busy', note: '2 sessions', folders: [
+    { p: '/srv/flama-web', repo: 'flama-ai/web', br: 'main' }] },
+  { id: 'gpu-a100', desc: 'A100 · eu-central', st: 'idle', folders: [
+    { p: '~/research/retriever', repo: 'flama-ai/api', br: 'exp/pgvector' }] },
+  { id: 'staging-box', desc: '8 vCPU · eu-west', st: 'busy', note: '1 session', folders: [] },
+  { id: 'jordi-laptop', desc: 'MacBook Pro', st: 'idle', folders: [
+    { p: '~/code/oppenheimer', repo: 'JordiParraCrespo/oppenheimer', br: 'main' }] },
+  { id: 'fable', desc: 'seen 2h ago', st: 'off', off: true, folders: [] },
+];
+const ACCOUNTS = [
+  { id: 'cc-work', prov: 'claude', provLabel: 'Claude Code', acct: 'jordi@flama.ai', short: 'work', logo: './assets/agents/claude.svg',
+    envs: [{ n: 'Default', d: 'Trusted network' }, { n: 'Staging secrets', d: 'Env vars + setup' }, { n: 'Prod read-only', d: 'No egress' }, { n: 'Mobile CI', d: 'Xcode 17 · Android SDK' }] },
+  { id: 'cc-personal', prov: 'claude', provLabel: 'Claude Code', acct: 'jordiparra99@gmail.com', short: 'personal', logo: './assets/agents/claude.svg',
+    envs: [{ n: 'Default', d: 'Trusted network' }, { n: 'Data notebooks', d: 'Python 3.13 · GPU' }] },
+  { id: 'cx-work', prov: 'codex', provLabel: 'Codex', acct: 'jordi@flama.ai', short: 'work', logo: './assets/agents/codex.svg',
+    envs: [{ n: 'flama-web', d: 'Node 22 · internet on' }, { n: 'flama-api', d: 'Python 3.13 · no internet' }, { n: 'xrp-mobile', d: 'Node 22 · Expo' }] },
+  { id: 'cur-team', prov: 'cursor', provLabel: 'Cursor', acct: 'flama-ai team', short: 'team', logo: './assets/agents/cursor.png', envs: [{ n: 'Default', d: 'Cursor’s cloud' }] },
+  { id: 'cur-personal', prov: 'cursor', provLabel: 'Cursor', acct: 'Personal · Pro+', short: 'personal', logo: './assets/agents/cursor.png', envs: [{ n: 'Default', d: 'Cursor’s cloud' }] },
+];
+const CLOUD = ACCOUNTS.flatMap(a => a.envs.map(e => ({ id: a.id + ':' + e.n, acct: a, prov: a.prov, label: e.n, desc: e.d, logo: a.logo })));
+const SAVED = [
+  { id: 'web-preview', label: 'Web preview', desc: 'Vite · port 5173', e: { k: 'host', id: 'optimus', mode: 'worktree' } },
+  { id: 'mobile-ci', label: 'Mobile CI', desc: 'Xcode 17 · Android SDK', e: { k: 'cloud', id: 'cc-work:Mobile CI' } },
+  { id: 'gpu', label: 'GPU research', desc: 'CUDA 13 · Python 3.13', e: { k: 'host', id: 'gpu-a100', mode: 'worktree' } },
+  { id: 'prod-ro', label: 'Prod read-only', desc: 'No egress', e: { k: 'cloud', id: 'cc-work:Prod read-only' } },
+  { id: 'notebooks', label: 'Data notebooks', desc: 'Jupyter · GPU', e: { k: 'cloud', id: 'cc-personal:Data notebooks' } },
+];
+const FS = {
+  '~': ['code', 'dev', 'research', 'Desktop', 'Downloads'],
+  '~/code': ['oppenheimer', 'flama-web', 'flama-api', 'sandbox', 'archive'],
+  '~/code/sandbox': ['tmp-ui', 'scratch', 'bench'],
+  '~/code/archive': ['old-landing', 'v0-console'],
+  '~/dev': ['xrp-mobile', 'expo-playground', 'dotfiles'],
+  '~/research': ['retriever', 'notebooks', 'papers'],
+  '~/research/notebooks': ['2026-10-eval', '2026-09-baseline'],
+  '~/Desktop': [], '~/Downloads': [],
+};
+const GIT = {
+  '~/code/oppenheimer': { repo: 'JordiParraCrespo/oppenheimer', br: 'docs/design-export-2026-10-15', dirty: '1 file' },
+  '~/code/flama-web': { repo: 'flama-ai/web', br: 'main' },
+  '~/code/flama-api': { repo: 'flama-ai/api', br: 'main', dirty: '4 files' },
+  '~/code/sandbox/tmp-ui': { repo: 'JordiParraCrespo/tmp-ui', br: 'main' },
+  '~/code/archive/old-landing': { repo: 'flama-ai/landing', br: 'legacy' },
+  '~/code/archive/v0-console': { repo: 'JordiParraCrespo/oppenheimer', br: 'v0' },
+  '~/dev/xrp-mobile': { repo: 'flama-ai/xrp-mobile', br: 'feat/expo-54', dirty: '3 files' },
+  '~/dev/expo-playground': { repo: 'JordiParraCrespo/expo-playground', br: 'main' },
+  '~/dev/dotfiles': { repo: 'JordiParraCrespo/dotfiles', br: 'main' },
+  '~/research/retriever': { repo: 'flama-ai/api', br: 'exp/pgvector' },
+};
+const REPOS = [
+  { r: 'JordiParraCrespo/oppenheimer', d: 'Updated 2h ago' },
+  { r: 'flama-ai/web', d: 'Updated yesterday' },
+  { r: 'flama-ai/api', d: 'Updated 3 days ago' },
+  { r: 'flama-ai/xrp-mobile', d: 'Updated last week' },
+];
+const BRANCHES = ['main', 'develop', 'docs/design-export-2026-10-15', 'frontend-audit/fix-2026-10-12'];
+const PERMS = [
+  { id: 'auto', label: 'Auto', desc: 'The agent handles permission decisions' },
+  { id: 'edits', label: 'Accept edits', desc: 'Accepts every file edit, asks for the rest' },
+  { id: 'plan', label: 'Plan', desc: 'Proposes a plan before changing anything' },
+  { id: 'skip', label: 'Dangerously skip', desc: 'Never asks. Use only in a sandbox.', danger: true },
+];
+const PROVS = [
+  { id: 'claude', label: 'Claude Code', logo: './assets/agents/claude.svg', models: ['Opus 5.5', 'Opus 5', 'Sonnet 5', 'Haiku 4.5'] },
+  { id: 'codex', label: 'Codex', logo: './assets/agents/codex.svg', models: ['GPT-5.6 Luna', 'GPT-5.5', 'GPT-5.5 mini'] },
+  { id: 'cursor', label: 'Cursor', logo: './assets/agents/cursor.png', cloudOnly: true, models: ['Composer 2', 'Grok 4.7', 'Sonnet 5'] },
+  { id: 'gemini', label: 'Gemini CLI', logo: './assets/agents/gemini.png', models: ['Gemini 3 Pro', 'Gemini 3 Flash'] },
+  { id: 'opencode', label: 'OpenCode', logo: './assets/agents/opencode.png', models: ['Kimi K3', 'GLM 5', 'Qwen 4 Coder'] },
+  { id: 'terminal', label: 'Terminal', term: true, hostOnly: true, models: ['tmux session'] },
+];
+const EFFORT = ['Low', 'Medium', 'High', 'Extra high', 'Max'];
+const T = x => x ? 'true' : undefined;
+const BUBBLES = Array.from({ length: 26 }, (_, i) => {
+  const r = n => { const x = Math.sin(i * 9301 + n * 49297) * 233280; return x - Math.floor(x); };
+  return { left: 30 + r(1) * 70, top: 15 + r(2) * 70, size: 2 + Math.round(r(3) * 4), dur: 2.4 + r(4) * 2.4, delay: r(5), dx: -(50 + Math.round(r(6) * 110)), dy: Math.round((r(7) - 0.5) * 8) };
+});
+const SPEED = [0.45, 0.8, 1.2, 1.7, 2.4], COUNT = [4, 8, 13, 19, 26], KNOB = 30;
+function EffortSlider({ value, onChange }) {
+  const h = React.createElement, ref = React.useRef(null);
+  const last = EFFORT.length - 1, max = value === last;
+  const from = x => { const r = ref.current.getBoundingClientRect(); return Math.max(0, Math.min(last, Math.floor((x - r.left) / r.width * EFFORT.length))); };
+  const down = e => { e.preventDefault(); e.stopPropagation(); ref.current.setPointerCapture(e.pointerId); onChange(from(e.clientX)); };
+  const move = e => { if (!ref.current.hasPointerCapture(e.pointerId)) return; const n = from(e.clientX); if (n !== value) onChange(n); };
+  const key = e => { const s = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : e.key === 'Home' ? -9 : e.key === 'End' ? 9 : 0; if (!s) return; e.preventDefault(); onChange(Math.max(0, Math.min(last, value + s))); };
+  const pos = `calc((100% - ${KNOB}px) * ${value / last})`, ease = '140ms cubic-bezier(.4,0,.2,1)';
+  return h('div', { ref, role: 'slider', tabIndex: 0, 'aria-label': 'Effort', 'aria-valuemin': 1, 'aria-valuemax': EFFORT.length, 'aria-valuenow': value + 1, 'aria-valuetext': EFFORT[value],
+      onPointerDown: down, onPointerMove: move, onClick: e => e.stopPropagation(), onKeyDown: key,
+      style: { position: 'relative', height: 28, borderRadius: 10, overflow: 'hidden', background: 'var(--hover-surface)', cursor: 'pointer', touchAction: 'none', userSelect: 'none', outline: 'none' } },
+    h('span', { 'aria-hidden': true, style: { position: 'absolute', top: 0, bottom: 0, left: 0, width: `calc(${pos} + ${KNOB}px)`, borderRadius: 10, overflow: 'hidden', background: 'var(--control-hover)', transition: 'width ' + ease, pointerEvents: 'none' } },
+      h('span', { style: { position: 'absolute', inset: 0, background: 'linear-gradient(90deg,#34c759,#00c7a8,#00b4d8,#0a84ff,#34c759)', backgroundSize: '200% 100%', animation: 'op-shimmer 8s linear infinite', opacity: max ? 1 : 0, transition: 'opacity 400ms cubic-bezier(.4,0,.2,1)' } }),
+      BUBBLES.map((b, i) => {
+        const d = (b.dur / SPEED[value]).toFixed(2);
+        return h('span', { key: 'b' + i, style: { position: 'absolute', left: b.left + '%', top: b.top + '%', width: b.size, height: b.size, borderRadius: 980, background: max ? 'rgba(255,255,255,.85)' : 'var(--fg-subtle)', '--dx': b.dx + 'px', '--dy': b.dy + 'px',
+          opacity: i < COUNT[value] ? (max ? 1 : 0.6) : 0, transition: 'opacity 400ms, background 400ms', animation: `op-bubble ${d}s linear ${(-b.delay * d).toFixed(2)}s infinite` } });
+      })),
+    h('span', { 'aria-hidden': true, style: { position: 'absolute', inset: 0, pointerEvents: 'none' } },
+      EFFORT.map((_, i) => h('span', { key: 'd' + i, style: { position: 'absolute', top: '50%', left: `calc((100% - ${KNOB}px) * ${i / last} + ${KNOB / 2}px)`, width: 4, height: 4, borderRadius: 980, background: 'var(--fg-subtle)', transform: 'translate(-50%,-50%)', opacity: i <= value ? 0 : 0.55, transition: 'opacity 140ms' } }))),
+    h('span', { 'aria-hidden': true, style: { position: 'absolute', top: 0, bottom: 0, left: pos, width: KNOB, borderRadius: 10, background: 'var(--fg)', transition: 'left ' + ease, pointerEvents: 'none' } })
+  );
+}
+function EffortSliderOld({ value, onChange }) {
+  const h = React.createElement, ref = React.useRef(null);
+  const [drag, setDrag] = React.useState(null);
+  const steps = EFFORT.length - 1, f = drag != null ? drag : value / steps, max = drag == null ? value === steps : drag > 0.92;
+  const lvl = drag != null ? Math.round(drag * steps) : value;
+  const at = e => { const b = ref.current.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - b.left - 17) / (b.width - 34))); };
+  const down = e => { e.stopPropagation(); ref.current.setPointerCapture(e.pointerId); setDrag(at(e)); };
+  const move = e => { if (drag != null) setDrag(at(e)); };
+  const up = e => { if (drag == null) return; const n = Math.round(at(e) * steps); setDrag(null); onChange(n); };
+  const key = e => { if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.min(steps, value + 1)); } if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.max(0, value - 1)); } };
+  const pos = `calc((100% - 34px) * ${f})`, ease = drag != null ? 'none' : '220ms cubic-bezier(.4,0,.2,1)';
+  return h('div', { ref, role: 'slider', tabIndex: 0, 'aria-label': 'Effort', 'aria-valuemin': 0, 'aria-valuemax': steps, 'aria-valuenow': value, 'aria-valuetext': EFFORT[value],
+      onPointerDown: down, onPointerMove: move, onPointerUp: up, onClick: e => e.stopPropagation(), onKeyDown: key,
+      style: { position: 'relative', height: 34, margin: '0 2px', cursor: drag != null ? 'grabbing' : 'pointer', touchAction: 'none', outline: 'none' } },
+    h('div', { style: { position: 'absolute', left: 0, right: 0, top: 3, height: 28, borderRadius: 980, background: 'var(--hover-surface)', overflow: 'hidden' } },
+      EFFORT.map((_, i) => h('span', { key: 'd' + i, style: { position: 'absolute', top: 11, left: `calc(17px + (100% - 34px) * ${i / steps} - 3px)`, width: 6, height: 6, borderRadius: 980, background: 'var(--fg-subtle)', opacity: 0.6 } })),
+      h('div', { style: { position: 'absolute', left: 0, top: 0, bottom: 0, width: `calc(${pos} + 34px)`, borderRadius: 980, background: 'var(--primary)', overflow: 'hidden', transition: drag != null ? 'none' : 'width ' + ease } },
+        h('div', { style: { position: 'absolute', inset: 0, background: 'linear-gradient(90deg,#34c759,#00c7a8,#00b4d8,#0a84ff,#34c759)', backgroundSize: '200% 100%', animation: 'op-shimmer 8s linear infinite', opacity: max ? 1 : 0, transition: 'opacity 400ms cubic-bezier(.4,0,.2,1)' } }),
+        h('div', { style: { position: 'absolute', inset: 0 } },
+          BUBBLES.map((b, i) => {
+            const speed = SPEED[lvl], d = (b.dur / speed).toFixed(2);
+            return h('span', { key: 'b' + i, style: { position: 'absolute', left: b.left + '%', top: b.top + '%', width: b.size, height: b.size, borderRadius: 980, background: 'rgba(255,255,255,.85)', boxShadow: '0 0 4px rgba(255,255,255,.5)', '--dx': b.dx + 'px', '--dy': b.dy + 'px',
+              opacity: i < COUNT[lvl] ? 1 : 0, transition: 'opacity 400ms',
+              animation: `op-bubble ${d}s linear ${(-b.delay * d).toFixed(2)}s infinite` } });
+          }))
+      )
+    ),
+    h('span', { style: { position: 'absolute', top: 0, left: pos, width: 34, height: 34, borderRadius: 980, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.18), 0 4px 12px rgba(0,0,0,.14)', transform: drag != null ? 'scale(1.06)' : 'none', transition: drag != null ? 'transform 80ms' : 'left ' + ease + ', transform 80ms' } })
+  );
+}
+const short = r => r.split('/').pop();
+const init = () => ({ open: null, exp: 'optimus', env: { k: 'host', id: 'optimus', mode: 'worktree' }, repos: [{ r: 'JordiParraCrespo/oppenheimer', b: 'main' }], perm: 'auto', prov: 'claude', model: 'Opus 5.5', effort: 1, wsCol: 'repos', text: '', attach: false, rec: false, sent: false });
+
+class Component extends DCLogic {
+  state = { a: init(), b: { ...init(), repos: [{ r: 'JordiParraCrespo/oppenheimer', b: 'main' }, { r: 'flama-ai/web', b: 'main' }] } };
+  set(v, p) { this.setState(s => ({ [v]: { ...s[v], ...(typeof p === 'function' ? p(s[v]) : p) } })); }
+  stopped(fn) { return e => { if (e && e.stopPropagation) e.stopPropagation(); fn(e); }; }
+
+  build(v) {
+    const s = this.state[v], isB = v === 'b', S = (p) => this.stopped(() => this.set(v, p));
+    const term = s.prov === 'terminal';
+    const env = s.env, home = env.k === 'host' && env.mode === 'home', folder = env.k === 'host' && env.mode === 'folder' ? (env.fobj || HOSTS.find(h => h.id === env.id).folders.find(f => f.p === env.folder)) : null;
+    const close = isB ? {} : { open: null };
+    const pickEnv = (e) => S(st => {
+      if (e.k === 'cloud' && st.prov === 'terminal') return {};
+      const n = { env: e, ...close };
+      if (e.k === 'cloud') {
+        const a = ACCOUNTS.find(x => e.id.indexOf(x.id + ':') === 0);
+        if (a) { if (st.prov !== a.prov) { n.prov = a.prov; n.model = PROVS.find(p => p.id === a.prov).models[0]; } n.lastAcct = { ...(st.lastAcct || {}), [a.prov]: a.id }; }
+      }
+      else if (st.prov === 'cursor') { n.prov = 'claude'; n.model = 'Opus 5.5'; }
+      if (isB && e.mode !== 'worktree' && e.k === 'host') n.wsCol = 'repos';
+      return n;
+    });
+    const envRows = [{ head: 'Hosts' }];
+    HOSTS.forEach(h => {
+      const exp = s.exp === h.id && !h.off, onHost = env.k === 'host' && env.id === h.id;
+      envRows.push({ row: T, icon: 'terminal', label: h.id, desc: h.off ? h.desc : onHost && !exp ? (env.mode === 'folder' ? env.folder : env.mode === 'home' ? 'Home folder' : 'New worktree') + ' · ' + h.desc : h.desc, sel: T(onHost && !exp), off: T(h.off), op: h.off ? '0.45' : '1', cursor: h.off ? 'default' : 'pointer', pad: '10px', chev: T(!h.off), rot: exp ? '90deg' : '0deg', font: 'inherit',
+        pick: S(st => h.off ? {} : { exp: st.exp === h.id ? null : h.id }) });
+      if (exp) {
+        envRows.push({ row: T, icon: 'git-branch', label: 'New worktree', desc: 'From the repositories and branches you pick', sel: T(onHost && env.mode === 'worktree'), op: '1', cursor: 'pointer', pad: '34px', font: 'inherit', pick: pickEnv({ k: 'host', id: h.id, mode: 'worktree' }) });
+        envRows.push({ row: T, icon: 'terminal', label: 'Home folder', desc: '~ · no repository, just a connection', sel: T(onHost && env.mode === 'home'), op: '1', cursor: 'pointer', pad: '34px', font: 'inherit', pick: pickEnv({ k: 'host', id: h.id, mode: 'home' }) });
+        h.folders.forEach(f => envRows.push({ row: T, icon: 'folder', label: f.p, desc: short(f.repo) + ' · ' + f.br, sel: T(onHost && env.folder === f.p), op: '1', cursor: 'pointer', pad: '34px', font: 'var(--font-mono)', pick: pickEnv({ k: 'host', id: h.id, mode: 'folder', folder: f.p }) }));
+      }
+    });
+    envRows.push({ head: 'Cloud' });
+    CLOUD.forEach(c => envRows.push({ row: T, cloud: T(!c.logo), logo: c.logo, label: c.label, desc: term ? 'A terminal needs a host' : c.desc, sel: T(env.k === 'cloud' && env.id === c.id), off: T(term), op: term ? '0.45' : '1', cursor: term ? 'default' : 'pointer', pad: '10px', font: 'inherit', pick: pickEnv({ k: 'cloud', id: c.id }) }));
+    envRows.push({ action: T });
+
+    const eq = (s.envQ || '').trim().toLowerCase(), hit = t => !eq || t.toLowerCase().indexOf(eq) > -1;
+    const pickEnv2 = e => S(st => {
+      if (e.k === 'cloud' && st.prov === 'terminal') return {};
+      const n = { env: e, open: null, envHost: null, envAcct: null, envBrowse: null, envPath: null, envQ: '' };
+      if (e.k === 'cloud') {
+        const a = ACCOUNTS.find(x => e.id.indexOf(x.id + ':') === 0);
+        if (a) { if (st.prov !== a.prov) { n.prov = a.prov; n.model = PROVS.find(p => p.id === a.prov).models[0]; } n.lastAcct = { ...(st.lastAcct || {}), [a.prov]: a.id }; }
+      }
+      else if (st.prov === 'cursor') { n.prov = 'claude'; n.model = 'Opus 5.5'; }
+      return n;
+    });
+    const dotOf = h => h.st === 'off' ? 'var(--fg-subtle)' : h.st === 'busy' ? 'var(--warning)' : 'var(--success)';
+    const modeText = e => e.mode === 'folder' ? short(e.folder) : e.mode === 'home' ? '~' : 'New worktree';
+    const drill = s.envHost ? HOSTS.find(h => h.id === s.envHost) : null;
+    const hostRows = HOSTS.filter(h => hit(h.id + ' ' + h.desc)).map(h => {
+      const on = env.k === 'host' && env.id === h.id;
+      return { name: h.id, meta: on ? modeText(env) : h.off ? 'Offline · ' + h.desc : h.note ? h.note : h.desc, dot: dotOf(h), sel: T(on), selS: on ? 'true' : 'false',
+        fg: h.off ? 'var(--fg-subtle)' : 'var(--fg)', metaFg: on ? 'var(--fg-muted)' : 'var(--fg-subtle)', cursor: h.off ? 'default' : 'pointer', off: T(h.off),
+        pick: S(h.off ? {} : { envHost: h.id, envQ: '' }) };
+    });
+    const curCloud = env.k === 'cloud' ? CLOUD.find(c => c.id === env.id) : null;
+    const cloudRows = [];
+    ACCOUNTS.filter(a => hit(a.provLabel + ' ' + a.acct + ' ' + a.envs.map(e => e.n).join(' '))).forEach((a, i, arr) => {
+      if (!i || arr[i - 1].prov !== a.prov) cloudRows.push({ head: a.provLabel });
+      const on = !!curCloud && curCloud.acct.id === a.id, multi = a.envs.length > 1;
+      cloudRows.push({ row: T, name: a.acct, logo: a.logo, sel: T(on), chev: T(multi),
+        meta: term ? 'Needs a host' : on ? curCloud.label : multi ? a.envs.length + ' environments' : 'No environments',
+        fg: term ? 'var(--fg-subtle)' : 'var(--fg)', cursor: term ? 'default' : 'pointer', off: T(term),
+        pick: term ? S({}) : multi ? S({ envAcct: a.id, envQ: '' }) : pickEnv2({ k: 'cloud', id: a.id + ':' + a.envs[0].n }) });
+    });
+    const savedRows = SAVED.filter(x => hit(x.label + ' ' + x.desc)).map(x => {
+      const c = x.e.k === 'cloud' ? CLOUD.find(y => y.id === x.e.id) : null, off = term && !!c;
+      return { name: x.label, meta: c ? c.acct.provLabel + ' · ' + c.acct.short : x.e.id, logo: c ? c.logo : undefined, hostIcon: T(!c), sel: T(env.saved === x.id),
+        fg: off ? 'var(--fg-subtle)' : 'var(--fg)', cursor: off ? 'default' : 'pointer', off: T(off), title: x.desc,
+        pick: off ? S({}) : pickEnv2({ ...x.e, saved: x.id }) };
+    });
+    const drillAcct = s.envAcct ? ACCOUNTS.find(a => a.id === s.envAcct) : null;
+    const acctRows = drillAcct ? drillAcct.envs.filter(e => hit(e.n + ' ' + e.d)).map(e => ({ label: e.n, meta: e.d, sel: T(env.k === 'cloud' && env.id === drillAcct.id + ':' + e.n), pick: pickEnv2({ k: 'cloud', id: drillAcct.id + ':' + e.n }) })) : [];
+    const subRows = drill ? [
+      { icon: 'git-branch', label: 'New worktree', meta: 'from repos you pick', on: env.k === 'host' && env.id === drill.id && env.mode === 'worktree', e: { k: 'host', id: drill.id, mode: 'worktree' } },
+      { icon: 'terminal', label: 'Home folder', meta: '~ · no repository', on: env.k === 'host' && env.id === drill.id && env.mode === 'home', e: { k: 'host', id: drill.id, mode: 'home' } },
+    ].concat(drill.folders.map(f => ({ icon: 'folder', label: f.p, mono: T(true), meta: f.br, on: env.k === 'host' && env.id === drill.id && env.folder === f.p, e: { k: 'host', id: drill.id, mode: 'folder', folder: f.p } })))
+      .filter(r => hit(r.label + ' ' + r.meta))
+      .map(r => ({ ...r, sel: T(r.on), font: r.mono ? 'var(--font-mono)' : 'inherit', size: r.mono ? '12.5px' : '13px', pick: pickEnv2(r.e) })) : [];
+    const browse = drill && s.envBrowse ? s.envBrowse : null;
+    const useDir = p => pickEnv2({ k: 'host', id: drill.id, mode: 'folder', folder: p, fobj: GIT[p] ? { p, ...GIT[p] } : { p, repo: null, br: '—', bare: true } });
+    let browseVals = {};
+    if (browse) {
+      const kids = (FS[browse] || []).map(n => { const p = browse + '/' + n; return { p, name: n, git: GIT[p], hasKids: !!(FS[p] && FS[p].length) }; }).filter(k => hit(k.name));
+      const segs = browse.split('/');
+      const here = GIT[browse], draft = s.envPath != null ? s.envPath : browse;
+      const go = p => S({ envBrowse: p, envPath: null, envQ: '' });
+      browseVals = {
+        browsing: T(true), notBrowsing: undefined, w: '360px', footDisp: 'none',
+        noUp: T(segs.length < 2), upOp: segs.length < 2 ? '0.35' : '1', pathBorder: s.envPathErr ? 'var(--danger)' : 'var(--border-subtle)',
+        path: draft, pathErr: T(s.envPathErr),
+        onPath: e => this.set(v, { envPath: e.target.value, envPathErr: false }),
+        onPathKey: e => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          const p = (s.envPath != null ? s.envPath : browse).trim().replace(/\/+$/, '');
+          if (FS[p]) this.set(v, { envBrowse: p, envPath: null, envPathErr: false });
+          else if (GIT[p]) useDir(p)(e);
+          else this.set(v, { envPathErr: true });
+        },
+        up: T(segs.length > 1), onUp: go(segs.slice(0, -1).join('/')),
+        crumbs: segs.map((n, i) => ({ name: n, sep: T(i > 0), go: go(segs.slice(0, i + 1).join('/')), fg: i === segs.length - 1 ? 'var(--fg)' : 'var(--fg-muted)' })),
+        dirs: kids.map(k => ({ name: k.name, branch: k.git ? k.git.br : '', isRepo: T(k.git), dirty: k.git && k.git.dirty ? '●' : '', hasKids: T(k.hasKids && !k.git), title: k.p,
+          pick: k.git || !k.hasKids ? useDir(k.p) : go(k.p) })),
+        dirsEmpty: T(!kids.length), dirsEmptyText: eq ? 'No folder matches “' + (s.envQ || '').trim() + '”.' : 'This folder has no subfolders.',
+        hereRepo: T(here), hereText: here ? short(here.repo) + ' · ' + here.br : 'Not a git repository · no branch',
+        useLabel: 'Open ' + (segs[segs.length - 1] || browse), onUse: useDir(browse),
+      };
+    }
+    const ne = s.newEnv;
+    const NE = p => S(st => ({ newEnv: { ...st.newEnv, ...p } }));
+    const neVals = { open: S({ open: null, newEnv: { name: '', kind: 'host', host: 'optimus', acct: 'cc-work', net: 'trusted', vars: '', setup: '' } }), show: T(!!ne) };
+    if (ne) {
+      const ccAccts = ACCOUNTS, acct = ACCOUNTS.find(a => a.id === ne.acct);
+      const acctHint = !acct ? '' : acct.prov === 'cursor' ? 'Saved in Oppenheimer. Cursor has no environments of its own, so the variables and setup script go with each run on ' + acct.acct + '.' : 'Created in ' + acct.acct + ' on ' + acct.provLabel + ', so it also shows up in ' + (acct.prov === 'codex' ? 'chatgpt.com/codex' : 'claude.ai/code') + '.';
+      Object.assign(neVals, {
+        name: ne.name, onName: e => this.set(v, { newEnv: { ...this.state[v].newEnv, name: e.target.value } }),
+        vars: ne.vars, onVars: e => this.set(v, { newEnv: { ...this.state[v].newEnv, vars: e.target.value } }),
+        setup: ne.setup, onSetup: e => this.set(v, { newEnv: { ...this.state[v].newEnv, setup: e.target.value } }),
+        kinds: [{ id: 'host', label: 'A host' }, { id: 'cloud', label: 'Cloud' }].map(k => ({ label: k.label, selS: ne.kind === k.id ? 'true' : 'false', bg: ne.kind === k.id ? 'var(--card)' : 'transparent', fg: ne.kind === k.id ? 'var(--fg)' : 'var(--fg-muted)', pick: NE({ kind: k.id }) })),
+        isCloud: T(ne.kind === 'cloud' && acct && acct.prov !== 'cursor'),
+        targets: ne.kind === 'host'
+          ? HOSTS.map(h => { const on = ne.host === h.id; return { label: h.id, dot: dotOf(h), selS: on ? 'true' : 'false', off: T(h.off), title: h.desc, border: on ? 'var(--fg)' : 'var(--border-subtle)', bg: on ? 'var(--hover-surface)' : 'transparent', fg: h.off ? 'var(--fg-subtle)' : 'var(--fg)', op: h.off ? '0.5' : '1', cursor: h.off ? 'default' : 'pointer', pick: NE(h.off ? {} : { host: h.id }) }; })
+          : ccAccts.map(a => { const on = ne.acct === a.id; return { label: a.provLabel + ' · ' + a.short, logo: a.logo, selS: on ? 'true' : 'false', title: a.provLabel + ' · ' + a.acct, border: on ? 'var(--fg)' : 'var(--border-subtle)', bg: on ? 'var(--hover-surface)' : 'transparent', fg: 'var(--fg)', op: '1', cursor: 'pointer', pick: NE({ acct: a.id }) }; }),
+        hint: ne.kind === 'host' ? 'Sessions in this environment start a new worktree on ' + ne.host + '. The variables and script run on the host.' : acctHint,
+        nets: [{ id: 'trusted', label: 'Trusted', desc: 'Package registries and GitHub only' }, { id: 'none', label: 'None', desc: 'No outbound network' }, { id: 'full', label: 'Full', desc: 'Any host on the internet' }].map(n => ({ ...n, selS: ne.net === n.id ? 'true' : 'false', bg: ne.net === n.id ? 'var(--hover-surface)' : 'transparent', ring: ne.net === n.id ? '4px solid var(--primary)' : '1.5px solid var(--border)', pick: NE({ net: n.id }) })),
+        cancel: S({ newEnv: null }),
+        createOff: T(!ne.name.trim()), createOp: ne.name.trim() ? '1' : '0.4',
+        create: this.stopped(() => {
+          const name = ne.name.trim(); if (!name) return;
+          const nVars = ne.vars.split('\n').filter(l => l.trim()).length;
+          const a0 = ACCOUNTS.find(x => x.id === ne.acct), isCur = ne.kind === 'cloud' && a0 && a0.prov === 'cursor';
+          const desc = [nVars ? nVars + (nVars === 1 ? ' variable' : ' variables') : null, ne.setup.trim() ? 'setup script' : null, ne.kind === 'cloud' && !isCur ? ne.net + ' network' : null].filter(Boolean).join(' · ') || 'No setup';
+          let e;
+          if (isCur) e = { k: 'cloud', id: a0.id + ':' + a0.envs[0].n };
+          else if (ne.kind === 'cloud') {
+            const a = a0; a.envs.push({ n: name, d: desc });
+            CLOUD.push({ id: a.id + ':' + name, acct: a, prov: a.prov, label: name, desc, logo: a.logo });
+            e = { k: 'cloud', id: a.id + ':' + name };
+          } else e = { k: 'host', id: ne.host, mode: 'worktree' };
+          const id = 'u' + Date.now();
+          SAVED.unshift({ id, label: name, desc, e });
+          this.set(v, { newEnv: null, env: { ...e, saved: id }, open: null });
+        }),
+      });
+    }
+    const envTab = s.envTab || (env.saved ? 'envs' : env.k === 'cloud' ? 'cloud' : 'hosts');
+    const tabHosts = envTab === 'hosts', tabEnvs = envTab === 'envs', tabCloud = envTab === 'cloud';
+    const nAcct = cloudRows.filter(r => r.row).length;
+    const envMenu = {
+      tabs: [{ id: 'envs', label: 'Environments', n: savedRows.length }, { id: 'hosts', label: 'Hosts', n: hostRows.length }, { id: 'cloud', label: 'Cloud', n: nAcct }].map(t => ({ ...t, selS: envTab === t.id ? 'true' : 'false',
+        fg: envTab === t.id ? 'var(--fg)' : 'var(--fg-muted)', bar: envTab === t.id ? 'var(--fg)' : 'transparent', pick: S({ envTab: t.id }) })),
+      showHosts: T(tabHosts && hostRows.length), showClouds: T(tabCloud && nAcct), showSaved: T(tabEnvs && savedRows.length), saved: savedRows,
+      acct: T(!!drillAcct), acctName: drillAcct ? drillAcct.acct : '', acctLogo: drillAcct ? drillAcct.logo : '', acctMeta: drillAcct ? drillAcct.provLabel : '', acctRows,
+      acctFoot: drillAcct ? 'Environments live in your ' + drillAcct.provLabel + ' account' : '',
+      open: T(!isB && s.open === 'env'), q: s.envQ || '', onQ: e => this.set(v, { envQ: e.target.value }),
+      ph: browse ? 'Filter ' + browse + '…' : drill ? 'Search ' + drill.id + '…' : drillAcct ? 'Search environments…' : tabHosts ? 'Search hosts…' : tabCloud ? 'Search accounts…' : 'Search environments…',
+      main: T(!drill && !drillAcct), drill: T(!!drill), back: S({ envHost: null, envAcct: null, envQ: '' }),
+      drillName: drill ? drill.id : '', drillMeta: drill ? drill.desc : '', drillDot: drill ? dotOf(drill) : '',
+      hosts: hostRows, hostsHead: 'Hosts · ' + HOSTS.length, hasHosts: T(hostRows.length), clouds: cloudRows, cloudHead: 'Cloud · ' + CLOUD.length, hasClouds: T(cloudRows.length),
+      empty: T(!browse && (drill ? subRows.length : drillAcct ? acctRows.length : tabHosts ? hostRows.length : tabEnvs ? savedRows.length : nAcct) === 0), emptyText: 'Nothing matches “' + (s.envQ || '').trim() + '”.',
+      w: '320px', notBrowsing: T(true), footDisp: 'block', ...browseVals,
+      drillBack: browse ? S({ envBrowse: null, envPath: null, envQ: '' }) : S({ envHost: null, envAcct: null, envQ: '' }),
+      drillMetaShown: browse ? 'Browse folders' : drill ? drill.desc : '',
+      onBrowse: S({ envBrowse: '~', envPath: null, envQ: '' }),
+      sub: subRows, browse: T(!!drill && !eq), subHead: drill ? (drill.folders.length ? 'Start in' : 'Start in · no recent folders') : '',
+    };
+    const cloud = curCloud;
+    const savedEnv = env.saved ? SAVED.find(x => x.id === env.saved) : null;
+    const envLabel = savedEnv ? savedEnv.label : cloud ? (cloud.prov === 'cursor' ? 'Cursor · ' + cloud.acct.short : cloud.label + ' · ' + cloud.acct.short) : folder ? env.id + ' · ' + short(folder.p) : home ? env.id + ' · ~' : env.id + ' · New worktree';
+
+    const key = isB ? s.wsCol : s.open;
+    let pick = { title: '', items: [] };
+    const m = /^(repo|br)(\d)$/.exec(key || '');
+    if (m && m[1] === 'repo') {
+      const i = +m[2], other = s.repos.filter((_, j) => j !== i).map(x => x.r);
+      pick = { title: 'Repositories', ph: 'Search repositories…', manage: T(true), items: REPOS.filter(x => other.indexOf(x.r) < 0).map(x => ({ label: x.r, desc: x.d, sel: T(s.repos[i].r === x.r), font: 'inherit',
+        onPick: S(st => ({ repos: st.repos.map((y, j) => j === i ? { r: x.r, b: 'main' } : y), open: null, wsCol: 'repos' })) })) };
+    } else if (m && m[1] === 'br') {
+      const i = +m[2], cur = folder ? folder.br : s.repos[i].b;
+      const list = folder ? [folder.br].concat(BRANCHES.filter(b => b !== folder.br)) : BRANCHES;
+      pick = { title: folder ? 'Branches in ' + short(folder.p) : 'Branches in ' + short(s.repos[i].r), ph: 'Search branches…', foot: 'Create and check out new branch…', items: list.map(b => ({ label: b, font: 'var(--font-mono)', meta: folder && b === folder.br ? 'current' : b === 'main' ? 'default' : '', desc: folder && b === folder.br && folder.dirty ? 'Uncommitted: ' + folder.dirty : undefined, sel: T(cur === b),
+        onPick: S(st => folder ? { open: null, wsCol: 'repos' } : ({ repos: st.repos.map((y, j) => j === i ? { ...y, b } : y), open: null, wsCol: 'repos' })) })) };
+    } else if (key === 'add') {
+      pick = { title: 'Add a second repository', ph: 'Search repositories…', items: REPOS.filter(x => s.repos.every(y => y.r !== x.r)).map(x => ({ label: x.r, desc: x.d, font: 'inherit', onPick: S(st => ({ repos: st.repos.concat({ r: x.r, b: 'main' }), open: null, wsCol: 'repos' })) })) };
+    }
+
+    const toggle = id => S(st => ({ open: st.open === id ? null : id }));
+    const slots = home ? [] : folder
+      ? [{ short: short(folder.p), full: folder.repo, sub: folder.p, icon: 'folder', branch: folder.br, locked: T(true), repoCursor: 'default', repoBg: 'transparent', brBg: s.open === 'br0' ? 'var(--hover-surface)' : 'transparent', onRepo: () => {}, onBr: isB ? S({ wsCol: 'br0' }) : toggle('br0'), showPick: T(!isB && s.open === 'br0') }]
+      : s.repos.map((x, i) => ({ short: short(x.r), full: x.r, icon: 'database', branch: x.b, repoCursor: 'pointer',
+          repoBg: s.open === 'repo' + i ? 'var(--hover-surface)' : 'transparent', brBg: s.open === 'br' + i ? 'var(--hover-surface)' : 'transparent',
+          onRepo: isB ? S({ wsCol: 'repo' + i }) : toggle('repo' + i), onBr: isB ? S({ wsCol: 'br' + i }) : toggle('br' + i),
+          canRemove: T(s.repos.length > 1), remove: S(st => ({ repos: st.repos.filter((_, j) => j !== i), open: null })),
+          showPick: T(!isB && (s.open === 'repo' + i || s.open === 'br' + i)) }));
+    const canAdd = !folder && !home && s.repos.length < 2;
+
+    const perm = PERMS.find(p => p.id === s.perm);
+    const prov = PROVS.find(p => p.id === s.prov);
+    const favTab = s.tabProv === 'fav', tabProv = favTab ? null : s.tabProv ? PROVS.find(p => p.id === s.tabProv) : prov;
+    const favs = s.favs || ['claude:Opus 5.5', 'cursor:Grok 4.7'], q = (s.q || '').trim().toLowerCase();
+    let rows;
+    if (q) rows = PROVS.flatMap(p => p.models.map(mm => ({ p, mm }))).filter(x => (x.mm + ' ' + x.p.label).toLowerCase().indexOf(q) > -1);
+    else if (favTab) rows = favs.map(k => { const [pid, mm] = k.split(':'); return { p: PROVS.find(p => p.id === pid), mm }; });
+    else rows = tabProv.models.map(mm => ({ p: tabProv, mm }));
+    const cross = !!q || favTab;
+    const isCursorEnv = !!cloud && cloud.prov === 'cursor';
+    const text = s.text || '';
+
+    return {
+      id: isB ? '1b' : '1a',
+      title: isB ? 'One workspace chip' : 'A chip per decision',
+      note: isB ? 'Where and what in one sheet: environment on the left, repositories and branches on the right. The row stays three chips.' : 'Like Claude Code on the web: environment, repository + branch (up to two), permissions, then agent and model on the right.',
+      isA: T(!isB), isB: T(isB),
+      text, onText: e => this.set(v, { text: e.target.value, sent: false }),
+      ph: s.rec ? 'Listening…' : term ? 'Command to run, or leave empty for a shell' : 'Describe a task or ask a question',
+      provTerm: T(term), provImg: T(!term), showPerm: T(!term), showEffort: T(!(tabProv && tabProv.term)),
+      attach: T(s.attach), onPlus: S(st => ({ attach: !st.attach })),
+      recS: s.rec ? 'true' : 'false', micBg: s.rec ? 'var(--selected-surface)' : 'transparent', micFg: s.rec ? 'var(--primary)' : 'var(--fg-muted)', onMic: S(st => ({ rec: !st.rec })),
+      boxBorder: s.focus ? 'var(--border)' : 'var(--border-subtle)', onFocus: () => this.set(v, { focus: true }), onBlur: () => this.set(v, { focus: false }),
+      sendOp: text.trim() || term ? '1' : '0.4',
+      sendOff: T(!text.trim() && !term), sendCursor: text.trim() || term ? 'pointer' : 'default',
+      onSend: this.stopped(() => {
+        if (!this.props.onStart) return this.set(v, { sent: true });
+        const r0 = s.repos[0];
+        this.props.onStart({ host: cloud ? null : env.id, cloud: cloud ? cloud.id : null, where: home ? 'home' : folder ? 'folder' : 'worktree',
+          folder: folder ? folder.p : null, repo: folder ? folder.repo : home ? null : r0.r, repos: s.repos, agent: prov.id, model: s.model, effort: EFFORT[s.effort], perm: s.perm, text,
+          scope: folder ? short(folder.p) : home ? '~' : s.repos.map(x => short(x.r)).join(' + '),
+          meta: [prov.label, term ? 'tmux' : s.model, envLabel].join(' · ') });
+        this.set(v, { text: '', attach: false, rec: false, open: null });
+      }), sent: T(s.sent),
+      sentMsg: term ? 'Opening a tmux session on ' + envLabel + (text.trim() ? ' · running ' + text.trim() : '') : 'Starting ' + prov.label + ' on ' + envLabel + (folder || home ? '' : ' · ' + s.repos.map(x => short(x.r) + '@' + x.b).join(', ')),
+      onBg: () => this.set(v, { open: null, wsCol: 'repos' }),
+      ne: neVals,
+      envLabel, envIsCloud: undefined, envIsCursor: T(cloud), envLogo: cloud ? cloud.logo : '', envIsHost: T(!cloud), envIcon: folder ? 'folder' : 'terminal',
+      envBg: s.open === 'env' || s.open === 'ws' ? 'var(--hover-surface)' : 'transparent',
+      onEnv: isB ? S(st => ({ open: st.open === 'ws' ? null : 'ws', wsCol: 'repos' })) : S(st => ({ open: st.open === 'env' ? null : 'env', envHost: null, envAcct: null, envBrowse: null, envPath: null, envQ: '', envTab: null })),
+      envRows, envMenu,
+      wsOpen: T(isB && s.open === 'ws'), wsRepos: folder ? folder.br : s.repos.map(x => short(x.r)).join(', '),
+      wsRepoList: T(s.wsCol === 'repos'), wsPick: T(s.wsCol !== 'repos'), wsBack: S({ wsCol: 'repos' }),
+      wsRightTitle: folder ? 'Folder' : 'Repositories',
+      wsFoot: folder ? 'The repository comes from the folder. Switching branch checks it out in place.' : cloud ? 'The cloud clones each repository at the branch you pick.' : 'Each repository gets its own worktree on ' + env.id + ', branched from the branch you pick.',
+      slots, canAdd: T(canAdd), onAdd: isB ? S({ wsCol: 'add' }) : toggle('add'), addOpen: T(!isB && s.open === 'add'), addBg: s.open === 'add' ? 'var(--hover-surface)' : 'transparent',
+      pick,
+      permLabel: perm.label, permColor: perm.danger ? 'var(--danger)' : 'var(--fg)', permBg: s.open === 'perm' ? 'var(--hover-surface)' : 'transparent', permOpen: T(s.open === 'perm'), onPerm: toggle('perm'),
+      perms: PERMS.map(p => ({ label: p.label, desc: p.desc, sel: T(s.perm === p.id), sep: T(p.danger), color: p.danger ? 'var(--danger)' : 'var(--fg)', pick: S({ perm: p.id, open: null }) })),
+      provLogo: prov.logo, modelLabel: term ? 'Terminal' : s.model, effortLabel: term ? 'tmux' : EFFORT[s.effort], chipEffort: EFFORT[s.effort],
+      modelBg: s.open === 'model' ? 'var(--hover-surface)' : 'transparent', modelOpen: T(s.open === 'model'), onModel: S(st => ({ open: st.open === 'model' ? null : 'model', tabProv: null })),
+      tabs: [{ star: T(true), label: 'Favourites', id: 'fav' }].concat(PROVS.map(p => ({ label: p.label, logo: p.logo, term: T(p.term), id: p.id }))).map(t => {
+        const on = !q && (t.id === 'fav' ? favTab : tabProv && tabProv.id === t.id);
+        return { ...t, selS: on ? 'true' : 'false', op: on ? '1' : '0.55', bar: on ? 'var(--fg)' : 'transparent', pick: S({ tabProv: t.id, q: '' }) };
+      }),
+      q: s.q || '', onQ: e => this.set(v, { q: e.target.value }),
+      provName: q ? 'Results' : favTab ? 'Favourites' : tabProv.label,
+      provNote: q ? rows.length + ' across all agents' : favTab ? 'Starred models from every agent' : tabProv.cloudOnly ? (isCursorEnv ? 'Runs in Cursor’s cloud' : 'Cloud only · picking a model switches to Cursor') : isCursorEnv ? 'Picking a model switches to Cloud · Default' : 'Runs on ' + (cloud ? 'the cloud' : env.id),
+      modelsEmpty: rows.length ? undefined : q ? 'No model matches “' + s.q.trim() + '”.' : 'Star a model to keep it here.',
+      models: rows.map(({ p, mm }, i) => {
+        const k = p.id + ':' + mm, isFav = favs.indexOf(k) > -1, sel = prov.id === p.id && s.model === mm;
+        return { label: mm, logo: cross ? p.logo : undefined, desc: p.term ? 'Raw connection to the host · no agent' : undefined, selS: sel ? 'true' : 'false', bg: sel ? 'var(--selected-surface)' : 'transparent',
+          kbd: !cross && i < 9 ? 'Ctrl ' + (i + 1) : undefined,
+          favS: isFav ? 'true' : 'false', starFill: isFav ? 'currentColor' : 'none', starColor: isFav ? 'var(--warning)' : 'var(--fg-subtle)', starLabel: isFav ? 'Remove from favourites' : 'Add to favourites',
+          fav: S(st => { const f = st.favs || favs; return { favs: f.indexOf(k) > -1 ? f.filter(x => x !== k) : f.concat(k) }; }),
+          pick: S(st => {
+            const n = { prov: p.id, model: mm, open: null, tabProv: null, q: '' };
+            const acctFor = pid => { const id = (s.lastAcct || {})[pid]; const a = ACCOUNTS.find(x => x.id === id) || ACCOUNTS.find(x => x.prov === pid); return a ? { k: 'cloud', id: a.id + ':' + a.envs[0].n } : null; };
+            if (p.cloudOnly) { if (!cloud || cloud.prov !== p.id) n.env = acctFor(p.id); }
+            else if (cloud && cloud.prov !== p.id) n.env = acctFor(p.id) || { k: 'host', id: 'optimus', mode: p.hostOnly ? 'home' : 'worktree' };
+            return n;
+          }) };
+      }),
+      effortEl: React.createElement(EffortSlider, { key: 'effort-' + v, value: s.effort, onChange: n => this.set(v, { effort: n }) }),
+      effortReset: S({ effort: 1 }), resetOp: s.effort === 1 ? '0.35' : '1',
+      efforts: EFFORT.map((l, i) => ({ label: l, selS: s.effort === i ? 'true' : 'false', bg: s.effort === i ? 'var(--card)' : 'transparent', fg: s.effort === i ? 'var(--fg)' : 'var(--fg-muted)', pick: S({ effort: i }) })),
+    };
+  }
+
+  renderVals() {
+    return { stop: e => e && e.stopPropagation && e.stopPropagation(), variants: [this.build('a')] };
+  }
+}
+</script>
+</body>
+</html>

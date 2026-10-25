@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;background:var(--canvas,#f5f5f7)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+@keyframes op-rise-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:80px;padding:72px 72px 120px;background:var(--canvas);font-family:var(--font-sans);color:var(--fg);min-width:max-content">
+
+<header style="display:flex;flex-direction:column;gap:10px;max-width:880px">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle)">Handoff · cloud agents</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:52px;font-weight:600;letter-spacing:-0.024em;line-height:1.05">Cursor in the console.</h1>
+<p style="margin:0;font-size:17px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">Start a Cursor cloud agent from New session, follow it next to your host sessions, and run automations on it. Grok in the cloud runs through Cursor. Frames are 1440 × 900.</p>
+</header>
+
+<sc-for list="{{ sections }}" as="sec" hint-placeholder-count="2">
+<section id="{{ sec.id }}" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;align-items:baseline;gap:14px">
+<span style="font-family:var(--font-mono);font-size:13px;color:var(--fg-subtle)">{{ sec.num }}</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">{{ sec.title }}</h2>
+<span style="font-size:14px;color:var(--fg-muted)">{{ sec.sub }}</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+<sc-for list="{{ sec.frames }}" as="f" hint-placeholder-count="2">
+<div id="{{ f.id }}" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:980px;background:var(--fg);color:var(--card);font-family:var(--font-mono);font-size:12px;font-weight:500">{{ f.id }}</span>
+<span style="font-size:15px;font-weight:500">{{ f.label }}</span>
+<span style="font-size:13.5px;color:var(--fg-muted)">{{ f.note }}</span>
+</div>
+<div style="display:flex;gap:24px;align-items:flex-start">
+<div data-screen-label="{{ f.id }} {{ f.label }}" style="position:relative;width:{{ f.w }};height:900px;flex:none;display:flex;overflow:hidden;border:1px solid var(--border-subtle);background:var(--background);font-size:15px;isolation:isolate">
+
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="{{ f.railS }}" aria-label="Sessions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" data-active="{{ f.railA }}" aria-label="Automations"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="workflow" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" data-active="{{ f.railX }}" aria-label="Settings" style="margin-top:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="18" hint-size="18px,18px"></x-import></button>
+</nav>
+
+<sc-if value="{{ f.sideSessions }}" hint-placeholder-val="{{ true }}">
+<nav class="op-sidebar" style="width:280px;min-width:280px;overflow:visible">
+<div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer</span></div>
+<div style="padding:0 12px 10px"><button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button></div>
+<div class="op-listhead"><span class="op-listhead__title">Sessions</span><span class="op-listhead__count">11</span></div>
+<div class="op-sidebar__scroll" style="overflow:visible">
+<div class="op-sessionlist">
+<sc-for list="{{ f.groups }}" as="g" hint-placeholder-count="4">
+<div class="op-pgroup">
+<div class="op-phead" data-open="true"><span class="op-phead__toggle"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></span></div>
+<sc-for list="{{ g.items }}" as="s" hint-placeholder-count="2">
+<div class="op-srow" style="position:relative">
+<button class="op-session" type="button" data-active="{{ s.active }}" data-state="{{ s.state }}" title="{{ s.tip }}">
+<sc-if value="{{ s.cloud }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
+<sc-if value="{{ s.host }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"></path><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle></svg></sc-if>
+<span class="op-session__name" style="opacity:{{ s.op }}">{{ s.name }}</span>
+<sc-if value="{{ s.cloud }}"><span style="flex:none;display:flex;align-items:center;gap:3px"><img src="./assets/agents/cursor.png" alt="Cursor" style="width:12px;height:12px;object-fit:contain;opacity:.85"><sc-if value="{{ s.grok }}"><span aria-label="Grok" style="width:12px;height:12px;border-radius:980px;background:var(--fg);color:var(--card);font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center">G</span></sc-if></span></sc-if>
+<span class="op-session__age" style="color:{{ s.ageColor }}">{{ s.age }}</span>
+</button>
+<sc-if value="{{ s.showTip }}">
+<div role="tooltip" style="position:absolute;left:24px;top:calc(100% + 4px);z-index:20;display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-radius:10px;background:var(--fg);color:var(--card);font-size:12px;line-height:1.4;box-shadow:var(--shadow-popover);white-space:nowrap"><span>{{ s.tipA }}</span><span style="opacity:.75">{{ s.tipB }}</span></div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</nav>
+</sc-if>
+
+<sc-if value="{{ f.sideAuto }}">
+<nav class="op-sidebar" style="width:280px;min-width:280px">
+<div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer</span></div>
+<div style="padding:0 12px 10px"><button class="op-btn op-btn--sm op-btn--block op-btn--primary" type="button">New automation</button></div>
+<div class="op-listhead"><span class="op-listhead__title">Projects</span><span class="op-listhead__count">2</span></div>
+<div class="op-sidebar__scroll"><div class="op-sessionlist">
+<sc-for list="{{ autoGroups }}" as="g" hint-placeholder-count="2">
+<div class="op-pgroup">
+<div class="op-phead" data-open="true"><span class="op-phead__toggle"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></span></div>
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
+<button class="op-session" type="button" data-active="{{ r.active }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ r.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ r.name }}</span><sc-if value="{{ r.cursor }}"><img src="./assets/agents/cursor.png" alt="Cursor" style="width:12px;height:12px;object-fit:contain;opacity:.85"></sc-if></button>
+</sc-for>
+</div>
+</sc-for>
+</div></div>
+</nav>
+</sc-if>
+
+<sc-if value="{{ f.sideSettings }}">
+<nav class="op-sidebar" style="width:264px;min-width:264px;display:flex;flex-direction:column">
+<div style="padding:18px 12px 8px"><span class="op-navitem" style="color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Back to console</span></span></div>
+<div style="padding:4px 12px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle)">Account</span>
+<span class="op-navitem"><span class="op-navitem__label">Profile</span></span>
+<span class="op-navitem"><span class="op-navitem__label">Appearance</span></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle)">Where sessions run</span>
+<span class="op-navitem"><span class="op-navitem__label">Hosts</span><span class="op-navitem__meta">3</span></span>
+<span class="op-navitem" data-active="true"><span class="op-navitem__label">Cloud agents</span><span class="op-navitem__meta">{{ f.cloudCount }}</span></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle)">Workspace</span>
+<span class="op-navitem"><span class="op-navitem__label">Projects</span></span>
+<span class="op-navitem"><span class="op-navitem__label">Pull requests</span></span>
+</div>
+</div>
+</nav>
+</sc-if>
+
+<sc-if value="{{ f.kNew }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--card)">
+<div class="op-newsession">
+<div class="op-newsession__inner" data-composer="tabbed" style="max-width:760px">
+<h1 style="margin:0;text-align:center;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:var(--fg)">Ready when you are.</h1>
+
+<sc-if value="{{ f.n.notConnected }}">
+<div role="status" style="display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;border-radius:14px;background:var(--selected-surface)">
+<span style="display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="16" hint-size="16px,16px"></x-import></span>
+<span style="flex:1;font-size:14px;line-height:1.45">Connect Cursor to run sessions in its cloud.</span>
+<button class="op-btn op-btn--primary op-btn--sm" type="button">Connect Cursor</button>
+</div>
+</sc-if>
+
+<div class="op-cstack">
+<div class="op-chiprow" style="opacity:{{ f.n.chipOp }}">
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" data-open="{{ f.n.whereOpenS }}" style="color:var(--fg)"><svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>Cloud</button>
+<sc-if value="{{ f.n.whereOpen }}">
+<div class="op-listbox" role="listbox" style="width:300px;min-width:0;box-sizing:border-box;max-height:none;padding:4px">
+<div class="op-tpop__label" style="padding:8px 10px 4px">Hosts</div>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;font-size:13px"><span class="op-option__stack"><span>New worktree</span><span class="op-option__desc" style="margin-top:0;font-size:11px">On optimus, mac-studio or fable</span></span></button>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;font-size:13px"><span class="op-option__stack"><span>Folder on host</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Not available in cloud · pick a host</span></span></button>
+<div class="op-tpop__label" style="padding:10px 10px 4px">Cloud</div>
+<button class="op-option" type="button" role="option" data-selected="true" style="padding:6px 10px;gap:10px;font-size:13px"><img src="./assets/agents/cursor.png" alt="" style="width:14px;height:14px;object-fit:contain"><span class="op-option__stack"><span>Cursor</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Runs in Cursor's cloud</span></span><span class="op-option__check">✓</span></button>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px"><img src="./assets/agents/claude.svg" alt="" style="width:14px;height:14px;object-fit:contain"><span class="op-option__stack"><span>Claude Code cloud</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Opens in claude.ai/code · no status after launch</span></span><span class="op-option__check">✓</span></button>
+<button class="op-option" type="button" role="option" aria-disabled="true" style="padding:6px 10px;gap:10px;font-size:13px;opacity:.45;cursor:default"><span style="width:14px;height:14px;border-radius:980px;border:1px dashed var(--border)"></span><span class="op-option__stack"><span>Oppenheimer cloud</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Coming later · any catalog agent on our VMs</span></span></button>
+</div>
+</sc-if>
+</div>
+<div class="op-chipselect"><button class="op-chipselect__trigger" type="button"><img class="op-chipselect__icon" src="./assets/agents/cursor.png" alt="" style="width:14px;height:14px;object-fit:contain">Cursor</button></div>
+<div class="op-chipselect"><button class="op-chipselect__trigger" type="button"><span class="op-chipselect__icon" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="14" hint-size="14px,14px"></x-import></span>{{ f.n.project }}</button></div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" data-open="{{ f.n.repoOpenS }}" style="color:{{ f.n.repoColor }}"><span class="op-chipselect__icon" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="database" size="14" hint-size="14px,14px"></x-import></span>{{ f.n.repo }}</button>
+<sc-if value="{{ f.n.repoOpen }}">
+<div class="op-listbox" role="listbox" style="width:340px;min-width:0;box-sizing:border-box;max-height:none;padding:4px">
+<div class="op-tpop__label" style="padding:8px 10px 4px">Repositories in flama-ai</div>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px"><span class="op-option__stack"><span>flama-ai/web</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Cursor can see it · main</span></span><span class="op-option__check">✓</span></button>
+<div class="op-option" role="option" aria-disabled="true" data-selected="true" style="padding:6px 10px;gap:10px;font-size:13px;cursor:default"><span class="op-option__stack" style="opacity:.55"><span>flama-ai/api</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Cursor can't see this repository.</span></span><a href="https://github.com/apps/cursor" target="_blank" rel="noopener" style="flex:none;margin-left:auto;font-size:12.5px">Install Cursor on it</a></div>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px"><span class="op-option__stack"><span>flama-ai/brand</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Cursor can see it · main</span></span><span class="op-option__check">✓</span></button>
+<div style="margin:4px -4px 0;padding:8px 14px 6px;border-top:1px solid var(--border-subtle);font-size:11.5px;line-height:1.4;color:var(--fg-subtle)">Cursor reads repositories through its GitHub app.</div>
+</div>
+</sc-if>
+</div>
+<div class="op-chipselect"><button class="op-chipselect__trigger" type="button" title="Starting ref"><svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"></path><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle></svg><span style="font-family:var(--font-mono);font-size:12.5px">main</span></button></div>
+</div>
+
+<div class="op-composer" style="opacity:{{ f.n.chipOp }}">
+<textarea class="op-composer__input" placeholder="Describe a task or ask a question" disabled="{{ f.n.inputOff }}">{{ f.n.prompt }}</textarea>
+<div class="op-composer__foot" style="gap:8px;flex-wrap:wrap">
+<button class="op-composer__tool" type="button" aria-label="Attach files"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="paperclip" size="15" hint-size="15px,15px"></x-import></button>
+<div role="radiogroup" aria-label="Mode" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<button type="button" role="radio" aria-checked="true" style="height:26px;padding:0 11px;border:0;border-radius:980px;background:var(--card);color:var(--fg);font:inherit;font-size:12.5px;cursor:pointer">Agent</button>
+<button type="button" role="radio" aria-checked="false" title="Proposes a plan, then waits for you" style="height:26px;padding:0 11px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:12.5px;cursor:pointer">Plan</button>
+</div>
+<label class="op-switch" style="gap:8px;font-size:12.5px;color:var(--fg-muted)"><input type="checkbox" checked="{{ true }}" readOnly="{{ true }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span>Open a pull request when done</label>
+<div class="op-composer__spacer"></div>
+<div style="position:relative">
+<button class="op-composer__tool" type="button" data-open="{{ f.n.modelOpenS }}" style="gap:6px;color:var(--fg);background:{{ f.n.modelBg }}">
+<sc-if value="{{ f.n.grok }}"><span aria-hidden="true" style="width:14px;height:14px;border-radius:980px;background:var(--fg);color:var(--card);font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center">G</span></sc-if>
+<span style="font-size:13px">{{ f.n.model }}</span><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></button>
+<sc-if value="{{ f.n.modelOpen }}">
+<div class="op-listbox" role="listbox" style="top:auto;bottom:calc(100% + 6px);right:0;left:auto;width:280px;min-width:0;box-sizing:border-box;max-height:none;padding:4px">
+<sc-for list="{{ modelGroups }}" as="mg" hint-placeholder-count="3">
+<div class="op-tpop__label" style="padding:8px 10px 4px">{{ mg.name }}</div>
+<sc-for list="{{ mg.items }}" as="m" hint-placeholder-count="2">
+<button class="op-option" type="button" role="option" data-selected="{{ m.sel }}" style="padding:6px 10px;gap:10px;font-size:13px"><sc-if value="{{ m.grok }}"><span aria-hidden="true" style="flex:none;width:14px;height:14px;border-radius:980px;background:var(--fg);color:var(--card);font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center">G</span></sc-if><sc-if value="{{ m.cur }}"><img src="./assets/agents/cursor.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><span class="op-option__stack"><span>{{ m.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px">{{ m.desc }}</span></span><span class="op-option__check">✓</span></button>
+</sc-for>
+</sc-for>
+<label class="op-switch" style="justify-content:space-between;margin:4px -4px 0;padding:10px 14px 8px;border-top:1px solid var(--border-subtle);font-size:13px"><span style="display:flex;flex-direction:column;gap:1px"><span>Fast</span><span style="font-size:11px;color:var(--fg-subtle)">Lower latency, same model</span></span><input type="checkbox" readOnly="{{ true }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>
+</div>
+</sc-if>
+</div>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ f.n.startOff }}" style="opacity:{{ f.n.startOp }}">Start in Cursor</button>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ f.n.grokHint }}">
+<div style="display:flex;align-items:center;gap:8px;margin:-4px 18px 0;font-size:13px;color:var(--fg-muted)"><span aria-hidden="true" style="width:14px;height:14px;border-radius:980px;background:var(--fg);color:var(--card);font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center">G</span>Grok in the cloud runs through Cursor. We switched Where to Cursor and kept Grok 4.7.</div>
+</sc-if>
+<sc-if value="{{ f.n.error }}">
+<div role="alert" style="display:flex;align-items:flex-start;gap:10px;margin:-4px 18px 0;font-size:13.5px;line-height:1.45"><span style="flex:none;width:7px;height:7px;margin-top:6px;border-radius:980px;background:var(--danger)"></span><span style="flex:1;text-wrap:pretty"><span style="color:var(--fg)">Cursor didn't start the session.</span> <span style="color:var(--fg-muted)">Model grok-4.7 isn't enabled for this account.</span> <span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">403 model_not_allowed</span></span><button class="op-btn op-btn--ghost op-btn--sm" type="button" style="margin-top:-5px">Try again</button></div>
+</sc-if>
+<p style="margin:-4px 18px 0;font-size:12.5px;line-height:1.45;color:var(--fg-subtle);text-wrap:pretty">Runs in Cursor's cloud, on its own machine, with full access to that machine. Changes reach you as a branch.</p>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.kPane }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--card);position:relative">
+<div style="flex:none;display:flex;align-items:center;gap:12px;height:60px;padding:0 16px 0 24px;border-bottom:1px solid var(--border-subtle)">
+<img src="./assets/agents/cursor.png" alt="Cursor" style="width:18px;height:18px;object-fit:contain">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.p.name }}</span><span style="flex:none;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:980px;background:var(--hover-surface);font-size:12px;color:var(--fg)"><span style="width:6px;height:6px;border-radius:980px;background:{{ f.p.dot }};animation:{{ f.p.dotAnim }}"></span>{{ f.p.status }}</span></div>
+<div style="display:flex;align-items:center;gap:6px;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);white-space:nowrap"><span>{{ f.p.repo }}</span><span style="color:var(--fg-subtle)">·</span><span>{{ f.p.branch }}</span><span style="color:var(--fg-subtle)">·</span><span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--font-sans)"><sc-if value="{{ f.p.grok }}"><span aria-hidden="true" style="width:12px;height:12px;border-radius:980px;background:var(--fg);color:var(--card);font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center">G</span></sc-if>{{ f.p.model }}</span></div>
+</div>
+<sc-if value="{{ f.p.reconnecting }}"><span role="status" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>Reconnecting to Cursor…</span></sc-if>
+<sc-if value="{{ f.p.canCancel }}"><button class="op-btn op-btn--secondary op-btn--sm" type="button">Cancel run</button></sc-if>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button">Archive</button>
+<a class="op-btn op-btn--secondary op-btn--sm" href="https://cursor.com/agents" target="_blank" rel="noopener" style="gap:6px;text-decoration:none">Open in Cursor<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></a>
+</div>
+
+<div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+<div style="width:100%;max-width:780px;margin:0 auto;padding:32px 32px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px">
+<sc-for list="{{ f.p.turns }}" as="t" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:14px">
+<sc-if value="{{ t.user }}"><div class="op-msg"><div class="op-msg__user"><span class="op-msg__label">{{ t.meta }}</span><div class="op-msg__bubble" style="background:var(--hover-surface)">{{ t.text }}</div></div></div></sc-if>
+<sc-if value="{{ t.steps }}">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="display:flex;align-items:center;gap:6px;height:24px;font-size:13px;color:var(--fg-muted)">{{ t.stepsHead }}</span>
+<sc-for list="{{ t.steps }}" as="st" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:10px;min-height:26px;font-size:13.5px"><span style="flex:none;width:16px;display:flex;justify-content:center;color:{{ st.color }}"><sc-if value="{{ st.live }}"><span style="width:7px;height:7px;border-radius:980px;background:var(--success);animation:op-pulse-dot 1.2s ease-in-out infinite"></span></sc-if><sc-if value="{{ st.done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import></sc-if></span><span style="color:var(--fg)">{{ st.label }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">{{ st.detail }}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ t.text }}"><sc-if value="{{ t.agent }}"><div class="op-msg__text" style="font-size:14.5px">{{ t.text }}</div></sc-if></sc-if>
+<sc-if value="{{ t.stream }}"><div class="op-msg__thinking"><span style="width:7px;height:7px;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>Cursor is writing · streamed, may lag a few seconds</div></sc-if>
+
+<sc-if value="{{ t.run }}">
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:13.5px"><span style="width:7px;height:7px;border-radius:980px;background:{{ t.run.dot }}"></span><span style="font-weight:500">{{ t.run.title }}</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ t.run.dur }}</span></div>
+<sc-if value="{{ t.run.reason }}"><div style="padding:0 16px 14px 33px;font-size:13.5px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ t.run.reason }}</div></sc-if>
+<sc-if value="{{ t.run.branch }}">
+<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--border-subtle);font-size:13.5px"><span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="14" hint-size="14px,14px"></x-import></span><span style="font-family:var(--font-mono);font-size:12.5px">{{ t.run.branch }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy branch" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="13" hint-size="13px,13px"></x-import></button></div>
+</sc-if>
+<sc-if value="{{ t.run.pr }}">
+<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--border-subtle);font-size:13.5px"><span style="display:flex;color:var(--success)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="14" hint-size="14px,14px"></x-import></span><span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg-muted)">{{ t.run.prNum }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.run.pr }}</span><a href="#" style="margin-left:auto;flex:none;font-size:13px">Open in Pull requests</a></div>
+</sc-if>
+<sc-if value="{{ t.run.arts }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:12px 16px 14px;border-top:1px solid var(--border-subtle)">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle)">Artifacts · 3</span>
+<div style="display:flex;gap:8px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:4px"><div style="width:148px;height:92px;border-radius:10px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">screenshot</div><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-muted)">hero-after.png</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="width:148px;height:92px;border-radius:10px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">screenshot</div><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-muted)">pricing-after.png</span></div>
+<span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;margin-bottom:20px;border-radius:980px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="13" hint-size="13px,13px"></x-import>lighthouse.json</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ t.run.retry }}"><div style="display:flex;gap:8px;padding:0 16px 14px 33px"><button class="op-btn op-btn--secondary op-btn--sm" type="button">Retry run</button><a class="op-btn op-btn--ghost op-btn--sm" href="https://github.com/apps/cursor" target="_blank" rel="noopener" style="text-decoration:none">Install Cursor on flama-ai/api</a></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ t.plan }}">
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:13.5px"><span style="width:7px;height:7px;border-radius:980px;background:var(--warning)"></span><span style="font-weight:500">Plan ready</span><span style="color:var(--fg-muted)">· needs your go-ahead</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">2m 48s</span></div>
+<ol style="margin:0;padding:4px 16px 14px 40px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5">
+<sc-for list="{{ planSteps }}" as="ps" hint-placeholder-count="4"><li style="padding-left:4px;text-wrap:pretty">{{ ps.t }} <span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">{{ ps.f }}</span></li></sc-for>
+</ol>
+<div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border-subtle)"><button class="op-btn op-btn--primary op-btn--sm" type="button">Run this plan</button><button class="op-btn op-btn--secondary op-btn--sm" type="button">Edit</button><span style="margin-left:auto;align-self:center;font-size:12.5px;color:var(--fg-subtle)">Runs as a follow-up in Agent mode</span></div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="flex:none;width:100%;max-width:780px;margin:0 auto;padding:0 32px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{ f.p.queued }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;background:var(--hover-surface)">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="13" hint-size="13px,13px"></x-import>Queued · sends when this run finishes<span style="margin-left:auto;display:flex;gap:2px"><button class="op-btn op-btn--ghost op-btn--sm" type="button" style="height:26px">Edit</button><button class="op-btn op-btn--ghost op-btn--sm" type="button" style="height:26px">Remove</button></span></div>
+<div style="font-size:14px;line-height:1.5;color:var(--fg)">{{ f.p.queued }}</div>
+</div>
+</sc-if>
+<div class="op-composer" style="border-radius:18px">
+<textarea class="op-composer__input" placeholder="{{ f.p.ph }}" style="min-height:56px;font-size:14.5px"></textarea>
+<div class="op-composer__foot" style="gap:8px">
+<div role="radiogroup" aria-label="Mode for the next run" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<button type="button" role="radio" aria-checked="true" style="height:26px;padding:0 11px;border:0;border-radius:980px;background:var(--card);color:var(--fg);font:inherit;font-size:12.5px">Agent</button>
+<button type="button" role="radio" aria-checked="false" style="height:26px;padding:0 11px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:12.5px">Plan</button>
+</div>
+<sc-if value="{{ f.p.busy }}"><span style="font-size:12.5px;color:var(--fg-muted)">Cursor is working. Your message will send when it finishes.</span></sc-if>
+<div class="op-composer__spacer"></div>
+<button class="op-composer__send" type="button" aria-label="{{ f.p.sendLabel }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ f.p.confirm }}">
+<div class="op-scrim" style="position:absolute;inset:0">
+<div class="op-dialog" role="dialog" aria-modal="true" style="max-width:440px">
+<div class="op-dialog__head"><h2 class="op-dialog__title" style="margin:0">Cancel this run?</h2></div>
+<div class="op-dialog__body"><p class="op-dialog__desc" style="margin:0">Cursor stops now and this can't be undone. Commits it already pushed to cursor/fix-flaky-auth stay on the branch.</p></div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--ghost op-btn--md" type="button">Keep running</button><button class="op-btn op-btn--danger op-btn--md" type="button">Cancel run</button></div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.kSettings }}">
+<div style="flex:1;min-width:0;overflow:hidden;background:var(--canvas)">
+<div style="max-width:760px;margin:0 auto;padding:48px 32px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Cloud agents</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted)">Run sessions on a provider's machines. Each card connects one provider for your account.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:18px;padding:22px 24px;border-radius:18px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:12px">
+<img src="./assets/agents/cursor.png" alt="" style="width:28px;height:28px;object-fit:contain">
+<div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:500">Cursor</span><span style="font-size:13px;color:var(--fg-muted)">Starts Cursor cloud agents and syncs their status. Grok models come with it.</span></div>
+<span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:980px;background:var(--hover-surface);font-size:12.5px"><span style="width:6px;height:6px;border-radius:980px;background:{{ f.s.dot }}"></span>{{ f.s.badge }}</span>
+</div>
+
+<sc-if value="{{ f.s.keyForm }}">
+<div class="op-field" style="display:flex;flex-direction:column;gap:6px">
+<span class="op-label">API key</span>
+<div style="display:flex;gap:8px">
+<label class="op-input op-input--md" style="flex:1;border-color:{{ f.s.keyBorder }}"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="key" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="password" value="{{ f.s.keyVal }}" placeholder="key_…" readOnly="{{ true }}" style="font-family:var(--font-mono)"></label>
+<button class="op-btn op-btn--primary op-btn--md" type="button">Connect</button>
+</div>
+<sc-if value="{{ f.s.rejected }}"><span role="alert" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--danger)"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger)"></span>Cursor rejected this key. Check that it hasn't been revoked. <span style="font-family:var(--font-mono);color:var(--fg-subtle)">401</span></span></sc-if>
+<span class="op-hint" style="font-size:12.5px;color:var(--fg-muted)">A user key or a team service-account key. <a href="https://cursor.com/dashboard" target="_blank" rel="noopener">Get a key in Cursor → Dashboard → API Keys</a></span>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.s.connected }}">
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border-subtle)"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">API key <span style="font-family:var(--font-mono);font-size:13px;color:var(--fg-muted)">…a1b2</span></span><span style="font-size:12.5px;color:var(--fg-muted)">User key · jordiparra99@gmail.com · Cursor Pro+</span></div><button class="op-btn op-btn--secondary op-btn--sm" type="button">Replace key</button><button class="op-btn op-btn--ghost op-btn--sm" type="button">Disconnect</button></div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border-subtle)"><span style="width:7px;height:7px;border-radius:980px;background:{{ f.s.ghDot }}"></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Cursor GitHub app</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ f.s.ghText }}</span></div><a class="op-btn op-btn--secondary op-btn--sm" href="https://github.com/apps/cursor" target="_blank" rel="noopener" style="gap:6px;text-decoration:none">{{ f.s.ghBtn }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></a></div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border-subtle)"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Default model</span><span style="font-size:12.5px;color:var(--fg-muted)">For new Cursor sessions. You can change it per session.</span></div><button class="op-chipselect__trigger" type="button" style="height:30px">Composer 2<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></button></div>
+<label class="op-switch" style="justify-content:space-between;gap:16px;padding:12px 0 0;border-top:1px solid var(--border-subtle)"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">Open a pull request when done</span><span style="font-size:12.5px;color:var(--fg-muted)">Default for new sessions. Pull requests on watched repositories land in Pull requests.</span></span><input type="checkbox" checked="{{ true }}" readOnly="{{ true }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>
+</div>
+</sc-if>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;padding:18px 24px;border-radius:18px;background:var(--card)">
+<img src="./assets/agents/claude.svg" alt="" style="width:24px;height:24px;object-fit:contain">
+<div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500">Claude Code cloud</span><span style="font-size:13px;color:var(--fg-muted)">Link-only. Sessions open in claude.ai/code, with no status after launch. No key needed.</span></div>
+<a class="op-btn op-btn--ghost op-btn--sm" href="https://claude.ai/code" target="_blank" rel="noopener" style="gap:6px;text-decoration:none">claude.ai/code<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import></a>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-radius:18px;border:1px dashed var(--border);opacity:.6">
+<div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:500">Oppenheimer cloud</span><span style="font-size:13px;color:var(--fg-muted)">Our own machines, for Grok Build and any catalog agent.</span></div>
+<span style="font-size:12.5px;color:var(--fg-muted)">Coming later</span>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.kAuto }}">
+<div style="flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column;background:var(--card)">
+<div style="flex:none;display:flex;align-items:center;gap:8px;height:56px;padding:0 24px;border-bottom:1px solid var(--border-subtle);font-size:13.5px;color:var(--fg-muted)"><span>atlas</span><span style="color:var(--fg-subtle)">/</span><span style="color:var(--fg)">Nightly dependency audit</span><span style="margin-left:auto;display:flex;gap:8px"><button class="op-btn op-btn--secondary op-btn--sm" type="button">Run now</button><button class="op-btn op-btn--ghost op-btn--sm" type="button">Pause</button></span></div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:32px 40px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;gap:6px;padding:3px;border-radius:980px;background:var(--hover-surface);align-self:flex-start">
+<span style="height:28px;padding:0 14px;border-radius:980px;display:flex;align-items:center;font-size:13px;background:{{ f.a.tabEditBg }};color:{{ f.a.tabEditFg }}">Edit</span>
+<span style="height:28px;padding:0 14px;border-radius:980px;display:flex;align-items:center;font-size:13px;background:{{ f.a.tabRunsBg }};color:{{ f.a.tabRunsFg }}">Run history</span>
+</div>
+
+<sc-if value="{{ f.a.edit }}">
+<div style="display:grid;grid-template-columns:200px minmax(0,640px);row-gap:22px;column-gap:24px;align-items:start">
+<span class="op-label" style="padding-top:8px">Run on</span>
+<div style="display:flex;flex-direction:column;gap:6px;position:relative">
+<button class="op-chipselect__trigger" type="button" data-open="true" style="align-self:flex-start;height:34px"><img src="./assets/agents/cursor.png" alt="" style="width:14px;height:14px;object-fit:contain">Cursor<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></button>
+<span style="font-size:12.5px;color:var(--fg-muted)">Cloud · each run opens a Cursor agent · status synced</span>
+<div class="op-listbox" role="listbox" style="top:40px;width:320px;min-width:0;box-sizing:border-box;max-height:none;padding:4px;z-index:5">
+<label class="op-input op-input--md" style="margin:4px 4px 6px;height:32px"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input class="op-input__el" placeholder="Search hosts and cloud…" readOnly="{{ true }}"></label>
+<div class="op-tpop__label" style="padding:6px 10px 4px">Hosts</div>
+<button class="op-option" type="button" style="padding:6px 10px;font-size:13px"><span class="op-option__stack"><span>optimus</span><span class="op-option__desc" style="margin-top:0;font-size:11px">32 vCPU · eu-west · idle</span></span></button>
+<button class="op-option" type="button" style="padding:6px 10px;font-size:13px"><span class="op-option__stack"><span>jordis-mac-studio</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Online</span></span></button>
+<div class="op-tpop__label" style="padding:10px 10px 4px">Cloud</div>
+<button class="op-option" type="button" data-selected="true" style="padding:6px 10px;gap:10px;font-size:13px"><img src="./assets/agents/cursor.png" alt="" style="width:14px;height:14px;object-fit:contain"><span class="op-option__stack"><span>Cursor</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Each run opens a Cursor agent</span></span><span class="op-option__check">✓</span></button>
+<button class="op-option" type="button" style="padding:6px 10px;gap:10px;font-size:13px"><img src="./assets/agents/claude.svg" alt="" style="width:14px;height:14px;object-fit:contain"><span class="op-option__stack"><span>Claude Code cloud</span><span class="op-option__desc" style="margin-top:0;font-size:11px">Each run opens as a link · no status</span></span></button>
+</div>
+</div>
+<span class="op-label" style="padding-top:8px">Model</span>
+<div style="display:flex;align-items:center;gap:10px;padding-top:150px"><button class="op-chipselect__trigger" type="button" style="height:34px">Composer 2<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></button><label class="op-switch" style="gap:8px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" readOnly="{{ true }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span>Fast</label></div>
+<span class="op-label" style="padding-top:6px">Mode</span>
+<div role="radiogroup" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface);justify-self:start"><span style="height:28px;padding:0 14px;border-radius:980px;display:flex;align-items:center;background:var(--card);font-size:13px">Agent</span><span style="height:28px;padding:0 14px;border-radius:980px;display:flex;align-items:center;font-size:13px;color:var(--fg-muted)">Plan</span></div>
+<span class="op-label" style="padding-top:4px">Pull request</span>
+<label class="op-switch" style="gap:10px;font-size:14px;justify-self:start"><input type="checkbox" checked="{{ true }}" readOnly="{{ true }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span>Open a pull request when done</label>
+<span class="op-label" style="padding-top:4px">Prompt</span>
+<div style="padding:12px 14px;border-radius:10px;border:1px solid var(--field-border);background:var(--field);font-size:14px;line-height:1.5;text-wrap:pretty">Audit every package manifest for known advisories. Open one PR that bumps what is safe to bump, and list anything that needs a human in the PR body.</div>
+<span></span>
+<span style="font-size:12.5px;line-height:1.45;color:var(--fg-subtle);text-wrap:pretty">Runs in Cursor's cloud, on its own machine. Permission and effort don't apply.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.a.runs }}">
+<div style="display:flex;flex-direction:column">
+<div class="op-runs__head" style="height:32px;font-size:12px;color:var(--fg-subtle);grid-template-columns:minmax(0,1fr) 200px 220px 124px"><span>Run</span><span>Status</span><span>Result</span><span>Started</span></div>
+<sc-for list="{{ runRows }}" as="rr" hint-placeholder-count="5">
+<div class="op-runrow" style="grid-template-columns:minmax(0,1fr) 200px 220px 124px;height:48px">
+<span class="op-runrow__run"><img src="./assets/agents/cursor.png" alt="Cursor" style="width:14px;height:14px;object-fit:contain"><span class="op-runrow__title">{{ rr.title }}</span></span>
+<span style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:7px;height:7px;border-radius:980px;background:{{ rr.dot }};animation:{{ rr.anim }}"></span>{{ rr.status }}</span>
+<span style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--fg-muted)"><sc-if value="{{ rr.pr }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="13" hint-size="13px,13px"></x-import><span style="font-family:var(--font-mono);font-size:12.5px;color:var(--link)">{{ rr.pr }}</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ rr.result }}</span></span>
+<span class="op-runrow__time"><span>{{ rr.when }}</span><span>{{ rr.dur }}</span></span>
+</div>
+</sc-for>
+<div class="op-runs__foot">Status syncs from Cursor every few seconds.</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ f.kSidebarOnly }}"><span></span></sc-if>
+</div>
+
+<sc-if value="{{ f.legend }}">
+<div style="width:420px;display:flex;flex-direction:column;gap:2px;padding:20px 22px;border-radius:18px;background:var(--card)">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-subtle);margin-bottom:8px">Cursor status → console group</span>
+<sc-for list="{{ legend }}" as="l" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:150px 1fr;gap:12px;padding:8px 0;border-top:1px solid var(--border-subtle);font-size:13px"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">{{ l.a }}</span><span>{{ l.b }}</span></div>
+</sc-for>
+<span style="margin-top:10px;font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Hover a Cursor row for its tooltip. The row with the open tooltip is “Fix flaky auth tests”.</span>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  groups(active, tipOn) {
+    const S = (name, state, age, o = {}) => ({ name, state, age, ...o });
+    const G = [
+      { name: 'Waiting on you', items: [
+        S('Pricing page plan', 'waiting', 'Plan ready', { id: 'plan', cloud: 1, tipB: 'Plan ready · needs your go-ahead' }),
+        S('Migrate retriever to pgvector', 'failed', 'Failed', { id: 'fail', cloud: 1, tipB: 'Failed · Cursor GitHub app has no access' }),
+        S('Auth onboarding copy', 'waiting', '12m', { host: 1 }),
+      ] },
+      { name: 'Working', items: [
+        S('Fix flaky auth tests', 'running', '6m', { id: 'run', cloud: 1, tipB: 'Running · status synced' }),
+        S('Refactor pricing API', 'running', '3m', { id: 'grok', cloud: 1, grok: 1, tipB: 'Cursor · Grok 4.7 · running' }),
+        S('Upgrade Expo SDK', 'running', 'Starting', { id: 'start', cloud: 1, tipB: 'Starting your session' }),
+        S('Search index rebuild', 'running', '41m', { host: 1 }),
+      ] },
+      { name: 'Ready for review', items: [
+        S('Landing copy pass', 'idle', '#128', { id: 'done', cloud: 1, pr: 1, tipB: 'Completed · PR #128 opened' }),
+      ] },
+      { name: 'Idle', items: [
+        S('Nightly dependency audit', 'idle', '2h', { id: 'nopr', cloud: 1, tipB: 'Completed · no pull request' }),
+        S('Docs sweep', 'idle', 'Cancelled', { id: 'cx', cloud: 1, tipB: 'Cancelled' }),
+        S('tool router', 'idle', '3w', { host: 1 }),
+      ] },
+      { name: 'Resolved', items: [S('Old onboarding flow', 'idle', '2w', { cloud: 1, op: 1, tipB: 'Archived' })] },
+    ];
+    return G.map(g => ({ name: g.name, count: g.items.length, items: g.items.map(s => ({
+      ...s, active: s.id && s.id === active ? 'true' : undefined,
+      cloud: s.cloud ? 'true' : undefined, host: s.host ? 'true' : undefined, grok: s.grok ? 'true' : undefined,
+      op: s.op ? '0.55' : '1', ageColor: s.pr ? 'var(--link)' : s.state === 'failed' ? 'var(--danger)' : '',
+      tip: s.cloud ? 'Cursor cloud · status synced · ' + s.tipB : 'optimus · worktree',
+      showTip: tipOn && s.id === 'run' ? 'true' : undefined, tipA: 'Cursor cloud · status synced', tipB: s.tipB,
+    })) }));
+  }
+  renderVals() {
+    const T = 'true', U = undefined;
+    const user = (text, meta) => ({ user: T, text, meta });
+    const steps = (head, list) => ({ steps: list, stepsHead: head });
+    const st = (label, detail, live) => ({ label, detail, live: live ? T : U, done: live ? U : T, color: live ? 'var(--success)' : 'var(--fg-subtle)' });
+    const agent = text => ({ agent: T, text });
+    const run = r => ({ run: { dot: 'var(--success)', ...r } });
+    const finishedTurns = [
+      user('Tighten the landing copy: shorter hero, one CTA, and fix the pricing table wording. Keep the tone plain.', 'You · 14:02 · Agent'),
+      steps('Worked for 6m 12s · 9 steps', [st('Read the landing page', 'app/(marketing)/page.tsx'), st('Rewrote hero and CTA', '+18 −31'), st('Updated pricing table copy', 'components/pricing.tsx'), st('Ran lint and tests', 'pnpm test · 142 passed')]),
+      agent('Shortened the hero to one sentence, removed the secondary CTA, and rewrote the pricing rows so each plan leads with what it includes. Tests pass. Screenshots of both sections are attached.'),
+      run({ title: 'Finished', dur: '6m 12s', branch: 'cursor/landing-copy-pass', pr: 'Landing copy pass', prNum: '#128', arts: T }),
+    ];
+    const P = (o) => ({ name: 'Landing copy pass', repo: 'flama-ai/web', branch: 'cursor/landing-copy-pass', model: 'Composer 2', status: 'Completed', dot: 'var(--success)', dotAnim: 'none', ph: 'Ask Cursor for a follow-up', sendLabel: 'Send follow-up', turns: finishedTurns, ...o });
+    const runningTurns = [
+      user('The auth tests in packages/auth fail about one run in five. Find the cause and fix it, don’t just add retries.', 'You · 15:40 · Agent'),
+      steps('Working · 6m', [st('Cloned xrp-mobile', 'main @ 4f2a91c'), st('Ran the suite 20 times', '4 failures, all in session.test.ts'), st('Traced the race to token refresh', 'src/session.ts:88'), st('Writing a fix', 'src/session.ts', true)]),
+      agent('The refresh timer and the logout handler both write the session store. When logout lands inside the refresh window the test reads a stale token. I’m serialising both through the store’s queue.'),
+      { stream: T },
+    ];
+    const R = { name: 'Fix flaky auth tests', repo: 'xrp-mobile', branch: 'cursor/fix-flaky-auth', model: 'Composer 2', status: 'Running', dot: 'var(--success)', dotAnim: 'op-pulse-dot 1.2s ease-in-out infinite', canCancel: T, turns: runningTurns, ph: 'Ask Cursor for a follow-up', busy: T };
+    const N = o => ({ project: 'flama-ai', repo: 'flama-ai/web', repoColor: 'var(--fg-muted)', model: 'Composer 2', prompt: 'Tighten the landing copy: shorter hero, one CTA, and fix the pricing table wording.', chipOp: '1', startOp: '1', ...o });
+    const F = (id, label, note, kind, o = {}) => ({ id, label, note, w: '1440px', railS: kind === 'auto' || kind === 'settings' ? U : T, railA: kind === 'auto' ? T : U, railX: kind === 'settings' ? T : U,
+      sideSessions: kind === 'new' || kind === 'pane' || kind === 'side' ? T : U, sideAuto: kind === 'auto' ? T : U, sideSettings: kind === 'settings' ? T : U,
+      kNew: kind === 'new' ? T : U, kPane: kind === 'pane' ? T : U, kSettings: kind === 'settings' ? T : U, kAuto: kind === 'auto' ? T : U,
+      groups: this.groups(o.active, o.tip), ...o });
+    const S = o => ({ dot: 'var(--success)', badge: 'Connected', ghDot: 'var(--success)', ghText: 'Installed on 3 of 4 watched repositories · flama-ai/api is missing', ghBtn: 'Manage in GitHub', ...o });
+    const sections = [
+      { id: 's1', num: '01', title: 'New session · Where → Cloud → Cursor', sub: 'Permission and effort hidden; Agent locked to Cursor', frames: [
+        F('1a', 'Connected', 'Where menu open', 'new', { n: N({ whereOpen: T, whereOpenS: T }) }),
+        F('1b', 'Cursor not connected', 'Chips greyed, start off', 'new', { n: N({ notConnected: T, chipOp: '0.45', startOff: T, startOp: '0.4', inputOff: T, prompt: '' }) }),
+        F('1c', 'Repository not installed', 'Cursor GitHub app can’t see flama-ai/api', 'new', { n: N({ repo: 'flama-ai/api', repoColor: 'var(--fg-muted)', repoOpen: T, repoOpenS: T, startOff: T, startOp: '0.4' }) }),
+        F('1d', 'Launch failed', 'API message inline', 'new', { n: N({ error: T, model: 'Grok 4.7', grok: T }) }),
+      ] },
+      { id: 's2', num: '02', title: 'Sidebar · host and Cursor sessions', sub: 'Cursor states mapped into the existing groups', frames: [
+        F('2a', 'Every Cursor state', 'Cloud glyph, Cursor mark, tooltip', 'side', { w: '338px', tip: T, legend: T }),
+      ] },
+      { id: 's3', num: '03', title: 'Cursor session pane', sub: 'Transcript and runs, not a terminal', frames: [
+        F('3a', 'Running · live stream', 'Stream lag noted; reconnecting state in header', 'pane', { active: 'run', p: { ...R, reconnecting: T } }),
+        F('3b', 'Finished · PR card', 'Branch, PR, duration, artifacts', 'pane', { active: 'done', p: P({}) }),
+        F('3c', 'Plan ready', 'Plan mode run waiting for you', 'pane', { active: 'plan', p: P({ name: 'Pricing page plan', branch: 'cursor/pricing-plan', status: 'Plan ready', dot: 'var(--warning)', turns: [user('Plan a pricing page redesign with three tiers and a comparison table. Don’t change code yet.', 'You · 11:20 · Plan'), steps('Read 14 files · 2m 48s', [st('Read pricing and checkout', 'app/pricing · lib/stripe'), st('Checked design tokens', 'styles/tokens.css')]), { plan: T }] }) }),
+        F('3d', 'Busy · queued follow-up', 'One run at a time per agent', 'pane', { active: 'run', p: { ...R, queued: 'Also add a regression test that reproduces the race with fake timers.' } }),
+        F('3e', 'Failed', 'ERROR with reason and retry', 'pane', { active: 'fail', p: P({ name: 'Migrate retriever to pgvector', repo: 'flama-ai/api', branch: 'main', status: 'Failed', dot: 'var(--danger)', turns: [user('Move the retriever from FAISS to pgvector and keep the public API the same.', 'You · 09:12 · Agent'), run({ dot: 'var(--danger)', title: 'Run failed', dur: '0m 38s', reason: 'Cursor couldn’t clone flama-ai/api: its GitHub app has no access to this repository.', retry: T })] }) }),
+        F('3f', 'Cancel confirm', 'Can’t be undone', 'pane', { active: 'run', p: { ...R, confirm: T } }),
+      ] },
+      { id: 's4', num: '04', title: 'Settings → Cloud agents', sub: 'One card per provider, key per person', frames: [
+        F('4a', 'Cursor disconnected', '', 'settings', { cloudCount: '1', s: S({ keyForm: T, dot: 'var(--fg-subtle)', badge: 'Not connected', keyBorder: '' }) }),
+        F('4b', 'Cursor connected', '', 'settings', { cloudCount: '2', s: S({ connected: T, ghText: 'Installed on 4 of 4 watched repositories' }) }),
+        F('4c', 'Key rejected', '401 from Cursor', 'settings', { cloudCount: '1', s: S({ keyForm: T, rejected: T, dot: 'var(--danger)', badge: 'Key rejected', keyVal: 'key_8f2c0000000000', keyBorder: 'var(--danger)' }) }),
+        F('4d', 'GitHub app missing', 'Key valid, app not installed', 'settings', { cloudCount: '2', s: S({ connected: T, dot: 'var(--warning)', badge: 'Needs GitHub app', ghDot: 'var(--warning)', ghText: 'Not installed on any watched repository. Sessions can’t start until it is.', ghBtn: 'Install in GitHub' }) }),
+      ] },
+      { id: 's5', num: '05', title: 'Automations · Run on Cursor', sub: 'Same chips as New session', frames: [
+        F('5a', 'Edit · Run on Cursor', 'Run on picker open', 'auto', { a: { edit: T, tabEditBg: 'var(--card)', tabEditFg: 'var(--fg)', tabRunsFg: 'var(--fg-muted)' } }),
+        F('5b', 'Run history', 'Cursor runs with §5.2 status', 'auto', { a: { runs: T, tabRunsBg: 'var(--card)', tabRunsFg: 'var(--fg)', tabEditFg: 'var(--fg-muted)' } }),
+      ] },
+      { id: 's6', num: '06', title: 'Grok via Cursor', sub: 'Agent → Grok, then Where → Cloud', frames: [
+        F('6a', 'Switched to Cursor · Grok 4.7', 'Model menu open', 'new', { n: N({ grok: T, model: 'Grok 4.7', grokHint: T, modelOpen: T, modelOpenS: T, modelBg: 'var(--hover-surface)', prompt: 'Refactor the pricing API into a typed client and remove the legacy endpoints.' }) }),
+        F('6b', 'Cursor · Grok 4.7 session', 'Both marks in row and header', 'pane', { active: 'grok', p: { ...R, name: 'Refactor pricing API', repo: 'flama-ai/api', branch: 'cursor/pricing-client', model: 'Grok 4.7', grok: T, turns: [user('Refactor the pricing API into a typed client and remove the legacy endpoints.', 'You · 16:05 · Agent · Grok 4.7'), steps('Working · 3m', [st('Mapped legacy endpoints', '7 routes under /v1/pricing'), st('Generating typed client', 'lib/pricing/client.ts', true)]), { stream: T }] } }),
+      ] },
+    ];
+    return {
+      sections,
+      modelGroups: [
+        { name: 'Cursor', items: [{ label: 'Composer 2', desc: 'Cursor’s default', cur: T }] },
+        { name: 'Grok', items: [{ label: 'Grok 4.7', desc: 'xAI · Fast available', grok: T, sel: T }, { label: 'Grok 4.7 500k', desc: 'xAI · long context', grok: T }, { label: 'Grok 4.6', desc: 'xAI', grok: T }, { label: 'Grok 4.5', desc: 'xAI', grok: T }] },
+        { name: 'Others on your account', items: [{ label: 'Claude Sonnet 4.6', desc: 'Anthropic' }, { label: 'GPT-5.2', desc: 'OpenAI' }] },
+      ],
+      planSteps: [
+        { t: 'Replace the two-column layout with three tier cards.', f: 'app/pricing/page.tsx' },
+        { t: 'Add a comparison table generated from the plan config.', f: 'lib/plans.ts' },
+        { t: 'Move prices to Stripe price IDs so copy and billing stay in step.', f: 'lib/stripe.ts' },
+        { t: 'Add visual tests for the three breakpoints.', f: 'tests/pricing.spec.ts' },
+      ],
+      autoGroups: [
+        { name: 'atlas', count: 2, items: [{ name: 'Nightly dependency audit', icon: 'clock', cursor: T, active: T }, { name: 'Label new issues', icon: 'zap' }] },
+        { name: 'xrp-mobile', count: 2, items: [{ name: 'Review every PR', icon: 'git-pull-request' }, { name: 'Weekly flaky-test sweep', icon: 'clock', cursor: T }] },
+      ],
+      runRows: [
+        { title: 'Nightly dependency audit', status: 'Running', dot: 'var(--success)', anim: 'op-pulse-dot 1.2s ease-in-out infinite', result: 'Bumping 6 packages', when: 'Today 02:00', dur: '4m' },
+        { title: 'Nightly dependency audit', status: 'Completed', dot: 'var(--success)', pr: '#131', result: '6 bumps, 2 need a human', when: 'Yesterday', dur: '11m 04s' },
+        { title: 'Nightly dependency audit', status: 'Completed', dot: 'var(--fg-subtle)', result: 'Nothing to bump', when: '2 days ago', dur: '3m 12s' },
+        { title: 'Nightly dependency audit', status: 'Failed', dot: 'var(--danger)', result: '402 · usage pool exhausted', when: '3 days ago', dur: '0m 09s' },
+        { title: 'Nightly dependency audit', status: 'Cancelled', dot: 'var(--fg-subtle)', result: 'Cancelled by jordi', when: '4 days ago', dur: '1m 50s' },
+        { title: 'Nightly dependency audit', status: 'Failed', dot: 'var(--danger)', result: 'Expired before it finished', when: '5 days ago', dur: '—' },
+      ],
+      legend: [
+        { a: 'CREATING', b: 'Working · “Starting”' },
+        { a: 'RUNNING', b: 'Working · running dot' },
+        { a: 'FINISHED + PR', b: 'Ready for review · PR number' },
+        { a: 'FINISHED, no PR', b: 'Idle · completed' },
+        { a: 'FINISHED (Plan)', b: 'Waiting on you · “Plan ready”' },
+        { a: 'ERROR / EXPIRED', b: 'Waiting on you · failed, reason on hover' },
+        { a: 'CANCELLED', b: 'Idle · “Cancelled”' },
+        { a: 'ARCHIVED', b: 'Resolved' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
