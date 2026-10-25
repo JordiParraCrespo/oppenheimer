@@ -74,11 +74,16 @@ export {
   SubagentRow,
   SubagentRunCard,
 } from './components/chat-cards';
+export type { ChatComposerLabels } from './components/chat-composer';
+export { ChatComposer } from './components/chat-composer';
+export type { DictationSlot } from './components/chat-composer-extras';
 export {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from './components/chat-composer-extras';
 export type { ComposerTask } from './components/chat-composer-stack';
@@ -99,6 +104,15 @@ export {
   ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
+export type { ChatCodeBlockLabels } from './components/chat-elements';
+export {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSource,
+  ChatSources,
+  ChatSuggestion,
+  ChatSuggestions,
+} from './components/chat-elements';
 export type { ThreadFindLabels } from './components/chat-header';
 export {
   ChatEmptyState,
@@ -109,6 +123,7 @@ export {
   ChatTrayButton,
   ThreadFindBar,
 } from './components/chat-header';
+export { ChatImage, ChatImageRemove } from './components/chat-image';
 export type { ChatErrorLabels } from './components/chat-status';
 export {
   ChatErrorAction,
@@ -117,6 +132,15 @@ export {
   FloatingChip,
   TranscriptDivider,
 } from './components/chat-status';
+export type { TraceOutputLabels } from './components/chat-trace';
+export {
+  Trace,
+  TraceGroup,
+  TraceLive,
+  TraceNote,
+  TraceOutput,
+  TraceStep,
+} from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
@@ -273,7 +297,7 @@ export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
-export { HostCard } from './components/host-card';
+export { HostCard, HostCardSkeleton } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
 export { HostLinkChrome } from './components/host-link';
 export type { IconButtonProps } from './components/icon-button';
@@ -341,11 +365,12 @@ export { PullRequestHeader } from './components/pull-request-header';
 export {
   MergeButton,
   PullRequestRow,
+  PullRequestRowSkeleton,
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
 export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
-export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {
@@ -509,4 +534,5 @@ export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
+export { useStickToBottom } from './hooks/use-stick-to-bottom';
 export { cn } from './lib/utils';

@@ -16,8 +16,11 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way.
+ * that the same way. The script builders beside the install entries
+ * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
  */
+
+import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
 /**
  * Every agent id, in display order.
@@ -228,6 +231,96 @@ export interface CodingAgentLoginTarget {
   readonly path?: string;
 }
 
+/**
+ * How the runner installs a CLI on a host that does not have it, unattended
+ * and as the person's own account: no `sudo`, no terminal, nothing on stdin
+ * (`product/versions/mvp/02-runner.md` §10).
+ *
+ * Each platform's entry is a POSIX `sh` script, run with `sh -c`, and a
+ * user-level destination. A vendor that publishes release binaries with
+ * checksums is installed from its latest release, verified against that
+ * checksum before it is unpacked or run (`release-install.ts`); one that
+ * publishes on npm is installed from the registry, which checks each
+ * package's integrity. A platform with no entry is one the runner does not
+ * install on; it says so rather than guessing.
+ *
+ * `bin` is the directory, `~`-relative, the script leaves the executable in.
+ * The runner puts every catalog `bin` on its own `PATH` at start, so a CLI it
+ * installed is found by the next probe and by the sessions' tmux server
+ * without the person editing a shell profile the service never reads.
+ */
+export interface HostInstall {
+  readonly macos?: string;
+  readonly linux?: string;
+  readonly bin: string;
+}
+
+/**
+ * How a CLI was installed, told from where its executable really lives: the
+ * first entry whose `pathContains` is a substring of the resolved path names
+ * the `<method>` an updater that needs one is given.
+ */
+export interface InstallMethod {
+  readonly method: string;
+  readonly pathContains: string;
+}
+
+/**
+ * Claude Code's latest native build, as `claude.ai/install.sh` finds it but
+ * without running that script: the version `latest` names, that version's
+ * `manifest.json`, the binary for this platform checked against the
+ * manifest's SHA-256, and then the verified binary's own `claude install
+ * <version>`, which puts it under `~/.local/share/claude/versions` with the
+ * `~/.local/bin/claude` link. Linux tells musl from glibc and macOS an x64
+ * shell under Rosetta from an Intel Mac, as the vendor's script does.
+ */
+function claudeRelease(platform: ReleasePlatform): string {
+  const target =
+    platform === 'macos'
+      ? [
+          'if [ "$arch" = x64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ]; then arch=arm64; fi',
+          'platform="darwin-$arch"',
+        ]
+      : [
+          'if [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then platform="linux-$arch-musl"; else platform="linux-$arch"; fi',
+        ];
+  return [
+    'set -eu',
+    'case "$(uname -m)" in x86_64|amd64) arch=x64 ;; aarch64|arm64) arch=arm64 ;; *) echo "claude: unsupported architecture $(uname -m)" >&2; exit 1 ;; esac',
+    ...target,
+    'base=https://downloads.claude.ai/claude-code-releases',
+    ...RELEASE_TEMP_DIR,
+    ...sha256Verifier(platform, 'claude'),
+    'version="$(curl -fsSL "$base/latest")"',
+    String.raw`printf '%s' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' || { echo "claude: could not read the latest version from $base/latest" >&2; exit 1; }`,
+    'curl -fsSL "$base/$version/manifest.json" -o "$tmp/manifest.json"',
+    // The platform's own object only: `[^{}]*` cannot leave it.
+    String.raw`checksum="$(tr -d ' \t\r\n' <"$tmp/manifest.json" | grep -o "\"$platform\":{[^{}]*}" | grep -o '"checksum":"[0-9a-f]*"' | cut -d '"' -f 4)"`,
+    // Before the binary's download, which is hundreds of megabytes.
+    'printf \'%s\' "$checksum" | grep -Eqx \'[0-9a-f]{64}\' || { echo "claude: the $version manifest has no checksum for $platform" >&2; exit 1; }',
+    'curl -fsSL "$base/$version/$platform/claude" -o "$tmp/claude"',
+    'verify "$tmp/claude" "$checksum"',
+    'chmod 0755 "$tmp/claude"',
+    '"$tmp/claude" install "$version" </dev/null',
+  ].join('\n');
+}
+
+/**
+ * A package from the npm registry, installed under `~/.local` so the global
+ * prefix is the person's own and `npm` needs no root. npm checks the tarball
+ * against the registry's integrity hash before it unpacks it, and a package
+ * with platform binaries (`opencode-ai`) gets them the same way, as its
+ * optional dependencies. Node is a prerequisite the script names rather than
+ * installs.
+ */
+function npmUserInstall(pkg: string): string {
+  return [
+    'set -eu',
+    'command -v npm >/dev/null 2>&1 || { echo "npm is not on PATH; install Node.js 22 first" >&2; exit 1; }',
+    `npm install --global --prefix "$HOME/.local" ${pkg}`,
+  ].join('\n');
+}
+
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
   readonly label: string;
@@ -285,10 +378,21 @@ export interface CodingAgentDefinition {
    * latest release **without asking**: the runner runs it unattended, with no
    * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
    *
-   * Absent: this CLI has no updater that runs without asking (OpenCode's,
-   * or a plain shell's none), and the runner leaves it alone.
+   * `<method>` in the argv is the install method `updateMethods` tells from
+   * the executable's path; when none matches, the runner leaves the CLI
+   * alone rather than run an updater that would stop to ask.
+   *
+   * Absent: this CLI has no updater that runs without asking (a plain
+   * shell's none), and the runner leaves it alone.
    */
   readonly update?: readonly string[];
+  /** What `<method>` in `update` is, by where the executable lives. */
+  readonly updateMethods?: readonly InstallMethod[];
+  /**
+   * How the runner installs this CLI when the person asks it to
+   * (`runner agents install`). Absent: it never does (a plain shell).
+   */
+  readonly install?: HostInstall;
 }
 
 /** A model's levels and default, frozen as the rest of the catalog is. */
@@ -388,6 +492,15 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `claude update|upgrade`: "Check for updates and install if available",
     // claude 2.1.284. It takes no options and asks nothing.
     update: Object.freeze(['update']),
+    // The native build, the one Anthropic documents first: one binary in
+    // `~/.local/bin`, no Node, and it keeps itself current through `update`.
+    // Its latest release, checked against the release manifest's checksum,
+    // rather than `claude.ai/install.sh`, which would run unchecked.
+    install: Object.freeze({
+      macos: claudeRelease('macos'),
+      linux: claudeRelease('linux'),
+      bin: '~/.local/bin',
+    }),
   }),
   codex: Object.freeze({
     id: 'codex',
@@ -403,31 +516,34 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // The four OpenAI ships for Codex, in capability order, with the slugs
-    // `codex --model` takes. Sol is the default because it is the CLI's own
-    // (`model = "gpt-5.6-sol"` in the documented starting `config.toml`), and
-    // Astra is not: it wants Codex 0.153.1 and Trusted Access, so defaulting to
-    // it would hand most hosts a row their CLI refuses.
-    //
-    // Same seed argument as Claude Code above, and the same limit: a probe is
-    // still what would tell the console which of these *this* machine's codex
-    // knows (`product/versions/mvp/05-screens.md`, open question 6).
-    //
-    // Each model's levels and default are codex's own (`codex debug models`):
-    // Sol and Astra think `low` unasked, Terra and Luna `medium`, Luna has no
-    // `ultra`, and none has `minimal`. Codex forwards a level a model lacks to
-    // the API unchanged, so a level listed here that the model does not take
-    // is a failed turn, not a dropped setting.
+    // What codex's own picker lists, in its order, with the slugs `codex
+    // --model` takes and each model's levels and default as codex reports them;
+    // a seed, with the limit Claude Code's has (`05-screens.md`, question 6).
     models: Object.freeze([
+      Object.freeze({
+        id: 'gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
+        default: true as const,
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
       Object.freeze({
         id: 'gpt-6-astra',
         label: 'GPT-6 Astra',
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
+        id: 'gpt-6-sol',
+        label: 'GPT-6 Sol',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'gpt-6-luna',
+        label: 'GPT-6 Luna',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
+      Object.freeze({
         id: 'gpt-5.6-sol',
         label: 'GPT-5.6 Sol',
-        default: true as const,
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
@@ -491,6 +607,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
     // Its options are config overrides only; it asks nothing.
     update: Object.freeze(['update']),
+    // `@openai/codex` from npm, which is what OpenAI's README installs first
+    // and the one way that is the same on macOS and Linux. Under a `~/.local`
+    // prefix so it needs no root, and `codex update` finds it there.
+    install: Object.freeze({
+      macos: npmUserInstall('@openai/codex'),
+      linux: npmUserInstall('@openai/codex'),
+      bin: '~/.local/bin',
+    }),
   }),
   opencode: Object.freeze({
     id: 'opencode',
@@ -531,9 +655,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Each model's levels are its OpenCode variants (`opencode models
     // --verbose`), and its default is what it runs with none: the API's own
     // `high` for the adaptive Claude models, no thinking for Haiku, whose
-    // variants are only `high` and `max` budgets, and `medium` for Sol. Sol's
-    // `none` variant is left off: "don't think" is not an amount of thinking
-    // anyone picks for a coding session.
+    // variants are only `high` and `max` budgets, and `medium` for the Sols.
+    // 5.6 Sol's `none` variant is left off: "don't think" is not an amount of
+    // thinking anyone picks for a coding session.
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
@@ -555,6 +679,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         id: 'anthropic/claude-haiku-4-5',
         label: 'Claude Haiku 4.5',
         effort: levels(['none', 'high', 'max'], 'none'),
+      }),
+      Object.freeze({
+        id: 'openai/gpt-6.1-sol',
+        label: 'GPT-6.1 Sol',
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-5.6-sol',
@@ -619,10 +748,35 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
     }),
-    // No `update`. `opencode upgrade` (1.18.33) has no flag that means "do
-    // not ask", and it asks "Install anyways?" whenever it cannot tell how it
-    // was installed — which is exactly when replacing it is not ours to do.
-    // OpenCode's own launch-time autoupdate skips the same case.
+    // `opencode upgrade` (1.18.33) asks "Install anyways?" whenever it cannot
+    // tell how it was installed, and has no flag that means "do not ask". It
+    // does take the method (`--method curl|npm|pnpm|bun|brew`), and told it,
+    // it detects nothing and asks nothing. So the runner tells it, from where
+    // the executable really lives; an OpenCode none of these match is one
+    // whose replacement is not ours to do, and it is left alone, as
+    // OpenCode's own launch-time autoupdate leaves it. `curl` is not one of
+    // them: that method runs `opencode.ai/install`, which checks nothing, so
+    // an OpenCode in `~/.opencode/bin` keeps its own autoupdate and no more.
+    // The runner's install below resolves to
+    // `~/.local/lib/node_modules/opencode-ai/`, the `npm` row, whose
+    // `npm install -g` the runner points at that `~/.local` prefix.
+    update: Object.freeze(['upgrade', '--method', '<method>']),
+    updateMethods: Object.freeze([
+      Object.freeze({ method: 'brew', pathContains: '/Cellar/' }),
+      Object.freeze({ method: 'bun', pathContains: '/.bun/' }),
+      Object.freeze({ method: 'pnpm', pathContains: '/pnpm/' }),
+      Object.freeze({ method: 'npm', pathContains: '/node_modules/' }),
+    ]),
+    // `opencode-ai` from npm rather than `opencode.ai/install`: the script
+    // checks nothing, and the GitHub releases publish no checksum for the CLI
+    // archives, while npm checks the package and the platform binary it
+    // pulls in (`opencode-<platform>`) against the registry's integrity hash,
+    // as it does Codex's and Grok's.
+    install: Object.freeze({
+      macos: npmUserInstall('opencode-ai'),
+      linux: npmUserInstall('opencode-ai'),
+      bin: '~/.local/bin',
+    }),
   }),
   grok: Object.freeze({
     id: 'grok',
@@ -711,6 +865,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `grok update`: "Check for updates or install a specific version", grok
     // 1.0.44. Bare, it installs the latest and asks nothing.
     update: Object.freeze(['update']),
+    // `@xai-official/grok` from npm rather than `x.ai/cli/install.sh`: the
+    // package lands in a directory this catalog can name, and the script's
+    // destination is not documented anywhere this repo can hold it to.
+    install: Object.freeze({
+      macos: npmUserInstall('@xai-official/grok'),
+      linux: npmUserInstall('@xai-official/grok'),
+      bin: '~/.local/bin',
+    }),
   }),
   shell: Object.freeze({
     id: 'shell',

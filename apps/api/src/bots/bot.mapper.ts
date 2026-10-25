@@ -14,6 +14,8 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.createdByUserId = entity.createdByUserId;
+    record.createdByBotId = entity.createdByBotId;
+    record.idempotencyKey = entity.idempotencyKey;
     record.name = entity.name;
     record.description = entity.description;
     record.avatarColor = entity.avatarColor;
@@ -36,6 +38,8 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
       props: {
         organizationId: record.organizationId,
         createdByUserId: record.createdByUserId ?? null,
+        createdByBotId: record.createdByBotId ?? null,
+        idempotencyKey: record.idempotencyKey ?? null,
         name: record.name,
         description: record.description,
         avatarColor: record.avatarColor as BotAvatarColor,
@@ -66,6 +70,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.model = entity.model;
     dto.effort = entity.effort;
     dto.permission = entity.permission;
+    dto.createdByBotId = entity.createdByBotId;
     dto.learnAutomatically = entity.learnAutomatically;
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();

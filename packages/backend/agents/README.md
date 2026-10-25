@@ -12,6 +12,7 @@ behind one port.
 | `anthropic` | Claude Agent SDK (Claude Code as a library) | Anthropic's API (`ANTHROPIC_API_KEY`), or `baseUrl` when given            |
 | `glm`       | Claude Agent SDK                           | z.ai's Anthropic-compatible endpoint, `https://api.z.ai/api/anthropic` (`ANTHROPIC_AUTH_TOKEN`), or `baseUrl` |
 | `openai`    | OpenAI Agents SDK, Responses API           | OpenAI's API, or `baseUrl` when given                                    |
+| `chatgpt`   | OpenAI Agents SDK, Responses API           | ChatGPT's Codex backend, `https://chatgpt.com/backend-api/codex`, on a ChatGPT sign-in (`apiKey` is its access token, `accountId` its account), or `baseUrl` |
 
 No model id is written in the package: the bot's model comes in on every
 request. `effort` goes to Claude Code's `effort` option and to OpenAI's
@@ -38,6 +39,25 @@ for await (const event of engine.run({
 })) {
   // publish to the chat's stream, store the messages
 }
+```
+
+A `chatgpt` turn runs on a ChatGPT subscription instead of API billing, the
+way the Codex CLI and OpenClaw do (`openai/chatgpt-bot-engine.ts`, the OpenAI
+engine with another endpoint): the request
+names the account (`chatgpt-account-id`), sends `store: false` and asks for
+its reasoning back encrypted (`include: ['reasoning.encrypted_content']`).
+Signing in and refreshing the token are the caller's; the engine only uses
+the access token it is given, and fails a turn that names no account.
+
+For text the caller keeps rather than a chat turn (a conversation's
+summary), `complete` asks for one answer with no tool at all, ours or the
+engine's, no history and one model round trip, through `run` and its
+contract. It resolves to the text, or rejects with the turn's reason:
+
+```ts
+const summary = await engine.complete({
+  provider, apiKey, model, systemPrompt, message, signal, scratchDir,
+});
 ```
 
 **Keys are passed per call and never read from the environment.** The
@@ -69,6 +89,16 @@ before the model reads it.
 - A tool that throws becomes an error result the model reads
   (`isError: true`), not a crash. Tool calls from Claude subagents are
   reported too; subagent text is not.
+- A failure the provider refused for rate or quota carries
+  `done.rateLimit = { resetAt }`: when it may be called again, or null when
+  it did not say. The Claude engine reads the SDK's `rate_limit` error, a
+  `429` status, a rejected rate-limit event (its reset) and Claude Code's own
+  retry wait; the OpenAI engine reads a `429` and its `Retry-After`.
+  `complete` throws it as `BotRateLimitError`. This package has no workspace
+  dependencies, so it cannot hold a shared pause itself
+  (`.agents/rules/integrations.md`): the caller must not call the provider
+  again with that key before `resetAt`, and a queued job is moved to delayed
+  until then rather than retried on its own schedule.
 - `maxSteps` (default 25) caps model round trips: Claude Code's `maxTurns`,
   the Agents SDK's `maxTurns`. Reaching it ends with `max_steps`.
 

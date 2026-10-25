@@ -24,24 +24,45 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await signInAs(page, owner.user);
 
   await page.goto(`/bots/${bot.id}`);
-  await expect(page.getByText('What would you most like help with?')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+  ).toBeVisible();
   const box = page.getByPlaceholder('Message Fruit Bot');
   await box.fill('Reply with exactly the word: pineapple');
   await page.getByRole('button', { name: 'Send' }).click();
 
-  // Your message as a card, the turn at work, then its answer and how it went.
+  // Your message as a bubble, the turn at work, then its answer and how it went.
   await expect(page.locator('[data-slot="chat-user-message"]')).toContainText(
     'Reply with exactly the word: pineapple',
   );
   await expect(box).toHaveValue('');
-  await expect(page.locator('[data-slot="turn-header"][data-state="done"]')).toBeVisible({
+  await expect(page.locator('[data-slot="bot-turn"][data-phase="completed"]')).toBeVisible({
     timeout: 120_000,
   });
   await expect(page.locator('[data-slot="chat-reply"]').last()).toContainText(/pineapple/i);
-  await expect(page.locator('[data-slot="turn-header"]')).toContainText('GLM-5.3');
+  // Under it, how it went: its model, and a copy button for the answer.
+  await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
+  await expect(page.getByRole('button', { name: 'Copy reply' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
   // The sidebar's row previews the last thing said.
   await expect(
     page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }),
   ).toContainText(/pineapple/i);
+
+  // Profile's chat history: the two messages, exported as Markdown, then cleared.
+  await page.goto(`/bots/${bot.id}/settings/profile`);
+  await expect(page.getByText(/^2 messages · last /)).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^fruit-bot-chat-\d{4}-\d{2}-\d{2}\.md$/);
+  await page.getByRole('button', { name: 'Clear history' }).click();
+  const confirm = page.getByRole('alertdialog', { name: 'Clear the chat history?' });
+  await confirm.getByRole('button', { name: 'Clear history' }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText('No messages yet.')).toBeVisible();
+  await page.goto(`/bots/${bot.id}`);
+  await expect(
+    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+  ).toBeVisible();
 });

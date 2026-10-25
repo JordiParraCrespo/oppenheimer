@@ -32,10 +32,14 @@ const keys = (model: TypeaheadModel, screen: TypeaheadScreen, data: string[]) =>
 };
 
 /** What the overlay would show on the row, laid over the host's line. */
-function shown(model: TypeaheadModel, hostLine: string): { text: string; cursor: number } | null {
+function shown(
+  model: TypeaheadModel,
+  hostLine: string,
+  cols = 40,
+): { text: string; cursor: number } | null {
   const view = model.view();
   if (!view) return null;
-  const cells = hostLine.padEnd(40, ' ').split('');
+  const cells = hostLine.padEnd(cols, ' ').split('');
   let cursor = -1;
   for (const cell of view.cells) {
     cells[cell.col] = cell.char;
@@ -181,6 +185,40 @@ describe('TypeaheadModel', () => {
     }
   });
 
+  it('never deletes a shell prompt that starts with its own text (`user@host:~/dir$ `)', () => {
+    // Bash's default prompt has no gap before its `$`, so the reader's text
+    // and the prompt read as one run; Backspace past the text ate the path.
+    for (const prompt of [
+      'doctor@optiplex-240:~/oppenheimer-ai/workspaces$ ',
+      '[me@box ~]# ',
+      'me@box ~ % ',
+    ]) {
+      const line = `${prompt}a`;
+      const { screen, host } = grid(line, line.length, 80);
+      const model = new TypeaheadModel(clock().now);
+      keys(model, screen, ['b']);
+      host(`${line}b`, line.length + 1);
+      model.reconcile(screen);
+      keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+      expect(shown(model, `${line}b`, 80)).toEqual({
+        text: prompt.trimEnd(),
+        cursor: prompt.length,
+      });
+    }
+  });
+
+  it('stops a Backspace guess at a prompt end the reader typed (`ls > out`), never past it', () => {
+    const { screen, host } = grid('$ ls > ou', 9);
+    const model = new TypeaheadModel(clock().now);
+    keys(model, screen, ['t']);
+    host('$ ls > out', 10);
+    model.reconcile(screen);
+    // Three take back `out`; the fourth is left to the host rather than
+    // guessed through `> `, which may as well be a prompt.
+    keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+    expect(shown(model, '$ ls > out')).toEqual({ text: '$ ls >', cursor: 7 });
+  });
+
   it('leaves a list bullet the reader typed deletable (`- item` is text, not prompt)', () => {
     const { screen, host } = grid('\u2502 > - a', 7);
     const model = new TypeaheadModel(clock().now);
@@ -228,6 +266,26 @@ describe('TypeaheadModel', () => {
     host('> a', 3);
     model.reconcile(screen);
     expect(confirmed).toEqual([80]);
+  });
+
+  it('confirms only the guess the host reached when the ones after it expect the same line', () => {
+    // The fourth Backspace is guessed to do nothing at `> `; the host
+    // drawing the third's line has not reached it, and a sample for it
+    // would read the link as faster than it is.
+    const time = clock();
+    const confirmed: number[] = [];
+    const { screen, host } = grid('$ ls > ou', 9);
+    const model = new TypeaheadModel(time.now, (ms) => confirmed.push(ms));
+    keys(model, screen, ['t']);
+    host('$ ls > out', 10);
+    model.reconcile(screen);
+    confirmed.length = 0;
+    keys(model, screen, ['\x7f', '\x7f', '\x7f', '\x7f']);
+    time.advance(80);
+    host('$ ls > ', 7);
+    model.reconcile(screen);
+    expect(confirmed).toEqual([80, 80, 80]);
+    expect(model.waiting).toBe(true);
   });
 
   it('starts a tentative epoch when the program redraws the line without a key (a prompt that stops echoing)', () => {

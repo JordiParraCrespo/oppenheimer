@@ -30,4 +30,26 @@ export const BotsErrors = {
   FETCH_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_019', message: 'Failed to load the chat' },
   SEND_FAILED: { code: 'BOTS_CLIENT_020', message: 'Failed to send the message' },
   STOP_FAILED: { code: 'BOTS_CLIENT_021', message: 'Failed to stop the turn' },
+  FETCH_APPROVALS_FAILED: { code: 'BOTS_CLIENT_022', message: 'Failed to load the approvals' },
+  DECIDE_APPROVAL_FAILED: { code: 'BOTS_CLIENT_023', message: 'Failed to answer the request' },
+  START_CHATGPT_LOGIN_FAILED: {
+    code: 'BOTS_CLIENT_024',
+    message: 'Failed to start signing in to ChatGPT',
+  },
+  POLL_CHATGPT_LOGIN_FAILED: {
+    code: 'BOTS_CLIENT_025',
+    message: 'Failed to check the ChatGPT sign-in',
+  },
+  EXPORT_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_026', message: 'Failed to export the chat' },
+  CLEAR_CONVERSATION_FAILED: { code: 'BOTS_CLIENT_027', message: 'Failed to clear the chat' },
+  SET_DEFAULT_PROVIDER_FAILED: {
+    code: 'BOTS_CLIENT_028',
+    message: 'Failed to change the default provider',
+  },
+  FETCH_ROUTINES_FAILED: { code: 'BOTS_CLIENT_029', message: 'Failed to load the routines' },
+  SAVE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_030', message: 'Failed to change the routine' },
+  RUN_ROUTINE_FAILED: { code: 'BOTS_CLIENT_031', message: 'Failed to run the routine' },
+  DELETE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_032', message: 'Failed to delete the routine' },
+  UPLOAD_IMAGE_FAILED: { code: 'BOTS_CLIENT_033', message: 'Failed to add the image' },
+  READ_IMAGE_FAILED: { code: 'BOTS_CLIENT_034', message: 'Failed to load the image' },
 } as const satisfies Record<string, ErrorDefinition>;

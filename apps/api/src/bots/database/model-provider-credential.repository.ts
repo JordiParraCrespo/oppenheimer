@@ -6,6 +6,7 @@ import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import { BotResource } from '../bots.resource';
 import type { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
+import { defaultBotProvider } from '../domain/model-provider-default.policy';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 import { ModelProviderCredentialOrmEntity } from './model-provider-credential.orm-entity';
 import type { ModelProviderCredentialRepositoryPort } from './model-provider-credential.repository.port';
@@ -50,8 +51,14 @@ export class ModelProviderCredentialRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async defaultProvider(scope: AccessScope): Promise<BotProvider> {
+    return defaultBotProvider(await this.findAll(scope));
+  }
+
   async put(credential: ModelProviderCredentialEntity): Promise<void> {
     // One row per workspace and provider: a second key replaces the first.
+    // `markedDefault` is left out of the update, so a replaced key keeps its
+    // mark; `setDefault` is the only writer of it.
     await this.repository
       .createQueryBuilder()
       .insert()
@@ -64,6 +71,27 @@ export class ModelProviderCredentialRepository
       .execute();
   }
 
+  async setDefault(scope: AccessScope, provider: BotProvider): Promise<boolean> {
+    const { organizationId } = scope;
+    if (!organizationId) return false;
+    return this.repository.manager.transaction(async (manager) => {
+      const rows = manager.getRepository(ModelProviderCredentialOrmEntity);
+      // Two switches at once would both clear, then collide on
+      // UQ_model_provider_credential_default: the workspace's rows are locked
+      // first, so the second waits and runs on what the first left.
+      const locked = await rows
+        .createQueryBuilder('credential')
+        .setLock('pessimistic_write')
+        .where('credential.organizationId = :organizationId', { organizationId })
+        .getMany();
+      if (!locked.some((row) => row.provider === provider)) return false;
+      // The index is checked row by row: the old mark goes first.
+      await rows.update({ organizationId, markedDefault: true }, { markedDefault: false });
+      await rows.update({ organizationId, provider }, { markedDefault: true });
+      return true;
+    });
+  }
+
   async delete(scope: AccessScope, provider: BotProvider): Promise<boolean> {
     if (!scope.organizationId) return false;
     const result = await this.repository.delete({
@@ -71,5 +99,25 @@ export class ModelProviderCredentialRepository
       provider,
     });
     return (result.affected ?? 0) > 0;
+  }
+
+  async replaceSecretIfUnchanged(
+    credential: ModelProviderCredentialEntity,
+    sealedKey: Buffer,
+    keyHint: string,
+  ): Promise<boolean> {
+    const result = await this.repository.update(
+      { id: credential.id, sealedKey: credential.sealedKey },
+      { sealedKey, keyHint },
+    );
+    return result.affected === 1;
+  }
+
+  async deleteIfUnchanged(credential: ModelProviderCredentialEntity): Promise<boolean> {
+    const result = await this.repository.delete({
+      id: credential.id,
+      sealedKey: credential.sealedKey,
+    });
+    return result.affected === 1;
   }
 }

@@ -45,6 +45,6 @@ export class UnpairHostHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.commandBus.execute(new UnpairHostCommand({ scope, hostId: id }));
+    await this.commandBus.execute(new UnpairHostCommand({ scope, hostId: id, wipe: false }));
   }
 }

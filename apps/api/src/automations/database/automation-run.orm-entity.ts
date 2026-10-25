@@ -31,6 +31,9 @@ import {
 @Index('IDX_automation_run_organization_session', ['organizationId', 'sessionId'], {
   where: '"sessionId" IS NOT NULL',
 })
+@Index('IDX_automation_run_bot_turn', ['organizationId', 'botTurnId'], {
+  where: '"botTurnId" IS NOT NULL',
+})
 @Index('IDX_automation_run_requested_by', ['requestedByUserId'], {
   where: '"requestedByUserId" IS NOT NULL',
 })
@@ -86,6 +89,10 @@ export class AutomationRunOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   sessionId!: string | null;
+
+  /** The bot turn a routine's run queued; never set with `sessionId`. */
+  @Column({ type: 'uuid', nullable: true })
+  botTurnId!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
   requestedByUserId!: string | null;

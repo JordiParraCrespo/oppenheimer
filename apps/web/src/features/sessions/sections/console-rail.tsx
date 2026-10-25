@@ -12,7 +12,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { type ConsoleList, useConsoleList } from '@/lib/console';
 import { RAIL_GROUP, useRailOrder } from '../hooks/use-rail-order';
-import { type RailItemId, railEntry } from '../lib/rail-order';
+import type { RailItemId } from '../lib/rail-landing';
+import { railEntry } from '../lib/rail-order';
 
 /**
  * The console's rail, switching the sidebar between its lists
@@ -54,8 +55,9 @@ export function ConsoleRail() {
         }}
       >
         <SortableGroup id={RAIL_GROUP} items={order} accepts={['rail-item']}>
-          {/* The group owns no spacing of its own; the column's gap is the rail's. */}
-          <div className="flex flex-col gap-1.5">
+          {/* The group owns no spacing of its own; the column's gap is the
+              rail's. On a phone the rail is a bar and the items spread across it. */}
+          <div className="flex flex-1 justify-around gap-1.5 md:flex-none md:flex-col md:justify-start">
             {order.map((id) => {
               const entry = railEntry(id);
               if (!entry) return null;

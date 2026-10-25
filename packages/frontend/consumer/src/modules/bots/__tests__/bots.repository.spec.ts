@@ -14,6 +14,7 @@ const sdk = vi.hoisted(() => ({
   updateBotDocument: vi.fn(),
   findBotDocumentRevisions: vi.fn(),
   findBotConversation: vi.fn(),
+  exportBotConversation: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: sdk }));
@@ -176,7 +177,17 @@ describe('BotsRepository', () => {
             turnId: 't1',
             role: 'activity',
             content: '',
-            steps: [{ callId: 'c1', name: 'read', input: {}, output: null, isError: false }],
+            steps: [
+              {
+                callId: 'c1',
+                name: 'read',
+                input: {},
+                output: null,
+                isError: false,
+                sessionId: null,
+                subagents: null,
+              },
+            ],
             createdAt: '2026-10-15T09:00:01.000Z',
           },
         ],
@@ -188,5 +199,79 @@ describe('BotsRepository', () => {
     expect(conversation.messages[0]?.createdAt).toEqual(new Date('2026-10-15T09:00:01.000Z'));
     expect(conversation.turns[0]?.startedAt).toBeNull();
     expect(conversation.activeTurn?.id).toBe('t2');
+  });
+
+  it('keeps the session an approved call started on its event, for the chat to open', async () => {
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [
+          {
+            id: 'm1',
+            turnId: 't1',
+            role: 'event',
+            content: 'Ana approved: Start it',
+            steps: [],
+            event: {
+              kind: 'approval',
+              outcome: 'approved',
+              tool: 'start_session',
+              summary: 'Start it',
+              fromBotId: null,
+              fromBotName: null,
+              expectsReply: null,
+              sessionId: 's-1',
+            },
+            createdAt: '2026-10-15T09:00:01.000Z',
+          },
+        ],
+        turns: [],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.messages[0]?.event).toMatchObject({ kind: 'approval', sessionId: 's-1' });
+  });
+
+  describe('exportConversation', () => {
+    function lines(...messages: Record<string, unknown>[]) {
+      const text = messages.map((message) => `${JSON.stringify(message)}\n`).join('');
+      return new Response(text).body as ReadableStream<Uint8Array>;
+    }
+    const said = (id: string, content: string) => ({
+      id,
+      turnId: 't1',
+      role: 'user',
+      content,
+      steps: [],
+      event: null,
+      createdAt: '2026-10-15T10:00:00.000Z',
+    });
+
+    it('asks for the body as a stream and hands each line on as a message', async () => {
+      sdk.exportBotConversation.mockResolvedValue(ok(lines(said('m1', 'One'), said('m2', 'Two'))));
+      const read: string[] = [];
+      for await (const message of await repository.exportConversation('bot-1')) {
+        read.push(message.content);
+        expect(message.createdAt).toBeInstanceOf(Date);
+      }
+      expect(read).toEqual(['One', 'Two']);
+      expect(sdk.exportBotConversation).toHaveBeenCalledWith({
+        path: { id: 'bot-1' },
+        parseAs: 'stream',
+      });
+    });
+
+    it('fails the export with its own code when a line cannot be read', async () => {
+      sdk.exportBotConversation.mockResolvedValue(
+        ok(new Response('{"id":"m1"\nnot json\n').body as ReadableStream<Uint8Array>),
+      );
+      const reading = (async () => {
+        for await (const _ of await repository.exportConversation('bot-1')) {
+          // drained
+        }
+      })();
+      await expect(reading).rejects.toMatchObject({
+        code: BotsErrors.EXPORT_CONVERSATION_FAILED.code,
+      });
+    });
   });
 });

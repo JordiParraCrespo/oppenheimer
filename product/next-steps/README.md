@@ -14,11 +14,14 @@ there.
 | 0.1 | [`../versions/mvp/`](../versions/mvp/README.md) | The MVP: hosts you own, sessions as worktrees with a tmux terminal, Claude Code first |
 | 0.2 | [Git and GitHub](0.2-git-and-github.md), [Pull requests](0.2-pull-requests.md) | Git, aka GitHub support: diff, review, commit, push and PRs from the console; a Pull requests area in the rail with a queue and analytics |
 | 0.3 | — | Kanban moved into the MVP as Plan ([`../versions/mvp/17-plan.md`](../versions/mvp/17-plan.md)) | Plan: a task board with goals, tasks that start or link sessions, and a calendar beside Google Calendar |
-| 0.4 | [Slack](0.4-slack.md) | The Slack integration |
+| 0.4 | [Slack](0.4-slack.md) | The Slack integration; now the Slack channel of [Channels](channels.md) |
 | 0.5 | [Mobile](0.5-mobile.md) | Mobile |
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
 | 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
+| — | [Channels](channels.md) | Bots on WhatsApp, Slack and email: one interface per channel, WhatsApp first on a number the owner links; version not set |
+| — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
+| — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
 
 ## What this list does not place yet
 
@@ -65,3 +68,33 @@ where these land is the first open question below.
 - 2026-10-05: the 2026-10-05 evening frames (`PullRequests.dc.html`) are
   the spec for the Pull requests area's first version, over the notes;
   the API plan is `0.2-pull-requests-api-plan.md`.
+- 2026-10-14: voice added, version not yet set: dictation into the
+  composers and the terminal, and a spoken session setup that fills the
+  new-session form (never starts it on its own).
+- 2026-10-14: voice has one mic, the composer's, which always dictates.
+  Setting up a session from what was said is the sessions module's
+  `POST /v1/sessions/proposals`, which takes any text, so the voice
+  endpoint stays audio in and text out.
+- 2026-10-16: voice transcribes on the workspace's ChatGPT sign-in
+  (Settings → Model providers), through ChatGPT's dictation route, with
+  an OpenAI-compatible key as the fallback. The route is undocumented;
+  if it only answers clients posing as the Codex app, the fallback
+  takes over.
+- 2026-10-17: voice slice 1 built: dictation into New session's composer.
+  The console records WAV itself, the route asks `sessions:write`, and the
+  recorder stays in the sessions feature until a second surface needs it
+  (`voice.md`, "Slice 1 as built").
+- 2026-10-17: voice's providers are one `SpeechProvider` interface and an
+  ordered list; the console reads `GET /v1/voice/status` instead of
+  deciding availability itself (`voice.md`).
+- 2026-10-22: channels added, version not yet set: a bot reachable on
+  WhatsApp (a linked device of a number the owner has, as OpenClaw does
+  it), Slack and email, each channel one implementation of one interface,
+  libraries for the transports, no hosted bridge. 0.4 Slack becomes its
+  Slack channel (`channels.md`).
+- 2026-10-22, in review: the WhatsApp socket is held by the runner on the
+  owner's host, so its keys never leave it and the API holds no long-lived
+  connection; email is polled. 0.4 now covers only sessions in Slack.
+- 2026-10-22: cloud agents added, version not yet set: a Cloud place for
+  sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
+  API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).

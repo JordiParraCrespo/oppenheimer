@@ -44,10 +44,10 @@ test.describe('Bots', () => {
     test.setTimeout(120_000);
     const { api, userId } = await signedUpContext('bots');
 
-    // A blank bot is "New Bot"; the second one is numbered.
+    // A blank bot takes the next first name; the second one gets the one after.
     const first = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
     expect(first).toMatchObject({
-      name: 'New Bot',
+      name: 'Juno',
       groupId: null,
       position: 0,
       homeHostId: null,
@@ -56,7 +56,7 @@ test.describe('Bots', () => {
       learnAutomatically: true,
     });
     const second = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
-    expect(second).toMatchObject({ name: 'New Bot 2', position: 1 });
+    expect(second).toMatchObject({ name: 'Milo', position: 1 });
     expect(second.avatarColor).not.toBe(first.avatarColor);
 
     // Its documents: a soul that says its name, empty instructions, both revision 1.
@@ -65,7 +65,7 @@ test.describe('Bots', () => {
       ['soul', 1],
       ['instructions', 1],
     ]);
-    expect(documents[0].content).toContain('You are New Bot.');
+    expect(documents[0].content).toContain('You are Juno.');
     expect(documents[1].content).toBe('');
 
     // Rename and choose a model and effort. A home host is only one the caller
@@ -214,14 +214,20 @@ test.describe('Bots', () => {
 
   test('a workspace keeps one key per model provider, and never shows it', async () => {
     const { api } = await signedUpContext('botproviders');
-    type Provider = { provider: string; configured: boolean; keyHint: string | null };
+    type Provider = {
+      provider: string;
+      configured: boolean;
+      keyHint: string | null;
+      isDefault: boolean;
+    };
     const list = () => api.get('/api/v1/model-providers');
 
     const empty = await ok<Provider[]>(await list());
     expect(empty).toEqual([
-      { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null },
-      { provider: 'glm', configured: false, keyHint: null, updatedAt: null },
-      { provider: 'openai', configured: false, keyHint: null, updatedAt: null },
+      { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null, isDefault: true },
+      { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'openai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
     ]);
 
     const secret = `zai-${randomUUID()}-wxyz`;
@@ -233,19 +239,44 @@ test.describe('Bots', () => {
     const stored = await list();
     expect(await stored.text()).not.toContain(secret);
     const glm = (await ok<Provider[]>(stored)).find((row) => row.provider === 'glm');
-    expect(glm).toMatchObject({ configured: true, keyHint: '9876' });
+    // The workspace's only key is the default until another is marked.
+    expect(glm).toMatchObject({ configured: true, keyHint: '9876', isDefault: true });
 
     await expectProblemDocument(
       await api.put('/api/v1/model-providers/mistral', { data: { apiKey: secret } }),
       { status: 404, code: 'BOTS_012' },
     );
-
-    // A bot moves to the provider and runs its default model.
-    const bot = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
-    const moved = await ok<{ provider: string; model: string | null }>(
-      await api.patch(`/api/v1/bots/${bot.id}`, { data: { provider: 'glm' } }),
+    // ChatGPT signs in instead; a sign-in the server never sealed is no sign-in.
+    await expectProblemDocument(
+      await api.put('/api/v1/model-providers/chatgpt', { data: { apiKey: secret } }),
+      { status: 422, code: 'BOTS_017' },
     );
-    expect(moved).toMatchObject({ provider: 'glm', model: null });
+    await expectProblemDocument(
+      await api.post('/api/v1/model-providers/chatgpt/login/poll', {
+        data: { flowId: 'not-a-sealed-sign-in' },
+      }),
+      { status: 410, code: 'BOTS_018' },
+    );
+
+    // A new bot starts on the default provider, at its default model.
+    const bot = await ok<Bot & { provider: string; model: string | null }>(
+      await api.post('/api/v1/bots', { data: {} }),
+      201,
+    );
+    expect(bot).toMatchObject({ provider: 'glm', model: null });
+
+    // Only a provider with a key can be made the default.
+    await expectProblemDocument(await api.put('/api/v1/model-providers/anthropic/default'), {
+      status: 409,
+      code: 'BOTS_023',
+    });
+    await ok(await api.put('/api/v1/model-providers/openai', { data: { apiKey: secret } }), 204);
+    await ok(await api.put('/api/v1/model-providers/openai/default'), 204);
+    const marked = await ok<Provider[]>(await list());
+    expect(marked.filter((row) => row.isDefault).map((row) => row.provider)).toEqual(['openai']);
+    const next = await ok<{ provider: string }>(await api.post('/api/v1/bots', { data: {} }), 201);
+    expect(next.provider).toBe('openai');
+    await ok(await api.delete('/api/v1/model-providers/openai'), 204);
     await expectProblemDocument(
       await api.patch(`/api/v1/bots/${bot.id}`, { data: { model: 'claude-opus-5-5' } }),
       { status: 422, code: 'BOTS_010' },

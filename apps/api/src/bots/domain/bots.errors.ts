@@ -81,4 +81,88 @@ export const BotErrors = {
     message: 'Turn not found',
     httpStatus: 404,
   },
+  /** Also an approval of another bot, or in another workspace. */
+  APPROVAL_NOT_FOUND: {
+    code: 'BOTS_015',
+    message: 'Approval not found',
+    httpStatus: 404,
+  },
+  /** It was approved, denied, or expired by a new message, before this decision arrived. */
+  APPROVAL_DECIDED: {
+    code: 'BOTS_016',
+    message: 'The approval was already decided',
+    httpStatus: 409,
+  },
+  /** ChatGPT runs on a sign-in to a subscription (`chatgpt/login`), never on a typed key. */
+  CHATGPT_SIGN_IN_ONLY: {
+    code: 'BOTS_017',
+    message: 'ChatGPT connects by signing in, not with a key',
+    httpStatus: 422,
+  },
+  /** The sign-in being polled ran past its time, or was started for another workspace. */
+  CHATGPT_LOGIN_EXPIRED: {
+    code: 'BOTS_018',
+    message: 'The ChatGPT sign-in expired',
+    httpStatus: 410,
+  },
+  /** OpenAI's sign-in server refused for rate, or too many calls to it were waiting. */
+  CHATGPT_RATE_LIMITED: {
+    code: 'BOTS_019',
+    message: "ChatGPT's sign-in is busy; try again shortly",
+    httpStatus: 429,
+  },
+  /** OpenAI's sign-in server did not answer, or answered something unusable. */
+  CHATGPT_UNREACHABLE: {
+    code: 'BOTS_020',
+    message: "ChatGPT's sign-in could not be reached",
+    httpStatus: 502,
+  },
+  /** Another replica is refreshing the workspace's ChatGPT sign-in; a turn that needs it now fails rather than waits. */
+  CHATGPT_REFRESHING: {
+    code: 'BOTS_021',
+    message: 'The ChatGPT sign-in is being refreshed',
+    httpStatus: 409,
+  },
+  /** Clear history while a turn is queued or running: the turn would write into a conversation that is gone. */
+  CONVERSATION_BUSY: {
+    code: 'BOTS_022',
+    message: 'The bot has a turn queued or running',
+    httpStatus: 409,
+  },
+  /** Only a provider the workspace has a key for can be the one new bots start on. */
+  DEFAULT_PROVIDER_KEY_MISSING: {
+    code: 'BOTS_023',
+    message: 'That model provider has no key',
+    httpStatus: 409,
+  },
+  /** An upload that is not a PNG, JPEG, GIF or WebP image (`BOT_IMAGE_MIME_TYPES`). */
+  ATTACHMENT_TYPE_UNSUPPORTED: {
+    code: 'BOTS_024',
+    message: 'That file is not an image a bot takes',
+    httpStatus: 415,
+  },
+  /** An upload past `BOT_IMAGE_MAX_BYTES`. */
+  ATTACHMENT_TOO_LARGE: {
+    code: 'BOTS_025',
+    message: 'The image is too large',
+    httpStatus: 413,
+  },
+  /** Also an image of another bot, in another workspace, or someone else's upload not sent yet. */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'BOTS_026',
+    message: 'Image not found',
+    httpStatus: 404,
+  },
+  /** An image another message carries, someone else's upload, or one past the send window. */
+  ATTACHMENT_UNSENDABLE: {
+    code: 'BOTS_027',
+    message: 'The image can no longer be sent',
+    httpStatus: 409,
+  },
+  /** An image for a bot whose provider's models read none (GLM). */
+  MODEL_TAKES_NO_IMAGES: {
+    code: 'BOTS_028',
+    message: "The bot's model does not read images",
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

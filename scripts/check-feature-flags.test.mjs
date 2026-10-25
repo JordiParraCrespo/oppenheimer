@@ -14,7 +14,7 @@ const flag = (overrides = {}) => ({
   expiresAt: '2026-06-01',
   client: true,
   type: 'boolean',
-  defaultValue: false,
+  defaultValue: true,
   ...overrides,
 });
 
@@ -71,4 +71,31 @@ test('a read counts whether it is in a hook, a decorator or the evaluator', () =
     });
     assert.deepEqual(errors, [], text);
   }
+});
+
+test('a boolean flag that defaults to off fails', () => {
+  const { errors } = checkFeatureFlags({
+    catalog: { new_checkout: flag({ expiresAt: '2099-01-01', defaultValue: false }) },
+    today: '2026-06-01',
+    sources: [readerOf('new_checkout')],
+  });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /new_checkout: a boolean flag defaulting to false/);
+});
+
+test('a variant flag defaults to a variant, not to on', () => {
+  const { errors } = checkFeatureFlags({
+    catalog: {
+      copy: flag({
+        kind: 'experiment',
+        expiresAt: '2099-01-01',
+        type: 'variant',
+        variants: ['control', 'bold'],
+        defaultValue: 'control',
+      }),
+    },
+    today: '2026-06-01',
+    sources: [readerOf('copy')],
+  });
+  assert.deepEqual(errors, []);
 });

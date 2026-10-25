@@ -3,10 +3,13 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
+import { CreateBotCommand } from '../commands/create-bot/create-bot.command';
+import { CreateBotCommandHandler } from '../commands/create-bot/create-bot.command-handler';
 import { BotOrmEntity } from '../database/bot.orm-entity';
 import { BotRepository } from '../database/bot.repository';
 import { BotDocumentOrmEntity } from '../database/bot-document.orm-entity';
@@ -30,8 +33,10 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
  * the migration's keys and checks, the sidebar order a move and a group delete
  * leave, the document's conditional write under two writers, the memory cap
- * under two adders, and the workspace boundary on every read. The schema is
- * the migrations', so a wrong key fails here.
+ * under two adders, and the workspace boundary on every read; a bot made by a
+ * bot, its composite "created by" link and the key that makes its creation
+ * happen once, under two racing creations. The schema is the migrations', so a
+ * wrong key fails here.
  */
 describe('bots (integration)', () => {
   let pg: StartedTestContainer;
@@ -438,10 +443,14 @@ describe('bots (integration)', () => {
     });
   });
 
-  function credential(key: string, organization = organizationId) {
+  function credential(
+    key: string,
+    organization = organizationId,
+    provider: 'glm' | 'openai' | 'chatgpt' = 'glm',
+  ) {
     return ModelProviderCredentialEntity.createNew({
       organizationId: organization,
-      provider: 'glm',
+      provider,
       sealedKey: Buffer.from(`sealed:${key}`),
       keyHint: key.slice(-4),
       updatedByUserId: userId,
@@ -479,10 +488,231 @@ describe('bots (integration)', () => {
     expect(count).toBe(0);
   });
 
+  it('marks one default per workspace, keeps it across a key replace, and refuses a provider with no key', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    expect(await credentials.defaultProvider(scope())).toBe('openai');
+    expect(await credentials.setDefault(scope(), 'glm')).toBe(true);
+    expect(await credentials.defaultProvider(scope())).toBe('glm');
+    expect(await credentials.setDefault(scope(), 'openai')).toBe(true);
+    await credentials.put(credential('openai-key-3333', organizationId, 'openai'));
+    const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+    expect(await credentials.defaultProvider(scope())).toBe('openai');
+
+    expect(await credentials.setDefault(scope(), 'anthropic')).toBe(false);
+    const after = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(after.map((row) => row.provider)).toEqual(['openai']);
+  });
+
+  it('lets a switch of default wait out one in flight instead of colliding on the index', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    // A first switch to GLM, held open between its set and its commit.
+    const runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    await runner.query(
+      `UPDATE model_provider_credential SET "markedDefault" = true WHERE "organizationId" = $1 AND provider = 'glm'`,
+      [organizationId],
+    );
+    const second = credentials.setDefault(scope(), 'openai');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await runner.commitTransaction();
+    await runner.release();
+
+    await expect(second).resolves.toBe(true);
+    const marked = (await credentials.findAll(scope())).filter((row) => row.markedDefault);
+    expect(marked.map((row) => row.provider)).toEqual(['openai']);
+  });
+
+  it('refuses a second default in a workspace', async () => {
+    await credentials.put(credential('glm-key-1111'));
+    await credentials.put(credential('openai-key-2222', organizationId, 'openai'));
+    await expect(
+      dataSource.query(
+        `UPDATE model_provider_credential SET "markedDefault" = true WHERE "organizationId" = $1`,
+        [organizationId],
+      ),
+    ).rejects.toMatchObject({ constraint: 'UQ_model_provider_credential_default' });
+  });
+
   it('refuses a provider the check does not list', async () => {
     await credentials.put(credential('mine-1234'));
     await expect(
       dataSource.query(`UPDATE model_provider_credential SET provider = 'mistral'`),
     ).rejects.toMatchObject({ constraint: 'CHK_model_provider_credential_provider' });
+  });
+
+  it("rotates a sign-in's secret only over the one it read: a second refresh loses", async () => {
+    await credentials.put(credential('signin-aaaa', organizationId, 'chatgpt'));
+    const read = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    const raced = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+
+    expect(
+      await credentials.replaceSecretIfUnchanged(read, Buffer.from('sealed:signin-bbbb'), 'bbbb'),
+    ).toBe(true);
+    expect(
+      await credentials.replaceSecretIfUnchanged(raced, Buffer.from('sealed:signin-cccc'), 'cccc'),
+    ).toBe(false);
+    const stored = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    expect(stored.sealedKey.toString()).toBe('sealed:signin-bbbb');
+    expect(stored.keyHint).toBe('bbbb');
+  });
+
+  it('removes a refused sign-in only while it is the one read, never a newer one', async () => {
+    await credentials.put(credential('signin-aaaa', organizationId, 'chatgpt'));
+    const stale = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    await credentials.put(credential('signin-dddd', organizationId, 'chatgpt'));
+
+    expect(await credentials.deleteIfUnchanged(stale)).toBe(false);
+    expect((await credentials.findForRun(organizationId, 'chatgpt')).isSome()).toBe(true);
+    const current = (await credentials.findForRun(organizationId, 'chatgpt')).unwrap();
+    expect(await credentials.deleteIfUnchanged(current)).toBe(true);
+    expect((await credentials.findForRun(organizationId, 'chatgpt')).isNone()).toBe(true);
+  });
+
+  describe('made by a bot', () => {
+    async function madeBy(
+      creator: BotEntity,
+      name: string,
+      idempotencyKey: string | null = null,
+    ): Promise<{ bot: BotEntity; outcome: string }> {
+      const bot = BotEntity.createNew({
+        organizationId,
+        createdByUserId: userId,
+        name,
+        description: '',
+        avatarColor: 'mint',
+        groupId: null,
+        homeHostId: null,
+        provider: 'glm',
+        createdByBotId: creator.id,
+        idempotencyKey,
+      });
+      const docs = (['soul', 'instructions'] as const).map((documentName) =>
+        BotDocumentEntity.initial({
+          organizationId,
+          botId: bot.id,
+          name: documentName,
+          content: '',
+          actor: userActor(userId),
+        }),
+      );
+      return { bot, outcome: await bots.insert(bot, docs) };
+    }
+
+    const handler = () =>
+      new CreateBotCommandHandler(
+        bots,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        new NewBotProviderResolver({ defaultProvider: async () => 'anthropic' }),
+      );
+
+    it('marks it as its creator’s, and keeps it, unmarked, when the creator is deleted', async () => {
+      const ada = await create('Ada');
+      const { bot, outcome } = await madeBy(ada, 'Scout');
+      expect(outcome).toBe('saved');
+      expect((await bots.findOneById(scope(), bot.id)).unwrap().createdByBotId).toBe(ada.id);
+
+      await bots.delete(ada);
+      const kept = (await bots.findOneById(scope(), bot.id)).unwrap();
+      expect(kept.createdByBotId).toBeNull();
+      expect(kept.organizationId).toBe(organizationId);
+    });
+
+    it('refuses a creator in another workspace (the composite key)', async () => {
+      const theirs = await create('Theirs', { organization: await insertOrganization() });
+      const mine = await create('Mine');
+      await expect(
+        dataSource.query(`UPDATE bot SET "createdByBotId" = $1 WHERE id = $2`, [
+          theirs.id,
+          mine.id,
+        ]),
+      ).rejects.toMatchObject({ constraint: 'FK_bot_created_by_bot' });
+    });
+
+    it('answers taken for a second creation with the same key, writing none of it', async () => {
+      const ada = await create('Ada');
+      const first = await madeBy(ada, 'Scout', 'bot:approval:a-1');
+      const second = await madeBy(ada, 'Scout 2', 'bot:approval:a-1');
+      expect([first.outcome, second.outcome]).toEqual(['saved', 'taken']);
+      expect((await bots.findOneByIdempotencyKey(scope(), 'bot:approval:a-1')).unwrap().id).toBe(
+        first.bot.id,
+      );
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM bot_document WHERE "botId" = $1`,
+        [second.bot.id],
+      );
+      expect(count).toBe(0);
+      // The key is the workspace's: another workspace may use it.
+      expect((await bots.findOneByIdempotencyKey(scopeOf(null), 'bot:approval:a-1')).isNone()).toBe(
+        true,
+      );
+    });
+
+    it('creates no looser child when the creator is lowered between the check and the write', async () => {
+      const ada = await create('Ada');
+      await dataSource.query(`UPDATE bot SET permission = 'full' WHERE id = $1`, [ada.id]);
+      // The owner lowers Ada to Approve for me after the handler checked her
+      // level (it reads the names it numbers by after the check), before the insert.
+      const lowering = Object.create(bots) as BotRepository;
+      lowering.namesIn = async (caller) => {
+        await dataSource.query(`UPDATE bot SET permission = 'auto' WHERE id = $1`, [ada.id]);
+        return bots.namesIn(caller);
+      };
+      const racing = new CreateBotCommandHandler(
+        lowering,
+        groups,
+        {
+          assertUsable: async () => ({ probedTools: null }),
+        },
+        new NewBotProviderResolver({ defaultProvider: async () => 'anthropic' }),
+      );
+      await expect(
+        racing.execute(
+          new CreateBotCommand({
+            scope: scope(),
+            input: { name: 'Scout', provider: 'glm' },
+            creatorBotId: ada.id,
+            permission: 'full',
+          }),
+        ),
+      ).rejects.toMatchObject({ code: 'GENERIC.ARGUMENT_INVALID' });
+      expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual(['Ada']);
+    });
+
+    it('creates one bot for two racing creations with the same key, and both answer it', async () => {
+      const ada = await create('Ada');
+      const command = () =>
+        new CreateBotCommand({
+          scope: scope(),
+          input: { name: 'Scout', provider: 'glm' },
+          creatorBotId: ada.id,
+          idempotencyKey: 'bot:approval:race',
+          model: null,
+          effort: null,
+          permission: 'auto',
+          instructions: 'Read papers.',
+        });
+      const ids = await Promise.all([handler().execute(command()), handler().execute(command())]);
+      expect(ids[0]).toBe(ids[1]);
+      const made = await dataSource.query(
+        `SELECT id, "createdByBotId", "createdByUserId" FROM bot WHERE "organizationId" = $1 AND "idempotencyKey" = $2`,
+        [organizationId, 'bot:approval:race'],
+      );
+      expect(made).toEqual([{ id: ids[0], createdByBotId: ada.id, createdByUserId: userId }]);
+      const stored = await documents.findAll(scope(), ids[0]);
+      expect(stored.map((document) => [document.name, document.content])).toEqual([
+        ['soul', expect.stringContaining('Scout')],
+        ['instructions', 'Read papers.'],
+      ]);
+      // A retry after both landed answers the same bot and writes nothing.
+      expect(await handler().execute(command())).toBe(ids[0]);
+      expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual(['Ada', 'Scout']);
+    });
   });
 });

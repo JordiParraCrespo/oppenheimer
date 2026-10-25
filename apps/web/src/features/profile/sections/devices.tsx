@@ -1,6 +1,7 @@
-import { SettingsHeading, Skeleton } from '@oppenheimer/design-system-web';
+import { SettingsHeading } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { DevicesSkeleton } from '../components/devices-skeleton';
 import { DeviceRows } from './device-rows';
 
 /**
@@ -16,7 +17,7 @@ export function DevicesSection() {
       <SettingsHeading>{t('settings.devices.heading')}</SettingsHeading>
       <QueryState>
         <QueryState.Pending>
-          <Skeleton className="h-16 w-full" />
+          <DevicesSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('settings.devices.failed')} />
         <QueryState.Data>

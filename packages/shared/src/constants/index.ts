@@ -74,4 +74,10 @@ export const QUEUE_NAMES = {
   OUTBOX_RETENTION: 'outbox-retention',
   /** Run one bot turn on its provider's engine, then start the bot's next queued one. */
   BOT_TURNS: 'bot-turns',
+  /** Carry out a call its bot's owner approved, then queue the turn that reports it. */
+  BOT_APPROVALS: 'bot-approvals',
+  /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */
+  BOT_SUMMARIES: 'bot-summaries',
+  /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
+  BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
 } as const;

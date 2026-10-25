@@ -1,4 +1,10 @@
-import { Button, ChipSelectItem, ChipSelectList, IconButton } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectList,
+  IconButton,
+} from '@oppenheimer/design-system-web';
 import {
   ChevronLeft,
   ChevronRight,
@@ -167,11 +173,9 @@ export function FolderBrowser({
         ) : null}
 
         {failure ? (
-          <p className="px-3 py-3.5 text-center text-xs text-fg-muted" role="alert">
-            {failure}
-          </p>
+          <ChipSelectEmpty role="alert">{failure}</ChipSelectEmpty>
         ) : view.empty ? (
-          <p className="px-3 py-3.5 text-center text-xs text-fg-muted">{emptyText}</p>
+          <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
         ) : (
           view.rows.map((entry) => (
             <ChipSelectItem

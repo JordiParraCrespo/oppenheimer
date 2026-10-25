@@ -5,7 +5,7 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { guardTurn, runTool } from '../turn';
+import { failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -45,25 +45,61 @@ function inputItems(request: BotTurnRequest): AgentInputItem[] {
               content: [{ type: 'output_text', text }],
             },
     ),
-    { type: 'message', role: 'user', content: request.message },
+    userMessage(request),
   ];
+}
+
+/** This turn's message: its text, or its parts (`messageParts`) as input parts. */
+function userMessage(request: BotTurnRequest): AgentInputItem {
+  if (!request.images?.length) return { type: 'message', role: 'user', content: request.message };
+  return {
+    type: 'message',
+    role: 'user',
+    content: messageParts(request).map((part) =>
+      part.type === 'image'
+        ? { type: 'input_image' as const, image: `data:${part.mimeType};base64,${part.data}` }
+        : { type: 'input_text' as const, text: part.text },
+    ),
+  };
+}
+
+/**
+ * Where a turn's requests go and what they carry besides its effort: the
+ * endpoint, and the model settings that endpoint requires. A subclass that
+ * reaches another Responses API endpoint says so here and nowhere else.
+ */
+export interface ResponsesEndpoint {
+  baseUrl?: string;
+  modelSettings: Record<string, unknown>;
 }
 
 /** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
-    return guardTurn(request, () => this.stream(request));
+    const endpoint = this.endpoint(request);
+    if (typeof endpoint === 'string') return guardTurn(request, () => [failed(endpoint)]);
+    return guardTurn(request, () => this.stream(request, endpoint));
   }
 
-  private async *stream(request: BotTurnRequest): AsyncGenerator<BotEngineEvent> {
+  /** OpenAI's API, or the request's `baseUrl`; a string refuses the turn with that reason. */
+  protected endpoint(request: BotTurnRequest): ResponsesEndpoint | string {
+    return { baseUrl: request.baseUrl, modelSettings: {} };
+  }
+
+  private async *stream(
+    request: BotTurnRequest,
+    endpoint: ResponsesEndpoint,
+  ): AsyncGenerator<BotEngineEvent> {
+    const { baseUrl } = endpoint;
     // Loaded on the first turn, so importing the package starts nothing.
     const sdk = await import('@openai/agents');
     const failedCalls = new Set<string>();
-    const translator = new OpenAiEventTranslator((callId) => failedCalls.has(callId));
+    const made = new ToolCallData();
+    const translator = new OpenAiEventTranslator((callId) => failedCalls.has(callId), made);
 
     const modelProvider = new sdk.OpenAIProvider({
       apiKey: request.apiKey,
-      ...(request.baseUrl ? { baseURL: request.baseUrl } : {}),
+      ...(baseUrl ? { baseURL: baseUrl } : {}),
     });
     // Tracing would export the turn to OpenAI's trace store under a key read
     // from the environment; a bot's turn is recorded by Oppenheimer.
@@ -85,11 +121,15 @@ export class OpenAiBotEngine extends BotEngine {
             });
             const callId = details?.toolCall?.callId;
             if (result.isError && callId) failedCalls.add(callId);
+            made.record(callId, result.data);
             return result.content;
           },
         }),
       ),
-      modelSettings: request.effort ? { reasoning: { effort: request.effort } } : {},
+      modelSettings: {
+        ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
+        ...endpoint.modelSettings,
+      },
     });
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {
       stream: true,

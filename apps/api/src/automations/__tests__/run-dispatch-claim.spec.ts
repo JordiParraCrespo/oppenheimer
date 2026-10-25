@@ -47,12 +47,12 @@ describe('reserving an automation run’s slot', () => {
   });
 
   it('honours a claim only while it is fresh, so a dead process frees its slot', () => {
-    const resolver = readFileSync(
-      fileURLToPath(new URL('../application/run-dispatch.resolver.ts', import.meta.url)),
+    const target = readFileSync(
+      fileURLToPath(new URL('../infrastructure/session-run-target.adapter.ts', import.meta.url)),
       'utf8',
     );
-    expect(resolver).toContain('CLAIM_TTL_MS');
-    expect(resolver).toContain('claimFloor: new Date(now.getTime() - CLAIM_TTL_MS)');
+    expect(target).toContain('CLAIM_TTL_MS');
+    expect(target).toContain('claimFloor: new Date(now.getTime() - CLAIM_TTL_MS)');
   });
 
   it('is namespaced per host, so other hosts dispatch in parallel', () => {

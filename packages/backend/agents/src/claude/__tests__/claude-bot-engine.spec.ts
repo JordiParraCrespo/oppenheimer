@@ -59,25 +59,29 @@ async function collect(events: AsyncIterable<BotEngineEvent>): Promise<BotEngine
 function scripted(
   messages: (options: Options, closed: Promise<void>) => AsyncIterable<SDKMessage> | SDKMessage[],
 ) {
-  const seen: { prompt?: string; options?: Options; closed: boolean } = { closed: false };
-  sdk.query.mockImplementation(({ prompt, options }: { prompt: string; options: Options }) => {
-    seen.prompt = prompt;
-    seen.options = options;
-    let onClose = () => {};
-    const closed = new Promise<void>((resolve) => {
-      onClose = resolve;
-    });
-    const source = messages(options, closed);
-    return {
-      async *[Symbol.asyncIterator]() {
-        yield* source;
-      },
-      close() {
-        seen.closed = true;
-        onClose();
-      },
-    } as unknown as Query;
-  });
+  const seen: { prompt?: string | AsyncIterable<unknown>; options?: Options; closed: boolean } = {
+    closed: false,
+  };
+  sdk.query.mockImplementation(
+    ({ prompt, options }: { prompt: string | AsyncIterable<unknown>; options: Options }) => {
+      seen.prompt = prompt;
+      seen.options = options;
+      let onClose = () => {};
+      const closed = new Promise<void>((resolve) => {
+        onClose = resolve;
+      });
+      const source = messages(options, closed);
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield* source;
+        },
+        close() {
+          seen.closed = true;
+          onClose();
+        },
+      } as unknown as Query;
+    },
+  );
   return { seen };
 }
 
@@ -222,6 +226,71 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, matched by the tool use Claude Code names, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async (input) => ({
+        content: 'Started it.',
+        data: { sessionId: (input as { id: string }).id },
+      }),
+    };
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      // Two calls of one tool, answered out of order.
+      const first = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-2' },
+        _meta: { 'claudecode/toolUseId': 'toolu_2' },
+      });
+      const second = await client.callTool({
+        name: 'start_session',
+        arguments: { id: 's-1' },
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      modelRead = first;
+      await client.close();
+
+      yield assistant([
+        {
+          type: 'tool_use',
+          id: 'toolu_1',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-1' },
+        },
+        {
+          type: 'tool_use',
+          id: 'toolu_2',
+          name: 'mcp__oppenheimer__start_session',
+          input: { id: 's-2' },
+        },
+      ]);
+      yield toolResults([
+        { type: 'tool_result', tool_use_id: 'toolu_1', content: second.content },
+        { type: 'tool_result', tool_use_id: 'toolu_2', content: first.content },
+      ]);
+      yield success();
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ tools: [start] })));
+
+    expect(events.filter((event) => event.type === 'tool.finished')).toEqual([
+      expect.objectContaining({ callId: 'toolu_1', data: { sessionId: 's-1' } }),
+      expect.objectContaining({ callId: 'toolu_2', data: { sessionId: 's-2' } }),
+    ]);
+    expect(modelRead).toEqual({
+      content: [{ type: 'text', text: 'Started it.' }],
+      isError: false,
+    });
+  });
+
   it('keeps built-in tool names and reports their results', async () => {
     scripted(() => [
       assistant([{ type: 'tool_use', id: 'toolu_w', name: 'WebSearch', input: { query: 'x' } }]),
@@ -353,6 +422,35 @@ describe('ClaudeBotEngine', () => {
     expect(prompt.match(/<\/transcript>/g)).toHaveLength(1);
   });
 
+  it('sends a message with images as one user message: the images, then the text', async () => {
+    const { seen } = scripted(() => [success()]);
+
+    await collect(
+      new ClaudeBotEngine().run(
+        request({
+          message: 'What does this say?',
+          images: [{ mimeType: 'image/jpeg', data: 'anBn' }],
+        }),
+      ),
+    );
+
+    const sent: unknown[] = [];
+    for await (const message of seen.prompt as AsyncIterable<unknown>) sent.push(message);
+    expect(sent).toEqual([
+      {
+        type: 'user',
+        parent_tool_use_id: null,
+        message: {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'anBn' } },
+            { type: 'text', text: 'What does this say?' },
+          ],
+        },
+      },
+    ]);
+  });
+
   it('ends with max_steps when the turn limit is reached', async () => {
     scripted(() => [
       {
@@ -367,6 +465,38 @@ describe('ClaudeBotEngine', () => {
     const events = await collect(new ClaudeBotEngine().run(request()));
 
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'max_steps' });
+  });
+
+  it('never hands back the turn’s scratch directory: in text, streamed or not, in a tool’s input or its answer', async () => {
+    const leaked = join(scratchDir, 'work');
+    const split = 8;
+    scripted(() => [
+      delta(`I run in ${leaked.slice(0, split)}`),
+      delta(`${leaked.slice(split)} now`),
+      assistant([{ type: 'text', text: `I run in ${leaked}` }]),
+      assistant([
+        {
+          type: 'tool_use',
+          id: 'toolu_1',
+          name: 'TodoWrite',
+          input: { todos: [{ note: leaked }] },
+        },
+      ]),
+      toolResults([{ type: 'tool_result', tool_use_id: 'toolu_1', content: `saved in ${leaked}` }]),
+      success(),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(JSON.stringify(events)).not.toContain(scratchDir);
+    const streamed = events.flatMap((event) => (event.type === 'text.delta' ? [event.text] : []));
+    // Split across two deltas, the path still never goes out, in whole or in halves.
+    expect(streamed.join('')).toBe('I run in [workspace]/work now');
+    expect(streamed.some((text) => text.includes(leaked.slice(0, split)))).toBe(false);
+    expect(events).toContainEqual({ type: 'text.done', text: 'I run in [workspace]/work' });
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'tool.finished', output: 'saved in [workspace]/work' }),
+    );
   });
 
   it('fails with the API error, not as bot text, and never with the key in it', async () => {
@@ -384,6 +514,52 @@ describe('ClaudeBotEngine', () => {
     expect(done).toMatchObject({ type: 'done', reason: 'failed' });
     expect((done as { error: string }).error).toContain('401 invalid x-api-key');
     expect((done as { error: string }).error).not.toContain(KEY);
+  });
+
+  it('marks a refusal for rate as a rate limit, with the wait Claude Code was given', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        attempt: 1,
+        max_retries: 1,
+        retry_delay_ms: 45_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      assistant([{ type: 'text', text: 'API Error: 429 rate limit reached' }], {
+        error: 'rate_limit',
+      }),
+      success({ is_error: true, result: 'API Error', api_error_status: 429 }),
+    ]);
+    const before = Date.now();
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1) as {
+      reason: string;
+      error: string;
+      rateLimit?: { resetAt: Date | null };
+    };
+
+    expect(done.reason).toBe('failed');
+    expect(done.error).toContain('429 rate limit reached');
+    expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 45_000);
+  });
+
+  it('takes the reset of a rejected limit, and says nothing of one on any other failure', async () => {
+    scripted(() => [
+      {
+        type: 'rate_limit_event',
+        rate_limit_info: { status: 'rejected', resetsAt: 1_900_000_000 },
+      } as unknown as SDKMessage,
+      success({ is_error: true, result: 'API Error' }),
+    ]);
+    const limited = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+    expect(limited).toMatchObject({ rateLimit: { resetAt: new Date(1_900_000_000_000) } });
+
+    scripted(() => [success({ is_error: true, result: 'API Error: 500' })]);
+    const other = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+    expect(other).toMatchObject({ type: 'done', reason: 'failed' });
+    expect(other).not.toHaveProperty('rateLimit');
   });
 
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {

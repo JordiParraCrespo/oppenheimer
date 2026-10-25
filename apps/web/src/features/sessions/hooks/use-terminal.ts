@@ -1,5 +1,10 @@
 import '@xterm/xterm/css/xterm.css';
-import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
+import type {
+  SessionChat,
+  SessionStream,
+  StreamEnd,
+  StreamStatus,
+} from '@oppenheimer/frontend-consumer';
 import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useEffect, useRef, useState } from 'react';
@@ -39,6 +44,10 @@ import { keepTerminalSnapshot, readTerminalSnapshot } from '../lib/terminal-snap
  * `slowDial`, the current dial has outlasted `DIAL_GRACE_MS`;
  * `hostName`, the list's name for it.
  *
+ * With `chat`, the stream feeds the chat view (`SessionChat`) the agent's
+ * transcript as it arrives and lends it its input, so the chat types into
+ * the same PTY the grid does. `chat` must be a stable reference.
+ *
  * With `snapshotKey`, the pane keeps its last picture under that key when it
  * unmounts and opens on it next time (`terminal-snapshots.ts`), so switching
  * back to a session shows its screen at once rather than the waiting state.
@@ -54,6 +63,8 @@ export function useTerminal(
     readOnly?: boolean;
     /** Which session window's picture to keep and restore; none without it. */
     snapshotKey?: string;
+    /** The chat view this stream feeds and types for (0.7). */
+    chat?: SessionChat;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -88,6 +99,7 @@ export function useTerminal(
   const agentWindow = options.agentWindow ?? false;
   const readOnly = options.readOnly ?? false;
   const snapshotKey = options.snapshotKey;
+  const chat = options.chat;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -130,6 +142,8 @@ export function useTerminal(
         setAwaySince(null);
       }
     });
+    const offChat = chat ? stream.onChat?.((batch) => chat.apply(batch)) : undefined;
+    const releaseChat = chat?.connect((data) => stream.send(data));
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
       onEndRef.current?.(reason);
@@ -144,12 +158,14 @@ export function useTerminal(
       window.removeEventListener('online', wake);
       document.removeEventListener('visibilitychange', wake);
       offStatus();
+      offChat?.();
+      releaseChat?.();
       offEnd();
       unmount();
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,
@@ -198,8 +214,6 @@ export function useTerminal(
 
   return {
     containerRef,
-    /** Writes to the agent's window as if typed into the grid; nothing while no link is open. */
-    send: (data: string) => streamRef.current?.send(data),
     status,
     hasOutput,
     ended,

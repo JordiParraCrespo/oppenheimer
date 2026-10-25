@@ -69,7 +69,10 @@ interface FlagDefinitionBase {
 
 export interface BooleanFlagDefinition extends FlagDefinitionBase {
   type: 'boolean';
-  /** The safe answer: what everyone gets when the flag is off or unreachable. */
+  /**
+   * Always `true` (`pnpm check:flags`): what everyone gets before targeting
+   * is saved and when the flag service is unreachable. Off serves `false`.
+   */
   defaultValue: boolean;
 }
 
@@ -77,7 +80,7 @@ export interface VariantFlagDefinition extends FlagDefinitionBase {
   type: 'variant';
   /** Every value the flag may take. The first is conventionally the control. */
   variants: readonly [string, ...string[]];
-  /** The safe answer; must be one of `variants`. */
+  /** What everyone gets untargeted or unreachable; must be one of `variants`. */
   defaultValue: string;
 }
 

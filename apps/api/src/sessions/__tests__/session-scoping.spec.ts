@@ -73,8 +73,14 @@ describe('session row scoping (SQL)', () => {
     expect(whereClausesFor(scope({ organizationId: null }))).toEqual(['1 = 0']);
   });
 
-  it('drops every filter for a platform-tier caller', () => {
-    expect(whereClausesFor(scope({ bypass: true }))).toEqual([]);
+  it('keeps a platform-tier caller inside the workspace it is acting in', () => {
+    expect(whereClausesFor(scope({ bypass: true }))).toEqual([
+      'session.organizationId = :authzOrganizationId',
+    ]);
+  });
+
+  it('drops every filter for a platform-tier caller acting globally', () => {
+    expect(whereClausesFor(scope({ bypass: true, organizationId: null }))).toEqual([]);
   });
 });
 

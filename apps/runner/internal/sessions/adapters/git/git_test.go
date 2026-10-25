@@ -313,6 +313,12 @@ func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
+	// The clone's deepen runs on in the background, and while it does Ensure
+	// takes the refs it brought as current and fetches nothing: on a slow
+	// host the push below landed after the deepen had read origin, and
+	// origin/main never moved. This is a later session's fetch, so the
+	// clone has finished deepening.
+	c.Wait()
 	mirror := layout.Store(repo)
 	before := remoteRef(t, mirror, "main")
 	advance(t, remote, "main")
@@ -405,6 +411,52 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	if _, err := os.Stat(worktree); !os.IsNotExist(err) {
 		t.Fatal("the worktree is still on disk")
 	}
+}
+
+// A forced remove git cut short ("Directory not empty") has already dropped
+// git's record, so every retry was "not a working tree" and the session's
+// delete was refused for ever. Unforced, the directory is still kept.
+func TestForcedRemoveDeletesAWorktreeGitNoLongerRegisters(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	worktree := checkout(layout, "half-removed")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/half", "main", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(worktree, "notes.txt"), []byte("left\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	gitdir := strings.TrimPrefix(strings.TrimSpace(readFile(t, filepath.Join(worktree, ".git"))), "gitdir: ")
+	if err := os.RemoveAll(gitdir); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := c.Remove(ctx, repo, worktree, false); err == nil {
+		t.Fatal("an unforced remove deleted a directory git does not know")
+	}
+	if _, err := os.Stat(worktree); err != nil {
+		t.Fatalf("the unforced remove did not keep the directory: %v", err)
+	}
+
+	if err := c.Remove(ctx, repo, worktree, true); err != nil {
+		t.Fatalf("forced remove: %v", err)
+	}
+	if _, err := os.Stat(worktree); !os.IsNotExist(err) {
+		t.Fatal("the worktree is still on disk")
+	}
+}
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }
 
 func TestAddRefusesToReuseAPathThatExists(t *testing.T) {

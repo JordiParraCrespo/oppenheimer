@@ -5,17 +5,20 @@ import {
   BOT_PROVIDERS,
   type BotProvider,
   botModelOf,
+  preferredKeyedProvider,
 } from '@oppenheimer/shared/schemas/bot';
 
 /**
  * The mark each provider is drawn with: the coding agent whose maker it is, so
  * Anthropic carries Claude Code's mark and OpenAI Codex's; GLM has no agent of
- * its own and falls back to the bot glyph.
+ * its own and falls back to the bot glyph, and so does ChatGPT, which needs a
+ * mark of its own to stay a group apart from OpenAI's in the model button.
  */
 const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
   anthropic: 'claude-code',
   glm: 'glm',
   openai: 'codex',
+  chatgpt: 'chatgpt',
 };
 
 /** The table read the other way: a mark back to its provider. */
@@ -23,9 +26,21 @@ const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
   BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),
 );
 
-/** The model button's groups: one per provider, with that provider's models. */
-export function botProviderOptions(): AgentOption[] {
-  return BOT_PROVIDERS.map((provider) => {
+/**
+ * The model button's groups: one per provider the workspace has a key or a
+ * sign-in for, with that provider's models, in catalog order. A provider
+ * with no key is never offered beside one that has; only when none has a
+ * key is the bot's own provider there, so the button still names its model
+ * and the composer says where to add the missing key.
+ */
+export function botProviderOptions(
+  configured: readonly BotProvider[],
+  current: BotProvider,
+): AgentOption[] {
+  const offered = BOT_PROVIDERS.filter((provider) =>
+    configured.length > 0 ? configured.includes(provider) : provider === current,
+  );
+  return offered.map((provider) => {
     const definition = BOT_PROVIDER_CATALOG[provider];
     return {
       id: BOT_PROVIDER_MARKS[provider],
@@ -33,6 +48,19 @@ export function botProviderOptions(): AgentOption[] {
       models: definition.models.map((model) => ({ value: model.id, label: model.label })),
     };
   });
+}
+
+/**
+ * Where a bot whose provider has no key moves: the first provider, in
+ * `BOT_PROVIDER_PREFERENCE`, that has one. Undefined when its own has a key, or when
+ * none does and there is nowhere to go.
+ */
+export function keyedProviderFor(
+  configured: readonly BotProvider[],
+  current: BotProvider,
+): BotProvider | undefined {
+  if (configured.includes(current)) return undefined;
+  return preferredKeyedProvider(configured);
 }
 
 /** The provider a pick in the model button belongs to; undefined for a mark no provider is drawn with. */
@@ -77,9 +105,4 @@ export function effortStops(
   labels: Record<SessionEffort, string>,
 ): EffortStop<SessionEffort>[] {
   return levels.map((level) => ({ value: level, label: labels[level] }));
-}
-
-/** The model's name as the catalog spells it ("Claude Opus 5.5"), for the line under a reply. */
-export function botModelLabel(provider: BotProvider, model: string | null): string | null {
-  return botModelOf(provider, model)?.label ?? null;
 }

@@ -14,6 +14,7 @@ import {
 @Index('IDX_automation_project', ['organizationId', 'projectId'])
 @Index('IDX_automation_owner', ['ownerUserId'])
 @Index('IDX_automation_current_revision', ['currentRevisionId'])
+@Index('IDX_automation_bot', ['organizationId', 'botId'], { where: '"botId" IS NOT NULL' })
 export class AutomationOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -21,8 +22,21 @@ export class AutomationOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  @Column({ type: 'uuid' })
-  projectId!: string;
+  /** Null only for a bot routine (`1791003000000-AddBotRoutines`). */
+  @Column({ type: 'uuid', nullable: true })
+  projectId!: string | null;
+
+  /** What its runs start: `session` or `bot`. */
+  @Column({ type: 'varchar', length: 16, default: 'session' })
+  runTarget!: string;
+
+  /** The bot a routine wakes; set exactly when `runTarget` is `bot`. */
+  @Column({ type: 'uuid', nullable: true })
+  botId!: string | null;
+
+  /** The scopes of the credential that saved it; null for a browser session. Read whole. */
+  @Column({ type: 'jsonb', nullable: true })
+  credentialScopes!: string[] | null;
 
   @Column({ type: 'uuid' })
   ownerUserId!: string;

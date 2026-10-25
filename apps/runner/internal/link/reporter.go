@@ -1,11 +1,13 @@
 package link
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -63,6 +65,9 @@ type pendingBatch struct {
 	batch  EventsAppend
 	queued bool
 	sentAt time.Time
+	// settled is called once the control plane has accounted for every
+	// event in the batch, accepted or rejected; nil for most events.
+	settled func()
 }
 
 // NewReporter builds a reporter for one process.
@@ -84,7 +89,17 @@ func (r *Reporter) RunID() string { return r.runID }
 // link refused. The batch stays pending until acked. Payload is marshalled
 // here and capped by the control plane.
 func (r *Reporter) Append(sessionID, kind string, payload any) {
-	body, err := json.Marshal(payload)
+	r.AppendSettled(sessionID, kind, payload, nil)
+}
+
+// AppendSettled is Append for an event whose sender must know it landed:
+// settled is called, once and outside the reporter's lock, when the control
+// plane's ack accounts for the event, whether it was accepted or rejected (a
+// rejected one would only be refused again). It is never called for an event
+// this process loses — dropped past the pending cap, or held when the process
+// ends — so whatever the sender marks done in it survives only a delivery.
+func (r *Reporter) AppendSettled(sessionID, kind string, payload any, settled func()) {
+	body, err := encodePayload(payload)
 	if err != nil {
 		r.logger.Warn("event payload could not be encoded", slog.String("kind", kind), slog.Any("error", err))
 		return
@@ -98,7 +113,7 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 		Events: []Event{{
 			IdempotencyKey: fmt.Sprintf("%s:%d", r.runID, n),
 			Kind:           kind,
-			Payload:        string(body),
+			Payload:        body,
 			OccurredAt:     r.now().UTC(),
 		}},
 	}
@@ -107,14 +122,37 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 	if len(r.pending) >= r.limit {
 		r.dropOldestLocked()
 	}
-	r.pending = append(r.pending, &pendingBatch{batch: batch})
+	r.pending = append(r.pending, &pendingBatch{batch: batch, settled: settled})
 	r.flushLocked()
+}
+
+// encodePayload is an event's payload as the JSON string the wire carries.
+// It is not HTML-escaped: the control plane caps the string's length, and
+// `encoding/json`'s default would spell each `<`, `>` and `&` in six
+// characters, so a prompt of pasted markup could pass every cap but that one.
+func encodePayload(payload any) (string, error) {
+	var body bytes.Buffer
+	encoder := json.NewEncoder(&body)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(payload); err != nil {
+		return "", err
+	}
+	return strings.TrimSuffix(body.String(), "\n"), nil
 }
 
 // Ack drops every key the control plane accounted for; a batch whose keys are
 // all accounted for is forgotten. A rejected key is logged and dropped too —
 // it was refused with a reason, and resending it would only be refused again.
 func (r *Reporter) Ack(ack EventsAck) {
+	if settled := r.ack(ack); settled != nil {
+		settled()
+	}
+}
+
+// ack settles what the ack accounts for and returns the batch's settled
+// callback when the batch is now fully accounted for, for Ack to call once the
+// lock is released.
+func (r *Reporter) ack(ack EventsAck) func() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	at := -1
@@ -125,7 +163,7 @@ func (r *Reporter) Ack(ack EventsAck) {
 		}
 	}
 	if at < 0 {
-		return
+		return nil
 	}
 	settled := map[string]bool{}
 	for _, key := range ack.Accepted {
@@ -145,9 +183,10 @@ func (r *Reporter) Ack(ack EventsAck) {
 	}
 	if len(kept) == 0 {
 		r.pending = append(r.pending[:at], r.pending[at+1:]...)
-		return
+		return entry.settled
 	}
 	entry.batch.Events = kept
+	return nil
 }
 
 // Resend replays every batch still waiting on an ack: what a reconnect calls

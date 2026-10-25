@@ -9,6 +9,7 @@ import {
   SummaryCard,
   SummaryRow,
 } from '@oppenheimer/design-system-web';
+import { Video } from '@oppenheimer/design-system-web/icons';
 import {
   useGoogleCalendarConnections,
   useGoogleCalendarEvents,
@@ -25,8 +26,8 @@ const calendar = getRouteApi('/_authenticated/plan/calendar');
 /**
  * A Google event, read-only (`23-plan-milestones-stats-accounts.md` §5): open
  * while the address says `?google=`. When it is, which account it came from,
- * in that account's colour, and a way to open it in Google Calendar, where it
- * can be changed.
+ * in that account's colour, a way to join it when it is a video meeting, and
+ * a way to open it in Google Calendar, where it can be changed.
  */
 export function GoogleEventDialog() {
   const { t } = useTranslation();
@@ -76,6 +77,12 @@ export function GoogleEventDialog() {
               <FieldDescription>{t('calendar.event.gone')}</FieldDescription>
             )}
             <FieldDescription>{t('calendar.googleEvent.readOnly')}</FieldDescription>
+            {event?.meetingUrl ? (
+              <Button render={<a href={event.meetingUrl} target="_blank" rel="noreferrer" />}>
+                <Video />
+                {t('calendar.googleEvent.join')}
+              </Button>
+            ) : null}
             {event?.url ? (
               <Button
                 variant="secondary"

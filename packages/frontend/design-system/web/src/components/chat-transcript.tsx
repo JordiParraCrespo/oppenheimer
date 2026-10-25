@@ -12,9 +12,9 @@ import { cn } from '../lib/utils';
  * unboxed prose on the left, each agent turn opened by a `TurnHeader`.
  *
  * - `ChatTranscript`: the column; turns 20px apart.
- * - `ChatUserMessage`: the person's turn, a card at 82% of the column with
- *   the 18px radius at 15px; attachments sit above it, the time and its
- *   actions (copy, edit) under it, the actions on hover.
+ * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
+ *   the 28px radius at 15px, its line breaks kept (Bots); attachments sit
+ *   above it, the time and its actions (copy, edit) under it, on hover.
  * - `ChatAttachment`: a file on a turn, a 44px card with the type's glyph
  *   on a 32px tile, the name over its size in mono; `icon` alone is the
  *   preview tile.
@@ -30,7 +30,7 @@ function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-transcript"
-      className={cn('mx-auto flex w-full max-w-184 flex-col gap-5', className)}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-5', className)}
       {...props}
     />
   );
@@ -48,23 +48,21 @@ function ChatUserMessage({
   time?: React.ReactNode;
   /** Icon buttons (copy, edit), shown on hover. */
   actions?: React.ReactNode;
-  /** `ChatAttachment`s, above the card. */
+  /** `ChatAttachment`s or `ChatImage`s, above the card; with no children, the message is these alone. */
   attachments?: React.ReactNode;
 }) {
   return (
-    <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1', className)} {...props}>
+    <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
-      <div className="max-w-[82%] rounded-lg bg-card px-3.5 py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-pretty text-fg">
-        {children}
-      </div>
+      {children != null && children !== false ? (
+        <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
+          {children}
+        </div>
+      ) : null}
       {time || actions ? (
-        <div className="flex items-center gap-0.5 text-fg-subtle">
-          {time ? <span className="figures pr-1.5 font-mono text-[11px]">{time}</span> : null}
-          {actions ? (
-            <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
-              {actions}
-            </span>
-          ) : null}
+        <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
+          {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}
+          {actions}
         </div>
       ) : null}
     </div>
@@ -280,17 +278,39 @@ function TurnHeader({
 
 /**
  * The agent's answer, unboxed: markdown at 15px on 1.6 across the chat's
- * column. Pass the rendered markdown as children; it styles the elements
- * the way `Prose` does, at the column's width rather than 72ch.
+ * column, its blocks 12px apart. Pass the rendered markdown as children; it
+ * styles the elements the way `Prose` does at a chat's scale: headings a step
+ * or two over the text, lists with muted markers, links in the link blue,
+ * a quote behind a 2px rule, inline code on the card, and tables full width
+ * on hairlines, each scrolling sideways in its own box when it is wider
+ * than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-reply"
       className={cn(
-        'flex flex-col gap-3 text-[15px] leading-[1.6] tracking-[-0.011em] text-pretty text-fg',
-        '[&_h3]:mt-1.5 [&_h3]:text-[17px] [&_h3]:font-semibold [&_h3]:tracking-[-0.014em] [&_li]:mt-1.5 [&_li:first-child]:mt-0 [&_ol]:pl-5 [&_p]:m-0 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ul]:marker:text-fg-subtle',
-        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-hover-surface [&_:not(pre)>code]:px-1.25 [&_:not(pre)>code]:py-px [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
+        'flex min-w-0 flex-col gap-3 text-[15px] leading-[1.6] tracking-[-0.011em] text-pretty wrap-anywhere text-fg',
+        // Headings
+        '[&_:is(h1,h2,h3,h4,h5,h6)]:m-0 [&_:is(h1,h2,h3,h4,h5,h6)]:mt-1.5 [&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold [&_:is(h1,h2,h3,h4,h5,h6)]:tracking-[-0.014em]',
+        '[&_h1]:text-[20px] [&_h2]:text-[18px] [&_h3]:text-[17px] [&_:is(h4,h5,h6)]:text-[15px]',
+        // Text, lists, quotes, rules
+        '[&_p]:m-0 [&_strong]:font-semibold [&_b]:font-semibold [&_em]:italic',
+        '[&_:is(ul,ol)]:m-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1.5 [&_li:first-child]:mt-0 [&_li]:ps-0.5 [&_li]:marker:text-fg-subtle',
+        '[&_li_:is(ul,ol)]:mt-1.5 [&_li>p+p]:mt-2',
+        '[&_[data-task-list]]:pl-0.5 [&_[data-task-list]>li]:flex [&_[data-task-list]>li]:list-none [&_[data-task-list]>li]:items-baseline [&_[data-task-list]>li]:gap-2 [&_[data-task-list]_input]:m-0 [&_[data-task-list]_input]:accent-primary',
+        '[&_blockquote]:m-0 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3.5 [&_blockquote]:text-fg-muted',
+        '[&_hr]:my-1 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-border-subtle',
+        '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
+        '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
+        '[&_summary]:cursor-pointer [&_summary]:font-medium',
+        // Inline code, on the card (a fenced block is a `ChatCodeBlock`)
+        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-card [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
+        // Tables
+        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[13.5px] [&_table]:leading-normal [&_table]:tabular-nums',
+        '[&_th]:border-b [&_th]:border-border-strong [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-start [&_th]:font-semibold',
+        '[&_td]:border-b [&_td]:border-border-subtle [&_td]:px-2 [&_td]:py-2 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
+        '[&_:is(th,td):first-child]:ps-0 [&_:is(th,td):last-child]:pe-0',
         className,
       )}
       {...props}

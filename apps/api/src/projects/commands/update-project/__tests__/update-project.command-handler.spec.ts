@@ -73,6 +73,13 @@ describe('UpdateProjectCommandHandler', () => {
     expect(projects.saveSettingsIfActive).toHaveBeenCalledWith(scope, project);
   });
 
+  it('refuses a rename to the Unassigned project’s name, and saves nothing', async () => {
+    await expect(handler.execute(command({ name: 'UNASSIGNED' }))).rejects.toMatchObject({
+      code: 'PROJECTS_009',
+    });
+    expect(projects.saveSettingsIfActive).not.toHaveBeenCalled();
+  });
+
   it('leaves absent fields as they are and clears a default given null', async () => {
     project.configure({ defaultAgent: 'codex', defaultHostId: 'host-1' });
 

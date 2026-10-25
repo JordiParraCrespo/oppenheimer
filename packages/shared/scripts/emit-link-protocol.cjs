@@ -95,6 +95,10 @@ const CONSTANT_DOCS = {
     'CloseUnpaired is terminal: its handshake twin is a 410 carrying',
     'RefusalHeader: RefusalUnpaired — see ErrUnpaired.',
   ],
+  closeReasons: [
+    'The reasons a close may carry on top of its code. CloseReasonWipe, on',
+    'CloseUnpaired, asks the runner to close every session too — see ErrWipe.',
+  ],
   refusal: [
     "RefusalHeader and its values mark the control plane's own refusal at the",
     'handshake. A bare 410 is not trusted — any proxy in front of the control',
@@ -123,6 +127,11 @@ const CONSTANT_DOCS = {
     "MaxEventPayloadBytes caps an event's JSON payload string, because an event",
     'never carries pane text.',
   ],
+  chatEntryMaxBytes: [
+    'ChatEntryMaxBytes is the largest transcript entry `attachment.chat`',
+    'carries; the runner compacts each line first and drops one still bigger.',
+  ],
+  chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
 };
 
 /** `session.window.open` → `SessionWindowOpen`, `HELLO_EXPECTED` → `HelloExpected`. */
@@ -342,6 +351,14 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
       Object.entries(constants.closeCodes).map(([key, code]) => [`Close${pascal(key)}`, code]),
     ),
     '',
+    ...comment(CONSTANT_DOCS.closeReasons),
+    ...constGroup(
+      Object.entries(constants.closeReasons).map(([key, value]) => [
+        `CloseReason${pascal(key)}`,
+        JSON.stringify(value),
+      ]),
+    ),
+    '',
     ...comment(CONSTANT_DOCS.refusal),
     ...constGroup([
       ['RefusalHeader', JSON.stringify(constants.refusalHeader)],
@@ -362,6 +379,12 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.maxEventPayloadBytes),
     `const MaxEventPayloadBytes = ${constants.maxEventPayloadBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatEntryMaxBytes),
+    `const ChatEntryMaxBytes = ${constants.chatEntryMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
+    `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(

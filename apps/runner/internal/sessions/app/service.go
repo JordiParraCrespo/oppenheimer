@@ -33,7 +33,13 @@ type Options struct {
 	// Gate holds a launch while its agent is being updated; nil launches
 	// at once.
 	Gate LaunchGate
-	Now  func() time.Time
+	// Trust marks a folder as one the agent may work in; nil leaves the
+	// agent to ask.
+	Trust Trust
+	// Transcripts reads a session's first message off the agent's own
+	// transcript, for a session launched with no task; nil reports none.
+	Transcripts Transcripts
+	Now         func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -42,8 +48,13 @@ type Service struct {
 	// save serialises writes to the store: two goroutines that both took a
 	// snapshot could otherwise write them in the opposite order and leave
 	// the older one on disk.
-	save     sync.Mutex
-	sessions map[string]domain.Session
+	save sync.Mutex
+	// prompting runs one ReportFirstPrompts pass at a time. inFlight, under
+	// mu, holds the sessions whose first message the publisher took and the
+	// control plane has not acknowledged yet, so it is not offered twice.
+	prompting sync.Mutex
+	inFlight  map[string]bool
+	sessions  map[string]domain.Session
 	// creating holds each create still running, keyed by session id. Get
 	// answers from it, so the session is there — `creating`, with its
 	// checkout — for the credential helper its own clone calls; and a second
@@ -56,19 +67,21 @@ type Service struct {
 	// command is in flight, so a Stop or a Close that landed in between is
 	// never overwritten by a live state read before it. Neither is
 	// persisted: they only order writes within this process.
-	revs       map[string]uint64
-	busy       map[string]int
-	terminals  Terminals
-	worktrees  Worktrees
-	classifier Classifier
-	store      Store
-	publisher  Publisher
-	files      Files
-	places     Places
-	layout     domain.Layout
-	env        func(domain.Session) map[string]string
-	gate       LaunchGate
-	now        func() time.Time
+	revs        map[string]uint64
+	busy        map[string]int
+	terminals   Terminals
+	worktrees   Worktrees
+	classifier  Classifier
+	store       Store
+	publisher   Publisher
+	files       Files
+	places      Places
+	layout      domain.Layout
+	env         func(domain.Session) map[string]string
+	gate        LaunchGate
+	trust       Trust
+	transcripts Transcripts
+	now         func() time.Time
 }
 
 // New builds the service and loads the session map from disk.
@@ -87,10 +100,11 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
+		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
+		transcripts: opts.Transcripts, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -236,6 +250,20 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
 }
 
+// FollowChat follows a session's conversation for the chat view, sending
+// its transcript entries to emit until ctx ends (Transcripts.Follow).
+// ErrNoChat for a session whose agent's transcript this runner cannot read.
+func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, emit func(ChatBatch) error) error {
+	if s.transcripts == nil {
+		return ErrNoChat
+	}
+	session, err := s.recorded(id)
+	if err != nil {
+		return err
+	}
+	return s.transcripts.Follow(ctx, session.Agent, session.Launch.Conversation, entryMax, batchMax, emit)
+}
+
 // Send types into a window, which is how the browser's keystrokes arrive
 // while nothing is attached.
 func (s *Service) Send(ctx context.Context, id string, window int, keys string) error {
@@ -376,6 +404,61 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 	return s.List(), errors.Join(errs...)
 }
 
+// ReportFirstPrompts is the poll loop's other job: for each session launched
+// with no task, the first message the person typed into the agent, read off
+// the agent's own transcript (never the PTY) and reported once as
+// `prompt.first`, which is what the control plane names the session from
+// (02-runner §7).
+//
+// The session is marked reported only when the control plane acknowledges the
+// message. Until then it is in flight, and not offered again by this process;
+// a runner that ends first (an update, a reboot) offers it again, which the
+// control plane absorbs (a named session is not renamed), where marking it
+// earlier could lose it. One pass at a time, so two never both offer it.
+func (s *Service) ReportFirstPrompts() {
+	if s.transcripts == nil {
+		return
+	}
+	s.prompting.Lock()
+	defer s.prompting.Unlock()
+	s.mu.Lock()
+	publisher := s.publisher
+	var waiting []domain.Session
+	for id, session := range s.sessions {
+		if session.AwaitsFirstPrompt() && !s.inFlight[id] {
+			waiting = append(waiting, session.Clone())
+		}
+	}
+	s.mu.Unlock()
+	for _, session := range waiting {
+		text := domain.FirstPromptText(s.transcripts.FirstPrompt(session.Agent, session.Launch.Conversation))
+		if text == "" {
+			continue
+		}
+		s.mu.Lock()
+		s.inFlight[session.ID] = true
+		s.mu.Unlock()
+		if !publisher.FirstPrompt(session, text, func() { s.promptReported(session.ID) }) {
+			s.mu.Lock()
+			delete(s.inFlight, session.ID)
+			s.mu.Unlock()
+		}
+	}
+}
+
+// promptReported records that the control plane has a session's first
+// message, so no pass offers it again, in this process or the next.
+func (s *Service) promptReported(id string) {
+	s.commit(id, func(cur domain.Session, known bool) (domain.Session, bool) {
+		delete(s.inFlight, id)
+		if !known || cur.PromptReported {
+			return cur, false
+		}
+		cur.PromptReported = true
+		return cur, true
+	})
+}
+
 // Restart recreates window 0 where the session ran: its checkout, or its
 // folder. It is the Restart button on a session that stopped when the host
 // rebooted.
@@ -407,6 +490,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// same work twice.
 	launch := session.Launch
 	launch.Resume = true
+	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
 	release()
@@ -600,6 +684,31 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 	return ended, errors.Join(errs...)
 }
 
+// WipeAll is EndAll, then a forced Close of every session not closed yet:
+// nothing is pushed, uncommitted work is not a reason to keep a worktree, and
+// each worktree and session folder goes. A folder session's folder is the
+// person's and stays, as in any Close. It is what an owner who removes a host
+// and asks for it to be cleaned up wants (14); nothing else deletes work like
+// this. It answers the sessions it closed.
+func (s *Service) WipeAll(ctx context.Context) ([]string, error) {
+	if _, err := s.EndAll(ctx); err != nil {
+		return nil, err
+	}
+	var closed []string
+	var errs []error
+	for _, session := range s.List() {
+		if session.State == domain.StateClosed {
+			continue
+		}
+		if _, err := s.Close(ctx, session.ID, CloseInput{Force: true}); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		closed = append(closed, session.ID)
+	}
+	return closed, errors.Join(errs...)
+}
+
 // hold marks a command as working on a session until the returned release
 // runs. Observations are dropped while one is, and taking the hold moves the
 // revision on, so a refresh that read the session before the command started
@@ -756,4 +865,15 @@ func (s *Service) holdLaunch(ctx context.Context, agent domain.Agent) (release f
 		return func() {}
 	}
 	return s.gate.Hold(ctx, command)
+}
+
+// trustFolder marks the folder a launch starts in as trusted, so the agent
+// starts working instead of waiting on a question about a folder the runner
+// itself made for it. A failure only leaves the question on the screen; the
+// adapter logs it.
+func (s *Service) trustFolder(agent domain.Agent, dir string) {
+	if s.trust == nil {
+		return
+	}
+	_ = s.trust.Trust(agent, dir)
 }

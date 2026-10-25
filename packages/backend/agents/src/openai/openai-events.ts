@@ -1,5 +1,5 @@
 import type { BotEngineEvent } from '../bot-engine';
-import { describeError, failed } from '../turn';
+import { describeError, failed, resetFromHeaders, type ToolCallData } from '../turn';
 
 /**
  * The part of the OpenAI Agents SDK's `RunStreamEvent` this package reads,
@@ -62,15 +62,18 @@ function outputText(output: unknown): string {
 /**
  * Turns the OpenAI Agents SDK's stream events into the engine's events, and
  * the run's end into `usage` and `done`. Whether a tool call failed is not
- * in the SDK's event; the adapter records it as it runs the tool, and
- * passes it in.
+ * in the SDK's event, nor what the call made; the adapter records both as
+ * it runs the tool, and passes them in.
  */
 export class OpenAiEventTranslator {
   private inputTokens = 0;
   private outputTokens = 0;
   private sawUsage = false;
 
-  constructor(private readonly toolFailed: (callId: string) => boolean) {}
+  constructor(
+    private readonly toolFailed: (callId: string) => boolean,
+    private readonly made: ToolCallData,
+  ) {}
 
   translate(event: OpenAiStreamEvent): BotEngineEvent[] {
     if (event.type === 'raw_model_stream_event') {
@@ -102,8 +105,9 @@ export class OpenAiEventTranslator {
             input: parseArguments(raw.arguments),
           },
         ];
-      case 'tool_output':
+      case 'tool_output': {
         if (raw.type !== 'function_call_result' || !raw.callId || !raw.name) return [];
+        const data = this.made.take(raw.callId);
         return [
           {
             type: 'tool.finished',
@@ -111,8 +115,10 @@ export class OpenAiEventTranslator {
             name: raw.name,
             output: outputText(event.item.output),
             isError: this.toolFailed(raw.callId),
+            ...(data ? { data } : {}),
           },
         ];
+      }
       default:
         return [];
     }
@@ -133,8 +139,30 @@ export class OpenAiEventTranslator {
     } else if (error instanceof Error && error.name === 'MaxTurnsExceededError') {
       events.push({ type: 'done', reason: 'max_steps' });
     } else {
-      events.push(failed(describeError(error)));
+      const rateLimit = rateLimitOf(error);
+      events.push(
+        rateLimit ? failed(describeError(error), rateLimit) : failed(describeError(error)),
+      );
     }
     return events;
   }
+}
+
+/**
+ * A refusal for rate or quota: the OpenAI client's error for a `429`, with
+ * when the provider may be called again from its `Retry-After` headers.
+ */
+function rateLimitOf(error: unknown): { resetAt: Date | null } | null {
+  const refused = error as { status?: unknown; headers?: unknown } | null;
+  if (!refused || typeof refused !== 'object' || refused.status !== 429) return null;
+  const headers = refused.headers;
+  const read = (name: string): string | null => {
+    if (headers instanceof Headers) return headers.get(name);
+    if (headers && typeof headers === 'object') {
+      const value = (headers as Record<string, unknown>)[name];
+      return typeof value === 'string' ? value : null;
+    }
+    return null;
+  };
+  return { resetAt: resetFromHeaders(read) };
 }

@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   DropZone,
   EmptyState,
   HostLinkChrome,
@@ -11,14 +12,17 @@ import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TerminalComposer } from '../components/terminal-composer';
+import { ChatCover } from '../components/chat-cover';
+import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
+import { useChatReading } from '../hooks/use-session-chat';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
+import type { PaneReading } from '../lib/chat-blocks';
 import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
-import { submitLine } from '../lib/terminal-submit';
+import { takeFilePaste } from '../lib/terminal-files';
 import { HostLinkFix } from './host-link-fix';
 import { SessionShareButton } from './session-share-button';
 
@@ -40,40 +44,48 @@ const AGENT_WINDOW = 0;
  * It comes back on its own; the fix is for when it does not. Share closes
  * the status line on the right, in either form.
  *
+ * **Chat** (0.7, behind `session_chat_view`): the pane hands in a chat
+ * (`reading`). This stream feeds it and lends it its input, and once the host
+ * sends the agent's transcript the status bar offers Terminal / Chat; Chat
+ * draws the pane's `cover` over the grid, which stays mounted under it at its
+ * size, so tmux is never resized. What the cover is, is the pane's: this
+ * section owns the terminal and only makes room, and takes the files pasted
+ * on it as it takes the grid's. While it shows, the terminal
+ * paints no ground of its own, so its status bar sits on the cover's.
+ *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
- * grid keeps the input.
+ * grid keeps the input. A pull request's review session is the same pane.
  */
 export function SessionTerminal({
   sessionId,
   hostId,
   statusItem,
-  composer,
+  reading,
 }: {
   sessionId: string;
   hostId: string;
+  /** The chat this terminal feeds, and how the pane around it reads it. */
+  reading: PaneReading;
   /** Drawn first in the status bar: the session's task, when the route has one. */
   statusItem?: ReactNode;
-  /**
-   * An input row under the grid, with this placeholder: a line sent to the
-   * agent on Enter, as if typed at its prompt. A pull request's review
-   * session has one ("Ask the review agent, or run a command").
-   */
-  composer?: string;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
+  const { chat, view, onViewChange, cover } = reading;
+  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
   const terminal = useTerminal(createStream, {
+    chat,
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
   });
-  const { containerRef, status, hasOutput, ended, retryNow, awaySince, send } = terminal;
+  const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
   const phase = hostLinkPhaseOf({
     status,
     away: awaySince !== null,
@@ -81,11 +93,14 @@ export function SessionTerminal({
     slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
+  const viewToggle = chatOffered ? (
+    <ChatViewToggle view={view} onViewChange={onViewChange} />
+  ) : null;
 
   return (
     <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
       <Terminal
-        className="min-h-0 flex-1 overflow-hidden"
+        className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
       >
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
@@ -93,7 +108,10 @@ export function SessionTerminal({
           padded host overflows its own box and paints over the rows below it.
           xterm owns everything inside the inner element, scrollbar included. */}
         <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
-          <div ref={containerRef} className="size-full" />
+          {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
+            the latency readout, each with a z-index) inside the grid, so the
+            covers below paint over all of them rather than under some. */}
+          <div ref={containerRef} className="isolate size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
             older one replaying its scrollback that this tab has no kept
@@ -112,6 +130,15 @@ export function SessionTerminal({
                 </EmptyState.Header>
               </EmptyState>
             </div>
+          ) : null}
+          {chatShown ? (
+            // Typing in the chat moves focus off the grid, so a paste there
+            // never reaches the grid's listener: the cover takes its files
+            // the same way, and they land in the agent's prompt. On the way
+            // down, as the grid does, so nothing in the chat can swallow it.
+            <ChatCover onPasteCapture={(event) => takeFilePaste(event, upload.send)}>
+              {cover}
+            </ChatCover>
           ) : null}
         </div>
 
@@ -150,10 +177,6 @@ export function SessionTerminal({
           </div>
         ) : null}
 
-        {composer ? (
-          <TerminalComposer placeholder={composer} onSubmit={(text) => submitLine(send, text)} />
-        ) : null}
-
         {phase ? (
           <HostLinkChrome
             elapsed={
@@ -163,6 +186,7 @@ export function SessionTerminal({
             }
             fix={<HostLinkFix host={host} />}
           >
+            {viewToggle}
             {statusItem}
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the

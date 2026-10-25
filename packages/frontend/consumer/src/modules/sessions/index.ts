@@ -1,10 +1,24 @@
 export {
+  type ChatBatch,
+  type ChatPrompt,
+  type ChatState,
+  type ChatStep,
+  type ChatTodo,
+  type ChatTodoStatus,
+  type ChatToolCall,
+  type ChatToolKind,
+  type ChatTurn,
+  SessionChat,
+} from './chat/session-chat';
+export {
   type AttachTicket,
   type CreateSessionCheckout,
   type CreateSessionInput,
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,
+  type SessionCloseRefusal,
+  type SessionCloseRequest,
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,
@@ -19,8 +33,9 @@ export type {
   SessionStartStepId,
   SessionStartStepState,
 } from './session-steps';
-export { SessionsModule } from './sessions.module';
+export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export type { LocalTerminals } from './stream/local-first-stream';
 export {
   createResizeCoalescer,
   type ResizeCoalescer,

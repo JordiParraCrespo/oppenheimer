@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
-import { type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
+import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
 
 /**
  * How a turn's engine events become the chat's messages: finished text is a
@@ -66,9 +67,91 @@ describe('TurnTranscript', () => {
       ['activity', 3],
     ]);
     expect(messages[0].steps).toEqual([
-      { callId: 'a', name: 'web_search', input: { q: 'x' }, output: 'found', isError: false },
-      { callId: 'b', name: 'web_fetch', input: { url: 'u' }, output: 'nope', isError: true },
+      {
+        callId: 'a',
+        name: 'web_search',
+        input: { q: 'x' },
+        output: 'found',
+        isError: false,
+        sessionId: null,
+        subagents: null,
+      },
+      {
+        callId: 'b',
+        name: 'web_fetch',
+        input: { url: 'u' },
+        output: 'nope',
+        isError: true,
+        sessionId: null,
+        subagents: null,
+      },
     ]);
+  });
+
+  it('keeps the session a call says it started on its step, never read from its words', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'start_session', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'start_session',
+        output: 'The agent is on it.',
+        isError: false,
+        data: { sessionId: 's-1' },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'start_session',
+        output: 'Started session s-2 on host h-1.',
+        isError: false,
+      },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps.map((step) => [step.callId, step.sessionId])).toEqual([
+      ['a', 's-1'],
+      ['b', null],
+    ]);
+  });
+
+  it('keeps the subagents a delegate call ran on its step, and counts their tokens as the turn’s', () => {
+    const runs = [
+      {
+        task: 'Check build-01',
+        status: 'completed',
+        result: 'Online',
+        toolCalls: ['list_hosts'],
+        inputTokens: 300,
+        outputTokens: 40,
+        durationMs: 2_000,
+      },
+      {
+        task: 'Check build-02',
+        status: 'failed',
+        result: 'model overloaded',
+        toolCalls: [],
+        inputTokens: 50,
+        outputTokens: 0,
+        durationMs: 800,
+      },
+    ];
+    const { writes, transcript } = run([
+      { type: 'tool.started', callId: 'a', name: 'delegate', input: { tasks: [] } },
+      { type: 'usage', inputTokens: 10, outputTokens: 2 },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'delegate',
+        output: '2 subagents ran; 1 did not complete.',
+        isError: false,
+        data: { [SUBAGENT_DATA_KEY]: JSON.stringify(runs) },
+      },
+      { type: 'done', reason: 'completed' },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps[0]?.subagents).toEqual(runs);
+    expect(transcript.result).toMatchObject({ inputTokens: 360, outputTokens: 42 });
   });
 
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {
@@ -78,6 +161,30 @@ describe('TurnTranscript', () => {
     ]);
     expect(inserted(writes).map((message) => message.content)).toEqual(['Half an ans']);
     expect(transcript.result).toMatchObject({ reason: 'failed', error: 'model overloaded' });
+  });
+
+  it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    const writes = [
+      { type: 'text.delta', text: 'Working on it' },
+      { type: 'done', reason: 'cancelled' },
+    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+    transcript.endTurn(new Date(), 'time_limit');
+    expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
+    expect(subject.status).toBe('failed');
+    expect(subject.error).toBe(TIME_LIMIT_ERROR);
+  });
+
+  it('ends a turn Stop cancelled as cancelled', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    transcript.apply({ type: 'done', reason: 'cancelled' });
+    transcript.endTurn(new Date(), 'stop');
+    expect(subject.status).toBe('cancelled');
+    expect(subject.error).toBeNull();
   });
 
   it('cuts a long tool answer short', () => {

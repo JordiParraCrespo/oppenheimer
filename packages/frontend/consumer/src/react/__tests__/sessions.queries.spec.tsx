@@ -162,7 +162,7 @@ describe('useSessions', () => {
  * Delete is a close the host answers: the request comes back with the row still
  * `open`, and only a later read sees it resolved. The list drops the row on the
  * click, keeps it out and keeps reading while the close is pending, and puts it
- * back when the close cannot happen.
+ * back when the close cannot happen — saying why: still deleting, or refused.
  */
 describe('a deleted session', () => {
   const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
@@ -249,6 +249,61 @@ describe('a deleted session', () => {
       expect(result.current.list.data).toEqual([]);
       await vi.advanceTimersByTimeAsync(35_000);
       await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 15_000);
+
+  /**
+   * The host never got the close: the API says so, and the row comes back at
+   * once, drawn as deleting (the API keeps the close owed and sends it again
+   * when the host reconnects). It used to stay hidden for a minute and then
+   * come back as if nothing had been asked.
+   */
+  it('comes back at once, still deleting, when the API answers that its host is offline', async () => {
+    const deleting = {
+      ...live,
+      isClosing: true,
+      closeRequest: { requestedAt: new Date(), acceptUnpushedWork: false },
+    } as SessionEntity;
+    const findAll = vi.fn().mockResolvedValueOnce([live]).mockResolvedValue([deleting]);
+    const close = vi.fn().mockResolvedValue({ ...deleting, isHostOffline: true });
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.list.data?.[0]?.isClosing).toBe(true));
+    // Nothing to wait for, so nothing polls.
+    const reads = findAll.mock.calls.length;
+    await pause(2_500);
+    expect(findAll).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  it('comes back with the refusal as soon as a read shows its host refused the close', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const refused = {
+        ...live,
+        closeRefusal: { code: 'GIT_003', detail: 'unpushed work' },
+      } as SessionEntity;
+      const findAll = vi
+        .fn()
+        .mockResolvedValueOnce([live])
+        .mockResolvedValueOnce([live])
+        .mockResolvedValue([refused]);
+      const { result } = closing(findAll);
+      await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+      result.current.close.mutate({ id: 'c-1' });
+      await waitFor(() => expect(result.current.list.data).toEqual([]));
+      // Well inside the watch, not at its end.
+      await vi.advanceTimersByTimeAsync(8_000);
+      await waitFor(() =>
+        expect(result.current.list.data?.[0]?.closeRefusal?.code).toBe('GIT_003'),
+      );
     } finally {
       vi.useRealTimers();
     }

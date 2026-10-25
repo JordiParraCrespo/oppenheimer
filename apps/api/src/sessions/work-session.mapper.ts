@@ -32,6 +32,7 @@ import {
   type SessionLaunchFold,
 } from './domain/session-state.policy';
 import {
+  SESSION_ORIGINS,
   type SessionTurnFold,
   TURN_DRIVES,
   TURN_ORIGINS,
@@ -113,6 +114,10 @@ export class WorkSessionMapper
     record.launchModel = fold.launch.model;
     record.launchPermission = fold.launch.permission;
     record.launchEffort = fold.launch.effort;
+    record.closeRequestedAt = fold.closeRequest?.requestedAt ?? null;
+    record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
+    record.closeRefusalCode = fold.closeRefusal?.code ?? null;
+    record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
     return record;
   }
 
@@ -135,8 +140,9 @@ export class WorkSessionMapper
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
-        origin:
-          record.origin === 'automation' || record.origin === 'review' ? record.origin : 'person',
+        origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
+          ? record.origin
+          : 'person',
         // Loaded by the repository when it folds, under the row lock.
         latestTurn: null,
         ...this.foldOf(record),
@@ -284,6 +290,15 @@ export class WorkSessionMapper
         effort: record.launchEffort,
       },
       projectId: record.projectId,
+      closeRequest: record.closeRequestedAt
+        ? {
+            requestedAt: record.closeRequestedAt,
+            acceptUnpushedWork: record.closeAcceptsUnpushedWork,
+          }
+        : null,
+      closeRefusal: record.closeRefusalCode
+        ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
+        : null,
     };
   }
 
@@ -603,6 +618,16 @@ export class WorkSessionMapper
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
     dto.hints = options.hints ?? [];
+    const { closeRequest, closeRefusal } = entity;
+    dto.closeRequest = closeRequest
+      ? {
+          requestedAt: closeRequest.requestedAt,
+          acceptUnpushedWork: closeRequest.acceptUnpushedWork,
+        }
+      : null;
+    dto.closeRefusal = closeRefusal
+      ? { code: closeRefusal.code, detail: closeRefusal.detail }
+      : null;
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));

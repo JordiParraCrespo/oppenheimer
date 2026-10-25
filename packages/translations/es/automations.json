@@ -56,7 +56,8 @@
     "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
     "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
     "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
-    "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+    "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
+    "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala."
   },
   "frequency": {
     "once": {
@@ -297,7 +298,7 @@
   "deleteDialog": {
     "title": "¿Eliminar «{{name}}»?",
     "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-    "confirm": "Eliminar",
+    "confirm": "Eliminar automatización",
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la automatización."
   },
@@ -308,5 +309,10 @@
     "open": "Abrir en el terminal",
     "opening": "Abriendo",
     "backToAutomation": "Volver a la automatización"
+  },
+  "routines": {
+    "routine": "Rutina de bot",
+    "runsOn": "La ejecuta {{bot}}",
+    "loadFailed": "No se pudieron cargar las rutinas de los bots."
   }
 }

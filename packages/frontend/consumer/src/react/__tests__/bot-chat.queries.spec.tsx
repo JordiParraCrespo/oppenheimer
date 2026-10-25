@@ -15,6 +15,7 @@ import { useBotLiveText } from '../bot-chat.queries';
 import { fakeKernel } from './fake-kernel';
 
 const CONVERSATION = ['bots', 'detail', 'bot-1', 'conversation'];
+const APPROVALS = ['bots', 'detail', 'bot-1', 'approvals'];
 const at = new Date('2026-10-01T10:00:00Z');
 
 /** The conversation as a read returns it: turn `t1` in `status`, with these stored replies. */
@@ -24,6 +25,7 @@ function read(status: BotTurnStatus, ...replies: string[]): BotConversationEntit
       (content, index) => new BotMessageEntity(`m${index}`, 't1', 'assistant', content, [], at),
     ),
     [new BotTurnEntity('t1', status, 'anthropic', 'm', null, 0, 0, false, at, at, null)],
+    replies.length,
   );
 }
 
@@ -95,13 +97,20 @@ describe('useBotLiveText', () => {
     expect(chat.stream.dispose).toHaveBeenCalled();
   });
 
-  it('reads the conversation again each time the stream comes up', async () => {
+  it('reads the conversation and the card again each time the stream comes up', async () => {
     const chat = setup();
     renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
     await chat.status('live');
     await chat.status('down');
     await chat.status('live');
-    expect(chat.invalidated).toEqual([CONVERSATION, CONVERSATION]);
+    expect(chat.invalidated).toEqual([CONVERSATION, APPROVALS, CONVERSATION, APPROVALS]);
+  });
+
+  it('reads the card again, and only the card, when one is raised or settled', async () => {
+    const chat = setup();
+    renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
+    await chat.send({ type: 'approval', approvalId: 'a1', status: 'pending' });
+    expect(chat.invalidated).toEqual([APPROVALS]);
   });
 
   it('gathers a turn’s text as it streams', async () => {
@@ -146,6 +155,7 @@ describe('useBotLiveText', () => {
     await chat.send(text('Done'));
     await chat.send({ type: 'turn', turnId: 't1', status: 'completed' });
     expect(chat.invalidated).toContainEqual(['bots', 'list']);
+    expect(chat.invalidated).toContainEqual(APPROVALS);
     expect(result.current).toEqual({ t1: 'Done' });
     await chat.land(read('completed', 'Done'));
     expect(result.current).toEqual({});

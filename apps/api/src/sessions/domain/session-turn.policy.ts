@@ -47,10 +47,11 @@ export const TURN_DRIVES = ['interactive', 'headless'] as const;
 export type TurnDrive = (typeof TURN_DRIVES)[number];
 
 /**
- * Who asked for a session: a person at the console, an automation's run, or a
- * person reviewing a pull request from its Chat tab (`review`).
+ * Who asked for a session: a person at the console, an automation's run, a
+ * person reviewing a pull request from its Chat tab (`review`), or a bot
+ * acting for its owner (`bot`, `25-bots.md` §4.2).
  */
-export const SESSION_ORIGINS = ['person', 'automation', 'review'] as const;
+export const SESSION_ORIGINS = ['person', 'automation', 'review', 'bot'] as const;
 export type SessionOrigin = (typeof SESSION_ORIGINS)[number];
 
 /**
@@ -61,6 +62,8 @@ const FIRST_TURN_ORIGIN: Record<SessionOrigin, TurnOrigin> = {
   person: 'person',
   automation: 'automation',
   review: 'person',
+  // A bot asks as its owner, and the first turn is theirs.
+  bot: 'person',
 };
 
 /** The kinds a headless runner and the follow-up path will write; nothing appends them yet. */

@@ -5,6 +5,7 @@
     "close": "Close",
     "copied": "Copied",
     "copy": "Copy",
+    "copyCode": "Copy code",
     "loading": "Loading...",
     "or": "or",
     "relative": {
@@ -45,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Manage repository access",
       "failed": "Could not open GitHub. Try again in a moment."
+    },
+    "dictation": {
+      "dictate": "Dictate",
+      "stop": "Stop recording",
+      "cancel": "Cancel recording",
+      "waiting": "Waiting for the microphone…",
+      "transcribing": "Transcribing…",
+      "denied": "The browser was not allowed to use the microphone. Allow it for this site, then dictate again.",
+      "unavailable": "No microphone could be opened. Plug one in or pick another in your system settings, then dictate again.",
+      "failed": "The recording could not be transcribed."
     }
   },
   "validation": {
@@ -153,6 +164,8 @@
       "GITHUB_013": "That pull request could not be found.",
       "GITHUB_014": "GitHub will not merge this pull request yet. It waits until it can.",
       "GITHUB_015": "GitHub asked us to slow down. Try again in a minute.",
+      "GITHUB_016": "That issue was not found, or the number is a pull request.",
+      "GITHUB_017": "GitHub would not let Oppenheimer read or write this repository's issues. An owner of the installation needs to accept the App's Issues permission on GitHub.",
       "PROJECTS_001": "That project could not be found.",
       "PROJECTS_002": "Choose a workspace before working with projects.",
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
@@ -161,6 +174,7 @@
       "PROJECTS_006": "When a project holds repositories, at least one of them must be offered by default, none twice, each with a base branch.",
       "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
       "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
+      "PROJECTS_009": "Unassigned is the name of the project for unfiled sessions. Choose another name.",
       "PULLS_001": "Choose a workspace before working with pull requests.",
       "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
       "SESSIONS_001": "We could not find that session.",
@@ -202,7 +216,6 @@
       "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
       "FLAG_007": "Those segment conditions are not valid.",
       "SESSIONS_012": "That file is over 5 MB. Save a smaller copy, then try again.",
-      "SESSIONS_CLIENT_019": "The host is offline, so the session was not deleted. Try again once it is back.",
       "SESSIONS_013": "A session takes images (PNG, JPEG, GIF, WebP), PDFs and text files. Executables, archives, scripts, SVG and HTML are refused.",
       "SESSIONS_014": "This session is stopped. Restart it to give its prompt a file.",
       "SESSIONS_015": "No file was attached. Paste or drop the file again.",
@@ -211,6 +224,7 @@
       "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
       "HOSTS_007": "No file is waiting for that command.",
+      "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_002": "Choose a workspace before working with automations.",
       "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
@@ -241,6 +255,20 @@
       "BOTS_012": "That model provider doesn't exist.",
       "BOTS_013": "This bot's model provider has no key yet. Add one in Settings → Model providers.",
       "BOTS_014": "That turn doesn't exist.",
+      "BOTS_015": "That approval doesn't exist.",
+      "BOTS_016": "That request was already answered.",
+      "BOTS_017": "ChatGPT connects by signing in, not with a key.",
+      "BOTS_018": "That ChatGPT sign-in expired. Start again.",
+      "BOTS_019": "ChatGPT's sign-in is busy. Try again in a moment.",
+      "BOTS_020": "Couldn't reach ChatGPT's sign-in. Try again in a moment.",
+      "BOTS_021": "The ChatGPT sign-in is being refreshed. Send your message again in a moment.",
+      "BOTS_022": "Stop the running turn first.",
+      "BOTS_023": "Add a key for that provider before making it the default.",
+      "BOTS_024": "That file isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+      "BOTS_025": "That image is too large. Images can be up to 5 MB.",
+      "BOTS_026": "That image is no longer available. Add it again.",
+      "BOTS_027": "That image can't be sent anymore. Add it again.",
+      "BOTS_028": "This bot's model can't read images. Remove them, or switch to a model that can.",
       "CALENDAR_001": "That event doesn't exist, or it was deleted.",
       "CALENDAR_002": "Choose a workspace before working with the calendar.",
       "CALENDAR_003": "That's too many days to show at once.",
@@ -277,7 +305,14 @@
       "SESSIONS_028": "That folder doesn’t exist on the host.",
       "SESSIONS_029": "That path is a file, not a folder.",
       "SESSIONS_030": "That folder can’t be read on the host.",
-      "SESSIONS_031": "The host didn’t answer in time. Try again."
+      "SESSIONS_031": "The host didn’t answer in time. Try again.",
+      "VOICE_001": "Dictation needs a workspace. Open one and try again.",
+      "VOICE_002": "Nothing was recorded. Try dictating again.",
+      "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
+      "VOICE_004": "That recording couldn’t be read. Try dictating again.",
+      "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
+      "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
+      "VOICE_007": "Too many dictations for now. Try again in a moment."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -439,7 +474,7 @@
       "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
       "confirm": "Delete project",
       "deleting": "Deleting…",
@@ -691,6 +726,9 @@
       "newSessionHere": "New session in {{name}}",
       "projectSettings": "{{name}} settings",
       "unfiled": "Other sessions",
+      "pinned": "Pinned",
+      "pin": "Pin",
+      "unpin": "Unpin",
       "actions": "Session actions",
       "rename": "Rename",
       "renameLabel": "Session name",
@@ -700,17 +738,42 @@
       "delete": "Delete",
       "writeFailed": "That change did not land. Try again.",
       "loadFailed": "Could not load your sessions.",
-      "share": "Share…"
+      "share": "Share…",
+      "deleting": "Deleting…",
+      "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
+      "notDeleted": "Not deleted",
+      "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
+      "select": "Select",
+      "selected": "Selected"
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
-      "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+      "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote. Deleting stops if the session has work that is not pushed.",
       "confirm": "Delete session",
       "deleting": "Deleting…",
       "failed": "The session could not be deleted.",
       "discard": "Also discard work that is not pushed",
       "keeps": "Deleting stops if the session has work that is not pushed.",
-      "descriptionFolder": "Ends the terminal. The folder stays as it is."
+      "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+      "refused": "Its host did not delete it",
+      "refusedUnknown": "The host refused to remove the session."
+    },
+    "selection": {
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "pin": "Pin selected",
+      "unpin": "Unpin selected",
+      "move": "Move selected to a project",
+      "delete": "Delete selected",
+      "clear": "Clear selection"
+    },
+    "deleteSessions": {
+      "title_one": "Delete {{count}} session?",
+      "title_other": "Delete {{count}} sessions?",
+      "description": "Each session stops, its worktree is removed from its host, and its transcript is gone. Commits already pushed stay on the remote. A session with work that is not pushed is not deleted.",
+      "confirm": "Delete sessions",
+      "partial_one": "{{count}} session was not deleted",
+      "partial_other": "{{count}} sessions were not deleted"
     },
     "filters": {
       "label": "Filter sessions",
@@ -867,6 +930,96 @@
     },
     "screen": {
       "loadFailed": "Couldn’t refresh this session."
+    },
+    "chat": {
+      "view": {
+        "label": "How to read this session",
+        "terminal": "Terminal",
+        "chat": "Chat"
+      },
+      "empty": {
+        "title": "Nothing said yet",
+        "description": "Claude's words and work appear here as it goes."
+      },
+      "composer": {
+        "placeholder": "Message Claude",
+        "send": "Send",
+        "stop": "Stop",
+        "agent": "Claude Code"
+      },
+      "turn": {
+        "working": "Working for",
+        "worked": "Worked for",
+        "stopped": "Stopped",
+        "interrupted": "Interrupted"
+      },
+      "thinking": "Thinking",
+      "plan": "Plan",
+      "latest": "Jump to latest",
+      "truncated": "cut on the host",
+      "failedCall": "failed",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed",
+      "files_one": "{{count}} file attached",
+      "files_other": "{{count}} files attached",
+      "tasks_one": "{{done}} of {{count}} task done",
+      "tasks_other": "{{done}} of {{count}} tasks done",
+      "notice": {
+        "interrupted": "You stopped this turn",
+        "compacted": "Context compacted"
+      },
+      "verb": {
+        "command": "Ran",
+        "read": "Read",
+        "edit": "Edited",
+        "write": "Wrote",
+        "search": "Searched",
+        "web": "Fetched",
+        "todo": "Updated tasks",
+        "agent": "Ran a subagent",
+        "plan": "Proposed a plan",
+        "question": "Asked",
+        "mcp": "Called",
+        "other": "Used"
+      },
+      "summary": {
+        "read_one": "read {{count}} file",
+        "read_other": "read {{count}} files",
+        "search_one": "searched {{count}} pattern",
+        "search_other": "searched {{count}} patterns",
+        "web_one": "fetched {{count}} page",
+        "web_other": "fetched {{count}} pages",
+        "edit_one": "edited {{count}} file",
+        "edit_other": "edited {{count}} files",
+        "write_one": "wrote {{count}} file",
+        "write_other": "wrote {{count}} files",
+        "command_one": "ran {{count}} command",
+        "command_other": "ran {{count}} commands",
+        "agent_one": "ran {{count}} subagent",
+        "agent_other": "ran {{count}} subagents",
+        "mcp_one": "called {{count}} tool",
+        "mcp_other": "called {{count}} tools",
+        "question_one": "asked {{count}} question",
+        "question_other": "asked {{count}} questions",
+        "other_one": "used {{count}} tool",
+        "other_other": "used {{count}} tools"
+      },
+      "verbLive": {
+        "command": "Running",
+        "read": "Reading",
+        "edit": "Editing",
+        "write": "Writing",
+        "search": "Searching",
+        "web": "Fetching",
+        "agent": "Running a subagent",
+        "question": "Asking",
+        "mcp": "Calling",
+        "other": "Using"
+      },
+      "thought": "Thought",
+      "thoughtFor": "Thought for {{seconds}}s",
+      "changes_one": "{{count}} file changed",
+      "changes_other": "{{count}} files changed"
     }
   },
   "bots": {
@@ -879,7 +1032,7 @@
       "noMatch": "No bots match “{{query}}”.",
       "ungrouped": "Ungrouped",
       "emptyTitle": "No bots yet",
-      "emptyBody": "Bots you create appear here. Make one, tell it the job, and shape it in its settings.",
+      "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
       "emptyGroup": "No bots in this group yet.",
       "noMessages": "No messages yet",
       "newGroup": "New group",
@@ -899,16 +1052,16 @@
     },
     "landing": {
       "titleEmpty": "Make your first bot.",
-      "title": "Pick a bot, or make a new one.",
-      "note": "A new bot starts blank. Tell it the job, and shape it in its settings."
+      "note": "A new bot gets a name and asks for its job. Tell it, and it sets itself up; change anything later in its settings."
     },
     "chat": {
       "toggleSidebar": "Toggle sidebar",
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
-      "helloBlank": "What would you most like help with? Tell me the job and I will write my own instructions from it.",
-      "hello": "Hi, I’m {{name}}. What should we work on?",
+      "helloBlank": "{{name}} is ready. Tell it what job to do.",
+      "startFrom": "Try asking",
+      "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
       "send": "Send",
       "stop": "Stop",
@@ -920,18 +1073,109 @@
       "failedUnknown": "The turn ended without saying why.",
       "errorDetails": "Show details",
       "errorLess": "Show less",
+      "retry": "Retry",
+      "copyMessage": "Copy message",
+      "copyReply": "Copy reply",
+      "toLatest": "Jump to latest",
+      "switchedModel": "Switched to <model>{{model}}</model>",
+      "tokens_one": "{{tokens}} token",
+      "tokens_other": "{{tokens}} tokens",
+      "images": {
+        "attach": "Add images",
+        "remove": "Remove {{name}}",
+        "open": "Open {{name}}",
+        "pasted": "Pasted image",
+        "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
+        "tooLarge": "{{name}} is larger than 5 MB.",
+        "tooMany": "A message can carry up to {{max}} images.",
+        "noVision": "{{model}} can't read images. Switch the bot's model to send them.",
+        "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
+        "uploading": "Wait for the images to finish adding.",
+        "failedHeld": "Remove the image that couldn't be added.",
+        "uploadFailed": "{{name}} couldn't be added.",
+        "unavailable": "This image couldn't be loaded."
+      },
       "turn": {
         "queued": "Waiting",
-        "working": "Working",
-        "worked": "Worked",
-        "stopped": "Stopped",
-        "interrupted": "Failed"
+        "thinking": "Thinking",
+        "writing": "Writing",
+        "stopped": "Stopped"
       },
       "activity": {
-        "summary_one": "Used {{count}} tool",
-        "summary_other": "Used {{count}} tools",
-        "failed": "{{count}} failed",
-        "running": "running"
+        "searched": "Searched the web",
+        "searchedFor": "Searched the web for “{{query}}”",
+        "searching": "Searching the web",
+        "searchingFor": "Searching the web for “{{query}}”",
+        "planned": "Updated its plan",
+        "planning": "Updating its plan",
+        "using": "Using {{name}}",
+        "stepFailed": "failed",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "rawOutput": "Show raw output",
+        "moreLines_one": "Show {{count}} more line",
+        "moreLines_other": "Show {{count}} more lines",
+        "lessOutput": "Show less",
+        "group_one": "Used {{count}} tool",
+        "group_other": "Used {{count}} tools",
+        "groupSearched_one": "Searched the web {{count}} time",
+        "groupSearched_other": "Searched the web {{count}} times",
+        "groupFailed_one": "{{count}} failed",
+        "groupFailed_other": "{{count}} failed",
+        "delegated_one": "Ran {{count}} subagent",
+        "delegated_other": "Ran {{count}} subagents",
+        "delegating_one": "Running {{count}} subagent",
+        "delegating_other": "Running {{count}} subagents",
+        "seconds": "{{count}}s",
+        "subagent": {
+          "completed": "completed",
+          "failed": "failed",
+          "cancelled": "stopped",
+          "timed_out": "timed out"
+        },
+        "subagentTokens": "{{tokens}} tokens"
+      },
+      "suggest": {
+        "task": {
+          "research": {
+            "name": "Research a topic",
+            "prompt": "Search the web and give me a short summary, with sources, of "
+          },
+          "summarise": {
+            "name": "Summarise something",
+            "prompt": "Summarise this in five bullet points:\n\n"
+          },
+          "draft": {
+            "name": "Draft a message",
+            "prompt": "Draft a short, friendly message to "
+          },
+          "plan": {
+            "name": "Make a plan",
+            "prompt": "Make a step-by-step plan to "
+          }
+        },
+        "job": {
+          "research": {
+            "name": "Research assistant",
+            "description": "Finds and sums up what I ask about",
+            "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
+          },
+          "writing": {
+            "name": "Writing partner",
+            "description": "Tightens my drafts in my own voice",
+            "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
+          },
+          "planner": {
+            "name": "Planner",
+            "description": "Turns goals into next steps",
+            "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
+          },
+          "news": {
+            "name": "News digest",
+            "description": "The latest on what I follow",
+            "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
+          }
+        }
       },
       "model": "Model",
       "searchModels": "Search models…",
@@ -948,7 +1192,57 @@
         }
       },
       "saveFailed": "Could not change the bot.",
-      "loadFailed": "Could not load this bot."
+      "loadFailed": "Could not load this bot.",
+      "approval": {
+        "needsInput": "Needs input",
+        "title": "{{name}} wants to do this",
+        "detail": "It runs once, as you, when you approve. Writing to {{name}} instead dismisses the request.",
+        "approve": "Approve",
+        "approving": "Approving…",
+        "deny": "Deny",
+        "denying": "Denying…",
+        "noteLabel": "What should {{name}} do instead?",
+        "notePlaceholder": "Optional: why not, or what to do instead",
+        "cancel": "Cancel",
+        "failed": "Could not answer the request."
+      },
+      "event": {
+        "approved": "You approved: {{summary}}",
+        "denied": "You denied: {{summary}}",
+        "failed": "You approved, and it failed: {{summary}}",
+        "routine": "Routine · {{name}}",
+        "routineSaved": "Created routine “{{name}}”",
+        "routineChanged": "Changed routine “{{name}}”",
+        "routinePaused": "Paused routine “{{name}}”",
+        "routinePausedBecause": "Paused routine “{{name}}”: {{reason}}",
+        "routineResumed": "Resumed routine “{{name}}”",
+        "routineDeleted": "Deleted routine “{{name}}”",
+        "routineFailed": "Routine “{{name}}” did not run: {{reason}}",
+        "openRoutines": "Open routines",
+        "peerMessage": "From <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> asked",
+        "peerAnswered": "<bot>{{name}}</bot> replied",
+        "peerFailed": "<bot>{{name}}</bot> could not answer",
+        "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered",
+        "session": {
+          "needsInput": "Session “{{name}}” needs input",
+          "completed": "Session “{{name}}” finished",
+          "failed": "Session “{{name}}” failed",
+          "cancelled": "Session “{{name}}” was stopped",
+          "expired": "Session “{{name}}” expired before it ran"
+        }
+      },
+      "routineReason": {
+        "expired": "it waited too long to start",
+        "automation_rate_limited": "it reached its hourly run limit",
+        "workspace_rate_limited": "the workspace reached its hourly run limit",
+        "missed": "its time passed while it could not run",
+        "agent_unavailable": "the agent could not start",
+        "bot_provider_missing": "the bot’s model provider has no key or sign-in",
+        "owner_lost_access": "its owner can no longer run it",
+        "unknown": "something went wrong"
+      },
+      "openSession": "Open session"
     },
     "settings": {
       "back": "Back to the chat",
@@ -959,7 +1253,8 @@
         "profile": "Profile",
         "instructions": "Instructions",
         "memory": "Memory",
-        "runsOn": "Runs on"
+        "routines": "Routines",
+        "homeHost": "Home host"
       },
       "profile": {
         "title": "Profile",
@@ -986,6 +1281,17 @@
         "created": "Created",
         "history": "Chat history",
         "noMessages": "No messages yet.",
+        "messages_one": "{{count}} message · last {{date}}",
+        "messages_other": "{{count}} messages · last {{date}}",
+        "exporting": "Exporting…",
+        "exportFailed": "Could not export the chat.",
+        "exportedAt": "Exported {{date}}",
+        "you": "You",
+        "oppenheimer": "Oppenheimer",
+        "clearTitle": "Clear the chat history?",
+        "clearBody": "Every message of this chat is erased, with any request still waiting on you. The bot keeps its soul, instructions and memory.",
+        "clearing": "Clearing…",
+        "clearFailed": "Could not clear the chat history.",
         "export": "Export",
         "clear": "Clear history",
         "discard": "Discard",
@@ -1004,6 +1310,8 @@
         "discard": "Discard",
         "save": "Save revision",
         "saving": "Saving…",
+        "saved": "Saved · revision {{revision}}",
+        "unsaved": "Unsaved changes",
         "saveFailed": "Could not save the revision.",
         "conflict": "{{file}} was saved somewhere else while you edited it, and is at revision {{revision}} now. Reload to see it; copy your text first if you want to keep it.",
         "reload": "Reload",
@@ -1052,21 +1360,53 @@
         "forgetFailed": "Could not forget the fact.",
         "loadFailed": "Could not load what the bot remembers."
       },
-      "runsOn": {
-        "title": "Runs on",
-        "subtitle": "The machine the bot works on.",
-        "homeHost": "Home host",
+      "routines": {
+        "title": "Routines",
+        "subtitle": "Work the bot does on a schedule or when something happens.",
+        "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+        "askInChat": "Ask in chat",
+        "schedule": "Schedule · {{when}}",
+        "github": "GitHub · {{when}}",
+        "last": "Last",
+        "next": "Next",
+        "never": "Never",
+        "switch": "Run “{{name}}” on its own",
+        "pause": "Pause",
+        "resume": "Resume",
+        "run": "Run now",
+        "running": "Running…",
+        "edit": "Edit in chat",
+        "delete": "Delete routine",
+        "editPrompt": "Edit your routine: {{name}}",
+        "deleteTitle": "Delete “{{name}}”?",
+        "deleteBody": "This deletes the routine and stops its future runs. This can't be undone.",
+        "deleting": "Deleting…",
+        "deleteFailed": "Could not delete the routine.",
+        "switchFailed": "Could not change the routine.",
+        "runFailed": "Could not run the routine.",
+        "loadFailed": "Could not load the bot's routines."
+      },
+      "homeHost": {
+        "title": "Home host",
+        "subtitle": "Your bot always runs in Oppenheimer. When it starts a coding session and you haven't named a machine, the session runs here.",
+        "machines": "Machines",
+        "none": "No home host",
+        "noneHint": "The bot asks which machine to use each time it starts a session.",
         "online": "Online",
         "offline": "Offline",
         "noHosts": "No hosts yet",
-        "noHostsBody": "A bot runs on a machine you own. Add one, then pick it here.",
+        "noHostsBody": "A bot starts its coding sessions on a machine you own. Add one, then pick it here.",
         "addHost": "Add a host",
+        "discard": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
         "failed": "Could not change the home host.",
         "hostsFailed": "Could not load your hosts."
       }
     },
     "delete": {
-      "title": "Delete {{name}}?",
+      "title": "Delete “{{name}}”?",
       "description": "The bot, its instructions, its memory and its conversation are removed for good.",
       "confirm": "Delete bot",
       "pending": "Deleting…",
@@ -1131,7 +1471,8 @@
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
       "project_archived": "Paused because its project was deleted. Move it to another project to resume it.",
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
-      "owner_lost_access": "Paused because its owner can no longer run it."
+      "owner_lost_access": "Paused because its owner can no longer run it.",
+      "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it."
     },
     "frequency": {
       "once": {
@@ -1370,7 +1711,7 @@
     "deleteDialog": {
       "title": "Delete “{{name}}”?",
       "description": "Its triggers stop now. Past runs are kept.",
-      "confirm": "Delete",
+      "confirm": "Delete automation",
       "deleting": "Deleting…",
       "failed": "The automation could not be deleted."
     },
@@ -1381,6 +1722,11 @@
       "open": "Open in terminal",
       "opening": "Opening",
       "backToAutomation": "Back to the automation"
+    },
+    "routines": {
+      "routine": "Bot routine",
+      "runsOn": "Runs on {{bot}}",
+      "loadFailed": "Bot routines could not be loaded."
     }
   },
   "pullRequests": {
@@ -1513,8 +1859,6 @@
       },
       "into": "into",
       "noDescription": "No description.",
-      "copyCode": "Copy code",
-      "codeCopied": "Copied",
       "editOnGithub": "Edit on GitHub",
       "checks": "Checks",
       "noReviewers": "Nobody has reviewed it yet.",
@@ -1617,7 +1961,7 @@
       "merged": "PRs merged",
       "from": "from {{value}}",
       "series": "Series",
-      "both": "Created and merged",
+      "both": "Both",
       "perDay": "Pull requests created and merged per day",
       "hover": "Hover a day",
       "reviewedByYou": "Reviewed by you",
@@ -1654,8 +1998,13 @@
       "bar": "review · {{repository}} #{{number}}",
       "close": "Show the pull request",
       "loadFailed": "Could not load the review session.",
-      "composer": "Ask the review agent, or run a command",
-      "listFailed": "Could not load your review sessions."
+      "listFailed": "Could not load your review sessions.",
+      "delete": "Delete review session",
+      "deleteTitle": "Delete the review session of #{{number}}?",
+      "deleteDescription": "The session stops, its worktree of {{branch}} is removed from the host, and the transcript is gone. The pull request is not touched. Deleting stops if the session has work that is not pushed.",
+      "stopped": "This review session has stopped. Restarting brings Claude Code back with the conversation where it left off.",
+      "restart": "Restart review",
+      "restarting": "Restarting…"
     }
   },
   "tasks": {
@@ -1742,10 +2091,11 @@
       "target": "Target",
       "add": "Add milestone",
       "delete": "Delete milestone",
-      "deleteTitle": "Delete this milestone?",
-      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteDescription": "Its tasks stay on the board without a milestone.",
       "saveFailed": "Couldn’t save the milestone.",
-      "deleteFailed": "Couldn’t delete the milestone."
+      "deleteFailed": "Couldn’t delete the milestone.",
+      "deleting": "Deleting…"
     },
     "dialog": {
       "newTitle": "New task",
@@ -1767,12 +2117,13 @@
       "add": "Add task",
       "save": "Save",
       "delete": "Delete task",
-      "deleteTitle": "Delete this task?",
-      "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "Its sessions stay as they are.",
       "saveFailed": "Couldn’t save the task.",
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
-      "gone": "This task no longer exists."
+      "gone": "This task no longer exists.",
+      "deleting": "Deleting…"
     },
     "link": {
       "search": "Search sessions",
@@ -1850,12 +2201,13 @@
       "add": "Add event",
       "save": "Save",
       "delete": "Delete event",
-      "deleteTitle": "Delete this event?",
-      "deleteDescription": "“{{title}}” is deleted.",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteDescription": "It is removed from the calendar.",
       "saveFailed": "Couldn’t save the event.",
       "deleteFailed": "Couldn’t delete the event.",
       "loadFailed": "Couldn’t load the event.",
-      "gone": "This event is not in the month shown, or no longer exists."
+      "gone": "This event is not in the month shown, or no longer exists.",
+      "deleting": "Deleting…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1870,17 +2222,18 @@
       "updated": "Updated {{age}} ago",
       "needsReconnect": "Needs reconnecting",
       "readFailed": "Couldn’t read it just now",
-      "remove": "Remove",
+      "remove": "Remove account",
       "removeLabel": "Remove {{email}}",
-      "removeTitle": "Remove this Google account?",
-      "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+      "removeTitle": "Remove “{{email}}”?",
+      "removeDescription": "Its events leave the calendar. You can connect it again at any time.",
       "removeFailed": "Couldn’t remove the Google account.",
       "startFailed": "Couldn’t reach Google. Try again.",
       "loadFailed": "Couldn’t check your Google accounts.",
       "connecting": "Connecting Google Calendar…",
       "connectFailed": "Couldn’t connect Google Calendar.",
       "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-      "back": "Back to the calendar"
+      "back": "Back to the calendar",
+      "removing": "Removing…"
     },
     "googleEvent": {
       "untitled": "(No title)",
@@ -1890,6 +2243,7 @@
       "busy": "Busy",
       "free": "Free",
       "readOnly": "Read-only here: change it in Google Calendar.",
+      "join": "Join meeting",
       "open": "Open in Google Calendar"
     }
   },
@@ -1952,17 +2306,24 @@
       },
       "actions": "{{name}} actions",
       "rename": "Rename",
+      "updateRunner": "Update runner",
+      "updateTitle": "Update the runner on “{{name}}”?",
+      "updateDescription": "The runner installs the newest release on its channel and restarts. Its sessions keep running, and open terminals reconnect in a few seconds. A host pinned to a version stays on it.",
+      "updating": "Updating…",
+      "updateFailed": "Could not update the runner on {{name}}.",
       "renameLabel": "Host name",
       "save": "Save",
       "cancel": "Cancel",
       "remove": "Remove host",
       "removing": "Removing…",
-      "removeTitle": "Remove {{name}}?",
-      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
-      "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "removeTitle": "Remove “{{name}}”?",
+      "removeRunning_one": "{{count}} session is running on it. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_other": "{{count}} sessions are running on it. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeIdle": "No sessions are running on it. The runner’s token is revoked and automations targeting it are paused.",
       "renameFailed": "Could not rename this host. Try again.",
       "removeFailed": "Could not remove this host. Try again.",
+      "wipe": "Also delete everything on this machine: close every session and remove its worktree, uncommitted work included. Nothing is pushed.",
+      "wipeOffline": "{{name}} is offline, so it can’t be cleaned up from here.",
       "openTerminal": "Open terminal",
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
@@ -2071,7 +2432,7 @@
     },
     "modelProviders": {
       "title": "Model providers",
-      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again.",
+      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again. New bots start on the default provider.",
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",
@@ -2081,10 +2442,15 @@
       "remove": "Remove",
       "removeLabel": "Remove the {{provider}} key",
       "removeFailed": "Couldn’t remove the key.",
+      "default": "Default",
+      "makeDefault": "Make default",
+      "makeDefaultLabel": "Start new bots on {{provider}}",
+      "makeDefaultFailed": "Couldn’t change the default provider.",
       "providers": {
         "anthropic": "Claude models, through Anthropic’s API.",
         "glm": "GLM models, through z.ai.",
-        "openai": "GPT models, through OpenAI’s API."
+        "openai": "GPT models, through OpenAI’s API.",
+        "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key."
       },
       "dialog": {
         "title": "{{provider}} key",
@@ -2093,6 +2459,26 @@
         "save": "Save key",
         "saving": "Saving…",
         "failed": "Couldn’t save the key."
+      },
+      "signedIn": "Signed in · {{hint}}",
+      "notConnected": "Not connected",
+      "connect": "Connect ChatGPT",
+      "reconnect": "Sign in again",
+      "disconnect": "Disconnect",
+      "disconnectLabel": "Disconnect {{provider}}",
+      "chatgpt": {
+        "title": "Connect ChatGPT",
+        "description": "Sign in to ChatGPT and bots on ChatGPT run on your subscription, not on API billing.",
+        "step": "Open OpenAI’s sign-in page and enter this code:",
+        "open": "Open sign-in page",
+        "codeTitle": "One-time code",
+        "waiting": "Waiting for you to approve the sign-in…",
+        "expires": "The code works for 15 minutes.",
+        "expired": "This code expired. Get a new one to try again.",
+        "newCode": "Get a new code",
+        "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
+        "done": "Done",
+        "failed": "Couldn’t sign in to ChatGPT."
       }
     }
   },
@@ -2378,11 +2764,13 @@
     "emailResent": "Email sent again.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",
     "hostRenamed": "Renamed to “{{name}}”.",
     "hostRemoved": "“{{name}}” removed.",
+    "hostUpdateRequested": "Update requested for “{{name}}”. If a newer runner is out, the host restarts on it.",
     "deviceSignedOut": "“{{name}}” signed out.",
     "otherDevicesSignedOut": "Your other devices are signed out.",
     "passwordChanged": "Password changed. Other devices are signed out.",

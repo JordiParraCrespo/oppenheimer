@@ -1,7 +1,8 @@
 # @oppenheimer/backend-agents — Agent Instructions
 
 The engines a bot's turn runs on: one `BotEngine` port over the Claude Agent
-SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
+SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`, and `chatgpt`,
+the same engine pointed at ChatGPT's Codex backend on a subscription sign-in). Designed in
 `product/versions/mvp/25-bots.md` §2.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) and
@@ -11,7 +12,7 @@ SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`). Designed in
 
 ```
 src/
-├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine
+├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine (run, complete)
 ├── bot-engine.factory.ts  # createBotEngine: routes by provider
 ├── fake-bot-engine.ts     # FakeBotEngine, for the API's tests
 ├── turn.ts                # guardTurn (the stream contract), runTool, key scrubbing
@@ -50,6 +51,12 @@ src/
 - **Tool output is redacted in `runTool`.** The request's key is replaced
   in every tool result before the model or `tool.finished` sees it, the way
   `guardTurn` does for `done.error`.
+- **What a call made is data, not words.** A tool's result may carry
+  `data` (strings by name: the session it started); the model never reads
+  it, and `tool.finished` hands it back. An SDK's own report of a call
+  carries only its words, so each adapter records `data` by call id as it
+  runs the tool (`ToolCallData`): the OpenAI SDK's `callId`, Claude Code's
+  `claudecode/toolUseId` in the MCP call's `_meta`.
 - **Model pinning has one owner.** `pinAllModels` sets every variable
   Claude Code picks a model through (`MODEL_VARIABLES`, read from the
   binary the SDK ships); recheck that list when the SDK is upgraded.

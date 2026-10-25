@@ -33,12 +33,13 @@
     "add": "Add event",
     "save": "Save",
     "delete": "Delete event",
-    "deleteTitle": "Delete this event?",
-    "deleteDescription": "“{{title}}” is deleted.",
+    "deleteTitle": "Delete “{{title}}”?",
+    "deleteDescription": "It is removed from the calendar.",
     "saveFailed": "Couldn’t save the event.",
     "deleteFailed": "Couldn’t delete the event.",
     "loadFailed": "Couldn’t load the event.",
-    "gone": "This event is not in the month shown, or no longer exists."
+    "gone": "This event is not in the month shown, or no longer exists.",
+    "deleting": "Deleting…"
   },
   "google": {
     "title": "Google Calendar",
@@ -53,17 +54,18 @@
     "updated": "Updated {{age}} ago",
     "needsReconnect": "Needs reconnecting",
     "readFailed": "Couldn’t read it just now",
-    "remove": "Remove",
+    "remove": "Remove account",
     "removeLabel": "Remove {{email}}",
-    "removeTitle": "Remove this Google account?",
-    "removeDescription": "{{email}} leaves the calendar, and its events with it. You can connect it again at any time.",
+    "removeTitle": "Remove “{{email}}”?",
+    "removeDescription": "Its events leave the calendar. You can connect it again at any time.",
     "removeFailed": "Couldn’t remove the Google account.",
     "startFailed": "Couldn’t reach Google. Try again.",
     "loadFailed": "Couldn’t check your Google accounts.",
     "connecting": "Connecting Google Calendar…",
     "connectFailed": "Couldn’t connect Google Calendar.",
     "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-    "back": "Back to the calendar"
+    "back": "Back to the calendar",
+    "removing": "Removing…"
   },
   "googleEvent": {
     "untitled": "(No title)",
@@ -73,6 +75,7 @@
     "busy": "Busy",
     "free": "Free",
     "readOnly": "Read-only here: change it in Google Calendar.",
+    "join": "Join meeting",
     "open": "Open in Google Calendar"
   }
 }

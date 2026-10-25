@@ -9,12 +9,14 @@
         "apps/web",
         "deploy/kamal/deploy.web.yml",
         "e2e/tests/web",
+        "e2e/tests/terminal",
         "e2e/tests/screens",
         "scripts/stack/screens.mjs",
         "scripts/evals/pr-screenshots",
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",
+        "scripts/evals/feature-flags",
         ".agents/skills/frontend-audit",
         ".agents/skills/scaffold-feature/evals",
         "knip.json",
@@ -100,7 +102,26 @@
       "summary": "e2e/ — Playwright suites against the running API and web app",
       "identifiers": ["@oppenheimer/e2e", "e2e/"],
       "paths": ["e2e", "scripts/stack", ".agents/skills/local-stack"],
-      "scripts": ["test:e2e", "screens"]
+      "scripts": ["test:e2e", "screens"],
+      "json": [
+        {
+          "file": "biome.json",
+          "path": "files.includes",
+          "remove": ["!e2e/tests/screens/local"]
+        },
+        {
+          "file": ".claude/settings.json",
+          "path": "permissions.allow",
+          "remove": [
+            "Bash(pnpm --filter @oppenheimer/e2e e2e:*)",
+            "Bash(service postgresql start)",
+            "Bash(service redis-server start)",
+            "Read(.stack/**)",
+            "Write(e2e/tests/screens/local/**)",
+            "Edit(e2e/tests/screens/local/**)"
+          ]
+        }
+      ]
     }
   },
   "shared": {

@@ -96,6 +96,17 @@ failure every `curl | sh` has unless it is written this way.
      stops the install **before the token is spent**, so the same command
      works once the tool is there. `claude` missing is a hint, not a
      failure (02 §10).
+   - **which agent CLIs to install** (`--agents`, decided 2026-10-12): the
+     ones of `claude`, `codex`, `opencode`, `grok` and `gh` this machine
+     lacks are listed, and the answer defaults to the missing ones of
+     Claude Code and gh, so Enter leaves a host that can run a Claude Code
+     session and open a pull request. Unlike git and tmux these need no
+     sudo — each is a release checked against its vendor's checksum, or
+     an npm package, into the user's home, run by the runner (02 §10) —
+     which is why they are offered by default rather than behind a typed
+     yes. With no terminal only `--agents` installs
+     anything, and the agent prompt Add host hands out asks the person
+     which ones and passes them.
 5. **Fetch the signed release manifest** for the host's channel and, where
    OpenSSL 3 is available, **check its Ed25519 signature** against the
    release keys `scripts/runner/release.sh` stamps into the copy of the
@@ -122,7 +133,11 @@ failure every `curl | sh` has unless it is written this way.
    only a `.app` would.
 8. **Register** (§3) with `--keep-existing`, the token in the runner's
    environment, and **install the service** (§4).
-9. **Confirm**: print `runner status` — the host id, the key fingerprint,
+9. **Install the chosen agent CLIs** with `runner agents install` and
+   `runner tools install gh`, after the service, so a failed one costs
+   that agent and not the pairing: the installer prints the retry line and
+   carries on.
+10. **Confirm**: print `runner status` — the host id, the key fingerprint,
    the version, the preflight table, and where sessions will live. The
    same table is what the console shows on the host's row.
 
@@ -203,11 +218,17 @@ putting the user's credentials on it.
   would keep working after the uninstall with no control plane and no
   console. `--force` ends the sessions and keeps their checkouts; a
   session it cannot end stops the uninstall before the identity is
-  erased, so the host stays paired and a second run can finish. It says
-  when the control plane could not be reached — the host is then still
-  listed and its key still trusted until it is unpaired there
-  (`DELETE /v1/hosts/{id}`; the console has no unpair control yet) — and
-  it **never touches the workspaces directory**, which is the user's
+  erased, so the host stays paired and a second run can finish. When the
+  control plane does not unpair the host (unreachable, timed out, refused
+  the key, failed), the identity is still erased but the command **exits
+  7 with `PAIR_009`**, not 0: it prints the underlying failure (request,
+  status, the control plane's sentence, never the bearer) and how a
+  signed-in person finishes it — Remove under Settings → Hosts, or
+  `DELETE /api/v1/hosts/{id}` with an API token holding `hosts:write` —
+  because the host is still listed and its key still trusted until then.
+  An earlier version of this note said the console had no unpair control
+  and printed `DELETE /v1/hosts/{id}` with exit 0 (issue #394). It
+  **never touches the workspaces directory**, which is the user's
   code. Binaries and logs under `~/.oppenheimer` are left for the user to
   delete, and it prints both paths.
 - **Where sessions live** is chosen at install (`--workspaces`) and saved
@@ -312,7 +333,16 @@ putting the user's credentials on it.
 - **Manual control.** `runner update [--check] [--version x.y.z]
   [--pin|--unpin]` from the host, and an Update now button in the
   console that sends `host.update` over the link. Both go through the
-  same verification; neither is a way to run something unsigned. A
+  same verification; neither is a way to run something unsigned.
+  The console's is **Update runner** in a host card's menu on Settings →
+  Hosts (`POST /v1/hosts/{id}/update`), behind a confirm that says the
+  runner restarts and sessions keep running, off while the host is offline
+  (`HOSTS_008`). It sends no `version`, so the runner takes the newest
+  release on its channel now, skipping the safe window, and is left
+  unpinned; a pinned host refuses (`UPD_004`) and stays on its pin. The
+  answer is "sent", not "done": the row's runner version moves when the
+  runner reconnects, and does not when it was already current or the
+  update failed. A
   downgrade is allowed to a retained version at or above
   `min_supported`, with a warning.
 - **A managed install defers.** If the running binary is not under
@@ -379,8 +409,9 @@ putting the user's credentials on it.
    When an updater fails (`HOST_009` from `runner agents update`, a
    warning in the service log), the CLI is almost always installed where
    the runner's account cannot write: `npm install -g` as root, or a
-   system package. Reinstall it as the account the runner runs as (Claude
-   Code's own installer puts it in `~/.local/bin`), or keep it current by
+   system package. Reinstall it as the account the runner runs as
+   (`runner agents install claude` puts Claude Code in `~/.local/bin`, from
+   its verified release binary), or keep it current by
    other means and set `RUNNER_AGENT_UPDATES=off` before `runner install`,
    which the service unit then carries.
 5. Update telemetry: is "version, channel, last outcome" per host enough

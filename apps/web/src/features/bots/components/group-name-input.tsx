@@ -34,7 +34,7 @@ export function GroupNameInput({
   }
 
   return (
-    <div className="mx-1.5 flex h-8 items-center px-1">
+    <div className="flex h-8 items-center">
       <Input
         size="sm"
         value={draft}

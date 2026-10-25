@@ -28,7 +28,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-105">
+      <DialogContent closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>{t('settings.changePassword.title')}</DialogTitle>
           <DialogDescription>{t('settings.changePassword.description')}</DialogDescription>

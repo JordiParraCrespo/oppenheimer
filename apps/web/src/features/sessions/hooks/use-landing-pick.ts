@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Apply the project New session lands on, once, when nothing named one.
- * `initialDraft` restores the remembered project but deliberately not its
- * scope, so once the lists can answer, that project is picked as the chip
- * would pick it. It decides once, at arrival: a project named by the address
- * or the dialog is `useSearchPick`'s, and nothing after is undone here.
+ * Apply the project New session lands on, once, when nothing named one: once
+ * the lists can answer, that project fills the chips the last visit left
+ * empty (`landingFillable`). It decides once, at arrival: a project named by
+ * the address or the dialog is `useSearchPick`'s, and nothing after is undone
+ * here.
  */
 export function useLandingPick<T extends { id: string }>(
   /** The project the chip shows: the remembered one, or Unassigned. */

@@ -244,6 +244,34 @@ describe('OpenAiBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  it('hands back what a call made on its own end, never to the model', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: 'Started it.', data: { sessionId: 's-1' } }),
+    };
+    let modelRead: string | undefined;
+    scripted(async function* (seen) {
+      const [tool] = seen.agent.tools;
+      yield toolCalled('call_1', 'start_session', '{}');
+      modelRead = await execute(tool, {}, 'call_1');
+      yield toolOutput('call_1', 'start_session', modelRead);
+    });
+
+    const events = await collect(new OpenAiBotEngine().run(request({ tools: [start] })));
+
+    expect(modelRead).toBe('Started it.');
+    expect(events.find((event) => event.type === 'tool.finished')).toEqual({
+      type: 'tool.finished',
+      callId: 'call_1',
+      name: 'start_session',
+      output: 'Started it.',
+      isError: false,
+      data: { sessionId: 's-1' },
+    });
+  });
+
   it('sends the key, endpoint, history as native input items, then this message', async () => {
     const run = scripted(async function* () {});
 
@@ -284,6 +312,34 @@ describe('OpenAiBotEngine', () => {
     });
   });
 
+  it('sends this message’s images before its text, as data URLs, and leaves the history text', async () => {
+    const run = scripted(async function* () {});
+
+    await collect(
+      new OpenAiBotEngine().run(
+        request({
+          message: 'What is in these?',
+          images: [
+            { mimeType: 'image/png', data: 'cG5n' },
+            { mimeType: 'image/webp', data: 'd2VicA==' },
+          ],
+        }),
+      ),
+    );
+
+    expect(run.seen.input).toEqual([
+      {
+        type: 'message',
+        role: 'user',
+        content: [
+          { type: 'input_image', image: 'data:image/png;base64,cG5n' },
+          { type: 'input_image', image: 'data:image/webp;base64,d2VicA==' },
+          { type: 'input_text', text: 'What is in these?' },
+        ],
+      },
+    ]);
+  });
+
   it('ends with max_steps when the SDK stops at the turn limit', async () => {
     const maxTurns = Object.assign(new Error('Max turns (4) exceeded'), {
       name: 'MaxTurnsExceededError',
@@ -307,6 +363,35 @@ describe('OpenAiBotEngine', () => {
     expect(done.reason).toBe('failed');
     expect(done.error).toContain('Incorrect API key provided');
     expect(done.error).not.toContain(KEY);
+  });
+
+  it('marks a 429 as a rate limit, with the reset its Retry-After gives', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error('429 Rate limit reached'), {
+        status: 429,
+        headers: new Headers({ 'retry-after': '30' }),
+      });
+    });
+    const before = Date.now();
+
+    const events = await collect(new OpenAiBotEngine().run(request()));
+
+    const done = events.at(-1) as { reason: string; rateLimit?: { resetAt: Date | null } };
+    expect(done.reason).toBe('failed');
+    expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 30_000);
+  });
+
+  it('leaves any other failure unmarked', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error('500 server error'), { status: 500 });
+    });
+
+    const done = (await collect(new OpenAiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed' });
+    expect(done).not.toHaveProperty('rateLimit');
   });
 
   it('fails when the run cannot start', async () => {

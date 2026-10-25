@@ -13,7 +13,9 @@ import { IconButton } from './icon-button';
  * - `TranscriptDivider`: where who answers, or where the thread came from,
  *   changes: a label centred between two hairlines ("Context handoff
  *   Sonnet → Codex", "Continued from chat"); `tone="danger"` for a handoff
- *   that failed.
+ *   that failed. `action` is a control after the label (Open session); with
+ *   one, the line is a row rather than a separator, so the control stays
+ *   reachable.
  * - `ChatErrorBanner`: a turn that failed, on the card with a hairline: the
  *   red alert, the title, the error clamped to three lines with Show
  *   details, then actions that name what they do (Copy error, Continue
@@ -22,24 +24,31 @@ import { IconButton } from './icon-button';
  *   provider reconnecting), on the card at the 14px radius: a glyph or a
  *   dot in its tone, the line, at most one action or the dismiss.
  * - `FloatingChip`: a 28px pill that floats over the transcript while what
- *   it points to is scrolled away ("2 running ↑", Jump to latest); its
- *   `notice` form is a quiet wash with no shadow ("Watching CI on #668").
+ *   it points to is scrolled away ("2 running ↑", Jump to latest), on the
+ *   popover surface with the full border so it lifts off the transcript in
+ *   dark, where the card sits within a few percent of the ground; its
+ *   `notice` form is a quiet wash with no shadow ("Watching CI on #668");
+ *   its `round` form is a bot chat's way back to the latest turn, a 34px
+ *   circle around one glyph (Bots), named by its `aria-label`.
  */
 function TranscriptDivider({
   icon,
   tone = 'default',
+  action,
   className,
   children,
 }: {
   icon?: React.ReactNode;
   tone?: 'default' | 'danger';
+  /** A small control after the label (a ghost `xs` Button). */
+  action?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <div
       data-slot="transcript-divider"
-      role="separator"
+      role={action ? undefined : 'separator'}
       className={cn(
         'flex items-center gap-4 py-2.5 text-[13px] before:h-px before:flex-1 before:bg-border-subtle after:h-px after:flex-1 after:bg-border-subtle',
         className,
@@ -54,6 +63,7 @@ function TranscriptDivider({
         {icon}
         {children}
       </span>
+      {action ? <span className="-mx-2 flex shrink-0">{action}</span> : null}
     </div>
   );
 }
@@ -183,7 +193,21 @@ function FloatingChip({
   variant = 'button',
   className,
   ...props
-}: React.ComponentProps<'button'> & { variant?: 'button' | 'notice' }) {
+}: React.ComponentProps<'button'> & { variant?: 'button' | 'notice' | 'round' }) {
+  if (variant === 'round') {
+    return (
+      <button
+        type="button"
+        data-slot="floating-chip"
+        data-variant="round"
+        className={cn(
+          'inline-flex size-8.5 items-center justify-center rounded-pill border border-border-subtle bg-card text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-4',
+          className,
+        )}
+        {...props}
+      />
+    );
+  }
   if (variant === 'notice') {
     const { type: _, ...rest } = props;
     return (
@@ -203,7 +227,7 @@ function FloatingChip({
       type="button"
       data-slot="floating-chip"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border-subtle bg-card px-2.5 text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
+        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border bg-popover px-3 font-medium text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-3.25',
         className,
       )}
       {...props}

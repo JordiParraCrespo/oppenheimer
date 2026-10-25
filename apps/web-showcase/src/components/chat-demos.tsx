@@ -18,11 +18,15 @@ import {
   SubagentRow,
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
+import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
+import { ChatImage, ChatImageRemove } from '@oppenheimer/design-system-web/chat-image';
 import {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from '@oppenheimer/design-system-web/chat-composer-extras';
 import {
@@ -40,6 +44,14 @@ import {
   ComposerApproval,
   QuestionPanel,
 } from '@oppenheimer/design-system-web/chat-decisions';
+import {
+  ChatCodeBlock,
+  ChatMarker,
+  ChatSource,
+  ChatSources,
+  ChatSuggestion,
+  ChatSuggestions,
+} from '@oppenheimer/design-system-web/chat-elements';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
@@ -67,6 +79,7 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
+import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
 import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
@@ -219,6 +232,114 @@ function ChatWorkBody() {
         The gateway already holds the run registry, so registering controllers there avoids a second lookup. A tool
         that ignores the signal still needs a ceiling, so the grace period stays.
       </ReasoningRow>
+      <Trace>
+        <TraceStep icon={<CheckCircleIcon />} title="Thought">
+          <TraceNote>stopRun() only flips run.status, so cancel has to reach the step itself.</TraceNote>
+        </TraceStep>
+        <TraceStep icon={<SearchIcon />} title="Searched abortSignal" meta="14 results" />
+        <TraceStep icon={<FileTextIcon />} title="Edited runner/step.ts" meta={<DiffStat additions={42} deletions={8} />} />
+        <TraceStep icon={<TerminalIcon />} title="Failed to run pnpm test runner" meta="2 failed" tone="danger" defaultOpen>
+          <TraceOutput>
+            {'FAIL  runner/step.test.ts\n  ✕ aborts a tool that ignores the signal (5012 ms)\n\nTests: 2 failed, 36 passed, 38 total'}
+          </TraceOutput>
+        </TraceStep>
+        <TraceStep icon={<TerminalIcon />} title="Ran pnpm test runner" meta="40 passed">
+          <TraceOutput>{'PASS  runner/step.test.ts\n\nTests: 40 passed, 40 total'}</TraceOutput>
+        </TraceStep>
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
+      </Trace>
+      <TraceGroup icon={<TerminalIcon />} summary="Used 4 tools" failed="1 failed" defaultOpen>
+        <TraceStep icon={<TerminalIcon />} title="List pull requests" target="mine">
+          <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
+        </TraceStep>
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="412" />
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="409" meta="failed" tone="danger" />
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session"
+          target="build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
+      </TraceGroup>
+      <TraceLive elapsed="12s">Searching run.status</TraceLive>
+    </div>
+  );
+}
+
+/* ── AI elements ─────────────────────────────────────────────────────────── */
+
+/** A screenshot's stand-in: a gradient, so the tile shows a picture without an asset. */
+const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db7f5"/><stop offset="1" stop-color="#3b5bdb"/></linearGradient></defs><rect width="160" height="160" fill="url(#g)"/></svg>',
+)}`;
+
+function ChatElementsBody() {
+  return (
+    <div className="flex w-full max-w-184 flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <TranscriptDivider>Yesterday</TranscriptDivider>
+        <ChatMarker icon={<LayersIcon />} meta="142k → 18k tokens">
+          Context compacted
+        </ChatMarker>
+        <ChatMarker icon={<CpuIcon />}>
+          Switched to <strong>GPT-5.2 Codex</strong> for the next turn
+        </ChatMarker>
+      </div>
+      <ChatSuggestions>
+        <ChatSuggestion>Open the pull request</ChatSuggestion>
+        <ChatSuggestion>Show the diff</ChatSuggestion>
+        <ChatSuggestion>Run the e2e suite</ChatSuggestion>
+      </ChatSuggestions>
+      <ChatSources>
+        <ChatSource index={1} href="https://developer.mozilla.org">developer.mozilla.org</ChatSource>
+        <ChatSource index={2} href="https://streams.spec.whatwg.org">streams.spec.whatwg.org</ChatSource>
+        <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
+      </ChatSources>
+      <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
+      <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
+      <ChatComposer
+        value="What is wrong in this run?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        allowEmpty
+        placeholder="Message Release Bot"
+        attachments={
+          <>
+            <ChatImage src={SAMPLE_IMAGE} alt="build-log.png">
+              <ChatImageRemove label="Remove build-log.png" />
+            </ChatImage>
+            <ChatImage src={SAMPLE_IMAGE} alt="trace.png" pending>
+              <ChatImageRemove label="Remove trace.png" />
+            </ChatImage>
+            <ChatImage alt="diagram.svg" invalid>
+              <ChatImageRemove label="Remove diagram.svg" />
+            </ChatImage>
+          </>
+        }
+      />
+      <ChatUserMessage attachments={<ChatImage src={SAMPLE_IMAGE} alt="build-log.png" size="lg" />}>
+        Why does this step fail?
+      </ChatUserMessage>
+      <div className="flex justify-center">
+        <FloatingChip variant="round" aria-label="Jump to latest">
+          <ChevronDownIcon />
+        </FloatingChip>
+      </div>
     </div>
   );
 }
@@ -426,6 +547,17 @@ function ChatStatusBody() {
           <a href="#chatstatus" className="text-operate text-link">
             Continued from chat
           </a>
+        </TranscriptDivider>
+        <TranscriptDivider
+          icon={<CheckCircleIcon />}
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        >
+          You approved: Start Claude Code on build-02
         </TranscriptDivider>
       </div>
       <ChatErrorBanner
@@ -682,6 +814,21 @@ function ChatComposerExtrasBody() {
         <VoiceRecorderBar state="waiting" />
         <VoiceRecorderBar state="transcribing" />
         <div className="flex items-center gap-2">
+          <DictationButton onClick={() => {}} />
+          <DictationButton recording onClick={() => {}} />
+        </div>
+        <DictationFrame dictation={{ mic: <DictationButton onClick={() => {}} /> }}>
+          <Textarea placeholder="Notes, or dictate them" />
+        </DictationFrame>
+        <DictationFrame
+          dictation={{
+            mic: <DictationButton recording onClick={() => {}} />,
+            recorder: <VoiceRecorderBar levels={LEVELS} elapsed="0:03" onCancel={() => {}} onStop={() => {}} />,
+          }}
+        >
+          <Textarea defaultValue="Check the deploy, then" />
+        </DictationFrame>
+        <div className="flex items-center gap-2">
           <ComposerContextMeter value={23} onCompact={() => {}} />
           <ComposerContextMeter value={78} onCompact={() => {}} />
         </div>
@@ -836,6 +983,14 @@ export function ChatWorkDemo() {
   );
 }
 
+export function ChatElementsDemo() {
+  return (
+    <ChatSurface>
+      <ChatElementsBody />
+    </ChatSurface>
+  );
+}
+
 export function ChatCardsDemo() {
   return (
     <ChatSurface>
@@ -903,11 +1058,21 @@ export function ChatSection() {
       <Spec
         id="chatwork"
         title="Work and tools"
-        meta="chat-work.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s."
+        meta="chat-work.tsx · chat-trace.tsx"
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
+      </Spec>
+
+      <Spec
+        id="chatelements"
+        title="AI elements"
+        meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. FloatingChip round takes the reader back to the latest turn."
+        code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
+      >
+        <ChatElementsDemo />
       </Spec>
 
       <Spec
@@ -924,7 +1089,7 @@ export function ChatSection() {
         id="chatstatus"
         title="Dividers and status"
         meta="chat-status.tsx"
-        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes. ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
+        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes; its action is a control after the label (Open session after an approval that started one). ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
         code={`<ChatErrorBanner title="Turn failed" actions={<ChatErrorAction variant="danger">Continue task</ChatErrorAction>} onDismiss={…}>{error}</ChatErrorBanner>`}
       >
         <ChatStatusDemo />
@@ -954,7 +1119,7 @@ export function ChatSection() {
         id="chatcomposer"
         title="Composer extras"
         meta="chat-composer-extras.tsx"
-        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
+        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder or the last problem under it. Every host — this frame, Composer, ChatComposer, the comment drafts — takes the same DictationSlot (mic, recorder, notice). ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
         code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
       >
         <ChatComposerExtrasDemo />

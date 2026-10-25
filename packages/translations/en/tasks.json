@@ -82,10 +82,11 @@
     "target": "Target",
     "add": "Add milestone",
     "delete": "Delete milestone",
-    "deleteTitle": "Delete this milestone?",
-    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a milestone.",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteDescription": "Its tasks stay on the board without a milestone.",
     "saveFailed": "Couldn’t save the milestone.",
-    "deleteFailed": "Couldn’t delete the milestone."
+    "deleteFailed": "Couldn’t delete the milestone.",
+    "deleting": "Deleting…"
   },
   "dialog": {
     "newTitle": "New task",
@@ -107,12 +108,13 @@
     "add": "Add task",
     "save": "Save",
     "delete": "Delete task",
-    "deleteTitle": "Delete this task?",
-    "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+    "deleteTitle": "Delete “{{title}}”?",
+    "deleteDescription": "Its sessions stay as they are.",
     "saveFailed": "Couldn’t save the task.",
     "deleteFailed": "Couldn’t delete the task.",
     "loadFailed": "Couldn’t load the board.",
-    "gone": "This task no longer exists."
+    "gone": "This task no longer exists.",
+    "deleting": "Deleting…"
   },
   "link": {
     "search": "Search sessions",

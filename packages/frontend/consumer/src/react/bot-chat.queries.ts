@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -8,7 +9,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { BotConversationEntity, BotTurnEntity } from '../modules/bots/bot-conversation.entity';
+import type {
+  BotConversationEntity,
+  BotMessageEntity,
+  BotTurnEntity,
+} from '../modules/bots/bot-conversation.entity';
 import {
   appendBotText,
   type BotLiveText,
@@ -35,6 +40,87 @@ export function useSuspenseBotConversation(id: string) {
   });
 }
 
+/** What Settings says of a chat: how many messages it holds, the newest's time, whether a turn works. */
+export interface BotHistory {
+  messageCount: number;
+  lastMessageAt: Date | null;
+  /** A turn is queued or running: Clear history is refused until it ends. */
+  busy: boolean;
+}
+
+/** The chat read as Settings → Profile's history row draws it, under a Suspense `QueryState`. */
+export function useSuspenseBotHistory(id: string) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<BotConversationEntity, Error, BotHistory>({
+    queryKey: botsKeys.conversation(id),
+    queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => ({
+      messageCount: conversation.messageCount,
+      lastMessageAt: conversation.lastMessageAt,
+      busy: conversation.activeTurn !== null,
+    }),
+  });
+}
+
+export interface ExportBotConversationVariables {
+  id: string;
+  /** What the file opens with. */
+  header: string;
+  /** One message as the file says it; an empty string leaves it out. */
+  chunk: (message: BotMessageEntity) => string;
+  /** The file's media type. */
+  type: string;
+}
+
+/** The file's pieces: the header, then each message's as it arrives. */
+async function piecesOf(
+  messages: AsyncIterable<BotMessageEntity>,
+  header: string,
+  chunk: (message: BotMessageEntity) => string,
+): Promise<string[]> {
+  const parts = [header];
+  for await (const message of messages) {
+    const piece = chunk(message);
+    if (piece) parts.push(piece);
+  }
+  return parts;
+}
+
+/**
+ * Export: the whole chat read once when asked for, each message turned into
+ * its piece of the file as it arrives, so the messages are never held
+ * together; the pieces become the file. The finished file is still a whole
+ * `Blob` in the browser, which is what a download needs.
+ */
+export function useExportBotConversation(
+  options?: UseMutationOptions<Blob, Error, ExportBotConversationVariables>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: async ({ id, header, chunk, type }: ExportBotConversationVariables) =>
+      new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
+    ...options,
+  });
+}
+
+/**
+ * Clear history. The chat, its card, the sidebar's last line and the bot's
+ * own read are read again, all empty of it now.
+ */
+export function useClearBotConversation(options?: UseMutationOptions<void, Error, string>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => app.bots.clearConversation(id),
+    ...withCacheOnSuccess(options, (_data, id) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
+        queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
+      ]),
+    ),
+  });
+}
+
 /**
  * The turn Stop applies to, for a reader that draws nothing while the chat
  * loads (the composer): `null` when nothing is queued or running.
@@ -49,16 +135,24 @@ export function useBotActiveTurn(id: string): BotTurnEntity | null {
   return data ?? null;
 }
 
-/** The chat read again; when a turn has ended, the bot too (its last activity moved). */
+/**
+ * The chat read again; when a turn has ended, the bot too (its last activity
+ * moved) and its Needs input card (the turn may have raised one).
+ */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
   const reads = [queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) })];
-  if (ended) reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
+  if (ended) {
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
+  }
   return Promise.all(reads);
 }
 
 export interface SendBotMessageVariables {
   id: string;
   content: string;
+  /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
+  attachmentIds?: readonly string[];
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
@@ -68,8 +162,45 @@ export function useSendBotMessage(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, content }: SendBotMessageVariables) => app.bots.sendMessage(id, content),
+    mutationFn: ({ id, content, attachmentIds }: SendBotMessageVariables) =>
+      app.bots.sendMessage(id, content, attachmentIds),
     ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
+  });
+}
+
+export interface UploadBotImageVariables {
+  id: string;
+  file: Blob;
+}
+
+/**
+ * Stores an image picked in the composer, before the message is sent, so a
+ * refusal (not an image, too large, a model that reads none) is said while
+ * the person is still writing. Nothing is read again: nothing on screen
+ * holds it until the message is sent.
+ */
+export function useUploadBotImage(
+  options?: UseMutationOptions<BotAttachment, Error, UploadBotImageVariables>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: ({ id, file }: UploadBotImageVariables) => app.bots.uploadImage(id, file),
+    ...options,
+  });
+}
+
+/**
+ * An image in a bot's chat, its bytes as a `Blob`, for the chat to draw.
+ * They never change under an id, so they are read once; like everything
+ * under `bots`, they are never written to the persisted cache.
+ */
+export function useBotImage(id: string, attachmentId: string) {
+  const app = useConsumerApp();
+  return useQuery<Blob, Error>({
+    queryKey: botsKeys.image(id, attachmentId),
+    queryFn: () => app.bots.readImage(id, attachmentId),
+    staleTime: Number.POSITIVE_INFINITY,
+    structuralSharing: false,
   });
 }
 
@@ -133,12 +264,17 @@ export function useBotLiveText(id: string): BotLiveText {
       if (now && !up) {
         update(markBotStreamGap);
         void refetchChat(queryClient, id, false);
+        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
       }
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
       if (event.type === 'text') {
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
+        return;
+      }
+      if (event.type === 'approval') {
+        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
       }
       const ended =

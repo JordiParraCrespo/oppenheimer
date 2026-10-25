@@ -16,13 +16,15 @@ export interface BotSection {
  * each with its bots by position, then Ungrouped. While a search narrows the
  * list a section with no match is left out; without one, every group stays
  * (an empty group is still somewhere to move a bot), and Ungrouped is drawn
- * only when it holds a bot. A bot's group the groups read does not have yet
- * (a refetch in flight) counts as Ungrouped rather than vanishing.
+ * only when it holds a bot, or with `keepUngrouped` (a drag held, for which
+ * it is somewhere to drop one). A bot's group the groups read does not have
+ * yet (a refetch in flight) counts as Ungrouped rather than vanishing.
  */
 export function botSections(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
   query: string,
+  { keepUngrouped = false }: { keepUngrouped?: boolean } = {},
 ): BotSection[] {
   const term = query.trim().toLowerCase();
   const matches = (bot: BotEntity) => !term || bot.name.toLowerCase().includes(term);
@@ -42,6 +44,55 @@ export function botSections(
   sections.push({ id: null, group: null, bots: ungrouped });
 
   return sections.filter((section) =>
-    term || section.group === null ? section.bots.length > 0 : true,
+    term || (section.group === null && !keepUngrouped) ? section.bots.length > 0 : true,
   );
+}
+
+/** The bot the sidebar draws first, in its groups' order then Ungrouped; undefined with none. */
+export function firstBot(
+  bots: readonly BotEntity[],
+  groups: readonly BotGroupEntity[],
+): BotEntity | undefined {
+  return botSections(bots, groups, '').flatMap((section) => section.bots)[0];
+}
+
+/** The key a section is dragged and folded by; Ungrouped has no id of its own. */
+const UNGROUPED = 'ungrouped';
+
+export function sectionKey(section: BotSection): string {
+  return section.id ?? UNGROUPED;
+}
+
+/** The group a section key names for the API: `null` for Ungrouped. */
+export function groupIdOf(key: string): string | null {
+  return key === UNGROUPED ? null : key;
+}
+
+/** Each section's bot ids, by its key: the value the drag layer moves. */
+export function sectionOrder(sections: readonly BotSection[]): Record<string, string[]> {
+  return Object.fromEntries(
+    sections.map((section) => [sectionKey(section), section.bots.map((bot) => bot.id)]),
+  );
+}
+
+/**
+ * The sections with their bots in `order` (a drag held, or a drop whose
+ * write is in flight): a bot is drawn in the section and place `order` puts
+ * it. `order` is drawn from these same sections, so it names every bot; the
+ * exceptions are the list changing under a pending write, where a bot made
+ * since is drawn after the ones `order` places, in its own section, and an
+ * id that is no longer a bot is skipped.
+ */
+export function inOrder(
+  sections: readonly BotSection[],
+  order: Readonly<Record<string, readonly string[]>>,
+): BotSection[] {
+  const byId = new Map(sections.flatMap((section) => section.bots.map((bot) => [bot.id, bot])));
+  const placed = new Set(Object.values(order).flat());
+  return sections.map((section) => {
+    const ids = order[sectionKey(section)];
+    const kept = section.bots.filter((bot) => !placed.has(bot.id));
+    const moved = (ids ?? []).flatMap((id) => byId.get(id) ?? []);
+    return { ...section, bots: [...moved, ...kept] };
+  });
 }

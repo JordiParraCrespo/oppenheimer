@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { S3StorageService } from './s3-storage.service';
@@ -36,6 +36,19 @@ describe('S3StorageService', () => {
       Key: 'avatars/u/1.png',
       ContentType: 'image/png',
     });
+  });
+
+  it('reads an object back as its bytes', async () => {
+    const send = vi.spyOn(S3Client.prototype, 'send').mockResolvedValue({
+      Body: { transformToByteArray: async () => new Uint8Array([7, 8]) },
+    } as never);
+
+    await expect(storage().download('bot-attachments/a/b.png')).resolves.toEqual(
+      Buffer.from([7, 8]),
+    );
+    const [command] = send.mock.calls[0] as [GetObjectCommand];
+    expect(command).toBeInstanceOf(GetObjectCommand);
+    expect(command.input).toMatchObject({ Bucket: 'bucket', Key: 'bot-attachments/a/b.png' });
   });
 
   it('signs a URL for the key with getUrl', async () => {

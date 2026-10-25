@@ -69,11 +69,6 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_018',
     message: 'Failed to open the shared session',
   },
-  /** The API took the close, but the host was offline and never got it. */
-  CLOSE_HOST_OFFLINE: {
-    code: 'SESSIONS_CLIENT_019',
-    message: 'The host is offline, so the session was not deleted',
-  },
   /**
    * The API's own code for a file over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader

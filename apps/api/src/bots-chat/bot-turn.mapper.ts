@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotProvider, BotTurnStatus } from '@oppenheimer/shared';
+import {
+  BOT_TURN_ORIGINS,
+  type BotProvider,
+  type BotTurnLane,
+  type BotTurnStatus,
+  type Scope,
+} from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnEntity } from './domain/bot-turn.entity';
@@ -15,9 +21,20 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.botId = entity.botId;
     record.requestedByUserId = entity.requestedByUserId;
     record.status = entity.status;
+    record.origin = entity.origin;
+    record.sourceKey = entity.sourceKey;
     record.provider = entity.provider;
     record.model = entity.model;
     record.effort = entity.effort;
+    record.timeZone = entity.timeZone;
+    record.credentialScopes = entity.credentialScopes ? [...entity.credentialScopes] : null;
+    record.lane = entity.lane;
+    record.chainId = entity.chainId;
+    record.chainDepth = entity.chainDepth;
+    record.askedByBotId = entity.askedByBotId;
+    record.askedByTurnId = entity.askedByTurnId;
+    record.replyRequested = entity.replyRequested;
+    record.answersTurnId = entity.answersTurnId;
     record.error = entity.error;
     record.inputTokens = entity.inputTokens;
     record.outputTokens = entity.outputTokens;
@@ -37,9 +54,20 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         botId: record.botId,
         requestedByUserId: record.requestedByUserId ?? null,
         status: record.status as BotTurnStatus,
+        origin: BOT_TURN_ORIGINS.find((origin) => origin === record.origin) ?? 'message',
+        sourceKey: record.sourceKey ?? null,
         provider: record.provider as BotProvider,
         model: record.model,
         effort: (record.effort ?? null) as SessionEffort | null,
+        timeZone: record.timeZone ?? null,
+        credentialScopes: (record.credentialScopes ?? null) as Scope[] | null,
+        lane: (record.lane ?? 'owner') as BotTurnLane,
+        chainId: record.chainId ?? null,
+        chainDepth: record.chainDepth ?? 0,
+        askedByBotId: record.askedByBotId ?? null,
+        askedByTurnId: record.askedByTurnId ?? null,
+        replyRequested: record.replyRequested === true,
+        answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,

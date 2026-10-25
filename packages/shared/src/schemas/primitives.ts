@@ -86,6 +86,15 @@ export function promptByteLength(value: string): number {
 }
 
 /**
+ * Whether a prompt fits the bound the log keeps. The one statement of the
+ * rule: the DTO, the wire and the bots' `start_session` tool are built on
+ * different Zod entry points, so they share this rather than a schema.
+ */
+export function fitsPromptBound(value: string): boolean {
+  return promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes;
+}
+
+/**
  * A session's first task, as typed. Trimmed before it is measured so a body of
  * whitespace is the empty prompt it looks like rather than a one-character one,
  * and measured in bytes so a paragraph of CJK or emoji is refused at the route
@@ -103,7 +112,7 @@ export const promptSchema = z
   .max(FIELD_BOUNDS.prompt.maxBytes)
   // The key names the message for a form's error map; a refine's own issue
   // code (`custom`) says nothing a person could act on.
-  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes, {
+  .refine(fitsPromptBound, {
     params: { i18nKey: 'validation.tooLong' },
   });
 

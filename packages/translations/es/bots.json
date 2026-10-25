@@ -8,7 +8,7 @@
     "noMatch": "Ningún bot coincide con «{{query}}».",
     "ungrouped": "Sin grupo",
     "emptyTitle": "Aún no hay bots",
-    "emptyBody": "Los bots que crees aparecen aquí. Crea uno, dile qué trabajo tiene que hacer y ajústalo en su configuración.",
+    "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
     "emptyGroup": "Aún no hay bots en este grupo.",
     "noMessages": "Aún no hay mensajes",
     "newGroup": "Nuevo grupo",
@@ -28,16 +28,16 @@
   },
   "landing": {
     "titleEmpty": "Crea tu primer bot.",
-    "title": "Elige un bot o crea uno nuevo.",
-    "note": "Un bot nuevo empieza en blanco. Dile qué trabajo tiene que hacer y ajústalo en su configuración."
+    "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
   },
   "chat": {
     "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "actions": "Opciones del bot",
     "settings": "Configuración",
     "delete": "Eliminar bot",
-    "helloBlank": "¿En qué te gustaría que te ayudara? Cuéntame el trabajo y escribiré mis propias instrucciones a partir de él.",
-    "hello": "Hola, soy {{name}}. ¿En qué trabajamos?",
+    "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
+    "startFrom": "Prueba a pedir",
+    "hello": "{{name}} está listo. ¿En qué trabajamos?",
     "placeholder": "Escribe a {{name}}",
     "send": "Enviar",
     "stop": "Detener",
@@ -49,18 +49,115 @@
     "failedUnknown": "El turno terminó sin decir por qué.",
     "errorDetails": "Mostrar detalles",
     "errorLess": "Mostrar menos",
+    "retry": "Reintentar",
+    "copyMessage": "Copiar mensaje",
+    "copyReply": "Copiar respuesta",
+    "toLatest": "Ir a lo último",
+    "switchedModel": "Cambiado a <model>{{model}}</model>",
+    "tokens_one": "{{tokens}} token",
+    "tokens_many": "{{tokens}} tokens",
+    "tokens_other": "{{tokens}} tokens",
+    "images": {
+      "attach": "Añadir imágenes",
+      "remove": "Quitar {{name}}",
+      "open": "Abrir {{name}}",
+      "pasted": "Imagen pegada",
+      "notSupported": "{{name}} no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
+      "tooLarge": "{{name}} ocupa más de 5 MB.",
+      "tooMany": "Un mensaje puede llevar hasta {{max}} imágenes.",
+      "noVision": "{{model}} no puede leer imágenes. Cambia el modelo del bot para enviarlas.",
+      "noVisionHeld": "{{model}} no puede leer imágenes. Quítalas o cambia de modelo para enviar este mensaje.",
+      "uploading": "Espera a que terminen de añadirse las imágenes.",
+      "failedHeld": "Quita la imagen que no se pudo añadir.",
+      "uploadFailed": "No se pudo añadir {{name}}.",
+      "unavailable": "No se pudo cargar esta imagen."
+    },
     "turn": {
       "queued": "Esperando",
-      "working": "Trabajando",
-      "worked": "Trabajó",
-      "stopped": "Detenido",
-      "interrupted": "Falló"
+      "thinking": "Pensando",
+      "writing": "Escribiendo",
+      "stopped": "Detenido"
     },
     "activity": {
-      "summary_one": "Usó {{count}} herramienta",
-      "summary_other": "Usó {{count}} herramientas",
-      "failed": "{{count}} con error",
-      "running": "en curso"
+      "searched": "Buscó en la web",
+      "searchedFor": "Buscó en la web «{{query}}»",
+      "searching": "Buscando en la web",
+      "searchingFor": "Buscando en la web «{{query}}»",
+      "planned": "Actualizó su plan",
+      "planning": "Actualizando su plan",
+      "using": "Usando {{name}}",
+      "stepFailed": "error",
+      "results_one": "{{count}} resultado",
+      "results_many": "{{count}} resultados",
+      "results_other": "{{count}} resultados",
+      "rawOutput": "Ver la salida completa",
+      "moreLines_one": "Ver {{count}} línea más",
+      "moreLines_many": "Ver {{count}} líneas más",
+      "moreLines_other": "Ver {{count}} líneas más",
+      "lessOutput": "Ver menos",
+      "group_one": "Usó {{count}} herramienta",
+      "group_many": "Usó {{count}} herramientas",
+      "group_other": "Usó {{count}} herramientas",
+      "groupSearched_one": "Buscó en la web {{count}} vez",
+      "groupSearched_many": "Buscó en la web {{count}} veces",
+      "groupSearched_other": "Buscó en la web {{count}} veces",
+      "groupFailed_one": "{{count}} con error",
+      "groupFailed_many": "{{count}} con error",
+      "groupFailed_other": "{{count}} con error",
+      "delegated_one": "Ejecutó {{count}} subagente",
+      "delegated_other": "Ejecutó {{count}} subagentes",
+      "delegating_one": "Ejecutando {{count}} subagente",
+      "delegating_other": "Ejecutando {{count}} subagentes",
+      "seconds": "{{count}} s",
+      "subagent": {
+        "completed": "completado",
+        "failed": "con error",
+        "cancelled": "detenido",
+        "timed_out": "sin tiempo"
+      },
+      "subagentTokens": "{{tokens}} tokens"
+    },
+    "suggest": {
+      "task": {
+        "research": {
+          "name": "Investigar un tema",
+          "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
+        },
+        "summarise": {
+          "name": "Resumir algo",
+          "prompt": "Resume esto en cinco viñetas:\n\n"
+        },
+        "draft": {
+          "name": "Redactar un mensaje",
+          "prompt": "Redacta un mensaje breve y cordial para "
+        },
+        "plan": {
+          "name": "Hacer un plan",
+          "prompt": "Haz un plan paso a paso para "
+        }
+      },
+      "job": {
+        "research": {
+          "name": "Asistente de investigación",
+          "description": "Encuentra y resume lo que le pido",
+          "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
+        },
+        "writing": {
+          "name": "Compañero de escritura",
+          "description": "Pule mis borradores con mi propia voz",
+          "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
+        },
+        "planner": {
+          "name": "Planificador",
+          "description": "Convierte objetivos en próximos pasos",
+          "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
+        },
+        "news": {
+          "name": "Resumen de noticias",
+          "description": "Lo último de lo que sigo",
+          "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
+        }
+      }
     },
     "model": "Modelo",
     "searchModels": "Buscar modelos…",
@@ -77,7 +174,57 @@
       }
     },
     "saveFailed": "No se ha podido cambiar el bot.",
-    "loadFailed": "No se ha podido cargar este bot."
+    "loadFailed": "No se ha podido cargar este bot.",
+    "approval": {
+      "needsInput": "Necesita tu respuesta",
+      "title": "{{name}} quiere hacer esto",
+      "detail": "Se ejecuta una vez, en tu nombre, cuando lo apruebas. Si escribes a {{name}} en su lugar, la solicitud se descarta.",
+      "approve": "Aprobar",
+      "approving": "Aprobando…",
+      "deny": "Denegar",
+      "denying": "Denegando…",
+      "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
+      "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
+      "cancel": "Cancelar",
+      "failed": "No se pudo responder a la solicitud."
+    },
+    "event": {
+      "approved": "Aprobaste: {{summary}}",
+      "denied": "Denegaste: {{summary}}",
+      "failed": "Aprobaste y falló: {{summary}}",
+      "routine": "Rutina · {{name}}",
+      "routineSaved": "Rutina creada: “{{name}}”",
+      "routineChanged": "Rutina cambiada: “{{name}}”",
+      "routinePaused": "Rutina en pausa: “{{name}}”",
+      "routinePausedBecause": "Rutina en pausa: “{{name}}”, porque {{reason}}",
+      "routineResumed": "Rutina reanudada: “{{name}}”",
+      "routineDeleted": "Rutina eliminada: “{{name}}”",
+      "routineFailed": "La rutina “{{name}}” no se ejecutó: {{reason}}",
+      "openRoutines": "Abrir rutinas",
+      "peerMessage": "De <bot>{{name}}</bot>",
+      "peerAsk": "<bot>{{name}}</bot> preguntó",
+      "peerAnswered": "<bot>{{name}}</bot> respondió",
+      "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder",
+      "session": {
+        "needsInput": "La sesión «{{name}}» necesita una respuesta",
+        "completed": "La sesión «{{name}}» ha terminado",
+        "failed": "La sesión «{{name}}» ha fallado",
+        "cancelled": "La sesión «{{name}}» se detuvo",
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+      }
+    },
+    "routineReason": {
+      "expired": "esperó demasiado para empezar",
+      "automation_rate_limited": "alcanzó su límite de ejecuciones por hora",
+      "workspace_rate_limited": "el espacio de trabajo alcanzó su límite de ejecuciones por hora",
+      "missed": "pasó su hora mientras no podía ejecutarse",
+      "agent_unavailable": "el agente no pudo arrancar",
+      "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
+      "owner_lost_access": "su propietario ya no puede ejecutarla",
+      "unknown": "algo salió mal"
+    },
+    "openSession": "Abrir sesión"
   },
   "settings": {
     "back": "Volver al chat",
@@ -88,7 +235,8 @@
       "profile": "Perfil",
       "instructions": "Instrucciones",
       "memory": "Memoria",
-      "runsOn": "Dónde se ejecuta"
+      "routines": "Rutinas",
+      "homeHost": "Máquina principal"
     },
     "profile": {
       "title": "Perfil",
@@ -115,6 +263,18 @@
       "created": "Creado",
       "history": "Historial del chat",
       "noMessages": "Aún no hay mensajes.",
+      "messages_one": "{{count}} mensaje · el último el {{date}}",
+      "messages_other": "{{count}} mensajes · el último el {{date}}",
+      "messages_many": "{{count}} mensajes · el último el {{date}}",
+      "exporting": "Exportando…",
+      "exportFailed": "No se ha podido exportar el chat.",
+      "exportedAt": "Exportado el {{date}}",
+      "you": "Tú",
+      "oppenheimer": "Oppenheimer",
+      "clearTitle": "¿Borrar el historial del chat?",
+      "clearBody": "Se borran todos los mensajes de este chat, con cualquier solicitud que aún espere tu respuesta. El bot conserva su alma, sus instrucciones y su memoria.",
+      "clearing": "Borrando…",
+      "clearFailed": "No se ha podido borrar el historial del chat.",
       "export": "Exportar",
       "clear": "Borrar historial",
       "discard": "Descartar",
@@ -133,6 +293,8 @@
       "discard": "Descartar",
       "save": "Guardar revisión",
       "saving": "Guardando…",
+      "saved": "Guardado · revisión {{revision}}",
+      "unsaved": "Cambios sin guardar",
       "saveFailed": "No se ha podido guardar la revisión.",
       "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
       "reload": "Recargar",
@@ -181,21 +343,53 @@
       "forgetFailed": "No se ha podido olvidar el dato.",
       "loadFailed": "No se ha podido cargar lo que recuerda el bot."
     },
-    "runsOn": {
-      "title": "Dónde se ejecuta",
-      "subtitle": "La máquina en la que trabaja el bot.",
-      "homeHost": "Máquina principal",
+    "routines": {
+      "title": "Rutinas",
+      "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
+      "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+      "askInChat": "Pedir en el chat",
+      "schedule": "Horario · {{when}}",
+      "github": "GitHub · {{when}}",
+      "last": "Última",
+      "next": "Próxima",
+      "never": "Nunca",
+      "switch": "Ejecutar «{{name}}» por su cuenta",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "run": "Ejecutar ahora",
+      "running": "Ejecutándose…",
+      "edit": "Editar en el chat",
+      "delete": "Eliminar rutina",
+      "editPrompt": "Edita tu rutina: {{name}}",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteBody": "Se elimina la rutina y se detienen sus próximas ejecuciones. No se puede deshacer.",
+      "deleting": "Eliminando…",
+      "deleteFailed": "No se pudo eliminar la rutina.",
+      "switchFailed": "No se pudo cambiar la rutina.",
+      "runFailed": "No se pudo ejecutar la rutina.",
+      "loadFailed": "No se pudieron cargar las rutinas del bot."
+    },
+    "homeHost": {
+      "title": "Máquina principal",
+      "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
+      "machines": "Máquinas",
+      "none": "Sin máquina principal",
+      "noneHint": "El bot pregunta qué máquina usar cada vez que inicia una sesión.",
       "online": "En línea",
       "offline": "Desconectada",
       "noHosts": "Aún no hay máquinas",
-      "noHostsBody": "Un bot se ejecuta en una máquina tuya. Añade una y elígela aquí.",
+      "noHostsBody": "Un bot inicia sus sesiones de código en una máquina tuya. Añade una y elígela aquí.",
       "addHost": "Añadir una máquina",
+      "discard": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
       "failed": "No se ha podido cambiar la máquina principal.",
       "hostsFailed": "No se han podido cargar tus máquinas."
     }
   },
   "delete": {
-    "title": "¿Eliminar {{name}}?",
+    "title": "¿Eliminar «{{name}}»?",
     "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
     "confirm": "Eliminar bot",
     "pending": "Eliminando…",

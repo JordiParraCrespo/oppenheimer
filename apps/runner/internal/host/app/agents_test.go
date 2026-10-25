@@ -39,7 +39,7 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 		"/usr/local/bin/grok update",
 	}
 	if !slices.Equal(u.Calls, want) {
-		t.Fatalf("calls = %v, want %v (git, tmux, OpenCode's asking updater and missing agents are left alone)", u.Calls, want)
+		t.Fatalf("calls = %v, want %v (git, tmux, an OpenCode whose install method is unknown and missing agents are left alone)", u.Calls, want)
 	}
 	byTool := map[string]domain.AgentUpdate{}
 	for _, r := range results {
@@ -55,7 +55,7 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 		t.Errorf("grok = %+v", r)
 	}
 	if _, ok := byTool[domain.ToolOpenCode]; ok {
-		t.Error("opencode was reported, but it has no unattended updater")
+		t.Error("opencode was reported, but nothing names how it was installed")
 	}
 	invalidations := 0
 	for _, call := range p.Calls {

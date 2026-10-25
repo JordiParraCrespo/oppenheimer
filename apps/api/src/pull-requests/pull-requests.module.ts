@@ -6,6 +6,7 @@ import { GithubModule } from '../github/github.module';
 import { WatchedRepositoriesResolver } from './application/watched-repositories.resolver';
 import { AddPullRequestCommentCommandHandler } from './commands/add-pull-request-comment/add-pull-request-comment.command-handler';
 import { AddPullRequestCommentHttpController } from './commands/add-pull-request-comment/add-pull-request-comment.http.controller';
+import { AddPullRequestConversationCommentCommandHandler } from './commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command-handler';
 import { MergePullRequestCommandHandler } from './commands/merge-pull-request/merge-pull-request.command-handler';
 import { MergePullRequestHttpController } from './commands/merge-pull-request/merge-pull-request.http.controller';
 import { SetRepositoryWatchCommandHandler } from './commands/set-repository-watch/set-repository-watch.command-handler';
@@ -62,6 +63,7 @@ const commandHandlers: Provider[] = [
   SetRepositoryWatchCommandHandler,
   SubmitPullRequestReviewCommandHandler,
   AddPullRequestCommentCommandHandler,
+  AddPullRequestConversationCommentCommandHandler,
   MergePullRequestCommandHandler,
   StartReviewSessionCommandHandler,
 ];

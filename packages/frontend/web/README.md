@@ -9,7 +9,7 @@ compiles it and tree-shakes what it does not use.
 The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
-`theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
+`theme`, `i18n`, `analytics`, `forms`, `markdown` and `dictation` are leaves, `layout` and
 `pairing` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
@@ -31,6 +31,12 @@ names the concern and what to reach for first.
   a success toast (a `toasts.*` key, so its copy lives in one place; when to
   toast is `.agents/rules/frontend-ui.md`). `useErrorMessage` itself comes
   from `@oppenheimer/frontend-core/react`.
+- **markdown** — `Markdown`, someone else's markdown as elements (a pull
+  request's description, a bot's reply), inside `Prose` or `ChatReply`.
+- **dictation** — `dictation={dictationSlots(useDictation(…))}` on any host
+  that frames its own field, `DictationField` around a plain `Textarea`, the
+  text in through `dictateInto` / `dictateIntoField`; the `voice` comes from
+  `useVoiceDictation()` in the product package.
 - **pairing** — `PairingChrome`, the column that pairs a machine.
 - **theme** — `ThemeProvider`.
 - **i18n** — `useLocale` and the formatters; `RelativeTime` for a "2 hours

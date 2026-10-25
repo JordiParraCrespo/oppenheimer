@@ -197,6 +197,7 @@ would confirm the id.
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
+| `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -222,6 +223,10 @@ on screen in the same write, so it never runs into the cap.
 settings and the control plane's own signing key there is nothing to hand a
 machine that wants to pair, so the host routes say so and the rest of the API is
 unaffected.
+
+`HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
+with no live link: the request goes down the link, so there is nothing to send
+it on. A runner that is offline checks for updates itself when it comes back.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
@@ -336,6 +341,8 @@ session asks.
 | `GITHUB_013` <a id="github_013" /> | Pull request not found                                         | 404  |
 | `GITHUB_014` <a id="github_014" /> | GitHub would not merge this pull request yet                   | 409  |
 | `GITHUB_015` <a id="github_015" /> | GitHub's rate limit was reached; try again shortly             | 429  |
+| `GITHUB_016` <a id="github_016" /> | Issue not found                                                | 404  |
+| `GITHUB_017` <a id="github_017" /> | GitHub refused access to this repository's issues              | 403  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -372,7 +379,9 @@ App from this console, or GitHub refused to refresh it. Connecting GitHub again
 stores a fresh one.
 
 `GITHUB_014` is GitHub refusing the merge (checks, a required review, a branch
-protection rule, a conflict, a head that moved). Nothing bypasses it: the pull
+protection rule, a conflict, a head that moved). A merge a bot's approval card
+carried out is pinned to the head the card showed, so a push while the card
+waited is this code too, without GitHub being asked. Nothing bypasses it: the pull
 request waits. Approve and merge answers `200` with `merged: false` instead of
 this code, because the approval itself landed; it then asks GitHub to merge it
 once the required checks pass (`autoMerge: true`), or leaves it waiting when
@@ -389,6 +398,15 @@ budget on anyone's behalf: the same request answers `GITHUB_015` straight
 away, on every replica. It is also the answer when one server already has too
 many GitHub requests waiting: a page that fans out that far is refused with a
 short `Retry-After` rather than left hanging.
+
+`GITHUB_016` and `GITHUB_017` come from a bot's issue tools (`list_issues`,
+`get_issue`, `create_issue`, `comment_on_issue`), which no route exposes yet.
+`GITHUB_016` is also a number that belongs to a pull request: GitHub numbers
+the two alike, and the pull request tools read those. `GITHUB_017` is GitHub's
+`403` on an issue route: the App was registered before it asked for the
+**Issues** permission, an owner has not accepted that permission on the
+installation yet, or the person cannot write to the repository. Rate limits
+on those routes are still `GITHUB_015`.
 
 ## Pull requests
 
@@ -422,6 +440,7 @@ project, where a session that names no project is listed. See
 | `PROJECTS_006` <a id="projects_006" /> | A project’s repositories need a default, no repeats and a base branch each | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
 | `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
+| `PROJECTS_009` <a id="projects_009" /> | That name belongs to the Unassigned project | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -443,6 +462,11 @@ of its own id. It is reported rather than retried.
 `PROJECTS_008` protects the one project every workspace has for sessions that name
 none. Its repositories and defaults can be edited like any project's; its name and
 its place cannot.
+
+`PROJECTS_009` keeps that project's name its own: another project named
+"Unassigned", or the label any locale gives it ("Sin asignar"), in any case,
+would list as a second Unassigned group. A project named so before the rule
+keeps loading and can be renamed to anything else.
 
 `PROJECTS_004` is no longer raised. It answered a session's first repository whose
 auto-created project was archived; projects are no longer created from repositories,
@@ -630,6 +654,20 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_012` <a id="bots_012" />       | No such model provider                       | 404  |
 | `BOTS_013` <a id="bots_013" />       | The bot's model provider has no key          | 409  |
 | `BOTS_014` <a id="bots_014" />       | Turn not found                               | 404  |
+| `BOTS_015` <a id="bots_015" />       | Approval not found                           | 404  |
+| `BOTS_016` <a id="bots_016" />       | The approval was already decided             | 409  |
+| `BOTS_017` <a id="bots_017" />       | ChatGPT connects by signing in, not with a key | 422 |
+| `BOTS_018` <a id="bots_018" />       | The ChatGPT sign-in expired                  | 410  |
+| `BOTS_019` <a id="bots_019" />       | ChatGPT's sign-in is busy; try again shortly | 429  |
+| `BOTS_020` <a id="bots_020" />       | ChatGPT's sign-in could not be reached       | 502  |
+| `BOTS_021` <a id="bots_021" />       | The ChatGPT sign-in is being refreshed       | 409  |
+| `BOTS_022` <a id="bots_022" />       | The bot has a turn queued or running         | 409  |
+| `BOTS_023` <a id="bots_023" />       | That model provider has no key               | 409  |
+| `BOTS_024` <a id="bots_024" />       | That file is not an image a bot takes        | 415  |
+| `BOTS_025` <a id="bots_025" />       | The image is too large                       | 413  |
+| `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
+| `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
+| `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -653,14 +691,75 @@ turn. Forget one first.
 
 `BOTS_011` is a server with no `BOTS_PROVIDER_KEY`: no workspace can store a
 model provider's key, so no bot can answer. `BOTS_012` is a provider other than
-`anthropic`, `glm` or `openai` in `/model-providers/:provider`.
+`anthropic`, `glm`, `openai` or `chatgpt` in `/model-providers/:provider`.
 
 `BOTS_013` is a message to a bot whose provider has no key in the workspace;
 store one in Settings → Model providers. A turn that finds the key gone when
 it runs fails with the same words. `BOTS_014` is a turn that is not this bot's,
 or not in the caller's workspace.
 
+`BOTS_015` is an approval (a Needs input card) that is not this bot's, or not
+in the caller's workspace. `BOTS_016` is a decision on one that was already
+approved, denied, or expired because a new message was sent to the bot: read
+the approvals again; the card is gone.
+
+`BOTS_017` to `BOTS_021` are the ChatGPT provider, which runs on a sign-in to a
+ChatGPT subscription instead of a key. `BOTS_017` is `PUT
+/model-providers/chatgpt`: sign in with `POST /model-providers/chatgpt/login`
+instead. `BOTS_018` is a poll of a sign-in that is past its fifteen minutes,
+that ChatGPT refused, or that was started in another workspace; start again.
+`BOTS_019` is OpenAI's sign-in server refusing for rate (or too many calls to it
+waiting), with `Retry-After`. `BOTS_020` is that server not answering, or
+answering something unusable. A ChatGPT sign-in that ChatGPT later refuses to
+refresh is removed, and the bot's next turn fails with `BOTS_013`. `BOTS_021`
+is a turn that needed the token refreshed while another API replica was
+refreshing it; it fails at once rather than wait, and the next message runs on
+the refreshed token.
+
+`BOTS_022` is `DELETE /bots/:id/conversation` while one of the bot's turns is
+queued or running: the turn would go on writing into a conversation that is
+gone. Stop it (`POST /bots/:id/turns/:turnId/cancel`), then clear.
+`BOTS_023` is making a provider the one new bots start on
+(`PUT /model-providers/:provider/default`) when the workspace has no key for
+it. Store the key first.
+
+`BOTS_024` to `BOTS_028` are images in a bot's chat. An image is uploaded with
+`POST /bots/:id/attachments` (one `file` per request) and then sent by naming
+its id in `attachmentIds` on `POST /bots/:id/messages`. `BOTS_024` is a file
+that is not PNG, JPEG, GIF or WebP; `BOTS_025` one larger than 5 MB.
+`BOTS_026` is an id that is not this bot's or not in the caller's workspace,
+or, when reading one, someone else's upload that was never sent. `BOTS_027`
+is an image the message cannot claim: another message already carries it,
+it is someone else's upload, or it was uploaded more than 23 hours ago and
+the daily sweep may be deleting it. Pick the image again to send it. `BOTS_028` is an
+upload or a message with images to a bot on a provider whose models read no
+images (GLM); the message's words are not sent either, so nothing is lost:
+remove the images, or switch the bot's model, and send again. An upload that
+is never sent is deleted after a day.
+
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
+
+## Voice
+
+Dictation: a recording in, the text it says out, heard by the workspace's
+ChatGPT sign-in or the deployment's own speech-to-text server
+(`VOICE_STT_*`). See `product/next-steps/voice.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `VOICE_001` <a id="voice_001" />     | Dictation needs an active workspace                          | 400  |
+| `VOICE_002` <a id="voice_002" />     | No audio was sent                                            | 400  |
+| `VOICE_003` <a id="voice_003" />     | The recording is too long                                    | 413  |
+| `VOICE_004` <a id="voice_004" />     | The recording is not 16-bit PCM WAV                          | 415  |
+| `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
+| `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
+| `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+
+`VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
+(Settings → Model providers), or give the deployment a speech-to-text server.
+A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
+falls back to the deployment's server when there is one; a rate limit
+(`VOICE_007`, with `Retry-After`) does not.
 
 ## Tasks
 
@@ -753,7 +852,7 @@ others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
-for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
+for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
 | Code                                   | Title                                        | HTTP |
 | -------------------------------------- | -------------------------------------------- | ---- |
@@ -777,6 +876,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
+| `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
+| `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -787,6 +888,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
 | `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
 | `PAIR_007` <a id="pair_007" />         | The control plane is limiting registrations  | 429  |
+| `PAIR_008` <a id="pair_008" />         | The control plane refused to unpair this host | 401  |
+| `PAIR_009` <a id="pair_009" />         | This host was erased here but is still paired at the control plane | 502  |
 | `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
 | `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
 | `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |
@@ -833,6 +936,13 @@ tightened by the runner itself.
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
+
+`HOST_010` is `runner agents install` or `runner tools install` asked for
+something it does not install: a name in neither catalog, a platform with no
+installer, or `git`/`tmux`, which need root. For those two the detail is the
+exact package-manager command to run. `HOST_011` is an install that ran and
+failed, or finished without the tool appearing on `PATH`; the detail is the
+installer's last line.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

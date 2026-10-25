@@ -1,6 +1,6 @@
-import { Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { QueueSkeleton } from '../components/queue-skeleton';
 import { QueueHeader } from '../sections/queue-header';
 import { QueueScopes } from '../sections/queue-scopes';
 import { QueueTable } from '../sections/queue-table';
@@ -14,7 +14,7 @@ export function PullRequestQueueScreen() {
       <QueueScopes />
       <QueryState>
         <QueryState.Pending>
-          <Skeleton className="h-80 w-full" />
+          <QueueSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('pullRequests.queue.loadFailed')} />
         <QueryState.Data>

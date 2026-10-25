@@ -13,8 +13,10 @@ import {
 @Entity('bot_message')
 @Index('IDX_bot_message_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('IDX_bot_message_turn', ['organizationId', 'turnId', 'position'])
-@Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity')`)
+@Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity', 'event')`)
+@Check('CHK_bot_message_event', `("role" = 'event') = ("event" IS NOT NULL)`)
 @Check('CHK_bot_message_position', `"position" >= 0`)
+@Check('CHK_bot_message_turn', `"turnId" IS NOT NULL OR "role" = 'event'`)
 export class BotMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -25,8 +27,9 @@ export class BotMessageOrmEntity {
   @Column({ type: 'uuid' })
   botId!: string;
 
-  @Column({ type: 'uuid' })
-  turnId!: string;
+  /** Null only for an event outside any turn (`1791003100000-AddRoutineActivityLines`). */
+  @Column({ type: 'uuid', nullable: true })
+  turnId!: string | null;
 
   @Column({ type: 'varchar', length: 16 })
   role!: string;
@@ -40,6 +43,14 @@ export class BotMessageOrmEntity {
 
   @Column({ type: 'integer', default: 0 })
   position!: number;
+
+  /** The images a message of yours carries (`BotAttachment`), read whole; empty on anything else. */
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  attachments!: Record<string, unknown>[];
+
+  /** What an event says happened (`BotMessageEvent`), read whole; null on anything else. */
+  @Column({ type: 'jsonb', nullable: true })
+  event!: Record<string, unknown> | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

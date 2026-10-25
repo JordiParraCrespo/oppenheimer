@@ -32,6 +32,20 @@ export const RUNNER_LINK_CLOSE_CODES = Object.freeze({
 });
 
 /**
+ * The reasons a close may carry on top of its code. A reason only refines a code
+ * the runner already acts on, so a runner too old to know one still does the
+ * code's part and nothing worse.
+ */
+export const RUNNER_LINK_CLOSE_REASONS = Object.freeze({
+  /**
+   * On `UNPAIRED`: the owner also asked for the machine to be cleaned up. The
+   * runner closes every session as well as stopping it — worktrees and session
+   * folders removed, nothing pushed — instead of keeping the checkouts.
+   */
+  WIPE: 'host-unpaired-wipe',
+});
+
+/**
  * The header on the control plane's own handshake refusal. A bare `410` is not
  * trusted — any proxy in front of the control plane can answer one — and a host
  * that took a stranger's as "unpaired" would stop dialling for good, so the
@@ -69,3 +83,14 @@ export const ATTACHMENT_CREDIT_WINDOW_BYTES = 256 * 1024;
  * session list in `hello` and `heartbeat`, which the runner fits to it.
  */
 export const LINK_MAX_FRAME_BYTES = 512 * 1024;
+
+/**
+ * The largest transcript entry `attachment.chat` carries. The runner compacts
+ * each line of the agent's transcript before it sends it — a tool's output and
+ * a file it wrote are cut, a pasted image is named, never sent — and drops an
+ * entry still bigger than this.
+ */
+export const CHAT_ENTRY_MAX_BYTES = 64 * 1024;
+
+/** The most entries one `attachment.chat` holds; a longer history is several. */
+export const CHAT_BATCH_MAX_ENTRIES = 256;

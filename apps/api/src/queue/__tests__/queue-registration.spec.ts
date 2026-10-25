@@ -98,11 +98,14 @@ describe('queue registration', () => {
       [QUEUE_NAMES.EMAIL, EMAIL_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_RUNS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.BOT_TURNS, BOT_TURN_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_APPROVALS, DURABLE_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_SUMMARIES, DURABLE_JOB_OPTIONS],
       // Scheduler-driven queues keep the root removal policy.
       [QUEUE_NAMES.HOST_RETENTION, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_SCHEDULES, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_RETENTION, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.OUTBOX_RETENTION, DEFAULT_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_ATTACHMENT_RETENTION, DEFAULT_JOB_OPTIONS],
     ])('gives the %s queue its options', (name, options) => {
       const queue = moduleRef.get<Queue>(getQueueToken(name));
 

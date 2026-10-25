@@ -11,8 +11,8 @@ import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
  * sidebar, greeted in its chat (which says its provider needs a key first), renamed and
  * recoloured on Profile, moved into a new sidebar group, its INSTRUCTIONS.md
  * edited and reverted, a fact added, reworded and forgotten, a home host
- * picked, and deleted. The host is paired but no runner dials in: Runs on is
- * about what the control plane holds.
+ * picked and saved, and deleted. The host is paired but no runner dials in:
+ * Home host is about what the control plane holds.
  */
 
 const toast = (page: Page, text: string) =>
@@ -35,8 +35,13 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await expect(page).toHaveURL(/\/bots\/[0-9a-f-]{36}$/);
   const chatUrl = page.url();
   const botId = chatUrl.split('/').pop() as string;
-  await expect(page.getByText('What would you most like help with?')).toBeVisible();
-  await expect(page.getByRole('link', { name: /New Bot/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Juno is ready. Tell it what job to do.' }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: /Juno/ })).toBeVisible();
+  // With a bot, Employees opens its chat rather than the greeting.
+  await page.getByRole('link', { name: 'Employees', exact: true }).click();
+  await expect(page).toHaveURL(chatUrl);
   // Send stays off while the bot's provider has no key, and says where to add one.
   await expect(
     page.getByRole('status').filter({ hasText: 'Anthropic has no key in this workspace yet' }),
@@ -55,10 +60,17 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect(page.getByRole('banner').getByText('Release Bot')).toBeVisible();
+  // Chat history: nothing said yet, so nothing to export or clear.
+  await expect(page.getByText('No messages yet.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Clear history' })).toBeDisabled();
 
-  // A colour applies as it is picked, and is the server's after a reload.
+  // A colour is a draft until Save, then the server's, and still after a reload.
   await page.getByRole('button', { name: 'Coral' }).click();
   await expect(page.getByRole('button', { name: 'Coral' })).toHaveAttribute('aria-pressed', 'true');
+  expect((await getBot(owner.api, botId)).avatarColor).not.toBe('coral');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect.poll(async () => (await getBot(owner.api, botId)).avatarColor).toBe('coral');
   await reloadFromServer(page);
   await expect(page.getByRole('button', { name: 'Coral' })).toHaveAttribute('aria-pressed', 'true');
@@ -114,20 +126,29 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await fact.getByRole('button', { name: /^Forget/ }).click();
   await expect(page.getByText('No facts yet. Add one below.')).toBeVisible();
 
-  // Runs on: the paired host, offline, picked as the home host.
-  await page.getByRole('link', { name: 'Runs on' }).click();
+  // Home host: none yet; the paired host, offline, picked as a draft, cancelled, then saved.
+  await page.getByRole('link', { name: 'Home host' }).click();
+  await expect(page).toHaveURL(new RegExp(`/bots/${botId}/settings/home-host$`));
+  await expect(page.getByRole('radio', { name: /No home host/ })).toBeChecked();
   const host = page.getByRole('radio', { name: /build-01/ });
   await expect(page.getByText(/Offline/)).toBeVisible();
   await host.click();
   await expect(host).toBeChecked();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('radio', { name: /No home host/ })).toBeChecked();
+  await host.click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
   await expect.poll(async () => (await getBot(owner.api, botId)).homeHostId).not.toBeNull();
-  await reloadFromServer(page);
+  // The page's old address still opens it.
+  await page.goto(`/bots/${botId}/settings/runs-on`);
+  await expect(page).toHaveURL(new RegExp(`/bots/${botId}/settings/home-host$`));
   await expect(page.getByRole('radio', { name: /build-01/ })).toBeChecked();
 
   // Delete bot, behind its confirm, from the settings' menu: back to the list.
   await page.getByRole('button', { name: 'Bot options' }).click();
   await page.getByRole('menuitem', { name: 'Delete bot' }).click();
-  const confirm = page.getByRole('alertdialog', { name: 'Delete Release Bot?' });
+  const confirm = page.getByRole('alertdialog', { name: 'Delete “Release Bot”?' });
   await confirm.getByRole('button', { name: 'Delete bot' }).click();
   await expect(page).toHaveURL(/\/bots$/);
   await expect(toast(page, '“Release Bot” deleted.')).toBeVisible();
@@ -145,7 +166,7 @@ async function getBot(
   return (await response.json()) as { avatarColor: string; homeHostId: string | null };
 }
 
-test('a model provider key from Settings, and a bot moved onto it from the chat', async ({
+test('a model provider key from Settings, and a bot with no key moved onto it', async ({
   page,
 }) => {
   const owner = await provisionedUser('botkeys');
@@ -165,13 +186,17 @@ test('a model provider key from Settings, and a bot moved onto it from the chat'
   await expect(glm).toContainText('Key ending in 4821');
   await expect(page.getByText('zai-e2e-secret-4821')).toHaveCount(0);
 
-  // A bot's model button lists every provider's models; GLM-5.3 moves it there.
-  const created = await owner.api.post('/api/v1/bots', { data: { name: 'Glm Bot' } });
+  // A new bot starts on GLM, the provider with a key.
+  const fresh = await owner.api.post('/api/v1/bots', { data: { name: 'Fresh Bot' } });
+  expect(((await fresh.json()) as { provider: string }).provider).toBe('glm');
+
+  // One left on Anthropic, which has no key, moves onto GLM when its chat
+  // opens, and the model button no longer offers Anthropic beside it.
+  const created = await owner.api.post('/api/v1/bots', {
+    data: { name: 'Glm Bot', provider: 'anthropic' },
+  });
   const botId = ((await created.json()) as { id: string }).id;
   await page.goto(`/bots/${botId}`);
-  await page.getByRole('button', { name: 'Model' }).click();
-  await page.getByRole('menuitem', { name: 'GLM' }).click();
-  await page.getByRole('option', { name: 'GLM-5.3' }).click();
   await expect(page.getByRole('button', { name: 'Model' })).toContainText('GLM-5.3');
   await expect
     .poll(
@@ -183,10 +208,53 @@ test('a model provider key from Settings, and a bot moved onto it from the chat'
         ).provider,
     )
     .toBe('glm');
+  await expect(page.getByText('Add a key')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Model' }).click();
+  await expect(page.getByRole('menuitem', { name: 'GLM' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Anthropic' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
 
   // Remove forgets it.
   await page.goto('/settings/model-providers');
   await glm.getByRole('button', { name: 'Remove the GLM key' }).click();
   await expect(glm).toContainText('No key');
+  await owner.api.dispose();
+});
+
+test('ChatGPT signs in from Settings with a device code, not a key', async ({ page }) => {
+  const owner = await provisionedUser('botchatgpt');
+  await signInAs(page, owner.user);
+  // The two routes that reach OpenAI answer here: the console's half of the
+  // flow is what this covers; the API's is its own specs'.
+  await page.route('**/api/v1/model-providers/chatgpt/login', (route) =>
+    route.fulfill({
+      json: {
+        flowId: 'flow-e2e',
+        userCode: 'E2E1-CODE',
+        verificationUrl: 'https://auth.openai.com/codex/device',
+        intervalSeconds: 1,
+        expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      },
+    }),
+  );
+  let polls = 0;
+  await page.route('**/api/v1/model-providers/chatgpt/login/poll', (route) =>
+    route.fulfill({ json: { status: ++polls < 2 ? 'pending' : 'connected' } }),
+  );
+
+  await page.goto('/settings/model-providers');
+  const chatgpt = page.getByTestId('model-provider').filter({ hasText: 'ChatGPT' });
+  await expect(chatgpt).toContainText('Not connected');
+  await chatgpt.getByRole('button', { name: 'Connect ChatGPT' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Connect ChatGPT' });
+  await expect(dialog.getByTestId('chatgpt-user-code')).toContainText('E2E1-CODE');
+  await expect(dialog.getByRole('link', { name: 'Open sign-in page' })).toHaveAttribute(
+    'href',
+    'https://auth.openai.com/codex/device',
+  );
+  await expect(dialog).toContainText('Signed in. Bots on ChatGPT now run on this subscription.');
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(dialog).toBeHidden();
   await owner.api.dispose();
 });

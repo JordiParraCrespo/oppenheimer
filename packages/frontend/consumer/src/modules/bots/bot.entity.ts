@@ -1,5 +1,6 @@
 import type { AppError } from '@oppenheimer/frontend-core';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { AutomationRunStatus } from '@oppenheimer/shared/automations';
 import type {
   BotAuthor,
   BotAvatarColor,
@@ -7,6 +8,7 @@ import type {
   BotPermission,
   BotProvider,
 } from '@oppenheimer/shared/schemas/bot';
+import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 /**
  * A bot as the console needs it (`product/versions/mvp/25-bots.md`): who it
@@ -164,7 +166,8 @@ export function documentConflictRevision(error: unknown): number | null {
 
 /**
  * One model provider as the workspace has it: whether a key is stored and its
- * last four characters. The key itself never reaches the console.
+ * last four characters, and whether a new bot starts on it. The key itself
+ * never reaches the console.
  */
 export class ModelProviderEntity {
   constructor(
@@ -172,5 +175,67 @@ export class ModelProviderEntity {
     public readonly configured: boolean,
     public readonly keyHint: string | null,
     public readonly updatedAt: Date | null,
+    /** Exactly one provider is: the one marked, else the key stored first, else Anthropic. */
+    public readonly isDefault: boolean,
   ) {}
+}
+
+/**
+ * A ChatGPT sign-in in progress: the code the person types on OpenAI's page,
+ * and the sealed handle the console polls with. Nothing in it is a credential
+ * the console could use; the tokens stay on the server.
+ */
+export class ChatgptLoginEntity {
+  constructor(
+    public readonly flowId: string,
+    public readonly userCode: string,
+    public readonly verificationUrl: string,
+    public readonly intervalSeconds: number,
+    public readonly expiresAt: Date,
+  ) {}
+}
+
+/** Where a ChatGPT sign-in stands, as the dialog draws it. */
+export type ChatgptLoginState = 'pending' | 'connected' | 'expired';
+
+/** The code the API answers a poll of a lapsed or refused sign-in with. */
+const CHATGPT_LOGIN_EXPIRED = 'BOTS_018';
+
+/** Whether `error` is the API saying the sign-in being polled is over, and a new one is needed. */
+export function isChatgptLoginExpired(error: unknown): boolean {
+  return (error as Partial<AppError> | null)?.code === CHATGPT_LOGIN_EXPIRED;
+}
+
+/** How a routine's latest run went, as its card's "Last" reads it. */
+export interface BotRoutineLastRun {
+  status: AutomationRunStatus;
+  createdAt: Date;
+}
+
+/**
+ * One of a bot's routines (`26-bot-routines.md` §7): what it is told, when it
+ * runs, whether it is on, and how it last went. The bot makes and changes it
+ * in chat; the Routines tab turns it on or off, runs it now or deletes it.
+ */
+export class BotRoutineEntity {
+  constructor(
+    public readonly id: string,
+    /** The bot that runs it. */
+    public readonly botId: string,
+    public readonly name: string,
+    public readonly prompt: string,
+    /** `running` while a run is going, paused or not: the pause is {@link isPaused}. */
+    public readonly status: AutomationStatus,
+    /** Whether its triggers are paused; a paused routine can still be run now. */
+    public readonly isPaused: boolean,
+    public readonly nextRunAt: Date | null,
+    public readonly triggers: AutomationTrigger[],
+    public readonly lastRun: BotRoutineLastRun | null,
+    public readonly updatedAt: Date,
+  ) {}
+
+  /** A run is queued or its turn is running. */
+  get isRunning(): boolean {
+    return this.status === 'running';
+  }
 }

@@ -5,12 +5,16 @@
  *
  *   pnpm screens /sessions /settings/profile anon:/login
  *   pnpm screens --phone --github /sessions/new
+ *   pnpm screens /sessions spec:delete-dialog
  *   pnpm screens --not-visual "renames a prop; nothing on screen changes"
  *
  * Each route is taken light and dark into `.screenshots/` by the e2e
  * `screens` project (`e2e/tests/screens/screens.spec.ts`), against the stack
  * `stack.mjs up --web` started. `--phone` adds a 390px width to the 1440px
- * one; `--github` connects a stub GitHub installation first. It empties
+ * one; `--github` connects a stub GitHub installation first. `spec:<name>`
+ * runs `e2e/tests/screens/local/<name>.spec.ts` beside the routes: a
+ * throwaway spec, git-ignored, that reaches a state an empty account cannot
+ * (a dialog open, a host online) and screenshots it there. It empties
  * `.screenshots/` first, so the folder never mixes two runs. Chromium is the
  * machine's own where it ships one (`/opt/pw-browsers/chromium`), so nothing
  * is downloaded.
@@ -70,6 +74,15 @@ if (routes.length === 0) {
   console.error('screens: name at least one route, e.g. pnpm screens /sessions');
   process.exit(2);
 }
+// oppenheimer:begin e2e
+for (const route of routes.filter((entry) => entry.startsWith('spec:'))) {
+  const spec = resolve(ROOT, 'e2e/tests/screens/local', `${route.slice('spec:'.length)}.spec.ts`);
+  if (!existsSync(spec)) {
+    console.error(`screens: ${route} names no spec; write it to ${spec}`);
+    process.exit(2);
+  }
+}
+// oppenheimer:end e2e
 
 const webUrl = new URL(process.env.WEB_URL ?? 'http://localhost:3000');
 const up = await new Promise((done) => {
