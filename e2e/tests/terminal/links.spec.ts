@@ -32,10 +32,24 @@ test('a printed URL opens in a new tab on click, with tmux reporting the mouse',
 
   const row = page.locator('.xterm-rows > div').first();
   await expect(row).toContainText(url);
-  const box = await row.boundingBox();
-  if (!box) throw new Error('the first row has no box');
-  const x = box.x + 40;
-  const y = box.y + box.height / 2;
+  // The centre of the URL as drawn, whatever the face's metrics.
+  const { x, y } = await row.evaluate((element, url) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const at = (element.textContent ?? '').indexOf(url);
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let offset = 0;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const length = node.textContent?.length ?? 0;
+      if (offset <= at && at < offset + length) range.setStart(node, at - offset);
+      if (offset < at + url.length && at + url.length <= offset + length) {
+        range.setEnd(node, at + url.length - offset);
+      }
+      offset += length;
+    }
+    const box = range.getBoundingClientRect();
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  }, url);
   // xterm finds the link under the pointer as it moves, then opens it on the
   // click that follows.
   await page.mouse.move(x, y);
