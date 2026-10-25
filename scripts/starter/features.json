@@ -9,6 +9,7 @@
         "apps/web",
         "deploy/kamal/deploy.web.yml",
         "e2e/tests/web",
+        "e2e/tests/terminal",
         "e2e/tests/screens",
         "scripts/stack/screens.mjs",
         "scripts/evals/pr-screenshots",

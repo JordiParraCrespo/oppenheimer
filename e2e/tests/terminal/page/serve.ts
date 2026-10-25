@@ -3,8 +3,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const PAGE = join(ROOT, 'e2e/tests/terminal/page');
+const PAGE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(PAGE, '../../../..');
 const fromWeb = createRequire(join(ROOT, 'apps/web/package.json'));
 
 export interface TerminalPage {
