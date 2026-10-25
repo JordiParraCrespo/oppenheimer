@@ -1,6 +1,7 @@
 import { useSortableGroups } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
-import { type RailItemId, railEntry, rememberRailOrder, storedRailOrder } from '../lib/rail-order';
+import { type RailItemId, rememberRailOrder, storedRailOrder } from '../lib/rail-landing';
+import { railEntry } from '../lib/rail-order';
 
 /** The `SortableGroup` id the rail's items sit in. */
 export const RAIL_GROUP = 'rail';

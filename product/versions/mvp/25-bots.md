@@ -630,7 +630,8 @@ eight colours (`AV_COLORS`).
   conversation's summary); the same image can run it alone when turns need their own
   container. The daily `bot-attachment-retention` job sweeps images no
   message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
-- **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
+- **Console:** the rail's Employees entry opens `/bots`, and leads the
+  rail by default, so the console opens there (05); a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
 

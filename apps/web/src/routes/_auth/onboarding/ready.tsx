@@ -11,7 +11,7 @@ import { OnboardingReadyScreen } from '@/features/organizations/screens/onboardi
 export const Route = createFileRoute('/_auth/onboarding/ready')({
   validateSearch: readySearchSchema,
   beforeLoad: ({ search }) => {
-    if (!search.walk) throw redirect({ to: '/sessions/new', replace: true });
+    if (!search.walk) throw redirect({ to: '/', replace: true });
   },
   component: ReadyStep,
 });
