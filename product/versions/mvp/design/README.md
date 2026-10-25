@@ -296,8 +296,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
-- The Inbox (`Brain`), global search, Teleport, the preview pane, the
-  one-composer New session and Cursor Cloud (2026-10-25) are in no note.
+- The Inbox (`Brain`) is planned in `../28-inbox.md`, minimal first:
+  its message box, model menus, suggestions and email items are left
+  out. Global search, Teleport, the preview pane, the one-composer New
+  session and Cursor Cloud (2026-10-25) are in no note.
   Teleport and cloud environments run ahead of `../00-scope.md` the same
   way cloud sessions do.
 - Cloud sessions in `SessionsConsole (cloud)` are in no note either:
