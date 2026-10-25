@@ -34,7 +34,9 @@ every painted frame while twenty keys are typed: exactly one, always, so the
 cursor never blinks out as each echo hands it back to the terminal. The one thing it cannot see is the WebGL
 renderer above 1x, which headless Chromium draws blank;
 `apps/web/src/features/sessions/__tests__/typeahead-webgl-baseline.spec.ts`
-holds the rule there. Run it after any change to the session terminal, the
+holds the rule there. It also clicks a URL the terminal printed, with the
+mouse reported as tmux's `mouse on` asks, and expects a new tab
+(`links.spec.ts`). Run it after any change to the session terminal, the
 typeahead or the terminal's font and cursor:
 `pnpm --filter @oppenheimer/e2e e2e:terminal`.
 
