@@ -552,6 +552,32 @@ describe('a long conversation', () => {
     expect(screen.getByText('Prompt 1')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /sessions.chat.earlier/ })).toBeNull();
   });
+
+  it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
+    const chat = new Chat();
+    chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
+    const { container } = render(<SessionChat chat={chat} readOnly={false} />);
+    const box = container.querySelector<HTMLElement>('.overflow-y-auto');
+    if (!box) throw new Error('no scrolling column');
+    // jsdom lays nothing out: a column taller than its box, read from the end, then from the top.
+    Object.defineProperty(box, 'scrollHeight', { configurable: true, value: 10_000 });
+    Object.defineProperty(box, 'clientHeight', { configurable: true, value: 500 });
+    const scrollTo = (top: number) => {
+      box.scrollTop = top;
+      fireEvent.scroll(box);
+    };
+    scrollTo(9_500);
+    scrollTo(0);
+
+    act(() => chat.apply({ entries: turn(91) }));
+    expect(screen.getByText('Prompt 91')).toBeTruthy();
+    expect(screen.getByText('Prompt 51')).toBeTruthy();
+
+    scrollTo(9_500);
+    act(() => chat.apply({ entries: turn(92) }));
+    expect(screen.queryByText('Prompt 52')).toBeNull();
+    expect(screen.getByText('Prompt 53')).toBeTruthy();
+  });
 });
 
 describe('the work in a turn', () => {

@@ -45,7 +45,8 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * With `attach` (a member's own session), a message carries files too: they
  * go to the host and into the agent's prompt ahead of its words. A long
  * conversation draws its latest turns (`TURNS_SHOWN`), the earlier ones a
- * click away above them, opened without moving what the reader is on.
+ * click away above them, opened without moving what the reader is on; while
+ * the reader is up in it, new turns add below and never take one off the top.
  */
 export function SessionChat({
   chat,
@@ -59,12 +60,22 @@ export function SessionChat({
   const { t } = useTranslation();
   const state = useChatState(chat);
   const { scroller, content, atLatest, toLatest } = useStickToBottom();
-  const [shown, setShown] = useState(TURNS_SHOWN);
+  // The first turn drawn. At the latest it follows the end; away from it,
+  // it is held, so a turn arriving never takes one off the top of what the
+  // reader is on. Back at the latest, it follows again.
+  const following = Math.max(0, state.turns.length - TURNS_SHOWN);
+  const [held, setHeld] = useState<number | null>(null);
+  const [wasAtLatest, setWasAtLatest] = useState(atLatest);
+  if (wasAtLatest !== atLatest) {
+    setWasAtLatest(atLatest);
+    setHeld(atLatest ? null : (held ?? following));
+  }
+  const first = Math.min(held ?? following, state.turns.length);
   const last = state.turns.at(-1);
-  const hidden = Math.max(0, state.turns.length - shown);
-  const turns = hidden > 0 ? state.turns.slice(hidden) : state.turns;
+  const turns = first > 0 ? state.turns.slice(first) : state.turns;
 
-  const showEarlier = () => keepingPlace(scroller.current, () => setShown(shown + TURNS_SHOWN));
+  const showEarlier = () =>
+    keepingPlace(scroller.current, () => setHeld(Math.max(0, first - TURNS_SHOWN)));
 
   return (
     <div className="relative flex size-full flex-col">
@@ -85,10 +96,10 @@ export function SessionChat({
               </EmptyState>
             ) : (
               <ChatTranscript>
-                {hidden > 0 ? (
+                {first > 0 ? (
                   <Button variant="ghost" size="sm" className="self-center" onClick={showEarlier}>
                     <ChevronUp />
-                    {t('sessions.chat.earlier', { count: Math.min(hidden, TURNS_SHOWN) })}
+                    {t('sessions.chat.earlier', { count: Math.min(first, TURNS_SHOWN) })}
                   </Button>
                 ) : null}
                 {turns.map((turn) => (
