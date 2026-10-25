@@ -105,6 +105,15 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/**
+ * How long a message waits after its files before its words go. A file's
+ * upload answers once the host has been told to fetch it, not once its path
+ * is in the prompt: the host still pulls the file and pastes the path, and
+ * words typed before that would land ahead of it, or Enter would submit
+ * without it. The protocol has no frame for "pasted" yet, so this is the
+ * margin for that pull on an ordinary link.
+ */
+const FILES_SETTLE_MS = 1500;
 
 /**
  * One attachment's chat: batches in, an immutable `ChatState` out, with a
@@ -145,12 +154,22 @@ export class SessionChat {
    * A message for the agent, typed the way a person would type it into the
    * terminal: a line as it is, several lines as one paste, then Enter. The
    * chat never reaches the agent any way the terminal could not.
+   *
+   * `withFiles` says the files the message carries were handed to the host,
+   * whose paths it pastes into the prompt: the message may then be empty,
+   * and its words and Enter wait for the paths to land (`FILES_SETTLE_MS`).
    */
-  send(message: string): void {
+  send(message: string, { withFiles = false }: { withFiles?: boolean } = {}): void {
     const type = this.type;
-    if (!type || message.trim() === '') return;
-    type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
-    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    if (!type || (message.trim() === '' && !withFiles)) return;
+    const write = () => {
+      if (message.trim() !== '') {
+        type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+      }
+      setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    };
+    if (withFiles) setTimeout(write, FILES_SETTLE_MS);
+    else write();
   }
 
   /** Stops the agent's turn: Escape, as in its terminal. */

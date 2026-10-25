@@ -190,7 +190,7 @@ export {
 export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
-export { Composer, ComposerToolButton } from './components/composer';
+export { Composer, ComposerFile, ComposerToolButton } from './components/composer';
 export { DatePicker } from './components/date-picker';
 export type {
   DateRange,

@@ -461,7 +461,13 @@
       "placeholder": "Message Claude",
       "send": "Send",
       "stop": "Stop",
-      "agent": "Claude Code"
+      "agent": "Claude Code",
+      "attach": "Attach files",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+      "attachTooMany": "A message carries at most {{max}} files.",
+      "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+      "attaching": "Attaching files…"
     },
     "turn": {
       "working": "Working for",

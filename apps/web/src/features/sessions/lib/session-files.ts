@@ -1,4 +1,7 @@
-import { sessionFileOffered } from '@oppenheimer/shared/protocol';
+import { SESSION_CREATE_MAX_FILES, sessionFileOffered } from '@oppenheimer/shared/protocol';
+
+/** How many files one chat message carries: as many as a first task does. */
+export const CHAT_MESSAGE_MAX_FILES = SESSION_CREATE_MAX_FILES;
 
 /**
  * The files a session takes, in the order they came, on every gesture and

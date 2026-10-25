@@ -1,7 +1,16 @@
 import { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useChatState } from '../hooks/use-session-chat';
+import { createFileHandOff } from '../lib/file-hand-off';
 import { SessionChat } from '../sections/session-chat';
 
 /**
@@ -12,9 +21,15 @@ import { SessionChat } from '../sections/session-chat';
  */
 // Whether this workspace has dictation; the recorder itself is the kit's to test.
 let voiceAvailable = false;
+// The host's end of a pasted file: resolves once its path is in the agent's prompt.
+const pasteFile = vi.fn<(file: Blob) => Promise<void>>();
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useVoiceDictation: () => ({ available: voiceAvailable, transcribe: vi.fn() }),
+  usePasteSessionFile: () => ({ mutateAsync: pasteFile }),
 }));
+
+/** Waits out the pauses before the words and Enter, which only the fake clock can skip. */
+const enterDelay = () => act(() => vi.runAllTimers());
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -205,5 +220,87 @@ describe('a batch', () => {
 
     expect(result.current.turns[0]).toBe(settled);
     expect(result.current.turns[1]).not.toBe(live);
+  });
+});
+
+describe('files on a message', () => {
+  const png = (name: string) => new File(['x'], name, { type: 'image/png' });
+
+  function renderAttaching() {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    const files = createFileHandOff();
+    render(<SessionChat chat={chat} readOnly={false} attach={{ sessionId: 's1', files }} />);
+    return { files, typed };
+  }
+
+  it('holds what the paperclip picks, then puts the files in the prompt before the words and Enter', async () => {
+    pasteFile.mockReset().mockResolvedValue(undefined);
+    const { typed } = renderAttaching();
+    const picker = screen.getByLabelText('sessions.chat.composer.attach', { selector: 'input' });
+    fireEvent.change(picker, { target: { files: [png('a.png'), png('b.png')] } });
+    expect(screen.getByText('a.png')).toBeTruthy();
+    expect(screen.getByText('b.png')).toBeTruthy();
+
+    vi.useFakeTimers();
+    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    fireEvent.change(field, { target: { value: 'What is in these?' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    await act(async () => {});
+    await act(async () => {});
+    await act(async () => {});
+    // One after another, in the order they were picked, so their paths read in that order.
+    expect(pasteFile.mock.calls.map(([file]) => (file as File).name)).toEqual(['a.png', 'b.png']);
+    // The words wait for the host to paste the paths ahead of them.
+    expect(typed).toEqual([]);
+    await enterDelay();
+    expect(typed).toEqual(['What is in these?', '\r']);
+    expect(screen.queryByText('a.png')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('sends files alone, and takes what the pane hands it from a drop or a paste', async () => {
+    pasteFile.mockReset().mockResolvedValue(undefined);
+    const { files, typed } = renderAttaching();
+    act(() => files.deliver([png('dropped.png')]));
+    expect(screen.getByText('dropped.png')).toBeTruthy();
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.composer.send' }));
+    await act(async () => {});
+    await act(async () => {});
+    expect(pasteFile).toHaveBeenCalledTimes(1);
+    await enterDelay();
+    expect(typed).toEqual(['\r']);
+    vi.useRealTimers();
+  });
+
+  it('keeps the words and the file that did not arrive, says why, and submits nothing', async () => {
+    pasteFile.mockReset().mockRejectedValue(new Error('The host is offline'));
+    const { files, typed } = renderAttaching();
+    act(() => files.deliver([png('trace.png')]));
+    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    fireEvent.change(field, { target: { value: 'Look at this' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toContain('sessions.session.file.failedTitle'),
+    );
+    expect(screen.getByText('trace.png')).toBeTruthy();
+    expect((field as HTMLTextAreaElement).value).toBe('Look at this');
+    expect(typed).toEqual([]);
+  });
+
+  it('says why a file was turned away rather than dropping it', () => {
+    const { files } = renderAttaching();
+    act(() => files.deliver([new File(['x'], 'tool.exe', { type: 'application/x-msdownload' })]));
+    expect(screen.queryByText('tool.exe')).toBeNull();
+    expect(screen.getByText(/sessions\.chat\.composer\.attachNotSupported/)).toBeTruthy();
+  });
+
+  it('offers no paperclip to a reader who cannot put files on the host', () => {
+    render(<SessionChat chat={new Chat()} readOnly={false} />);
+    expect(screen.queryByRole('button', { name: 'sessions.chat.composer.attach' })).toBeNull();
   });
 });

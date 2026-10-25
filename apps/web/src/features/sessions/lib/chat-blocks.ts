@@ -8,6 +8,7 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
+import type { FileHandOff } from './file-hand-off';
 
 /** How a session pane reads its session: the grid, or the chat (0.7). */
 export type SessionView = 'terminal' | 'chat';
@@ -22,6 +23,18 @@ export interface PaneReading {
   view: SessionView;
   onViewChange: (view: SessionView) => void;
   cover: ReactNode;
+  /**
+   * Where the files the pane catches go while the chat shows, when its
+   * composer takes files: a drop on the pane or a paste on the chat becomes
+   * a chip on the next message rather than a path in the agent's prompt.
+   */
+  files?: FileHandOff;
+}
+
+/** What the chat's composer needs to carry files: the session they go to, and the pane's hand-off. */
+export interface ChatAttach {
+  sessionId: string;
+  files: FileHandOff;
 }
 
 /** A file a turn changed, its line counts summed over every edit to it. */
