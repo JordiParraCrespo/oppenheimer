@@ -551,7 +551,9 @@ describe('a long conversation', () => {
     fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":10\}/ }));
     expect(screen.getByText('Prompt 1')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /sessions.chat.earlier/ })).toBeNull();
-  });
+    // Ninety turns drawn and two more pages: 2.6s alone, past vitest's 5s
+    // default when the whole repository's suites run side by side.
+  }, 15_000);
 
   it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
     const chat = new Chat();
