@@ -27,16 +27,15 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 444.5KB measured (2026-10-26); the last raise was for a bot's chat
-    // queueing what you write while it works and its room-left meter: the
-    // strings ride the default locale's catalog, which the entry loads whole,
-    // and the conversation's `waitingMessages` and `roomLeft` are in the
-    // consumer package the entry boots (+1.1KB). Earlier raises and
+    // 445.0KB measured (2026-10-26); the last raise was for a bot's chat
+    // opening inside the section it was clicked in: the route tree, which the
+    // entry loads, gained `/sessions`, `/automations` and `/plan` bot chat
+    // routes (+0.2KB on a main at 444.8KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 445,
+    budgetKB: 446,
   },
   // oppenheimer:end web
 ];
