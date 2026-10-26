@@ -70,11 +70,13 @@ worker runs it and streams what happens back to the chat.
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
+  | Grok (`xai`) | OpenAI Agents SDK | xAI's Responses API (`api.x.ai/v1`), on an xAI API key |
 
   A bot made with no provider named, or left on one with no key, goes to
   the first provider the workspace has a key or sign-in for, in the order
-  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
-  it was the catalog order before, which put GLM ahead of ChatGPT).
+  Anthropic, ChatGPT, OpenAI, Grok, GLM (`BOT_PROVIDER_PREFERENCE`,
+  2026-10-18; it was the catalog order before, which put GLM ahead of
+  ChatGPT; Grok joined it on 2026-10-26).
 
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
@@ -252,7 +254,7 @@ over the text as soon as it is picked, and a message may be images alone.
   (`attachmentIds` on `POST /bots/:id/messages`); one image is sent by one
   message, claimed in the send's transaction, and only by the person who
   uploaded it: that claim is the one place the rule lives.
-- **Which models.** Anthropic, OpenAI and ChatGPT read images; GLM does
+- **Which models.** Anthropic, OpenAI, ChatGPT and Grok read images; GLM does
   not (`BOT_PROVIDER_CATALOG[provider].images`). On a GLM bot the
   composer refuses a picked image and says to switch the model; with
   images already held, send stays off and says why. Nothing written is
@@ -782,3 +784,8 @@ The decisions it produced:
   one level deep), offered only the turn's read-only tools behind the
   owner's permissions, and what they say is data the bot checks. Children
   that change things wait until this lifecycle has proven itself.
+- 2026-10-26: **Grok is a fifth provider** (`xai`), on the OpenAI engine
+  pointed at xAI's Responses API, with a workspace's xAI API key stored
+  like OpenAI's (§2). It offers Grok 4.7, whose effort runs low to extra
+  high, and Grok Build 0.1, which xAI refuses an effort for, so its row
+  has none. It comes after OpenAI and before GLM in the fallback order.

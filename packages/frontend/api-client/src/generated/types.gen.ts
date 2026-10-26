@@ -3012,7 +3012,7 @@ export type BotResponseDto = {
     /**
      * Who answers it, and so which engine runs.
      */
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
      * A model id the provider offers; null runs the provider's default.
      */
@@ -3051,7 +3051,7 @@ export type CreateBotRequest = {
     avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
     groupId?: string | null;
     homeHostId?: string | null;
-    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
 };
 
 export type UpdateBotRequest = {
@@ -3061,7 +3061,7 @@ export type UpdateBotRequest = {
     groupId?: string | null;
     position?: number;
     homeHostId?: string | null;
-    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
@@ -3150,7 +3150,7 @@ export type UpdateBotGroupRequest = {
 };
 
 export type ModelProviderCredentialResponseDto = {
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
      * Whether the workspace has a key for this provider.
      */
@@ -3396,7 +3396,7 @@ export type BotTurnPlanLimitsDto = {
 export type BotTurnResponseDto = {
     id: string;
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
      * The model it runs on, fixed when it was sent.
      */

@@ -113,7 +113,8 @@ describe('the model button', () => {
   it('maps a pick back to the provider whose group it is in', () => {
     expect(providerOfMark(botEngineValue('openai', null).agent)).toBe('openai');
     expect(providerOfMark(botEngineValue('glm', null).agent)).toBe('glm');
-    expect(providerOfMark('grok')).toBeUndefined();
+    expect(providerOfMark(botEngineValue('xai', null).agent)).toBe('xai');
+    expect(providerOfMark('shell')).toBeUndefined();
     expect(botEngineValue('anthropic', null)).toEqual({
       agent: 'claude-code',
       model: 'claude-opus-5-5',

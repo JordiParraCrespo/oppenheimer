@@ -120,7 +120,8 @@
       "anthropic": "Modelos Claude, a través de la API de Anthropic.",
       "glm": "Modelos GLM, a través de z.ai.",
       "openai": "Modelos GPT, a través de la API de OpenAI.",
-      "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API."
+      "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API.",
+      "xai": "Modelos Grok, a través de la API de xAI."
     },
     "dialog": {
       "title": "Clave de {{provider}}",

@@ -26304,7 +26304,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai", "chatgpt"],
+            "enum": ["anthropic", "glm", "openai", "chatgpt", "xai"],
             "description": "Who answers it, and so which engine runs."
           },
           "model": {
@@ -26400,7 +26400,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai", "chatgpt"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt", "xai"]
           }
         }
       },
@@ -26439,7 +26439,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai", "chatgpt"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt", "xai"]
           },
           "model": {
             "type": "string",
@@ -26675,7 +26675,7 @@
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai", "chatgpt"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt", "xai"]
           },
           "configured": {
             "type": "boolean",
@@ -27129,7 +27129,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["anthropic", "glm", "openai", "chatgpt"]
+            "enum": ["anthropic", "glm", "openai", "chatgpt", "xai"]
           },
           "model": {
             "type": "string",

@@ -73,22 +73,23 @@ export function botSoulFor(name: string): string {
 
 /**
  * Who answers a bot (`product/versions/mvp/25-bots.md` §2): the provider picks
- * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI and ChatGPT the
- * OpenAI Agents SDK. Each runs on the workspace's own key for it; ChatGPT's is
- * a sign-in to a ChatGPT subscription rather than an API key.
+ * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI, ChatGPT and xAI
+ * the OpenAI Agents SDK. Each runs on the workspace's own key for it; ChatGPT's
+ * is a sign-in to a ChatGPT subscription rather than an API key.
  */
-export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt'] as const;
+export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt', 'xai'] as const;
 export type BotProvider = (typeof BOT_PROVIDERS)[number];
 
 /**
  * The order a bot falls back through when its provider has no key, or a new
- * bot names none: Anthropic, then ChatGPT and OpenAI, GLM last. It is not the
- * catalog order, which is how the model button lists them.
+ * bot names none: Anthropic, then ChatGPT and OpenAI, then xAI, GLM last. It
+ * is not the catalog order, which is how the model button lists them.
  */
 export const BOT_PROVIDER_PREFERENCE: readonly BotProvider[] = Object.freeze([
   'anthropic',
   'chatgpt',
   'openai',
+  'xai',
   'glm',
 ]);
 
@@ -129,10 +130,19 @@ const GLM_LEVELS = Object.freeze({
 });
 
 /**
+ * The levels xAI's Responses API takes for Grok 4.7 as `reasoning.effort`.
+ * Grok Build 0.1 refuses the parameter, so its row offers none.
+ */
+const GROK_LEVELS = Object.freeze({
+  levels: Object.freeze(['low', 'medium', 'high', 'xhigh'] as SessionEffort[]),
+  default: 'medium' as SessionEffort,
+});
+
+/**
  * The models each provider offers a bot. Anthropic's and OpenAI's are the rows
  * the coding agents already list (Claude Code's, Codex's), so a model offered to
  * a session and to a bot is one row; GLM's are z.ai's, reached through its
- * Anthropic-compatible endpoint.
+ * Anthropic-compatible endpoint; xAI's are Grok's, through its Responses API.
  */
 export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefinition>> =
   Object.freeze({
@@ -170,6 +180,21 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
       auth: 'sign_in',
       label: 'ChatGPT',
       models: CODING_AGENTS.codex.models,
+    }),
+    xai: Object.freeze({
+      id: 'xai',
+      images: true,
+      auth: 'api_key',
+      label: 'Grok',
+      models: Object.freeze([
+        Object.freeze({
+          id: 'grok-4.7',
+          label: 'Grok 4.7',
+          default: true as const,
+          effort: GROK_LEVELS,
+        }),
+        Object.freeze({ id: 'grok-build-0.1', label: 'Grok Build 0.1' }),
+      ]),
     }),
   });
 
