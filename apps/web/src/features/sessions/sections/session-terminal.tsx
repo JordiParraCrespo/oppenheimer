@@ -13,7 +13,6 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
-import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useChatReading } from '../hooks/use-session-chat';
@@ -24,7 +23,6 @@ import { hostLinkLabels } from '../lib/host-link-labels';
 import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { takeFilePaste } from '../lib/terminal-files';
 import { HostLinkFix } from './host-link-fix';
-import { SessionShareButton } from './session-share-button';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
@@ -44,8 +42,9 @@ const AGENT_WINDOW = 0;
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
  * the link is live or blipping, and while the host is away a banner in its
  * place that says so, counts the time, and opens the fix from How to fix.
- * It comes back on its own; the fix is for when it does not. Share closes
- * the status line on the right, in either form.
+ * It comes back on its own; the fix is for when it does not. What else the
+ * line carries is the pane's (`statusItems`): nothing when the session has a bar
+ * of its own, the view switch and Share when it does not.
  *
  * **Chat** (0.7, behind `session_chat_view`): the pane hands in a chat
  * (`reading`). This stream feeds it and lends it its input, and once the host
@@ -64,22 +63,22 @@ const AGENT_WINDOW = 0;
 export function SessionTerminal({
   sessionId,
   hostId,
-  statusItem,
+  statusItems,
   reading,
 }: {
   sessionId: string;
   hostId: string;
   /** The chat this terminal feeds, and how the pane around it reads it. */
   reading: PaneReading;
-  /** Drawn first in the status bar: the session's task, when the route has one. */
-  statusItem?: ReactNode;
+  /** What the status line carries beside the link, from the pane. */
+  statusItems?: ReactNode;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
-  const { chat, view, onViewChange, cover } = reading;
-  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  const { chat, cover } = reading;
+  const { shown: chatShown } = useChatReading(reading);
   const takeFiles = chatShown && reading.files ? reading.files.deliver : upload.send;
   const terminal = useTerminal(createStream, {
     chat,
@@ -97,9 +96,6 @@ export function SessionTerminal({
     slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
-  const viewToggle = chatOffered ? (
-    <ChatViewToggle view={view} onViewChange={onViewChange} />
-  ) : null;
 
   return (
     <DropZone onFiles={takeFiles} className="flex min-h-0 flex-1 flex-col">
@@ -190,8 +186,6 @@ export function SessionTerminal({
             }
             fix={<HostLinkFix host={host} />}
           >
-            {viewToggle}
-            {statusItem}
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the
                 banner says it comes back on its own, and it does. */}
@@ -207,13 +201,12 @@ export function SessionTerminal({
                 memory, permission mode, host count — are numbers the runner
                 and the control plane report. They stay out until there is
                 something real to put in them. */}
-            <SessionShareButton sessionId={sessionId} />
+            {statusItems}
           </HostLinkChrome>
         ) : (
           <TerminalStatusBar>
-            {statusItem}
             <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
-            <SessionShareButton sessionId={sessionId} />
+            {statusItems}
           </TerminalStatusBar>
         )}
       </Terminal>

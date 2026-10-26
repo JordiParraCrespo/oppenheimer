@@ -59,11 +59,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   attach and the `PermissionMenu`. Right: `AgentModelSelect` (harness first,
   then its models, so the pair is always valid), `EffortPicker`, mic, send.
   All of them hang from `ComposerToolButton`. Full access is the one setting
-  allowed the warning tone, because it can change a machine unattended. On
-  New session the composer is tabbed: the scope chips go in its `scope`
-  slot, a grey band fused to the top of the field, each chip a
-  `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
-  so where the work happens reads as one sentence over the box.
+  allowed the warning tone, because it can change a machine unattended. New
+  session is `ComposerPill` (2026-10-25 export): one line with Add files,
+  the mic and send, and under it a `ComposerChoices` row in the same order,
+  where it runs and what it may touch on the left, the engine on the right,
+  each place chip a `ChipSelectTrigger` in its `tab` variant. `Composer`'s
+  `scope` band, the tabbed form it replaced, has no caller in the console.
 - **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
   switches between the sessions and routines lists (under 768px it is a
   tab bar along the bottom of the screen, and the page beside it keeps

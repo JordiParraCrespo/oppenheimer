@@ -60,7 +60,9 @@ test('boot: Send → first agent bytes on the console', async ({ page, context }
     await signInAs(page, user);
     for (let run = 1; run <= RUNS; run += 1) {
       await page.goto('/sessions/new');
-      await expect(page.getByRole('heading', { name: 'New session', level: 1 })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'What should we work on?', level: 1 }),
+      ).toBeVisible();
       await page.getByRole('button', { name: 'Host' }).click();
       await page.getByRole('option', { name: new RegExp(box.host.name) }).click();
       await page.getByRole('button', { name: 'Repositories' }).click();
