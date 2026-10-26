@@ -39,7 +39,10 @@ type Options struct {
 	// Transcripts reads a session's first message off the agent's own
 	// transcript, for a session launched with no task; nil reports none.
 	Transcripts Transcripts
-	Now         func() time.Time
+	// StatusLine is the command a Claude Code session runs for its status
+	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
+	StatusLine string
+	Now        func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -81,6 +84,7 @@ type Service struct {
 	gate        LaunchGate
 	trust       Trust
 	transcripts Transcripts
+	statusLine  string
 	now         func() time.Time
 }
 
@@ -104,7 +108,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, now: now,
+		transcripts: opts.Transcripts, statusLine: opts.StatusLine, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -490,6 +494,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// same work twice.
 	launch := session.Launch
 	launch.Resume = true
+	launch.StatusLine = s.statusLine
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))

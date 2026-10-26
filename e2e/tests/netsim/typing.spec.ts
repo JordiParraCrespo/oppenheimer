@@ -20,7 +20,7 @@ import {
   resetLegStats,
 } from '../../support/netsim';
 import { connectInstallation, createSession, mintPairingToken } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * How typing feels from different places to hosts behind different internet
@@ -218,7 +218,7 @@ test('typing latency: relay vs direct, by place and host connection', async () =
           }
           await signInAs(page, user);
           await page.goto(`/sessions/${host.sessionId}`);
-          await expect(page.getByText('Live', { exact: true })).toBeVisible({ timeout: 120_000 });
+          await expect(linkLive(page)).toBeVisible({ timeout: 120_000 });
           await expect(page.getByText(`· ${path}`)).toBeVisible({ timeout: 60_000 });
 
           await place('browser', scenario.placement);

@@ -244,6 +244,8 @@ export class BotTurnRepository
   }
 
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean> {
+    // The stored shape of what the turn ended with is the mapper's.
+    const record = this.mapper.toPersistence(turn);
     return this.outbox.transaction(async (manager) => {
       // The same lock a send takes, first: a send either commits before this
       // looks for the next queued turn, or counts this one as ended.
@@ -256,6 +258,9 @@ export class BotTurnRepository
           error: turn.error,
           inputTokens: turn.inputTokens,
           outputTokens: turn.outputTokens,
+          contextTokens: record.contextTokens,
+          contextWindow: record.contextWindow,
+          planLimits: record.planLimits,
           endedAt: turn.endedAt,
         })
         .where('id = :id AND "status" = :at', { id: turn.id, at: turn.statusAtLoad })

@@ -63,9 +63,31 @@ export interface BotTurnProps {
   error: string | null;
   inputTokens: number;
   outputTokens: number;
+  /** What the model's context held at the turn's last answer; null before one. */
+  context: BotTurnContext | null;
+  /** A subscription's usage windows as that answer said them; null on an API key. */
+  planLimits: BotTurnPlanLimits | null;
   cancelRequestedAt: Date | null;
   startedAt: Date | null;
   endedAt: Date | null;
+}
+
+/** What the model's context held: the tokens, against its window when the engine knew it. */
+export interface BotTurnContext {
+  tokens: number;
+  window: number | null;
+}
+
+/** One of a subscription's usage windows: the share used, 0–100, and when it resets. */
+export interface BotTurnPlanWindow {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/** A subscription's 5-hour and weekly windows, each null when the provider left it out. */
+export interface BotTurnPlanLimits {
+  fiveHour: BotTurnPlanWindow | null;
+  sevenDay: BotTurnPlanWindow | null;
 }
 
 /** The longest failure a turn keeps (`bot_turn.error`); a longer one is cut to fit. */
@@ -136,6 +158,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         error: null,
         inputTokens: 0,
         outputTokens: 0,
+        context: null,
+        planLimits: null,
         cancelRequestedAt: null,
         startedAt: null,
         endedAt: null,
@@ -278,6 +302,12 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get outputTokens(): number {
     return this.props.outputTokens;
   }
+  get context(): BotTurnContext | null {
+    return this.props.context;
+  }
+  get planLimits(): BotTurnPlanLimits | null {
+    return this.props.planLimits;
+  }
   get cancelRequestedAt(): Date | null {
     return this.props.cancelRequestedAt;
   }
@@ -304,7 +334,13 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   end(
     status: 'completed' | 'cancelled' | 'failed',
     now: Date,
-    outcome: { error?: string | null; inputTokens?: number; outputTokens?: number } = {},
+    outcome: {
+      error?: string | null;
+      inputTokens?: number;
+      outputTokens?: number;
+      context?: BotTurnContext | null;
+      planLimits?: BotTurnPlanLimits | null;
+    } = {},
   ): void {
     if (this.ended) throw new ArgumentInvalidException(`The turn already ${this.props.status}`);
     this.props.status = status;
@@ -312,6 +348,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;
     this.props.inputTokens = outcome.inputTokens ?? this.props.inputTokens;
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
+    this.props.context = outcome.context ?? this.props.context;
+    this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
   }
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */

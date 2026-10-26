@@ -81,6 +81,7 @@ test.describe('New session', () => {
     // machines does, and the chip must still take the choice.
     await page.getByRole('button', { name: 'Host' }).click();
     await page.getByRole('option', { name: /E2E box/ }).click();
+    await page.getByRole('option', { name: /New worktree/ }).click();
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
 
     // ── The repository chip, and the branch pane inside it ───────────────────

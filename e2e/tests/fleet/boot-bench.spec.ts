@@ -65,6 +65,7 @@ test('boot: Send → first agent bytes on the console', async ({ page, context }
       ).toBeVisible();
       await page.getByRole('button', { name: 'Host' }).click();
       await page.getByRole('option', { name: new RegExp(box.host.name) }).click();
+      await page.getByRole('option', { name: /New worktree/ }).click();
       await page.getByRole('button', { name: 'Repositories' }).click();
       await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
       await page.keyboard.press('Escape');

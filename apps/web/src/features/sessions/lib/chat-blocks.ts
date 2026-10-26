@@ -1,4 +1,5 @@
 import type {
+  ChatStatus,
   ChatStep,
   ChatTodo,
   ChatToolCall,
@@ -6,6 +7,7 @@ import type {
   ChatTurn,
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
+import type { ChatUsageContext } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import type { FileHandOff } from './file-hand-off';
@@ -161,6 +163,33 @@ export function latestModel(turns: readonly ChatTurn[]): string | null {
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const model = turns[i]?.model;
     if (model) return model;
+  }
+  return null;
+}
+
+/** The window a Claude model reads by default. */
+const CONTEXT_WINDOW = 200_000;
+/** The long-context window, which a session past the default is on. */
+const LONG_CONTEXT_WINDOW = 1_000_000;
+
+/**
+ * The context as of the agent's last answer: the CLI's own figure when its
+ * status line has sent one, which knows the window the session runs with;
+ * otherwise counted off the transcript, which does not, so it is the
+ * default window until the tokens could only fit the long one.
+ */
+export function latestContext(
+  turns: readonly ChatTurn[],
+  status: ChatStatus | null = null,
+): ChatUsageContext | null {
+  if (status?.context) {
+    const { usedPercent, window } = status.context;
+    return { tokens: Math.round((usedPercent / 100) * window), window };
+  }
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const tokens = turns[i]?.contextTokens;
+    if (!tokens) continue;
+    return { tokens, window: tokens > CONTEXT_WINDOW ? LONG_CONTEXT_WINDOW : CONTEXT_WINDOW };
   }
   return null;
 }

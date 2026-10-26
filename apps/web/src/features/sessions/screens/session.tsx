@@ -89,6 +89,7 @@ export function SessionScreen({
               sessionId={session.id}
               hostId={session.hostId}
               statusItems={statusItems}
+              showLive={!bar}
               reading={reading}
             />
           )}

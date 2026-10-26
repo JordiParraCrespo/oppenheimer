@@ -27,10 +27,12 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 445.0KB measured (2026-10-26); the last raise was for the session's
+    // 445.6KB measured (2026-10-26); the last raise was for the session's
     // device preview: its strings ride the bundled locale and its pane's
-    // classes the one stylesheet (+1.6KB), while the stream client loads
-    // with the pane (`sessions/stream/device-stream.ts`). Earlier raises and
+    // classes the one stylesheet (+1.1KB), while the stream client loads
+    // with the pane (`sessions/stream/device-stream.ts`). The one before it
+    // was a bot's chat queueing what you write and its room-left meter
+    // (+1.1KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code

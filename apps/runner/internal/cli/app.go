@@ -178,7 +178,13 @@ func New(version string) (*App, error) {
 		Trust: agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)}),
 		// A session launched with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
-		Transcripts: transcript.New(transcript.Options{ClaudeProjects: claudeProjectsPath(paths)}),
+		Transcripts: transcript.New(transcript.Options{
+			ClaudeProjects: claudeProjectsPath(paths),
+			StatusDir:      StatusDir(paths),
+		}),
+		// Claude Code hands its status line the context and the plan's usage,
+		// which the chat shows; the runner's own takes them on the way.
+		StatusLine: statusLineCommand(),
 	})
 	if err != nil {
 		return nil, err

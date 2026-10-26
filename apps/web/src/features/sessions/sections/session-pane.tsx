@@ -16,6 +16,7 @@ import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import { rememberPreviewOpen, storedPreviewOpen } from '../lib/preview-open';
+import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionPreview } from './session-preview';
@@ -134,6 +135,7 @@ export function SessionPane({
         head: null,
         statusItems: (
           <>
+            <LatencyReadout sessionId={session.id} />
             {viewToggle}
             <SessionShareButton sessionId={session.id} place="status" />
           </>

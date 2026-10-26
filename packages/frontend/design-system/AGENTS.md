@@ -66,7 +66,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   session is `ComposerPill` (2026-10-25 export): one line with Add files,
   the mic and send, and under it a `ComposerChoices` row in the same order,
   where it runs and what it may touch on the left, the engine on the right,
-  each place chip a `ChipSelectTrigger` in its `tab` variant. That row never
+  each place chip a `ChipSelectTrigger` in its `tab` variant. The first chip
+  is the host and where on it as one ("mac-studio · New worktree"): its pane
+  is the hosts under a `ChipSelectHeading` with their count, and a host
+  opens its Start in pane under another. The box stands as tall as a session chat's
+  `ChatComposer`, and the engine pane's rows are the `engine` density, 36px
+  of 13.5px, beside a boxed search. That row never
   wraps: the place chips truncate and the engine keeps its width. `Composer`'s
   `scope` band, the tabbed form it replaced, has no caller in the console.
 - **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)

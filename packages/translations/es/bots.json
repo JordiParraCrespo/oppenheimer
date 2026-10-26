@@ -45,6 +45,8 @@
     "addKey": "Añadir una clave",
     "sendFailed": "No se pudo enviar el mensaje.",
     "stopFailed": "No se pudo detener el turno.",
+    "queuedImages_one": "{{count}} imagen",
+    "queuedImages_other": "{{count}} imágenes",
     "failed": "{{provider}} no pudo terminar este turno",
     "failedUnknown": "El turno terminó sin decir por qué.",
     "errorDetails": "Mostrar detalles",

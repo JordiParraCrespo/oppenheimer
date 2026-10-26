@@ -27079,6 +27079,47 @@
           "createdAt"
         ]
       },
+      "BotPlanWindowDto": {
+        "type": "object",
+        "properties": {
+          "usedPercent": {
+            "type": "number",
+            "description": "The share of the window used, 0–100."
+          },
+          "resetsAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": ["usedPercent", "resetsAt"]
+      },
+      "BotTurnPlanLimitsDto": {
+        "type": "object",
+        "properties": {
+          "fiveHour": {
+            "nullable": true,
+            "description": "The 5-hour window.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotPlanWindowDto"
+              }
+            ]
+          },
+          "sevenDay": {
+            "nullable": true,
+            "description": "The weekly window.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotPlanWindowDto"
+              }
+            ]
+          }
+        },
+        "required": ["fiveHour", "sevenDay"]
+      },
       "BotTurnResponseDto": {
         "type": "object",
         "properties": {
@@ -27109,6 +27150,26 @@
           "outputTokens": {
             "type": "number"
           },
+          "contextTokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "What the model's context held at the turn's last answer, in tokens; null before one."
+          },
+          "contextWindow": {
+            "type": "number",
+            "nullable": true,
+            "description": "The model's context window, when the engine reported it."
+          },
+          "planLimits": {
+            "nullable": true,
+            "description": "A subscription sign-in's usage windows (ChatGPT's) as the last answer said them; null on an API key.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotTurnPlanLimitsDto"
+              }
+            ]
+          },
           "cancelRequested": {
             "type": "boolean",
             "description": "Stop was pressed and the worker has not ended it yet."
@@ -27136,6 +27197,9 @@
           "error",
           "inputTokens",
           "outputTokens",
+          "contextTokens",
+          "contextWindow",
+          "planLimits",
           "cancelRequested",
           "createdAt",
           "startedAt",
