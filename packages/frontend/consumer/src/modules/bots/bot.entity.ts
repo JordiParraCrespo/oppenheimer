@@ -43,13 +43,8 @@ export class BotEntity {
     /** The start of its last message; `null` before the first. */
     public readonly lastMessagePreview: string | null = null,
     /** The console sections whose sidebar lists it beside Employees, in catalog order. */
-    public readonly sections: readonly BotSection[] = [],
+    public readonly sections: BotSection[] = [],
   ) {}
-
-  /** Whether `section`'s sidebar lists it. */
-  showsIn(section: BotSection): boolean {
-    return this.sections.includes(section);
-  }
 
   /**
    * The letters its avatar draws: the first of the first two words ("New Bot"
@@ -149,7 +144,7 @@ export interface UpdateBotInput {
   permission?: BotPermission;
   learnAutomatically?: boolean;
   /** The whole set; `[]` shows it in Employees only. */
-  sections?: readonly BotSection[];
+  sections?: BotSection[];
 }
 
 /** `PUT /bots/:id/documents/:name`: the text, over the revision the editor loaded. */

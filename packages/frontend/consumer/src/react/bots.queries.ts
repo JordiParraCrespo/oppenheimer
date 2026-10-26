@@ -125,7 +125,7 @@ export function useSuspenseBotsAndGroups() {
 export function useSuspenseSectionBots(section: BotSection) {
   return useSuspenseQuery<BotEntity[], Error, BotEntity[]>({
     ...useBotListQuery(),
-    select: (bots) => bots.filter((bot) => bot.showsIn(section)),
+    select: (bots) => bots.filter((bot) => bot.sections.includes(section)),
   });
 }
 
@@ -262,12 +262,12 @@ function settleFacts(
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
 export function useCreateBot(
-  options?: UseMutationOptions<BotEntity, Error, readonly BotSection[] | undefined>,
+  options?: UseMutationOptions<BotEntity, Error, BotSection[] | undefined>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (sections?: readonly BotSection[]) => app.bots.create(sections),
+    mutationFn: (sections?: BotSection[]) => app.bots.create(sections),
     ...withCacheOnSuccess(options, (added) => settleBot(queryClient, added, true)),
   });
 }

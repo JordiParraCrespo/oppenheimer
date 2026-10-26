@@ -16,7 +16,7 @@ export function SectionBots({ section }: { section: BotSection }) {
   const { t } = useTranslation();
 
   return (
-    <section aria-label={t('bots.section.label')} className="pb-3">
+    <section aria-label={t('bots.section.heading')} className="pb-3">
       <SidebarListHead label={t('bots.section.heading')}>
         <NewBotButton section={section} size="xs" />
       </SidebarListHead>

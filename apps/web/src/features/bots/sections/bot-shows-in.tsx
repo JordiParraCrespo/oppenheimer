@@ -10,6 +10,14 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_SECTIONS, type BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
+/** Each section by the name the rail gives it. */
+const SECTION_NAMES = {
+  sessions: 'nav.sessions',
+  automations: 'nav.automations',
+  plan: 'nav.plan',
+  pulls: 'nav.pullRequests',
+} as const satisfies Record<BotSection, string>;
+
 /**
  * Settings → Profile's Shows in: the console sections whose sidebar lists the
  * bot under a Bots heading, beside Employees, where every bot is
@@ -20,9 +28,7 @@ import { useTranslation } from 'react-i18next';
 export function BotShowsIn({ bot }: { bot: BotEntity }) {
   const { t } = useTranslation();
   const update = useUpdateBot();
-  const value = update.isPending
-    ? [...(update.variables.input.sections ?? bot.sections)]
-    : [...bot.sections];
+  const value = update.isPending ? (update.variables.input.sections ?? bot.sections) : bot.sections;
 
   return (
     <div className="flex flex-col gap-2">
@@ -42,9 +48,9 @@ export function BotShowsIn({ bot }: { bot: BotEntity }) {
             }
             aria-label={t('bots.settings.profile.showsIn')}
           >
-            {BOT_SECTIONS.map((section: BotSection) => (
+            {BOT_SECTIONS.map((section) => (
               <PillGroupItem key={section} value={section}>
-                {t(`bots.section.names.${section}`)}
+                {t(SECTION_NAMES[section])}
               </PillGroupItem>
             ))}
           </PillGroup>

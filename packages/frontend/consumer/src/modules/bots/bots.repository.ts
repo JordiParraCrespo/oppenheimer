@@ -426,9 +426,9 @@ export class BotsRepository {
    * the workspace's default provider, shown in `sections` beside Employees.
    */
   @MapApiError(BotsErrors.SAVE_FAILED)
-  async create(sections: readonly BotSection[] = []): Promise<BotEntity> {
+  async create(sections?: BotSection[]): Promise<BotEntity> {
     const data = await unwrapBody(
-      heyApiSdk.createBot({ body: sections.length ? { sections: [...sections] } : {} }),
+      heyApiSdk.createBot({ body: { sections } }),
       BotsErrors.SAVE_FAILED,
     );
     return toBot(data);
@@ -437,10 +437,7 @@ export class BotsRepository {
   @MapApiError(BotsErrors.SAVE_FAILED)
   async update(id: string, input: UpdateBotInput): Promise<BotEntity> {
     const data = await unwrapBody(
-      heyApiSdk.updateBot({
-        path: { id },
-        body: { ...input, sections: input.sections ? [...input.sections] : undefined },
-      }),
+      heyApiSdk.updateBot({ path: { id }, body: input }),
       BotsErrors.SAVE_FAILED,
     );
     return toBot(data);

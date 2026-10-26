@@ -283,7 +283,7 @@
       "saved": "Guardado",
       "failed": "No se ha podido guardar el bot.",
       "showsIn": "Aparece en",
-      "showsInHint": "Secciones cuya barra lateral lo muestra, además de Empleados",
+      "showsInHint": "Barras laterales que lo muestran, además de Empleados",
       "showsInFailed": "No se pudo guardar dónde aparece el bot."
     },
     "instructions": {
@@ -399,14 +399,7 @@
     "failed": "No se ha podido eliminar el bot."
   },
   "section": {
-    "label": "Bots de esta sección",
     "heading": "Bots",
-    "empty": "Aún no hay bots aquí. Añade uno con +.",
-    "names": {
-      "sessions": "Sesiones",
-      "automations": "Automatizaciones",
-      "plan": "Plan",
-      "pulls": "Pull requests"
-    }
+    "empty": "Aún no hay bots aquí."
   }
 }
