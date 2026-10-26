@@ -1,18 +1,23 @@
 import {
   ChatComposer,
   ComposerNotice,
+  ComposerStack,
   ComposerStackAction,
+  ComposerStackRow,
   FieldError,
 } from '@oppenheimer/design-system-web';
 import { KeyRound } from '@oppenheimer/design-system-web/icons';
+import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
+  useBotWaitingMessages,
   useCancelBotTurn,
   useModelProviders,
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import {
+  ChatQueuedRow,
   dictateInto,
   dictationSlots,
   ErrorAlert,
@@ -38,7 +43,12 @@ import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-image
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
- * running the button is Stop. A provider with no key in the workspace keeps
+ * running the button is Stop until something is written, and what is sent
+ * then waits for its turn. Each message waiting shows over the box
+ * (`ChatQueuedRow`): Remove takes it back, Edit takes it back into the
+ * field, and the first one's Send now stops the turn under way so it runs
+ * next. A message that carried images is not taken back to edit: they were
+ * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
  * send off and says where to add one, fused to the top of the box. It owns
  * the draft alone: the chips in `tools` and `engine` are elements its parent
  * made, so a keystroke renders the field and none of them. The draft is
@@ -76,6 +86,7 @@ export function BotComposer({
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
   const active = useBotActiveTurn(botId);
+  const waiting = useBotWaitingMessages(botId);
   const { data: keyed } = useModelProviders({
     select: (rows) => rows.find((row) => row.provider === provider)?.configured,
   });
@@ -102,6 +113,25 @@ export function BotComposer({
     voice: useVoiceDictation(() => [name]),
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
   });
+
+  const addKey = (
+    <ComposerStackAction onClick={() => navigate({ to: '/settings/model-providers' })}>
+      {t('bots.chat.addKey')}
+    </ComposerStackAction>
+  );
+
+  // Edit: the waiting turn is called off, and its words come back into the field.
+  function takeBack(message: BotWaitingMessage) {
+    cancel.mutate(
+      { id: botId, turnId: message.turnId },
+      {
+        onSuccess: () => {
+          const current = botDraft(botId);
+          setBotDraft(botId, current ? `${message.text}\n${current}` : message.text);
+        },
+      },
+    );
+  }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
     // Nothing is prevented: text pasted with an image still lands in the field.
@@ -147,37 +177,51 @@ export function BotComposer({
           })
         }
         onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
-        busy={active !== null || send.isPending}
+        busy={
+          (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
+        }
         sendBlockedReason={blocked}
         allowEmpty={images.images.length > 0}
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
         attachments={
-          images.images.length > 0 ? (
-            <>
-              {images.images.map((image) => (
+          images.images.length > 0
+            ? images.images.map((image) => (
                 <BotComposerImage
                   key={image.key}
                   image={image}
                   onRemove={() => images.remove(image.key)}
                 />
-              ))}
-            </>
-          ) : undefined
+              ))
+            : undefined
         }
         placeholder={t('bots.chat.placeholder', { name })}
         tools={tools}
         engine={engine}
         above={
-          noKey ? (
-            <ComposerNotice
-              icon={<KeyRound />}
-              action={
-                <ComposerStackAction onClick={() => navigate({ to: '/settings/model-providers' })}>
-                  {t('bots.chat.addKey')}
-                </ComposerStackAction>
-              }
-            >
+          waiting.length > 0 ? (
+            <ComposerStack>
+              {noKey ? (
+                <ComposerStackRow icon={<KeyRound />} actions={addKey}>
+                  {noKey}
+                </ComposerStackRow>
+              ) : null}
+              {waiting.map((message, index) => (
+                <ChatQueuedRow
+                  key={message.turnId}
+                  text={message.text || t('bots.chat.queuedImages', { count: message.images })}
+                  onSendNow={
+                    index === 0 && active?.status === 'running'
+                      ? () => cancel.mutate({ id: botId, turnId: active.id })
+                      : undefined
+                  }
+                  onEdit={message.images === 0 ? () => takeBack(message) : undefined}
+                  onRemove={() => cancel.mutate({ id: botId, turnId: message.turnId })}
+                />
+              ))}
+            </ComposerStack>
+          ) : noKey ? (
+            <ComposerNotice icon={<KeyRound />} action={addKey}>
               {noKey}
             </ComposerNotice>
           ) : undefined

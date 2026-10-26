@@ -56,6 +56,26 @@
       "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
       "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
       "failed": "No se ha podido transcribir la grabación."
+    },
+    "chat": {
+      "usage": {
+        "open": "{{percent}}% del contexto usado. Ver el contexto y el uso del plan.",
+        "openPlan": "{{percent}}% del límite del plan usado. Ver el contexto y el uso del plan.",
+        "context": "Contexto",
+        "tokens": "{{used}} de {{window}} tokens",
+        "compact": "Compactar",
+        "plan": "Límites de uso del plan",
+        "fiveHour": "Límite de 5 horas",
+        "sevenDay": "Límite semanal",
+        "resets": "Se reinicia {{when}}",
+        "tokensOnly": "{{used}} tokens"
+      },
+      "queue": {
+        "queued": "En cola",
+        "sendNow": "Enviar ahora",
+        "edit": "Editar",
+        "remove": "Quitar de la cola"
+      }
     }
   },
   "validation": {
@@ -1066,22 +1086,6 @@
         "previous": "Pregunta anterior",
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
-      },
-      "queue": {
-        "queued": "En cola",
-        "sendNow": "Enviar ahora",
-        "edit": "Editar",
-        "remove": "Quitar de la cola"
-      },
-      "usage": {
-        "open": "{{percent}}% del contexto usado. Ver el contexto y el uso del plan.",
-        "context": "Contexto",
-        "tokens": "{{used}} de {{window}} tokens",
-        "compact": "Compactar",
-        "plan": "Límites de uso del plan",
-        "fiveHour": "Límite de 5 horas",
-        "sevenDay": "Límite semanal",
-        "resets": "Se reinicia {{when}}"
       }
     }
   },
@@ -1132,6 +1136,8 @@
       "addKey": "Añadir una clave",
       "sendFailed": "No se pudo enviar el mensaje.",
       "stopFailed": "No se pudo detener el turno.",
+      "queuedImages_one": "{{count}} imagen",
+      "queuedImages_other": "{{count}} imágenes",
       "failed": "{{provider}} no pudo terminar este turno",
       "failedUnknown": "El turno terminó sin decir por qué.",
       "errorDetails": "Mostrar detalles",

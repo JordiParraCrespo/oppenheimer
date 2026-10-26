@@ -145,6 +145,49 @@ describe('ClaudeBotEngine', () => {
     ]);
   });
 
+  it('reports what the last answer was sent, against the window of the model that read the most', async () => {
+    const answer = (sent: number, parent: string | null = null) =>
+      ({
+        type: 'assistant',
+        parent_tool_use_id: parent,
+        message: {
+          content: [{ type: 'text', text: 'step' }],
+          usage: { input_tokens: 2, cache_read_input_tokens: sent - 2, output_tokens: 40 },
+        },
+      }) as unknown as SDKMessage;
+    const model = (read: number, contextWindow: number) => ({
+      inputTokens: read,
+      outputTokens: 0,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      webSearchRequests: 0,
+      costUSD: 0,
+      contextWindow,
+      maxOutputTokens: 0,
+    });
+    scripted(() => [
+      answer(30_000),
+      // A subagent's call is its own context, not the bot's.
+      answer(90_000, 'toolu_parent'),
+      answer(41_000),
+      success({
+        modelUsage: {
+          'model-main': model(71_000, 1_000_000),
+          'model-small': model(9_000, 200_000),
+        },
+      }),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(events.find((event) => event.type === 'usage')).toEqual({
+      type: 'usage',
+      inputTokens: 15,
+      outputTokens: 5,
+      context: { tokens: 41_000, window: 1_000_000 },
+    });
+  });
+
   it('runs our tools through the in-process MCP server, under our names, with the key redacted', async () => {
     const getTime: BotEngineTool = {
       name: 'get_time',

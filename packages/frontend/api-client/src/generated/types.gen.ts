@@ -3386,6 +3386,25 @@ export type BotMessageResponseDto = {
     createdAt: string;
 };
 
+export type BotPlanWindowDto = {
+    /**
+     * The share of the window used, 0–100.
+     */
+    usedPercent: number;
+    resetsAt: string | null;
+};
+
+export type BotTurnPlanLimitsDto = {
+    /**
+     * The 5-hour window.
+     */
+    fiveHour: BotPlanWindowDto | null;
+    /**
+     * The weekly window.
+     */
+    sevenDay: BotPlanWindowDto | null;
+};
+
 export type BotTurnResponseDto = {
     id: string;
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
@@ -3400,6 +3419,18 @@ export type BotTurnResponseDto = {
     error: string | null;
     inputTokens: number;
     outputTokens: number;
+    /**
+     * What the model's context held at the turn's last answer, in tokens; null before one.
+     */
+    contextTokens: number | null;
+    /**
+     * The model's context window, when the engine reported it.
+     */
+    contextWindow: number | null;
+    /**
+     * A subscription sign-in's usage windows (ChatGPT's) as the last answer said them; null on an API key.
+     */
+    planLimits: BotTurnPlanLimitsDto | null;
     /**
      * Stop was pressed and the worker has not ended it yet.
      */

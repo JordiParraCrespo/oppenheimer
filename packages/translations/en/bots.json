@@ -45,6 +45,8 @@
     "addKey": "Add a key",
     "sendFailed": "Could not send the message.",
     "stopFailed": "Could not stop the turn.",
+    "queuedImages_one": "{{count}} image",
+    "queuedImages_other": "{{count}} images",
     "failed": "{{provider}} could not finish this turn",
     "failedUnknown": "The turn ended without saying why.",
     "errorDetails": "Show details",

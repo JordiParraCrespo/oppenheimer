@@ -420,6 +420,28 @@ describe('bots chat (integration)', () => {
     expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({ status: 'failed' });
   });
 
+  // What breaks this: a column the finish leaves out of its UPDATE, a CHECK
+  // that refuses a real window, or the plan's reset read back as a string.
+  it('keeps the context and the plan limits a turn ended with', async () => {
+    const bot = await create('Metered');
+    const { turn, message } = sent(bot, 'One');
+    await turns.enqueue(turn, message, null);
+    const running = (await turns.findForRun(turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    const fiveHour = { usedPercent: 20.5, resetsAt: new Date('2026-10-26T14:00:00.000Z') };
+    running.end('completed', new Date(), {
+      inputTokens: 900,
+      outputTokens: 40,
+      context: { tokens: 41_000, window: 1_000_000 },
+      planLimits: { fiveHour, sevenDay: { usedPercent: 3, resetsAt: null } },
+    });
+    expect(await turns.finish(running, null)).toBe(true);
+    const stored = (await turns.findForRun(turn.id)).unwrap();
+    expect(stored.context).toEqual({ tokens: 41_000, window: 1_000_000 });
+    expect(stored.planLimits).toEqual({ fiveHour, sevenDay: { usedPercent: 3, resetsAt: null } });
+  });
+
   it('makes the end of a turn wait for the bot row a send holds', async () => {
     const bot = await create('Locked');
     const first = sent(bot, 'One');
