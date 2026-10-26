@@ -539,12 +539,7 @@
     },
     "new": {
       "title": "Nueva sesión",
-      "subtitle": "Define el alcance y describe el trabajo.",
-      "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
-      "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
-      "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
-      "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
-      "subtitleFolder": "Abre una carpeta del host tal como está. No se clona nada ni se crea ninguna rama.",
+      "heading": "¿En qué trabajamos?",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -669,6 +664,19 @@
     "session": {
       "status": {
         "closed": "Desconectado"
+      },
+      "state": {
+        "starting": "Iniciando",
+        "failed": "Falló",
+        "stopped": "Detenida",
+        "deleted": "Eliminada",
+        "deleting": "Eliminando…",
+        "working": "En marcha",
+        "waiting-on-you": "Necesita tu respuesta",
+        "ready-for-review": "Lista para revisar",
+        "landing": "Cerrando",
+        "idle": "Inactiva",
+        "resolved": "Terminada"
       },
       "file": {
         "sending": "Enviando archivo",

@@ -261,18 +261,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  it('summarises the picked project under the title', () => {
-    cleanup();
-    render(
-      <ConsoleDialogProvider>
-        <NewSessionForm heading={<h1>title</h1>} />
-      </ConsoleDialogProvider>,
-    );
-    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'project' }));
-    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
-  });
-
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */
   describe('the send gate', () => {
     function composer() {
@@ -326,10 +314,10 @@ describe('NewSessionForm', () => {
       rendered();
     });
 
-    it('swaps the repository and branch chips for the folder chip, and leaves the composer', () => {
+    it('swaps the repository and branch chips for the folder chip, and leaves the composer and the project', () => {
       fireEvent.click(screen.getByRole('button', { name: 'where' }));
 
-      expect(rendered()).toEqual(['folder', 'host', 'project', 'where']);
+      expect(rendered()).toEqual(['folder', 'host', 'where']);
       expect(screen.queryByRole('button', { name: 'repositories' })).toBeNull();
     });
 

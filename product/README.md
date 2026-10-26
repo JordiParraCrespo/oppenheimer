@@ -691,3 +691,9 @@ earlier note:
   rail's default order, and the console opens on the rail's first item,
   so a reader who drags another item to the top opens there instead
   (`versions/mvp/05-screens.md`, `25-bots.md`).
+- New session's chips used to sit in a grey band fused to the top of a
+  tall composer, under a line saying what sending would do. On
+  2026-10-26 it became one box at the pane's foot with a row of choices
+  under it and the project over it, and a session's name, state, Terminal
+  / Chat and Share moved from the terminal's status line to a bar over it
+  (`versions/mvp/05-screens.md`).

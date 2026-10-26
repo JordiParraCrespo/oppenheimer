@@ -1,4 +1,4 @@
-import { Composer, FieldError } from '@oppenheimer/design-system-web';
+import { ComposerChoices, ComposerPill, FieldError } from '@oppenheimer/design-system-web';
 import {
   dictateInto,
   dictationSlots,
@@ -26,7 +26,9 @@ import { refusalText } from '../lib/session-files';
  * dropped. A paste with no file is left to the field.
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
- * the New session draft's store.
+ * the New session draft's store. They sit on the row under the box
+ * (`ComposerChoices`): where it runs and what it may touch on the left, who
+ * drives it on the right.
  *
  * `voice` is dictation (`product/next-steps/voice.md`, the kit's
  * `useDictation`): while anyone can hear the workspace the mic is on, the
@@ -88,7 +90,7 @@ export function NewSessionComposer({
           hold(picked);
         }}
       />
-      <Composer
+      <ComposerPill
         value={draft}
         onValueChange={setDraft}
         busy={busy}
@@ -110,9 +112,6 @@ export function NewSessionComposer({
         onAttach={() => picker.current?.click()}
         onPaste={onPaste}
         dictation={dictationSlots(dictation)}
-        scope={scope}
-        tools={tools}
-        engine={engine}
         onSubmit={(text) => {
           const task = text.trim();
           // A file rides a written task: the text is optional only with none held.
@@ -126,6 +125,10 @@ export function NewSessionComposer({
           // and its files where their author can fix them and send again.
         }}
       />
+      <ComposerChoices engine={engine}>
+        {scope}
+        {tools}
+      </ComposerChoices>
       {refusal ? (
         <FieldError className="mx-4.5">
           {refusalText(refusal, t, 'sessions.new.composer')}
