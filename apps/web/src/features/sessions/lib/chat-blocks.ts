@@ -7,6 +7,7 @@ import type {
   ChatTurn,
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
+import type { ChatUsageContext } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import type { FileHandOff } from './file-hand-off';
@@ -166,15 +167,6 @@ export function latestModel(turns: readonly ChatTurn[]): string | null {
   return null;
 }
 
-/** How full the agent's context is, as of its last answer. */
-export interface ChatContext {
-  tokens: number;
-  /** The window those tokens fill. */
-  window: number;
-  /** `tokens` as a share of `window`, 0–100. */
-  percent: number;
-}
-
 /** The window a Claude model reads by default. */
 const CONTEXT_WINDOW = 200_000;
 /** The long-context window, which a session past the default is on. */
@@ -189,30 +181,17 @@ const LONG_CONTEXT_WINDOW = 1_000_000;
 export function latestContext(
   turns: readonly ChatTurn[],
   status: ChatStatus | null = null,
-): ChatContext | null {
+): ChatUsageContext | null {
   if (status?.context) {
     const { usedPercent, window } = status.context;
-    return { tokens: Math.round((usedPercent / 100) * window), window, percent: usedPercent };
+    return { tokens: Math.round((usedPercent / 100) * window), window };
   }
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const tokens = turns[i]?.contextTokens;
     if (!tokens) continue;
-    const window = tokens > CONTEXT_WINDOW ? LONG_CONTEXT_WINDOW : CONTEXT_WINDOW;
-    return { tokens, window, percent: Math.min(100, (tokens / window) * 100) };
+    return { tokens, window: tokens > CONTEXT_WINDOW ? LONG_CONTEXT_WINDOW : CONTEXT_WINDOW };
   }
   return null;
-}
-
-const tokenFormats = new Map<string, Intl.NumberFormat>();
-
-/** A token count as people read it ("32K", "1M"); one formatter per locale. */
-export function formatTokens(tokens: number, locale: string): string {
-  let format = tokenFormats.get(locale);
-  if (!format) {
-    format = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 });
-    tokenFormats.set(locale, format);
-  }
-  return format.format(tokens);
 }
 
 /**

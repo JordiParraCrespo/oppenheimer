@@ -10,6 +10,9 @@ import {
 import { ListChecks } from '@oppenheimer/design-system-web/icons';
 import type { ChatLimit, ChatQueued, ChatTodo } from '@oppenheimer/frontend-consumer';
 import {
+  ChatQueuedRow,
+  ChatUsage,
+  type ChatUsageContext,
   dictateInto,
   dictationSlots,
   useDictation,
@@ -20,11 +23,8 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type HeldFile, useHeldFiles } from '../hooks/use-held-files';
 import { useTakeFiles } from '../hooks/use-take-files';
-import type { ChatContext } from '../lib/chat-blocks';
 import type { FileHandOff } from '../lib/file-hand-off';
 import { CHAT_MESSAGE_MAX_FILES, refusalText } from '../lib/session-files';
-import { ChatQueuedRow } from './chat-queued-row';
-import { ChatUsage } from './chat-usage';
 
 /** How a send went: all of it, or the files that reached the host before one did not. */
 export type ChatSendResult = { sent: true } | { sent: false; landed: readonly string[] };
@@ -79,7 +79,7 @@ export function SessionChatComposer({
   /** Messages written while the agent worked, waiting for its turn to end. */
   queued: readonly ChatQueued[];
   /** How full the agent's context is, once the host sends its counts. */
-  context: ChatContext | null;
+  context: ChatUsageContext | null;
   /** The plan's usage windows, from the agent's status line on the host. */
   limits: { fiveHour: ChatLimit | null; sevenDay: ChatLimit | null };
   onSend: (text: string, files: HeldFile[]) => Promise<ChatSendResult>;
@@ -125,7 +125,7 @@ export function SessionChatComposer({
         {queued.map((message) => (
           <ChatQueuedRow
             key={message.id}
-            queued={message}
+            text={message.text}
             onSendNow={() => onSendQueued(message.id)}
             onEdit={() => {
               const text = onUnqueue(message.id);

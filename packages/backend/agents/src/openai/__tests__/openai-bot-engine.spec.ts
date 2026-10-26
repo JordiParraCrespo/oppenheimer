@@ -167,7 +167,7 @@ describe('OpenAiBotEngine', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 14, outputTokens: 3 },
+      { type: 'usage', inputTokens: 14, outputTokens: 3, context: { tokens: 4, window: null } },
       { type: 'done', reason: 'completed' },
     ]);
   });

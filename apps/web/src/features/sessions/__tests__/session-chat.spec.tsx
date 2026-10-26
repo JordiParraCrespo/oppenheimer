@@ -667,13 +667,13 @@ describe('the queue and the context', () => {
     ).toEqual(['Then run the tests', 'And open a PR']);
 
     // Edit takes it back into the field; remove drops it.
-    const edits = screen.getAllByRole('button', { name: 'sessions.chat.queue.edit' });
+    const edits = screen.getAllByRole('button', { name: 'common.chat.queue.edit' });
     fireEvent.click(edits[1] as HTMLElement);
     expect((composer() as HTMLTextAreaElement).value).toBe('And open a PR');
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.queue.sendNow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.chat.queue.sendNow' }));
     act(() => vi.runAllTimers());
     expect(typed).toEqual(['Then run the tests', '\r']);
-    expect(screen.queryByRole('button', { name: 'sessions.chat.queue.remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'common.chat.queue.remove' })).toBeNull();
     vi.useRealTimers();
   });
 
@@ -685,7 +685,7 @@ describe('the queue and the context', () => {
     chat.apply({ reset: true, entries: [prompt, answer('a1')] });
     render(<SessionChat chat={chat} readOnly={false} />);
     // Counted off the transcript until the status line says otherwise.
-    const meter = screen.getByRole('button', { name: /sessions\.chat\.usage\.open/ });
+    const meter = screen.getByRole('button', { name: /common\.chat\.usage\.open/ });
     expect(meter.textContent).toContain('25%');
 
     act(() =>
@@ -704,15 +704,15 @@ describe('the queue and the context', () => {
     );
     expect(meter.textContent).toContain('32%');
     fireEvent.click(meter);
-    expect(screen.getByText('sessions.chat.usage.plan')).toBeTruthy();
-    expect(screen.getByText('sessions.chat.usage.fiveHour')).toBeTruthy();
+    expect(screen.getByText('common.chat.usage.plan')).toBeTruthy();
+    expect(screen.getByText('common.chat.usage.fiveHour')).toBeTruthy();
     expect(screen.getByText('84%')).toBeTruthy();
     expect(screen.getByText('41%')).toBeTruthy();
     expect(screen.getByText(/"used":"64K","window":"200K"/)).toBeTruthy();
     // Nothing is typed until Compact is asked for.
     act(() => vi.runAllTimers());
     expect(typed).toEqual([]);
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.usage.compact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.chat.usage.compact' }));
     act(() => vi.runAllTimers());
     expect(typed).toEqual(['/compact', '\r']);
     vi.useRealTimers();
@@ -722,6 +722,6 @@ describe('the queue and the context', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt] });
     render(<SessionChat chat={chat} readOnly={false} />);
-    expect(screen.queryByRole('button', { name: /sessions\.chat\.usage\.open/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /common\.chat\.usage\.open/ })).toBeNull();
   });
 });

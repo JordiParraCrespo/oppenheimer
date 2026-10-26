@@ -28,6 +28,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
+  useBotWaitingMessages: () => [],
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: state.upload }),
