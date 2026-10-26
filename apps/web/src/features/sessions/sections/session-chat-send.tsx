@@ -9,6 +9,7 @@ import type { HeldFile } from '../hooks/use-held-files';
 import { useChatState } from '../hooks/use-session-chat';
 import {
   chatVocabulary,
+  latestContext,
   latestModel,
   latestTodos,
   modelName,
@@ -35,6 +36,9 @@ const FILES_SETTLE_MS = 1500;
  * not arrive stops the send: it and the rest stay in the composer with the
  * words, the failure is said above it, and nothing is submitted. A reader
  * with no `upload` (a guest on a shared link) sends words only.
+ *
+ * Words sent while the agent works wait in the chat's queue
+ * (`SessionChat.post`) and go when its turn ends; the composer shows them.
  *
  * While the agent is stopped on questions (`pendingQuestion`), its picker
  * holds the terminal's input, so they are answered here instead of a
@@ -63,7 +67,10 @@ export function SessionChatSend({
   const question = pendingQuestion(last);
 
   function deliver(text: string, withFiles: boolean): ChatSendResult {
-    chat.send(text, { withFiles });
+    // Words alone wait their turn while the agent works; with files, they
+    // follow the paths the host already pasted, which cannot wait.
+    if (withFiles) chat.send(text, { withFiles });
+    else chat.post(text);
     onSent();
     return { sent: true };
   }
@@ -122,8 +129,13 @@ export function SessionChatSend({
           model={modelName(latestModel(state.turns))}
           voice={voice}
           files={upload ? files : undefined}
+          queued={state.queued}
+          context={latestContext(state.turns)}
           onSend={send}
           onStop={() => chat.interrupt()}
+          onSendQueued={(id) => chat.sendQueued(id)}
+          onUnqueue={(id) => chat.unqueue(id)}
+          onCompact={() => chat.post('/compact')}
         />
       </div>
     </div>

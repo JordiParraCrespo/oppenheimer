@@ -1043,6 +1043,15 @@
         "previous": "Previous question",
         "nextQuestion": "Next question",
         "of": "{{n}} of {{total}}"
+      },
+      "queue": {
+        "queued": "Queued",
+        "sendNow": "Send now",
+        "edit": "Edit",
+        "remove": "Remove from the queue"
+      },
+      "context": {
+        "label": "{{percent}}% of context used, {{used}} of {{window}} tokens. Click to compact."
       }
     }
   },

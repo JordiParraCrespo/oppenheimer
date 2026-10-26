@@ -562,6 +562,15 @@
       "previous": "Pregunta anterior",
       "nextQuestion": "Pregunta siguiente",
       "of": "{{n}} de {{total}}"
+    },
+    "queue": {
+      "queued": "En cola",
+      "sendNow": "Enviar ahora",
+      "edit": "Editar",
+      "remove": "Quitar de la cola"
+    },
+    "context": {
+      "label": "{{percent}}% del contexto usado, {{used}} de {{window}} tokens. Haz clic para compactarlo."
     }
   }
 }

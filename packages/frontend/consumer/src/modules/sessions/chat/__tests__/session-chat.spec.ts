@@ -237,7 +237,7 @@ describe('SessionChat', () => {
 
     const before = chat.snapshot();
     chat.apply({ reset: true, entries: [] });
-    expect(chat.snapshot()).toEqual({ available: true, turns: [] });
+    expect(chat.snapshot()).toEqual({ available: true, turns: [], queued: [] });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
   });
@@ -372,6 +372,107 @@ describe('typing into the session', () => {
     chat.send('What is in these?', { withFiles: true });
     vi.runAllTimers();
     expect(typed).toEqual(['\r', 'What is in these?', '\r']);
+    vi.useRealTimers();
+  });
+});
+
+describe('what the context holds', () => {
+  it('reads the tokens of the last answer in each turn, and none from a host that sends no counts', () => {
+    const answer = (uuid: string, usage?: Record<string, number>) => ({
+      ...assistant(uuid, [{ type: 'text', text: 'Ok.' }]),
+      message: {
+        role: 'assistant',
+        model: 'claude-opus-5-5',
+        content: [{ type: 'text', text: 'Ok.' }],
+        ...(usage ? { usage } : {}),
+      },
+    });
+    const turns = toTurns([
+      user('u1', 'One'),
+      answer('a1', { input_tokens: 10, cache_read_input_tokens: 30_000, output_tokens: 90 }),
+      answer('a2', {
+        input_tokens: 4,
+        cache_creation_input_tokens: 1_000,
+        cache_read_input_tokens: 31_000,
+        output_tokens: 200,
+      }),
+      user('u2', 'Two'),
+      answer('a3'),
+    ]);
+    expect(turns.map((turn) => turn.contextTokens)).toEqual([32_204, null]);
+  });
+});
+
+describe('the queue', () => {
+  const working = [JSON.stringify(user('u1', 'Fix it'))];
+  const settled = (uuid: string) =>
+    JSON.stringify(assistant(uuid, [{ type: 'text', text: 'Fixed.' }]));
+
+  it('sends at once while the agent is free, and holds what is written while it works', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.post('Hello');
+    vi.runAllTimers();
+    expect(typed).toEqual(['Hello', '\r']);
+
+    typed.length = 0;
+    chat.apply({ reset: true, entries: working });
+    chat.post('Then run the tests');
+    chat.post('And open a PR');
+    vi.runAllTimers();
+    expect(typed).toEqual([]);
+    expect(chat.snapshot().queued.map((queued) => queued.text)).toEqual([
+      'Then run the tests',
+      'And open a PR',
+    ]);
+
+    // The turn ends: the first goes; the second waits for the first's turn.
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then run the tests', '\r']);
+    expect(chat.snapshot().queued.map((queued) => queued.text)).toEqual(['And open a PR']);
+    chat.apply({ entries: [JSON.stringify(user('u2', 'Then run the tests'))] });
+    chat.apply({ entries: [settled('a2')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then run the tests', '\r', 'And open a PR', '\r']);
+    expect(chat.snapshot().queued).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('lets a queued message be sent now, or taken back to edit or drop', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
+    chat.post('One');
+    chat.post('Two');
+    const [one, two] = chat.snapshot().queued;
+
+    expect(chat.unqueue(two?.id ?? '')).toBe('Two');
+    expect(chat.unqueue(two?.id ?? '')).toBeNull();
+    chat.sendQueued(one?.id ?? '');
+    vi.runAllTimers();
+    expect(typed).toEqual(['One', '\r']);
+    expect(chat.snapshot().queued).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('does not let a message that opens no turn hold the rest', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
+    chat.post('/cost');
+    chat.post('Go on');
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['/cost', '\r']);
+    vi.advanceTimersByTime(5_000);
+    expect(typed).toEqual(['/cost', '\r', 'Go on', '\r']);
     vi.useRealTimers();
   });
 });

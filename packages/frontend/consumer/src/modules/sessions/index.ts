@@ -3,6 +3,7 @@ export {
   type ChatBatch,
   type ChatPrompt,
   type ChatQuestion,
+  type ChatQueued,
   type ChatState,
   type ChatStep,
   type ChatTodo,

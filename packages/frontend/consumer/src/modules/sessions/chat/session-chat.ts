@@ -99,16 +99,30 @@ export interface ChatTurn {
   prompt: ChatPrompt | null;
   steps: ChatStep[];
   model: string | null;
+  /**
+   * How many tokens the agent's context held at its last answer in the turn:
+   * what it was sent, cached or not, and what it wrote. None from a host
+   * that does not send the counts.
+   */
+  contextTokens: number | null;
   startedAt: Date | null;
   lastAt: Date | null;
   /** The last turn, while the agent has not answered in words or a call is open. */
   working: boolean;
 }
 
+/** A message written while the agent worked, waiting for its turn to end. */
+export interface ChatQueued {
+  id: string;
+  text: string;
+}
+
 export interface ChatState {
   /** The host follows this session's transcript: a first batch has arrived. */
   available: boolean;
   turns: ChatTurn[];
+  /** What waits to be sent, in order; the first goes once the agent settles. */
+  queued: readonly ChatQueued[];
 }
 
 export interface ChatBatch {
@@ -116,7 +130,7 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [] };
+const EMPTY: ChatState = { available: false, turns: [], queued: [] };
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';
@@ -130,6 +144,12 @@ const SUBMIT_AFTER_TEXT_MS = 60;
  * each one and reads the next against what it drew.
  */
 const QUESTION_KEY_GAP_MS = 120;
+/**
+ * How long a queued message that went waits for its turn to show before
+ * the next may go: a message that opens no turn (a slash command the CLI
+ * answers itself) must not hold the rest of the queue.
+ */
+const QUEUE_SETTLE_MS = 5000;
 
 /**
  * One attachment's chat: batches in, an immutable `ChatState` out, with a
@@ -154,6 +174,9 @@ export class SessionChat {
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
+  /** The last queued message sent: how many turns there were, and when. */
+  private sentQueued: { turns: number; at: number } | null = null;
+  private queuedIds = 0;
 
   apply(batch: ChatBatch): void {
     if (batch.reset) {
@@ -181,8 +204,79 @@ export class SessionChat {
     }
     if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
     const last = turns[open];
-    this.state = { available: true, turns: last ? [...this.closed, last] : [...this.closed] };
+    this.publish({
+      ...this.state,
+      available: true,
+      turns: last ? [...this.closed, last] : [...this.closed],
+    });
+    this.flush();
+  }
+
+  private publish(state: ChatState): void {
+    this.state = state;
     for (const listener of this.listeners) listener();
+  }
+
+  /** The agent is in a turn: a message now would interrupt the work it is doing. */
+  private busy(): boolean {
+    return this.state.turns.at(-1)?.working === true;
+  }
+
+  /**
+   * A message from the composer: sent now when the agent is free, queued
+   * while it works, to go when its turn ends. Claude Code would queue a
+   * message typed mid-turn too, but out of sight; this keeps it in the chat,
+   * where it can still be edited, sent now or taken back.
+   */
+  post(message: string): void {
+    const text = message.trim();
+    if (text === '') return;
+    if (!this.busy()) {
+      this.send(message);
+      return;
+    }
+    this.queuedIds += 1;
+    this.publish({
+      ...this.state,
+      queued: [...this.state.queued, { id: `queued-${this.queuedIds}`, text: message }],
+    });
+  }
+
+  /** Takes a queued message back, for the composer to edit or to drop; its text, if it was there. */
+  unqueue(id: string): string | null {
+    const held = this.state.queued.find((queued) => queued.id === id);
+    if (!held) return null;
+    this.publish({ ...this.state, queued: this.state.queued.filter((queued) => queued !== held) });
+    return held.text;
+  }
+
+  /** Sends a queued message at once, into the turn under way, as the terminal would take it. */
+  sendQueued(id: string): void {
+    if (!this.type) return;
+    const text = this.unqueue(id);
+    if (text !== null) this.send(text);
+  }
+
+  /**
+   * Sends the first queued message once the agent has settled, and the next
+   * only after that one has opened its turn (or `QUEUE_SETTLE_MS`), so two
+   * never go into the same moment.
+   */
+  private flush(): void {
+    const [next, ...rest] = this.state.queued;
+    if (!next || !this.type || this.busy()) return;
+    const waiting = this.sentQueued;
+    if (
+      waiting &&
+      this.state.turns.length <= waiting.turns &&
+      Date.now() - waiting.at < QUEUE_SETTLE_MS
+    ) {
+      return;
+    }
+    this.sentQueued = { turns: this.state.turns.length, at: Date.now() };
+    this.publish({ ...this.state, queued: rest });
+    this.send(next.text);
+    if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
   }
 
   private reopen(): void {
@@ -278,7 +372,13 @@ function date(value: unknown): Date | null {
  */
 type Reading =
   | { kind: 'prompt'; prompt: ChatPrompt }
-  | { kind: 'steps'; steps: ChatStep[]; model: string | null; at: Date | null }
+  | {
+      kind: 'steps';
+      steps: ChatStep[];
+      model: string | null;
+      at: Date | null;
+      contextTokens?: number | null;
+    }
   | { kind: 'results'; results: ChatResult[]; at: Date | null }
   | null;
 
@@ -303,7 +403,13 @@ export function classify(value: unknown, index: number): Reading {
       const step = stepOf(record(raw), `${id}:${position}`, at);
       return step ? [step] : [];
     });
-    return { kind: 'steps', steps, model: text(message.model), at };
+    return {
+      kind: 'steps',
+      steps,
+      model: text(message.model),
+      at,
+      contextTokens: contextOf(message.usage),
+    };
   }
   if (entry.type !== 'user') return null;
   if (entry.isCompactSummary === true) {
@@ -399,6 +505,7 @@ function buildTurns(
       case 'steps': {
         const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at, index);
         turn.model = reading.model ?? turn.model;
+        turn.contextTokens = reading.contextTokens ?? turn.contextTokens;
         if (reading.at) turn.lastAt = reading.at;
         for (const step of reading.steps) {
           if (step.kind === 'tool') calls.set(step.call.id, step.call);
@@ -431,6 +538,7 @@ function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date
     prompt,
     steps: [],
     model: null,
+    contextTokens: null,
     startedAt: at,
     lastAt: at,
     working: false,
@@ -538,6 +646,25 @@ function toolCall(block: Loose): ChatToolCall {
     startedAt: null,
     finishedAt: null,
   };
+}
+
+/**
+ * The tokens an answer's context held, off its `usage`: what it was sent,
+ * whether read from the cache or written to it, and what it wrote.
+ */
+function contextOf(value: unknown): number | null {
+  const usage = record(value);
+  if (!usage) return null;
+  const count = (key: string) => {
+    const n = usage[key];
+    return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+  };
+  const total =
+    count('input_tokens') +
+    count('cache_creation_input_tokens') +
+    count('cache_read_input_tokens') +
+    count('output_tokens');
+  return total > 0 ? total : null;
 }
 
 const lines = (value: unknown): number =>
