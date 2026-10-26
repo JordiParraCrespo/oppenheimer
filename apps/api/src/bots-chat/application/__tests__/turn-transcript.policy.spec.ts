@@ -47,6 +47,8 @@ describe('TurnTranscript', () => {
       error: null,
       inputTokens: 10,
       outputTokens: 2,
+      context: null,
+      planLimits: null,
     });
   });
 
@@ -175,6 +177,30 @@ describe('TurnTranscript', () => {
     expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
     expect(subject.status).toBe('failed');
     expect(subject.error).toBe(TIME_LIMIT_ERROR);
+  });
+
+  // What breaks this: the meter reading the first answer's context, not the
+  // last; a later usage event with no limits wiping the plan windows.
+  it('ends the turn with the context of its last answer and the last plan limits said', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    const fiveHour = { usedPercent: 20.5, resetsAt: new Date(1_793_040_000_000) };
+    const events: BotEngineEvent[] = [
+      {
+        type: 'usage',
+        inputTokens: 10,
+        outputTokens: 2,
+        context: { tokens: 10, window: 200_000 },
+        limits: { fiveHour, sevenDay: null },
+      },
+      { type: 'usage', inputTokens: 40, outputTokens: 5, context: { tokens: 40, window: 200_000 } },
+      { type: 'done', reason: 'completed' },
+    ];
+    for (const event of events) transcript.apply(event);
+    transcript.endTurn(new Date(), null);
+    expect(subject.context).toEqual({ tokens: 40, window: 200_000 });
+    expect(subject.planLimits).toEqual({ fiveHour, sevenDay: null });
   });
 
   it('ends a turn Stop cancelled as cancelled', () => {

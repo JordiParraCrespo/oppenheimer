@@ -76,6 +76,33 @@ export interface BotTurnRequest {
   scratchDir: string;
 }
 
+/** One of a subscription's usage windows: the share used, 0–100, and when it resets. */
+export interface BotPlanWindow {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/**
+ * A subscription's usage windows as the provider reported them on the
+ * turn's last answer: the 5-hour one and the weekly one, each absent when it
+ * did not say. Only a sign-in to a subscription has them (ChatGPT's); a
+ * provider on an API key bills per token instead.
+ */
+export interface BotPlanLimits {
+  fiveHour: BotPlanWindow | null;
+  sevenDay: BotPlanWindow | null;
+}
+
+/**
+ * What the model's context held when it gave the turn's last answer: what
+ * that call was sent, cached or not, and the window it is read against when
+ * the engine knows it.
+ */
+export interface BotTurnContext {
+  tokens: number;
+  window: number | null;
+}
+
 export type BotEngineEvent =
   | { type: 'text.delta'; text: string }
   | { type: 'text.done'; text: string }
@@ -89,7 +116,14 @@ export type BotEngineEvent =
       /** What one of our tools said the call made; absent for the engine's own tools. */
       data?: BotToolData;
     }
-  | { type: 'usage'; inputTokens: number; outputTokens: number }
+  | {
+      type: 'usage';
+      /** Summed over every call the turn made. */
+      inputTokens: number;
+      outputTokens: number;
+      context?: BotTurnContext;
+      limits?: BotPlanLimits;
+    }
   | {
       type: 'done';
       reason: 'completed' | 'cancelled' | 'max_steps' | 'failed';

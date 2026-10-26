@@ -30,6 +30,8 @@ export {
   useBotActiveTurn,
   useBotImage,
   useBotLiveText,
+  useBotRoomLeft,
+  useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
