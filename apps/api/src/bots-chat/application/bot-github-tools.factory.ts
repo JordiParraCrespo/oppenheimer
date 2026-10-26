@@ -216,6 +216,7 @@ export class BotGithubToolsFactory implements BotToolArea {
         const props = {
           scope: context.owner,
           address: {
+            kind: 'installation' as const,
             installationId: input.installation_id,
             githubRepoId: input.github_repo_id,
             number: input.number,

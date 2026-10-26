@@ -10,7 +10,11 @@ import type {
 } from '../infrastructure/github-issues.port';
 import { GithubAccessResolver } from './github-access.resolver';
 import type { IssueAccessPort, IssueAddress } from './issue-access.port';
-import type { RepositoryAddress, WorkspaceRepository } from './pull-request-access.port';
+import type {
+  InstallationAddress,
+  RepositoryAddress,
+  WorkspaceRepository,
+} from './pull-request-access.port';
 
 /**
  * Issues, read live through the installation and written with the caller's
@@ -57,7 +61,7 @@ export class IssueAccessResolver implements IssueAccessPort {
   async createIssue(
     scope: AccessScope,
     userId: string,
-    address: RepositoryAddress,
+    address: InstallationAddress,
     issue: GithubIssueInput,
   ): Promise<GithubIssue> {
     const repository = await this.access.repositoryOf(scope, address);
@@ -68,7 +72,7 @@ export class IssueAccessResolver implements IssueAccessPort {
   async addComment(
     scope: AccessScope,
     userId: string,
-    address: IssueAddress,
+    address: InstallationAddress & { number: number },
     body: string,
   ): Promise<{ htmlUrl: string }> {
     const repository = await this.access.repositoryOf(scope, address);

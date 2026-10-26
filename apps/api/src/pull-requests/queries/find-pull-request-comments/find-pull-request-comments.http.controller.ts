@@ -17,10 +17,12 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
 import {
   ApiRepositorySource,
-  RepositorySource,
+  RepositorySourceParam,
 } from '../../decorators/repository-source.decorator';
 import { PullRequestCommentDto } from '../../dtos/pull-request.response.dto';
 import { FindPullRequestCommentsQuery } from './find-pull-request-comments.query';
@@ -47,14 +49,14 @@ export class FindPullRequestCommentsHttpController {
   @ApiResponse({ status: 200, type: [PullRequestCommentDto] })
   async list(
     @CurrentAccessScope() scope: AccessScope,
-    @RepositorySource() installationId: string | null,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
   ): Promise<PullRequestCommentDto[]> {
     return this.queryBus.execute(
       new FindPullRequestCommentsQuery({
         scope,
-        address: { installationId, githubRepoId, number },
+        address: { ...addressFrom(source, githubRepoId), number },
       }),
     );
   }

@@ -5,6 +5,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
 import { planClosedReads } from '../domain/closed-read.policy';
 import { GithubErrors } from '../domain/github.errors';
+import { isInstallationAddress } from '../domain/repository-address.policy';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
@@ -24,6 +25,8 @@ import { GithubAccessResolver } from './github-access.resolver';
 import { GithubUserGrantResolver } from './github-user-grant.resolver';
 import {
   type ClosedPullRequestSnapshot,
+  type InstallationAddress,
+  type InstallationPullRequestAddress,
   type Part,
   type PullRequestAccessPort,
   type PullRequestAddress,
@@ -104,8 +107,8 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     return [...installed, ...tokens.filter((repository) => !covered.has(repository.githubRepoId))];
   }
 
-  requireApp(address: RepositoryAddress): string {
-    if (address.installationId !== null) return address.installationId;
+  requireApp<T extends RepositoryAddress>(address: T): Extract<T, InstallationAddress> {
+    if (isInstallationAddress(address)) return address;
     throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
       detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
     });
@@ -123,6 +126,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
         return repositories
           .filter((repository) => !repository.archived)
           .map((repository) => ({
+            kind: 'installation' as const,
             installationId: installation.id,
             githubRepoId: repository.githubRepoId,
             name: repository.name,
@@ -412,7 +416,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async submitReview(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     review: ReviewSubmission,
   ): Promise<void> {
     const { repository, writer, reader, head } = await this.forWrite(scope, userId, address);
@@ -426,7 +430,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async addComment(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void> {
     const { repository, writer, head } = await this.forWrite(scope, userId, address);
@@ -439,7 +443,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async merge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
     expectedHead?: string,
   ): Promise<void> {
@@ -456,7 +460,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async enableAutoMerge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
   ): Promise<boolean> {
     const { repository, writer, reader, head, nodeId } = await this.forWrite(
@@ -470,7 +474,11 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   }
 
   /** The repository, the caller's own token and the head commit a write lands on. */
-  private async forWrite(scope: AccessScope, userId: string, address: PullRequestAddress) {
+  private async forWrite(
+    scope: AccessScope,
+    userId: string,
+    address: InstallationPullRequestAddress,
+  ) {
     const repository = await this.access.repositoryOf(scope, address);
     const writer = await this.access.writeCredential(userId, address);
     const credential = await this.access.readCredential(scope, address);

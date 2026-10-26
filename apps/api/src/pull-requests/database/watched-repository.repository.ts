@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { IsNull, Repository } from 'typeorm';
+import { addressOf, installationIdOf } from '../../github/domain/repository-address.policy';
 import { PullRequestResource } from '../pull-requests.resource';
 import { WatchedRepositoryOrmEntity } from './watched-repository.orm-entity';
 import type {
@@ -29,10 +30,7 @@ export class WatchedRepositoryRepository
     const rows = await this.scopedQuery(scope)
       .andWhere('watch.userId = :userId', { userId: scope.userId })
       .getMany();
-    return rows.map((row) => ({
-      installationId: row.installationId,
-      githubRepoId: Number(row.githubRepoId),
-    }));
+    return rows.map((row) => addressOf(row.installationId, Number(row.githubRepoId)));
   }
 
   async watch(scope: AccessScope, watch: RepositoryWatch): Promise<void> {
@@ -48,7 +46,7 @@ export class WatchedRepositoryRepository
     // `= NULL` matches nothing: a token repository's watch is found with `IS NULL`.
     await this.repository.delete({
       ...this.rowOf(scope, watch),
-      installationId: watch.installationId ?? IsNull(),
+      installationId: installationIdOf(watch) ?? IsNull(),
     });
   }
 
@@ -56,7 +54,7 @@ export class WatchedRepositoryRepository
     return {
       organizationId: scope.organizationId as string,
       userId: scope.userId,
-      installationId: watch.installationId,
+      installationId: installationIdOf(watch),
       githubRepoId: String(watch.githubRepoId),
     };
   }

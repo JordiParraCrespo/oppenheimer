@@ -140,6 +140,7 @@ function build(
     ),
   );
   const repository: WorkspaceRepository = {
+    kind: 'installation',
     installationId: connected.id,
     githubRepoId: 821374923,
     name: 'xrp',
@@ -318,6 +319,7 @@ describe('the open pull requests read in one request', () => {
     await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
 
     const snapshot = await resolver.pullRequest(SCOPE, {
+      kind: 'installation' as const,
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
       number: 12,
@@ -580,6 +582,7 @@ describe('a merge pinned to the head it was decided on', () => {
       { actorFor: vi.fn().mockResolvedValue({ token: 'gho_ana', githubUserId: 1 }) },
     );
     const address = {
+      kind: 'installation' as const,
       installationId: built.repository.installationId,
       githubRepoId: 821374923,
       number: 12,
@@ -634,7 +637,7 @@ describe('a repository read through the person’s own token', () => {
     }),
     credentialFor: vi.fn().mockResolvedValue({ token: 'github_pat_ana', bucket: 'user:1' }),
   });
-  const address = { installationId: null, githubRepoId: 99, number: 5 };
+  const address = { kind: 'tokens' as const, githubRepoId: 99, number: 5 };
 
   it('reads the pull request with the token that opens the repository', async () => {
     const readPullRequest = vi.fn().mockResolvedValue({ ...PULL, number: 5 });
@@ -653,31 +656,12 @@ describe('a repository read through the person’s own token', () => {
 
     const snapshot = await resolver.pullRequest(SCOPE, address);
 
-    expect(snapshot.repository).toMatchObject({
-      installationId: null,
-      fullName: 'other-org/billing',
-    });
+    expect(snapshot.repository).toMatchObject({ kind: 'tokens', fullName: 'other-org/billing' });
     expect(readPullRequest).toHaveBeenCalledWith(
       { token: 'github_pat_ana', bucket: 'user:1' },
       'other-org/billing',
       5,
     );
-  });
-
-  it('merges nothing, with GITHUB_022, and asks GitHub nothing', async () => {
-    const merge = vi.fn();
-    const readPullRequest = vi.fn();
-    const { resolver } = build(
-      { merge, readPullRequest },
-      { actorFor: vi.fn().mockResolvedValue({ token: 'gho_ana', githubUserId: 1 }) },
-      tokens(),
-    );
-
-    await expect(resolver.merge(SCOPE, 'ana', address, 'squash')).rejects.toMatchObject({
-      code: 'GITHUB_022',
-    });
-    expect(merge).not.toHaveBeenCalled();
-    expect(readPullRequest).not.toHaveBeenCalled();
   });
 
   // Keyed by installation alone, a snapshot one token read was served to any
@@ -710,21 +694,20 @@ describe('a repository read through the person’s own token', () => {
 
   // A review session clones through the App, which a token repository has none of.
   it('gives no installation to start a session on, with GITHUB_022', () => {
-    const { resolver, repository } = build({});
+    const { resolver } = build({});
 
     expect(() => resolver.requireApp(address)).toThrow(
       expect.objectContaining({ code: 'GITHUB_022' }),
     );
-    expect(resolver.requireApp({ ...address, installationId: repository.installationId })).toBe(
-      repository.installationId,
-    );
+    const app = { ...address, kind: 'installation' as const, installationId: 'inst' };
+    expect(resolver.requireApp(app)).toBe(app);
   });
 
   it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {
     const { resolver } = build({ readPullRequest: vi.fn() }, {}, tokens());
 
     await expect(
-      resolver.pullRequest(SCOPE, { installationId: null, githubRepoId: 7, number: 1 }),
+      resolver.pullRequest(SCOPE, { kind: 'tokens', githubRepoId: 7, number: 1 }),
     ).rejects.toMatchObject({ code: 'GITHUB_023' });
   });
 });

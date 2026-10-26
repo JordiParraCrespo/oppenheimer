@@ -20,7 +20,12 @@ const SCOPE: AccessScope = {
   grants: new Map(),
   bypass: false,
 };
-const ADDRESS = { installationId: 'inst-1', githubRepoId: 42, number: 14 };
+const ADDRESS = {
+  kind: 'installation' as const,
+  installationId: 'inst-1',
+  githubRepoId: 42,
+  number: 14,
+};
 
 function setup(fromFork = false) {
   const access = {
@@ -34,8 +39,8 @@ function setup(fromFork = false) {
         fromFork,
       },
     }),
-    requireApp: vi.fn((address: { installationId: string | null }) => address.installationId ?? ''),
-  } satisfies Pick<PullRequestAccessPort, 'pullRequest' | 'requireApp'>;
+    requireApp: vi.fn(<T>(address: T) => address),
+  } satisfies Pick<PullRequestAccessPort, 'pullRequest'> & { requireApp: unknown };
   const reviews = {
     link: vi.fn().mockResolvedValue(undefined),
     findOpen: vi.fn(),
@@ -72,7 +77,13 @@ describe('starting a review session', () => {
       input: {
         hostId: 'host-1',
         agent: 'claude-code',
-        checkouts: [{ installationId: 'inst-1', githubRepoId: 42, baseBranch: 'fix/empty' }],
+        checkouts: [
+          {
+            installationId: 'inst-1',
+            githubRepoId: 42,
+            baseBranch: 'fix/empty',
+          },
+        ],
         launch: { permission: 'auto' },
       },
     });

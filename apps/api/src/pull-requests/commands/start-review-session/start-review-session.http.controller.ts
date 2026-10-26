@@ -21,11 +21,13 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
 import {
   ApiRepositorySource,
-  RepositorySource,
+  RepositorySourceParam,
 } from '../../decorators/repository-source.decorator';
 import { ReviewSessionStartedResponseDto } from '../../dtos/review-session.response.dto';
 import { StartReviewSessionCommand } from './start-review-session.command';
@@ -74,7 +76,7 @@ export class StartReviewSessionHttpController {
   async start(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
-    @RepositorySource() installationId: string | null,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: StartReviewSessionRequest,
@@ -87,7 +89,7 @@ export class StartReviewSessionHttpController {
       new StartReviewSessionCommand({
         scope,
         userId,
-        address: { installationId, githubRepoId, number },
+        address: { ...addressFrom(source, githubRepoId), number },
         hostId: body.hostId,
         idempotencyKey: idempotencyKey?.trim() || null,
       }),

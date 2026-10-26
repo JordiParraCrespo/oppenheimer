@@ -20,13 +20,15 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import {
   PullRequestProblemResponses,
   PullRequestWriteProblemResponses,
 } from '../../decorators/pull-request-problem-responses.decorator';
 import {
   ApiRepositorySource,
-  RepositorySource,
+  RepositorySourceParam,
 } from '../../decorators/repository-source.decorator';
 import { MergePullRequestCommand } from './merge-pull-request.command';
 import { MergePullRequestRequest } from './merge-pull-request.request.dto';
@@ -57,7 +59,7 @@ export class MergePullRequestHttpController {
   @ApiResponse({ status: 204 })
   async merge(
     @CurrentAccessScope() scope: AccessScope,
-    @RepositorySource() installationId: string | null,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: MergePullRequestRequest,
@@ -65,7 +67,7 @@ export class MergePullRequestHttpController {
     await this.commandBus.execute(
       new MergePullRequestCommand({
         scope,
-        address: { installationId, githubRepoId, number },
+        address: { ...addressFrom(source, githubRepoId), number },
         method: body.method,
       }),
     );

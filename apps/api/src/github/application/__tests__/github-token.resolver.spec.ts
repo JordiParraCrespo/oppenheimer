@@ -101,10 +101,12 @@ describe('adding a token', () => {
     const id = await resolver.add('ana', 'acme: billing', 'github_pat_secret', NOW);
 
     expect(id).toBe('new-token');
-    const kept = store.insert.mock.calls[0]?.[0];
-    expect(kept?.tokenSealed.toString()).toBe('sealed:github_pat_secret');
-    expect(kept?.repositories.map((r) => r.fullName)).toEqual(['acme-labs/billing']);
-    expect(kept?.expiresAt).toEqual(INSPECTION.expiresAt);
+    const kept = store.insert.mock.calls[0]?.[0] as Parameters<
+      GithubTokenRepositoryPort['insert']
+    >[0];
+    expect(kept.tokenSealed.toString()).toBe('sealed:github_pat_secret');
+    expect(kept.repositories.map((r) => r.fullName)).toEqual(['acme-labs/billing']);
+    expect(kept.expiresAt).toEqual(INSPECTION.expiresAt);
   });
 
   it('keeps nothing from a token GitHub refuses', async () => {
