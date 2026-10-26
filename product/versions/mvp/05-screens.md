@@ -137,7 +137,7 @@
   the line — an image, a PDF or a text file; a file it cannot take is
   refused under the box with the reason, never dropped). Under the box
   one row of choices: the host and where on it as one chip ("mac-studio ·
-  New worktree", a Hosts tab whose host opens its Start in pane: New
+  New worktree", the hosts under a heading, each opening its Start in pane: New
   worktree or Folder on host; changed 2026-10-26, they were two chips),
   repository and branch (or folder), and the permission level on the left (ask for approval,
   approve for me, full access, the last in a warning tone because it

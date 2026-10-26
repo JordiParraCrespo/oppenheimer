@@ -243,62 +243,6 @@ function ChipSelectBack({
   );
 }
 
-/**
- * The tab row of a pane that lists more than one kind of thing ("Hosts 2"):
- * a word, its count in mono, and the 2px ink bar under the open one, on the
- * hairline that divides the tabs from the rows. A tab with nothing to switch
- * to still draws, so the pane says what it lists.
- */
-function ChipSelectTabs({
-  tabs,
-  value,
-  onValueChange,
-  className,
-  ...props
-}: Omit<React.ComponentProps<'div'>, 'onChange'> & {
-  tabs: readonly { id: string; label: React.ReactNode; count?: number }[];
-  value: string;
-  onValueChange: (id: string) => void;
-}) {
-  return (
-    <div
-      role="tablist"
-      data-slot="chip-select-tabs"
-      className={cn('-mx-1 mb-1 flex gap-4 border-b border-border-subtle px-3.5', className)}
-      {...props}
-    >
-      {tabs.map((tab) => {
-        const on = tab.id === value;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            onClick={() => onValueChange(tab.id)}
-            className={cn(
-              'relative flex items-baseline gap-1.5 py-2 text-[13px] outline-none transition-colors duration-fast focus-visible:text-fg',
-              on ? 'text-fg' : 'text-fg-muted hover:text-fg',
-            )}
-          >
-            {tab.label}
-            {tab.count === undefined ? null : (
-              <span className="figures text-[11px] text-fg-subtle">{tab.count}</span>
-            )}
-            <span
-              aria-hidden
-              className={cn(
-                'absolute inset-x-0 -bottom-px h-0.5 rounded-pill',
-                on ? 'bg-fg' : 'bg-transparent',
-              )}
-            />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 /** A heading over a run of rows ("Start in"), in the eyebrow's small caps. */
 function ChipSelectHeading({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -788,7 +732,6 @@ export {
   ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
-  ChipSelectTabs,
   ChipSelectTrigger,
 };
 export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption, ChipSelectTriggerVariant };

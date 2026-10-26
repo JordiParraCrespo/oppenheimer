@@ -37,6 +37,22 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  * the design system's, so a picker cannot drift from what the API answered.
  */
 
+/**
+ * The rows a picker's search leaves: the label, the second line and the hidden
+ * keywords, matched on the trimmed, lower-cased term, as `ChipSelect` matches.
+ */
+export function filterOptions<T extends ChipSelectOption>(
+  options: readonly T[],
+  term: string,
+): T[] {
+  if (!term) return [...options];
+  return options.filter((option) =>
+    `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`
+      .toLowerCase()
+      .includes(term),
+  );
+}
+
 /** A host row of the place chip: the option, and whether the machine is reachable now. */
 export type PlaceHost = ChipSelectOption & { online: boolean };
 

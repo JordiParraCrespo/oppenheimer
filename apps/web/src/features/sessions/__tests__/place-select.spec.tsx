@@ -56,4 +56,18 @@ describe('PlaceSelect', () => {
     expect(onHostChange).not.toHaveBeenCalled();
     expect(onPlaceChange).toHaveBeenCalledWith('folder');
   });
+
+  /** Keys as in `ChipSelect`: the arrows walk the list under the search, Enter takes the row. */
+  it('picks a host and a place from the keyboard', () => {
+    const { onHostChange, onPlaceChange } = renderChip();
+    const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
+
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'Enter' });
+
+    expect(onHostChange).toHaveBeenCalledWith('host-2');
+    expect(onPlaceChange).toHaveBeenCalledWith('folder');
+  });
 });
