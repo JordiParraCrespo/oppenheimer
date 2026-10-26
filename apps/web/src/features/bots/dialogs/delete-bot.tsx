@@ -3,7 +3,7 @@ import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { BOT_SECTIONS } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { botChatDestination, SECTION_HOME } from '@/features/bots/lib/bot-chat-destination';
+import { botChatDestination } from '@/features/bots/lib/bot-chat-destination';
 
 /**
  * Delete bot, from the sidebar row, the chat's menu or its settings: the bot,
@@ -37,7 +37,7 @@ export function DeleteBotDialog({
       onClose();
       notifySuccess('botDeleted', { name: bot.name });
       if (onItsPage) void navigate({ to: '/bots' });
-      else if (sectionHome) void navigate({ to: SECTION_HOME[sectionHome] });
+      else if (sectionHome) void navigate({ to: `/${sectionHome}` });
     },
   });
 
