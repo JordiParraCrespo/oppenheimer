@@ -33,8 +33,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * marks older than 30 days (28 §3) is planned and not built yet; until then
  * the read is bounded by its limit.
  */
-export class AddInboxMarks1791003500000 implements MigrationInterface {
-  name = 'AddInboxMarks1791003500000';
+export class AddInboxMarks1791003700000 implements MigrationInterface {
+  name = 'AddInboxMarks1791003700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

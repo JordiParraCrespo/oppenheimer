@@ -15,8 +15,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Access pattern:
  *   the workspace's approvals in one status, newest first → IDX_bot_approval_org_status
  */
-export class AddBotApprovalWorkspaceIndex1791003400000 implements MigrationInterface {
-  name = 'AddBotApprovalWorkspaceIndex1791003400000';
+export class AddBotApprovalWorkspaceIndex1791003600000 implements MigrationInterface {
+  name = 'AddBotApprovalWorkspaceIndex1791003600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** A person's mark on an occurrence of an Inbox item (`1791003500000-AddInboxMarks`). */
+/** A person's mark on an occurrence of an Inbox item (`1791003700000-AddInboxMarks`). */
 @Entity('inbox_mark')
 @Index('UQ_inbox_mark_item', ['organizationId', 'userId', 'itemKey'], { unique: true })
 @Index('IDX_inbox_mark_user', ['userId'])
