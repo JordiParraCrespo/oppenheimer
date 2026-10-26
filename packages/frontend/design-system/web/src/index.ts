@@ -173,6 +173,7 @@ export {
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
+  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,

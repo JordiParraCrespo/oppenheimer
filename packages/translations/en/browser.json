@@ -557,7 +557,9 @@
         "folder": {
           "label": "Folder on host",
           "description": "Open an existing directory as it is · nothing is cloned"
-        }
+        },
+        "hosts": "Hosts",
+        "startIn": "Start in"
       },
       "project": {
         "label": "Project",
@@ -1055,6 +1057,22 @@
         "previous": "Previous question",
         "nextQuestion": "Next question",
         "of": "{{n}} of {{total}}"
+      },
+      "queue": {
+        "queued": "Queued",
+        "sendNow": "Send now",
+        "edit": "Edit",
+        "remove": "Remove from the queue"
+      },
+      "usage": {
+        "open": "{{percent}}% of context used. Show the context and plan usage.",
+        "context": "Context",
+        "tokens": "{{used}} of {{window}} tokens",
+        "compact": "Compact",
+        "plan": "Plan usage limits",
+        "fiveHour": "5-hour limit",
+        "sevenDay": "Weekly limit",
+        "resets": "Resets {{when}}"
       }
     }
   },

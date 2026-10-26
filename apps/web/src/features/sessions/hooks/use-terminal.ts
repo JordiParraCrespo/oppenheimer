@@ -65,6 +65,8 @@ export function useTerminal(
     snapshotKey?: string;
     /** The chat view this stream feeds and types for (0.7). */
     chat?: SessionChat;
+    /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
+    latencyKey?: string;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +102,7 @@ export function useTerminal(
   const readOnly = options.readOnly ?? false;
   const snapshotKey = options.snapshotKey;
   const chat = options.chat;
+  const latencyKey = options.latencyKey;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -124,6 +127,7 @@ export function useTerminal(
         : undefined,
       onFiles: (files) => onFilesRef.current?.(files),
       typeahead: () => typeaheadRef.current,
+      latencyKey,
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
@@ -165,7 +169,7 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, latencyKey]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,

@@ -3,7 +3,7 @@ import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, createSession } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * The console's terminal on a real runner: the session route mounts xterm over
@@ -49,7 +49,7 @@ test('the console streams a live session from a real runner', async ({ page }) =
   await signInAs(page, user);
   await page.goto(`/sessions/${sessionId}`);
   await expect.poll(() => screen.includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
-  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await expect(linkLive(page)).toBeVisible();
 
   await page.locator('.xterm').first().click();
   await page.keyboard.type('echo console-$((6*7))');

@@ -99,16 +99,51 @@ export interface ChatTurn {
   prompt: ChatPrompt | null;
   steps: ChatStep[];
   model: string | null;
+  /**
+   * How many tokens the agent's context held at its last answer in the turn:
+   * what it was sent, cached or not, and what it wrote. None from a host
+   * that does not send the counts.
+   */
+  contextTokens: number | null;
   startedAt: Date | null;
   lastAt: Date | null;
   /** The last turn, while the agent has not answered in words or a call is open. */
   working: boolean;
 }
 
+/** One of the plan's usage windows: the share used, 0–100, and when it resets. */
+export interface ChatLimit {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/**
+ * The figures Claude Code hands its status line, which the runner sends
+ * beside the transcript (`oppenheimer.status` entries): how full the context
+ * is, by the CLI's own count, and the plan's 5-hour and weekly windows. Each
+ * part is absent until the CLI sends it, and the windows never come for an
+ * account on an API key.
+ */
+export interface ChatStatus {
+  context: { usedPercent: number; window: number } | null;
+  fiveHour: ChatLimit | null;
+  sevenDay: ChatLimit | null;
+}
+
+/** A message written while the agent worked, waiting for its turn to end. */
+export interface ChatQueued {
+  id: string;
+  text: string;
+}
+
 export interface ChatState {
   /** The host follows this session's transcript: a first batch has arrived. */
   available: boolean;
   turns: ChatTurn[];
+  /** What waits to be sent, in order; the first goes once the agent settles. */
+  queued: readonly ChatQueued[];
+  /** The latest status the host sent, if any. */
+  status: ChatStatus | null;
 }
 
 export interface ChatBatch {
@@ -116,7 +151,10 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [] };
+const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null };
+
+/** The entry the runner adds for the status line's figures. */
+const STATUS_ENTRY = 'oppenheimer.status';
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';
@@ -130,6 +168,12 @@ const SUBMIT_AFTER_TEXT_MS = 60;
  * each one and reads the next against what it drew.
  */
 const QUESTION_KEY_GAP_MS = 120;
+/**
+ * How long a queued message that went waits for its turn to show before
+ * the next may go: a message that opens no turn (a slash command the CLI
+ * answers itself) must not hold the rest of the queue.
+ */
+const QUEUE_SETTLE_MS = 5000;
 
 /**
  * One attachment's chat: batches in, an immutable `ChatState` out, with a
@@ -154,6 +198,16 @@ export class SessionChat {
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
+  /** The last queued message sent: how many turns there were, and when. */
+  private sentQueued: { turns: number; at: number } | null = null;
+  /**
+   * The turn the queue was started during. Nothing goes until it is in the
+   * chat again and has ended: a reconnect replays the history in several
+   * batches, and one that ends on an older, settled turn is not the agent
+   * being free.
+   */
+  private queuedDuring: string | null = null;
+  private queuedIds = 0;
 
   apply(batch: ChatBatch): void {
     if (batch.reset) {
@@ -161,12 +215,18 @@ export class SessionChat {
       this.reopen();
     }
     const from = this.entries.length;
+    let status = this.state.status;
     for (const raw of batch.entries) {
+      let parsed: unknown;
       try {
-        this.entries.push(JSON.parse(raw));
+        parsed = JSON.parse(raw);
       } catch {
         // A line the host sent that is not JSON is the host's bug; skip it.
+        continue;
       }
+      // The status is the latest one, not a line of the conversation.
+      if (record(parsed)?.type === STATUS_ENTRY) status = statusOf(parsed);
+      else this.entries.push(parsed);
     }
     // A result for a call a closed turn made (a background command that
     // finished after the next prompt) changes that turn: build them all again.
@@ -181,8 +241,84 @@ export class SessionChat {
     }
     if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
     const last = turns[open];
-    this.state = { available: true, turns: last ? [...this.closed, last] : [...this.closed] };
+    this.publish({
+      ...this.state,
+      available: true,
+      turns: last ? [...this.closed, last] : [...this.closed],
+      status,
+    });
+    this.flush();
+  }
+
+  private publish(state: ChatState): void {
+    this.state = state;
     for (const listener of this.listeners) listener();
+  }
+
+  /** The agent is in a turn: a message now would interrupt the work it is doing. */
+  private busy(): boolean {
+    return this.state.turns.at(-1)?.working === true;
+  }
+
+  /**
+   * A message from the composer: sent now when the agent is free, queued
+   * while it works, to go when its turn ends. Claude Code would queue a
+   * message typed mid-turn too, but out of sight; this keeps it in the chat,
+   * where it can still be edited, sent now or taken back.
+   */
+  post(message: string): void {
+    const text = message.trim();
+    if (text === '') return;
+    if (!this.busy()) {
+      this.send(message);
+      return;
+    }
+    this.queuedIds += 1;
+    if (this.state.queued.length === 0) this.queuedDuring = this.state.turns.at(-1)?.id ?? null;
+    this.publish({
+      ...this.state,
+      queued: [...this.state.queued, { id: `queued-${this.queuedIds}`, text: message }],
+    });
+  }
+
+  /** Takes a queued message back, for the composer to edit or to drop; its text, if it was there. */
+  unqueue(id: string): string | null {
+    const held = this.state.queued.find((queued) => queued.id === id);
+    if (!held) return null;
+    this.publish({ ...this.state, queued: this.state.queued.filter((queued) => queued !== held) });
+    return held.text;
+  }
+
+  /** Sends a queued message at once, into the turn under way, as the terminal would take it. */
+  sendQueued(id: string): void {
+    if (!this.type) return;
+    const text = this.unqueue(id);
+    if (text !== null) this.send(text);
+  }
+
+  /**
+   * Sends the first queued message once the agent has settled, and the next
+   * only after that one has opened its turn (or `QUEUE_SETTLE_MS`), so two
+   * never go into the same moment.
+   */
+  private flush(): void {
+    const [next, ...rest] = this.state.queued;
+    if (!next || !this.type || this.busy()) return;
+    const during = this.queuedDuring;
+    if (during && !this.state.turns.some((turn) => turn.id === during)) return;
+    this.queuedDuring = null;
+    const waiting = this.sentQueued;
+    if (
+      waiting &&
+      this.state.turns.length <= waiting.turns &&
+      Date.now() - waiting.at < QUEUE_SETTLE_MS
+    ) {
+      return;
+    }
+    this.sentQueued = { turns: this.state.turns.length, at: Date.now() };
+    this.publish({ ...this.state, queued: rest });
+    this.send(next.text);
+    if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
   }
 
   private reopen(): void {
@@ -278,8 +414,16 @@ function date(value: unknown): Date | null {
  */
 type Reading =
   | { kind: 'prompt'; prompt: ChatPrompt }
-  | { kind: 'steps'; steps: ChatStep[]; model: string | null; at: Date | null }
+  | {
+      kind: 'steps';
+      steps: ChatStep[];
+      model: string | null;
+      at: Date | null;
+      contextTokens?: number | null;
+    }
   | { kind: 'results'; results: ChatResult[]; at: Date | null }
+  /** A command the CLI answered itself (`/cost`): its output ends the turn it opened. */
+  | { kind: 'answered'; at: Date | null }
   | null;
 
 interface ChatResult {
@@ -303,7 +447,13 @@ export function classify(value: unknown, index: number): Reading {
       const step = stepOf(record(raw), `${id}:${position}`, at);
       return step ? [step] : [];
     });
-    return { kind: 'steps', steps, model: text(message.model), at };
+    return {
+      kind: 'steps',
+      steps,
+      model: text(message.model),
+      at,
+      contextTokens: contextOf(message.usage),
+    };
   }
   if (entry.type !== 'user') return null;
   if (entry.isCompactSummary === true) {
@@ -330,6 +480,9 @@ export function classify(value: unknown, index: number): Reading {
   );
   if (results.length > 0) return { kind: 'results', results, at };
   if (entry.isMeta === true) return null;
+  if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
+    return { kind: 'answered', at };
+  }
   const typed = typedPrompt(
     typeof content === 'string'
       ? content
@@ -381,6 +534,7 @@ function buildTurns(
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
   const calls = new Map<string, ChatToolCall>();
+  const answered = new Set<ChatTurn>();
   const current = (id: string, at: Date | null, index: number): ChatTurn => {
     const last = turns.at(-1);
     if (last) return last;
@@ -399,10 +553,19 @@ function buildTurns(
       case 'steps': {
         const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at, index);
         turn.model = reading.model ?? turn.model;
+        turn.contextTokens = reading.contextTokens ?? turn.contextTokens;
         if (reading.at) turn.lastAt = reading.at;
         for (const step of reading.steps) {
           if (step.kind === 'tool') calls.set(step.call.id, step.call);
           turn.steps.push(step);
+        }
+        continue;
+      }
+      case 'answered': {
+        const turn = turns.at(-1);
+        if (turn) {
+          answered.add(turn);
+          if (reading.at) turn.lastAt = reading.at;
         }
         continue;
       }
@@ -421,7 +584,7 @@ function buildTurns(
   }
 
   const last = turns.at(-1);
-  if (last) last.working = isWorking(last);
+  if (last) last.working = !answered.has(last) && isWorking(last);
   return { turns, starts };
 }
 
@@ -431,6 +594,7 @@ function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date
     prompt,
     steps: [],
     model: null,
+    contextTokens: null,
     startedAt: at,
     lastAt: at,
     working: false,
@@ -537,6 +701,58 @@ function toolCall(block: Loose): ChatToolCall {
     truncated: block.truncated === true,
     startedAt: null,
     finishedAt: null,
+  };
+}
+
+/**
+ * The tokens an answer's context held, off its `usage`: what it was sent,
+ * whether read from the cache or written to it. Its output is left out, as
+ * Claude Code's own count leaves it out.
+ */
+function contextOf(value: unknown): number | null {
+  const usage = record(value);
+  if (!usage) return null;
+  const count = (key: string) => {
+    const n = usage[key];
+    return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+  };
+  const total =
+    count('input_tokens') + count('cache_creation_input_tokens') + count('cache_read_input_tokens');
+  return total > 0 ? total : null;
+}
+
+/** A share the CLI sent, as a number from 0 to 100, or none. */
+function percentOf(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(100, Math.max(0, value))
+    : null;
+}
+
+function limitOf(value: unknown): ChatLimit | null {
+  const window = record(value);
+  const usedPercent = percentOf(window?.used_percentage);
+  if (usedPercent === null) return null;
+  const resets = window?.resets_at;
+  return {
+    usedPercent,
+    resetsAt: typeof resets === 'number' && resets > 0 ? new Date(resets * 1000) : null,
+  };
+}
+
+/** The status entry the runner sends, read loosely like every other. */
+function statusOf(value: unknown): ChatStatus {
+  const entry = record(value);
+  const context = record(entry?.context_window);
+  const limits = record(entry?.rate_limits);
+  const usedPercent = percentOf(context?.used_percentage);
+  const window = context?.context_window_size;
+  return {
+    context:
+      usedPercent !== null && typeof window === 'number' && window > 0
+        ? { usedPercent, window }
+        : null,
+    fiveHour: limitOf(limits?.five_hour),
+    sevenDay: limitOf(limits?.seven_day),
   };
 }
 

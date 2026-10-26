@@ -18,7 +18,12 @@ import { TerminalStatusBar, TerminalStatusLink } from './terminal';
  * system cannot know: the time offline, and the fix (the commands to run on
  * the host as a `CommandRowList`, and a link to Settings → Hosts).
  *
- * - **Live, reconnecting**: the status bar, its first item the link.
+ * - **Live, reconnecting**: the status bar, its first item the link. A
+ *   pane whose header already says the session's state passes
+ *   `showLive={false}`: while the link is live the bar then leaves the link
+ *   out, so the pane carries one status, and it speaks up only when the
+ *   link does not hold. The bar keeps its height either way, so the grid
+ *   above it is never resized by a blip.
  * - **Offline, catching up, reconnected** in the `banner` form (the
  *   console's): the bar's place goes to a banner on a faint amber wash —
  *   the dot, the title, a dim line, the time offline — and while offline its
@@ -37,6 +42,7 @@ function HostLinkChrome({
   fixOpen,
   defaultFixOpen = false,
   onFixOpenChange,
+  showLive = true,
   children,
 }: {
   /** Mono time since the host went away ("2m 14s"); shown while offline. */
@@ -47,6 +53,8 @@ function HostLinkChrome({
   fixOpen?: boolean;
   defaultFixOpen?: boolean;
   onFixOpenChange?: (open: boolean) => void;
+  /** Draw the link while it is live; off when the pane's header says the state. */
+  showLive?: boolean;
   /** The status bar's items after the link. */
   children?: React.ReactNode;
 }) {
@@ -97,8 +105,10 @@ function HostLinkChrome({
           {offerFix ? fix : null}
         </Notice>
       ) : null}
-      <TerminalStatusBar>
-        <TerminalStatusLink state={row.link}>{labels.status[phase](host)}</TerminalStatusLink>
+      <TerminalStatusBar data-phase={phase}>
+        {phase === 'live' && !showLive ? null : (
+          <TerminalStatusLink state={row.link}>{labels.status[phase](host)}</TerminalStatusLink>
+        )}
         {children}
       </TerminalStatusBar>
     </>

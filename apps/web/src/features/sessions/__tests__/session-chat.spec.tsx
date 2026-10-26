@@ -625,3 +625,105 @@ describe('the work in a turn', () => {
     expect(screen.getByText('c.ts')).toBeTruthy();
   });
 });
+
+describe('the queue and the context', () => {
+  const prompt = entry({
+    type: 'user',
+    uuid: 'u1',
+    message: { role: 'user', content: 'Fix the flaky test' },
+  });
+  const answer = (uuid: string) =>
+    entry({
+      type: 'assistant',
+      uuid,
+      message: {
+        role: 'assistant',
+        model: 'claude-opus-5-5',
+        content: [{ type: 'text', text: 'Fixed.' }],
+        usage: { input_tokens: 6, cache_read_input_tokens: 49_000, output_tokens: 994 },
+      },
+    });
+
+  it('holds what is written while the agent works, to send now, edit or drop', async () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    const composer = () => screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+
+    const field = composer();
+    for (const words of ['Then run the tests', 'And open a PR']) {
+      fireEvent.change(composer(), { target: { value: words } });
+      fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.composer.send' }));
+      // The field clears once the send settles, a microtask later.
+      await act(() => Promise.resolve());
+    }
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual([]);
+    // The queue appearing over the field leaves the field where it was, focus and all.
+    expect(composer()).toBe(field);
+    expect(
+      screen.getAllByText(/^(Then run the tests|And open a PR)$/).map((el) => el.textContent),
+    ).toEqual(['Then run the tests', 'And open a PR']);
+
+    // Edit takes it back into the field; remove drops it.
+    const edits = screen.getAllByRole('button', { name: 'sessions.chat.queue.edit' });
+    fireEvent.click(edits[1] as HTMLElement);
+    expect((composer() as HTMLTextAreaElement).value).toBe('And open a PR');
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.queue.sendNow' }));
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['Then run the tests', '\r']);
+    expect(screen.queryByRole('button', { name: 'sessions.chat.queue.remove' })).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('shows how full the context is, and opens to it and the plan’s limits, compacting on asking', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, answer('a1')] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    // Counted off the transcript until the status line says otherwise.
+    const meter = screen.getByRole('button', { name: /sessions\.chat\.usage\.open/ });
+    expect(meter.textContent).toContain('25%');
+
+    act(() =>
+      chat.apply({
+        entries: [
+          JSON.stringify({
+            type: 'oppenheimer.status',
+            context_window: { used_percentage: 32, context_window_size: 200_000 },
+            rate_limits: {
+              five_hour: { used_percentage: 84, resets_at: 1_793_040_000 },
+              seven_day: { used_percentage: 41 },
+            },
+          }),
+        ],
+      }),
+    );
+    expect(meter.textContent).toContain('32%');
+    fireEvent.click(meter);
+    expect(screen.getByText('sessions.chat.usage.plan')).toBeTruthy();
+    expect(screen.getByText('sessions.chat.usage.fiveHour')).toBeTruthy();
+    expect(screen.getByText('84%')).toBeTruthy();
+    expect(screen.getByText('41%')).toBeTruthy();
+    expect(screen.getByText(/"used":"64K","window":"200K"/)).toBeTruthy();
+    // Nothing is typed until Compact is asked for.
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.usage.compact' }));
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['/compact', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('shows no meter until the host sends the counts', () => {
+    const chat = new Chat();
+    chat.apply({ reset: true, entries: [prompt] });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    expect(screen.queryByRole('button', { name: /sessions\.chat\.usage\.open/ })).toBeNull();
+  });
+});

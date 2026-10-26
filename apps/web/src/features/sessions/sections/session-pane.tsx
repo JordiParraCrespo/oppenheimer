@@ -13,6 +13,7 @@ import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
+import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
@@ -113,6 +114,7 @@ export function SessionPane({
         head: null,
         statusItems: (
           <>
+            <LatencyReadout sessionId={session.id} />
             {viewToggle}
             <SessionShareButton sessionId={session.id} place="status" />
           </>
