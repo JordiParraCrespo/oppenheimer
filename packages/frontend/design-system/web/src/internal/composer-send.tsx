@@ -130,4 +130,45 @@ function ComposerFrame({
   );
 }
 
-export { ComposerFrame, ComposerSendButton, useComposerSend };
+/**
+ * The foot row both composers share: what acts on the message (`leading`:
+ * attach, the tools) on the left; the `engine` (model, effort); then the mic
+ * and send (`children`) in the corner. On a box 448px wide or more it is one
+ * line. On a narrower box (a phone) send keeps its corner on the first line
+ * beside the tools, and the engine takes the line under them, so nothing is
+ * stranded alone and the box never outgrows the screen. The box's own width
+ * decides, not the screen's. Each composer sets its own gap and padding.
+ */
+function ComposerFoot({
+  leading,
+  engine,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { leading?: React.ReactNode; engine?: React.ReactNode }) {
+  return (
+    <div className="@container/composer-foot">
+      <div className={cn('flex flex-wrap items-center', className)} {...props}>
+        {leading}
+        {engine ? (
+          <span className="order-last flex basis-full flex-wrap items-center gap-[inherit] @md/composer-foot:order-none @md/composer-foot:ml-auto @md/composer-foot:basis-auto">
+            {engine}
+          </span>
+        ) : null}
+        {/* Send closes the row on the right: after the engine when there is
+            one (which takes the auto margin from the medium width up), on
+            its own when there is not. */}
+        <span
+          className={cn(
+            'ml-auto flex items-center gap-[inherit]',
+            engine ? '@md/composer-foot:ml-0' : undefined,
+          )}
+        >
+          {children}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend };

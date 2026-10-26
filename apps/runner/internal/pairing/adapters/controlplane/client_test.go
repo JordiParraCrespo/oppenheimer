@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/controlplane"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
@@ -95,14 +97,79 @@ func TestRevokeTreatsA404AsAlreadyGone(t *testing.T) {
 	}
 }
 
-func TestRevokeReportsAnythingElse(t *testing.T) {
-	client, baseURL, _ := serve(t, http.StatusUnauthorized, nil)
+func TestRevokeSaysWhichRequestFailedAndHow(t *testing.T) {
+	cases := []struct {
+		name     string
+		status   int
+		response any
+		code     string
+		want     string
+	}{
+		{
+			name: "a refused key is a refusal, not a registration token", status: http.StatusUnauthorized,
+			code: "PAIR_008", want: "answered 401: the control plane no longer accepts this host's key",
+		},
+		{
+			name: "the control plane's own sentence is kept", status: http.StatusForbidden,
+			response: map[string]string{"title": "Forbidden", "detail": "this host belongs to another workspace"},
+			code:     "PAIR_008", want: "answered 403: this host belongs to another workspace",
+		},
+		{
+			name: "a server failure reads as the control plane being down", status: http.StatusServiceUnavailable,
+			code: "PAIR_006", want: "answered 503",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client, baseURL, _ := serve(t, tc.status, tc.response)
 
-	err := client.Revoke(context.Background(), baseURL, "the.boot.jwt")
+			err := client.Revoke(context.Background(), baseURL, "the.boot.jwt")
+
+			var prob *problem.Error
+			if !errors.As(err, &prob) || prob.Code != tc.code {
+				t.Fatalf("err = %v, want %s", err, tc.code)
+			}
+			if !strings.Contains(prob.Detail, "DELETE "+baseURL+"/api/v1/hosts/self") || !strings.Contains(prob.Detail, tc.want) {
+				t.Fatalf("detail = %q, want the request and %q", prob.Detail, tc.want)
+			}
+			if strings.Contains(prob.Detail, "the.boot.jwt") {
+				t.Fatalf("detail carries the bearer: %q", prob.Detail)
+			}
+		})
+	}
+}
+
+func TestRevokeReportsATimeoutAsUnreachable(t *testing.T) {
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	t.Cleanup(func() { close(release); server.Close() })
+	httpClient := server.Client()
+	httpClient.Timeout = 50 * time.Millisecond
+	client := controlplane.New(controlplane.Options{HTTP: httpClient})
+
+	err := client.Revoke(context.Background(), server.URL, "the.boot.jwt")
 
 	var prob *problem.Error
-	if !errors.As(err, &prob) || prob.Code != "PAIR_003" {
-		t.Fatalf("err = %v, want PAIR_003", err)
+	if !errors.As(err, &prob) || prob.Code != "PAIR_006" {
+		t.Fatalf("err = %v, want PAIR_006", err)
+	}
+	if !strings.Contains(prob.Detail, "DELETE "+server.URL+"/api/v1/hosts/self") {
+		t.Fatalf("detail = %q, want the request that timed out", prob.Detail)
+	}
+}
+
+func TestRevokeNeverPrintsCredentialsInTheControlPlaneURL(t *testing.T) {
+	client := controlplane.New(controlplane.Options{})
+
+	err := client.Revoke(context.Background(), "https://someone:hunter2@127.0.0.1:1", "the.boot.jwt")
+
+	if err == nil || strings.Contains(err.Error(), "hunter2") {
+		t.Fatalf("err = %v, want a failure without the password", err)
 	}
 }
 

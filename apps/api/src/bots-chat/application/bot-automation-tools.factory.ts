@@ -23,6 +23,7 @@ import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -51,6 +52,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private listAutomations(): BotToolDefinition {
     return defineBotTool({
       name: 'list_automations',
+      readOnly: true,
       scope: 'automations:read',
       description: `Lists the workspace's automations (a saved task a coding agent runs on a schedule, on a GitHub event, or by hand), each with its triggers, whether it is paused or running, and its last run. Filter by project; at most ${AUTOMATIONS_LIMIT_MAX} per call. Use get_automation for one automation's settings and prompt, and run_history for its runs.`,
       input: z.object({
@@ -86,6 +88,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private getAutomation(): BotToolDefinition {
     return defineBotTool({
       name: 'get_automation',
+      readOnly: true,
       scope: 'automations:read',
       description: `Reads one automation: its triggers and when each fires next, the host, agent, model and permission its runs use, the repositories it works in, its limits, its prompt, and a digest of its last ${RUN_HISTORY_DAYS} days of runs. Use run_history for the runs themselves.`,
       input: z.object({
@@ -96,11 +99,16 @@ export class BotAutomationToolsFactory implements BotToolArea {
           FindAutomationQuery,
           AutomationDetail
         >(new FindAutomationQuery({ scope: context.owner, automationId: input.automation_id }));
-        const revision = automation.revision;
+        const { target } = automation;
+        // The query answers a session automation or not found; a routine is read with update_routine.
+        if (target.kind !== 'session') {
+          throw new BotToolRefusal(`No automation has the id ${input.automation_id}.`);
+        }
+        const { revision } = target;
         const lines = [
           `Automation ${automation.id} "${automation.name}"`,
           `- state: ${describeState(automation)}`,
-          `- project: ${automation.projectId}`,
+          `- project: ${target.projectId}`,
           `- runs on: host ${revision.hostId}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
           `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : 'none (it runs in no checkout)'}`,
           `- revision: ${revision.number}, saved ${formatToolTime(revision.createdAt, context.timeZone)}`,
@@ -121,6 +129,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
   private runHistory(): BotToolDefinition {
     return defineBotTool({
       name: 'run_history',
+      readOnly: true,
       scope: 'automations:read',
       description: `Lists automation runs, newest first: each run's cause, status, when it fired, and the session it started. Filter by automation, project, status or window (24h, 7d, 30d); at most ${RUNS_LIMIT_MAX} per call. Runs that never became a session (skipped, expired) are left out unless asked for by status. A run's status is not its test results; read the session with get_session for what the agent reported.`,
       input: z.object({
@@ -186,7 +195,7 @@ function describeAutomation(
   const lastRun = digest?.lastRuns[0];
   const parts = [
     describeState(automation),
-    `project ${automation.projectId}`,
+    automation.target.kind === 'session' ? `project ${automation.target.projectId}` : 'a routine',
     `triggers: ${triggers}`,
     digest?.running ? 'a run is live now' : 'nothing running',
     `${digest?.runCount ?? 0} runs in ${RUN_HISTORY_DAYS} days`,
@@ -202,7 +211,11 @@ function describeState(automation: AutomationEntity): string {
   return `paused (${automation.pausedReason ?? 'user'})`;
 }
 
-function describeTrigger(trigger: AutomationTriggerProps, context: BotToolCallContext): string {
+/** One trigger in words: a schedule with its zone and next slot, or the GitHub event it listens for. */
+export function describeTrigger(
+  trigger: AutomationTriggerProps,
+  context: Pick<BotToolCallContext, 'timeZone'>,
+): string {
   if (trigger.source === 'schedule') {
     const { config } = trigger;
     const at = `${String(config.hour).padStart(2, '0')}:${String(config.minute).padStart(2, '0')}`;

@@ -1,9 +1,12 @@
 import { z } from 'zod/v4';
 import {
   ATTACHMENT_CREDIT_WINDOW_BYTES,
+  CHAT_BATCH_MAX_ENTRIES,
+  CHAT_ENTRY_MAX_BYTES,
   LINK_FRAME_HEADER_BYTES,
   LINK_MAX_FRAME_BYTES,
   RUNNER_LINK_CLOSE_CODES,
+  RUNNER_LINK_CLOSE_REASONS,
   RUNNER_LINK_REFUSAL_HEADER,
   RUNNER_LINK_REFUSALS,
 } from './link.js';
@@ -52,6 +55,7 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
     'x-constants': {
       protocolVersion: PROTOCOL_VERSION,
       closeCodes: RUNNER_LINK_CLOSE_CODES,
+      closeReasons: RUNNER_LINK_CLOSE_REASONS,
       refusalHeader: RUNNER_LINK_REFUSAL_HEADER,
       refusals: RUNNER_LINK_REFUSALS,
       frameHeaderBytes: LINK_FRAME_HEADER_BYTES,
@@ -59,6 +63,8 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       maxFrameBytes: LINK_MAX_FRAME_BYTES,
       capabilities: RUNNER_CAPABILITIES,
       maxEventPayloadBytes: PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
+      chatEntryMaxBytes: CHAT_ENTRY_MAX_BYTES,
+      chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
     },
   };
 }

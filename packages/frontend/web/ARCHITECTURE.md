@@ -20,7 +20,8 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
-| `markdown` | `Markdown`: markdown someone else wrote (a pull request's description, a bot's reply) as elements, never raw HTML; fenced code coloured with a copy button, links to a new tab. The caller sets it in `Prose` or `ChatReply` | leaf |
+| `markdown` | `Markdown`: markdown someone else wrote (a pull request's description, a bot's reply) as elements, never raw HTML; fenced code coloured with a copy button, links to a new tab. The caller sets it in `Prose` or `ChatReply`; `MarkdownLine` is the start of such a text on one line (a bot's sidebar preview), its marks read and its blocks flattened | leaf |
+| `dictation` | `useDictation` (one field's recording, transcription and last problem), `dictationSlots` (it, as the design system's `DictationSlot` every host takes), `DictationField` (the two around a plain `Textarea`), `dictateInto` / `dictateIntoField` (what is heard, onto the end of a state draft or a form field). It takes a `VoiceInput` (`useVoiceDictation` in the product package) and knows nothing of the API | leaf |
 | `pairing` | `PairingChrome`, the agent-first column that pairs a machine with a pairing it is handed (onboarding and the Add a host dialog): the agent prompt's card, the token line with the manual install behind it, and the Connection list. Settings composes `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt as one tabbed panel) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
 | `layout` | `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `shell` | `AppShell` (the sidebar, top bar, user menu and command palette are its parts), `SettingsSidebar`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), the nav types | top |
@@ -100,7 +101,12 @@ A screen says how it wants to be framed with route `staticData.pane`, and
 `AppShell` frames it: the pane paints the ground, holds a bar slot
 (`PaneBar`), takes drops (`usePaneDrop`) and draws `PageFrame` at the
 measure. `resolveContentPane` reads the innermost match that declares a
-pane, the same way `AuthLayout` reads its legal note. The model is
+pane, the same way `AuthLayout` reads its legal note. Every console page
+opens on a bar the shell draws, the sidebar toggle (`SidebarToggle`) alone.
+A route that declares `staticData.bar: 'own'` gets none from the shell and
+its screen fills the slot: `PageBar` (the toggle, then `leading`, `title`,
+`meta`, `status`, `tabs` and `actions`) for a bot's chat, or a toolbar of its
+own led by `SidebarToggle` for a pull request. The model is
 `.agents/rules/frontend-architecture.md`, "The page frame is the shell's".
 
 ## How an app configures the auth layout
@@ -147,7 +153,7 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 
 - `no-circular` — no import cycles, counting value imports only.
 - `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`,
-  `markdown` never import a middle or top concern.
+  `markdown`, `dictation` never import a middle or top concern.
 - `middle-below-top` — `layout`, `pairing` never import `shell` or
   `auth`.
 - `concerns-meet-at-their-index` — a concern reaches another only through

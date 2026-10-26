@@ -10,6 +10,7 @@ import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { automationsKeys } from '../automations.queries';
 import { hostsKeys, useHostPresence } from '../hosts.queries';
 import { LIVE_POLL } from '../live-poll';
+import { pullRequestsKeys } from '../pull-requests.queries';
 import {
   sessionsKeys,
   useSessionStartProgress,
@@ -106,6 +107,7 @@ describe('useWorkspaceEvents', () => {
       sessionsKeys.detail('s-1'),
       sessionsKeys.lists(),
       hostsKeys.lists(),
+      pullRequestsKeys.reviewSessions(),
     ]);
 
     invalidated.length = 0;

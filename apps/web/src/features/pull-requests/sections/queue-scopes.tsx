@@ -1,4 +1,4 @@
-import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web';
+import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestScope } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared/schemas/pull-request';
@@ -9,7 +9,8 @@ import { useQueueSearch } from '../hooks/use-queue-search';
 /**
  * Whose pull requests: mine, review requests, watching, each with its count,
  * and what the scope means. Which repositories are watched is set in
- * Settings, which Watching links to.
+ * Settings, which Watching links to. A count not answered yet keeps its
+ * place, so the tabs do not widen when it lands.
  */
 export function QueueScopes() {
   const { t } = useTranslation();
@@ -26,7 +27,17 @@ export function QueueScopes() {
         className="self-start"
       >
         {PULL_REQUEST_SCOPES.map((value) => (
-          <SegmentedControlItem key={value} value={value} count={scopes?.[value]}>
+          <SegmentedControlItem
+            key={value}
+            value={value}
+            count={
+              scopes ? (
+                scopes[value]
+              ) : (
+                <Skeleton shape="sm" className="inline-block h-2.5 w-1.5 align-[-0.05em]" />
+              )
+            }
+          >
             {t(`pullRequests.queue.scopes.${value}`)}
           </SegmentedControlItem>
         ))}

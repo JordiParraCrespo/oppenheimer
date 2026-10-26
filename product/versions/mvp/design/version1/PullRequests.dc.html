@@ -23,6 +23,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./Brain.dc.html" aria-label="Inbox" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></a>
 <a class="op-rail__btn" href="./SessionsConsole.dc.html" aria-label="Sessions" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></a>
 <a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Pull requests"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests<span class="op-nav__count">{{ queueN }}</span></span></button>
@@ -34,22 +35,20 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div class="op-sidebar__head">
 <span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
+<div class="op-sbsearch" data-on="{{ rsQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search bots and sessions" placeholder="Search bots and sessions" value="{{ rsQ }}" onChange="{{ rsQSet }}" onKeyDown="{{ rsQKey }}"><sc-if value="{{ rsQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rsQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-sidebar__scroll">
 <div class="op-sessionlist">
 <sc-for list="{{ views }}" as="v" hint-placeholder-count="4">
 <button class="op-session" type="button" data-active="{{ v.on }}" onClick="{{ v.pick }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ v.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ v.name }}</span><span class="op-session__age" style="opacity:1">{{ v.n }}</span></button>
 </sc-for>
 </div>
-<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">General</span></div>
+<sc-if value="{{ botsShow }}" hint-placeholder-val="{{ true }}">
+<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
 <div class="op-sessionlist">
-<button class="op-session" type="button" data-active="{{ mgOn }}" onClick="{{ mgOpen }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="users" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Merge manager</span><sc-if value="{{ mgLive }}"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:var(--success);animation:op-wait-breathe 1.4s cubic-bezier(.4,0,.2,1) infinite"></span></sc-if></button>
+<sc-if value="{{ mgShow }}" hint-placeholder-val="{{ true }}"><button type="button" aria-current="{{ mgOn }}" onClick="{{ mgOpen }}" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border:0;border-radius:14px;background:{{ mgBg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">OP</span><sc-if value="{{ mgLive }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Oppenheimer</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">3h</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">{{ mgPreview }}</span></span></button></sc-if>
+<sc-for list="{{ prBots }}" as="b" hint-placeholder-count="1"><button type="button" aria-current="{{ b.on }}" onClick="{{ b.pick }}" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border:0;border-radius:14px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}</span><sc-if value="{{ b.live }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">{{ b.name }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.age }}</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">{{ b.preview }}</span></span></button></sc-for>
 </div>
-<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Merge agents</span></div>
-<div class="op-sessionlist">
-<sc-for list="{{ mergeAgents }}" as="m" hint-placeholder-count="4">
-<button class="op-session" type="button" data-active="{{ m.on }}" onClick="{{ m.pick }}" title="{{ m.tip }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:7px;height:7px;border-radius:980px;background:{{ m.dot }};animation:{{ m.anim }}"></span></span><span class="op-session__name">{{ m.name }}</span><span class="op-session__age" style="opacity:1;font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ m.n }}</span></button>
-</sc-for>
-</div>
+</sc-if>
 <div class="op-listhead" style="margin-top:14px">
 <span class="op-listhead__title">For review</span>
 <span class="op-listhead__count">{{ rsCount }}</span>
@@ -77,7 +76,6 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 </sc-if>
 </div>
 </div>
-<div class="op-sbsearch" data-on="{{ rsQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search review sessions" placeholder="Search review sessions" value="{{ rsQ }}" onChange="{{ rsQSet }}" onKeyDown="{{ rsQKey }}"><sc-if value="{{ rsQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rsQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <sc-if value="{{ rsfDirty }}">
 <div class="op-filterchips">
 <sc-for list="{{ rsfChips }}" as="f" hint-placeholder-count="1">
@@ -733,6 +731,13 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+// Bots created on Employees that have GitHub access. Oppenheimer, the general bot, ships built in.
+const PR_BOTS = [
+  { id: 't1', name: 'Release Bot', ini: 'RB', age: '2m', preview: 'Watching runner #131', role: 'Ships changes and watches runs',
+    seed: [{ role: 'user', text: 'Tag the release once runner #131 lands.', time: '09:02' }, { role: 'work', label: 'Watching runner #131' },
+      { role: 'assistant', meta: 'Release Bot · 640 tokens', md: 'Watching **runner #131**. When it merges I will tag the next version and open a pull request with release notes from everything merged since the last tag.' }],
+    reply: 'Noted. I will **ask you before tagging** and open an issue if the release build fails.' },
+];
 const PRS = [
   { id: 1, view: 'queue', bp: ['Adds a keychain store on the runner and moves every token read and write behind it.','Migrates existing tokens from the token file on first start, then deletes the file.','Guards the migration with an epoch so it runs once, even if the runner restarts mid-way.','Web client checks the runner version and falls back to the token file on older runners.','No change to the token format or to how sessions authenticate.'], scope: 'mine', conflict: false, lane: 'Deep', repo: 'oppenheimer', num: 482, title: 'Move session tokens to the runner keychain', author: 'Session · auth-hardening', agent: true, add: 612, del: 248, ck: 'pass', wait: 26.5, branch: 'agent/auth-keychain',
     why: 'Deep by policy: touches auth/ and changes 860 lines. The full-review agent prepared a review session on mac-studio.',
@@ -975,21 +980,25 @@ class Component extends DCLogic {
     const info = r => { const mine = PRS.filter(p => p.repo === r && p.view !== 'auto'); const q = mine.filter(p => p.view === 'queue');
       const fail = q.filter(p => p.prep.some(x => x[2] === 'fail')), run = q.filter(p => p.prep.some(x => x[2] === 'run')), ready = q.filter(p => !p.prep.some(x => x[2] === 'fail' || x[2] === 'run') && !p.conflict), conf = q.filter(p => p.conflict), wait = mine.filter(p => p.view === 'waiting');
       return { r, q, fail, run, ready, conf, wait }; };
-    const ag = s.agent || null, isMg = ag === 'manager';
+    const ag = s.agent || null, isMg = ag === 'manager', bot = ag && ag.startsWith('bot:') ? PR_BOTS.find(x => 'bot:' + x.id === ag) : null;
+    const bq = (s.rsQ || '').trim().toLowerCase(), bm = (n, r, pv) => !bq || (n + ' ' + r + ' ' + pv).toLowerCase().includes(bq);
+    const mgShow = bm('Oppenheimer', 'general bot merges pull requests opens issues', '');
+    const prBots = PR_BOTS.filter(x => bm(x.name, x.role, x.preview)).map(x => ({ ...x, on: ag === 'bot:' + x.id ? 'true' : 'false', live: s.agRun === 'bot:' + x.id, bg: ag === 'bot:' + x.id ? 'var(--selected-surface)' : 'transparent', pick: () => this.setState({ view: 'agent', agent: 'bot:' + x.id, open: null }) }));
     const mergeAgents = repos.map(r => { const x = info(r); const on = ag === r;
       return { name: r, n: x.q.length || '', on: on ? 'true' : 'false',
         dot: x.fail.length || x.conf.length ? 'var(--danger)' : x.run.length ? 'var(--warning)' : x.q.length ? 'var(--success)' : 'var(--fg-subtle)',
         anim: (s.agRun === r) ? 'op-wait-breathe 1.4s cubic-bezier(.4,0,.2,1) infinite' : 'none',
         tip: r + ' merge agent', pick: () => this.setState({ view: 'agent', agent: r, open: null }) }; });
-    const base = { mergeAgents, mgOn: isMg ? 'true' : 'false', mgLive: s.agRun === 'manager', mgOpen: () => this.setState({ view: 'agent', agent: 'manager', open: null }) };
+    const base = { mergeAgents, prBots, mgShow, botsShow: mgShow || prBots.length > 0, mgBg: isMg ? 'var(--selected-surface)' : 'transparent', mgPreview: repos.map(info).reduce((a, x) => a + x.ready.length, 0) + ' pull requests ready to merge', mgOn: isMg ? 'true' : 'false', mgLive: s.agRun === 'manager', mgOpen: () => this.setState({ view: 'agent', agent: 'manager', open: null }) };
     if (s.view !== 'agent' || !ag) return { ...base, agMode: undefined };
     const pr = p => '#' + p.num + ' ' + p.title.toLowerCase();
     const seed = (() => {
+      if (bot) return bot.seed;
       if (isMg) { const all = repos.map(info); const ready = all.reduce((a, x) => a + x.ready.length, 0);
-        return [{ role: 'user', text: 'What can merge today?', time: '08:42' }, { role: 'work', label: 'Checked ' + repos.length + ' repositories' },
-          { role: 'assistant', meta: 'Merge manager · 1.2k tokens', md: '**' + ready + ' pull requests** are ready to merge. The rest wait on checks, conflicts or a reviewer.\n\n' +
+        return [{ role: 'user', text: 'What can merge today?', time: '08:42' }, { role: 'work', label: 'Checked ' + repos.length + ' repositories and their issues' },
+          { role: 'assistant', meta: 'Oppenheimer · 1.2k tokens', md: '**' + ready + ' pull requests** are ready to merge. The rest wait on checks, conflicts or a reviewer.\n\n' +
             all.filter(x => x.q.length).map(x => '- **' + x.r + '** — ' + x.ready.length + ' ready, ' + x.run.length + ' waiting on checks' + (x.fail.length ? ', ' + x.fail.length + ' with failing checks' : '') + (x.conf.length ? ', ' + x.conf.length + ' with conflicts' : '') + '.').join('\n') +
-            '\n\nWant me to merge the ready ones? I will ask each repo agent to rebase first and stop on any red check.' }]; }
+            '\n\nWant me to merge the ready ones? I will ask each repo agent to rebase first, stop on any red check and **open an issue** with the failing log.' }]; }
       const x = info(ag);
       return [{ role: 'user', text: 'Where does the queue stand?', time: '08:44' }, { role: 'work', label: 'Read ' + x.q.length + ' pull requests' },
         { role: 'assistant', meta: ag + ' agent · 860 tokens', md: (x.q.length ? x.q.length + ' open in **' + ag + '**.' : 'Nothing open in **' + ag + '**.') +
@@ -1005,16 +1014,16 @@ class Component extends DCLogic {
       const d = new Date(), time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       const push = (st, m) => ({ agThreads: { ...(st.agThreads || {}), [ag]: [...((st.agThreads || {})[ag] || []), m] } });
       this.setState(st => ({ agDraft: '', agRun: ag, ...push(st, { role: 'user', text, time }) }));
-      setTimeout(() => this.setState(st => ({ agRun: null, ...push(st, { role: 'assistant', meta: (isMg ? 'Merge manager' : ag + ' agent') + ' · 410 tokens', md: isMg ? 'On it. I asked each repo agent to rebase its ready pull requests and re-run checks. I will merge only when checks pass and **ask you before each merge**.' : 'Rebased the ready pull requests onto main and re-ran checks. I will **ask you before merging** each one.' }) })), 1600); };
+      setTimeout(() => this.setState(st => ({ agRun: null, ...push(st, { role: 'assistant', meta: (bot ? bot.name : isMg ? 'Oppenheimer' : ag + ' agent') + ' · 410 tokens', md: bot ? bot.reply : isMg ? 'On it. I asked each repo agent to rebase its ready pull requests and re-run checks. I will merge only when checks pass and **ask you before each merge**.' : 'Rebased the ready pull requests onto main and re-ran checks. I will **ask you before merging** each one.' }) })), 1600); };
     return { ...base, agMode: 'true', listMode: undefined, detailMode: undefined,
-      agHeadIcon: isMg ? 'users' : 'git-pull-request', agHeadTitle: isMg ? 'Merge manager' : ag,
-      agHeadRole: isMg ? 'Coordinates every repo agent and decides what merges next' : 'Rebases, re-runs checks and merges ready pull requests',
-      agGoQueue: () => this.setState({ view: 'all', repo: isMg ? null : ag, agent: null, pg: 0 }),
+      agHeadIcon: bot || isMg ? 'bot' : 'git-pull-request', agHeadTitle: bot ? bot.name : isMg ? 'Oppenheimer' : ag,
+      agHeadRole: bot ? bot.role : isMg ? 'General bot · merges pull requests, opens issues, coordinates repo agents' : 'Rebases, re-runs checks and merges ready pull requests',
+      agGoQueue: () => this.setState({ view: 'all', repo: isMg || bot ? null : ag, agent: null, pg: 0 }),
       agMsgs, agRunning: s.agRun === ag,
       agDraft: draft, agOnDraft: e => this.setState({ agDraft: e.target.value }),
       agOnKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } },
       agSend: send, agCantSend: !draft.trim(), agSendOp: draft.trim() ? '1' : '.45',
-      agPlaceholder: 'Message ' + (isMg ? 'the merge manager' : 'the ' + ag + ' agent') };
+      agPlaceholder: 'Message ' + (bot ? bot.name : isMg ? 'Oppenheimer' : 'the ' + ag + ' agent') };
   }
   detailVals() {
     const s = this.state; const p = PRS.find(x => x.id === s.open);

@@ -4,11 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { EventFormSkeleton } from '../components/event-form-skeleton';
 import { NEW_EVENT } from '../lib/calendar-search';
 import { EventEditor } from '../sections/event-editor';
 import { SavedEventEditor } from '../sections/saved-event-editor';
@@ -45,7 +45,7 @@ export function EventDialog() {
             ) : (
               <QueryState>
                 <QueryState.Pending>
-                  <Skeleton className="h-60 w-full" />
+                  <EventFormSkeleton />
                 </QueryState.Pending>
                 <QueryState.Error fallback={t('calendar.event.loadFailed')} />
                 <QueryState.Data>

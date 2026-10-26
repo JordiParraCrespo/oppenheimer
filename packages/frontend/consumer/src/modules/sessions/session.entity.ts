@@ -31,6 +31,19 @@ export type SessionGroup =
  */
 export type SessionState = 'starting' | 'open' | 'failed' | 'resolved';
 
+/** A delete asked for and not yet carried out by the host. */
+export interface SessionCloseRequest {
+  requestedAt: Date;
+  /** Whether the delete may remove a worktree whose work is not pushed. */
+  acceptUnpushedWork: boolean;
+}
+
+/** The host's refusal of a delete: its catalog code (`GIT_003`) and its own words. */
+export interface SessionCloseRefusal {
+  code: string;
+  detail: string | null;
+}
+
 /** How the agent was started: the composer's foot row, as the API returns it. */
 export interface SessionLaunch {
   /** Null runs the agent's own default. */
@@ -142,7 +155,19 @@ export class SessionEntity {
     public readonly place: SessionPlace,
     /** The folder a `folder` session runs in, absolute; null for a worktree session. */
     public readonly folderPath: string | null,
+    /**
+     * A delete the host has not carried out yet: the close is the host's to do, so
+     * the session stays until it answers, and its next connection is sent it again.
+     */
+    public readonly closeRequest: SessionCloseRequest | null = null,
+    /** Why the host refused the last delete, until it is asked again. */
+    public readonly closeRefusal: SessionCloseRefusal | null = null,
   ) {}
+
+  /** Whether a delete is on its way to the host: the row reads "Deleting…". */
+  get isClosing(): boolean {
+    return this.closeRequest !== null;
+  }
 
   /** Whether it runs in a folder of the host's own, with no checkout and nothing to push. */
   get isFolder(): boolean {
@@ -213,6 +238,8 @@ export class SessionEntity {
       this.createdAt,
       this.place,
       this.folderPath,
+      this.closeRequest,
+      this.closeRefusal,
     );
   }
 }

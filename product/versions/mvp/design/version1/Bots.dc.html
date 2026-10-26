@@ -27,6 +27,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
+<a class="op-rail__btn" href="./Brain.dc.html" aria-label="Inbox" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></a>
 <a class="op-rail__btn" href="./SessionsConsole.dc.html" aria-label="Sessions" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></a>
 <button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Employees"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></button>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests</span></a>
@@ -36,13 +37,13 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
 <nav class="op-sidebar" style="width:288px;min-width:288px;overflow:hidden">
-<div class="op-sidebar__head" style="display:flex;align-items:center;gap:8px">
-<span class="op-wordmark" style="font-size:18px;flex:1">Oppenheimer</span>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="New chat" title="New chat" onClick="{{ newThread }}" style="background:{{ newBg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></button>
+<div class="op-sidebar__head">
+<span class="op-wordmark" style="font-size:18px">Oppenheimer</span>
 </div>
-<div style="padding:0 12px 6px">
-<label style="display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:10px;background:var(--hover-surface);color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input value="{{ botQuery }}" onChange="{{ onBotQuery }}" placeholder="Search bots" aria-label="Search bots" style="flex:1;min-width:0;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:14px"></label>
+<div style="padding:0 12px 10px">
+<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button" onClick="{{ newThread }}">New chat</button>
 </div>
+<div class="op-sbsearch"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" value="{{ botQuery }}" onChange="{{ onBotQuery }}" placeholder="Search bots" aria-label="Search bots"></div>
 <div class="op-sidebar__scroll">
 <sc-if value="{{ noOwnBots }}"><div style="margin:8px 6px 0;padding:14px;border-radius:14px;background:var(--hover-surface);display:flex;flex-direction:column;gap:8px"><span style="font-size:13.5px;font-weight:500">No bots yet</span><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Bots you create appear here. Start from a template, or describe the job and the bot writes its own instructions.</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newThread }}" style="align-self:flex-start;margin-top:2px">New bot</button></div></sc-if>
 <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
@@ -495,8 +496,7 @@ class Component extends DCLogic {
         { id: 'c3', role: 'assistant', md: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.', meta: 'Claude Sonnet 4.6 · 0.6k tokens' },
         { id: 'c4', role: 'proposal', status: 'pending', job: T3_JOB, lines: proposalLines(T3_JOB) }] },
       t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Claude Opus 4.6' }, { id: 'd2', role: 'b2b', dir: 'in', bot: 'Release Bot', time: 'Oct 7', text: 'Find the SDK changelog entry for AbortSignal support.', reply: 'Sent 3 changelog links, newest first.' }] },
-      pm: { title: 'Project manager', role: 'Runs the project agents on Plan', builtin: true, ini: 'PM', age: '1h', msgs: [{ id: 'p0', role: 'user', text: 'What is blocked across projects?', time: '08:02' }, { id: 'p1', role: 'work', label: 'Checked 3 projects', open: false, steps: [{ icon: 'check-circle', verb: 'Read', target: 'XRP Mobile · 14 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Atlas · 9 tasks' }, { icon: 'check-circle', verb: 'Read', target: 'Client sites · 4 tasks' }] }, { id: 'p2', role: 'assistant', md: 'Two tasks are blocked, both in XRP Mobile and both waiting on review. One task has no project; I can file it under Atlas.', meta: 'Claude Opus 4.6' }] },
-      mm: { title: 'Merge manager', role: 'Lands pull requests through project agents', builtin: true, ini: 'MM', age: '3h', msgs: [{ id: 'q0', role: 'assistant', md: '4 pull requests are ready. I will ask each project agent to rebase its pull requests first and stop on any red check.', meta: 'Claude Opus 4.6' }] },
+      op: { title: 'Oppenheimer', role: 'General bot · merges pull requests, opens issues, runs Plan', builtin: true, ini: 'OP', age: '1h', msgs: [{ id: 'o0', role: 'user', text: 'Merge what is ready and open issues for anything that fails.', time: '08:40' }, { id: 'o1', role: 'work', label: 'Worked across 3 repositories', open: false, steps: [{ icon: 'git-pull-request', verb: 'Merged', target: 'oppenheimer #485', meta: 'squash' }, { icon: 'git-pull-request', verb: 'Merged', target: 'runner #130', meta: 'squash' }, { icon: 'alert-triangle', verb: 'Opened', target: 'issue runner #212', meta: 'checks failing' }, { icon: 'check-circle', verb: 'Moved', target: '2 tasks to Done', meta: 'Plan' }] }, { id: 'o2', role: 'assistant', md: 'Merged 2 pull requests. runner #131 has a failing check, so I opened **runner #212** with the log and assigned it to the runner agent. Both linked tasks moved to Done on Plan.', meta: 'Claude Opus 4.6' }] },
     },
     draft: '', focused: false, slashIdx: 0,
     approval: 'ask', approvalOpen: false, model: (window.OP_CATALOG || {}).defaultModel || 'sonnet', effort: 'high', effortShown: 'high', effortOpen: false, modelOpen: false,

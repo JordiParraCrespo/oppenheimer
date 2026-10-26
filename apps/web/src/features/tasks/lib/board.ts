@@ -1,4 +1,4 @@
-import { compareRank, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import { compareRank, type MilestoneEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 /** The board's columns, in the frames' order (`Tasks.dc.html`). */
@@ -8,6 +8,28 @@ export const COLUMNS: readonly TaskStatus[] = ['later', 'todo', 'doing', 'done']
 export interface BoardFilter {
   projectId?: string;
   milestoneId?: string;
+}
+
+/**
+ * Where a task added from the board is filed: a milestone brings its own project
+ * (the API refuses a project that disagrees with it), else the filtered project,
+ * else the workspace's Unassigned one. A filtered milestone the list does not
+ * have (deleted, or not refetched yet) is sent without a project, so the API
+ * files under its project or says it is gone, rather than the task quietly
+ * landing elsewhere.
+ */
+export function filingOf(
+  filter: BoardFilter,
+  milestones: readonly Pick<MilestoneEntity, 'id' | 'projectId'>[],
+  unassignedId: string | undefined,
+): { projectId: string | undefined; milestoneId: string | null } {
+  const milestone = filter.milestoneId
+    ? milestones.find((row) => row.id === filter.milestoneId)
+    : undefined;
+  return {
+    projectId: filter.milestoneId ? milestone?.projectId : filter.projectId || unassignedId,
+    milestoneId: filter.milestoneId ?? null,
+  };
 }
 
 function passes(task: TaskEntity, filter: BoardFilter): boolean {

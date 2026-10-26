@@ -1,8 +1,14 @@
 export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
-export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
-export { AgentModelSelect } from './components/agent-model-select';
+export type {
+  AgentModel,
+  AgentModelEffort,
+  AgentModelSelectLabels,
+  AgentOption,
+  Engine,
+} from './components/agent-model-select';
+export { AgentModelSelect, engineKey } from './components/agent-model-select';
 export type { AlertTone } from './components/alert';
 export {
   Alert,
@@ -76,11 +82,14 @@ export {
 } from './components/chat-cards';
 export type { ChatComposerLabels } from './components/chat-composer';
 export { ChatComposer } from './components/chat-composer';
+export type { DictationSlot } from './components/chat-composer-extras';
 export {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from './components/chat-composer-extras';
 export type { ComposerTask } from './components/chat-composer-stack';
@@ -120,6 +129,7 @@ export {
   ChatTrayButton,
   ThreadFindBar,
 } from './components/chat-header';
+export { ChatImage, ChatImageRemove } from './components/chat-image';
 export type { ChatErrorLabels } from './components/chat-status';
 export {
   ChatErrorAction,
@@ -129,7 +139,14 @@ export {
   TranscriptDivider,
 } from './components/chat-status';
 export type { TraceOutputLabels } from './components/chat-trace';
-export { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from './components/chat-trace';
+export {
+  Trace,
+  TraceGroup,
+  TraceLive,
+  TraceNote,
+  TraceOutput,
+  TraceStep,
+} from './components/chat-trace';
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
@@ -179,7 +196,13 @@ export {
 export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
-export { Composer, ComposerToolButton } from './components/composer';
+export {
+  Composer,
+  ComposerChoices,
+  ComposerFile,
+  ComposerPill,
+  ComposerToolButton,
+} from './components/composer';
 export { DatePicker } from './components/date-picker';
 export type {
   DateRange,
@@ -286,7 +309,7 @@ export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export { FileIcon } from './components/file-icon';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
-export { HostCard } from './components/host-card';
+export { HostCard, HostCardSkeleton } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
 export { HostLinkChrome } from './components/host-link';
 export type { IconButtonProps } from './components/icon-button';
@@ -354,11 +377,12 @@ export { PullRequestHeader } from './components/pull-request-header';
 export {
   MergeButton,
   PullRequestRow,
+  PullRequestRowSkeleton,
   PullRequestTable,
   PullRequestTableHead,
 } from './components/pull-request-table';
 export { RadioGroup, RadioGroupCard, RadioGroupItem } from './components/radio-group';
-export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
+export { RAIL_BAR_CLEARANCE, Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {
@@ -522,4 +546,5 @@ export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
+export { useStickToBottom } from './hooks/use-stick-to-bottom';
 export { cn } from './lib/utils';

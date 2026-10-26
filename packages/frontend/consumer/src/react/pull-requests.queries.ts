@@ -33,8 +33,10 @@ import type {
   ReviewSession,
   WatchedRepository,
 } from '../modules/pull-requests/pull-request.entity';
+import type { SessionEntity } from '../modules/sessions/session.entity';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
+import { watchSessionStart } from './sessions.queries';
 
 /**
  * Query key factory for the Pull requests area. Everything sits under one
@@ -355,8 +357,54 @@ export function useStartReviewSession(
   return useMutation({
     mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
       app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
+    ...withCacheOnSuccess(options, (sessionId) => {
+      // The Chat tab draws the session the moment For review lists it, and the
+      // host makes its pane before the checkout: watched, the tab shows the
+      // start's steps until Claude Code runs rather than a shell in an empty
+      // folder.
+      watchSessionStart(queryClient, sessionId);
+      return queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+    }),
+  });
+}
+
+export interface CloseReviewSessionVariables {
+  sessionId: string;
+  acceptUnpushedWork?: boolean;
+}
+
+/**
+ * Deletes a review session: the sessions' close, which removes the worktree
+ * of its head branch. The row leaves For review on the click, and the API
+ * stops listing it once the close is asked for, so a host that is offline
+ * does not bring it back; a close the API refuses puts it back at once, and a
+ * host that refuses does on the next read.
+ */
+export function useCloseReviewSession(
+  options?: UseMutationOptions<SessionEntity, Error, CloseReviewSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, acceptUnpushedWork }: CloseReviewSessionVariables) =>
+      app.sessions.close(sessionId, acceptUnpushedWork),
     ...withCacheOnSuccess(options, () =>
       queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() }),
     ),
+    onMutate: async ({ sessionId }) => {
+      await queryClient.cancelQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+      const before = queryClient.getQueryData<ReviewSession[]>(pullRequestsKeys.reviewSessions());
+      queryClient.setQueryData<ReviewSession[]>(pullRequestsKeys.reviewSessions(), (rows) =>
+        rows?.filter((row) => row.sessionId !== sessionId),
+      );
+      return { before };
+    },
+    onError: (error, variables, context, mutation) => {
+      // Back at once, then read again: the list is the server's.
+      const before = (context as { before?: ReviewSession[] } | undefined)?.before;
+      if (before) queryClient.setQueryData(pullRequestsKeys.reviewSessions(), before);
+      void queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+      return options?.onError?.(error, variables, context, mutation);
+    },
   });
 }

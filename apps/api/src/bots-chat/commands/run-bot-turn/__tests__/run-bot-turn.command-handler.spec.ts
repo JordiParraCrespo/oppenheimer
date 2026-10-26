@@ -50,7 +50,6 @@ function setup(
     isCancelRequested: vi.fn(async () => options.cancel ?? false),
   } satisfies Partial<BotTurnRepositoryPort>;
   const messages = {
-    findOpening: vi.fn(async () => ({ role: 'user' as const, content: 'Hi' })),
     insert: vi.fn(async () => undefined),
     saveSteps: vi.fn(async () => undefined),
   } satisfies Partial<BotMessageRepositoryPort>;
@@ -177,8 +176,7 @@ describe('RunBotTurnCommandHandler', () => {
 
   it('fails the turn, rather than leaving it running, when its message cannot be read', async () => {
     const turn = queued();
-    const { handler, messages, turns } = setup(turn, () => []);
-    messages.findOpening.mockRejectedValueOnce(new Error('connection reset'));
+    const { handler, turns } = setup(turn, () => [], { resolve: new Error('connection reset') });
     await run(handler, turn.id);
     expect(turn).toMatchObject({ status: 'failed', error: 'connection reset' });
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));

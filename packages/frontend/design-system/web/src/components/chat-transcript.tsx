@@ -30,7 +30,7 @@ function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-transcript"
-      className={cn('mx-auto flex w-full max-w-184 flex-col gap-5', className)}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-5', className)}
       {...props}
     />
   );
@@ -40,6 +40,7 @@ function ChatUserMessage({
   time,
   actions,
   attachments,
+  tone = 'card',
   className,
   children,
   ...props
@@ -48,15 +49,28 @@ function ChatUserMessage({
   time?: React.ReactNode;
   /** Icon buttons (copy, edit), shown on hover. */
   actions?: React.ReactNode;
-  /** `ChatAttachment`s, above the card. */
+  /** `ChatAttachment`s or `ChatImage`s, above the card; with no children, the message is these alone. */
   attachments?: React.ReactNode;
+  /**
+   * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
+   * bot's recessed chat; `wash` (the hover surface) is for a chat on a
+   * card-coloured ground, a session's, where a card would vanish.
+   */
+  tone?: 'card' | 'wash';
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
-      <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
-        {children}
-      </div>
+      {children != null && children !== false ? (
+        <div
+          className={cn(
+            'max-w-[80%] rounded-xl px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            tone === 'wash' ? 'bg-hover-surface' : 'bg-card',
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
       {time || actions ? (
         <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
           {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}

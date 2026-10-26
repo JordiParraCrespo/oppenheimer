@@ -19,11 +19,14 @@ import {
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
 import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
+import { ChatImage, ChatImageRemove } from '@oppenheimer/design-system-web/chat-image';
 import {
   ComposerContextMeter,
   ComposerMenu,
   ComposerMenuGroup,
   ComposerMenuItem,
+  DictationButton,
+  DictationFrame,
   VoiceRecorderBar,
 } from '@oppenheimer/design-system-web/chat-composer-extras';
 import {
@@ -49,7 +52,7 @@ import {
   ChatSuggestion,
   ChatSuggestions,
 } from '@oppenheimer/design-system-web/chat-elements';
-import { Composer } from '@oppenheimer/design-system-web/composer';
+import { Composer, ComposerFile } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
   ChatHeader,
@@ -76,7 +79,7 @@ import {
   StreamingCaret,
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
-import { Trace, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
+import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
 import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
@@ -243,13 +246,46 @@ function ChatWorkBody() {
         <TraceStep icon={<TerminalIcon />} title="Ran pnpm test runner" meta="40 passed">
           <TraceOutput>{'PASS  runner/step.test.ts\n\nTests: 40 passed, 40 total'}</TraceOutput>
         </TraceStep>
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
       </Trace>
+      <TraceGroup icon={<TerminalIcon />} summary="Used 4 tools" failed="1 failed" defaultOpen>
+        <TraceStep icon={<TerminalIcon />} title="List pull requests" target="mine">
+          <TraceOutput>{'#412 Cancel a step mid-run\n#409 Stream the runner log'}</TraceOutput>
+        </TraceStep>
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="412" />
+        <TraceStep icon={<TerminalIcon />} title="Get pull request" target="409" meta="failed" tone="danger" />
+        <TraceStep
+          icon={<TerminalIcon />}
+          title="Start session"
+          target="build-02"
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        />
+      </TraceGroup>
       <TraceLive elapsed="12s">Searching run.status</TraceLive>
     </div>
   );
 }
 
 /* ── AI elements ─────────────────────────────────────────────────────────── */
+
+/** A screenshot's stand-in: a gradient, so the tile shows a picture without an asset. */
+const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db7f5"/><stop offset="1" stop-color="#3b5bdb"/></linearGradient></defs><rect width="160" height="160" fill="url(#g)"/></svg>',
+)}`;
 
 function ChatElementsBody() {
   return (
@@ -275,6 +311,45 @@ function ChatElementsBody() {
       </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
+      <ChatComposer
+        value="What is wrong in this run?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        allowEmpty
+        placeholder="Message Release Bot"
+        attachments={
+          <>
+            <ChatImage src={SAMPLE_IMAGE} alt="build-log.png">
+              <ChatImageRemove label="Remove build-log.png" />
+            </ChatImage>
+            <ChatImage src={SAMPLE_IMAGE} alt="trace.png" pending>
+              <ChatImageRemove label="Remove trace.png" />
+            </ChatImage>
+            <ChatImage alt="diagram.svg" invalid>
+              <ChatImageRemove label="Remove diagram.svg" />
+            </ChatImage>
+          </>
+        }
+      />
+      <ChatComposer
+        layout="inline"
+        value="Why does the import fail on these?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        placeholder="Message Claude"
+        engine="Opus 5.5"
+        attachments={
+          <>
+            <ComposerFile name="failing-import.png" removeLabel="Remove failing-import.png" />
+            <ComposerFile name="vendor-export.pdf" removeLabel="Remove vendor-export.pdf" />
+          </>
+        }
+      />
+      <ChatUserMessage attachments={<ChatImage src={SAMPLE_IMAGE} alt="build-log.png" size="lg" />}>
+        Why does this step fail?
+      </ChatUserMessage>
       <div className="flex justify-center">
         <FloatingChip variant="round" aria-label="Jump to latest">
           <ChevronDownIcon />
@@ -488,6 +563,17 @@ function ChatStatusBody() {
             Continued from chat
           </a>
         </TranscriptDivider>
+        <TranscriptDivider
+          icon={<CheckCircleIcon />}
+          action={
+            <Button variant="ghost" size="xs">
+              <ExternalLinkIcon />
+              Open session
+            </Button>
+          }
+        >
+          You approved: Start Claude Code on build-02
+        </TranscriptDivider>
       </div>
       <ChatErrorBanner
         title="Turn failed"
@@ -679,6 +765,7 @@ function ChatDecisionsBody() {
       </div>
       <ComposerApprovalDemo />
       <QuestionPanel
+        header="Base branch"
         question="Which branch should the pull request target?"
         index={0}
         total={2}
@@ -700,7 +787,35 @@ function ChatDecisionsBody() {
           </>
         }
       />
+      <QuestionPanelSeveralDemo />
     </div>
+  );
+}
+
+function QuestionPanelSeveralDemo() {
+  const [picks, setPicks] = React.useState<number[]>([0, 2]);
+  return (
+    <QuestionPanel
+      header="Platforms"
+      question="Which platforms should it target?"
+      index={1}
+      total={2}
+      options={[
+        { label: 'Web', description: 'React' },
+        { label: 'iOS', description: 'SwiftUI' },
+        { label: 'Android', description: 'Compose' },
+      ]}
+      value={picks}
+      onValueChange={(index) =>
+        setPicks((held) => (held.includes(index) ? held.filter((i) => i !== index) : [...held, index]))
+      }
+      foot={
+        <>
+          <span className="flex-1">Pick as many as apply</span>
+          <Button size="sm">Submit answers</Button>
+        </>
+      }
+    />
   );
 }
 
@@ -742,6 +857,21 @@ function ChatComposerExtrasBody() {
         <VoiceRecorderBar levels={LEVELS} elapsed="0:07" onCancel={() => {}} onStop={() => {}} />
         <VoiceRecorderBar state="waiting" />
         <VoiceRecorderBar state="transcribing" />
+        <div className="flex items-center gap-2">
+          <DictationButton onClick={() => {}} />
+          <DictationButton recording onClick={() => {}} />
+        </div>
+        <DictationFrame dictation={{ mic: <DictationButton onClick={() => {}} /> }}>
+          <Textarea placeholder="Notes, or dictate them" />
+        </DictationFrame>
+        <DictationFrame
+          dictation={{
+            mic: <DictationButton recording onClick={() => {}} />,
+            recorder: <VoiceRecorderBar levels={LEVELS} elapsed="0:03" onCancel={() => {}} onStop={() => {}} />,
+          }}
+        >
+          <Textarea defaultValue="Check the deploy, then" />
+        </DictationFrame>
         <div className="flex items-center gap-2">
           <ComposerContextMeter value={23} onCompact={() => {}} />
           <ComposerContextMeter value={78} onCompact={() => {}} />
@@ -973,7 +1103,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
@@ -982,8 +1112,8 @@ export function ChatSection() {
       <Spec
         id="chatelements"
         title="AI elements"
-        meta="chat-elements.tsx · chat-composer.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; FloatingChip round takes the reader back to the latest turn."
+        meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />
@@ -1003,7 +1133,7 @@ export function ChatSection() {
         id="chatstatus"
         title="Dividers and status"
         meta="chat-status.tsx"
-        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes. ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
+        desc="Boundaries and status. TranscriptDivider marks where who answers, or where the thread came from, changes; its action is a control after the label (Open session after an approval that started one). ChatErrorBanner is a failed turn: the error clamped to three lines with Show details and actions that name what they do. ChatNotice is one line about the run in its tone: a limit near or hit, a provider reconnecting. FloatingChip floats over the transcript while what it points to is scrolled away; its notice form is a quiet wash."
         code={`<ChatErrorBanner title="Turn failed" actions={<ChatErrorAction variant="danger">Continue task</ChatErrorAction>} onDismiss={…}>{error}</ChatErrorBanner>`}
       >
         <ChatStatusDemo />
@@ -1023,7 +1153,7 @@ export function ChatSection() {
         id="chatdecisions"
         title="Decisions"
         meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card."
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card. Where the agent allows several answers, QuestionPanel takes the set of picks and each row toggles."
         code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
       >
         <ChatDecisionsDemo />
@@ -1033,7 +1163,7 @@ export function ChatSection() {
         id="chatcomposer"
         title="Composer extras"
         meta="chat-composer-extras.tsx"
-        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
+        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder or the last problem under it. Every host — this frame, Composer, ChatComposer, the comment drafts — takes the same DictationSlot (mic, recorder, notice). ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
         code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
       >
         <ChatComposerExtrasDemo />

@@ -30,6 +30,8 @@ type recorder struct{ states []domain.State }
 
 func (r *recorder) SessionChanged(s domain.Session) { r.states = append(r.states, s.State) }
 
+func (r *recorder) FirstPrompt(domain.Session, string, func()) bool { return true }
+
 // realHarness wires the service to this machine's tmux and git.
 type realHarness struct {
 	svc      *app.Service

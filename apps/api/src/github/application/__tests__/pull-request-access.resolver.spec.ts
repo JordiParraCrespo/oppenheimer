@@ -8,6 +8,7 @@ import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
 import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
+import { GithubAccessResolver } from '../github-access.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
 import type { WorkspaceRepository } from '../pull-request-access.port';
 import { PullRequestAccessResolver } from '../pull-request-access.resolver';
@@ -83,7 +84,10 @@ const refused = (status: number) =>
     extensions: { upstreamStatus: status },
   });
 
-function build(pulls: Partial<Record<keyof GithubPullsPort, unknown>>) {
+function build(
+  pulls: Partial<Record<keyof GithubPullsPort, unknown>>,
+  userGrants: Partial<GithubUserGrantResolver> = {},
+) {
   const connected = installation();
   const store = new Map<string, { value: unknown; ttl?: number }>();
   const cache = {
@@ -94,18 +98,31 @@ function build(pulls: Partial<Record<keyof GithubPullsPort, unknown>>) {
     getOrSet: vi.fn(async (_key: string, _ttl: number, load: () => Promise<unknown>) => load()),
     del: vi.fn(),
   };
+  const installations = {
+    findOneById: vi.fn().mockResolvedValue(Some(connected)),
+  } as unknown as GithubInstallationRepositoryPort;
+  const app = {
+    mintInstallationToken: vi
+      .fn()
+      .mockResolvedValue({ token: 'ghs_read', expiresAt: new Date(Date.now() + 3_600_000) }),
+    listInstallationRepositories: vi.fn().mockResolvedValue([
+      {
+        githubRepoId: 821374923,
+        name: 'xrp',
+        fullName: 'acme-labs/xrp',
+        defaultBranch: 'main',
+        private: true,
+      },
+    ]),
+  } as unknown as GithubAppPort;
+  const grants = userGrants as GithubUserGrantResolver;
   const resolver = new PullRequestAccessResolver(
-    {
-      findOneById: vi.fn().mockResolvedValue(Some(connected)),
-    } as unknown as GithubInstallationRepositoryPort,
-    {
-      mintInstallationToken: vi
-        .fn()
-        .mockResolvedValue({ token: 'ghs_read', expiresAt: new Date(Date.now() + 3_600_000) }),
-    } as unknown as GithubAppPort,
+    installations,
+    app,
     pulls as unknown as GithubPullsPort,
-    {} as GithubUserGrantResolver,
+    grants,
     cache as unknown as CacheService,
+    new GithubAccessResolver(installations, app, grants, cache as unknown as CacheService),
   );
   const repository: WorkspaceRepository = {
     installationId: connected.id,
@@ -390,5 +407,45 @@ describe('what one read spends', () => {
     ]);
 
     expect(listFiles).toHaveBeenCalledTimes(BUDGET);
+  });
+});
+
+describe('a merge pinned to the head it was decided on', () => {
+  function forMerge() {
+    const merge = vi.fn().mockResolvedValue(undefined);
+    const built = build(
+      { readPullRequest: vi.fn().mockResolvedValue({ ...PULL, headSha: 'def' }), merge },
+      // The write is made with the caller's own token.
+      { actorFor: vi.fn().mockResolvedValue({ token: 'gho_ana', githubUserId: 1 }) },
+    );
+    const address = {
+      installationId: built.repository.installationId,
+      githubRepoId: 821374923,
+      number: 12,
+    };
+    return { ...built, merge, address };
+  }
+
+  it('merges nothing, with GITHUB_014, once a push has moved the head on', async () => {
+    const { resolver, merge, address } = forMerge();
+
+    await expect(resolver.merge(SCOPE, 'ana', address, 'squash', 'abc')).rejects.toMatchObject({
+      code: 'GITHUB_014',
+    });
+    expect(merge).not.toHaveBeenCalled();
+  });
+
+  it('merges at the head it was decided on while that is still the head', async () => {
+    const { resolver, merge, address } = forMerge();
+
+    await resolver.merge(SCOPE, 'ana', address, 'squash', 'def');
+
+    expect(merge).toHaveBeenCalledWith(
+      { token: 'gho_ana', bucket: 'user:1' },
+      'acme-labs/xrp',
+      12,
+      'squash',
+      'def',
+    );
   });
 });

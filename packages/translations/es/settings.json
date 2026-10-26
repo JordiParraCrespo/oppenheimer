@@ -102,7 +102,7 @@
   },
   "modelProviders": {
     "title": "Proveedores de modelos",
-    "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+    "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
     "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
     "loadFailed": "No se pudieron cargar los proveedores de modelos.",
     "keyEnding": "Clave que termina en {{hint}}",
@@ -112,6 +112,10 @@
     "remove": "Quitar",
     "removeLabel": "Quitar la clave de {{provider}}",
     "removeFailed": "No se pudo quitar la clave.",
+    "default": "Predeterminado",
+    "makeDefault": "Hacer predeterminado",
+    "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
+    "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
     "providers": {
       "anthropic": "Modelos Claude, a través de la API de Anthropic.",
       "glm": "Modelos GLM, a través de z.ai.",
@@ -126,7 +130,7 @@
       "saving": "Guardando…",
       "failed": "No se pudo guardar la clave."
     },
-    "signedIn": "Sesión iniciada · cuenta que termina en {{hint}}",
+    "signedIn": "Sesión iniciada · {{hint}}",
     "notConnected": "Sin conectar",
     "connect": "Conectar ChatGPT",
     "reconnect": "Volver a iniciar sesión",

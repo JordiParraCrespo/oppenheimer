@@ -53,12 +53,7 @@
   },
   "new": {
     "title": "New session",
-    "subtitle": "Set the scope, then describe the work.",
-    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
-    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
-    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
-    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
-    "subtitleFolder": "Opens a folder on the host as it is. Nothing is cloned and no branch is made.",
+    "heading": "What should we work on?",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -136,7 +131,11 @@
     "agent": {
       "label": "Agent and model",
       "search": "Search models…",
-      "empty": "No model matches “{{query}}”."
+      "empty": "No model matches “{{query}}”.",
+      "favourites": "Favourites",
+      "favouritesEmpty": "Star a model to keep it here.",
+      "addFavourite": "Add {{model}} to favourites",
+      "removeFavourite": "Remove {{model}} from favourites"
     },
     "permission": {
       "label": "Permission level",
@@ -183,6 +182,19 @@
   "session": {
     "status": {
       "closed": "Disconnected"
+    },
+    "state": {
+      "starting": "Starting",
+      "failed": "Failed",
+      "stopped": "Stopped",
+      "deleted": "Deleted",
+      "deleting": "Deleting…",
+      "working": "Running",
+      "waiting-on-you": "Needs input",
+      "ready-for-review": "Ready for review",
+      "landing": "Landing",
+      "idle": "Idle",
+      "resolved": "Done"
     },
     "file": {
       "sending": "Sending file",
@@ -242,6 +254,9 @@
     "newSessionHere": "New session in {{name}}",
     "projectSettings": "{{name}} settings",
     "unfiled": "Other sessions",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
     "actions": "Session actions",
     "rename": "Rename",
     "renameLabel": "Session name",
@@ -251,17 +266,42 @@
     "delete": "Delete",
     "writeFailed": "That change did not land. Try again.",
     "loadFailed": "Could not load your sessions.",
-    "share": "Share…"
+    "share": "Share…",
+    "deleting": "Deleting…",
+    "deletingHint": "Waiting for its host to remove it. If the host is offline, it is removed when the host is back.",
+    "notDeleted": "Not deleted",
+    "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
+    "select": "Select",
+    "selected": "Selected"
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
-    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote. Deleting stops if the session has work that is not pushed.",
     "confirm": "Delete session",
     "deleting": "Deleting…",
     "failed": "The session could not be deleted.",
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
-    "descriptionFolder": "Ends the terminal. The folder stays as it is."
+    "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+    "refused": "Its host did not delete it",
+    "refusedUnknown": "The host refused to remove the session."
+  },
+  "selection": {
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "pin": "Pin selected",
+    "unpin": "Unpin selected",
+    "move": "Move selected to a project",
+    "delete": "Delete selected",
+    "clear": "Clear selection"
+  },
+  "deleteSessions": {
+    "title_one": "Delete {{count}} session?",
+    "title_other": "Delete {{count}} sessions?",
+    "description": "Each session stops, its worktree is removed from its host, and its transcript is gone. Commits already pushed stay on the remote. A session with work that is not pushed is not deleted.",
+    "confirm": "Delete sessions",
+    "partial_one": "{{count}} session was not deleted",
+    "partial_other": "{{count}} sessions were not deleted"
   },
   "filters": {
     "label": "Filter sessions",
@@ -418,5 +458,119 @@
   },
   "screen": {
     "loadFailed": "Couldn’t refresh this session."
+  },
+  "chat": {
+    "view": {
+      "label": "How to read this session",
+      "terminal": "Terminal",
+      "chat": "Chat"
+    },
+    "empty": {
+      "title": "Nothing said yet",
+      "description": "Claude's words and work appear here as it goes."
+    },
+    "composer": {
+      "placeholder": "Message Claude",
+      "send": "Send",
+      "stop": "Stop",
+      "agent": "Claude Code",
+      "attach": "Attach files",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+      "attachTooMany": "A message carries at most {{max}} files.",
+      "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+      "attaching": "Attaching files…"
+    },
+    "turn": {
+      "working": "Working for",
+      "worked": "Worked for",
+      "stopped": "Stopped",
+      "interrupted": "Interrupted"
+    },
+    "thinking": "Thinking",
+    "plan": "Plan",
+    "latest": "Jump to latest",
+    "earlier_one": "Show {{count}} earlier turn",
+    "earlier_other": "Show {{count}} earlier turns",
+    "truncated": "cut on the host",
+    "failedCall": "failed",
+    "failed_one": "{{count}} failed",
+    "failed_other": "{{count}} failed",
+    "files_one": "{{count}} file attached",
+    "files_other": "{{count}} files attached",
+    "tasks_one": "{{done}} of {{count}} task done",
+    "tasks_other": "{{done}} of {{count}} tasks done",
+    "notice": {
+      "interrupted": "You stopped this turn",
+      "compacted": "Context compacted"
+    },
+    "verb": {
+      "command": "Ran",
+      "read": "Read",
+      "edit": "Edited",
+      "write": "Wrote",
+      "search": "Searched",
+      "web": "Fetched",
+      "todo": "Updated tasks",
+      "agent": "Ran a subagent",
+      "plan": "Proposed a plan",
+      "question": "Asked",
+      "mcp": "Called",
+      "other": "Used"
+    },
+    "summary": {
+      "read_one": "read {{count}} file",
+      "read_other": "read {{count}} files",
+      "search_one": "searched {{count}} pattern",
+      "search_other": "searched {{count}} patterns",
+      "web_one": "fetched {{count}} page",
+      "web_other": "fetched {{count}} pages",
+      "edit_one": "edited {{count}} file",
+      "edit_other": "edited {{count}} files",
+      "write_one": "wrote {{count}} file",
+      "write_other": "wrote {{count}} files",
+      "command_one": "ran {{count}} command",
+      "command_other": "ran {{count}} commands",
+      "agent_one": "ran {{count}} subagent",
+      "agent_other": "ran {{count}} subagents",
+      "mcp_one": "called {{count}} tool",
+      "mcp_other": "called {{count}} tools",
+      "question_one": "asked {{count}} question",
+      "question_other": "asked {{count}} questions",
+      "other_one": "used {{count}} tool",
+      "other_other": "used {{count}} tools"
+    },
+    "verbLive": {
+      "command": "Running",
+      "read": "Reading",
+      "edit": "Editing",
+      "write": "Writing",
+      "search": "Searching",
+      "web": "Fetching",
+      "agent": "Running a subagent",
+      "question": "Asking",
+      "mcp": "Calling",
+      "other": "Using"
+    },
+    "thought": "Thought",
+    "thoughtFor": "Thought for {{seconds}}s",
+    "changes_one": "{{count}} file changed",
+    "changes_other": "{{count}} files changed",
+    "question": {
+      "waiting": "Waiting for your answer",
+      "dismissed": "You dismissed the questions",
+      "noAnswer": "No answer read",
+      "ownAnswer": "Or type your own answer…",
+      "ownAnswerLabel": "Your answer",
+      "several": "Toggle with 1–{{last}}, as many as apply",
+      "one": "Pick one with 1–{{last}}, or answer in your own words",
+      "next": "Next",
+      "submit": "Submit answers",
+      "dismiss": "Dismiss",
+      "sending": "Sending your answers…",
+      "previous": "Previous question",
+      "nextQuestion": "Next question",
+      "of": "{{n}} of {{total}}"
+    }
   }
 }

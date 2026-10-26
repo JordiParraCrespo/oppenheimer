@@ -2,6 +2,7 @@
 // not import the kernel's React entry. `useErrorMessage` itself comes from there.
 export type { ResolvedErrorMessage } from '@oppenheimer/frontend-core/react';
 export { ErrorAlert } from './components/error-alert';
+export { SettingsFormSaveRow } from './components/settings-form-save-row';
 export { SidebarSearchField } from './components/sidebar-search-field';
 export {
   type ServerFieldErrorSource,

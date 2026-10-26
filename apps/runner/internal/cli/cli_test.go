@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/cli"
+	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
@@ -101,6 +102,10 @@ func TestExitCodeIsTheDocumentedContract(t *testing.T) {
 		{"unreachable", problem.New("X", http.StatusBadGateway, "t"), 6},
 		{"server error", problem.New("X", http.StatusInternalServerError, "t"), 1},
 		{"wrapped problem", fmt.Errorf("register: %w", problem.New("X", http.StatusBadGateway, "t")), 6},
+		{"still paired", pairdomain.ErrStillPaired, 7},
+		// The service removal failing too must not hide the half-done unpair.
+		{"still paired behind another problem", errors.Join(
+			problem.New("SVC_004", http.StatusInternalServerError, "t"), pairdomain.ErrStillPaired), 7},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := cli.ExitCode(tc.err); got != tc.want {

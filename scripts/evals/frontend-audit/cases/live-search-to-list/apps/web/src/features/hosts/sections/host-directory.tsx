@@ -1,5 +1,6 @@
-import { SidebarSearch, Skeleton } from '@oppenheimer/design-system-web';
-import { useHosts } from '@oppenheimer/frontend-consumer/react';
+import { SidebarSearch } from '@oppenheimer/design-system-web';
+import { useSuspenseHosts } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HostRows } from '../components/host-rows';
@@ -9,10 +10,12 @@ import { HostRows } from '../components/host-rows';
  *
  * The list is short enough to filter in the browser, so the search narrows
  * what is already loaded rather than asking the API again.
+ * Read under Suspense, in the screen's `QueryState`; a refetch that fails
+ * keeps the rows and says so above them.
  */
 export function HostDirectory() {
   const { t } = useTranslation();
-  const { data: hosts, isPending } = useHosts();
+  const { data: hosts, error } = useSuspenseHosts();
   const [query, setQuery] = useState('');
 
   return (
@@ -23,11 +26,8 @@ export function HostDirectory() {
         placeholder={t('sessions.new.host.search')}
         aria-label={t('sessions.new.host.search')}
       />
-      {isPending ? (
-        <Skeleton className="h-8 w-full" />
-      ) : (
-        <HostRows hosts={hosts ?? []} query={query} />
-      )}
+      <ErrorAlert error={error} fallback={t('settings.hosts.failed')} />
+      <HostRows hosts={hosts} query={query} />
     </div>
   );
 }

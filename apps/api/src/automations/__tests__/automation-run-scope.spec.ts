@@ -33,7 +33,14 @@ describe('the runs list tenant predicate', () => {
     });
   });
 
-  it('adds nothing for a bypass scope', () => {
+  it('keeps a bypass scope inside its active workspace', () => {
+    expect(runTenantPredicate(scope({ bypass: true }), 2)).toEqual({
+      clause: 'run."organizationId" = $2',
+      values: ['org-1'],
+    });
+  });
+
+  it('adds nothing for a bypass scope with no workspace', () => {
     expect(runTenantPredicate(scope({ bypass: true, organizationId: null }), 2)).toBeNull();
   });
 
@@ -78,6 +85,8 @@ describe('the runs page', () => {
     const [rowsSql, rowsValues] = query.mock.calls[0];
     expect(rowsSql).toContain('run."createdAt" >= $1 AND run."organizationId" = $2');
     expect(rowsSql).not.toContain(' IN (SELECT');
+    // A bot routine's runs are its bot's, never the console's list.
+    expect(rowsSql).toContain(`a."runTarget" = 'session'`);
     expect(rowsValues.slice(0, 2)).toEqual([since, 'org-1']);
     expect(rowsValues.slice(-2)).toEqual([10, 10]);
     const [countsSql, countsValues] = query.mock.calls[1];

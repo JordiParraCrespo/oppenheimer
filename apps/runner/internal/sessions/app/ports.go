@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -174,13 +175,53 @@ type Store interface {
 // plane.
 type Publisher interface {
 	SessionChanged(session domain.Session)
+	// FirstPrompt carries a session's first message, read off the agent's
+	// transcript, to the control plane as `prompt.first` (02-runner §7). It
+	// reports whether it took the message, and calls reported once the
+	// control plane has it: only then is the session marked reported, so a
+	// message offered before the link exists, or lost with the process
+	// before it landed, is offered again.
+	FirstPrompt(session domain.Session, text string, reported func()) bool
 }
+
+// Transcripts reads what an agent's own transcript says, on this host. The
+// transcript is the CLI's. Two things leave the host from it: the first
+// message, at most domain.FirstPromptMaxBytes of it, and, while a browser is
+// attached to the session, its entries compacted for the chat view (0.7) —
+// what the same browser's terminal already shows.
+type Transcripts interface {
+	// FirstPrompt is the first message a person sent the agent in the
+	// conversation it was launched under, or "" while there is none yet, for
+	// an agent whose transcript this runner cannot read, or when the
+	// transcript cannot be read at all. It is asked again on the next poll,
+	// so a failure is only a later name.
+	FirstPrompt(agent domain.Agent, conversation string) string
+	// Follow sends the conversation's entries to emit, the history first
+	// under Reset and then each one the agent appends, until ctx ends. An
+	// entry over entryMax bytes is left out and a batch holds at most
+	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
+	// runner cannot read the agent's transcript.
+	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
+}
+
+// ChatBatch is a run of transcript entries for the chat view, each one the
+// JSON of one compacted transcript line. Reset starts the history over.
+type ChatBatch struct {
+	Reset   bool
+	Entries []string
+}
+
+// ErrNoChat is a session whose agent's transcript this runner cannot follow.
+var ErrNoChat = errors.New("no chat for this agent")
 
 // NopPublisher drops events: the service's publisher until the link is set.
 type NopPublisher struct{}
 
 // SessionChanged implements Publisher.
 func (NopPublisher) SessionChanged(domain.Session) {}
+
+// FirstPrompt implements Publisher: nobody takes it.
+func (NopPublisher) FirstPrompt(domain.Session, string, func()) bool { return false }
 
 // LaunchGate holds an agent's launch while something is replacing that
 // agent's executable, so a session never starts a CLI halfway through its
@@ -189,4 +230,13 @@ func (NopPublisher) SessionChanged(domain.Session) {}
 // launch refused.
 type LaunchGate interface {
 	Hold(ctx context.Context, command string) (release func())
+}
+
+// Trust answers an agent's "do you trust this folder?" question before it is
+// asked, for every launch: the folder is one the runner made or the person
+// picked for the session, so the question only stands between them and the
+// agent. It is best-effort: a launch whose folder could not be marked still
+// starts, and the question is then on the screen for whoever opens it.
+type Trust interface {
+	Trust(agent domain.Agent, dir string) error
 }

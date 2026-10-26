@@ -105,6 +105,7 @@ describe('queue registration', () => {
       [QUEUE_NAMES.AUTOMATION_SCHEDULES, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_RETENTION, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.OUTBOX_RETENTION, DEFAULT_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_ATTACHMENT_RETENTION, DEFAULT_JOB_OPTIONS],
     ])('gives the %s queue its options', (name, options) => {
       const queue = moduleRef.get<Queue>(getQueueToken(name));
 

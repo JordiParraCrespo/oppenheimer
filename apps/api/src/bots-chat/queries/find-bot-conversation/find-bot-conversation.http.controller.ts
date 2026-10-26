@@ -45,7 +45,7 @@ export class FindBotConversationHttpController {
   @ApiOperation({
     summary: "A bot's chat",
     description:
-      'Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running.',
+      'Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. The whole chat is `GET /bots/:id/conversation/export`.',
   })
   @ApiResponse({ status: 200, type: BotConversationResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -60,6 +60,7 @@ export class FindBotConversationHttpController {
     return {
       messages: conversation.messages.map((message) => this.messages.toResponse(message)),
       turns: conversation.turns.map((turn) => this.turns.toResponse(turn)),
+      messageCount: conversation.messageCount,
     };
   }
 }

@@ -31,6 +31,9 @@ import { UninstallHostCommandHandler } from './commands/uninstall-host/uninstall
 import { UninstallHostHttpController } from './commands/uninstall-host/uninstall-host.http.controller';
 import { UnpairHostCommandHandler } from './commands/unpair-host/unpair-host.command-handler';
 import { UnpairHostHttpController } from './commands/unpair-host/unpair-host.http.controller';
+import { UpdateHostRunnerCommandHandler } from './commands/update-host-runner/update-host-runner.command-handler';
+import { UpdateHostRunnerHttpController } from './commands/update-host-runner/update-host-runner.http.controller';
+import { WipeHostHttpController } from './commands/wipe-host/wipe-host.http.controller';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostRepository } from './database/host.repository';
 import { HostEventOrmEntity } from './database/host-event.orm-entity';
@@ -89,6 +92,8 @@ const httpControllers = [
   FindHostTimelineHttpController,
   RenameHostHttpController,
   UnpairHostHttpController,
+  WipeHostHttpController,
+  UpdateHostRunnerHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -99,6 +104,7 @@ const commandHandlers: Provider[] = [
   UnpairHostCommandHandler,
   UninstallHostCommandHandler,
   CollectSessionImageCommandHandler,
+  UpdateHostRunnerCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -145,7 +151,8 @@ const resolvers: Provider[] = [
 @Module({
   imports: [
     CqrsModule,
-    // The parked images a runner collects (`GET /hosts/self/images/{id}`).
+    // The parked images a runner collects (`GET /hosts/self/images/{id}`), and
+    // the link Update runner sends `host.update` down.
     LinksModule,
     TypeOrmModule.forFeature([
       HostOrmEntity,

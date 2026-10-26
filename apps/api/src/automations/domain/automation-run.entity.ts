@@ -9,6 +9,7 @@ import type {
   AutomationRunOutcome,
   AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
+import type { RunDispatchRef } from './automation.types';
 import { AutomationRunChangedDomainEvent } from './events/automation-run-changed.domain-event';
 
 /**
@@ -47,13 +48,15 @@ export interface AutomationRunProps {
   availableAt: Date;
   attempts: number;
   sessionId: string | null;
+  /** The bot turn a routine's run queued; never set with `sessionId`. */
+  botTurnId: string | null;
   requestedByUserId: string | null;
   dispatchedAt: Date | null;
 }
 
 export type NewRunProps = Omit<
   AutomationRunProps,
-  'outcome' | 'skipReason' | 'availableAt' | 'attempts' | 'sessionId' | 'dispatchedAt'
+  'outcome' | 'skipReason' | 'availableAt' | 'attempts' | 'sessionId' | 'botTurnId' | 'dispatchedAt'
 >;
 
 /**
@@ -68,7 +71,23 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
 
   /** A firing the dispatcher owes a look at. */
   static fire(props: NewRunProps, now: Date): AutomationRunEntity {
-    const run = new AutomationRunEntity({
+    const run = AutomationRunEntity.pending(props, now);
+    run.changed('the automation fired');
+    return run;
+  }
+
+  /**
+   * A firing a guard refused before it was ever queued. Recorded, never
+   * silent: its one event says skipped, never the pending it never was.
+   */
+  static skipped(props: NewRunProps, reason: AutomationSkipReason, now: Date): AutomationRunEntity {
+    const run = AutomationRunEntity.pending(props, now);
+    run.skip(reason);
+    return run;
+  }
+
+  private static pending(props: NewRunProps, now: Date): AutomationRunEntity {
+    return new AutomationRunEntity({
       id: randomUUID(),
       props: {
         ...props,
@@ -77,18 +96,10 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         availableAt: now,
         attempts: 0,
         sessionId: null,
+        botTurnId: null,
         dispatchedAt: null,
       },
     });
-    run.changed('the automation fired');
-    return run;
-  }
-
-  /** A firing a guard refused before it was ever queued. Recorded, never silent. */
-  static skipped(props: NewRunProps, reason: AutomationSkipReason, now: Date): AutomationRunEntity {
-    const run = AutomationRunEntity.fire(props, now);
-    run.skip(reason);
-    return run;
   }
 
   get organizationId(): string {
@@ -133,6 +144,9 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
   get sessionId(): string | null {
     return this.props.sessionId;
   }
+  get botTurnId(): string | null {
+    return this.props.botTurnId;
+  }
   get requestedByUserId(): string | null {
     return this.props.requestedByUserId;
   }
@@ -168,20 +182,29 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
   }
 
   /**
-   * The session exists. `revisionId` is the revision it was launched with —
-   * the current one at dispatch, which is what actually ran.
+   * What the run launched exists. `revisionId` is the revision it was launched
+   * with — the current one at dispatch, which is what actually ran.
    */
-  dispatched(sessionId: string, revisionId: string, at: Date): void {
+  dispatched(ref: RunDispatchRef, revisionId: string, at: Date): void {
     this.assertPending();
     this.props.revisionId = revisionId;
     this.props.outcome = 'dispatched';
-    this.props.sessionId = sessionId;
+    switch (ref.kind) {
+      case 'session':
+        this.props.sessionId = ref.sessionId;
+        break;
+      case 'bot_turn':
+        this.props.botTurnId = ref.turnId;
+        break;
+    }
     this.props.dispatchedAt = at;
     this.setUpdatedAt(new Date());
-    this.changed('the run started its session');
+    this.changed(
+      ref.kind === 'session' ? 'the run started its session' : 'the run queued its turn',
+    );
   }
 
-  /** One per write, however many steps it took (`skipped` fires, then skips). */
+  /** One per write, however many steps it took; `skipped` never raises the pending it skips. */
   private changed(reason: string): void {
     if (this.domainEvents.some((event) => event instanceof AutomationRunChangedDomainEvent)) return;
     this.addEvent(
@@ -190,6 +213,8 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
         reason,
         organizationId: this.props.organizationId,
         automationId: this.props.automationId,
+        outcome: this.props.outcome,
+        skipReason: this.props.skipReason,
       }),
     );
   }

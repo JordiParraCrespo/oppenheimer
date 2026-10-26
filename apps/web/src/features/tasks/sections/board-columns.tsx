@@ -28,7 +28,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { COLUMNS, columnOf } from '../lib/board';
+import { COLUMNS, columnOf, filingOf } from '../lib/board';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -87,6 +87,7 @@ export function BoardColumns() {
   };
   const milestone = filter.milestoneId ? milestones.get(filter.milestoneId) : undefined;
   const filed = milestone?.name ?? (filter.projectId ? projectNames.get(filter.projectId) : null);
+  const filing = filingOf(filter, read.milestones, unassignedId);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
@@ -186,8 +187,7 @@ export function BoardColumns() {
                         create.mutate({
                           title,
                           status,
-                          projectId: filter.projectId || unassignedId,
-                          milestoneId: filter.milestoneId ?? null,
+                          ...filing,
                         })
                       }
                     />

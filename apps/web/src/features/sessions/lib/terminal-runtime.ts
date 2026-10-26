@@ -3,6 +3,7 @@ import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard'
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
 import { createSnapshotHandover } from './snapshot-handover';
@@ -114,6 +115,9 @@ export function mountSessionTerminal(
   // terminal as OSC 52; without this the highlight copies nothing. A
   // watcher's pane leaves it out: the owner's copies are not theirs.
   if (!options.readOnly) term.loadAddon(new ClipboardAddon(undefined, OSC52_CLIPBOARD));
+  // A URL on the grid opens in a new tab on click. xterm's link detection
+  // runs whatever mouse mode tmux asked for, so `mouse on` does not hide it.
+  term.loadAddon(new WebLinksAddon());
 
   term.open(container);
 

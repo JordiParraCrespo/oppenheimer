@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;height:100%;background:var(--background,#000)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+input::placeholder,textarea::placeholder{color:var(--fg-subtle)}
+</style>
+<script src="./rail-order.js"></script>
+</helmet>
+<div data-theme="{{ theme }}" onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
+
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Inbox"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></button>
+<a class="op-rail__btn" href="./SessionsConsole.dc.html" aria-label="Sessions" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></a>
+<a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Pull requests</span></a>
+<a class="op-rail__btn" href="./Routines.dc.html" aria-label="Automations" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></a>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
+</nav>
+
+<aside aria-label="Notifications" class="op-sidebar" style="flex:none;width:288px;min-width:288px;height:100vh;overflow-y:auto;padding:0 10px 16px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+<div class="op-sidebar__head" style="padding-left:6px"><span class="op-wordmark" style="font-size:18px">Oppenheimer</span></div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div class="op-listhead"><span class="op-listhead__title">Needs you</span><span class="op-listhead__count">{{ openN }}</span>
+<div class="op-filterwrap" style="margin-left:auto">
+<button class="op-iconbtn-sm" type="button" aria-label="Filter notifications" aria-haspopup="menu" data-open="{{ fOpenS }}" data-dirty="{{ fDirty }}" onClick="{{ fToggle }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7"></path><path d="M4 10V3"></path><path d="M12 21v-9"></path><path d="M12 8V3"></path><path d="M20 21v-5"></path><path d="M20 12V3"></path><path d="M1 14h6"></path><path d="M9 8h6"></path><path d="M17 16h6"></path></svg></button>
+<sc-if value="{{ fOpen }}">
+<div class="op-menu op-filtermenu" role="menu" onClick="{{ stop }}">
+<sc-if value="{{ fRoot }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ fRows }}" as="f" hint-placeholder-count="2">
+<button class="op-menu__item" type="button" onClick="{{ f.open }}"><span class="op-menu__label-text">{{ f.name }}</span><span class="op-menu__value">{{ f.value }}</span><span class="op-menu__shortcut">›</span></button>
+</sc-for>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" role="menuitemcheckbox" aria-checked="{{ fDoneS }}" onClick="{{ fToggleDone }}"><span class="op-menu__label-text">Show done</span><span class="op-menu__shortcut">{{ fDoneCheck }}</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" onClick="{{ fClear }}" data-disabled="{{ fClean }}"><span class="op-menu__label-text">Clear filters</span></button>
+</sc-if>
+<sc-if value="{{ fDetail }}">
+<button class="op-menu__item" type="button" onClick="{{ fBack }}"><span class="op-menu__shortcut">‹</span><span class="op-menu__label-text">{{ fTitle }}</span></button>
+<div class="op-menu__sep"></div>
+<sc-for list="{{ fOptions }}" as="o" hint-placeholder-count="4">
+<button class="op-menu__item" type="button" role="menuitemradio" aria-checked="{{ o.onS }}" onClick="{{ o.pick }}"><span class="op-menu__label-text">{{ o.label }}</span><span class="op-menu__shortcut">{{ o.check }}</span></button>
+</sc-for>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+<sc-if value="{{ fChip }}">
+<div class="op-filterchips"><sc-for list="{{ fChips }}" as="c" hint-placeholder-count="1"><button class="op-filterchip" type="button" onClick="{{ c.clear }}" aria-label="Clear filter">{{ c.label }}<span aria-hidden="true">×</span></button></sc-for></div>
+</sc-if>
+<sc-if value="{{ fNone }}"><p class="op-emptylist">Nothing matching these filters needs you.</p></sc-if>
+<sc-for list="{{ queue }}" as="q" hint-placeholder-count="5">
+<div class="op-srow" data-menu="{{ q.menuS }}" style="position:relative">
+<button type="button" onClick="{{ q.focus }}" aria-current="{{ q.curS }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:{{ q.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer;opacity:{{ q.op }}" style-hover="background:var(--hover-surface)">
+<span style="flex:none;display:flex;padding-top:2px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ q.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;text-decoration:{{ q.strike }}">{{ q.short }}</span>
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--fg-subtle)">{{ q.from }}</span>
+</span>
+<span class="op-session__age" style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:{{ q.ageFg }}">{{ q.age }}</span>
+</button>
+<button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Notification actions" aria-haspopup="menu" onClick="{{ q.toggleMenu }}" style="position:absolute;top:8px;right:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button>
+<sc-if value="{{ q.menuOpen }}">
+<div class="op-menu" role="menu" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 2px);right:4px;left:auto;bottom:auto;z-index:60;min-width:200px">
+<sc-for list="{{ q.actions }}" as="x" hint-placeholder-count="5">
+<sc-if value="{{ x.sep }}"><div class="op-menu__sep"></div></sc-if>
+<sc-if value="{{ x.row }}" hint-placeholder-val="{{ true }}"><button class="op-menu__item" type="button" role="menuitem" onClick="{{ x.go }}" style="color:{{ x.fg }}"><span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ x.icon }}" size="15" hint-size="15px,15px"></x-import></span><span class="op-menu__label-text">{{ x.label }}</span><span class="op-menu__shortcut">{{ x.key }}</span></button></sc-if>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ hasSnoozed }}">
+<div class="op-listhead" style="margin-top:14px"><span class="op-listhead__title">Snoozed</span><span class="op-listhead__count">{{ snoozedN }}</span></div>
+<sc-for list="{{ snoozedRows }}" as="z" hint-placeholder-count="1">
+<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;color:var(--fg-muted)">
+<span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px">{{ z.short }}</span>
+<span style="flex:none;font-size:12px;color:var(--fg-subtle)">{{ z.until }}</span>
+<button type="button" onClick="{{ z.wake }}" style="flex:none;height:24px;padding:0 8px;border:0;border-radius:980px;background:var(--hover-surface);color:var(--fg);font:inherit;font-size:12px;cursor:pointer">Bring back</button>
+</div>
+</sc-for>
+</sc-if>
+</div>
+</aside>
+<main style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<header style="flex:none;display:flex;align-items:center;gap:12px;height:56px;padding:0 20px 0 12px;border-bottom:1px solid var(--border-subtle)">
+
+<span style="font-size:15px;font-weight:600;letter-spacing:-0.011em">Inbox</span>
+<span style="font-size:13px;color:var(--fg-muted)">{{ headLine }}</span>
+<span style="flex:1"></span>
+</header>
+
+<div style="flex:1;min-height:0;display:flex">
+<div ref="{{ scrollRef }}" style="flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column">
+<div style="width:100%;max-width:720px;margin:0 auto;padding:40px 24px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;flex:1">
+
+<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-0.024em">{{ greeting }}</h1>
+<p style="margin:0;font-size:15px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ introLine }}</p>
+</div>
+
+<sc-for list="{{ timeline }}" as="t" hint-placeholder-count="0">
+<sc-if value="{{ t.isDone }}">
+<div style="display:flex;align-items:center;gap:10px;min-width:0;padding:10px 14px;border-radius:14px;background:var(--hover-surface);animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<span style="flex:none;display:flex;color:var(--success)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px">{{ t.text }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ t.time }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ t.isYou }}">
+<div style="align-self:flex-end;max-width:80%;padding:10px 14px;border-radius:18px;background:var(--hover-surface);font-size:14.5px;line-height:1.5;text-wrap:pretty;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">{{ t.text }}</div>
+</sc-if>
+<sc-if value="{{ t.isBrain }}">
+<div style="font-size:14.5px;line-height:1.6;color:var(--fg);text-wrap:pretty;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">{{ t.text }}</div>
+</sc-if>
+</sc-for>
+
+<sc-if value="{{ hasCur }}" hint-placeholder-val="{{ true }}">
+<div style="font-size:14.5px;line-height:1.6;color:var(--fg-muted)">{{ cur.lead }}</div>
+<div key="{{ cur.id }}" style="display:flex;flex-direction:column;gap:16px;padding:20px;border:1px solid var(--border-subtle);border-radius:18px;background:var(--card);animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;gap:14px;align-items:flex-start">
+<span style="flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:980px;background:var(--control,var(--hover-surface));color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ cur.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ cur.from }}</span>
+<span style="font-size:17px;font-weight:600;line-height:1.3;letter-spacing:-0.011em;text-wrap:pretty">{{ cur.title }}</span>
+</div>
+<span style="flex:none;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ cur.age }}</span>
+</div>
+<p style="margin:0;font-size:14.5px;line-height:1.6;color:var(--fg);text-wrap:pretty">{{ cur.body }}</p>
+
+<sc-if value="{{ cur.isPr }}">
+<div style="display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--fg-muted)">
+<span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span>14 of 14 checks</span>
+<span>Approved by Release Bot</span>
+<span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums"><span style="color:var(--success)">+84</span> <span style="color:var(--danger)">−41</span> · 6 files</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ cur.isQs }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{ qs }}" as="q" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:14px;line-height:1.45"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);margin-right:8px">{{ q.n }}</span>{{ q.q }}</span>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ q.opts }}" as="o" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{ o.on }}" onClick="{{ o.pick }}" style="height:32px;padding:0 14px;border-radius:980px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:var(--fg);font:inherit;font-size:13px;cursor:pointer">{{ o.label }}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ cur.isInput }}">
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ inputOpts }}" as="o" hint-placeholder-count="2">
+<button type="button" onClick="{{ o.pick }}" style="height:32px;padding:0 14px;border-radius:980px;border:1px solid var(--border);background:transparent;color:var(--fg);font:inherit;font-size:13px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ cur.hasSuggest }}">
+<div style="display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:var(--hover-surface);font-size:13.5px;line-height:1.5;color:var(--fg);text-wrap:pretty"><span style="flex:none;font-size:11px;font-weight:500;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle);padding-top:2px">Suggested</span>{{ cur.suggest }}</div>
+</sc-if>
+
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ later }}">Later</button>
+<sc-if value="{{ cur.hasLink }}"><a class="op-btn op-btn--secondary op-btn--md" href="{{ cur.href }}" style="text-decoration:none">{{ cur.linkLabel }}</a></sc-if>
+<span style="flex:1"></span>
+<sc-if value="{{ cur.hasPrimary }}" hint-placeholder-val="{{ true }}"><button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ resolve }}" disabled="{{ primaryDisabled }}" style="opacity:{{ primaryOp }}">{{ cur.primary }}</button></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ allClear }}">
+<div style="display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:18px;background:var(--card);animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.011em">You're clear</span>
+<span style="font-size:14px;line-height:1.5;color:var(--fg-muted)">30 sessions are still running. I'll bring the next thing here when one needs you.</span>
+</div>
+</sc-if>
+
+<div style="flex:1"></div>
+</div>
+
+<div style="position:sticky;bottom:0;width:100%;max-width:720px;margin:0 auto;padding:0 24px 20px;box-sizing:border-box;background:var(--background)">
+<div style="border-radius:28px;background:var(--card);border:1px solid var(--border-subtle)">
+<textarea value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ draftKey }}" rows="2" placeholder="Message Oppenheimer" aria-label="Message Oppenheimer" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px 8px;border:0;outline:0;resize:none;background:none;color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.55;letter-spacing:-0.011em"></textarea>
+<div style="display:flex;align-items:center;gap:4px;padding:0 12px 12px 12px">
+<button type="button" aria-label="Attach" title="Attach" style="flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:none;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="paperclip" size="16" hint-size="16px,16px"></x-import></button>
+<span style="flex:1"></span>
+<sc-for list="{{ pickers }}" as="p" hint-placeholder-count="2">
+<div style="position:relative">
+<button type="button" aria-haspopup="menu" aria-expanded="{{ p.openS }}" onClick="{{ p.toggle }}" style="white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:0;border-radius:10px;background:{{ p.bg }};color:{{ p.fg }};font:inherit;font-size:13.5px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><sc-if value="{{ p.isModel }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="15" hint-size="15px,15px"></x-import></sc-if>{{ p.value }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ p.open }}">
+<div onClick="{{ stop }}" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:260px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="padding:6px 10px 4px;font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">{{ p.name }}</div>
+<sc-for list="{{ p.opts }}" as="o" hint-placeholder-count="3">
+<button type="button" role="menuitemradio" aria-checked="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13.5px;font-weight:500">{{ o.label }}</span><span style="font-size:12px;line-height:1.4;color:var(--fg-subtle)">{{ o.hint }}</span></span>
+<sc-if value="{{ o.on }}"><span style="display:flex;padding-top:2px;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<button type="button" aria-label="Dictate" title="Dictate" style="flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:none;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="16" hint-size="16px,16px"></x-import></button>
+<button type="button" onClick="{{ send }}" aria-label="Send" title="Send" style="flex:none;width:40px;height:40px;margin-left:4px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer;opacity:{{ sendOp }}" style-active="transform:scale(.975)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg></button>
+</div>
+</div>
+</div>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;}}">
+const ITEMS = [
+  { id: 'pr121', kind: 'pr', project: 'mobile', icon: 'git-pull-request', from: 'Release Bot · xrp-mobile', age: '6m', short: 'Merge #121 Port to peersyst',
+    lead: 'A pull request is ready for you.', title: 'Merge #121 · Port to peersyst?',
+    body: 'All checks passed and Release Bot approved it. Merging closes two issues and unblocks the sign-in rebuild.',
+    primary: 'Merge', href: './PullRequests.dc.html', linkLabel: 'Review diff', done: 'Merged #121 into main' },
+  { id: 'qs', kind: 'qs', project: 'opp', icon: 'bot', from: 'Session Bot · oppenheimer/gateway', age: '14m', short: 'Answer 3 questions on the gateway',
+    lead: 'Session Bot is blocked on you.', title: 'Three questions before the gateway session continues',
+    body: 'It paused at the routing layer. Pick one answer for each and it picks up where it stopped.',
+    primary: 'Send answers', done: 'Answered Session Bot · gateway session resumed',
+    qs: [
+      { q: 'Keep the REST gateway alongside gRPC?', opts: ['Keep both', 'gRPC only'] },
+      { q: 'Where should rate limits live?', opts: ['Gateway', 'Each service'] },
+      { q: 'Ship it behind a feature flag?', opts: ['Yes', 'No'] },
+    ] },
+  { id: 'mail', kind: 'mail', project: 'mobile', icon: 'mail', from: 'Gmail · ops@ripple.com', age: '22m', short: 'Validator upgrade moved to Oct 28',
+    lead: 'A new email got my attention.', title: 'Testnet validator upgrade moved to Tuesday, 02:00 UTC',
+    body: 'Ripple ops moved the upgrade window. Your nightly e2e automation runs at 02:00 and would fail while validators restart.',
+    suggest: 'I can pause nightly e2e for that night only and draft a reply confirming the window.',
+    primary: 'Do both', done: 'Paused nightly e2e for Oct 28 · reply drafted' },
+  { id: 'sso', kind: 'input', project: 'mobile', icon: 'terminal', from: 'Session · sign-in rebuild · xrp-mobile', age: '31m', short: 'SSO buttons above or below the form',
+    lead: 'A session is waiting on a decision.', title: 'SSO buttons above or below the email form?',
+    body: 'Claude Code stopped at the layout step. The design spec shows both placements.',
+    opts: ['Above the form', 'Below the form'], done: 'Told sign-in rebuild: ' },
+  { id: 'audit', kind: 'failed', project: 'opp', icon: 'zap', from: 'Automation · Atlas', age: '1h', short: 'Dependency audit failed twice',
+    lead: 'One automation keeps failing.', title: 'Nightly dependency audit failed two nights in a row',
+    body: 'Both runs hit a registry timeout. Nothing changed in the lockfile, so a retry should pass.',
+    primary: 'Retry now', href: './Routines.dc.html', linkLabel: 'Open automation', done: 'Retried dependency audit · running' },
+];
+const T = v => (v ? 'true' : undefined);
+const TYPES = [['all', 'All'], ['pr', 'Pull requests'], ['bot', 'Bot questions'], ['mail', 'Email'], ['session', 'Sessions'], ['auto', 'Automations']];
+const PROJECTS = [['all', 'All projects'], ['mobile', 'XRP Mobile'], ['opp', 'Oppenheimer']];
+const TYPE_OF = { pr: 'pr', qs: 'bot', mail: 'mail', input: 'session', failed: 'auto' };
+const MODELS = [
+  { id: 'opus', label: 'Opus 5.5', hint: 'Best for triage across many sessions' },
+  { id: 'sonnet', label: 'Sonnet 4.6', hint: 'Faster, good for routine answers' },
+  { id: 'haiku', label: 'Haiku 4.5', hint: 'Quickest, for short replies' },
+];
+const EFFORTS = [
+  { id: 'low', label: 'Low', hint: 'Answers right away' },
+  { id: 'medium', label: 'Medium', hint: 'Checks context before acting' },
+  { id: 'high', label: 'High', hint: 'Reads sessions and history first' },
+];
+
+class Component extends DCLogic {
+  state = { order: ITEMS.map(i => i.id), done: {}, timeline: [], answers: {}, draft: '', queue: true, model: 'opus', effort: 'medium', menu: null, focus: null, clock: 9 * 60 + 41 };
+  scrollRef = React.createRef();
+  componentDidUpdate() {
+    const n = this.state.timeline.length;
+    if (n !== this._tl) { this._tl = n; const el = this.scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }
+  }
+  tick() { const c = this.state.clock + 1; return { clock: c, time: String(Math.floor(c / 60)).padStart(2, '0') + ':' + String(c % 60).padStart(2, '0') }; }
+  finish(id, text) {
+    const { clock, time } = this.tick();
+    this.setState(s => ({ clock, done: { ...s.done, [id]: true }, focus: null, timeline: s.timeline.concat([{ type: 'done', text, time }]) }));
+  }
+  renderVals() {
+    const s = this.state;
+    const gone = id => (s.deleted || {})[id] || (s.snoozed || {})[id];
+    const open = s.order.filter(id => !s.done[id] && !gone(id));
+    const curId = s.focus && !s.done[s.focus] && !gone(s.focus) ? s.focus : open[0];
+    const it = ITEMS.find(i => i.id === curId);
+    const ans = s.answers;
+    const qsReady = it && it.kind === 'qs' ? it.qs.every((_, i) => ans[i] != null) : true;
+    const cur = it ? {
+      ...it, isPr: T(it.kind === 'pr'), isQs: T(it.kind === 'qs'), isInput: T(it.kind === 'input'),
+      hasSuggest: T(it.suggest), hasLink: T(it.href), hasPrimary: T(it.primary),
+    } : {};
+    const n = open.length;
+    return {
+      theme: this.props.theme ?? 'dark',
+      scrollRef: this.scrollRef,
+      greeting: 'Good morning, Jordi.',
+      introLine: n ? '30 sessions are running. ' + (n === 1 ? 'One thing needs you.' : n + ' things need you, one at a time.') : '30 sessions are running. Nothing needs you right now.',
+      headLine: n + ' need you · 30 sessions running',
+      timeline: s.timeline.map(t => ({ ...t, isDone: T(t.type === 'done'), isYou: T(t.type === 'you'), isBrain: T(t.type === 'brain') })),
+      hasCur: T(it), allClear: T(!it), cur,
+      qs: it && it.kind === 'qs' ? it.qs.map((q, i) => ({ n: String(i + 1), q: q.q,
+        opts: q.opts.map((o, j) => { const on = ans[i] === j; return { label: o, on: on ? 'true' : 'false',
+          bg: on ? 'var(--selected-surface)' : 'transparent', bd: on ? 'var(--primary)' : 'var(--border)',
+          pick: () => this.setState(x => ({ answers: { ...x.answers, [i]: j } })) }; }) })) : [],
+      inputOpts: it && it.kind === 'input' ? it.opts.map(o => ({ label: o, pick: () => this.finish(it.id, it.done + o.toLowerCase()) })) : [],
+      primaryDisabled: !qsReady, primaryOp: qsReady ? '1' : '0.45',
+      resolve: () => { if (it && qsReady) this.finish(it.id, it.done); },
+      later: () => { if (!it) return; this.setState(x => ({ focus: null, order: x.order.filter(id => id !== it.id).concat([it.id]) })); },
+      openN: String(n),
+      ...(() => {
+        const ft = s.fType || 'all', fp = s.fProj || 'all', showDone = s.fDone !== false;
+        const inP = i => fp === 'all' || i.project === fp, inT = i => ft === 'all' || TYPE_OF[i.kind] === ft;
+        const cnt = k => ITEMS.filter(i => !s.done[i.id] && !gone(i.id) && inP(i) && (k === 'all' || TYPE_OF[i.kind] === k)).length;
+        const pcnt = k => ITEMS.filter(i => !s.done[i.id] && !gone(i.id) && inT(i) && (k === 'all' || i.project === k)).length;
+        const dirty = ft !== 'all' || fp !== 'all' || !showDone;
+        const label = (TYPES.find(t => t[0] === ft) || [])[1];
+        const shown = s.order.map(id => ITEMS.find(i => i.id === id)).filter(q => !gone(q.id) && inT(q) && inP(q) && (showDone || !s.done[q.id]));
+        this._shown = shown;
+        return {
+          fOpen: T(s.fOpen), fOpenS: s.fOpen ? 'true' : 'false', fDirty: dirty ? 'true' : undefined, fClean: dirty ? undefined : 'true',
+          fToggle: e => { e.stopPropagation(); this.setState(x => ({ fOpen: !x.fOpen, fSub: null, menu: null })); },
+          fRoot: T(!s.fSub), fDetail: T(s.fSub), fTitle: s.fSub === 'proj' ? 'Project' : 'Type',
+          fBack: () => this.setState({ fSub: null }),
+          fRows: [
+            { name: 'Type', value: ft === 'all' ? 'Any' : label, open: () => this.setState({ fSub: 'type' }) },
+            { name: 'Project', value: fp === 'all' ? 'Any' : PROJECTS.find(p => p[0] === fp)[1], open: () => this.setState({ fSub: 'proj' }) },
+          ],
+          fOptions: (s.fSub === 'proj' ? PROJECTS.map(([k, l]) => [k, k === 'all' ? 'Any' : l, fp, 'fProj']) : TYPES.map(([k, l]) => [k, k === 'all' ? 'Any' : l, ft, 'fType']))
+            .map(([k, l, cur, key]) => ({ label: l, onS: cur === k ? 'true' : 'false', check: cur === k ? '✓' : '', pick: () => this.setState({ [key]: k, fSub: null }) })),
+          fTypes: TYPES.map(([k, l]) => ({ label: l, n: String(cnt(k)), onS: ft === k ? 'true' : 'false', check: ft === k ? '✓' : '', pick: () => this.setState({ fType: k }) })),
+          fProjs: PROJECTS.map(([k, l]) => ({ label: l, n: String(pcnt(k)), onS: fp === k ? 'true' : 'false', check: fp === k ? '✓' : '', pick: () => this.setState({ fProj: k }) })),
+          fDoneS: showDone ? 'true' : 'false', fDoneCheck: showDone ? '✓' : '',
+          fToggleDone: () => this.setState({ fDone: !showDone }),
+          fClear: e => { if (e) e.stopPropagation(); this.setState({ fType: 'all', fProj: 'all', fDone: true }); },
+          fChips: [ft !== 'all' && { label: 'Type: ' + label, clear: e => { e.stopPropagation(); this.setState({ fType: 'all' }); } }, fp !== 'all' && { label: 'Project: ' + PROJECTS.find(p => p[0] === fp)[1], clear: e => { e.stopPropagation(); this.setState({ fProj: 'all' }); } }].filter(Boolean),
+          fChip: T(ft !== 'all' || fp !== 'all'),
+          fNone: T(!shown.length),
+        };
+      })(),
+      queue: (this._shown || []).map(q => {
+        const d = !!s.done[q.id], c = q.id === curId;
+        return { ...q, from: (PROJECTS.find(p => p[0] === q.project) || [])[1] + ' · ' + q.from, curS: c ? 'true' : 'false', bg: c ? 'var(--selected-surface)' : 'transparent', op: d ? '0.5' : '1', strike: d ? 'line-through' : 'none',
+          ageFg: (s.low || {})[q.id] ? 'var(--fg-subtle)' : 'var(--fg-subtle)',
+          age: (s.low || {})[q.id] && !d ? 'Low' : q.age,
+          menuOpen: T(s.rowMenu === q.id), menuS: s.rowMenu === q.id ? 'true' : 'false',
+          toggleMenu: e => { e.stopPropagation(); this.setState(x => ({ rowMenu: x.rowMenu === q.id ? null : q.id, fOpen: false, menu: null })); },
+          actions: this.rowActions(q, d),
+          focus: () => { if (!d) this.setState({ focus: q.id, rowMenu: null }); } };
+      }),
+      ...(() => { const z = s.order.filter(id => (s.snoozed || {})[id] && !(s.deleted || {})[id]).map(id => ITEMS.find(i => i.id === id));
+        return { hasSnoozed: T(z.length), snoozedN: String(z.length), snoozedRows: z.map(q => ({ short: q.short, until: s.snoozed[q.id], wake: () => this.setState(x => { const n = { ...x.snoozed }; delete n[q.id]; return { snoozed: n }; }) })) }; })(),
+      running: [
+        { label: 'Running', n: '22', dot: 'var(--success)' },
+        { label: 'Waiting on bots', n: '5', dot: 'var(--warning)' },
+        { label: 'Failed', n: '1', dot: 'var(--danger)' },
+        { label: 'Idle', n: '2', dot: 'var(--fg-subtle)' },
+      ],
+      queueOn: T(s.queue), queueS: s.queue ? 'true' : 'false', queueLabel: s.queue ? 'Hide notifications' : 'Show notifications',
+      queueBg: s.queue ? 'var(--selected-surface)' : 'transparent',
+      toggleQueue: () => this.setState(x => ({ queue: !x.queue })),
+      stop: e => e.stopPropagation(),
+      closeMenus: () => { if (s.menu || s.fOpen || s.rowMenu) this.setState({ menu: null, fOpen: false, rowMenu: null }); },
+      pickers: [
+        ['model', 'Model', MODELS, s.model],
+        ['effort', 'Effort', EFFORTS, s.effort],
+      ].map(([k, name, list, val]) => {
+        const op = s.menu === k;
+        return { name, value: list.find(o => o.id === val).label, open: T(op), openS: op ? 'true' : 'false', isModel: T(k === 'model'),
+          bg: k === 'model' || op ? 'var(--hover-surface)' : 'transparent', fg: k === 'model' ? 'var(--fg)' : 'var(--fg-muted)',
+          toggle: e => { e.stopPropagation(); this.setState(x => ({ menu: x.menu === k ? null : k })); },
+          opts: list.map(o => ({ ...o, on: T(o.id === val), onS: o.id === val ? 'true' : 'false', check: o.id === val ? '✓' : '',
+            pick: () => this.setState({ [k]: o.id, menu: null }) })) };
+      }),
+      draft: s.draft,
+      setDraft: e => this.setState({ draft: e.target.value }),
+      draftKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMsg(); } },
+      sendOp: s.draft.trim() ? '1' : '0.4',
+      send: () => this.sendMsg(),
+    };
+  }
+  rowActions(q, d) {
+    const set = fn => e => { if (e) e.stopPropagation(); this.setState(x => ({ ...fn(x), rowMenu: null })); };
+    const low = (this.state.low || {})[q.id];
+    const snooze = lbl => set(x => ({ snoozed: { ...(x.snoozed || {}), [q.id]: lbl }, focus: x.focus === q.id ? null : x.focus }));
+    const row = (icon, label, go, key, fg) => ({ row: T(1), icon, label, go, key: key || '', fg: fg || 'var(--fg)' });
+    if (d) return [row('x', 'Delete', set(x => ({ deleted: { ...(x.deleted || {}), [q.id]: true } })), '', 'var(--danger)')];
+    return [
+      row('check', 'Mark as done', e => { if (e) e.stopPropagation(); this.setState({ rowMenu: null }); this.finish(q.id, 'Marked done · ' + q.short); }, 'E'),
+      row(low ? 'trending-up' : 'trending-down', low ? 'Restore priority' : 'Deprioritize', set(x => ({ low: { ...(x.low || {}), [q.id]: !low }, order: low ? [q.id].concat(x.order.filter(i => i !== q.id)) : x.order.filter(i => i !== q.id).concat([q.id]), focus: x.focus === q.id ? null : x.focus })), 'L'),
+      { sep: T(1) },
+      row('clock', 'Snooze 1 hour', snooze('1h')),
+      row('clock', 'Snooze until tomorrow', snooze('Tomorrow')),
+      { sep: T(1) },
+      row('x', 'Delete', set(x => ({ deleted: { ...(x.deleted || {}), [q.id]: true }, focus: x.focus === q.id ? null : x.focus })), '⌫', 'var(--danger)'),
+    ];
+  }
+  sendMsg() {
+    const t = this.state.draft.trim(); if (!t) return;
+    this.setState(s => ({ draft: '', timeline: s.timeline.concat([{ type: 'you', text: t }]) }));
+    setTimeout(() => this.setState(s => ({ timeline: s.timeline.concat([{ type: 'brain', text: 'On it. I started a session for that and will bring it back here when it needs you.' }]) })), 600);
+  }
+}
+</script>
+</body>
+</html>

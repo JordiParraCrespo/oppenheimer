@@ -1,5 +1,7 @@
+import type { APIRequestContext } from '@playwright/test';
 import { expect, type Page, test } from '@playwright/test';
-import { connectInstallation, GITHUB_STUB_URL } from '../../support/sessions';
+import { query } from '../../support/db';
+import { connectInstallation, GITHUB_STUB_URL, pairHost } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -177,6 +179,62 @@ test.describe('Pull requests', () => {
     await analytics.click();
     await expect(merged).toHaveText('0', { timeout: 30_000 });
   });
+
+  /**
+   * A review session is listed under For review and never under Sessions, so
+   * it is deleted from there or from its Chat tab: the bar's bin and the
+   * row's menu each ask for the sessions' close. The host is a paired row
+   * with no runner, so the close is owed and the row must still leave.
+   */
+  test('a review session is deleted from its Chat tab and from For review', async ({ page }) => {
+    test.slow();
+    const owner = await provisionedUser('pulls-review');
+    await connectInstallation(owner.api);
+    const hostId = await pairHost(owner.api, 'review-host');
+    await signInAs(page, owner.user);
+    await page.goto('/settings/repositories');
+    await watch(page, ['acme-labs/xrp-mobile']);
+
+    await page.goto('/pulls');
+    await page.getByRole('button', { name: /^Review requests/ }).click();
+    await rowButton(page, 'Fix the empty state on the wallet screen').click();
+    await expect(page).toHaveURL(/\/pulls\/[0-9a-f-]+\/\d+\/14$/);
+    const [, installationId, githubRepoId] =
+      /\/pulls\/([0-9a-f-]+)\/(\d+)\/14/.exec(page.url()) ?? [];
+    const chat = `/pulls/${installationId}/${githubRepoId}/14?view=chat`;
+    const forReview = page.getByRole('link', { name: /^#14 Fix the empty state/ });
+
+    // ── From the Chat tab's bar ──────────────────────────────────────────────
+    const first = await startReview(owner.api, chat, hostId);
+    await page.goto(chat);
+    await expect(forReview).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Delete review session' }).click();
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog.getByText('Delete the review session of #14?')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Delete session' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(forReview).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Start review session' })).toBeVisible();
+    // The close is owed to an offline host; a read from the server still leaves it out.
+    expect(await closeRequested(first)).toBe(true);
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Start review session' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(forReview).toHaveCount(0);
+
+    // ── From the row's menu under For review ────────────────────────────────
+    const second = await startReview(owner.api, chat, hostId);
+    await page.goto('/pulls');
+    await expect(forReview).toBeVisible({ timeout: 30_000 });
+    await forReview.hover();
+    await page.getByRole('button', { name: 'Session actions' }).click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await dialog.getByRole('button', { name: 'Delete session' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(forReview).toHaveCount(0);
+    expect(await closeRequested(second)).toBe(true);
+  });
 });
 
 test.describe('Pull requests when GitHub answers in part', () => {
@@ -231,4 +289,24 @@ async function watch(page: Page, names: string[]) {
 
 function rowButton(page: Page, title: string) {
   return page.getByRole('button', { name: title, exact: true });
+}
+
+/** Starts a review session through the API: the console cannot, with no host online. */
+async function startReview(api: APIRequestContext, chat: string, hostId: string): Promise<string> {
+  const address = chat.replace(/\?.*$/, '');
+  const response = await api.post(`/api/v1${address}/review-session`, {
+    data: { hostId },
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+    failOnStatusCode: false,
+  });
+  expect(response.status(), await response.text()).toBe(201);
+  return ((await response.json()) as { sessionId: string }).sessionId;
+}
+
+async function closeRequested(sessionId: string): Promise<boolean> {
+  const [row] = await query<{ owed: boolean }>(
+    `SELECT "closeRequestedAt" IS NOT NULL AS owed FROM "work_session" WHERE "id" = $1`,
+    [sessionId],
+  );
+  return row?.owed ?? false;
 }

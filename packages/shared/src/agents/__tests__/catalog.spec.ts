@@ -61,6 +61,10 @@ describe('coding agent catalog', () => {
     expect(levelsOf('codex', 'gpt-5.6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(effortFor('codex', 'gpt-5.6-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-5.6-terra')?.default).toBe('medium');
+    expect(levelsOf('codex', null)).toEqual(levelsOf('codex', 'gpt-6.1-sol'));
+    expect(effortFor('codex', 'gpt-6.1-sol')?.default).toBe('low');
+    expect(effortFor('codex', 'gpt-6-sol')?.default).toBe('medium');
+    expect(levelsOf('codex', 'gpt-6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
     expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');
     expect(effortFor('shell', null)).toBeUndefined();
@@ -357,9 +361,12 @@ describe('the runner launch table', () => {
       render,
       updatesOutputPath,
       renderUpdates,
+      hostToolsOutputPath,
+      renderHostTools,
     } = require('../../../scripts/emit-agent-catalog.cjs');
     expect(readFileSync(outputPath, 'utf8')).toBe(render());
     expect(readFileSync(updatesOutputPath, 'utf8')).toBe(renderUpdates());
+    expect(readFileSync(hostToolsOutputPath, 'utf8')).toBe(renderHostTools());
   });
 });
 
@@ -368,9 +375,55 @@ describe('agent updates', () => {
     // Read off each CLI's own `--help`; the runner runs these with no terminal.
     expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
     expect(CODING_AGENTS.codex.update).toEqual(['update']);
-    // `opencode upgrade` asks "Install anyways?" and has no flag not to.
-    expect(CODING_AGENTS.opencode.update).toBeUndefined();
+    // `opencode upgrade` asks "Install anyways?" unless told the method, which
+    // the runner reads off where the binary lives. Never `curl`: that method
+    // reruns `opencode.ai/install`, which checks nothing.
+    expect(CODING_AGENTS.opencode.update).toEqual(['upgrade', '--method', '<method>']);
+    const methods = CODING_AGENTS.opencode.updateMethods ?? [];
+    expect(methods.map((m) => m.method)).not.toContain('curl');
+    // The runner's own install, which is npm's global layout under ~/.local.
+    const installed = '/home/j/.local/lib/node_modules/opencode-ai/bin/opencode.exe';
+    expect(methods.find((m) => installed.includes(m.pathContains))?.method).toBe('npm');
     expect(CODING_AGENTS.grok.update).toEqual(['update']);
     expect(CODING_AGENTS.shell.update).toBeUndefined();
+  });
+});
+
+describe('agent installs', () => {
+  it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      if (id === 'shell') {
+        expect(install).toBeUndefined();
+        continue;
+      }
+      expect(install?.macos, id).toBeTruthy();
+      expect(install?.linux, id).toBeTruthy();
+      expect(install?.bin.startsWith('~/'), id).toBe(true);
+      expect(`${install?.macos}\n${install?.linux}`, id).not.toMatch(/\bsudo\b/);
+    }
+  });
+
+  it('installs every agent from a download something checks: a verified release or an npm package', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      for (const script of install ? [install.macos, install.linux] : []) {
+        const verified = /^verify "\$tmp\/[^"]+" /m.test(script);
+        const fromNpm = /^npm install --global --prefix "\$HOME\/\.local" \S+$/m.test(script);
+        expect(verified || fromNpm, id).toBe(true);
+        // A fetched script run as it arrived, whole or not.
+        expect(script, id).not.toMatch(/\b(ba)?sh "\$tmp"/);
+      }
+    }
+    expect(CODING_AGENTS.opencode.install?.bin).toBe('~/.local/bin');
+  });
+
+  it('never pipes a download straight into a shell', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const install = CODING_AGENTS[id].install;
+      for (const script of [install?.macos, install?.linux]) {
+        expect(script ?? '').not.toMatch(/curl[^\n]*\|\s*(ba)?sh/);
+      }
+    }
   });
 });

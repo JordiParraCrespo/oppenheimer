@@ -4,8 +4,11 @@ export {
   BotEngine,
   type BotEngineEvent,
   type BotEngineTool,
+  type BotEngineToolResult,
   type BotProvider,
   BotRateLimitError,
+  type BotToolData,
+  type BotTurnImage,
   type BotTurnRequest,
 } from './bot-engine';
 export { createBotEngine, engineCapabilities } from './bot-engine.factory';

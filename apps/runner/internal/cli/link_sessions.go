@@ -250,7 +250,8 @@ func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPr
 
 // update applies a version the control plane asks for: the pin and the safe
 // window are the control plane's to override here, the signature and the
-// digest never are (09 §5).
+// digest never are (09 §5). With no version it asks for the newest now, which
+// skips the safe window but not a pin: a pinned host refuses with UPD_004.
 func (h *linkHandler) update(ctx context.Context, m link.HostUpdate) {
 	if h.app.Updates == nil {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("this host is not paired"))
@@ -262,7 +263,7 @@ func (h *linkHandler) update(ctx context.Context, m link.HostUpdate) {
 			return
 		}
 	}
-	if _, err := h.app.Updates.Apply(ctx, updapp.ApplyOptions{Force: true}); err != nil {
+	if _, err := h.app.Updates.Apply(ctx, updapp.ApplyOptions{Force: true, KeepPin: m.Version == ""}); err != nil {
 		h.fail(m.CommandID, err)
 	}
 }

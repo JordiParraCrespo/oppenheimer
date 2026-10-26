@@ -117,6 +117,23 @@ describe('LocalStorageService', () => {
     });
   });
 
+  describe('download', () => {
+    it('reads back the bytes stored under a key', async () => {
+      const subject = storage();
+      await subject.upload(Buffer.from([1, 2, 3]), 'bot-attachments/a/b.png', 'image/png');
+
+      await expect(subject.download('bot-attachments/a/b.png')).resolves.toEqual(
+        Buffer.from([1, 2, 3]),
+      );
+    });
+
+    it('is guarded like a write: a read that escapes is a remote file disclosure', async () => {
+      await expect(storage().download('../../etc/passwd')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+  });
+
   describe('delete', () => {
     it('removes a stored file', async () => {
       const subject = storage();

@@ -46,6 +46,16 @@
     "repositoryAccess": {
       "manage": "Gestionar el acceso a repositorios",
       "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
+    },
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Detener la grabación",
+      "cancel": "Cancelar la grabación",
+      "waiting": "Esperando al micrófono…",
+      "transcribing": "Transcribiendo…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
+      "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
+      "failed": "No se ha podido transcribir la grabación."
     }
   },
   "validation": {
@@ -154,6 +164,8 @@
       "GITHUB_013": "No se ha encontrado esa pull request.",
       "GITHUB_014": "GitHub todavía no fusionará esta pull request. Espera hasta que pueda.",
       "GITHUB_015": "GitHub nos ha pedido que vayamos más despacio. Vuelve a intentarlo en un minuto.",
+      "GITHUB_016": "No se ha encontrado esa incidencia, o el número es una pull request.",
+      "GITHUB_017": "GitHub no permite a Oppenheimer leer ni escribir las incidencias de este repositorio. Un propietario de la instalación tiene que aceptar el permiso de Issues de la App en GitHub.",
       "PROJECTS_001": "No se ha encontrado ese proyecto.",
       "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
@@ -162,6 +174,7 @@
       "PROJECTS_006": "Si un proyecto tiene repositorios, al menos uno debe ofrecerse por defecto, ninguno repetido y cada uno con su rama base.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
@@ -203,7 +216,6 @@
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
       "FLAG_007": "Las condiciones de ese segmento no son válidas.",
       "SESSIONS_012": "El archivo pesa más de 5 MB. Guarda una copia más pequeña y vuelve a intentarlo.",
-      "SESSIONS_CLIENT_019": "El host está desconectado, así que la sesión no se ha eliminado. Inténtalo de nuevo cuando vuelva.",
       "SESSIONS_013": "Una sesión recibe imágenes (PNG, JPEG, GIF, WebP), PDF y archivos de texto. Se rechazan ejecutables, archivos comprimidos, scripts, SVG y HTML.",
       "SESSIONS_014": "Esta sesión está detenida. Reiníciala para darle un archivo a su prompt.",
       "SESSIONS_015": "No se adjuntó ningún archivo. Vuelve a pegarlo o arrastrarlo.",
@@ -212,6 +224,7 @@
       "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+      "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -249,6 +262,13 @@
       "BOTS_019": "El inicio de sesión de ChatGPT está ocupado. Inténtalo de nuevo en un momento.",
       "BOTS_020": "No se ha podido contactar con el inicio de sesión de ChatGPT. Inténtalo de nuevo en un momento.",
       "BOTS_021": "Se está renovando el inicio de sesión de ChatGPT. Vuelve a enviar tu mensaje en un momento.",
+      "BOTS_022": "Detén primero el turno en curso.",
+      "BOTS_023": "Añade una clave para ese proveedor antes de hacerlo predeterminado.",
+      "BOTS_024": "Ese archivo no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
+      "BOTS_025": "Esa imagen es demasiado grande. Las imágenes pueden ocupar hasta 5 MB.",
+      "BOTS_026": "Esa imagen ya no está disponible. Vuelve a añadirla.",
+      "BOTS_027": "Esa imagen ya no se puede enviar. Vuelve a añadirla.",
+      "BOTS_028": "El modelo de este bot no puede leer imágenes. Quítalas o cambia a un modelo que pueda.",
       "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
       "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
       "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
@@ -285,7 +305,14 @@
       "SESSIONS_028": "Esa carpeta no existe en el equipo.",
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
-      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo."
+      "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
+      "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
+      "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
+      "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
+      "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
+      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -449,7 +476,7 @@
       "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
       "confirm": "Eliminar proyecto",
       "deleting": "Eliminando…",
@@ -512,12 +539,7 @@
     },
     "new": {
       "title": "Nueva sesión",
-      "subtitle": "Define el alcance y describe el trabajo.",
-      "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
-      "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
-      "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
-      "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
-      "subtitleFolder": "Abre una carpeta del host tal como está. No se clona nada ni se crea ninguna rama.",
+      "heading": "¿En qué trabajamos?",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -595,7 +617,11 @@
       "agent": {
         "label": "Agente y modelo",
         "search": "Buscar modelos…",
-        "empty": "Ningún modelo coincide con «{{query}}»."
+        "empty": "Ningún modelo coincide con «{{query}}».",
+        "favourites": "Favoritos",
+        "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+        "addFavourite": "Añadir {{model}} a favoritos",
+        "removeFavourite": "Quitar {{model}} de favoritos"
       },
       "permission": {
         "label": "Nivel de permisos",
@@ -642,6 +668,19 @@
     "session": {
       "status": {
         "closed": "Desconectado"
+      },
+      "state": {
+        "starting": "Iniciando",
+        "failed": "Falló",
+        "stopped": "Detenida",
+        "deleted": "Eliminada",
+        "deleting": "Eliminando…",
+        "working": "En marcha",
+        "waiting-on-you": "Necesita tu respuesta",
+        "ready-for-review": "Lista para revisar",
+        "landing": "Cerrando",
+        "idle": "Inactiva",
+        "resolved": "Terminada"
       },
       "file": {
         "sending": "Enviando archivo",
@@ -701,6 +740,9 @@
       "newSessionHere": "Nueva sesión en {{name}}",
       "projectSettings": "Ajustes de {{name}}",
       "unfiled": "Otras sesiones",
+      "pinned": "Fijadas",
+      "pin": "Fijar",
+      "unpin": "Desfijar",
       "actions": "Acciones de la sesión",
       "rename": "Renombrar",
       "renameLabel": "Nombre de la sesión",
@@ -710,17 +752,45 @@
       "delete": "Eliminar",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
       "loadFailed": "No se han podido cargar tus sesiones.",
-      "share": "Compartir…"
+      "share": "Compartir…",
+      "deleting": "Eliminando…",
+      "deletingHint": "Esperando a que su host la elimine. Si el host está desconectado, se eliminará cuando vuelva.",
+      "notDeleted": "No eliminada",
+      "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
+      "select": "Seleccionar",
+      "selected": "Seleccionada"
     },
     "deleteSession": {
-      "title": "¿Eliminar “{{name}}”?",
-      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto. La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "confirm": "Eliminar sesión",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la sesión.",
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
-      "descriptionFolder": "Termina el terminal. La carpeta se queda como está."
+      "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+      "refused": "Su host no la eliminó",
+      "refusedUnknown": "El host se negó a eliminar la sesión."
+    },
+    "selection": {
+      "count_one": "{{count}} seleccionada",
+      "count_many": "{{count}} seleccionadas",
+      "count_other": "{{count}} seleccionadas",
+      "pin": "Fijar las seleccionadas",
+      "unpin": "Desfijar las seleccionadas",
+      "move": "Mover las seleccionadas a un proyecto",
+      "delete": "Eliminar las seleccionadas",
+      "clear": "Quitar la selección"
+    },
+    "deleteSessions": {
+      "title_one": "¿Eliminar {{count}} sesión?",
+      "title_many": "¿Eliminar {{count}} de sesiones?",
+      "title_other": "¿Eliminar {{count}} sesiones?",
+      "description": "Cada sesión se detiene, su worktree se elimina de su host y su transcripción desaparece. Los commits ya enviados se quedan en el remoto. Una sesión con trabajo sin enviar no se elimina.",
+      "confirm": "Eliminar sesiones",
+      "partial_one": "{{count}} sesión no se eliminó",
+      "partial_many": "{{count}} de sesiones no se eliminaron",
+      "partial_other": "{{count}} sesiones no se eliminaron"
     },
     "filters": {
       "label": "Filtrar sesiones",
@@ -877,6 +947,120 @@
     },
     "screen": {
       "loadFailed": "No se ha podido actualizar esta sesión."
+    },
+    "chat": {
+      "view": {
+        "label": "Cómo leer esta sesión",
+        "terminal": "Terminal",
+        "chat": "Chat"
+      },
+      "empty": {
+        "title": "Todavía no se ha dicho nada",
+        "description": "Lo que Claude dice y hace aparece aquí mientras trabaja."
+      },
+      "composer": {
+        "placeholder": "Escribe a Claude",
+        "send": "Enviar",
+        "stop": "Detener",
+        "agent": "Claude Code",
+        "attach": "Adjuntar archivos",
+        "removeAttachment": "Quitar {{name}}",
+        "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+        "attachTooMany": "Un mensaje lleva como mucho {{max}} archivos.",
+        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
+        "attaching": "Adjuntando archivos…"
+      },
+      "turn": {
+        "working": "Trabajando desde hace",
+        "worked": "Trabajó",
+        "stopped": "Detenido",
+        "interrupted": "Interrumpido"
+      },
+      "thinking": "Pensando",
+      "plan": "Plan",
+      "latest": "Ir a lo último",
+      "earlier_one": "Mostrar {{count}} turno anterior",
+      "earlier_other": "Mostrar {{count}} turnos anteriores",
+      "truncated": "recortado en el host",
+      "failedCall": "falló",
+      "failed_one": "{{count}} falló",
+      "failed_other": "{{count}} fallaron",
+      "files_one": "{{count}} archivo adjunto",
+      "files_other": "{{count}} archivos adjuntos",
+      "tasks_one": "{{done}} de {{count}} tarea hecha",
+      "tasks_other": "{{done}} de {{count}} tareas hechas",
+      "notice": {
+        "interrupted": "Detuviste este turno",
+        "compacted": "Contexto compactado"
+      },
+      "verb": {
+        "command": "Ejecutó",
+        "read": "Leyó",
+        "edit": "Editó",
+        "write": "Escribió",
+        "search": "Buscó",
+        "web": "Consultó",
+        "todo": "Actualizó tareas",
+        "agent": "Lanzó un subagente",
+        "plan": "Propuso un plan",
+        "question": "Preguntó",
+        "mcp": "Llamó",
+        "other": "Usó"
+      },
+      "summary": {
+        "read_one": "leyó {{count}} archivo",
+        "read_other": "leyó {{count}} archivos",
+        "search_one": "buscó {{count}} patrón",
+        "search_other": "buscó {{count}} patrones",
+        "web_one": "consultó {{count}} página",
+        "web_other": "consultó {{count}} páginas",
+        "edit_one": "editó {{count}} archivo",
+        "edit_other": "editó {{count}} archivos",
+        "write_one": "escribió {{count}} archivo",
+        "write_other": "escribió {{count}} archivos",
+        "command_one": "ejecutó {{count}} comando",
+        "command_other": "ejecutó {{count}} comandos",
+        "agent_one": "lanzó {{count}} subagente",
+        "agent_other": "lanzó {{count}} subagentes",
+        "mcp_one": "llamó {{count}} herramienta",
+        "mcp_other": "llamó {{count}} herramientas",
+        "question_one": "hizo {{count}} pregunta",
+        "question_other": "hizo {{count}} preguntas",
+        "other_one": "usó {{count}} herramienta",
+        "other_other": "usó {{count}} herramientas"
+      },
+      "verbLive": {
+        "command": "Ejecutando",
+        "read": "Leyendo",
+        "edit": "Editando",
+        "write": "Escribiendo",
+        "search": "Buscando",
+        "web": "Consultando",
+        "agent": "Lanzando un subagente",
+        "question": "Preguntando",
+        "mcp": "Llamando",
+        "other": "Usando"
+      },
+      "thought": "Pensó",
+      "thoughtFor": "Pensó {{seconds}} s",
+      "changes_one": "{{count}} archivo cambiado",
+      "changes_other": "{{count}} archivos cambiados",
+      "question": {
+        "waiting": "Esperando tu respuesta",
+        "dismissed": "Descartaste las preguntas",
+        "noAnswer": "No se pudo leer la respuesta",
+        "ownAnswer": "O escribe tu propia respuesta…",
+        "ownAnswerLabel": "Tu respuesta",
+        "several": "Marca con 1–{{last}} todas las que apliquen",
+        "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+        "next": "Siguiente",
+        "submit": "Enviar respuestas",
+        "dismiss": "Descartar",
+        "sending": "Enviando tus respuestas…",
+        "previous": "Pregunta anterior",
+        "nextQuestion": "Pregunta siguiente",
+        "of": "{{n}} de {{total}}"
+      }
     }
   },
   "bots": {
@@ -889,7 +1073,7 @@
       "noMatch": "Ningún bot coincide con «{{query}}».",
       "ungrouped": "Sin grupo",
       "emptyTitle": "Aún no hay bots",
-      "emptyBody": "Los bots que crees aparecen aquí. Crea uno, dile qué trabajo tiene que hacer y ajústalo en su configuración.",
+      "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
       "emptyGroup": "Aún no hay bots en este grupo.",
       "noMessages": "Aún no hay mensajes",
       "newGroup": "Nuevo grupo",
@@ -909,8 +1093,7 @@
     },
     "landing": {
       "titleEmpty": "Crea tu primer bot.",
-      "title": "Elige un bot o crea uno nuevo.",
-      "note": "Un bot nuevo empieza en blanco. Dile qué trabajo tiene que hacer y ajústalo en su configuración."
+      "note": "Un bot nuevo recibe un nombre y te pregunta por su trabajo. Díselo y se configura solo; cambia lo que quieras más tarde en su configuración."
     },
     "chat": {
       "toggleSidebar": "Mostrar u ocultar la barra lateral",
@@ -939,6 +1122,21 @@
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
       "tokens_other": "{{tokens}} tokens",
+      "images": {
+        "attach": "Añadir imágenes",
+        "remove": "Quitar {{name}}",
+        "open": "Abrir {{name}}",
+        "pasted": "Imagen pegada",
+        "notSupported": "{{name}} no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
+        "tooLarge": "{{name}} ocupa más de 5 MB.",
+        "tooMany": "Un mensaje puede llevar hasta {{max}} imágenes.",
+        "noVision": "{{model}} no puede leer imágenes. Cambia el modelo del bot para enviarlas.",
+        "noVisionHeld": "{{model}} no puede leer imágenes. Quítalas o cambia de modelo para enviar este mensaje.",
+        "uploading": "Espera a que terminen de añadirse las imágenes.",
+        "failedHeld": "Quita la imagen que no se pudo añadir.",
+        "uploadFailed": "No se pudo añadir {{name}}.",
+        "unavailable": "No se pudo cargar esta imagen."
+      },
       "turn": {
         "queued": "Esperando",
         "thinking": "Pensando",
@@ -961,7 +1159,28 @@
         "moreLines_one": "Ver {{count}} línea más",
         "moreLines_many": "Ver {{count}} líneas más",
         "moreLines_other": "Ver {{count}} líneas más",
-        "lessOutput": "Ver menos"
+        "lessOutput": "Ver menos",
+        "group_one": "Usó {{count}} herramienta",
+        "group_many": "Usó {{count}} herramientas",
+        "group_other": "Usó {{count}} herramientas",
+        "groupSearched_one": "Buscó en la web {{count}} vez",
+        "groupSearched_many": "Buscó en la web {{count}} veces",
+        "groupSearched_other": "Buscó en la web {{count}} veces",
+        "groupFailed_one": "{{count}} con error",
+        "groupFailed_many": "{{count}} con error",
+        "groupFailed_other": "{{count}} con error",
+        "delegated_one": "Ejecutó {{count}} subagente",
+        "delegated_other": "Ejecutó {{count}} subagentes",
+        "delegating_one": "Ejecutando {{count}} subagente",
+        "delegating_other": "Ejecutando {{count}} subagentes",
+        "seconds": "{{count}} s",
+        "subagent": {
+          "completed": "completado",
+          "failed": "con error",
+          "cancelled": "detenido",
+          "timed_out": "sin tiempo"
+        },
+        "subagentTokens": "{{tokens}} tokens"
       },
       "suggest": {
         "task": {
@@ -1037,8 +1256,40 @@
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
-        "failed": "Aprobaste y falló: {{summary}}"
-      }
+        "failed": "Aprobaste y falló: {{summary}}",
+        "routine": "Rutina · {{name}}",
+        "routineSaved": "Rutina creada: “{{name}}”",
+        "routineChanged": "Rutina cambiada: “{{name}}”",
+        "routinePaused": "Rutina en pausa: “{{name}}”",
+        "routinePausedBecause": "Rutina en pausa: “{{name}}”, porque {{reason}}",
+        "routineResumed": "Rutina reanudada: “{{name}}”",
+        "routineDeleted": "Rutina eliminada: “{{name}}”",
+        "routineFailed": "La rutina “{{name}}” no se ejecutó: {{reason}}",
+        "openRoutines": "Abrir rutinas",
+        "peerMessage": "De <bot>{{name}}</bot>",
+        "peerAsk": "<bot>{{name}}</bot> preguntó",
+        "peerAnswered": "<bot>{{name}}</bot> respondió",
+        "peerFailed": "<bot>{{name}}</bot> no pudo responder",
+        "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder",
+        "session": {
+          "needsInput": "La sesión «{{name}}» necesita una respuesta",
+          "completed": "La sesión «{{name}}» ha terminado",
+          "failed": "La sesión «{{name}}» ha fallado",
+          "cancelled": "La sesión «{{name}}» se detuvo",
+          "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+        }
+      },
+      "routineReason": {
+        "expired": "esperó demasiado para empezar",
+        "automation_rate_limited": "alcanzó su límite de ejecuciones por hora",
+        "workspace_rate_limited": "el espacio de trabajo alcanzó su límite de ejecuciones por hora",
+        "missed": "pasó su hora mientras no podía ejecutarse",
+        "agent_unavailable": "el agente no pudo arrancar",
+        "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
+        "owner_lost_access": "su propietario ya no puede ejecutarla",
+        "unknown": "algo salió mal"
+      },
+      "openSession": "Abrir sesión"
     },
     "settings": {
       "back": "Volver al chat",
@@ -1049,7 +1300,8 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
-        "runsOn": "Dónde se ejecuta"
+        "routines": "Rutinas",
+        "homeHost": "Máquina principal"
       },
       "profile": {
         "title": "Perfil",
@@ -1076,6 +1328,18 @@
         "created": "Creado",
         "history": "Historial del chat",
         "noMessages": "Aún no hay mensajes.",
+        "messages_one": "{{count}} mensaje · el último el {{date}}",
+        "messages_other": "{{count}} mensajes · el último el {{date}}",
+        "messages_many": "{{count}} mensajes · el último el {{date}}",
+        "exporting": "Exportando…",
+        "exportFailed": "No se ha podido exportar el chat.",
+        "exportedAt": "Exportado el {{date}}",
+        "you": "Tú",
+        "oppenheimer": "Oppenheimer",
+        "clearTitle": "¿Borrar el historial del chat?",
+        "clearBody": "Se borran todos los mensajes de este chat, con cualquier solicitud que aún espere tu respuesta. El bot conserva su alma, sus instrucciones y su memoria.",
+        "clearing": "Borrando…",
+        "clearFailed": "No se ha podido borrar el historial del chat.",
         "export": "Exportar",
         "clear": "Borrar historial",
         "discard": "Descartar",
@@ -1094,6 +1358,8 @@
         "discard": "Descartar",
         "save": "Guardar revisión",
         "saving": "Guardando…",
+        "saved": "Guardado · revisión {{revision}}",
+        "unsaved": "Cambios sin guardar",
         "saveFailed": "No se ha podido guardar la revisión.",
         "conflict": "{{file}} se ha guardado en otro sitio mientras lo editabas y ahora está en la revisión {{revision}}. Recarga para verla; copia antes tu texto si quieres conservarlo.",
         "reload": "Recargar",
@@ -1142,21 +1408,53 @@
         "forgetFailed": "No se ha podido olvidar el dato.",
         "loadFailed": "No se ha podido cargar lo que recuerda el bot."
       },
-      "runsOn": {
-        "title": "Dónde se ejecuta",
-        "subtitle": "La máquina en la que trabaja el bot.",
-        "homeHost": "Máquina principal",
+      "routines": {
+        "title": "Rutinas",
+        "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
+        "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+        "askInChat": "Pedir en el chat",
+        "schedule": "Horario · {{when}}",
+        "github": "GitHub · {{when}}",
+        "last": "Última",
+        "next": "Próxima",
+        "never": "Nunca",
+        "switch": "Ejecutar «{{name}}» por su cuenta",
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "run": "Ejecutar ahora",
+        "running": "Ejecutándose…",
+        "edit": "Editar en el chat",
+        "delete": "Eliminar rutina",
+        "editPrompt": "Edita tu rutina: {{name}}",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteBody": "Se elimina la rutina y se detienen sus próximas ejecuciones. No se puede deshacer.",
+        "deleting": "Eliminando…",
+        "deleteFailed": "No se pudo eliminar la rutina.",
+        "switchFailed": "No se pudo cambiar la rutina.",
+        "runFailed": "No se pudo ejecutar la rutina.",
+        "loadFailed": "No se pudieron cargar las rutinas del bot."
+      },
+      "homeHost": {
+        "title": "Máquina principal",
+        "subtitle": "Tu bot siempre se ejecuta en Oppenheimer. Cuando inicia una sesión de código y no has indicado una máquina, la sesión se ejecuta aquí.",
+        "machines": "Máquinas",
+        "none": "Sin máquina principal",
+        "noneHint": "El bot pregunta qué máquina usar cada vez que inicia una sesión.",
         "online": "En línea",
         "offline": "Desconectada",
         "noHosts": "Aún no hay máquinas",
-        "noHostsBody": "Un bot se ejecuta en una máquina tuya. Añade una y elígela aquí.",
+        "noHostsBody": "Un bot inicia sus sesiones de código en una máquina tuya. Añade una y elígela aquí.",
         "addHost": "Añadir una máquina",
+        "discard": "Cancelar",
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "saved": "Guardado",
         "failed": "No se ha podido cambiar la máquina principal.",
         "hostsFailed": "No se han podido cargar tus máquinas."
       }
     },
     "delete": {
-      "title": "¿Eliminar {{name}}?",
+      "title": "¿Eliminar «{{name}}»?",
       "description": "El bot, sus instrucciones, su memoria y su conversación se eliminan para siempre.",
       "confirm": "Eliminar bot",
       "pending": "Eliminando…",
@@ -1221,7 +1519,8 @@
       "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
       "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
       "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
-      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
+      "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala."
     },
     "frequency": {
       "once": {
@@ -1462,7 +1761,7 @@
     "deleteDialog": {
       "title": "¿Eliminar «{{name}}»?",
       "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "confirm": "Eliminar",
+      "confirm": "Eliminar automatización",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la automatización."
     },
@@ -1473,6 +1772,11 @@
       "open": "Abrir en el terminal",
       "opening": "Abriendo",
       "backToAutomation": "Volver a la automatización"
+    },
+    "routines": {
+      "routine": "Rutina de bot",
+      "runsOn": "La ejecuta {{bot}}",
+      "loadFailed": "No se pudieron cargar las rutinas de los bots."
     }
   },
   "pullRequests": {
@@ -1707,7 +2011,7 @@
       "merged": "PR fusionadas",
       "from": "desde {{value}}",
       "series": "Series",
-      "both": "Creadas y fusionadas",
+      "both": "Ambas",
       "perDay": "Pull requests creadas y fusionadas por día",
       "hover": "Pasa por encima de un día",
       "reviewedByYou": "Revisadas por ti",
@@ -1744,8 +2048,13 @@
       "bar": "revisión · {{repository}} #{{number}}",
       "close": "Mostrar el pull request",
       "loadFailed": "No se pudo cargar la sesión de revisión.",
-      "composer": "Pregunta al agente de revisión o ejecuta un comando",
-      "listFailed": "No se pudieron cargar tus sesiones de revisión."
+      "listFailed": "No se pudieron cargar tus sesiones de revisión.",
+      "delete": "Eliminar sesión de revisión",
+      "deleteTitle": "¿Eliminar la sesión de revisión de #{{number}}?",
+      "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir.",
+      "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
+      "restart": "Reiniciar revisión",
+      "restarting": "Reiniciando…"
     }
   },
   "tasks": {
@@ -1832,10 +2141,11 @@
       "target": "Fecha",
       "add": "Añadir hito",
       "delete": "Eliminar hito",
-      "deleteTitle": "¿Eliminar este hito?",
-      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin hito.",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteDescription": "Sus tareas siguen en el tablero sin hito.",
       "saveFailed": "No se ha podido guardar el hito.",
-      "deleteFailed": "No se ha podido eliminar el hito."
+      "deleteFailed": "No se ha podido eliminar el hito.",
+      "deleting": "Eliminando…"
     },
     "dialog": {
       "newTitle": "Nueva tarea",
@@ -1857,12 +2167,13 @@
       "add": "Añadir tarea",
       "save": "Guardar",
       "delete": "Eliminar tarea",
-      "deleteTitle": "¿Eliminar esta tarea?",
-      "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Sus sesiones siguen como están.",
       "saveFailed": "No se ha podido guardar la tarea.",
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
-      "gone": "Esta tarea ya no existe."
+      "gone": "Esta tarea ya no existe.",
+      "deleting": "Eliminando…"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -1940,12 +2251,13 @@
       "add": "Añadir evento",
       "save": "Guardar",
       "delete": "Eliminar evento",
-      "deleteTitle": "¿Eliminar este evento?",
-      "deleteDescription": "Se elimina «{{title}}».",
+      "deleteTitle": "¿Eliminar «{{title}}»?",
+      "deleteDescription": "Se quita del calendario.",
       "saveFailed": "No se ha podido guardar el evento.",
       "deleteFailed": "No se ha podido eliminar el evento.",
       "loadFailed": "No se ha podido cargar el evento.",
-      "gone": "Este evento no está en el mes que se muestra o ya no existe."
+      "gone": "Este evento no está en el mes que se muestra o ya no existe.",
+      "deleting": "Eliminando…"
     },
     "google": {
       "title": "Google Calendar",
@@ -1960,17 +2272,18 @@
       "updated": "Actualizado hace {{age}}",
       "needsReconnect": "Hay que volver a conectarla",
       "readFailed": "No se ha podido leer ahora",
-      "remove": "Quitar",
+      "remove": "Quitar cuenta",
       "removeLabel": "Quitar {{email}}",
-      "removeTitle": "¿Quitar esta cuenta de Google?",
-      "removeDescription": "{{email}} deja el calendario, y sus eventos con ella. Puedes volver a conectarla cuando quieras.",
+      "removeTitle": "¿Quitar «{{email}}»?",
+      "removeDescription": "Sus eventos dejan el calendario. Puedes volver a conectarla cuando quieras.",
       "removeFailed": "No se ha podido quitar la cuenta de Google.",
       "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
       "loadFailed": "No se han podido comprobar tus cuentas de Google.",
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario"
+      "back": "Volver al calendario",
+      "removing": "Quitando…"
     },
     "googleEvent": {
       "untitled": "(Sin título)",
@@ -1980,6 +2293,7 @@
       "busy": "Ocupado",
       "free": "Libre",
       "readOnly": "Aquí es de solo lectura: cámbialo en Google Calendar.",
+      "join": "Unirse a la reunión",
       "open": "Abrir en Google Calendar"
     }
   },
@@ -2042,19 +2356,26 @@
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
+      "updateRunner": "Actualizar runner",
+      "updateTitle": "¿Actualizar el runner de «{{name}}»?",
+      "updateDescription": "El runner instala la versión más reciente de su canal y se reinicia. Sus sesiones siguen en marcha y los terminales abiertos se reconectan en unos segundos. Un host fijado a una versión se queda en ella.",
+      "updating": "Actualizando…",
+      "updateFailed": "No se ha podido actualizar el runner de {{name}}.",
       "rename": "Renombrar",
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removing": "Eliminando…",
-      "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "removeTitle": "¿Eliminar «{{name}}»?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en él. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en él. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en él. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
       "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo.",
+      "wipe": "Borrar también todo lo de esta máquina: cerrar cada sesión y eliminar su worktree, incluido el trabajo sin confirmar. No se sube nada.",
+      "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
@@ -2163,7 +2484,7 @@
     },
     "modelProviders": {
       "title": "Proveedores de modelos",
-      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar.",
+      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
       "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
       "loadFailed": "No se pudieron cargar los proveedores de modelos.",
       "keyEnding": "Clave que termina en {{hint}}",
@@ -2173,6 +2494,10 @@
       "remove": "Quitar",
       "removeLabel": "Quitar la clave de {{provider}}",
       "removeFailed": "No se pudo quitar la clave.",
+      "default": "Predeterminado",
+      "makeDefault": "Hacer predeterminado",
+      "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
+      "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
@@ -2187,7 +2512,7 @@
         "saving": "Guardando…",
         "failed": "No se pudo guardar la clave."
       },
-      "signedIn": "Sesión iniciada · cuenta que termina en {{hint}}",
+      "signedIn": "Sesión iniciada · {{hint}}",
       "notConnected": "Sin conectar",
       "connect": "Conectar ChatGPT",
       "reconnect": "Volver a iniciar sesión",
@@ -2222,7 +2547,7 @@
     "users": "Usuarios",
     "roles": "Roles",
     "featureFlags": "Indicadores de funcionalidad",
-    "toggleSidebar": "Mostrar u ocultar el menú",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
     "commandTitle": "Paleta de comandos",
@@ -2491,11 +2816,13 @@
     "emailResent": "Correo enviado de nuevo.",
     "sessionRenamed": "Renombrada a «{{name}}».",
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+    "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",
     "projectDeleted": "Se ha eliminado «{{name}}».",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
+    "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",

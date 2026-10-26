@@ -37,13 +37,30 @@ vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'de
 vi.mock('../components/permission-select', () => ({
   PermissionSelect: chip('permission', 'ask'),
 }));
-vi.mock('../components/agent-select', () => ({
-  AgentSelect: chip(
+// The engine button holds the effort too: its `effort` button picks a level.
+vi.mock('../components/agent-select', () => {
+  const Agent = chip(
     'agent',
     { agent: 'codex', model: null },
     { shell: { agent: 'shell', model: null } },
-  ),
-}));
+  );
+  return {
+    AgentSelect: (props: {
+      onValueChange: (value: unknown) => void;
+      effort: unknown;
+      onEffortChange: (value: string) => void;
+    }) => (
+      <>
+        <Agent onValueChange={props.onValueChange} />
+        {props.effort ? (
+          <button type="button" onClick={() => props.onEffortChange('high')}>
+            effort
+          </button>
+        ) : null}
+      </>
+    ),
+  };
+});
 vi.mock('../components/where-select', () => ({
   WhereSelect: chip('where', 'folder', { worktree: 'worktree' }),
 }));
@@ -62,7 +79,6 @@ vi.mock('../sections/new-session-folder-browser', () => ({
     </button>
   ),
 }));
-vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'high') }));
 
 /**
  * The reads, from a store the test can settle. `useSyncExternalStore` is what
@@ -130,10 +146,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     error: null,
     submittedAt: 0,
   }),
+  useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
+  useFeatureFlag: () => false,
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
   lastFailure: () => ({ error: null, index: -1, dismiss: vi.fn() }),
 }));
@@ -193,9 +211,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NewSessionForm', () => {
-  it('renders only the effort chip when an effort is picked', () => {
+  it('renders only the engine button when an effort is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'effort' }));
-    expect(rendered()).toEqual(['effort']);
+    expect(rendered()).toEqual(['agent']);
   });
 
   it('renders only the permission chip when a level is picked', () => {
@@ -234,10 +252,10 @@ describe('NewSessionForm', () => {
     });
   });
 
-  /** An agent switch decides which foot controls exist, so those three redraw. */
+  /** An agent switch decides which foot controls exist, so those two redraw. */
   it('renders the engine and the agent-dependent controls when the agent changes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'agent' }));
-    expect(rendered()).toEqual(['agent', 'effort', 'permission']);
+    expect(rendered()).toEqual(['agent', 'permission']);
   });
 
   /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */
@@ -257,18 +275,6 @@ describe('NewSessionForm', () => {
     fireEvent.change(textarea, { target: { value: 'F' } });
     fireEvent.change(textarea, { target: { value: 'Fix' } });
     expect(rendered()).toEqual([]);
-  });
-
-  it('summarises the picked project under the title', () => {
-    cleanup();
-    render(
-      <ConsoleDialogProvider>
-        <NewSessionForm heading={<h1>title</h1>} />
-      </ConsoleDialogProvider>,
-    );
-    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'project' }));
-    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
   });
 
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */
@@ -324,10 +330,10 @@ describe('NewSessionForm', () => {
       rendered();
     });
 
-    it('swaps the repository and branch chips for the folder chip, and leaves the composer', () => {
+    it('swaps the repository and branch chips for the folder chip, and leaves the composer and the project', () => {
       fireEvent.click(screen.getByRole('button', { name: 'where' }));
 
-      expect(rendered()).toEqual(['folder', 'host', 'project', 'where']);
+      expect(rendered()).toEqual(['folder', 'host', 'where']);
       expect(screen.queryByRole('button', { name: 'repositories' })).toBeNull();
     });
 

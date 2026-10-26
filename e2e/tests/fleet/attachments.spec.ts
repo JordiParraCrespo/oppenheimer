@@ -39,7 +39,9 @@ test('files attached to the first task reach the agent with it', async ({ page }
   await page.setViewportSize({ width: 1280, height: 800 });
   await signInAs(page, user);
   await page.goto('/sessions/new');
-  await expect(page.getByRole('heading', { name: 'New session', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'What should we work on?', level: 1 }),
+  ).toBeVisible();
   await shot('1-new-session');
 
   await page.getByRole('button', { name: 'Host' }).click();
@@ -69,7 +71,9 @@ test('files attached to the first task reach the agent with it', async ({ page }
   );
 
   // A real PNG: a picture of the heading itself.
-  const png = await page.getByRole('heading', { name: 'New session', level: 1 }).screenshot();
+  const png = await page
+    .getByRole('heading', { name: 'What should we work on?', level: 1 })
+    .screenshot();
   const pdf = Buffer.from('%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n');
   const notes = Buffer.from('# Notes\n\n- keep the header sticky\n');
   await picker.setInputFiles([

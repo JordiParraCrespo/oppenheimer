@@ -7,7 +7,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
-import { BOT_PROVIDER_CATALOG, botModelOf } from '@oppenheimer/shared/schemas/bot';
+import {
+  BOT_PROVIDER_CATALOG,
+  type BotAttachment,
+  botModelOf,
+} from '@oppenheimer/shared/schemas/bot';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
@@ -31,16 +36,20 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * a live line says what it is doing, with its clock. Once it has ended, a
  * trail copies the answer, offers Retry on the newest turn, and says its
  * model and the tokens it took (Stopped first when someone pressed Stop); a
- * failure says why, with Retry beside it.
+ * failure says why, with Retry beside it. The images your message carried
+ * sit above its bubble, each drawn by `image`, which reads it.
  */
 export function BotTurn({
   block,
   live,
+  image,
   onRetry,
   retrying = false,
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
+  /** One image a message of yours carried, as the section that reads it draws it. */
+  image: (attachment: BotAttachment) => ReactNode;
   /** Sends your last message again; only the newest turn, once it has ended. */
   onRetry?: () => void;
   retrying?: boolean;
@@ -73,9 +82,16 @@ export function BotTurn({
             key={message.id}
             data-message-id={message.id}
             time={time.format(message.createdAt)}
-            actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
+            actions={
+              message.content ? (
+                <CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />
+              ) : undefined
+            }
+            attachments={
+              message.attachments.length > 0 ? <>{message.attachments.map(image)}</> : undefined
+            }
           >
-            {message.content}
+            {message.content || null}
           </ChatUserMessage>
         ),
       )}

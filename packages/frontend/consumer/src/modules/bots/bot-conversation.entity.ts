@@ -1,8 +1,10 @@
 import type {
   BotApprovalStatus,
+  BotAttachment,
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
+  BotSubagentRun,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 
@@ -15,6 +17,10 @@ export interface BotToolStep {
   /** What it answered, cut short; `null` while it runs. */
   output: string | null;
   isError: boolean;
+  /** The session the call started (`start_session`), for the chat to open; `null` for any other. */
+  sessionId: string | null;
+  /** The subagents a `delegate` call ran, as they ended; `null` for any other call, and while it runs. */
+  subagents: readonly BotSubagentRun[] | null;
 }
 
 /**
@@ -25,7 +31,8 @@ export interface BotToolStep {
 export class BotMessageEntity {
   constructor(
     public readonly id: string,
-    public readonly turnId: string,
+    /** The turn it belongs to; `null` for an event outside any turn (a routine changed, paused or failed). */
+    public readonly turnId: string | null,
     public readonly role: BotMessageRole,
     /** The text; empty for an activity line. */
     public readonly content: string,
@@ -33,6 +40,8 @@ export class BotMessageEntity {
     public readonly createdAt: Date,
     /** What an event says happened, for the chat to draw; `null` on every other role. */
     public readonly event: BotMessageEvent | null = null,
+    /** The images a message of yours carries, in the order you attached them; none on any other. */
+    public readonly attachments: readonly BotAttachment[] = [],
   ) {}
 }
 
@@ -67,7 +76,14 @@ export class BotConversationEntity {
     public readonly messages: readonly BotMessageEntity[],
     /** Oldest first; any still queued or running are among them. */
     public readonly turns: readonly BotTurnEntity[],
+    /** How many messages the chat holds in all, past this window; activity lines not counted. */
+    public readonly messageCount: number,
   ) {}
+
+  /** When the newest message was written; `null` for an empty chat. */
+  get lastMessageAt(): Date | null {
+    return this.messages.at(-1)?.createdAt ?? null;
+  }
 
   /** The turn Stop applies to: the running one, else the oldest queued. */
   get activeTurn(): BotTurnEntity | null {

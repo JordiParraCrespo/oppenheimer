@@ -193,6 +193,12 @@
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;
     --term-accent: var(--op-blue-600);
+    /* A session read as a chat over its terminal (0.7): the terminal's own
+       ground, so switching Terminal / Chat changes what is drawn and never
+       the colour of the pane or the bar over it (the `SessionsConsole`
+       frame draws its chat on the same card as its terminal). The chat's
+       cards (the composer, the code) keep their hairlines to stand on it. */
+    --chat-ground: var(--term-bg);
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
@@ -367,6 +373,9 @@
     --sidebar-w: 264px;
     --sidebar-w-collapsed: 60px;
     --topbar-h: 56px;
+    /* The terminal's status bar, and the clearance what floats over the grid
+       keeps above it (the host-link drawer and notice). */
+    --term-status-h: 36px;
 
     /* =====================================================================
        Radii — six, and no others: type into a 10, press a pill, read in an 18
@@ -573,6 +582,7 @@
     --term-dim: var(--op-gray-500);
     --term-border: #262629;
     --term-accent: var(--op-blue-400);
+    --chat-ground: var(--term-bg);
     --term-success: var(--op-green-400);
     --term-warning: var(--op-amber-400);
     --term-danger: var(--op-red-400);
@@ -755,10 +765,10 @@
   --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  /* The agent chat: work in flight breathes between 55% and full ink, and
+  /* The agent chat: a band of full ink sweeps across work in flight, and
      the write head of a streaming reply blinks. Both sit behind
      `motion-safe:`, since reduced motion zeroes durations, not animations. */
-  --animate-shimmer: op-chat-shimmer 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-shimmer: op-chat-shimmer 2s linear infinite;
   --animate-caret: op-caret 1s steps(2) infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
@@ -810,6 +820,7 @@
   --color-term-dim: var(--term-dim);
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
+  --color-chat-ground: var(--chat-ground);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);
   --color-term-danger: var(--term-danger);
@@ -981,15 +992,71 @@
   ::selection {
     background: var(--selected-surface);
   }
+
+  /* Every scroller gets the same quiet bar: a pill thumb in subtle ink on no
+     track, no arrow buttons, lit to muted ink under the pointer. Subtle ink is
+     the faintest that keeps the 3:1 a control needs on both themes' surfaces.
+     Chromium and Safari draw it from the pseudo-elements. Chromium ignores
+     those once `scrollbar-color` or `scrollbar-width` is set, so the
+     standard properties are only for browsers without a thumb pseudo-element
+     (Firefox, some of whose versions parse `::-webkit-scrollbar` alone). */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--fg-subtle);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: var(--radius-pill);
+    min-height: 32px;
+  }
+  ::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--fg-muted);
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  @supports not selector(::-webkit-scrollbar-thumb) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--fg-subtle) transparent;
+    }
+  }
 }
 
+/* The sweep paints the words with a gradient clipped to them, so the
+   element needs nothing but the animation: a child in its own ink (a mono
+   target) keeps it and is not swept. */
 @keyframes op-chat-shimmer {
   0%,
   100% {
-    opacity: 0.55;
+    background-image: linear-gradient(
+      90deg,
+      var(--fg-subtle) 0%,
+      var(--fg-subtle) 40%,
+      var(--fg) 50%,
+      var(--fg-subtle) 60%,
+      var(--fg-subtle) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
-  50% {
-    opacity: 1;
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
   }
 }
 
@@ -1128,6 +1195,16 @@
   background-size: 22px 22px;
 }
 
+/* The part of a wrapping row that keeps the line: a title, a label. Its
+   neighbours (the actions, a control) wrap under it once it would have less
+   than 12rem, so a narrow screen moves them rather than cutting the text.
+   One threshold for every such row: PageHeaderRow, SettingsTitle,
+   SettingsRow. */
+@utility wrap-lead {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
 /* No scrollbar at all, for a list that scrolls but draws its own edges — the
    console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
 @utility no-scrollbar {
@@ -1138,33 +1215,16 @@
   }
 }
 
-/* A quiet 8px scrollbar for panes that scroll inside a card. */
+/* The baseline scrollbar at 8px, for panes that scroll inside a card. The
+   pill, its colours and the hidden buttons are the baseline's; this only
+   narrows the bar and the thumb's inset. */
 @utility scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-
   &::-webkit-scrollbar {
     height: 8px;
     width: 8px;
   }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
   &::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    border-radius: var(--radius-pill);
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  &::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+    border-width: 2px;
   }
 }
 

@@ -30,7 +30,7 @@ export interface SessionNameProposal {
  *
  * **Two writers reach it**: the console's create request, and a runner's
  * `prompt.first` off the transcript (the only path for a prompt typed into the
- * terminal; no runner sends it yet). {@link alreadyNamed} stops the second
+ * terminal; the runner reads Claude Code's today). {@link alreadyNamed} stops the second
  * renaming: a session named by anybody has had its first prompt.
  *
  * Nothing here throws: a title is not worth failing a create or an acknowledgement.

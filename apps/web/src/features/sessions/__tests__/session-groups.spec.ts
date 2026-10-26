@@ -1,6 +1,13 @@
 import { ProjectEntity, type SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-groups';
+import {
+  emptyMessage,
+  groupByProject,
+  matchesQuery,
+  projectsForMove,
+  shownGroups,
+} from '../lib/session-groups';
 
 /**
  * The sidebar's groups and the move pane's targets
@@ -68,5 +75,47 @@ describe('matchesQuery', () => {
     expect(matchesQuery(row, '  ')).toBe(true);
     expect(matchesQuery(row, 'EMPTY')).toBe(true);
     expect(matchesQuery(row, 'ledger')).toBe(false);
+  });
+});
+
+describe('shownGroups', () => {
+  const groups = groupByProject(
+    [project('a', []), project('b', []), project('c', [])],
+    [session('s1', 'a', [])],
+  );
+  const ids = (list: typeof groups) => list.map((group) => group.project?.id);
+
+  it('keeps every group, empty ones included, when nothing narrows the list', () => {
+    expect(ids(shownGroups(groups, false, null))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('drops the groups a filter or search left empty', () => {
+    expect(ids(shownGroups(groups, true, null))).toEqual(['a']);
+  });
+
+  it('keeps the picked project even when nothing in it matches', () => {
+    expect(ids(shownGroups(groups, true, 'c'))).toEqual(['a', 'c']);
+  });
+
+  it('drops an empty group with no project, whatever project is picked', () => {
+    const orphaned = [...groups, { project: null, sessions: [] }];
+    expect(ids(shownGroups(orphaned, true, 'c'))).toEqual(['a', 'c']);
+  });
+});
+
+describe('emptyMessage', () => {
+  const t = ((key: string, values?: Record<string, string>) =>
+    values ? `${key}:${values.query}` : key) as unknown as TFunction;
+
+  it('says the project is empty when nothing narrows the list', () => {
+    expect(emptyMessage(t, false, '')).toBe('sessions.sidebar.emptyProject');
+  });
+
+  it('repeats the trimmed search when one narrows the list', () => {
+    expect(emptyMessage(t, true, '  deploy ')).toBe('sessions.sidebar.noMatches:deploy');
+  });
+
+  it('names the filters when only they narrow the list', () => {
+    expect(emptyMessage(t, true, '  ')).toBe('sessions.filters.noMatches');
   });
 });

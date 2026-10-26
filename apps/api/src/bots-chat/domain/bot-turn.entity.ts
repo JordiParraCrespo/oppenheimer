@@ -6,8 +6,11 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import {
+  BOT_TURN_LANES,
   BOT_TURN_STATUSES,
   type BotProvider,
+  type BotTurnLane,
+  type BotTurnOrigin,
   type BotTurnStatus,
   type Scope,
 } from '@oppenheimer/shared';
@@ -19,6 +22,10 @@ export interface BotTurnProps {
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
+  /** Why it exists: a message of yours, an approval's decision, a routine's run, or a subscription's wake. */
+  origin: BotTurnOrigin;
+  /** What makes it happen once (`automation-run:<runId>`); null for a message. */
+  sourceKey: string | null;
   /** The engine and model it runs on, fixed when it is sent, so a later pick never changes it. */
   provider: BotProvider;
   model: string;
@@ -31,6 +38,27 @@ export interface BotTurnProps {
    * these scopes cover, so a token reaches no further through a bot.
    */
   credentialScopes: readonly Scope[] | null;
+  /** Which of the bot's waiting turns runs first (`BotQueueLanes`). */
+  lane: BotTurnLane;
+  /**
+   * The first turn of the chain this one belongs to (`BotChainPolicy`): the
+   * message of yours every bot-to-bot turn after it traces back to. Null on
+   * that first turn, whose chain is its own id.
+   */
+  chainId: string | null;
+  /** How many bots deep in its chain: 0 for a turn of yours. */
+  chainDepth: number;
+  /**
+   * The bot whose tool call queued this turn, and that call's turn, as
+   * Oppenheimer recorded them when it ran the call. Null on a turn of yours,
+   * and once that bot is deleted or its chat cleared.
+   */
+  askedByBotId: string | null;
+  askedByTurnId: string | null;
+  /** Sent with `ask_bot`: when this turn ends, its answer is queued as a turn of the asker. */
+  replyRequested: boolean;
+  /** On the turn that delivers an answer, the turn it answers. */
+  answersTurnId: string | null;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   inputTokens: number;
@@ -79,11 +107,29 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     effort: SessionEffort | null;
     timeZone?: string | null;
     credentialScopes?: readonly Scope[] | null;
+    origin?: BotTurnOrigin;
+    sourceKey?: string | null;
+    lane?: BotTurnLane;
+    chainId?: string | null;
+    chainDepth?: number;
+    askedByBotId?: string | null;
+    askedByTurnId?: string | null;
+    replyRequested?: boolean;
+    answersTurnId?: string | null;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
       props: {
+        lane: 'owner',
+        chainId: null,
+        chainDepth: 0,
+        askedByBotId: null,
+        askedByTurnId: null,
+        replyRequested: false,
+        answersTurnId: null,
         ...props,
+        origin: props.origin ?? 'message',
+        sourceKey: props.sourceKey ?? null,
         timeZone: props.timeZone ?? null,
         credentialScopes: props.credentialScopes ?? null,
         status: 'queued',
@@ -99,6 +145,69 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     return turn;
   }
 
+  /**
+   * A turn another bot's `message_bot` or `ask_bot` call queues on this bot
+   * (`25-bots.md` §4.6): in the `bots` lane, one bot deeper in the asking
+   * turn's chain, marked with the bot and turn that asked. It runs on the
+   * receiving bot's own engine, and is sent with no more reach than the
+   * asking turn had: the same requester, zone and credential scopes.
+   */
+  static queueFromBot(
+    asker: BotTurnEntity,
+    props: {
+      botId: string;
+      provider: BotProvider;
+      model: string;
+      effort: SessionEffort | null;
+      replyRequested: boolean;
+    },
+  ): BotTurnEntity {
+    return BotTurnEntity.queue({
+      ...props,
+      organizationId: asker.organizationId,
+      requestedByUserId: asker.requireRequester(),
+      timeZone: asker.timeZone,
+      credentialScopes: asker.credentialScopes,
+      lane: 'bots',
+      chainId: asker.chainRoot,
+      chainDepth: asker.chainDepth + 1,
+      askedByBotId: asker.botId,
+      askedByTurnId: asker.id,
+    });
+  }
+
+  /**
+   * The answer to an `ask_bot` call, queued on the bot that asked once the
+   * asked turn ended: in the `bots` lane, at the asker's depth in the chain,
+   * marked as from the bot that answered and as answering its turn.
+   */
+  static queueAnswer(
+    answered: BotTurnEntity,
+    props: {
+      botId: string;
+      provider: BotProvider;
+      model: string;
+      effort: SessionEffort | null;
+    },
+  ): BotTurnEntity {
+    if (!answered.replyRequested || !answered.ended) {
+      throw new ArgumentInvalidException('Only an ended ask is answered');
+    }
+    return BotTurnEntity.queue({
+      ...props,
+      organizationId: answered.organizationId,
+      requestedByUserId: answered.requireRequester(),
+      timeZone: answered.timeZone,
+      credentialScopes: answered.credentialScopes,
+      lane: 'bots',
+      chainId: answered.chainRoot,
+      chainDepth: Math.max(0, answered.chainDepth - 1),
+      askedByBotId: answered.botId,
+      askedByTurnId: answered.id,
+      answersTurnId: answered.id,
+    });
+  }
+
   get organizationId(): string {
     return this.props.organizationId;
   }
@@ -111,6 +220,12 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get status(): BotTurnStatus {
     return this.props.status;
   }
+  get origin(): BotTurnOrigin {
+    return this.props.origin;
+  }
+  get sourceKey(): string | null {
+    return this.props.sourceKey;
+  }
   get statusAtLoad(): BotTurnStatus {
     return this.loadedStatus;
   }
@@ -119,6 +234,31 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get model(): string {
     return this.props.model;
+  }
+  get lane(): BotTurnLane {
+    return this.props.lane;
+  }
+  get chainId(): string | null {
+    return this.props.chainId;
+  }
+  /** The chain this turn belongs to: its own id when it started one. */
+  get chainRoot(): string {
+    return this.props.chainId ?? this.id;
+  }
+  get chainDepth(): number {
+    return this.props.chainDepth;
+  }
+  get askedByBotId(): string | null {
+    return this.props.askedByBotId;
+  }
+  get askedByTurnId(): string | null {
+    return this.props.askedByTurnId;
+  }
+  get replyRequested(): boolean {
+    return this.props.replyRequested;
+  }
+  get answersTurnId(): string | null {
+    return this.props.answersTurnId;
   }
   get timeZone(): string | null {
     return this.props.timeZone;
@@ -179,6 +319,14 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.end('failed', now, { error: 'The turn was interrupted. Send the message again.' });
   }
 
+  /** Who sent the message the turn answers; a turn whose sender's account is gone queues nothing more. */
+  private requireRequester(): string {
+    if (!this.props.requestedByUserId) {
+      throw new ArgumentInvalidException("The turn's sender no longer has an account");
+    }
+    return this.props.requestedByUserId;
+  }
+
   /** The write that stored this instance landed: its next one is conditioned on what it holds now. */
   markPersisted(): void {
     this.loadedStatus = this.props.status;
@@ -193,6 +341,18 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       throw new ArgumentInvalidException(`${props.status} is not a turn status`);
     }
     if (!props.model) throw new ArgumentNotProvidedException('A turn runs on a model');
+    if (!BOT_TURN_LANES.includes(props.lane)) {
+      throw new ArgumentInvalidException(`${props.lane} is not a turn lane`);
+    }
+    if (!Number.isInteger(props.chainDepth) || props.chainDepth < 0) {
+      throw new ArgumentInvalidException('A chain depth is a whole number from 0');
+    }
+    if (props.lane === 'bots' && props.chainId === null) {
+      throw new ArgumentInvalidException('A turn a bot queued belongs to its chain');
+    }
+    if (props.answersTurnId && props.replyRequested) {
+      throw new ArgumentInvalidException('An answer asks for no answer');
+    }
   }
 }
 

@@ -32,11 +32,27 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
-  it('asks for the job while INSTRUCTIONS.md is empty, and carries it once written', () => {
-    expect(composeBotSystemPrompt(base)).toContain('You have no instructions yet');
+  it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
+    expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
-    expect(written).not.toContain('You have no instructions yet');
+    expect(written).not.toContain('# Getting started');
+  });
+
+  it('lists the setup steps of the tools its turn offers, and points at Settings without them', () => {
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: [
+        { name: 'get_self', description: 'Reads you.' },
+        { name: 'edit_instructions', description: 'Rewrites it.', setupStep: 'Write it down.' },
+        { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
+      ],
+    });
+    expect(equipped).toMatch(/3\. Write it down\.\n4\. Remember them\.\n5\. If no step above/);
+
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n3\. If no step above .*Settings → Instructions/,
+    );
   });
 
   it('closes the list of what it can do, and lists our tools by their first sentence', () => {
@@ -50,6 +66,30 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).not.toContain('Use it before starting work');
     expect(prompt).toContain('You have no shell, no files, no access to the machine you run on');
     expect(prompt).toContain('Never try to discover other capabilities');
+  });
+
+  describe('code work through sessions', () => {
+    const sessions = {
+      ...base,
+      tools: [
+        { name: 'list_hosts', description: 'Lists your hosts.' },
+        { name: 'start_session', description: 'Starts a coding agent on a host with a task.' },
+      ],
+    };
+
+    it('tells a bot that may start a session to delegate code work there instead of refusing it', () => {
+      const prompt = composeBotSystemPrompt(sessions);
+      expect(prompt).toContain('# Working on code through sessions');
+      expect(prompt).toContain('goes to a session on a host');
+    });
+
+    it('promises no code work to a turn that cannot start a session, and keeps the plain refusal', () => {
+      // An API token without sessions:write gets a catalog with no start_session.
+      const prompt = composeBotSystemPrompt({ ...sessions, tools: sessions.tools.slice(0, 1) });
+      expect(prompt).not.toContain('# Working on code through sessions');
+      expect(prompt).not.toContain('goes to a session on a host');
+      expect(prompt).toContain('When a request needs something no tool here does');
+    });
   });
 
   it('promises only what the engine and the tools give', () => {
@@ -92,6 +132,39 @@ describe('events from Oppenheimer', () => {
     const prompt = botTurnPrompt(event);
     expect(prompt).toContain('Ana denied: Start Claude Code');
     expect(prompt).toContain('do not try the same thing another way');
+  });
+
+  // What breaks this: a routine's turn told to report on "the approval card
+  // you raised", which it never raised.
+  it('reads a routine run as the note it is, and a followed session by its state', () => {
+    const routine = botTurnPrompt({
+      role: 'event',
+      content: 'Your routine "Digest" is running now',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: 'a-1',
+        runId: 'r-1',
+        name: 'Digest',
+        reason: null,
+      },
+    });
+    expect(routine).toContain('Your routine "Digest" is running now');
+    expect(routine).not.toContain('approval card');
+    const session = botTurnPrompt({
+      role: 'event',
+      content: 'its task #1 failed.',
+      event: {
+        kind: 'session',
+        subscriptionId: 's-1',
+        sessionId: 'session-1',
+        sessionName: 'x',
+        turn: 1,
+        state: 'failed',
+      },
+    });
+    expect(session).toContain('tell the person it failed');
+    expect(session).not.toContain('approval card');
   });
 
   it('asks a turn your message opened exactly what you wrote', () => {

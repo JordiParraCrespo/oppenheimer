@@ -45,6 +45,23 @@ function setup(options: { waiting?: boolean; summarize?: () => string } = {}) {
   return { run, approvals, call };
 }
 
+describe('defineBotTool, a read-only tool', () => {
+  it('cannot also ask first: a child offered it would raise a card no one asked for', () => {
+    expect(() =>
+      defineBotTool({
+        name: 'peek',
+        scope: 'sessions:read',
+        description: 'Peeks.',
+        input: z.object({}),
+        readOnly: true,
+        asks: true,
+        summarize: () => 'peek',
+        run: async () => 'ok',
+      }),
+    ).toThrow('cannot both ask first and be read-only');
+  });
+});
+
 describe('defineBotTool, an asking tool', () => {
   it('raises a card for a valid call under Approve for me, runs nothing, and tells the model to end its turn', async () => {
     const { run, approvals, call } = setup();
@@ -125,5 +142,46 @@ describe('defineBotTool, an asking tool', () => {
     expect(answer).toEqual({ content: 'Started deploy', isError: false });
     expect(run.mock.calls[0][1]).toMatchObject({ approvalId: 'approval-1' });
     expect(approvals.request).not.toHaveBeenCalled();
+  });
+});
+
+describe('defineBotTool, a call that starts a session', () => {
+  const tool = defineBotTool({
+    name: 'start_thing',
+    scope: 'sessions:write',
+    description: 'Starts a thing.',
+    input: z.object({}),
+    run: async () => ({ content: 'The agent is on it.', sessionId: 's-1' }),
+  });
+  const context = {
+    owner: emptyScope('owner-1', 'org-1'),
+    organizationId: 'org-1',
+    botId: 'bot-1',
+    turnId: 'turn-1',
+    homeHostId: null,
+    timeZone: 'UTC',
+    permission: 'full' as const,
+    budget: new BotTurnBudget(),
+  };
+
+  it('hands the engine the session as data, apart from the words the model reads', async () => {
+    const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
+    const result = await tool
+      .bind({ ...context, approvals })
+      .run({}, { signal: new AbortController().signal });
+    expect(result).toEqual({
+      content: 'The agent is on it.',
+      isError: false,
+      data: { sessionId: 's-1' },
+    });
+  });
+
+  it('answers an approved call with the session it started', async () => {
+    const answer = await tool.runApproved(
+      {},
+      { ...context, approvalId: 'approval-1' },
+      new AbortController().signal,
+    );
+    expect(answer).toEqual({ content: 'The agent is on it.', isError: false, sessionId: 's-1' });
   });
 });

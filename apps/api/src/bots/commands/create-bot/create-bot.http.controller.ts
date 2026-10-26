@@ -36,7 +36,7 @@ export class CreateBotHttpController {
   @ApiOperation({
     summary: 'Create a bot',
     description:
-      'A blank bot: "New Bot" unless named, numbered when the workspace has the name, last in its group, with a soul that says its name and empty instructions.',
+      'A blank bot: the next free first name ("Juno", "Milo"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.',
   })
   @ApiResponse({ status: 201, type: BotResponseDto })
   @ApiProblemResponse({

@@ -6,6 +6,7 @@ import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
+import { speechKeyIsConfigured } from '../config/voice.config';
 
 /**
  * Whether the sessions GitHub App is usable on this deployment. All six values are
@@ -74,6 +75,9 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     ),
     // A valid sealing key for the workspaces' model provider keys.
     bot_providers: Boolean(botsProviderKeyOf(configService.get<string>('bots.providerKey'))),
+    // The deployment's own speech-to-text server. A workspace signed in to
+    // ChatGPT dictates without it; this is every other workspace's way in.
+    voice_transcription: speechKeyIsConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

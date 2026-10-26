@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
-import type { BotDocumentName, BotProvider } from '@oppenheimer/shared/schemas/bot';
+import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -21,7 +21,6 @@ import {
   BotEntity,
   type BotGroupEntity,
   type BotMemoryFactEntity,
-  type ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
@@ -47,7 +46,14 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
+  routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
+  // Every bot's, for `/automations`: apart from any one bot's, so a write to
+  // one routine refreshes both by name.
+  allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
+  image: (id: string, attachmentId: string) =>
+    [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
@@ -239,7 +245,7 @@ function settleFacts(
   );
 }
 
-/** A blank bot ("New Bot"), ungrouped. Open its chat with the answer. */
+/** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 export function useCreateBot(options?: UseMutationOptions<BotEntity, Error, void>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
@@ -492,58 +498,6 @@ export function useClearBotMemory(options?: UseMutationOptions<void, Error, stri
     mutationFn: (id: string) => app.bots.clearMemory(id),
     ...withCacheOnSuccess(options, (_data, id) =>
       queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []),
-    ),
-  });
-}
-
-function useModelProviderListQuery() {
-  const app = useConsumerApp();
-  return { queryKey: botsKeys.providerList(), queryFn: () => app.bots.findModelProviders() };
-}
-
-/** The model providers, for a reader that draws nothing while they load (the composer). */
-export function useModelProviders<TData = ModelProviderEntity[]>(
-  options?: Omit<UseQueryOptions<ModelProviderEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
-) {
-  return useQuery<ModelProviderEntity[], Error, TData>({
-    ...useModelProviderListQuery(),
-    ...options,
-  });
-}
-
-/** The workspace's model providers, each with whether it has a key, under a Suspense `QueryState`. */
-export function useSuspenseModelProviders() {
-  return useSuspenseQuery<ModelProviderEntity[], Error>(useModelProviderListQuery());
-}
-
-interface ModelProviderKeyVariables {
-  provider: BotProvider;
-  apiKey: string;
-}
-
-/** Stores a provider's key. The answer carries no key, so the list is read again for its hint. */
-export function usePutModelProviderKey(
-  options?: UseMutationOptions<void, Error, ModelProviderKeyVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ provider, apiKey }: ModelProviderKeyVariables) =>
-      app.bots.putModelProviderKey(provider, apiKey),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
-  });
-}
-
-/** Forgets a provider's key. */
-export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Error, BotProvider>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: BotProvider) => app.bots.removeModelProviderKey(provider),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
     ),
   });
 }

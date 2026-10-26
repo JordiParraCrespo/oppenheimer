@@ -67,10 +67,16 @@ boundary or the [one-page brief](product/brief.html) for the wider vision.
 
 ## Quick start
 
-You will need Node.js 22, pnpm, Docker, and Go.
+You will need Node.js 22, pnpm, Go, golangci-lint, gh, Docker with compose,
+and Playwright's browsers for the e2e suites. One command installs what needs
+no root and lists what is left (a sudo step, a re-login, `gh auth login`):
 
 ```bash
-# Install dependencies
+# Install or check the toolchain (mise.toml pins it); --sudo also runs the
+# root steps, --check changes nothing
+scripts/dev/bootstrap.sh
+
+# Install dependencies (the bootstrap already did)
 pnpm install
 
 # Configure the single root environment file

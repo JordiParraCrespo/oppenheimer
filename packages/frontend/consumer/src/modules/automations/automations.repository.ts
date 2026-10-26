@@ -33,7 +33,8 @@ function filterOf(dto: AutomationTriggerResponseDto['filter']): TriggerFilter {
   return dto?.op === 'equals' && dto.value ? { op: 'equals', value: dto.value } : { op: 'any' };
 }
 
-function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null {
+/** A saved trigger as the console reads it; a kind this client does not know reads as none. */
+export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null {
   if (dto.source === 'schedule' && dto.schedule) {
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
@@ -93,7 +94,7 @@ function toRunEntity(dto: AutomationRunResponseDto): AutomationRunEntity {
     dto.automationId,
     dto.automationName,
     dto.automationDeleted,
-    dto.projectId,
+    dto.projectId ?? null,
     dto.status,
     dto.outcome,
     dto.skipReason ?? null,
@@ -103,9 +104,9 @@ function toRunEntity(dto: AutomationRunResponseDto): AutomationRunEntity {
     dto.sessionId ?? null,
     dto.branch ?? null,
     dto.revisionNumber,
-    dto.agent,
+    dto.agent ?? null,
     dto.model ?? null,
-    dto.hostId,
+    dto.hostId ?? null,
     new Date(dto.createdAt),
     date(dto.startedAt),
     date(dto.endedAt),

@@ -69,8 +69,17 @@ go.work.sum
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
 
+# Local storage (STORAGE_PROVIDER=local, UPLOAD_DIR=./uploads): avatars and
+# chat images the API and the e2e suite write, which otherwise stop the next
+# `pnpm ci:local` on a dirty tree
+uploads/
+
 # Screenshots of the console for a pull request (e2e/tests/screens)
 .screenshots/
+# oppenheimer:begin e2e
+# Throwaway specs that reach a state for them (pnpm screens --spec)
+e2e/tests/screens/local/
+# oppenheimer:end e2e
 
 # IP databases fetched by scripts/geoip/fetch-dbip.mjs
 .data/

@@ -1,5 +1,7 @@
 import {
+  cn,
   DropOutline,
+  RAIL_BAR_CLEARANCE,
   SidebarInset,
   SidebarProvider,
   useFileDrag,
@@ -9,9 +11,10 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useApplyUserSettings } from '../../i18n';
 import { PaneBarContext, type PaneDrop, PaneDropContext } from '../hooks/use-pane';
 import { type ShellConfig, ShellProvider } from '../hooks/use-shell';
-import { resolveContentPane } from '../lib/pane';
+import { resolveContentPane, screenOwnsBar } from '../lib/pane';
 import { AppSidebar } from './app-sidebar';
 import { CommandPalette } from './command-palette';
+import { SidebarToggle } from './page-bar';
 import { PageFrame } from './page-frame';
 import { TopBar } from './top-bar';
 
@@ -31,6 +34,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
   const [commandOpen, setCommandOpen] = useState(false);
   useApplyUserSettings();
   const pane = useMatches({ select: resolveContentPane });
+  const ownBar = useMatches({ select: screenOwnsBar });
   const [bar, setBar] = useState<HTMLElement | null>(null);
   // The pane takes a screen's drops (`usePaneDrop`) and draws their outline on
   // its own edge. One object for the shell's life, so a screen's registration
@@ -53,16 +57,32 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
       <SidebarProvider className="h-svh min-h-0">
         {config.rail}
         <AppSidebar />
-        <SidebarInset className="flex min-h-0 min-w-0 flex-col">
+        {/* On a phone the rail is a bar along the bottom (`Rail`), so the
+            column keeps clear of it. */}
+        <SidebarInset
+          className={cn(
+            'flex min-h-0 min-w-0 flex-col',
+            config.rail ? RAIL_BAR_CLEARANCE : undefined,
+          )}
+        >
           {chrome ? <TopBar onSearch={() => setCommandOpen(true)} /> : null}
           {/* The pane: the console's one painter of the ground, and a flex
-              column that never scrolls itself. Its bar slot holds a screen's
-              bar (`PaneBar`) above the page; a page scrolls inside its frame;
+              column that never scrolls itself. Its bar slot holds the bar
+              every page opens with, the sidebar toggle, unless the route
+              says the screen draws its own there (`PaneBar`, `PageBar`); a page scrolls inside its frame;
               a `full` screen — whose content *is* the viewport, the session
               terminal — fills the height with `flex-1` instead of guessing at
               a viewport calculation; and a drop's outline is drawn on its
               edge. */}
           <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
+            {ownBar ? null : (
+              // On the pane's own grey, not a surface: the bar reads as the
+              // page's top edge rather than a strip above it. A session draws
+              // its own bar, on its terminal's ground.
+              <header data-slot="page-bar" className="flex h-12 shrink-0 items-center pl-3.5">
+                <SidebarToggle />
+              </header>
+            )}
             <div ref={setBar} className="shrink-0 empty:hidden" />
             <PaneBarContext value={bar}>
               <PaneDropContext value={drop}>

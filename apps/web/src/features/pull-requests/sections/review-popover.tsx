@@ -11,9 +11,18 @@ import type {
   PullRequestAddress,
   ReviewVerdict,
 } from '@oppenheimer/frontend-consumer';
-import { usePullRequest, useSubmitPullRequestReview } from '@oppenheimer/frontend-consumer/react';
+import {
+  usePullRequest,
+  useSubmitPullRequestReview,
+  useVoiceDictation,
+} from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess } from '@oppenheimer/frontend-web';
+import {
+  dictateInto,
+  dictationSlots,
+  notifySuccess,
+  useDictation,
+} from '@oppenheimer/frontend-web';
 import { REVIEW_VERDICTS } from '@oppenheimer/shared/schemas/pull-request';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +51,10 @@ export function ReviewPopover({
   const [open, setOpen] = useState(false);
   const [verdict, setVerdict] = useState<ReviewVerdict>('approve');
   const [comment, setComment] = useState('');
+  const dictation = useDictation({
+    voice: useVoiceDictation(),
+    onText: dictateInto(setComment),
+  });
   const submit = useSubmitPullRequestReview({
     onSuccess: ({ merged, autoMerge }) => {
       setOpen(false);
@@ -80,6 +93,7 @@ export function ReviewPopover({
           onVerdictChange={(value) => setVerdict(value as ReviewVerdict)}
           comment={comment}
           onCommentChange={setComment}
+          dictation={dictationSlots(dictation)}
           note={[
             pending.length ? t('pullRequests.review.pending', { count: pending.length }) : null,
             viewerLogin ? t('pullRequests.review.postsAs', { login: viewerLogin }) : null,

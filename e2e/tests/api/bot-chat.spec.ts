@@ -5,8 +5,9 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
  * A bot's chat through the deployed API (`product/versions/mvp/25-bots.md`
  * §2): a message to a bot whose provider has no key is refused; with a GLM key
  * (`GLM_API_KEY`, a real one, so the turn calls z.ai) a message becomes a
- * turn the worker runs, and the bot's answer is in the conversation. The live
- * half is skipped without the key.
+ * turn the worker runs, and the bot's answer is in the conversation, which
+ * exports whole, one message per line, and clears (refused while the turn works). The live half is
+ * skipped without the key.
  */
 
 interface Conversation {
@@ -28,7 +29,17 @@ test('a message to a bot whose provider has no key is refused, with nothing queu
   const conversation = (await (
     await api.get(`/api/v1/bots/${bot.id}/conversation`)
   ).json()) as Conversation;
-  expect(conversation).toEqual({ messages: [], turns: [] });
+  expect(conversation).toEqual({ messages: [], turns: [], messageCount: 0 });
+  // An empty chat exports empty and clears to the same; another workspace's bot is not found.
+  const exported = await api.get(`/api/v1/bots/${bot.id}/conversation/export`);
+  expect(exported.status()).toBe(200);
+  expect(exported.headers()['content-type']).toContain('application/x-ndjson');
+  expect(await exported.text()).toBe('');
+  expect((await api.delete(`/api/v1/bots/${bot.id}/conversation`)).status()).toBe(204);
+  await expectProblemDocument(
+    await api.delete('/api/v1/bots/00000000-0000-4000-8000-000000000000/conversation'),
+    { status: 404, code: 'BOTS_001' },
+  );
   await api.dispose();
 });
 
@@ -49,6 +60,11 @@ test('a GLM bot answers a message, end to end', async () => {
   expect(sent.status(), await sent.text()).toBe(202);
   const turn = (await sent.json()) as { id: string; status: string; model: string };
   expect(turn).toMatchObject({ status: 'queued', model: 'glm-5.3' });
+  // Clear history waits for the turn: the model takes seconds to answer.
+  await expectProblemDocument(await api.delete(`/api/v1/bots/${bot.id}/conversation`), {
+    status: 409,
+    code: 'BOTS_022',
+  });
 
   await expect
     .poll(
@@ -76,5 +92,23 @@ test('a GLM bot answers a message, end to end', async () => {
   expect(listed.find((row) => row.id === bot.id)?.lastMessagePreview?.toLowerCase()).toContain(
     'pineapple',
   );
+  expect(conversation).toMatchObject({ messageCount: 2 });
+
+  // The export is the whole chat; Clear history erases it, and the sidebar's line with it.
+  const exported = (await (await api.get(`/api/v1/bots/${bot.id}/conversation/export`)).text())
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as Conversation['messages'][number]);
+  expect(exported.map((message) => message.role)).toEqual(['user', 'assistant']);
+  expect((await api.delete(`/api/v1/bots/${bot.id}/conversation`)).status()).toBe(204);
+  expect(await (await api.get(`/api/v1/bots/${bot.id}/conversation`)).json()).toEqual({
+    messages: [],
+    turns: [],
+    messageCount: 0,
+  });
+  const cleared = (await (await api.get(`/api/v1/bots/${bot.id}`)).json()) as {
+    lastMessagePreview: string | null;
+  };
+  expect(cleared.lastMessagePreview).toBeNull();
   await api.dispose();
 });

@@ -26,7 +26,7 @@ export function ModelProviderKeyDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-105">
+      <DialogContent closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>
             {t('settings.modelProviders.dialog.title', { provider: label })}

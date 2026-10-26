@@ -230,7 +230,7 @@
     "merged": "PR fusionadas",
     "from": "desde {{value}}",
     "series": "Series",
-    "both": "Creadas y fusionadas",
+    "both": "Ambas",
     "perDay": "Pull requests creadas y fusionadas por día",
     "hover": "Pasa por encima de un día",
     "reviewedByYou": "Revisadas por ti",
@@ -267,7 +267,12 @@
     "bar": "revisión · {{repository}} #{{number}}",
     "close": "Mostrar el pull request",
     "loadFailed": "No se pudo cargar la sesión de revisión.",
-    "composer": "Pregunta al agente de revisión o ejecuta un comando",
-    "listFailed": "No se pudieron cargar tus sesiones de revisión."
+    "listFailed": "No se pudieron cargar tus sesiones de revisión.",
+    "delete": "Eliminar sesión de revisión",
+    "deleteTitle": "¿Eliminar la sesión de revisión de #{{number}}?",
+    "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir.",
+    "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
+    "restart": "Reiniciar revisión",
+    "restarting": "Reiniciando…"
   }
 }

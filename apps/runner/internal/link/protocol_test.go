@@ -312,6 +312,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	var constants struct {
 		ProtocolVersion      int               `json:"protocolVersion"`
 		CloseCodes           map[string]int    `json:"closeCodes"`
+		CloseReasons         map[string]string `json:"closeReasons"`
 		RefusalHeader        string            `json:"refusalHeader"`
 		Refusals             map[string]string `json:"refusals"`
 		FrameHeaderBytes     int               `json:"frameHeaderBytes"`
@@ -319,6 +320,8 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		MaxFrameBytes        int               `json:"maxFrameBytes"`
 		Capabilities         []string          `json:"capabilities"`
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
+		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
+		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -338,24 +341,28 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"REPLACED":             {constants.CloseCodes["REPLACED"], link.CloseReplaced},
 		"UNPAIRED":             {constants.CloseCodes["UNPAIRED"], link.CloseUnpaired},
 		"PROTOCOL_MISMATCH":    {constants.CloseCodes["PROTOCOL_MISMATCH"], link.CloseProtocolMismatch},
+		"closeReasons.WIPE":    {constants.CloseReasons["WIPE"], link.CloseReasonWipe},
 		"refusalHeader":        {constants.RefusalHeader, link.RefusalHeader},
 		"refusals.UNPAIRED":    {constants.Refusals["UNPAIRED"], link.RefusalUnpaired},
 		"frameHeaderBytes":     {constants.FrameHeaderBytes, link.FrameHeader},
 		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
 		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
+		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
+		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
 	} {
 		if pair[0] != pair[1] {
 			t.Errorf("%s: the schema says %v, protocol.gen.go %v", name, pair[0], pair[1])
 		}
 	}
-	if len(constants.CloseCodes) != 5 || len(constants.Refusals) != 1 {
-		t.Errorf("x-constants gained a close code or a refusal this test does not check: %v %v", constants.CloseCodes, constants.Refusals)
+	if len(constants.CloseCodes) != 5 || len(constants.CloseReasons) != 1 || len(constants.Refusals) != 1 {
+		t.Errorf("x-constants gained a close code, reason or refusal this test does not check: %v %v %v",
+			constants.CloseCodes, constants.CloseReasons, constants.Refusals)
 	}
 	if !slices.Equal(constants.Capabilities, []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect,
-		link.CapabilitySessionFolder, link.CapabilityFsList,
+		link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityAttachmentChat,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

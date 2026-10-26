@@ -40,6 +40,7 @@ function toEvent(
     data.busy,
     data.url ?? null,
     'connectionId' in data ? data.connectionId : null,
+    data.meetingUrl ?? null,
   );
 }
 

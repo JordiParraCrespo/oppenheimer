@@ -1,12 +1,11 @@
 import { TokenMono, useNow, WeekdayStrip } from '@oppenheimer/design-system-web';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { formatCountdown, useLocale } from '@oppenheimer/frontend-web';
+import { formatCountdown, useLocale, viewerTimeZone, weekdayName } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
 import type { ScheduleCard } from '../lib/automation-draft';
 import { nextInstantText } from '../lib/automation-view';
-import { localDate, viewerTimeZone } from '../lib/time';
-import { weekdayName } from '../lib/trigger-text';
+import { localDate } from '../lib/time';
 
 const DAY = 86_400_000;
 

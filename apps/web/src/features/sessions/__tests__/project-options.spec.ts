@@ -47,7 +47,7 @@ describe('projectPrefill', () => {
         { id: repositoryKey({ installationId: 'inst-1', githubRepoId: 2 }), branch: 'develop' },
       ],
       agent: 'codex',
-      model: 'gpt-5.6-sol',
+      model: 'gpt-6.1-sol',
     });
   });
 

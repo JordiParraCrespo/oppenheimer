@@ -6,9 +6,15 @@
       "Bash(node scripts/stack/stack.mjs status*)",
       "Bash(node scripts/stack/stack.mjs down*)",
       "Bash(pnpm screens *)",
+      "Bash(pnpm --filter @oppenheimer/e2e e2e:*)",
+      "Bash(service postgresql start)",
+      "Bash(service redis-server start)",
       "Read(.screenshots/**)",
       "Write(.screenshots/**)",
       "Edit(.screenshots/**)",
+      "Write(e2e/tests/screens/local/**)",
+      "Edit(e2e/tests/screens/local/**)",
+      "Read(.stack/**)",
       "SendUserFile"
     ],
     "ask": [

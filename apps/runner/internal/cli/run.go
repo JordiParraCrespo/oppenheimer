@@ -222,6 +222,7 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		}
 		return httpx.WriteJSON(w, http.StatusOK, session)
 	})
+	router.HandleFunc("GET /v1/sessions/{id}/attach", a.localAttach)
 	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
 		// The token comes from the control plane, per session and per
 		// repository, over the link. A 404 is the helper's "I have none":
@@ -274,6 +275,9 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
+		// A session started with no task is named from the first message
+		// typed into its agent, read off the agent's own transcript.
+		a.Sessions.ReportFirstPrompts()
 	}
 }
 

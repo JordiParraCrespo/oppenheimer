@@ -8,6 +8,13 @@ import type { StoredExternalEvent } from '../../inbound-events/domain/external-e
 import type { AutomationEntity } from './automation.entity';
 import type { RunCauseSummary } from './automation-run.entity';
 
+/** A bot routine as its bot's chat names it. */
+export interface BotRoutineRef {
+  organizationId: string;
+  botId: string;
+  name: string;
+}
+
 /**
  * A run as the lists read it: the firing joined to its automation, its
  * revision, and — once dispatched — its session and that session's first
@@ -18,7 +25,8 @@ export interface RunReadModel {
   automationId: string;
   automationName: string;
   automationDeleted: boolean;
-  projectId: string;
+  /** Null for a bot routine's run, which belongs to no project. */
+  projectId: string | null;
   status: AutomationRunStatus;
   outcome: AutomationRunOutcome;
   skipReason: AutomationSkipReason | null;
@@ -29,9 +37,10 @@ export interface RunReadModel {
   sessionNamed: boolean;
   branch: string | null;
   revisionNumber: number;
-  agent: string;
+  /** Null for a bot routine's run, as `projectId` and `hostId` are: its bot runs it. */
+  agent: string | null;
   model: string | null;
-  hostId: string;
+  hostId: string | null;
   createdAt: Date;
   scheduledFor: Date | null;
   dispatchedAt: Date | null;

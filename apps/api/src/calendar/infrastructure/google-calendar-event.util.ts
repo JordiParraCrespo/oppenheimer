@@ -15,6 +15,13 @@ interface GoogleEvent {
   summary?: string;
   transparency?: string;
   htmlLink?: string;
+  /** The event's Google Meet link, when it has one. */
+  hangoutLink?: string;
+  /** A conference attached by Meet or an add-on (Zoom, Teams…). */
+  conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
+  location?: string;
+  /** Free text, often HTML: where a pasted invite puts its join link. */
+  description?: string;
   start?: GoogleEventTime;
   end?: GoogleEventTime;
 }
@@ -22,6 +29,72 @@ interface GoogleEvent {
 function asEvents(input: unknown): GoogleEvent[] {
   const items = (input as { items?: unknown })?.items;
   return Array.isArray(items) ? (items as GoogleEvent[]) : [];
+}
+
+/**
+ * `value` as an absolute address when it is one `https:` address and nothing
+ * else, else null: it becomes a link in the console.
+ */
+function httpsUrl(value: string | undefined): string | null {
+  if (!value || /\s/.test(value)) return null;
+  try {
+    const url = new URL(value);
+    // The parsed form: `https:zoom.us/j/4` parses, but as written a browser
+    // would read it as a path on the console's own origin.
+    return url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A join link of a meeting service we recognise: Zoom (a `/j/`, `/my/` or
+ * `/w/` path, so a download or help page does not count), Meet, Teams, Webex.
+ */
+function isMeetingLink(url: URL): boolean {
+  const host = url.hostname.toLowerCase();
+  const on = (domain: string) => host === domain || host.endsWith(`.${domain}`);
+  if (on('zoom.us') || on('zoomgov.com')) return /^\/(j|my|w)\//.test(url.pathname);
+  return (
+    host === 'meet.google.com' ||
+    host === 'teams.microsoft.com' ||
+    host === 'teams.live.com' ||
+    on('webex.com')
+  );
+}
+
+/** The first meeting service's join link written anywhere in `text` (prose or HTML). */
+function meetingLinkIn(text: string | undefined): string | null {
+  if (!text) return null;
+  const candidates = text.replace(/&amp;/g, '&').match(/https:\/\/[^\s<>"'()[\]]+/g) ?? [];
+  for (const candidate of candidates) {
+    const href = candidate.replace(/[.,;:!?]+$/, '');
+    try {
+      const url = new URL(href);
+      if (isMeetingLink(url)) return url.href;
+    } catch {}
+  }
+  return null;
+}
+
+/**
+ * Where to join the meeting: its Meet link, else the video entry point of a
+ * conference an add-on attached (Zoom, Teams…), else a location that is
+ * itself an address, as an invite pasted by hand often is, else a meeting
+ * service's join link written in the location or the description (a Zoom
+ * invite pasted with its text around it).
+ */
+function meetingUrlOf(event: GoogleEvent): string | null {
+  const video = event.conferenceData?.entryPoints?.find(
+    (entry) => entry.entryPointType === 'video',
+  );
+  return (
+    httpsUrl(event.hangoutLink) ??
+    httpsUrl(video?.uri) ??
+    httpsUrl(event.location?.trim()) ??
+    meetingLinkIn(event.location) ??
+    meetingLinkIn(event.description)
+  );
 }
 
 /** The next calendar day of `YYYY-MM-DD`. */
@@ -69,6 +142,7 @@ export function googleEventsToProvider(
       title: event.summary ?? '',
       busy: event.transparency !== 'transparent',
       url: event.htmlLink ?? null,
+      meetingUrl: meetingUrlOf(event),
     };
     if (event.start.date) {
       const end = event.end?.date ?? nextDay(event.start.date);

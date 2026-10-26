@@ -8,6 +8,7 @@ import { useMoveSession } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
 import { groupByProject } from '../lib/session-groups';
 import {
+  mergeSessionOrder,
   orderProjects,
   orderSessions,
   rememberSidebarOrder,
@@ -103,7 +104,10 @@ export function useSidebarOrder({
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
       if (!custom) onReorder();
       if (from === to) {
-        setStored((current) => ({ ...current, sessions: order }));
+        setStored((current) => ({
+          ...current,
+          sessions: mergeSessionOrder(order, current.sessions),
+        }));
         return;
       }
       setProposed(order);
@@ -111,7 +115,10 @@ export function useSidebarOrder({
         { id, projectId: to },
         {
           onSuccess: () => {
-            setStored((current) => ({ ...current, sessions: order }));
+            setStored((current) => ({
+              ...current,
+              sessions: mergeSessionOrder(order, current.sessions),
+            }));
             onWrite(null);
           },
           onError: onWrite,

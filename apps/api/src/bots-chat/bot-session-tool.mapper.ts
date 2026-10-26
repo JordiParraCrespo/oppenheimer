@@ -17,7 +17,18 @@ export interface StartSessionInput {
   host_id?: string;
   agent?: CodingAgentId;
   name?: string;
+  /** Subscribe the bot to it (`27-bot-subscriptions.md` §3); true when omitted. */
+  watch?: boolean;
 }
+
+/**
+ * The level every session a bot starts runs at. Nobody sits at a bot's
+ * terminal, so the API's own default (`ask`) would leave the agent waiting on
+ * its first approval forever; `auto` lets it work while still checking each
+ * action, and the runner marks its folder trusted for the same reason. An
+ * agent with no approvals records no level whatever is sent.
+ */
+export const BOT_SESSION_PERMISSION = 'auto' as const;
 
 export function planSession(
   input: StartSessionInput,
@@ -44,17 +55,33 @@ export function planSession(
     projectId: project?.id,
     name: input.name,
     prompt: input.task,
+    launch: { permission: BOT_SESSION_PERMISSION },
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
   if (!parsed.success) {
-    const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'input');
+    const fields = parsed.error.issues.map((issue) => toolField(issue.path.join('.')));
     return {
       refusal: `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). Check the task, folder and name.`,
     };
   }
   return { body: parsed.data, hostId };
+}
+
+/**
+ * The session body's fields that `start_session`'s input names otherwise, so
+ * a refusal names the field the model wrote: it never sees `prompt`.
+ */
+const TOOL_FIELD_OF: Readonly<Record<string, keyof StartSessionInput>> = {
+  prompt: 'task',
+  hostId: 'host_id',
+  projectId: 'project_id',
+};
+
+/** A rejected field of the session's body, as the tool's input names it. */
+function toolField(path: string): string {
+  return TOOL_FIELD_OF[path] ?? (path || 'input');
 }
 
 /** How much of the task a Needs input card shows. */
@@ -71,8 +98,8 @@ export function sessionHostId(
 
 /**
  * The Needs input card's line for a `start_session` call: "Start Claude Code
- * on build-02 in acme/xrp-mobile: Fix the failing test", the task cut to
- * fit. `hostName` is the host as the owner sees it, or null when none is set.
+ * on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the
+ * failing test", the task cut to fit. `hostName` is the host as the owner sees it, or null when none is set.
  */
 export function sessionSummary(
   input: StartSessionInput,
@@ -92,7 +119,8 @@ export function sessionSummary(
   const task = input.task.replace(/\s+/g, ' ').trim();
   const clipped =
     task.length > TASK_IN_SUMMARY_MAX ? `${task.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : task;
-  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}: ${clipped}`;
+  const hearBack = input.watch === false ? '' : ', and hear back when it ends';
+  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}${hearBack}: ${clipped}`;
 }
 
 function repositoryOf(project: ProjectEntity, name: string | undefined): string | null {

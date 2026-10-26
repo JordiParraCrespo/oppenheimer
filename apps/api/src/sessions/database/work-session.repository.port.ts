@@ -119,7 +119,10 @@ export interface RecentFolder {
  * read only through their session, keeping one tenant predicate instead of three.
  */
 export interface WorkSessionRepositoryPort {
-  /** Every unresolved session on a host, unscoped: the host proved who it is. */
+  /**
+   * Every unresolved session on a host (`starting`, `open` and `failed`, which a
+   * person may delete too), unscoped: the host proved who it is.
+   */
   findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]>;
 
   /**
@@ -129,6 +132,12 @@ export interface WorkSessionRepositoryPort {
    * started it.
    */
   findRunningOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
+
+  /**
+   * Every session on a host not yet resolved, running or stopped, unscoped for
+   * the same reason: a removal that cleans the machine up closes them all.
+   */
+  findUnresolvedOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
 
   /**
    * How many sessions are running on each of these hosts, by the same rule.

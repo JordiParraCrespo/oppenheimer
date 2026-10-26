@@ -21,6 +21,10 @@
  *
  * `google_calendar` says whether Plan's calendar can show a person's Google
  * Calendar: the Google client and the key its refresh tokens are sealed under.
+ *
+ * `voice_transcription` says whether the deployment has a speech-to-text key
+ * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
+ * dictate is `GET /voice/status`, which asks every speech provider.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -33,6 +37,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'ip_geolocation',
   'google_calendar',
   'bot_providers',
+  'voice_transcription',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
