@@ -1,7 +1,6 @@
 import {
   AgentMark,
   ChatComposer,
-  ComposerContextMeter,
   ComposerFile,
   ComposerStack,
   ComposerStackRow,
@@ -9,12 +8,11 @@ import {
   FieldError,
 } from '@oppenheimer/design-system-web';
 import { ListChecks } from '@oppenheimer/design-system-web/icons';
-import type { ChatQueued, ChatTodo } from '@oppenheimer/frontend-consumer';
+import type { ChatLimit, ChatQueued, ChatTodo } from '@oppenheimer/frontend-consumer';
 import {
   dictateInto,
   dictationSlots,
   useDictation,
-  useLocale,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
 import { SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
@@ -22,10 +20,11 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type HeldFile, useHeldFiles } from '../hooks/use-held-files';
 import { useTakeFiles } from '../hooks/use-take-files';
-import { type ChatContext, formatTokens } from '../lib/chat-blocks';
+import type { ChatContext } from '../lib/chat-blocks';
 import type { FileHandOff } from '../lib/file-hand-off';
 import { CHAT_MESSAGE_MAX_FILES, refusalText } from '../lib/session-files';
 import { ChatQueuedRow } from './chat-queued-row';
+import { ChatUsage } from './chat-usage';
 
 /** How a send went: all of it, or the files that reached the host before one did not. */
 export type ChatSendResult = { sent: true } | { sent: false; landed: readonly string[] };
@@ -43,8 +42,9 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * **The queue**: a message sent while the agent works waits on the stack,
  * under the tasks, until the turn ends (`SessionChat.post`). Each can be
  * sent now, taken back into the field to edit (ahead of whatever is being
- * written), or dropped. **The context**: how full the agent's context is,
- * beside the model; a click asks the agent to compact it.
+ * written), or dropped. **The room left**: how full the agent's context is,
+ * beside the model, opening to the context in tokens (with Compact) and the
+ * plan's usage limits (`ChatUsage`).
  *
  * **Files**, when the pane hands them in (`files`): the paperclip, a paste on
  * the chat and a drop on the pane all go through `useHeldFiles`, New
@@ -61,6 +61,7 @@ export function SessionChatComposer({
   files: handOff,
   queued,
   context,
+  limits,
   onSend,
   onStop,
   onSendQueued,
@@ -79,6 +80,8 @@ export function SessionChatComposer({
   queued: readonly ChatQueued[];
   /** How full the agent's context is, once the host sends its counts. */
   context: ChatContext | null;
+  /** The plan's usage windows, from the agent's status line on the host. */
+  limits: { fiveHour: ChatLimit | null; sevenDay: ChatLimit | null };
   onSend: (text: string, files: HeldFile[]) => Promise<ChatSendResult>;
   onStop: () => void;
   onSendQueued: (id: string) => void;
@@ -87,7 +90,6 @@ export function SessionChatComposer({
   onCompact: () => void;
 }) {
   const { t } = useTranslation();
-  const locale = useLocale();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const { files, refusal, hold, release } = useHeldFiles(CHAT_MESSAGE_MAX_FILES);
@@ -134,17 +136,15 @@ export function SessionChatComposer({
         ))}
       </ComposerStack>
     ) : undefined;
-  const meter = context ? (
-    <ComposerContextMeter
-      value={context.percent}
-      onCompact={onCompact}
-      label={t('sessions.chat.context.label', {
-        percent: Math.round(context.percent),
-        used: formatTokens(context.tokens, locale),
-        window: formatTokens(context.window, locale),
-      })}
-    />
-  ) : null;
+  const meter =
+    context || limits.fiveHour || limits.sevenDay ? (
+      <ChatUsage
+        context={context}
+        fiveHour={limits.fiveHour}
+        sevenDay={limits.sevenDay}
+        onCompact={onCompact}
+      />
+    ) : null;
 
   async function submit(text: string) {
     const carried = files;

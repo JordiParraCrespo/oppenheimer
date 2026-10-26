@@ -39,6 +39,9 @@ type agentReader interface {
 type Reader struct {
 	agents map[domain.Agent]agentReader
 	logger *slog.Logger
+	// statusDir is where `runner statusline` keeps each Claude Code
+	// conversation's status (SaveStatus); empty follows none.
+	statusDir string
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -49,6 +52,9 @@ type Options struct {
 	// ClaudeProjects is Claude Code's `projects/` folder,
 	// `~/.claude/projects` or `$CLAUDE_CONFIG_DIR/projects`.
 	ClaudeProjects string
+	// StatusDir is where the runner's status line keeps what Claude Code
+	// hands it, by conversation; empty sends no status beside the chat.
+	StatusDir string
 	// Logger reports a transcript that could not be read, which the session
 	// service treats as none yet; nil is the process's default logger.
 	Logger *slog.Logger
@@ -64,7 +70,7 @@ func New(opts Options) *Reader {
 	if opts.ClaudeProjects != "" {
 		agents[domain.AgentClaude] = claudeReader{projects: opts.ClaudeProjects}
 	}
-	return &Reader{agents: agents, logger: logger}
+	return &Reader{agents: agents, logger: logger, statusDir: opts.StatusDir}
 }
 
 // FirstPrompt implements app.Transcripts.

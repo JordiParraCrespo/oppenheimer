@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"slices"
 	"sort"
 	"strings"
@@ -33,6 +34,11 @@ type Launch struct {
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
 	Prompt string `json:"prompt,omitempty"`
+	// StatusLine is the command Claude Code runs for its status line, the
+	// runner's own `statusline`, which keeps the figures the CLI hands it
+	// (the context, the plan's usage) for the chat. It is this host's, so it
+	// is set at each launch and never saved.
+	StatusLine string `json:"-"`
 }
 
 // launchMap is one agent's `launch` entry of the catalog
@@ -104,6 +110,9 @@ func (l Launch) Args(agent Agent) []string {
 		return nil
 	}
 	args := append([]string(nil), m.always...)
+	if l.StatusLine != "" && agent == AgentClaude {
+		args = append(args, "--settings", statusLineSettings(l.StatusLine))
+	}
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -198,6 +207,16 @@ func PromptWithFiles(prompt string, paths []string) string {
 		return list
 	}
 	return prompt + "\n\n" + list
+}
+
+// statusLineSettings is the settings Claude Code takes on its command line
+// for the status line: they outrank the person's own, which the runner's
+// `statusline` runs in turn, so the terminal shows what it always did.
+func statusLineSettings(command string) string {
+	encoded, _ := json.Marshal(map[string]any{
+		"statusLine": map[string]string{"type": "command", "command": command},
+	})
+	return string(encoded)
 }
 
 // namesConversation reports whether a form asks for the conversation's id.

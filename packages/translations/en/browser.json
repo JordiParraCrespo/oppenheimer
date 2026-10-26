@@ -1050,8 +1050,15 @@
         "edit": "Edit",
         "remove": "Remove from the queue"
       },
-      "context": {
-        "label": "{{percent}}% of context used, {{used}} of {{window}} tokens. Click to compact."
+      "usage": {
+        "open": "{{percent}}% of context used. Show the context and plan usage.",
+        "context": "Context",
+        "tokens": "{{used}} of {{window}} tokens",
+        "compact": "Compact",
+        "plan": "Plan usage limits",
+        "fiveHour": "5-hour limit",
+        "sevenDay": "Weekly limit",
+        "resets": "Resets {{when}}"
       }
     }
   },

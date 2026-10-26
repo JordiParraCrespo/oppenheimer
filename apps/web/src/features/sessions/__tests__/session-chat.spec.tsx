@@ -677,17 +677,42 @@ describe('the queue and the context', () => {
     vi.useRealTimers();
   });
 
-  it('shows how full the context is, and compacts it on a click', () => {
+  it('shows how full the context is, and opens to it and the plan’s limits, compacting on asking', () => {
     vi.useFakeTimers();
     const chat = new Chat();
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, answer('a1')] });
     render(<SessionChat chat={chat} readOnly={false} />);
-    const meter = screen.getByRole('button', { name: /sessions\.chat\.context\.label/ });
-    expect(meter.getAttribute('aria-label')).toContain('"percent":25');
+    // Counted off the transcript until the status line says otherwise.
+    const meter = screen.getByRole('button', { name: /sessions\.chat\.usage\.open/ });
     expect(meter.textContent).toContain('25%');
+
+    act(() =>
+      chat.apply({
+        entries: [
+          JSON.stringify({
+            type: 'oppenheimer.status',
+            context_window: { used_percentage: 32, context_window_size: 200_000 },
+            rate_limits: {
+              five_hour: { used_percentage: 84, resets_at: 1_793_040_000 },
+              seven_day: { used_percentage: 41 },
+            },
+          }),
+        ],
+      }),
+    );
+    expect(meter.textContent).toContain('32%');
     fireEvent.click(meter);
+    expect(screen.getByText('sessions.chat.usage.plan')).toBeTruthy();
+    expect(screen.getByText('sessions.chat.usage.fiveHour')).toBeTruthy();
+    expect(screen.getByText('84%')).toBeTruthy();
+    expect(screen.getByText('41%')).toBeTruthy();
+    expect(screen.getByText(/"used":"64K","window":"200K"/)).toBeTruthy();
+    // Nothing is typed until Compact is asked for.
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.usage.compact' }));
     act(() => vi.runAllTimers());
     expect(typed).toEqual(['/compact', '\r']);
     vi.useRealTimers();
@@ -697,6 +722,6 @@ describe('the queue and the context', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt] });
     render(<SessionChat chat={chat} readOnly={false} />);
-    expect(screen.queryByRole('button', { name: /sessions\.chat\.context\.label/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /sessions\.chat\.usage\.open/ })).toBeNull();
   });
 });

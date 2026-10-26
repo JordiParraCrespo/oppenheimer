@@ -130,7 +130,11 @@ export function SessionChatSend({
           voice={voice}
           files={upload ? files : undefined}
           queued={state.queued}
-          context={latestContext(state.turns)}
+          context={latestContext(state.turns, state.status)}
+          limits={{
+            fiveHour: state.status?.fiveHour ?? null,
+            sevenDay: state.status?.sevenDay ?? null,
+          }}
           onSend={send}
           onStop={() => chat.interrupt()}
           onSendQueued={(id) => chat.sendQueued(id)}

@@ -111,6 +111,25 @@ export interface ChatTurn {
   working: boolean;
 }
 
+/** One of the plan's usage windows: the share used, 0–100, and when it resets. */
+export interface ChatLimit {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/**
+ * The figures Claude Code hands its status line, which the runner sends
+ * beside the transcript (`oppenheimer.status` entries): how full the context
+ * is, by the CLI's own count, and the plan's 5-hour and weekly windows. Each
+ * part is absent until the CLI sends it, and the windows never come for an
+ * account on an API key.
+ */
+export interface ChatStatus {
+  context: { usedPercent: number; window: number } | null;
+  fiveHour: ChatLimit | null;
+  sevenDay: ChatLimit | null;
+}
+
 /** A message written while the agent worked, waiting for its turn to end. */
 export interface ChatQueued {
   id: string;
@@ -123,6 +142,8 @@ export interface ChatState {
   turns: ChatTurn[];
   /** What waits to be sent, in order; the first goes once the agent settles. */
   queued: readonly ChatQueued[];
+  /** The latest status the host sent, if any. */
+  status: ChatStatus | null;
 }
 
 export interface ChatBatch {
@@ -130,7 +151,10 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [], queued: [] };
+const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null };
+
+/** The entry the runner adds for the status line's figures. */
+const STATUS_ENTRY = 'oppenheimer.status';
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';
@@ -184,12 +208,18 @@ export class SessionChat {
       this.reopen();
     }
     const from = this.entries.length;
+    let status = this.state.status;
     for (const raw of batch.entries) {
+      let parsed: unknown;
       try {
-        this.entries.push(JSON.parse(raw));
+        parsed = JSON.parse(raw);
       } catch {
         // A line the host sent that is not JSON is the host's bug; skip it.
+        continue;
       }
+      // The status is the latest one, not a line of the conversation.
+      if (record(parsed)?.type === STATUS_ENTRY) status = statusOf(parsed);
+      else this.entries.push(parsed);
     }
     // A result for a call a closed turn made (a background command that
     // finished after the next prompt) changes that turn: build them all again.
@@ -208,6 +238,7 @@ export class SessionChat {
       ...this.state,
       available: true,
       turns: last ? [...this.closed, last] : [...this.closed],
+      status,
     });
     this.flush();
   }
@@ -650,7 +681,8 @@ function toolCall(block: Loose): ChatToolCall {
 
 /**
  * The tokens an answer's context held, off its `usage`: what it was sent,
- * whether read from the cache or written to it, and what it wrote.
+ * whether read from the cache or written to it. Its output is left out, as
+ * Claude Code's own count leaves it out.
  */
 function contextOf(value: unknown): number | null {
   const usage = record(value);
@@ -660,11 +692,43 @@ function contextOf(value: unknown): number | null {
     return typeof n === 'number' && Number.isFinite(n) ? n : 0;
   };
   const total =
-    count('input_tokens') +
-    count('cache_creation_input_tokens') +
-    count('cache_read_input_tokens') +
-    count('output_tokens');
+    count('input_tokens') + count('cache_creation_input_tokens') + count('cache_read_input_tokens');
   return total > 0 ? total : null;
+}
+
+/** A share the CLI sent, as a number from 0 to 100, or none. */
+function percentOf(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(100, Math.max(0, value))
+    : null;
+}
+
+function limitOf(value: unknown): ChatLimit | null {
+  const window = record(value);
+  const usedPercent = percentOf(window?.used_percentage);
+  if (usedPercent === null) return null;
+  const resets = window?.resets_at;
+  return {
+    usedPercent,
+    resetsAt: typeof resets === 'number' && resets > 0 ? new Date(resets * 1000) : null,
+  };
+}
+
+/** The status entry the runner sends, read loosely like every other. */
+function statusOf(value: unknown): ChatStatus {
+  const entry = record(value);
+  const context = record(entry?.context_window);
+  const limits = record(entry?.rate_limits);
+  const usedPercent = percentOf(context?.used_percentage);
+  const window = context?.context_window_size;
+  return {
+    context:
+      usedPercent !== null && typeof window === 'number' && window > 0
+        ? { usedPercent, window }
+        : null,
+    fiveHour: limitOf(limits?.five_hour),
+    sevenDay: limitOf(limits?.seven_day),
+  };
 }
 
 const lines = (value: unknown): number =>

@@ -569,8 +569,15 @@
       "edit": "Editar",
       "remove": "Quitar de la cola"
     },
-    "context": {
-      "label": "{{percent}}% del contexto usado, {{used}} de {{window}} tokens. Haz clic para compactarlo."
+    "usage": {
+      "open": "{{percent}}% del contexto usado. Ver el contexto y el uso del plan.",
+      "context": "Contexto",
+      "tokens": "{{used}} de {{window}} tokens",
+      "compact": "Compactar",
+      "plan": "Límites de uso del plan",
+      "fiveHour": "Límite de 5 horas",
+      "sevenDay": "Límite semanal",
+      "resets": "Se reinicia {{when}}"
     }
   }
 }

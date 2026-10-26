@@ -1,4 +1,5 @@
 import type {
+  ChatStatus,
   ChatStep,
   ChatTodo,
   ChatToolCall,
@@ -180,11 +181,19 @@ const CONTEXT_WINDOW = 200_000;
 const LONG_CONTEXT_WINDOW = 1_000_000;
 
 /**
- * The context as of the agent's last answer, when the host sends its token
- * counts. The transcript does not say which window the session runs with,
- * so it is the default one until the tokens could only fit the long one.
+ * The context as of the agent's last answer: the CLI's own figure when its
+ * status line has sent one, which knows the window the session runs with;
+ * otherwise counted off the transcript, which does not, so it is the
+ * default window until the tokens could only fit the long one.
  */
-export function latestContext(turns: readonly ChatTurn[]): ChatContext | null {
+export function latestContext(
+  turns: readonly ChatTurn[],
+  status: ChatStatus | null = null,
+): ChatContext | null {
+  if (status?.context) {
+    const { usedPercent, window } = status.context;
+    return { tokens: Math.round((usedPercent / 100) * window), window, percent: usedPercent };
+  }
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const tokens = turns[i]?.contextTokens;
     if (!tokens) continue;

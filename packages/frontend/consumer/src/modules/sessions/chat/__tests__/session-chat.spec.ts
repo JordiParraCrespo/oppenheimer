@@ -237,7 +237,7 @@ describe('SessionChat', () => {
 
     const before = chat.snapshot();
     chat.apply({ reset: true, entries: [] });
-    expect(chat.snapshot()).toEqual({ available: true, turns: [], queued: [] });
+    expect(chat.snapshot()).toEqual({ available: true, turns: [], queued: [], status: null });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
   });
@@ -377,7 +377,7 @@ describe('typing into the session', () => {
 });
 
 describe('what the context holds', () => {
-  it('reads the tokens of the last answer in each turn, and none from a host that sends no counts', () => {
+  it('reads what the last answer in each turn was sent, and none from a host that sends no counts', () => {
     const answer = (uuid: string, usage?: Record<string, number>) => ({
       ...assistant(uuid, [{ type: 'text', text: 'Ok.' }]),
       message: {
@@ -399,7 +399,7 @@ describe('what the context holds', () => {
       user('u2', 'Two'),
       answer('a3'),
     ]);
-    expect(turns.map((turn) => turn.contextTokens)).toEqual([32_204, null]);
+    expect(turns.map((turn) => turn.contextTokens)).toEqual([32_004, null]);
   });
 });
 
@@ -474,5 +474,46 @@ describe('the queue', () => {
     vi.advanceTimersByTime(5_000);
     expect(typed).toEqual(['/cost', '\r', 'Go on', '\r']);
     vi.useRealTimers();
+  });
+});
+
+describe('the status line’s figures', () => {
+  const status = (fiveHour: number) =>
+    JSON.stringify({
+      type: 'oppenheimer.status',
+      context_window: { used_percentage: 32, context_window_size: 200_000 },
+      rate_limits: {
+        five_hour: { used_percentage: fiveHour, resets_at: 1_793_040_000 },
+        seven_day: { used_percentage: 41.2 },
+      },
+    });
+
+  it('keeps the latest status apart from the conversation, through a reset', () => {
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Go')), status(10)] });
+    chat.apply({ entries: [status(23.5)] });
+    const state = chat.snapshot();
+    expect(state.turns).toHaveLength(1);
+    expect(state.status).toEqual({
+      context: { usedPercent: 32, window: 200_000 },
+      fiveHour: { usedPercent: 23.5, resetsAt: new Date(1_793_040_000_000) },
+      sevenDay: { usedPercent: 41.2, resetsAt: null },
+    });
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Go'))] });
+    expect(chat.snapshot().status?.fiveHour?.usedPercent).toBe(23.5);
+  });
+
+  it('reads an account with no plan windows as having none', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify({
+          type: 'oppenheimer.status',
+          context_window: { context_window_size: 200_000 },
+        }),
+      ],
+    });
+    expect(chat.snapshot().status).toEqual({ context: null, fiveHour: null, sevenDay: null });
   });
 });
