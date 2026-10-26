@@ -46,7 +46,7 @@ export function SessionPreview({ sessionId, onClose }: { sessionId: string; onCl
           state={live ? 'running' : 'pending'}
           pulse={status === 'connecting'}
           density="compact"
-          className="min-w-0 truncate text-xs text-fg-muted"
+          className="min-w-0"
         >
           {name}
         </StatusDot>
