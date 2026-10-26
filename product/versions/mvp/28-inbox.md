@@ -153,16 +153,16 @@ session event: that is slice 4.
    (`../../next-steps/channels.md`), batched delivery during a focus
    block (the research note §3).
 
-## Open questions
+## Decided (2026-10-26)
 
-1. A person who already reordered the rail: append Inbox at the end (what
-   the stored order does today), or put it first once?
-2. Should a failed automation run stay in the Inbox for 24 hours, or
-   until someone opens it?
-3. Does a session that `failed` belong here, or only one whose agent is
-   waiting on a decision?
-4. Delete and Mark as done both hide the occurrence; is Delete needed in
-   the first version, or only for clearing the *Show done* list as the
-   frame also uses it?
-5. A feature flag: a `release` flag `inbox`, on by default with an
-   expiry, so it can be turned off while it settles?
+The owner asked for the feature to be built end to end without stopping
+for these; they were settled with the defaults below and can be changed.
+
+1. **Rail position.** Inbox goes first for everyone once: a stored rail
+   order that lacks it gets it at the front, not the end, so it is where
+   the console lands.
+2. **Failed runs** show for 24 hours after the run, then drop out.
+3. **A failed session** stays in, as `waiting-on-you` already counts it.
+4. **Delete** is kept, as the frame draws it: it hides the occurrence
+   with no log line, and clears a done item from *Show done*.
+5. **A `release` flag `inbox`**, on by default, expiring 2026-12-31.
