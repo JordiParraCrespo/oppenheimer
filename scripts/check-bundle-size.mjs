@@ -27,14 +27,15 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 443.4KB measured (2026-10-25); the last raise was for `/`, which reads
-    // the rail order to pick where the console opens and is on the first load
-    // (`features/sessions/lib/rail-landing.ts`, +0.3KB). Earlier raises and
-    // their reasons are in git history. `manualChunks` puts every
+    // 444.1KB measured (2026-10-26); the last raise was for the Bots heading
+    // in every section's sidebar (`28-bots-in-sections.md`): its route, its
+    // copy in the bundled catalog and the sessions sidebar's slot are on the
+    // first load (+0.3KB on a main at 443.8KB). Earlier raises and their
+    // reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 444,
+    budgetKB: 445,
   },
   // oppenheimer:end web
 ];
