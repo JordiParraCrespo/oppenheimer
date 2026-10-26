@@ -21,10 +21,9 @@ import { ReviewSessionStart } from './review-session-start';
  * side. The bar's bin deletes the session; its dialog sits outside both
  * branches, since the delete swaps the terminal for the start panel at once.
  *
- * The bar stands on the terminal's ground in either view: the chat's ground
- * is the terminal's, so bar, grid and chat are one surface and switching
- * views changes no colour. It reads the pane's `data-pane-ground` only for
- * its ink, the contract the shell's page bar reads too (`session-pane.tsx`).
+ * The bar stands on the terminal's ground, in the terminal's ink, in either
+ * view: the chat's ground is the terminal's, so bar, grid and chat are one
+ * surface and switching views changes no colour.
  */
 export function PullRequestChat({
   address,
@@ -46,9 +45,9 @@ export function PullRequestChat({
   return (
     <>
       {session ? (
-        <div className="group/review flex min-h-0 flex-1 flex-col bg-term-bg">
-          <div className="flex h-10 shrink-0 items-center gap-2.5 border-b border-term-border pr-3 pl-4 font-mono text-xs text-term-dim group-has-[[data-pane-ground=chat]]/review:border-border-subtle group-has-[[data-pane-ground=chat]]/review:text-fg-muted">
-            <span className="text-term-fg group-has-[[data-pane-ground=chat]]/review:text-fg">
+        <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
+          <div className="flex h-10 shrink-0 items-center gap-2.5 border-b border-term-border pr-3 pl-4 font-mono text-xs text-term-dim">
+            <span className="text-term-fg">
               {t('pullRequests.reviewSession.bar', {
                 repository: session.repository.split('/').pop(),
                 number: session.number,

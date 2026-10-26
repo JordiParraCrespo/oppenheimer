@@ -40,6 +40,7 @@ function ChatUserMessage({
   time,
   actions,
   attachments,
+  tone = 'card',
   className,
   children,
   ...props
@@ -50,12 +51,23 @@ function ChatUserMessage({
   actions?: React.ReactNode;
   /** `ChatAttachment`s or `ChatImage`s, above the card; with no children, the message is these alone. */
   attachments?: React.ReactNode;
+  /**
+   * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
+   * bot's recessed chat; `wash` (the hover surface) is for a chat on a
+   * card-coloured ground, a session's, where a card would vanish.
+   */
+  tone?: 'card' | 'wash';
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
       {children != null && children !== false ? (
-        <div className="max-w-[80%] rounded-xl bg-chat-turn px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
+        <div
+          className={cn(
+            'max-w-[80%] rounded-xl px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            tone === 'wash' ? 'bg-hover-surface' : 'bg-card',
+          )}
+        >
           {children}
         </div>
       ) : null}

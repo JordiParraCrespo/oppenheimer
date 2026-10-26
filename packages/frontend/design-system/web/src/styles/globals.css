@@ -199,12 +199,6 @@
        frame draws its chat on the same card as its terminal). The chat's
        cards (the composer, the code) keep their hairlines to stand on it. */
     --chat-ground: var(--term-bg);
-    /* The person's turn in a chat (`ChatUserMessage`): a card that lifts off
-       the recessed ground of a bot's chat. A session's chat stands on its
-       terminal's ground, which is the card's own colour, so there the turn
-       is the hover wash instead, as the `SessionsConsole` frame draws it:
-       `[data-chat-ground="terminal"]`, below, re-points it. */
-    --chat-turn: var(--card);
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
@@ -827,7 +821,6 @@
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
   --color-chat-ground: var(--chat-ground);
-  --color-chat-turn: var(--chat-turn);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);
   --color-term-danger: var(--term-danger);
@@ -1286,11 +1279,4 @@
   --trees-file-icon-color-yml: var(--file-icon-yml);
   --trees-file-icon-color-zig: var(--file-icon-zig);
   --trees-file-icon-color-zip: var(--file-icon-zip);
-}
-
-/* A chat drawn over a session's terminal stands on the terminal's ground
-   (`--chat-ground`), the same colour as a card, so the person's turn takes
-   the hover wash there to stay a shape on it. */
-[data-chat-ground='terminal'] {
-  --chat-turn: var(--hover-surface);
 }

@@ -88,9 +88,8 @@ export function SessionPane({
     cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
     files,
   };
-  // What is on screen, not what was picked: a pane opened on Chat shows the
-  // terminal until the transcript comes.
-  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  // Whether the transcript has come, so the view switch is offered.
+  const { offered: chatOffered } = useChatReading(reading);
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
@@ -187,20 +186,10 @@ export function SessionPane({
        ground either side is the terminal's colour, so column and pane read as
        one surface. Read as a chat it is the same colour: the chat's ground is
        the terminal's (`--chat-ground`), so switching views changes what is
-       drawn and never the pane's colour or the bar's.
-
-       `data-pane-ground` is the pane's **public contract** with whatever
-       frames it, not a detail of this file: `terminal` or `chat`, the view
-       on screen. An ancestor matches it with `group-has-[[data-pane-ground=…]]`
-       to set its ink for that view — the shell's page bar (`app-shell.tsx`)
-       and a pull request's review bar (`pull-request-chat.tsx`). Renaming it,
-       or setting it anywhere but the pane's root, changes both. */
+       drawn and never the pane's colour or the bar's. */
     <>
       {head}
-      <div
-        data-pane-ground={chatShown ? 'chat' : 'terminal'}
-        className="flex min-h-0 flex-1 flex-col bg-term-bg"
-      >
+      <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
         <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
           {terminal(session, reading, statusItems)}
         </div>
