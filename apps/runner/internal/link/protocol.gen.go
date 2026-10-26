@@ -75,6 +75,7 @@ const (
 	CapabilitySessionFolder       = "session.folder"
 	CapabilityFsList              = "fs.list"
 	CapabilityAttachmentChat      = "attachment.chat"
+	CapabilityDeviceScreen        = "device.screen"
 )
 
 // The `type` of every message on the link.
@@ -112,6 +113,10 @@ const (
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
 	TypeAttachmentPath          = "attachment.path"
 	TypeAttachmentChat          = "attachment.chat"
+	TypeDeviceAttach            = "device.attach"
+	TypeDeviceInfo              = "device.info"
+	TypeDeviceInput             = "device.input"
+	TypeDeviceDetach            = "device.detach"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -149,6 +154,10 @@ var MessageTypes = []string{
 	TypeAttachmentDirectRefused,
 	TypeAttachmentPath,
 	TypeAttachmentChat,
+	TypeDeviceAttach,
+	TypeDeviceInfo,
+	TypeDeviceInput,
+	TypeDeviceDetach,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -221,6 +230,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(AttachmentPath), true
 	case TypeAttachmentChat:
 		return new(AttachmentChat), true
+	case TypeDeviceAttach:
+		return new(DeviceAttach), true
+	case TypeDeviceInfo:
+		return new(DeviceInfo), true
+	case TypeDeviceInput:
+		return new(DeviceInput), true
+	case TypeDeviceDetach:
+		return new(DeviceDetach), true
 	}
 	return nil, false
 }
@@ -568,6 +585,45 @@ type AttachmentChat struct {
 	AttachmentID uint32   `json:"attachmentId"`
 	Reset        bool     `json:"reset,omitempty"`
 	Entries      []string `json:"entries"`
+}
+
+// DeviceAttach is the `device.attach` message.
+type DeviceAttach struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// DeviceInfo is the `device.info` message.
+type DeviceInfo struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Serial       string `json:"serial"`
+	Name         string `json:"name"`
+	Platform     string `json:"platform"`
+}
+
+// DeviceInput is the `device.input` message.
+type DeviceInput struct {
+	Type         string  `json:"type"`
+	AttachmentID uint32  `json:"attachmentId"`
+	Kind         string  `json:"kind"`
+	X            float64 `json:"x,omitempty"`
+	Y            float64 `json:"y,omitempty"`
+	ToX          float64 `json:"toX,omitempty"`
+	ToY          float64 `json:"toY,omitempty"`
+	Text         string  `json:"text,omitempty"`
+	Key          string  `json:"key,omitempty"`
+	Button       string  `json:"button,omitempty"`
+}
+
+// DeviceDetach is the `device.detach` message.
+type DeviceDetach struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	AttachmentID uint32 `json:"attachmentId"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

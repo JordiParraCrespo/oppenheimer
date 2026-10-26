@@ -301,9 +301,16 @@ export class SessionsRepository {
    * its own: the ticket is single use and sixty seconds.
    */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
-  async issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
+  async issueAttachTicket(
+    id: string,
+    window = 0,
+    target: 'terminal' | 'device' = 'terminal',
+  ): Promise<AttachTicket> {
     const data = await unwrapBody(
-      heyApiSdk.issueAttachTicket({ path: { id }, body: { window } }),
+      heyApiSdk.issueAttachTicket({
+        path: { id },
+        body: target === 'device' ? { window, target } : { window },
+      }),
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
     return toTicket(data);

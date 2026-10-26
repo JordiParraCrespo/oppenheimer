@@ -20,6 +20,8 @@ export interface AttachTicket {
   userId: string;
   /** Present when the attach came through a share. */
   share?: AttachTicketShare;
+  /** `device`: the session's device screen, not a window's terminal. */
+  target?: 'device';
 }
 
 export interface AttachTicketShare {

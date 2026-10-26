@@ -62,6 +62,7 @@ describe('IssueAttachTicketCommandHandler', () => {
       sessionId: work.id,
       userId: 'user-1',
       window: 0,
+      device: false,
     });
 
   it('mints a ticket for a session on a host the caller can still use', async () => {
