@@ -255,7 +255,8 @@ function Composer({
  * (`internal/composer-send`): Enter sends, Shift+Enter breaks a line, a
  * `sendBlockedReason` keeps send focusable and says why it is off, and while
  * `busy` send becomes stop. Files list above the line as removable chips;
- * a recording takes a row under it, its notice under the box.
+ * a recording takes a row under it, standing in for the mic and send until
+ * it ends, and its notice sits under the box.
  */
 function ComposerPill({
   value,
@@ -345,30 +346,36 @@ function ComposerPill({
           data-slot="composer-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          onKeyDown={onKeyDown}
+          // Enter waits for the recording too, for the reason send does below.
+          onKeyDown={dictation?.recorder ? undefined : onKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
           className="field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-[15px] leading-normal tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder"
         />
-        <span className="flex shrink-0 items-center gap-1 p-1.5">
-          {dictation?.mic}
-          <ComposerSendButton
-            busy={busy}
-            blocked={blocked}
-            canSend={canSend}
-            sendBlockedReason={sendBlockedReason}
-            labels={label}
-            onClick={submit}
-            className="ml-1 size-8"
-          >
-            {busy ? (
-              <SquareIcon className="size-3.5 fill-current" />
-            ) : (
-              <ArrowUpIcon className="size-4" strokeWidth={2.2} />
-            )}
-          </ComposerSendButton>
-        </span>
+        {/* While a recording is open its bar holds the controls, as it takes
+            `Composer`'s foot row: a send pressed mid-sentence would start the
+            session on the typed half and drop what is still being heard. */}
+        {dictation?.recorder ? null : (
+          <span className="flex shrink-0 items-center gap-1 p-1.5">
+            {dictation?.mic}
+            <ComposerSendButton
+              busy={busy}
+              blocked={blocked}
+              canSend={canSend}
+              sendBlockedReason={sendBlockedReason}
+              labels={label}
+              onClick={submit}
+              className="ml-1 size-8"
+            >
+              {busy ? (
+                <SquareIcon className="size-3.5 fill-current" />
+              ) : (
+                <ArrowUpIcon className="size-4" strokeWidth={2.2} />
+              )}
+            </ComposerSendButton>
+          </span>
+        )}
       </div>
       {dictation?.recorder ? (
         <div data-slot="composer-recorder" className="px-1 pb-1">
