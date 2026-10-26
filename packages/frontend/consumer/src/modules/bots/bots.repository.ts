@@ -24,6 +24,7 @@ import {
   type BotDocumentName,
   type BotMessageEvent,
   type BotProvider,
+  type BotSection,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -70,6 +71,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.updatedAt),
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
+    dto.sections,
   );
 }
 
@@ -421,18 +423,24 @@ export class BotsRepository {
 
   /**
    * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
-   * the workspace's default provider.
+   * the workspace's default provider, shown in `sections` beside Employees.
    */
   @MapApiError(BotsErrors.SAVE_FAILED)
-  async create(): Promise<BotEntity> {
-    const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
+  async create(sections: readonly BotSection[] = []): Promise<BotEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBot({ body: sections.length ? { sections: [...sections] } : {} }),
+      BotsErrors.SAVE_FAILED,
+    );
     return toBot(data);
   }
 
   @MapApiError(BotsErrors.SAVE_FAILED)
   async update(id: string, input: UpdateBotInput): Promise<BotEntity> {
     const data = await unwrapBody(
-      heyApiSdk.updateBot({ path: { id }, body: input }),
+      heyApiSdk.updateBot({
+        path: { id },
+        body: { ...input, sections: input.sections ? [...input.sections] : undefined },
+      }),
       BotsErrors.SAVE_FAILED,
     );
     return toBot(data);

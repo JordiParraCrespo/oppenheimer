@@ -1,6 +1,7 @@
 import { Button, RoutineItem, Skeleton } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { QueryState } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { AutomationsSidebarList } from './automations-sidebar-list';
@@ -8,9 +9,10 @@ import { AutomationsSidebarList } from './automations-sidebar-list';
 /**
  * The console's sidebar body on its automations list
  * (`product/versions/mvp/13-automations.md`): New automation, which needs no
- * read and stays in every state, and the list under it, read under Suspense.
+ * read and stays in every state, the section's bots (`bots`, composed by the
+ * route), and the list under it, read under Suspense.
  */
-export function AutomationsSidebar() {
+export function AutomationsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
   const dialogs = useConsoleDialog();
 
@@ -21,6 +23,7 @@ export function AutomationsSidebar() {
           {t('automations.sidebar.new')}
         </Button>
       </div>
+      {bots}
       <QueryState>
         <QueryState.Pending>
           <div className="flex flex-col gap-2 px-3 pt-2">

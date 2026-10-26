@@ -39,6 +39,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 25 | [Bots](25-bots.md) | The Employees section's general bot: its loop in Oppenheimer on the Claude Agent SDK or the OpenAI Agents SDK by provider (Anthropic, GLM, OpenAI), the tool catalog and per-bot permissions, bots that edit themselves, talk to each other and create bots, hosts for the sessions it starts; four slices |
 | 26 | [Bot routines](26-bot-routines.md) | How a bot works when nobody writes to it: routines as automations whose run target is a bot (an `AutomationRunTarget` port, session and bot adapters), a routine's run as a queued turn of the bot, "when a session ends" as a trigger source, the heartbeat as a spread schedule with quiet turns; routines made in chat through one `update_routine` tool, a read-only Routines tab and a spend guard, as Grok Bot does; five slices |
 | 27 | [Bot subscriptions](27-bot-subscriptions.md) | How a bot hears back from work it delegated: a subscription to a session (at start or later) wakes it with a queued turn when the task needs input, completes, fails or is stopped; thin events re-read as the owner, one wake per task and state, a wake limit; what Grok Bot and OpenAI's webhooks taught; three slices |
+| 28 | [Bots in the sections](28-bots-in-sections.md) | A Bots heading in Sessions, Automations, Plan and Pull requests, as the 2026-10-25 export draws it: a bot shows in the sections placed on it (by its owner, the section's plus, or itself), and opens its chat inside Pull requests; three slices |
 
 ## Decision log
 
@@ -718,3 +719,4 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   agent SDK, with owner-set tool permissions and bots that edit
   themselves; see [25](25-bots.md) "Decided".
 - 2026-10-22: **a bot follows a session it delegated with a subscription** (27, issue #445): a `bot_subscription` row whose wakes are queued turns keyed once per task and state, re-reading the session as the owner. It changes 26's "no watch table" for a bot's own sessions; 26 §5's trigger stays for automations.
+- 2026-10-26: **bots show in the console's sections** (28): a set of sections on the bot, chosen by its owner, the section's plus or the bot itself, lists it under a Bots heading in Sessions, Automations, Plan and Pull requests; Pull requests opens its chat in place. Not derived from permissions, which are not built yet.

@@ -274,7 +274,10 @@
       "save": "Save changes",
       "saving": "Saving…",
       "saved": "Saved",
-      "failed": "Could not save the bot."
+      "failed": "Could not save the bot.",
+      "showsIn": "Shows in",
+      "showsInHint": "Sections whose sidebar lists it, beside Employees",
+      "showsInFailed": "Could not save where the bot shows."
     },
     "instructions": {
       "title": "Instructions",
@@ -387,5 +390,16 @@
     "confirm": "Delete bot",
     "pending": "Deleting…",
     "failed": "Could not delete the bot."
+  },
+  "section": {
+    "label": "Bots in this section",
+    "heading": "Bots",
+    "empty": "No bots here yet. Add one with +.",
+    "names": {
+      "sessions": "Sessions",
+      "automations": "Automations",
+      "plan": "Plan",
+      "pulls": "Pull requests"
+    }
   }
 }

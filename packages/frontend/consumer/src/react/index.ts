@@ -77,6 +77,7 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
