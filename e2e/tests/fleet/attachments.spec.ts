@@ -5,7 +5,7 @@ import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, STUB_REPOSITORIES } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * Files attached to the first task (an image, a PDF, Markdown), end to end on
@@ -39,11 +39,14 @@ test('files attached to the first task reach the agent with it', async ({ page }
   await page.setViewportSize({ width: 1280, height: 800 });
   await signInAs(page, user);
   await page.goto('/sessions/new');
-  await expect(page.getByRole('heading', { name: 'New session', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'What should we work on?', level: 1 }),
+  ).toBeVisible();
   await shot('1-new-session');
 
   await page.getByRole('button', { name: 'Host' }).click();
   await page.getByRole('option', { name: new RegExp(box.host.name) }).click();
+  await page.getByRole('option', { name: /New worktree/ }).click();
   await page.getByRole('button', { name: 'Repositories' }).click();
   await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
   await page.keyboard.press('Escape');
@@ -69,7 +72,9 @@ test('files attached to the first task reach the agent with it', async ({ page }
   );
 
   // A real PNG: a picture of the heading itself.
-  const png = await page.getByRole('heading', { name: 'New session', level: 1 }).screenshot();
+  const png = await page
+    .getByRole('heading', { name: 'What should we work on?', level: 1 })
+    .screenshot();
   const pdf = Buffer.from('%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n');
   const notes = Buffer.from('# Notes\n\n- keep the header sticky\n');
   await picker.setInputFiles([
@@ -129,6 +134,6 @@ test('files attached to the first task reach the agent with it', async ({ page }
   const shown = () => screen.replace(escapes, '').replace(/\s+/g, '');
   await expect.poll(shown, { timeout: 120_000 }).toContain('CLAUDE-SHIMargv=');
   await expect.poll(shown).toContain(`Matchthismockup${saved}${savedPdf}${savedNotes}`);
-  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await expect(linkLive(page)).toBeVisible();
   await shot('4-session-terminal');
 });

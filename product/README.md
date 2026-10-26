@@ -691,6 +691,17 @@ earlier note:
   rail's default order, and the console opens on the rail's first item,
   so a reader who drags another item to the top opens there instead
   (`versions/mvp/05-screens.md`, `25-bots.md`).
+- New session's chips used to sit in a grey band fused to the top of a
+  tall composer, under a line saying what sending would do. On
+  2026-10-26 it became one box at the pane's foot with a row of choices
+  under it and the project over it, and a session's name, state, Terminal
+  / Chat and Share moved from the terminal's status line to a bar over it
+  (`versions/mvp/05-screens.md`).
+- New session's Where and Host were two chips. On 2026-10-26 the owner
+  asked for the export's one chip, the host and where on it ("mac-studio ·
+  New worktree", the hosts and a Start in pane per host); the box took a
+  session chat's height, and the models dropped "Claude" from their names
+  ("Opus 5.5") (`versions/mvp/05-screens.md`).
 - `versions/mvp/28-inbox.md` §4 had the cross-bot approvals read list the
   bots the caller may update. Built on 2026-10-26, it lists the bots the
   caller may read, as the per-bot read it mirrors does; deciding a card

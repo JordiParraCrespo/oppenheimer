@@ -179,7 +179,7 @@ also toast.
 | --- | --- |
 | Two to four views of one pane | `SegmentedControl` |
 | Fixed and short, known at build time, inside a menu | `DropdownMenuRadioGroup` |
-| A scope chip on the console (project, host, branch, agent) | `ChipSelect`, always searchable; `variant="tab"` inside the composer's scope band |
+| A scope chip on the console (project, host, branch, agent) | `ChipSelect`, always searchable; `variant="tab"` on New session's `ComposerChoices` row and over its box |
 | A labelled pick in the routine editor | `FieldSelect` |
 | Several repositories, each on its own branch | `RepositorySelect` |
 | A filter over a list rather than a field | `DropdownMenuSub` per facet, `DropdownMenuRadioGroup` inside (the sessions filter menu) |

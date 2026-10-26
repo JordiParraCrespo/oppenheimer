@@ -1,8 +1,14 @@
 export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
-export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
-export { AgentModelSelect } from './components/agent-model-select';
+export type {
+  AgentModel,
+  AgentModelEffort,
+  AgentModelSelectLabels,
+  AgentOption,
+  Engine,
+} from './components/agent-model-select';
+export { AgentModelSelect, engineKey } from './components/agent-model-select';
 export type { AlertTone } from './components/alert';
 export {
   Alert,
@@ -167,6 +173,7 @@ export {
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
+  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
@@ -190,7 +197,13 @@ export {
 export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
-export { Composer, ComposerFile, ComposerToolButton } from './components/composer';
+export {
+  Composer,
+  ComposerChoices,
+  ComposerFile,
+  ComposerPill,
+  ComposerToolButton,
+} from './components/composer';
 export { DatePicker } from './components/date-picker';
 export type {
   DateRange,

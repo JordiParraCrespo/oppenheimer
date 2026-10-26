@@ -192,6 +192,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
+		launch.StatusLine = s.statusLine
 		s.trustFolder(session.Agent, session.Cwd())
 		defer s.holdLaunch(ctx, session.Agent)()
 		if err := s.terminals.Launch(ctx, session.Target(0), session.Cwd(), launch.CommandLine(session.Agent)); err != nil {

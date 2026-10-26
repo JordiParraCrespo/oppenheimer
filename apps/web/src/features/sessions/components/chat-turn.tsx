@@ -48,6 +48,9 @@ export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
     <div className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
+          // A session's chat stands on its terminal's ground, the card's own
+          // colour, so the turn takes the wash to stay a shape on it.
+          tone="wash"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
           attachments={

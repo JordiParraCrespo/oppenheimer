@@ -91,7 +91,7 @@ test('switching the rail away from Plan leaves the console drawn', async ({ page
 
   await page.goto('/plan/calendar');
   await page.getByRole('link', { name: 'Sessions', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What should we work on?' })).toBeVisible();
   await expect(broken).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, PlusIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
@@ -29,6 +29,58 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
   attach: 'Attach a file',
   removeAttachment: (name) => `Remove ${name}`,
 };
+
+/**
+ * What `Composer` and `ComposerPill` draw alike, kept in one place so a rule
+ * changed for one is changed for both: the files held for the message, the
+ * send button's glyph (the arrow, or stop while busy), and the dictation
+ * notice under the box. The send rules themselves are
+ * `internal/composer-send`'s. Each composer keeps its own frame, because
+ * the frame is what differs.
+ */
+function ComposerFileList({
+  attachments,
+  removeLabel,
+  onRemove,
+  className,
+}: {
+  attachments?: ComposerAttachment[];
+  removeLabel: (name: string) => string;
+  onRemove?: (id: string) => void;
+  className?: string;
+}) {
+  if (!attachments || attachments.length === 0) return null;
+  return (
+    <div data-slot="composer-attachments" className={cn('flex flex-wrap gap-1.5', className)}>
+      {attachments.map((file) => (
+        <ComposerFile
+          key={file.id}
+          name={file.name}
+          removeLabel={removeLabel(file.name)}
+          onRemove={() => onRemove?.(file.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ComposerSendGlyph({ busy }: { busy: boolean }) {
+  return busy ? (
+    <SquareIcon className="size-3.5 fill-current" />
+  ) : (
+    <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+  );
+}
+
+function ComposerNoticeFrame({ notice, children }: { notice?: React.ReactNode; children: React.ReactNode }) {
+  if (!notice) return children;
+  return (
+    <div data-slot="composer-dictation" className="flex flex-col gap-2">
+      {children}
+      <div className="mx-4.5">{notice}</div>
+    </div>
+  );
+}
 
 /**
  * Composer — the prompt box: an 18px-radius field holding a growing textarea,
@@ -173,18 +225,12 @@ function Composer({
             scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
           )}
         />
-        {attachments && attachments.length > 0 ? (
-          <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
-            {attachments.map((file) => (
-              <ComposerFile
-                key={file.id}
-                name={file.name}
-                removeLabel={label.removeAttachment(file.name)}
-                onRemove={() => onRemoveAttachment?.(file.id)}
-              />
-            ))}
-          </div>
-        ) : null}
+        <ComposerFileList
+          attachments={attachments}
+          removeLabel={label.removeAttachment}
+          onRemove={onRemoveAttachment}
+          className="px-3 pb-2.5"
+        />
         {dictation?.recorder ? (
           // The bar is 16px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
@@ -223,22 +269,185 @@ function Composer({
             onClick={submit}
             className="size-8"
           >
-            {busy ? (
-              <SquareIcon className="size-3.5 fill-current" />
-            ) : (
-              <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
-            )}
+            <ComposerSendGlyph busy={busy} />
           </ComposerSendButton>
         </ComposerFoot>
         )}
       </div>
     </ComposerFrame>
   );
-  if (!dictation?.notice) return box;
+  return <ComposerNoticeFrame notice={dictation?.notice}>{box}</ComposerNoticeFrame>;
+}
+
+/**
+ * ComposerPill — New session's prompt (`NewSessionComposer.dc.html`, the
+ * 2026-10-25 export): one 28px-radius box holding a line that grows, with
+ * Add files (+) at its start and the mic and the round send at its end, so
+ * the box reads as a sentence to finish rather than a form to fill. It
+ * stands as tall as a session chat's `ChatComposer` (`inline`), 46px for one
+ * line, so the box New session starts in is the box the session goes on in.
+ * What the run will use is not inside it: the caller lays those choices on a
+ * `ComposerChoices` row under the box.
+ *
+ * It shares `Composer`'s send rules and its send button
+ * (`internal/composer-send`): Enter sends, Shift+Enter breaks a line, a
+ * `sendBlockedReason` keeps send focusable and says why it is off, and while
+ * `busy` send becomes stop. Files list above the line as removable chips;
+ * a recording takes a row under it, standing in for the mic and send until
+ * it ends, and its notice sits under the box.
+ */
+function ComposerPill({
+  value,
+  onValueChange,
+  onSubmit,
+  onStop,
+  busy = false,
+  disabled = false,
+  sendBlockedReason,
+  allowEmpty = false,
+  placeholder = 'Describe a task or ask a question',
+  attachments,
+  onRemoveAttachment,
+  onAttach,
+  dictation,
+  labels,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
+  value: string;
+  onValueChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+  onStop?: () => void;
+  busy?: boolean;
+  disabled?: boolean;
+  /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
+  sendBlockedReason?: string;
+  /** Send with nothing written, while no file rides along (a blank terminal). */
+  allowEmpty?: boolean;
+  placeholder?: string;
+  attachments?: ComposerAttachment[];
+  onRemoveAttachment?: (id: string) => void;
+  /** Present: shows Add files at the line's start. */
+  onAttach?: () => void;
+  /** Dictation: the mic before send, the recorder under the line, the notice under the box. */
+  dictation?: DictationSlot;
+  /** The icon buttons' accessible names; any left out stay in English. */
+  labels?: Partial<ComposerLabels>;
+}) {
+  const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
+  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+    value,
+    busy,
+    disabled,
+    sendBlockedReason,
+    allowEmpty,
+    attachmentCount: attachments?.length,
+    onSubmit,
+    onStop,
+  });
+
+  const box = (
+    <div
+      data-slot="composer-pill"
+      data-disabled={disabled || undefined}
+      className={cn(
+        'flex flex-col rounded-xl border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
+        className,
+      )}
+      {...props}
+    >
+      <ComposerFileList
+        attachments={attachments}
+        removeLabel={label.removeAttachment}
+        onRemove={onRemoveAttachment}
+        className="px-3 pt-3"
+      />
+      <div className="flex items-end">
+        {onAttach ? (
+          <span className="flex shrink-0 items-center p-1.5 pr-0">
+            <IconButton
+              aria-label={label.attach}
+              title={label.attach}
+              size="sm"
+              onClick={onAttach}
+              className="size-8 text-fg-muted"
+            >
+              <PlusIcon className="size-4.25" />
+            </IconButton>
+          </span>
+        ) : null}
+        <textarea
+          data-slot="composer-input"
+          value={value}
+          onChange={(event) => onValueChange(event.target.value)}
+          // Enter waits for the recording too, for the reason send does below.
+          onKeyDown={dictation?.recorder ? undefined : onKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          rows={1}
+          className={cn(
+            'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+            onAttach ? 'pl-1' : 'pl-4.5',
+          )}
+        />
+        {/* While a recording is open its bar holds the controls, as it takes
+            `Composer`'s foot row: a send pressed mid-sentence would start the
+            session on the typed half and drop what is still being heard. */}
+        {dictation?.recorder ? null : (
+          <span className="flex shrink-0 items-center gap-1 p-1.5">
+            {dictation?.mic}
+            <ComposerSendButton
+              busy={busy}
+              blocked={blocked}
+              canSend={canSend}
+              sendBlockedReason={sendBlockedReason}
+              labels={label}
+              onClick={submit}
+              className="ml-1 size-8"
+            >
+              <ComposerSendGlyph busy={busy} />
+            </ComposerSendButton>
+          </span>
+        )}
+      </div>
+      {dictation?.recorder ? (
+        <div data-slot="composer-recorder" className="p-1.5">
+          {dictation.recorder}
+        </div>
+      ) : null}
+    </div>
+  );
+  return <ComposerNoticeFrame notice={dictation?.notice}>{box}</ComposerNoticeFrame>;
+}
+
+/**
+ * ComposerChoices — the row under a `ComposerPill`: what the run will use, as
+ * quiet 30px choices that read left to right as where it runs and what it may
+ * touch (`children`: the place, the repositories and branch, the permission
+ * level), then, pushed to the right, who drives it (`engine`: the agent and
+ * model, the effort). It is always one line: when it runs out of room the
+ * choices on the left give way, each truncating its label, and the engine
+ * keeps its full width at the right edge. On a row 672px or wider each
+ * choice keeps 72px, so a short label is not cut first; narrower, they
+ * shrink to their icons. The row's own width decides, not the viewport's,
+ * because the pane beside an open sidebar is narrower than the window.
+ */
+function ComposerChoices({
+  engine,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { engine?: React.ReactNode }) {
   return (
-    <div data-slot="composer-dictation" className="flex flex-col gap-2">
-      {box}
-      <div className="mx-4.5">{dictation.notice}</div>
+    <div
+      data-slot="composer-choices"
+      className={cn('@container flex min-h-8.5 items-center gap-0.5 px-0.5', className)}
+      {...props}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-0.5 [&_button]:min-w-0 [&_button]:shrink @2xl:[&_button]:min-w-18">
+        {children}
+      </span>
+      {engine ? <span className="flex shrink-0 items-center gap-0.5">{engine}</span> : null}
     </div>
   );
 }
@@ -336,5 +545,5 @@ function ComposerFile({
   );
 }
 
-export { Composer, ComposerFile, ComposerToolButton };
+export { Composer, ComposerChoices, ComposerFile, ComposerPill, ComposerToolButton };
 export type { ComposerAttachment, ComposerLabels };

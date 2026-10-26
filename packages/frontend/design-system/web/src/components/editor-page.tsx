@@ -19,7 +19,11 @@ import { cn } from '../lib/utils';
  * export's frames:
  *
  * - `status` (420px) and `composer` (760px) are a column centred in the pane
- *   both ways: a session being prepared, New session's composer.
+ *   both ways: a session being prepared, a new bot's chat.
+ * - `prompt` (760px inside its gutter) is the composer's column at the
+ *   pane's foot, 40px off its bottom edge: New session, whose box sits where
+ *   the session's own input will be once it starts
+ *   (`NewSessionComposer.dc.html`).
  * - `narrow` (760px), a form, a single card or an article; `wide` (1040px), a
  *   page that holds a table or a briefing, the session terminal's width;
  *   `board` (1240px), Plan's columns. These open 24px under the page bar.
@@ -62,13 +66,15 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-type EditorPageSize = 'status' | 'composer' | 'narrow' | 'wide' | 'board' | 'fluid';
+type EditorPageSize = 'status' | 'composer' | 'prompt' | 'narrow' | 'wide' | 'board' | 'fluid';
 
 const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   // `.op-provision__inner`, centred in the pane.
   status: 'my-auto max-w-105 py-8',
   // `.op-newsession`, centred in the pane, at the reading measure.
   composer: 'my-auto max-w-190 py-12',
+  // `NewSessionComposer.dc.html`: the same column, at the pane's foot.
+  prompt: 'mt-auto max-w-206 pt-12 pb-10',
   // Every page that opens at the top opens 24px under the page bar.
   narrow: 'max-w-190 pt-6 pb-18',
   wide: 'max-w-260 pt-6 pb-18',
