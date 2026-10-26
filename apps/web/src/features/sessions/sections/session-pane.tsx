@@ -1,4 +1,3 @@
-import { cn } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useRestartSession,
@@ -51,9 +50,7 @@ export function SessionPane({
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
-   * the pane reads it, held here because the frame changes with it (the chat
-   * sits on the console's own ground, the grid on the terminal's) and the
-   * chat is a view of its own, beside the terminal rather than inside it:
+   * the pane reads it, held here because the chat is a view of its own, beside the terminal rather than inside it:
    * the terminal feeds it and draws it over its grid as `cover`. `status` is
    * what the terminal's status line carries beside the link: the view switch
    * and Share when there is no bar to hold them, else nothing.
@@ -91,8 +88,8 @@ export function SessionPane({
     cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
     files,
   };
-  // The ground is the view on screen, not the one picked: a pane opened on
-  // Chat shows the terminal until the transcript comes, on the terminal's.
+  // What is on screen, not what was picked: a pane opened on Chat shows the
+  // terminal until the transcript comes.
   const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
@@ -188,20 +185,21 @@ export function SessionPane({
        it (the 2026-10-25 export dropped the 14px of canvas), on a 1040px
        column so mono output keeps a readable measure on a wide display; the
        ground either side is the terminal's colour, so column and pane read as
-       one surface. Read as a chat, the pane paints nothing: the chat and the
-       bar are the shell's own ground.
+       one surface. Read as a chat it is the same colour: the chat's ground is
+       the terminal's (`--chat-ground`), so switching views changes what is
+       drawn and never the pane's colour or the bar's.
 
        `data-pane-ground` is the pane's **public contract** with whatever
-       frames it, not a detail of this file: `terminal` or `chat`, the ground
+       frames it, not a detail of this file: `terminal` or `chat`, the view
        on screen. An ancestor matches it with `group-has-[[data-pane-ground=…]]`
-       to stand on the same colour — the shell's page bar (`app-shell.tsx`)
+       to set its ink for that view — the shell's page bar (`app-shell.tsx`)
        and a pull request's review bar (`pull-request-chat.tsx`). Renaming it,
        or setting it anywhere but the pane's root, changes both. */
     <>
       {head}
       <div
         data-pane-ground={chatShown ? 'chat' : 'terminal'}
-        className={cn('flex min-h-0 flex-1 flex-col', !chatShown && 'bg-term-bg')}
+        className="flex min-h-0 flex-1 flex-col bg-term-bg"
       >
         <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
           {terminal(session, reading, statusItems)}

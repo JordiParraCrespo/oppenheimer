@@ -47,9 +47,10 @@ export function SessionBar({
       }
       tabs={tabs}
       actions={<SessionShareButton sessionId={session.id} />}
-      // On the terminal's ground with a hairline under it, so bar and grid read
-      // as one surface split by an edge; over the chat, the shell's own.
-      className="border-b border-border-subtle group-has-[[data-pane-ground=terminal]]/pane:bg-term-bg"
+      // On the terminal's ground with a hairline under it, whichever view is
+      // on screen: the chat stands on the same ground, so bar, grid and chat
+      // read as one surface and switching views changes no colour.
+      className="border-b border-border-subtle bg-term-bg"
     />
   );
 }

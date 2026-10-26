@@ -55,7 +55,7 @@ function ChatUserMessage({
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
       {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
       {children != null && children !== false ? (
-        <div className="max-w-[80%] rounded-xl bg-card px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
+        <div className="max-w-[80%] rounded-xl bg-chat-turn px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg">
           {children}
         </div>
       ) : null}
