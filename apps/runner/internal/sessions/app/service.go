@@ -70,8 +70,11 @@ type Service struct {
 	// command is in flight, so a Stop or a Close that landed in between is
 	// never overwritten by a live state read before it. Neither is
 	// persisted: they only order writes within this process.
-	revs        map[string]uint64
-	busy        map[string]int
+	revs map[string]uint64
+	busy map[string]int
+	// confirmed, under mu, holds the sessions whose blocked agent has been
+	// announced a second time (see observe).
+	confirmed   map[string]bool
 	terminals   Terminals
 	worktrees   Worktrees
 	classifier  Classifier
@@ -104,7 +107,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
@@ -768,6 +771,13 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	return next
 }
 
+// blockedConfirmAfter is how long an agent stays blocked before observe
+// announces it once more. A state is announced when it changes, but the
+// control plane counts how long one has lasted only from its second report
+// (`session-state.policy.ts`), so that one report cannot claim a duration: a
+// blocked agent announced once would never come to wait on anyone.
+const blockedConfirmAfter = 15 * time.Second
+
 // observe applies what a refresh saw, as a compare-and-set against the record
 // it read at revision seen. It writes nothing (no store, no revision, no
 // `Updated`) when the session was written since, when a command is working
@@ -775,6 +785,7 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 // is stored. Otherwise the change is applied to the current record, not to
 // the refresh's copy, so a window opened meanwhile is kept, and announced.
 func (s *Service) observe(session domain.Session, seen uint64, state domain.State, loginURL string) domain.Session {
+	var confirm bool
 	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
 		switch {
 		case !known:
@@ -782,8 +793,14 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
 			return cur, false
 		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL):
+			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
+				s.now().Sub(cur.Updated) >= blockedConfirmAfter
+			if confirm {
+				s.confirmed[session.ID] = true
+			}
 			return cur, false
 		}
+		delete(s.confirmed, session.ID)
 		cur.State = state
 		if loginURL != "" {
 			cur.LoginURL = loginURL
@@ -791,6 +808,9 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 		cur.Updated = s.now().UTC()
 		return cur, true
 	})
+	if confirm {
+		publisher.SessionChanged(next)
+	}
 	if !changed {
 		return next
 	}

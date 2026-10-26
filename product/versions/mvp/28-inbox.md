@@ -203,3 +203,11 @@ Where it departs from the note above:
 - **Snooze until tomorrow** brings it back at 09:00 the reader's time.
 - **Off flag**: the rail drops the item and `/inbox` goes on to New
   session, which is where the console landed before.
+- **A blocked session never reached the Inbox** on a real runner: the
+  runner announced a state only when it changed, and the control plane
+  starts the 30 s clock only on a second report of the same state, so
+  `waiting-on-you` from a question never fired, in the sidebar either.
+  The runner now announces a blocked agent once more after 15 s
+  (`02-runner.md` §9), and `e2e/tests/fleet/inbox-session.spec.ts` proves
+  it end to end: a session on a real runner prints Claude Code's
+  question, shows in the Inbox about 45 s later, and opens from its card.
