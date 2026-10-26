@@ -708,3 +708,10 @@ earlier note:
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
   ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- The preview pane the session frame opens beside a terminal was not
+  built. On 2026-10-26 the owner asked for the Simulator in it: a
+  session's host offers simulators and emulators (`RUNNER_DEVICES`), each
+  session holds one, its agent drives it through Argent and the reader
+  watches and taps it in the pane, its screen relayed over the link as one
+  more attachment kind (`versions/mvp/05-screens.md`,
+  `research/device-streaming.md`). The Browser tab is still not built.

@@ -27,15 +27,18 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 445.0KB measured (2026-10-26); the last raise was for a bot's chat
+    // 446.1KB measured (2026-10-26); the last raise was for a bot's chat
     // opening inside the section it was clicked in: the route tree, which the
     // entry loads, gained `/sessions`, `/automations` and `/plan` bot chat
-    // routes (+0.2KB on a main at 444.8KB). Earlier raises and
+    // routes (+0.5KB on a main at 445.6KB). The one before it was the
+    // session's device preview: its strings ride the bundled locale and its
+    // pane's classes the one stylesheet (+1.1KB), while the stream client
+    // loads with the pane (`sessions/stream/device-stream.ts`). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 446,
+    budgetKB: 447,
   },
   // oppenheimer:end web
 ];
