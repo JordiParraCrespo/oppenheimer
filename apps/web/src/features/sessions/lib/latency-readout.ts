@@ -9,6 +9,9 @@ const LATENCY_READOUT_KEY = 'oppenheimer.terminal.latency';
 
 const REFRESH_MS = 500;
 
+const readouts = new Map<string, string>();
+const listeners = new Set<(key: string) => void>();
+
 function readoutWanted(): boolean {
   try {
     return localStorage.getItem(LATENCY_READOUT_KEY) === '1';
@@ -17,37 +20,36 @@ function readoutWanted(): boolean {
   }
 }
 
+function publish(key: string, text: string | undefined): void {
+  if (readouts.get(key) === text) return;
+  if (text === undefined) readouts.delete(key);
+  else readouts.set(key, text);
+  for (const listener of listeners) listener(key);
+}
+
+/** The readout last published under `key`, if its terminal is measuring. */
+export function latencyReadout(key: string): string | undefined {
+  return readouts.get(key);
+}
+
+export function subscribeLatencyReadouts(listener: (key: string) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 /**
- * The keystroke round trip, drawn in the pane's top-right corner as
- * `echo p50 / p95 ms · samples · path`, over `host` (xterm's root, which is
- * positioned), when `LATENCY_READOUT_KEY` asks for it. Returns its
+ * The keystroke round trip as `echo p50 / p95 ms · samples · path`,
+ * published under `key` (the session) for the session's bar to draw
+ * (`useLatencyReadout`), when `LATENCY_READOUT_KEY` asks for it. Returns its
  * disposer; a no-op when the readout is off.
  */
 export function bindLatencyReadout(
-  host: HTMLElement,
+  key: string,
   latency: EchoLatency,
   /** The path the bytes take (`relay`, `direct`), when the stream says. */
   path: () => string | null = () => null,
 ): () => void {
   if (!readoutWanted()) return () => {};
-  const readout = document.createElement('div');
-  readout.setAttribute('aria-hidden', 'true');
-  readout.dataset.testid = 'terminal-latency';
-  readout.style.cssText = [
-    'position:absolute',
-    'top:4px',
-    'right:8px',
-    'z-index:7',
-    'pointer-events:none',
-    'font:11px ui-monospace, monospace',
-    'padding:1px 6px',
-    'border-radius:4px',
-    'background:var(--term-bg)',
-    'color:var(--term-dim)',
-    'opacity:0.85',
-  ].join(';');
-  host.appendChild(readout);
-
   const render = () => {
     const p50 = latency.quantile(0.5);
     const p95 = latency.quantile(0.95);
@@ -56,12 +58,12 @@ export function bindLatencyReadout(
         ? 'echo –'
         : `echo ${Math.round(p50)} / ${Math.round(p95)} ms · ${latency.count}`;
     const via = path();
-    readout.textContent = via ? `${echo} · ${via}` : echo;
+    publish(key, via ? `${echo} · ${via}` : echo);
   };
   render();
   const timer = setInterval(render, REFRESH_MS);
   return () => {
     clearInterval(timer);
-    readout.remove();
+    publish(key, undefined);
   };
 }
