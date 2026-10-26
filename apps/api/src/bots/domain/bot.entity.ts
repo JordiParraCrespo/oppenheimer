@@ -316,14 +316,18 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (!Number.isInteger(props.position) || props.position < 0) {
       throw new ArgumentInvalidException('A position is a whole number from 0');
     }
-    const unknown = this.sections.find((section) => !BOT_SECTIONS.includes(section));
-    if (unknown !== undefined) {
-      throw new ArgumentInvalidException(`${unknown} is not a console section`);
-    }
   }
 }
 
-/** Each section once, in the catalog's order, so a stored set reads the same however it was sent. */
+/**
+ * Each section once, in the catalog's order, so a stored set reads the same
+ * however it was sent. A section the console does not have is refused, never
+ * dropped.
+ */
 function inSectionOrder(sections: readonly BotSection[]): BotSection[] {
+  const unknown = sections.find((section) => !BOT_SECTIONS.includes(section));
+  if (unknown !== undefined) {
+    throw new ArgumentInvalidException(`${unknown} is not a console section`);
+  }
   return BOT_SECTIONS.filter((section) => sections.includes(section));
 }

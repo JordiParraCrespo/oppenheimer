@@ -22,8 +22,10 @@ const PullRequestsSidebar = lazy(() =>
     default: module.PullRequestsSidebar,
   })),
 );
-const PlanNav = lazy(() =>
-  import('@/features/tasks/sections/plan-nav').then((module) => ({ default: module.PlanNav })),
+const PlanSidebar = lazy(() =>
+  import('@/features/tasks/sections/plan-sidebar').then((module) => ({
+    default: module.PlanSidebar,
+  })),
 );
 const CalendarSidebar = lazy(() =>
   import('@/features/calendar/sections/calendar-sidebar').then((module) => ({
@@ -44,8 +46,9 @@ const SectionBots = lazy(() =>
  * Calendar), with the calendar's layers and accounts under it on the
  * calendar; the board and Milestones filter by project in the page.
  * Every section but Employees carries the bots placed in it
- * (`product/versions/mvp/28-bots-in-sections.md`), which the bots feature
- * draws and each sidebar takes where the design puts it.
+ * (`product/versions/mvp/28-bots-in-sections.md`): the bots feature draws
+ * them, and each sidebar takes them as its `bots` slot and places them where
+ * the design does.
  * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {
@@ -69,15 +72,13 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
       ) : list === 'pulls' ? (
         <PullRequestsSidebar bots={<SectionBots section="pulls" />} />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <PlanNav />
-          <SectionBots section="plan" />
+        <PlanSidebar bots={<SectionBots section="plan" />}>
           {list === 'calendar' ? (
             <Suspense fallback={null}>
               <CalendarSidebar />
             </Suspense>
           ) : null}
-        </div>
+        </PlanSidebar>
       )}
     </Suspense>
   );
