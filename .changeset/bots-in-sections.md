@@ -15,7 +15,7 @@ Bots in the console's sections (`product/versions/mvp/28-bots-in-sections.md`).
   the bot, empty by default; `POST /v1/bots` and `PATCH /v1/bots/:id` take it,
   and `update_profile` lets a bot place itself.
 - `@oppenheimer/api-client`: `sections` on the bot.
-- `@oppenheimer/frontend-consumer`: `BotEntity.sections` and `showsIn`,
+- `@oppenheimer/frontend-consumer`: `BotEntity.sections`,
   `useSuspenseSectionBots`, and `useCreateBot` taking the sections.
 - `@oppenheimer/web`: a Bots heading in Sessions, Automations, Plan and Pull
   requests, whose plus makes a bot there; a bot's chat inside Pull requests at
