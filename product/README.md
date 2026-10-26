@@ -697,3 +697,8 @@ earlier note:
   under it and the project over it, and a session's name, state, Terminal
   / Chat and Share moved from the terminal's status line to a bar over it
   (`versions/mvp/05-screens.md`).
+- New session's Where and Host were two chips. On 2026-10-26 the owner
+  asked for the export's one chip, the host and where on it ("mac-studio ·
+  New worktree", the hosts and a Start in pane per host); the box took a
+  session chat's height, and the models dropped "Claude" from their names
+  ("Opus 5.5") (`versions/mvp/05-screens.md`).

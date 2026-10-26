@@ -283,8 +283,10 @@ function Composer({
  * ComposerPill — New session's prompt (`NewSessionComposer.dc.html`, the
  * 2026-10-25 export): one 28px-radius box holding a line that grows, with
  * Add files (+) at its start and the mic and the round send at its end, so
- * the box reads as a sentence to finish rather than a form to fill. What the
- * run will use is not inside it: the caller lays those choices on a
+ * the box reads as a sentence to finish rather than a form to fill. It
+ * stands as tall as a session chat's `ChatComposer` (`inline`), 46px for one
+ * line, so the box New session starts in is the box the session goes on in.
+ * What the run will use is not inside it: the caller lays those choices on a
  * `ComposerChoices` row under the box.
  *
  * It shares `Composer`'s send rules and its send button
@@ -349,7 +351,7 @@ function ComposerPill({
       data-slot="composer-pill"
       data-disabled={disabled || undefined}
       className={cn(
-        'flex flex-col gap-1.5 rounded-xl border border-field-border bg-field p-1.5 transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
+        'flex flex-col rounded-xl border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
         className,
       )}
       {...props}
@@ -358,19 +360,21 @@ function ComposerPill({
         attachments={attachments}
         removeLabel={label.removeAttachment}
         onRemove={onRemoveAttachment}
-        className="px-3 pt-2"
+        className="px-3 pt-3"
       />
-      <div className="flex items-end gap-1">
+      <div className="flex items-end">
         {onAttach ? (
-          <IconButton
-            aria-label={label.attach}
-            title={label.attach}
-            size="sm"
-            onClick={onAttach}
-            className="mb-1.5 ml-1 size-8 shrink-0 text-fg-muted"
-          >
-            <PlusIcon className="size-4.25" />
-          </IconButton>
+          <span className="flex shrink-0 items-center p-1.5 pr-0">
+            <IconButton
+              aria-label={label.attach}
+              title={label.attach}
+              size="sm"
+              onClick={onAttach}
+              className="size-8 text-fg-muted"
+            >
+              <PlusIcon className="size-4.25" />
+            </IconButton>
+          </span>
         ) : null}
         <textarea
           data-slot="composer-input"
@@ -381,7 +385,10 @@ function ComposerPill({
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
-          className="field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-[15px] leading-normal tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder"
+          className={cn(
+            'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+            onAttach ? 'pl-1' : 'pl-4.5',
+          )}
         />
         {/* While a recording is open its bar holds the controls, as it takes
             `Composer`'s foot row: a send pressed mid-sentence would start the
@@ -404,7 +411,7 @@ function ComposerPill({
         )}
       </div>
       {dictation?.recorder ? (
-        <div data-slot="composer-recorder" className="px-1 pb-1">
+        <div data-slot="composer-recorder" className="p-1.5">
           {dictation.recorder}
         </div>
       ) : null}

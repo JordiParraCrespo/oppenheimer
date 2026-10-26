@@ -1,13 +1,14 @@
 'use client';
 
-import { CircleQuestionMarkIcon, StarIcon } from 'lucide-react';
+import { CircleQuestionMarkIcon, SearchIcon, StarIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { AgentMark } from './agent-mark';
-import { ChipSelectItem, ChipSelectList, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import { ChipSelectItem, ChipSelectList, ChipSelectPopup } from './chip-select';
 import { ComposerToolButton } from './composer';
 import { EffortSlider, type EffortStop } from './effort-slider';
+import { Input } from './input';
 import { Popover, PopoverTrigger } from './popover';
 
 type AgentModel = { value: string; label: string };
@@ -116,7 +117,7 @@ function AgentModelTabs({
   'aria-label': string;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 px-1.5 pt-1.5">
+    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 border-b border-border-subtle px-1.5 pt-1.5">
       {tabs.map((item) => {
         const on = selected === item.id;
         return (
@@ -171,12 +172,12 @@ function AgentModelStar({
       title={label}
       onClick={onToggle}
       className={cn(
-        'flex shrink-0 rounded-pill p-1.5 outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring',
+        'flex shrink-0 rounded-pill p-1.25 outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring',
         starred ? 'text-warning' : 'text-fg-subtle',
       )}
     >
       <StarIcon
-        className="size-3.5"
+        className="size-3.75"
         fill={starred ? 'currentColor' : 'none'}
         strokeWidth={1.8}
         aria-hidden
@@ -251,7 +252,7 @@ function AgentModelEffortFoot<V extends string>({
  *
  * ```tsx
  * <AgentModelSelect
- *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5-5', label: 'Claude Opus 5.5' }] }]}
+ *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5-5', label: 'Opus 5.5' }] }]}
  *   value={{ agent: 'claude-code', model: 'claude-opus-5-5' }}
  *   onValueChange={setEngine}
  *   favourites={favourites}
@@ -346,7 +347,7 @@ function AgentModelSelect<V extends string = string>({
           </ComposerToolButton>
         }
       />
-      <ChipSelectPopup density="menu" side="top" align="end" width={340} className="p-0">
+      <ChipSelectPopup density="engine" side="top" align="end" width={340} className="p-0">
         <AgentModelTabs
           tabs={tabs}
           selected={term ? null : shownTab}
@@ -356,25 +357,29 @@ function AgentModelSelect<V extends string = string>({
           }}
           aria-label={ariaLabel}
         />
-        <div className="px-1">
-          <ChipSelectSearch
-            density="menu"
+        <div className="px-2 pt-2">
+          <Input
+            size="md"
+            // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
+            autoFocus
+            leading={<SearchIcon className="size-3.5" />}
+            // Focus is where the popup opens; the halo would light up every opening.
+            className="has-focus-visible:ring-0"
             value={query}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
             onChange={(event) => setQuery(event.target.value)}
-            className="text-[13px]"
           />
         </div>
         <ChipSelectList
-          density="menu"
+          density="engine"
           role="listbox"
           aria-label={ariaLabel}
           rows={VISIBLE_ROWS}
           total={total}
           empty={rows.length === 0}
           emptyText={term ? emptyText(query) : label.favouritesEmpty}
-          className="px-1 pb-1"
+          className="p-1"
         >
           {rows.map((row) => {
             const key = rowKey(row);
@@ -386,7 +391,7 @@ function AgentModelSelect<V extends string = string>({
             return (
               <div key={key} className="flex items-center">
                 <ChipSelectItem
-                  density="menu"
+                  density="engine"
                   selected={value.agent === row.agent.id && value.model === (row.model?.value ?? null)}
                   leading={mixed ? <AgentMark agent={row.agent.id} /> : undefined}
                   className="min-w-0 flex-1"

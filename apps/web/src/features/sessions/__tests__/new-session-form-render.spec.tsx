@@ -26,7 +26,28 @@ const created = vi.hoisted(() => vi.fn());
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
 }));
-vi.mock('../components/host-select', () => ({ HostSelect: chip('host', 'host-2') }));
+// The place chip holds the host and where on it: `host` picks one, `where` a folder.
+vi.mock('../components/place-select', () => ({
+  PlaceSelect: ({
+    onHostChange,
+    onPlaceChange,
+  }: {
+    onHostChange: (value: string) => void;
+    onPlaceChange: (value: string) => void;
+  }) => {
+    renders.set('place', (renders.get('place') ?? 0) + 1);
+    return (
+      <>
+        <button type="button" onClick={() => onHostChange('host-2')}>
+          host
+        </button>
+        <button type="button" onClick={() => onPlaceChange('folder')}>
+          where
+        </button>
+      </>
+    );
+  },
+}));
 vi.mock('../components/repository-branch-select', () => ({
   RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }], {
     // A row whose key no longer parses: `toCheckouts` drops it from the body.
@@ -61,9 +82,6 @@ vi.mock('../components/agent-select', () => {
     ),
   };
 });
-vi.mock('../components/where-select', () => ({
-  WhereSelect: chip('where', 'folder', { worktree: 'worktree' }),
-}));
 // The folder chip draws its popup's body as it is given; the body is the
 // section that reads the host, stubbed to a button that uses one folder.
 vi.mock('../components/folder-select', () => ({
@@ -221,9 +239,9 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['permission']);
   });
 
-  it('renders only the host chip and the send gate when a host is picked', () => {
+  it('renders only the place chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
-    expect(rendered()).toEqual(['host', 'send']);
+    expect(rendered()).toEqual(['place', 'send']);
   });
 
   /**
@@ -259,9 +277,9 @@ describe('NewSessionForm', () => {
   });
 
   /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */
-  it('renders only the host chip when the host list settles', () => {
+  it('renders only the place chip when the host list settles', () => {
     act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-1' }] }));
-    expect(rendered()).toEqual(['host']);
+    expect(rendered()).toEqual(['place']);
   });
 
   /** The send reads the projects when it sends, so a refetch never reaches the composer. */
@@ -333,7 +351,7 @@ describe('NewSessionForm', () => {
     it('swaps the repository and branch chips for the folder chip, and leaves the composer and the project', () => {
       fireEvent.click(screen.getByRole('button', { name: 'where' }));
 
-      expect(rendered()).toEqual(['folder', 'host', 'where']);
+      expect(rendered()).toEqual(['folder', 'place']);
       expect(screen.queryByRole('button', { name: 'repositories' })).toBeNull();
     });
 

@@ -39,12 +39,15 @@ type ChipSelectAction = {
  * chip, 13px rows at 1.35, an underlined search row, the current row in blue.
  * `menu` is the composer's engine button, which the export draws as a menu: a
  * 252px pane of 13px rows at 1.47 with a tighter back row, a full-bleed search
- * hairlined on both edges, and the check as the only blue thing.
+ * hairlined on both edges, and the check as the only blue thing. `engine` is
+ * the engine button's own pane (`AgentModelSelect`): the export's 36px rows of
+ * 13.5px, so its list keeps the scale of the agent tabs above it and the
+ * effort slider below.
  *
  * One prop rather than a class list per call site: a menu is not a chip with
  * six overrides.
  */
-type ChipSelectDensity = 'chip' | 'menu';
+type ChipSelectDensity = 'chip' | 'menu' | 'engine';
 
 /**
  * One row of a list, for sizing a pane in rows rather than in pixels.
@@ -53,7 +56,7 @@ type ChipSelectDensity = 'chip' | 'menu';
  * artboard's own arithmetic: the last visible row is cut rather than flush, so
  * a list that continues says so without a scrollbar.
  */
-const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5 };
+const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5, engine: 35.5 };
 
 function matches(option: ChipSelectOption, term: string) {
   if (!term) return true;
@@ -176,6 +179,7 @@ const SEARCH_CLASSES: Record<ChipSelectDensity, string> = {
   // divides the agent it belongs to from that agent's models, rather than
   // sitting under a heading the way a chip's search does.
   menu: '-mx-1 my-1 border-y px-[13px] py-[5px]',
+  engine: 'my-1 border-b px-2.5 py-1.5',
 };
 
 /** The sticky search row: glyph, borderless input, hairline under it. */
@@ -212,6 +216,7 @@ const BACK_CLASSES: Record<ChipSelectDensity, string> = {
   // A row of the menu it heads, not a header over it: the search row below
   // carries the divider.
   menu: 'gap-2 rounded-sm px-2.5 py-[3px] text-[13px] leading-[1.47] hover:bg-hover-surface',
+  engine: 'gap-2 rounded-sm px-2.5 py-1.5 text-[13.5px] hover:bg-hover-surface',
 };
 
 /** The back row of a nested pane ("‹ Branch for xrp-mobile"). */
@@ -238,12 +243,27 @@ function ChipSelectBack({
   );
 }
 
+/** A heading over a run of rows ("Start in"), in the eyebrow's small caps. */
+function ChipSelectHeading({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="chip-select-heading"
+      className={cn(
+        'px-2.5 pt-2 pb-1 text-[11px] font-medium tracking-[0.06em] text-fg-subtle uppercase',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 const ITEM_CLASSES =
   'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
 const ITEM_DENSITY: Record<ChipSelectDensity, string> = {
   chip: 'gap-2.5 leading-[1.35]',
   menu: 'gap-[9px] leading-[1.47]',
+  engine: 'min-h-9 gap-2.5 py-1 text-[13.5px] leading-[1.35]',
 };
 
 /**
@@ -313,7 +333,7 @@ function ChipSelectItem({
         <span
           className={cn(
             'flex w-3.5 shrink-0 items-center justify-center',
-            density === 'menu' && 'text-link',
+            density !== 'chip' && 'text-link',
           )}
         >
           {selected ? <CheckIcon className="size-3.5" strokeWidth={2.5} /> : null}
@@ -707,6 +727,7 @@ export {
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
+  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
