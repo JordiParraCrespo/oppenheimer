@@ -90,7 +90,7 @@ export class BotOrmEntity {
   @Column({ type: 'boolean', default: true })
   learnAutomatically!: boolean;
 
-  /** The console sections whose sidebar lists it (`1791003400000-AddBotSections`). */
+  /** The console sections whose sidebar lists it (`1791003500000-AddBotSections`). */
   @Column({ type: 'varchar', length: 16, array: true, default: () => "'{}'" })
   sections!: string[];
 

@@ -40,7 +40,7 @@ says what the bot is *for*, which permissions do not.
 ## 2. Where things live
 
 - **API:** `bot."sections"`, `varchar(16)[]` with a `CHECK` on its values
-  (`1791003400000-AddBotSections`). `POST /v1/bots` and `PATCH /v1/bots/:id`
+  (`1791003500000-AddBotSections`). `POST /v1/bots` and `PATCH /v1/bots/:id`
   take `sections`; the bot's response carries it in catalog order. The
   domain keeps each section once, in catalog order, however it was sent.
 - **Bot tools:** `update_profile` takes `sections` (the whole set); `get_self`
