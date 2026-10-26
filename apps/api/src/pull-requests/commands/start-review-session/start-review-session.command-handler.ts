@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
+import { GithubErrors } from '../../../github/domain/github.errors';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
@@ -38,13 +39,20 @@ export class StartReviewSessionCommandHandler
 
   async execute(command: StartReviewSessionCommand): Promise<SessionCommandResult> {
     const { scope, userId, address } = command;
+    // A session clones through the App; a repository read through a token has none.
+    const installationId = address.installationId;
+    if (installationId === null) {
+      throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
+        detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
+      });
+    }
     const { repository, pull } = await this.access.pullRequest(scope, address);
     if (pull.fromFork)
       throw new AppError(PullRequestsErrors.REVIEW_FROM_FORK, {
         detail: `${repository.fullName}#${pull.number} comes from a fork`,
       });
     const reviewed: ReviewedPullRequest = {
-      installationId: address.installationId,
+      installationId,
       githubRepoId: address.githubRepoId,
       repository: repository.fullName,
       number: pull.number,

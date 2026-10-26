@@ -9,6 +9,7 @@ import { GithubInstallationEntity } from '../../domain/github-installation.entit
 import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
 import { GithubAccessResolver } from '../github-access.resolver';
+import type { GithubTokenResolver } from '../github-token.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
 import type { WorkspaceRepository } from '../pull-request-access.port';
 import { PullRequestAccessResolver } from '../pull-request-access.resolver';
@@ -91,6 +92,7 @@ const BY_REST = () => ({ listOpenPullRequests: vi.fn().mockRejectedValue(refused
 function build(
   pulls: Partial<Record<keyof GithubPullsPort, unknown>>,
   userGrants: Partial<GithubUserGrantResolver> = {},
+  tokens: Partial<GithubTokenResolver> = { isConfigured: () => false },
 ) {
   const connected = installation();
   const store = new Map<string, { value: unknown; ttl?: number }>();
@@ -129,7 +131,13 @@ function build(
     withGraph as unknown as GithubPullsPort,
     grants,
     cache as unknown as CacheService,
-    new GithubAccessResolver(installations, app, grants, cache as unknown as CacheService),
+    new GithubAccessResolver(
+      installations,
+      app,
+      grants,
+      cache as unknown as CacheService,
+      tokens as GithubTokenResolver,
+    ),
   );
   const repository: WorkspaceRepository = {
     installationId: connected.id,
@@ -364,7 +372,11 @@ describe('the closed pull requests Analytics reads', () => {
  * predates the stored user grant saw.
  */
 describe('who the reader is on GitHub', () => {
-  const viewerResolver = (grantLogin: string | null, installations: GithubInstallationEntity[]) =>
+  const viewerResolver = (
+    grantLogin: string | null,
+    installations: GithubInstallationEntity[],
+    tokenLogin: string | null = null,
+  ) =>
     new PullRequestAccessResolver(
       {
         findAll: vi.fn().mockResolvedValue(installations),
@@ -373,6 +385,9 @@ describe('who the reader is on GitHub', () => {
       {} as GithubPullsPort,
       { loginOf: vi.fn().mockResolvedValue(grantLogin) } as unknown as GithubUserGrantResolver,
       {} as CacheService,
+      {
+        tokenLogin: vi.fn().mockResolvedValue(tokenLogin),
+      } as unknown as GithubAccessResolver,
     );
 
   const personal = (installedByUserId: string) =>
@@ -404,6 +419,13 @@ describe('who the reader is on GitHub', () => {
     const resolver = viewerResolver(null, [installation()]);
 
     expect(await resolver.viewerLogin(SCOPE)).toBeNull();
+  });
+
+  // GitHub answered `GET /user` with the token when it was added: it is theirs.
+  it('is the login one of their own tokens belongs to, with no grant', async () => {
+    const resolver = viewerResolver(null, [installation()], 'ana-dev');
+
+    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
   });
 
   // Another person's personal installation says who *they* are, never who asked.
@@ -586,5 +608,107 @@ describe('a merge pinned to the head it was decided on', () => {
       'squash',
       'def',
     );
+  });
+});
+
+/**
+ * A repository the App is not on, read through the person's own token (§6.2):
+ * its address has no installation, it reads with the token that opens it, and
+ * nothing is written to it in anyone's name.
+ */
+describe('a repository read through the person’s own token', () => {
+  const TOKEN_REPOSITORY = {
+    githubRepoId: 99,
+    name: 'billing',
+    fullName: 'other-org/billing',
+    defaultBranch: 'main',
+    private: true,
+    tokenId: 't1',
+    pinned: false,
+  };
+  const tokens = (): Partial<GithubTokenResolver> => ({
+    isConfigured: () => true,
+    repositoriesOf: vi.fn().mockResolvedValue([TOKEN_REPOSITORY]),
+    credentialFor: vi.fn().mockResolvedValue({ token: 'github_pat_ana', bucket: 'user:1' }),
+  });
+  const address = { installationId: null, githubRepoId: 99, number: 5 };
+
+  it('reads the pull request with the token that opens the repository', async () => {
+    const readPullRequest = vi.fn().mockResolvedValue({ ...PULL, number: 5 });
+    const { resolver } = build(
+      {
+        readPullRequest,
+        listFiles: vi.fn().mockResolvedValue([]),
+        readChecks: vi
+          .fn()
+          .mockResolvedValue({ state: 'none', total: 0, passed: 0, failed: 0, pending: 0 }),
+        listReviews: vi.fn().mockResolvedValue([]),
+      },
+      {},
+      tokens(),
+    );
+
+    const snapshot = await resolver.pullRequest(SCOPE, address);
+
+    expect(snapshot.repository).toMatchObject({
+      installationId: null,
+      fullName: 'other-org/billing',
+    });
+    expect(readPullRequest).toHaveBeenCalledWith(
+      { token: 'github_pat_ana', bucket: 'user:1' },
+      'other-org/billing',
+      5,
+    );
+  });
+
+  it('merges nothing, with GITHUB_022, and asks GitHub nothing', async () => {
+    const merge = vi.fn();
+    const readPullRequest = vi.fn();
+    const { resolver } = build(
+      { merge, readPullRequest },
+      { actorFor: vi.fn().mockResolvedValue({ token: 'gho_ana', githubUserId: 1 }) },
+      tokens(),
+    );
+
+    await expect(resolver.merge(SCOPE, 'ana', address, 'squash')).rejects.toMatchObject({
+      code: 'GITHUB_022',
+    });
+    expect(merge).not.toHaveBeenCalled();
+    expect(readPullRequest).not.toHaveBeenCalled();
+  });
+
+  // Keyed by installation alone, a snapshot one person's token read was served
+  // to anyone else whose token opened the same repository.
+  it('never serves one person’s token read to another', async () => {
+    const listFiles = vi.fn().mockResolvedValue([]);
+    const credentialFor = vi
+      .fn()
+      .mockResolvedValueOnce({ token: 'github_pat_ana', bucket: 'user:1' })
+      .mockResolvedValueOnce({ token: 'github_pat_bruno', bucket: 'user:2' });
+    const { resolver } = build(
+      {
+        readPullRequest: vi.fn().mockResolvedValue({ ...PULL, number: 5 }),
+        listFiles,
+        readChecks: vi
+          .fn()
+          .mockResolvedValue({ state: 'none', total: 0, passed: 0, failed: 0, pending: 0 }),
+        listReviews: vi.fn().mockResolvedValue([]),
+      },
+      {},
+      { ...tokens(), credentialFor },
+    );
+
+    await resolver.pullRequest(SCOPE, address);
+    await resolver.pullRequest({ ...SCOPE, userId: 'bruno' } as AccessScope, address);
+
+    expect(listFiles).toHaveBeenCalledTimes(2);
+  });
+
+  it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {
+    const { resolver } = build({ readPullRequest: vi.fn() }, {}, tokens());
+
+    await expect(
+      resolver.pullRequest(SCOPE, { installationId: null, githubRepoId: 7, number: 1 }),
+    ).rejects.toMatchObject({ code: 'GITHUB_023' });
   });
 });

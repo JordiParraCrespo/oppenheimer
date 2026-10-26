@@ -100,7 +100,10 @@ export class GithubHttp {
    * travels in the `Authorization` header and never in the URL, which is what
    * lets the log line and the problem document name the request at all.
    */
-  async request<T>(url: string, options: GithubRequest): Promise<{ body: T; link: string | null }> {
+  async request<T>(
+    url: string,
+    options: GithubRequest,
+  ): Promise<{ body: T; link: string | null; headers: Headers }> {
     let exchanged: Awaited<ReturnType<typeof this.limiter.exchange<Response>>>;
     try {
       exchanged = await this.limiter.exchange(
@@ -151,7 +154,11 @@ export class GithubHttp {
     }
 
     const text = await response.text();
-    return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
+    return {
+      body: (text ? JSON.parse(text) : {}) as T,
+      link: response.headers.get('link'),
+      headers: response.headers,
+    };
   }
 
   /**

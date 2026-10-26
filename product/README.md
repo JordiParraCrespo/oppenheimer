@@ -678,3 +678,10 @@ earlier note:
   the owner asked for the shared page to have the chat view too: the
   relay judges the flag as the sharer, and the guest gets Terminal / Chat,
   read-only on a read share (0.7, "Wire").
+- `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
+  notifications token and one optional token for private repositories. On
+  2026-10-26 the owner asked for several organisations and, inside one, a
+  token per repository if need be: a person adds any number of tokens, each
+  opens whatever repositories GitHub says it does, and each repository is
+  read with one key chosen at read time (the App, else a pinned token, else
+  the narrowest). The notifications wake-up is left for later (§6.2).

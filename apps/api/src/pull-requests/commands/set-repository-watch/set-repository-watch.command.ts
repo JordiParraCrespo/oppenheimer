@@ -3,7 +3,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 export class SetRepositoryWatchCommand extends CommandBase {
   readonly scope: AccessScope;
-  readonly installationId: string;
+  readonly installationId: string | null;
   readonly githubRepoId: number;
   readonly watching: boolean;
 

@@ -5117,6 +5117,667 @@
         "tags": ["GitHub installations"]
       }
     },
+    "/api/v1/github/tokens": {
+      "get": {
+        "description": "The tokens you added for repositories the GitHub App is not installed on, oldest first, with what each opens. A token’s secret is never answered.",
+        "operationId": "findGithubTokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GithubTokenResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your own GitHub tokens",
+        "tags": ["GitHub tokens"]
+      },
+      "post": {
+        "description": "For repositories the GitHub App is not installed on. GitHub is asked whose the token is, when it expires and what it opens before anything is kept; the token is stored encrypted, used only to read, and never answered. Prefer a read-only fine-grained token.",
+        "operationId": "addGithubToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddGithubTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubTokenResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_020 — You already have a token with that label",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "GITHUB_018 — GitHub did not accept the token",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a GitHub token of your own",
+        "tags": ["GitHub tokens"]
+      }
+    },
+    "/api/v1/github/tokens/repositories": {
+      "get": {
+        "description": "Every repository your tokens open, by name, with the token that reads it now: the one you pinned, else the one that opens the fewest repositories. A repository the GitHub App also covers is read through the App instead.",
+        "operationId": "findGithubTokenReads",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GithubTokenReadsResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Which of your tokens reads each repository",
+        "tags": ["GitHub tokens"]
+      }
+    },
+    "/api/v1/github/tokens/pins/{githubRepoId}": {
+      "put": {
+        "description": "Over the narrowest token, which reads it otherwise. Ignored while the GitHub App covers the repository, and while the pinned token is refused or expired.",
+        "operationId": "pinGithubToken",
+        "parameters": [
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinGithubTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_023 — That token does not open the repository",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which of your tokens reads a repository",
+        "tags": ["GitHub tokens"]
+      },
+      "delete": {
+        "description": "Removes your pin, if any.",
+        "operationId": "unpinGithubToken",
+        "parameters": [
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Let the narrowest token read a repository again",
+        "tags": ["GitHub tokens"]
+      }
+    },
+    "/api/v1/github/tokens/{id}/check": {
+      "post": {
+        "description": "Refreshes what the token opens and when it expires. A token GitHub now refuses is marked, stops being chosen to read, and the refusal is answered.",
+        "operationId": "checkGithubToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubTokenResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "GITHUB_018 — GitHub did not accept the token",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ask GitHub about one of your tokens again",
+        "tags": ["GitHub tokens"]
+      }
+    },
+    "/api/v1/github/tokens/{id}": {
+      "patch": {
+        "operationId": "renameGithubToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameGithubTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubTokenResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_020 — You already have a token with that label",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Give one of your GitHub tokens another label",
+        "tags": ["GitHub tokens"]
+      },
+      "delete": {
+        "description": "Deleted here, with its pins; nothing is revoked on GitHub, which is done from your token settings there. Another token that opens the same repositories takes over reading them.",
+        "operationId": "removeGithubToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The token is gone."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_019 — No such token of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_021 — This server has no key to keep GitHub tokens with",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove one of your GitHub tokens",
+        "tags": ["GitHub tokens"]
+      }
+    },
     "/api/v1/hosts": {
       "get": {
         "description": "The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.",
@@ -13725,7 +14386,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13842,7 +14503,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13951,7 +14612,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14060,7 +14721,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14125,19 +14786,21 @@
         "operationId": "setRepositoryWatch",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14186,7 +14849,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14251,14 +14914,6 @@
         "operationId": "findPullRequest",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14272,6 +14927,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14317,7 +14982,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14382,14 +15047,6 @@
         "operationId": "findPullRequestFiles",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14403,6 +15060,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14451,7 +15118,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14516,14 +15183,6 @@
         "operationId": "findPullRequestComments",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14537,6 +15196,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14585,7 +15254,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14648,14 +15317,6 @@
         "operationId": "addPullRequestComment",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14669,6 +15330,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14717,7 +15388,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14727,7 +15398,7 @@
             }
           },
           "409": {
-            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "description": "GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14782,14 +15453,6 @@
         "operationId": "findPullRequestActivity",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14803,6 +15466,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14851,7 +15524,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14916,14 +15589,6 @@
         "operationId": "submitPullRequestReview",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -14937,6 +15602,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -14992,7 +15667,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15002,7 +15677,7 @@
             }
           },
           "409": {
-            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "description": "GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15057,14 +15732,6 @@
         "operationId": "mergePullRequest",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -15078,6 +15745,16 @@
             "in": "path",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
             }
           }
         ],
@@ -15126,7 +15803,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there",
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15136,7 +15813,7 @@
             }
           },
           "409": {
-            "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "description": "GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15191,14 +15868,6 @@
         "operationId": "startReviewSession",
         "parameters": [
           {
-            "name": "installationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "githubRepoId",
             "required": true,
             "in": "path",
@@ -15228,6 +15897,16 @@
             "description": "Send one. A retry after a lost response returns the session already started.",
             "required": false,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
               "type": "string"
             }
           }
@@ -15294,7 +15973,7 @@
             }
           },
           "409": {
-            "description": "PULLS_002 — The pull request comes from a fork",
+            "description": "PULLS_002 / GITHUB_022 — The pull request comes from a fork, or its repository is read through your own token",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20252,6 +20931,164 @@
           }
         },
         "required": ["name", "commitSha", "protected", "isDefault"]
+      },
+      "GithubTokenRepositoryDto": {
+        "type": "object",
+        "properties": {
+          "githubRepoId": {
+            "type": "number",
+            "description": "GitHub’s own repository id.",
+            "example": 831004242
+          },
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/billing"
+          },
+          "private": {
+            "type": "boolean"
+          }
+        },
+        "required": ["githubRepoId", "fullName", "private"]
+      },
+      "GithubTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string",
+            "example": "acme: billing repo"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["fine_grained", "classic", "other"],
+            "description": "From GitHub’s prefix: `github_pat_` fine-grained, `ghp_` classic."
+          },
+          "login": {
+            "type": "string",
+            "description": "The GitHub account the token belongs to.",
+            "example": "jordiparra"
+          },
+          "scopes": {
+            "type": "string",
+            "nullable": true,
+            "description": "A classic token’s scopes, as GitHub lists them; null for the others.",
+            "example": "repo, read:org"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Null for a token GitHub says never expires."
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When GitHub was last asked."
+          },
+          "refusedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When GitHub last refused the token; null while it is accepted."
+          },
+          "usable": {
+            "type": "boolean",
+            "description": "Not refused and not past its expiry: it can be chosen to read."
+          },
+          "repositories": {
+            "description": "What the token opened when it was last checked, archived ones aside.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GithubTokenRepositoryDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "kind",
+          "login",
+          "scopes",
+          "expiresAt",
+          "checkedAt",
+          "refusedAt",
+          "usable",
+          "repositories",
+          "createdAt"
+        ]
+      },
+      "GithubTokenReadsResponseDto": {
+        "type": "object",
+        "properties": {
+          "githubRepoId": {
+            "type": "number",
+            "description": "GitHub’s own repository id.",
+            "example": 831004242
+          },
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/billing"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "tokenId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The token that reads it now; null when no token that still works opens it."
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "Whether the caller pinned that token to this repository."
+          }
+        },
+        "required": ["githubRepoId", "fullName", "private", "tokenId", "pinned"]
+      },
+      "AddGithubTokenRequest": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 255,
+            "pattern": "^[A-Za-z0-9_]+$"
+          }
+        },
+        "required": ["label", "token"]
+      },
+      "PinGithubTokenRequest": {
+        "type": "object",
+        "properties": {
+          "tokenId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["tokenId"]
+      },
+      "RenameGithubTokenRequest": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": ["label"]
       },
       "HostStatus": {
         "type": "string",
@@ -25286,7 +26123,8 @@
           "installationId": {
             "type": "string",
             "format": "uuid",
-            "description": "The installation that reaches the repository."
+            "nullable": true,
+            "description": "The installation that reaches the repository; null for one read through your own GitHub tokens."
           },
           "githubRepoId": {
             "type": "number"
@@ -25716,7 +26554,9 @@
         "properties": {
           "installationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true,
+            "description": "The installation that reaches the repository; null for one read through your own GitHub tokens."
           },
           "githubRepoId": {
             "type": "number"
@@ -25857,7 +26697,8 @@
           "installationId": {
             "type": "string",
             "format": "uuid",
-            "description": "The installation that reaches the repository."
+            "nullable": true,
+            "description": "The installation that reaches the repository; null for one read through your own GitHub tokens."
           },
           "githubRepoId": {
             "type": "number"

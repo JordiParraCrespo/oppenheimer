@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -25,6 +24,10 @@ import {
   PullRequestProblemResponses,
   PullRequestWriteProblemResponses,
 } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySource,
+} from '../../decorators/repository-source.decorator';
 import { AddPullRequestCommentCommand } from './add-pull-request-comment.command';
 import { AddPullRequestCommentRequest } from './add-pull-request-comment.request.dto';
 
@@ -40,6 +43,7 @@ export class AddPullRequestCommentHttpController {
 
   @Post(':installationId/:githubRepoId/:number/comments')
   @Version('1')
+  @ApiRepositorySource()
   @HttpCode(HttpStatus.NO_CONTENT)
   @CheckPolicies({ action: 'update', subject: 'PullRequest' })
   @RequireScopes('pulls:write')
@@ -53,7 +57,7 @@ export class AddPullRequestCommentHttpController {
   @ApiResponse({ status: 204 })
   async add(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySource() installationId: string | null,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: AddPullRequestCommentRequest,

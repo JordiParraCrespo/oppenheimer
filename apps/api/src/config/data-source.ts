@@ -32,6 +32,8 @@ import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
+import { GithubTokenOrmEntity } from '../github/database/github-token.orm-entity';
+import { GithubTokenPinOrmEntity } from '../github/database/github-token-pin.orm-entity';
 import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
@@ -121,6 +123,8 @@ export default new DataSource({
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
     GithubUserGrantOrmEntity,
+    GithubTokenOrmEntity,
+    GithubTokenPinOrmEntity,
     WatchedRepositoryOrmEntity,
     BotOrmEntity,
     BotGroupOrmEntity,

@@ -7,6 +7,8 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from
  * identity.
  */
 @Entity('watched_repository')
+// `NULLS NOT DISTINCT` in the migration, which TypeORM's `@Unique` cannot say:
+// one watch per token repository too.
 @Unique('UQ_watched_repository', ['organizationId', 'userId', 'installationId', 'githubRepoId'])
 export class WatchedRepositoryOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -18,8 +20,9 @@ export class WatchedRepositoryOrmEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'uuid' })
-  installationId!: string;
+  /** Null for a repository read through the person's own tokens, whichever one reads it. */
+  @Column({ type: 'uuid', nullable: true })
+  installationId!: string | null;
 
   /** GitHub's own id. A bigint, which the driver exchanges as a string. */
   @Column({ type: 'bigint' })

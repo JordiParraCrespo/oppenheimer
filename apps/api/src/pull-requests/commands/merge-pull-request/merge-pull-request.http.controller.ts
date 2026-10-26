@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -25,6 +24,10 @@ import {
   PullRequestProblemResponses,
   PullRequestWriteProblemResponses,
 } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySource,
+} from '../../decorators/repository-source.decorator';
 import { MergePullRequestCommand } from './merge-pull-request.command';
 import { MergePullRequestRequest } from './merge-pull-request.request.dto';
 
@@ -40,6 +43,7 @@ export class MergePullRequestHttpController {
 
   @Post(':installationId/:githubRepoId/:number/merge')
   @Version('1')
+  @ApiRepositorySource()
   @HttpCode(HttpStatus.NO_CONTENT)
   @CheckPolicies({ action: 'update', subject: 'PullRequest' })
   @RequireScopes('pulls:write')
@@ -53,7 +57,7 @@ export class MergePullRequestHttpController {
   @ApiResponse({ status: 204 })
   async merge(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySource() installationId: string | null,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: MergePullRequestRequest,

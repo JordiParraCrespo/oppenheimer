@@ -4,7 +4,6 @@ import {
   Headers,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -24,6 +23,10 @@ import { CurrentAccessScope } from '../../../authz/decorators/current-access-sco
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySource,
+} from '../../decorators/repository-source.decorator';
 import { ReviewSessionStartedResponseDto } from '../../dtos/review-session.response.dto';
 import { StartReviewSessionCommand } from './start-review-session.command';
 import { StartReviewSessionRequest } from './start-review-session.request.dto';
@@ -40,6 +43,7 @@ export class StartReviewSessionHttpController {
 
   @Post(':installationId/:githubRepoId/:number/review-session')
   @Version('1')
+  @ApiRepositorySource()
   @CheckPolicies(
     { action: 'read', subject: 'PullRequest' },
     { action: 'create', subject: 'Session' },
@@ -61,15 +65,16 @@ export class StartReviewSessionHttpController {
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
     status: 409,
-    description: 'The pull request comes from a fork',
-    code: 'PULLS_002',
+    description:
+      'The pull request comes from a fork, or its repository is read through your own token',
+    code: ['PULLS_002', 'GITHUB_022'],
   })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit', code: ['RATE_001', 'GITHUB_015'] })
   async start(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySource() installationId: string | null,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: StartReviewSessionRequest,

@@ -149,7 +149,13 @@ export interface GithubReviewInput {
  * the App's own JWT, the OAuth exchange, an installation (every token minted
  * for it shares one budget), or a person (every token of theirs shares one).
  */
-export type GithubBucket = 'app' | 'oauth' | `installation:${number}` | `user:${number}`;
+export type GithubBucket =
+  | 'app'
+  | 'oauth'
+  | `installation:${number}`
+  | `user:${number}`
+  /** A token GitHub has not yet said whose it is, named by a digest of it, never the secret. */
+  | `token:${string}`;
 
 /** A token and the budget GitHub counts it against, which only the caller knows. */
 export interface GithubCredential {

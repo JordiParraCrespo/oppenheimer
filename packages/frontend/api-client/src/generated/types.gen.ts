@@ -699,6 +699,83 @@ export type RepositoryBranchResponseDto = {
     isDefault: boolean;
 };
 
+export type GithubTokenRepositoryDto = {
+    /**
+     * GitHub’s own repository id.
+     */
+    githubRepoId: number;
+    fullName: string;
+    private: boolean;
+};
+
+export type GithubTokenResponseDto = {
+    id: string;
+    label: string;
+    /**
+     * From GitHub’s prefix: `github_pat_` fine-grained, `ghp_` classic.
+     */
+    kind: 'fine_grained' | 'classic' | 'other';
+    /**
+     * The GitHub account the token belongs to.
+     */
+    login: string;
+    /**
+     * A classic token’s scopes, as GitHub lists them; null for the others.
+     */
+    scopes: string | null;
+    /**
+     * Null for a token GitHub says never expires.
+     */
+    expiresAt: string | null;
+    /**
+     * When GitHub was last asked.
+     */
+    checkedAt: string;
+    /**
+     * When GitHub last refused the token; null while it is accepted.
+     */
+    refusedAt: string | null;
+    /**
+     * Not refused and not past its expiry: it can be chosen to read.
+     */
+    usable: boolean;
+    /**
+     * What the token opened when it was last checked, archived ones aside.
+     */
+    repositories: Array<GithubTokenRepositoryDto>;
+    createdAt: string;
+};
+
+export type GithubTokenReadsResponseDto = {
+    /**
+     * GitHub’s own repository id.
+     */
+    githubRepoId: number;
+    fullName: string;
+    private: boolean;
+    /**
+     * The token that reads it now; null when no token that still works opens it.
+     */
+    tokenId: string | null;
+    /**
+     * Whether the caller pinned that token to this repository.
+     */
+    pinned: boolean;
+};
+
+export type AddGithubTokenRequest = {
+    label: string;
+    token: string;
+};
+
+export type PinGithubTokenRequest = {
+    tokenId: string;
+};
+
+export type RenameGithubTokenRequest = {
+    label: string;
+};
+
 /**
  * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
  */
@@ -2590,9 +2667,9 @@ export type PullRequestLaneReasonDto = {
 
 export type PullRequestRowDto = {
     /**
-     * The installation that reaches the repository.
+     * The installation that reaches the repository; null for one read through your own GitHub tokens.
      */
-    installationId: string;
+    installationId: string | null;
     githubRepoId: number;
     repository: string;
     number: number;
@@ -2773,7 +2850,10 @@ export type PullRequestAnalyticsResponseDto = {
 };
 
 export type WatchedRepositoryDto = {
-    installationId: string;
+    /**
+     * The installation that reaches the repository; null for one read through your own GitHub tokens.
+     */
+    installationId: string | null;
     githubRepoId: number;
     fullName: string;
     private: boolean;
@@ -2832,9 +2912,9 @@ export type PullRequestReviewerDto = {
 
 export type PullRequestDetailResponseDto = {
     /**
-     * The installation that reaches the repository.
+     * The installation that reaches the repository; null for one read through your own GitHub tokens.
      */
-    installationId: string;
+    installationId: string | null;
     githubRepoId: number;
     repository: string;
     number: number;
@@ -6087,6 +6167,323 @@ export type DisconnectInstallationResponses = {
 };
 
 export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
+
+export type FindGithubTokensData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/github/tokens';
+};
+
+export type FindGithubTokensErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindGithubTokensError = FindGithubTokensErrors[keyof FindGithubTokensErrors];
+
+export type FindGithubTokensResponses = {
+    200: Array<GithubTokenResponseDto>;
+};
+
+export type FindGithubTokensResponse = FindGithubTokensResponses[keyof FindGithubTokensResponses];
+
+export type AddGithubTokenData = {
+    body: AddGithubTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/github/tokens';
+};
+
+export type AddGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_020 — You already have a token with that label
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_018 — GitHub did not accept the token
+     */
+    422: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type AddGithubTokenError = AddGithubTokenErrors[keyof AddGithubTokenErrors];
+
+export type AddGithubTokenResponses = {
+    201: GithubTokenResponseDto;
+};
+
+export type AddGithubTokenResponse = AddGithubTokenResponses[keyof AddGithubTokenResponses];
+
+export type FindGithubTokenReadsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/github/tokens/repositories';
+};
+
+export type FindGithubTokenReadsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindGithubTokenReadsError = FindGithubTokenReadsErrors[keyof FindGithubTokenReadsErrors];
+
+export type FindGithubTokenReadsResponses = {
+    200: Array<GithubTokenReadsResponseDto>;
+};
+
+export type FindGithubTokenReadsResponse = FindGithubTokenReadsResponses[keyof FindGithubTokenReadsResponses];
+
+export type UnpinGithubTokenData = {
+    body?: never;
+    path: {
+        githubRepoId: number;
+    };
+    query?: never;
+    url: '/api/v1/github/tokens/pins/{githubRepoId}';
+};
+
+export type UnpinGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type UnpinGithubTokenError = UnpinGithubTokenErrors[keyof UnpinGithubTokenErrors];
+
+export type UnpinGithubTokenResponses = {
+    204: void;
+};
+
+export type UnpinGithubTokenResponse = UnpinGithubTokenResponses[keyof UnpinGithubTokenResponses];
+
+export type PinGithubTokenData = {
+    body: PinGithubTokenRequest;
+    path: {
+        githubRepoId: number;
+    };
+    query?: never;
+    url: '/api/v1/github/tokens/pins/{githubRepoId}';
+};
+
+export type PinGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_023 — That token does not open the repository
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PinGithubTokenError = PinGithubTokenErrors[keyof PinGithubTokenErrors];
+
+export type PinGithubTokenResponses = {
+    204: void;
+};
+
+export type PinGithubTokenResponse = PinGithubTokenResponses[keyof PinGithubTokenResponses];
+
+export type CheckGithubTokenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/github/tokens/{id}/check';
+};
+
+export type CheckGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_018 — GitHub did not accept the token
+     */
+    422: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type CheckGithubTokenError = CheckGithubTokenErrors[keyof CheckGithubTokenErrors];
+
+export type CheckGithubTokenResponses = {
+    200: GithubTokenResponseDto;
+};
+
+export type CheckGithubTokenResponse = CheckGithubTokenResponses[keyof CheckGithubTokenResponses];
+
+export type RemoveGithubTokenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/github/tokens/{id}';
+};
+
+export type RemoveGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type RemoveGithubTokenError = RemoveGithubTokenErrors[keyof RemoveGithubTokenErrors];
+
+export type RemoveGithubTokenResponses = {
+    /**
+     * The token is gone.
+     */
+    204: void;
+};
+
+export type RemoveGithubTokenResponse = RemoveGithubTokenResponses[keyof RemoveGithubTokenResponses];
+
+export type RenameGithubTokenData = {
+    body: RenameGithubTokenRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/github/tokens/{id}';
+};
+
+export type RenameGithubTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_019 — No such token of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_020 — You already have a token with that label
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_021 — This server has no key to keep GitHub tokens with
+     */
+    503: ProblemDetailsDto;
+};
+
+export type RenameGithubTokenError = RenameGithubTokenErrors[keyof RenameGithubTokenErrors];
+
+export type RenameGithubTokenResponses = {
+    200: GithubTokenResponseDto;
+};
+
+export type RenameGithubTokenResponse = RenameGithubTokenResponses[keyof RenameGithubTokenResponses];
 
 export type FindHostsData = {
     body?: never;
@@ -10226,7 +10623,7 @@ export type FindPullRequestsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10283,7 +10680,7 @@ export type FindPullRequestAnalyticsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10335,7 +10732,7 @@ export type FindWatchedRepositoriesErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10387,7 +10784,7 @@ export type FindReviewSessionsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10421,8 +10818,11 @@ export type FindReviewSessionsResponse = FindReviewSessionsResponses[keyof FindR
 export type SetRepositoryWatchData = {
     body: SetRepositoryWatchRequest;
     path: {
-        installationId: string;
         githubRepoId: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/repositories/{installationId}/{githubRepoId}';
@@ -10442,7 +10842,7 @@ export type SetRepositoryWatchErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10476,9 +10876,12 @@ export type SetRepositoryWatchResponse = SetRepositoryWatchResponses[keyof SetRe
 export type FindPullRequestData = {
     body?: never;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}';
@@ -10498,7 +10901,7 @@ export type FindPullRequestErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10532,9 +10935,12 @@ export type FindPullRequestResponse = FindPullRequestResponses[keyof FindPullReq
 export type FindPullRequestFilesData = {
     body?: never;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/files';
@@ -10554,7 +10960,7 @@ export type FindPullRequestFilesErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10588,9 +10994,12 @@ export type FindPullRequestFilesResponse = FindPullRequestFilesResponses[keyof F
 export type FindPullRequestCommentsData = {
     body?: never;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/comments';
@@ -10610,7 +11019,7 @@ export type FindPullRequestCommentsErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10644,9 +11053,12 @@ export type FindPullRequestCommentsResponse = FindPullRequestCommentsResponses[k
 export type AddPullRequestCommentData = {
     body: AddPullRequestCommentRequest;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/comments';
@@ -10666,11 +11078,11 @@ export type AddPullRequestCommentErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
-     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     * GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token
      */
     409: ProblemDetailsDto;
     /**
@@ -10700,9 +11112,12 @@ export type AddPullRequestCommentResponse = AddPullRequestCommentResponses[keyof
 export type FindPullRequestActivityData = {
     body?: never;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/activity';
@@ -10722,7 +11137,7 @@ export type FindPullRequestActivityErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
@@ -10756,9 +11171,12 @@ export type FindPullRequestActivityResponse = FindPullRequestActivityResponses[k
 export type SubmitPullRequestReviewData = {
     body: SubmitPullRequestReviewRequest;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/reviews';
@@ -10778,11 +11196,11 @@ export type SubmitPullRequestReviewErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
-     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     * GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token
      */
     409: ProblemDetailsDto;
     /**
@@ -10812,9 +11230,12 @@ export type SubmitPullRequestReviewResponse = SubmitPullRequestReviewResponses[k
 export type MergePullRequestData = {
     body: MergePullRequestRequest;
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/merge';
@@ -10834,11 +11255,11 @@ export type MergePullRequestErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 / GITHUB_010 / GITHUB_013 — The installation, the repository or the pull request is not there
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
      */
     404: ProblemDetailsDto;
     /**
-     * GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet
+     * GITHUB_012 / GITHUB_014 / GITHUB_022 — No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token
      */
     409: ProblemDetailsDto;
     /**
@@ -10874,9 +11295,12 @@ export type StartReviewSessionData = {
         'Idempotency-Key'?: string;
     };
     path: {
-        installationId: string;
         githubRepoId: number;
         number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
     };
     query?: never;
     url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/review-session';
@@ -10900,7 +11324,7 @@ export type StartReviewSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * PULLS_002 — The pull request comes from a fork
+     * PULLS_002 / GITHUB_022 — The pull request comes from a fork, or its repository is read through your own token
      */
     409: ProblemDetailsDto;
     /**

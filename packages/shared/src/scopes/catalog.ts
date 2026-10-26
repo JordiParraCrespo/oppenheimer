@@ -465,14 +465,14 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         scope: 'pulls:read',
         label: 'Read',
         description:
-          'Read the queue, a pull request, its files and comments, issues, and the analytics.',
+          'Read the queue, a pull request, its files and comments, issues, and the analytics, and list the owner’s own GitHub tokens (never their secrets).',
         policies: [{ action: 'read', subject: 'PullRequest' }],
       },
       write: {
         scope: 'pulls:write',
         label: 'Review',
         description:
-          'Comment on, review and merge pull requests, and open and comment on issues, in the owner’s name, and choose which repositories to watch.',
+          'Comment on, review and merge pull requests, and open and comment on issues, in the owner’s name, choose which repositories to watch, and add, check, pin and remove the owner’s own GitHub tokens.',
         policies: [{ action: 'update', subject: 'PullRequest' }],
       },
     },

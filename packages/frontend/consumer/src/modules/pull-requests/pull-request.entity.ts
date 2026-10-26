@@ -15,9 +15,21 @@ export type {
 };
 
 /**
+ * The source of a repository read through the person's own GitHub tokens: the
+ * API answers its installation as null and takes this segment in its place
+ * (`product/next-steps/0.2-pull-requests.md` §6.2).
+ */
+export const TOKENS_SOURCE = 'tokens';
+
+/** The installation a row names, or {@link TOKENS_SOURCE} for one read through a token. */
+export function sourceOf(installationId: string | null): string {
+  return installationId ?? TOKENS_SOURCE;
+}
+
+/**
  * A pull request is GitHub's: the console names one by the installation that
- * reaches it, the repository and its number, and keeps nothing of it
- * (`product/next-steps/0.2-pull-requests-api-plan.md`).
+ * reaches it (or {@link TOKENS_SOURCE}), the repository and its number, and
+ * keeps nothing of it (`product/next-steps/0.2-pull-requests-api-plan.md`).
  */
 export interface PullRequestAddress {
   installationId: string;

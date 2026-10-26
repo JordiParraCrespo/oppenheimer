@@ -10,10 +10,14 @@ import type {
   GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 
-/** One repository a workspace's installations cover, named by the installation that reaches it. */
+/**
+ * One repository the caller can read: one a workspace's installation covers,
+ * named by that installation, or one their own GitHub tokens open
+ * (`installationId: null`, §6.2), whichever token reads it.
+ */
 export interface WorkspaceRepository {
-  /** The control-plane installation row's uuid. */
-  installationId: string;
+  /** The control-plane installation row's uuid; null for a repository read through the caller's tokens. */
+  installationId: string | null;
   githubRepoId: number;
   name: string;
   fullName: string;
@@ -21,9 +25,12 @@ export interface WorkspaceRepository {
   private: boolean;
 }
 
-/** The address of one repository: the installation that reaches it, and GitHub's id for it. */
+/**
+ * The address of one repository: the installation that reaches it, or null
+ * for one read through the caller's own tokens, and GitHub's id for it.
+ */
 export interface RepositoryAddress {
-  installationId: string;
+  installationId: string | null;
   githubRepoId: number;
 }
 

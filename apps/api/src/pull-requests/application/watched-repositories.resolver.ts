@@ -10,8 +10,8 @@ import type { WatchedRepositoryRepositoryPort } from '../database/watched-reposi
 import { PullRequestsErrors } from '../domain/pull-requests.errors';
 import { WATCHED_REPOSITORY_REPOSITORY } from '../pull-requests.di-tokens';
 
-const keyOf = (r: { installationId: string; githubRepoId: number }) =>
-  `${r.installationId}:${r.githubRepoId}`;
+const keyOf = (r: { installationId: string | null; githubRepoId: number }) =>
+  `${r.installationId ?? 'tokens'}:${r.githubRepoId}`;
 
 /**
  * Which of the workspace's repositories the caller watches: the ones they
@@ -35,9 +35,13 @@ export class WatchedRepositoriesResolver {
       this.watches.findOwn(scope),
     ]);
     const watched = new Set(watches.map(keyOf));
+    // A repository watched through a token stays watched once an installation
+    // covers it: the App reads it first (§6.2), and the watch is still the person's.
     return repositories.map((repository) => ({
       repository,
-      watching: watched.has(keyOf(repository)),
+      watching:
+        watched.has(keyOf(repository)) ||
+        watched.has(keyOf({ installationId: null, githubRepoId: repository.githubRepoId })),
     }));
   }
 

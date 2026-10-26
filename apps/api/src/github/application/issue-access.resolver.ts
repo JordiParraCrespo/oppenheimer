@@ -33,7 +33,7 @@ export class IssueAccessResolver implements IssueAccessPort {
     limit: number,
   ): Promise<{ repository: WorkspaceRepository; issues: GithubIssue[] }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     const issues = await this.github.listIssues(credential, repository.fullName, filter, limit);
     return { repository, issues };
   }
@@ -43,14 +43,14 @@ export class IssueAccessResolver implements IssueAccessPort {
     address: IssueAddress,
   ): Promise<{ repository: WorkspaceRepository; issue: GithubIssue }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     const issue = await this.github.readIssue(credential, repository.fullName, address.number);
     return { repository, issue };
   }
 
   async issueComments(scope: AccessScope, address: IssueAddress): Promise<GithubIssueComment[]> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     return this.github.listIssueComments(credential, repository.fullName, address.number);
   }
 
@@ -61,7 +61,7 @@ export class IssueAccessResolver implements IssueAccessPort {
     issue: GithubIssueInput,
   ): Promise<GithubIssue> {
     const repository = await this.access.repositoryOf(scope, address);
-    const writer = await this.access.writeCredential(userId);
+    const writer = await this.access.writeCredential(userId, address);
     return this.github.createIssue(writer, repository.fullName, issue);
   }
 
@@ -72,7 +72,7 @@ export class IssueAccessResolver implements IssueAccessPort {
     body: string,
   ): Promise<{ htmlUrl: string }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const writer = await this.access.writeCredential(userId);
+    const writer = await this.access.writeCredential(userId, address);
     return this.github.createIssueComment(writer, repository.fullName, address.number, body);
   }
 }

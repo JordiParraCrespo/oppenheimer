@@ -1,8 +1,11 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 
-/** A repository a person watches, by the installation that reaches it. A row is a watch. */
+/**
+ * A repository a person watches, by the installation that reaches it, or null
+ * for one read through their own tokens. A row is a watch.
+ */
 export interface RepositoryWatch {
-  installationId: string;
+  installationId: string | null;
   githubRepoId: number;
 }
 

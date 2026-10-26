@@ -3,7 +3,6 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
   Version,
@@ -19,6 +18,10 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySource,
+} from '../../decorators/repository-source.decorator';
 import { PullRequestActivityItemDto } from '../../dtos/pull-request.response.dto';
 import { FindPullRequestActivityQuery } from './find-pull-request-activity.query';
 
@@ -34,6 +37,7 @@ export class FindPullRequestActivityHttpController {
 
   @Get(':installationId/:githubRepoId/:number/activity')
   @Version('1')
+  @ApiRepositorySource()
   @CheckPolicies({ action: 'read', subject: 'PullRequest' })
   @RequireScopes('pulls:read')
   @ApiOperation({
@@ -44,7 +48,7 @@ export class FindPullRequestActivityHttpController {
   @ApiResponse({ status: 200, type: [PullRequestActivityItemDto] })
   async list(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySource() installationId: string | null,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
   ): Promise<PullRequestActivityItemDto[]> {

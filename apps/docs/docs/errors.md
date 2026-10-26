@@ -343,6 +343,12 @@ session asks.
 | `GITHUB_015` <a id="github_015" /> | GitHub's rate limit was reached; try again shortly             | 429  |
 | `GITHUB_016` <a id="github_016" /> | Issue not found                                                | 404  |
 | `GITHUB_017` <a id="github_017" /> | GitHub refused access to this repository's issues              | 403  |
+| `GITHUB_018` <a id="github_018" /> | GitHub did not accept this token                               | 422  |
+| `GITHUB_019` <a id="github_019" /> | GitHub token not found                                         | 404  |
+| `GITHUB_020` <a id="github_020" /> | You already have a token with that label                       | 409  |
+| `GITHUB_021` <a id="github_021" /> | GitHub tokens are not configured on this server                | 503  |
+| `GITHUB_022` <a id="github_022" /> | This repository is read through your token; act on it on GitHub | 409  |
+| `GITHUB_023` <a id="github_023" /> | None of your GitHub tokens opens this repository               | 404  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -407,6 +413,17 @@ the two alike, and the pull request tools read those. `GITHUB_017` is GitHub's
 **Issues** permission, an owner has not accepted that permission on the
 installation yet, or the person cannot write to the repository. Rate limits
 on those routes are still `GITHUB_015`.
+
+`GITHUB_018` to `GITHUB_023` are a person's own GitHub tokens, for
+repositories the App will never be installed on. `GITHUB_018` is GitHub
+answering `401` when a token is added or checked again: mistyped, expired,
+revoked, or an organisation's fine-grained token still waiting for an owner's
+approval; nothing is stored from it. `GITHUB_019` is also somebody else's
+token. `GITHUB_021` means the server has no `GITHUB_USER_TOKEN_KEY` to seal
+tokens with. `GITHUB_022` answers a review, comment, merge or review session
+on a repository read through a token: those happen on GitHub. `GITHUB_023`
+means no token of the person's that GitHub still accepts opens the
+repository, or a pin names a token that does not open it.
 
 ## Pull requests
 

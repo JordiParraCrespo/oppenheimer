@@ -7,7 +7,7 @@ import type { WatchedRepositoryRepositoryPort } from '../../database/watched-rep
 import { WATCHED_REPOSITORY_REPOSITORY } from '../../pull-requests.di-tokens';
 import { SetRepositoryWatchCommand } from './set-repository-watch.command';
 
-/** Watch a repository, or stop: only one the workspace's installations cover. */
+/** Watch a repository, or stop: only one the workspace's installations cover or the caller's tokens open. */
 @CommandHandler(SetRepositoryWatchCommand)
 export class SetRepositoryWatchCommandHandler
   implements ICommandHandler<SetRepositoryWatchCommand, void>
@@ -30,7 +30,15 @@ export class SetRepositoryWatchCommandHandler
       });
     }
     const watch = { installationId: command.installationId, githubRepoId: command.githubRepoId };
-    if (command.watching) await this.watches.watch(command.scope, watch);
-    else await this.watches.unwatch(command.scope, watch);
+    if (command.watching) {
+      await this.watches.watch(command.scope, watch);
+      return;
+    }
+    await this.watches.unwatch(command.scope, watch);
+    // A watch made through a token counts for the installation that now covers
+    // the repository, so stopping it there stops that one too.
+    if (watch.installationId !== null) {
+      await this.watches.unwatch(command.scope, { ...watch, installationId: null });
+    }
   }
 }

@@ -8,6 +8,7 @@ import type { GithubInstallationEntity } from '../domain/github-installation.ent
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type { GithubCredential } from '../infrastructure/github-pulls.port';
+import { GithubTokenResolver } from './github-token.resolver';
 import { GithubUserGrantResolver } from './github-user-grant.resolver';
 import type { RepositoryAddress, WorkspaceRepository } from './pull-request-access.port';
 
@@ -35,9 +36,16 @@ export class GithubAccessResolver {
     private readonly github: GithubAppPort,
     private readonly userGrants: GithubUserGrantResolver,
     private readonly cache: CacheService,
+    private readonly tokens: GithubTokenResolver,
   ) {}
 
+  /**
+   * The repository an address names, checked reachable: covered by the
+   * installation it names, or, for an address with no installation, opened by
+   * one of the caller's own tokens (§6.2).
+   */
   async repositoryOf(scope: AccessScope, address: RepositoryAddress): Promise<WorkspaceRepository> {
+    if (address.installationId === null) return this.tokenRepositoryOf(scope, address.githubRepoId);
     const installation = await this.usableInstallation(scope, address.installationId);
     const repositories = await this.cache.getOrSet(
       `github:repositories:${installation.id}`,
@@ -66,8 +74,11 @@ export class GithubAccessResolver {
    * The installation's token, held for most of its hour, and the budget GitHub
    * counts it against: the installation, whichever token was minted for it.
    */
-  async readCredential(scope: AccessScope, installationId: string): Promise<GithubCredential> {
-    const installation = await this.usableInstallation(scope, installationId);
+  async readCredential(scope: AccessScope, address: RepositoryAddress): Promise<GithubCredential> {
+    if (address.installationId === null) {
+      return this.tokens.credentialFor(scope.userId, address.githubRepoId, new Date());
+    }
+    const installation = await this.usableInstallation(scope, address.installationId);
     const githubInstallationId = installation.githubInstallationId;
     const bucket = `installation:${githubInstallationId}` as const;
     const held = this.installationTokens.get(githubInstallationId);
@@ -85,7 +96,12 @@ export class GithubAccessResolver {
    * theirs shares one budget): every write is made in their name, never
    * anyone else's.
    */
-  async writeCredential(userId: string): Promise<GithubCredential> {
+  async writeCredential(userId: string, repository: RepositoryAddress): Promise<GithubCredential> {
+    if (repository.installationId === null) {
+      throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
+        detail: `Repository ${repository.githubRepoId} is read through your own GitHub token.`,
+      });
+    }
     const actor = await this.userGrants.actorFor(userId);
     if (!actor) {
       throw new AppError(GithubErrors.USER_NOT_CONNECTED, {
@@ -93,6 +109,42 @@ export class GithubAccessResolver {
       });
     }
     return { token: actor.token, bucket: `user:${actor.githubUserId}` };
+  }
+
+  /**
+   * Every repository the caller's own tokens open, archived ones aside, as
+   * addresses with no installation. Empty when tokens are not configured here.
+   */
+  async tokenRepositories(scope: AccessScope): Promise<WorkspaceRepository[]> {
+    if (!this.tokens.isConfigured()) return [];
+    return (await this.tokens.repositoriesOf(scope.userId, new Date())).map((repository) => ({
+      installationId: null,
+      githubRepoId: repository.githubRepoId,
+      name: repository.name,
+      fullName: repository.fullName,
+      defaultBranch: repository.defaultBranch,
+      private: repository.private,
+    }));
+  }
+
+  /** The login a token of the caller's belongs to, oldest token first; null when they have none. */
+  async tokenLogin(scope: AccessScope): Promise<string | null> {
+    return (await this.tokens.findOwn(scope.userId))[0]?.login ?? null;
+  }
+
+  private async tokenRepositoryOf(
+    scope: AccessScope,
+    githubRepoId: number,
+  ): Promise<WorkspaceRepository> {
+    const repository = (await this.tokenRepositories(scope)).find(
+      (candidate) => candidate.githubRepoId === githubRepoId,
+    );
+    if (!repository) {
+      throw new AppError(GithubErrors.NO_TOKEN_FOR_REPOSITORY, {
+        detail: `None of your GitHub tokens opens repository ${githubRepoId}`,
+      });
+    }
+    return repository;
   }
 
   async usableInstallation(

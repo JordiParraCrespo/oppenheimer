@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { PullRequestResource } from '../pull-requests.resource';
 import { WatchedRepositoryOrmEntity } from './watched-repository.orm-entity';
 import type {
@@ -45,7 +45,11 @@ export class WatchedRepositoryRepository
   }
 
   async unwatch(scope: AccessScope, watch: RepositoryWatch): Promise<void> {
-    await this.repository.delete(this.rowOf(scope, watch));
+    // `= NULL` matches nothing: a token repository's watch is found with `IS NULL`.
+    await this.repository.delete({
+      ...this.rowOf(scope, watch),
+      installationId: watch.installationId ?? IsNull(),
+    });
   }
 
   private rowOf(scope: AccessScope, watch: RepositoryWatch) {

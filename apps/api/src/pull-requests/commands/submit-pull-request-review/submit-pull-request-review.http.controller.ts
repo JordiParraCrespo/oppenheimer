@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -25,6 +24,10 @@ import {
   PullRequestProblemResponses,
   PullRequestWriteProblemResponses,
 } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySource,
+} from '../../decorators/repository-source.decorator';
 import { ReviewSubmittedResponseDto } from '../../dtos/review-submitted.response.dto';
 import { SubmitPullRequestReviewCommand } from './submit-pull-request-review.command';
 import { SubmitPullRequestReviewRequest } from './submit-pull-request-review.request.dto';
@@ -41,6 +44,7 @@ export class SubmitPullRequestReviewHttpController {
 
   @Post(':installationId/:githubRepoId/:number/reviews')
   @Version('1')
+  @ApiRepositorySource()
   @HttpCode(HttpStatus.OK)
   @CheckPolicies({ action: 'update', subject: 'PullRequest' })
   @RequireScopes('pulls:write')
@@ -54,7 +58,7 @@ export class SubmitPullRequestReviewHttpController {
   @ApiResponse({ status: 200, type: ReviewSubmittedResponseDto })
   async submit(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySource() installationId: string | null,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: SubmitPullRequestReviewRequest,

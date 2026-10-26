@@ -46,3 +46,34 @@ export const connectInstallationSchema = z.object({
 });
 
 export type ConnectInstallationDto = z.infer<typeof connectInstallationSchema>;
+
+/**
+ * A person's own GitHub tokens, for repositories the App will never be
+ * installed on (`product/next-steps/0.2-pull-requests.md` §6.2). What kind a
+ * token is GitHub's prefix says: `github_pat_` fine-grained, `ghp_` classic.
+ */
+export const GITHUB_TOKEN_KINDS = ['fine_grained', 'classic', 'other'] as const;
+export type GithubTokenKind = (typeof GITHUB_TOKEN_KINDS)[number];
+
+/** The name a person gives a token so the picker can tell them apart. */
+export const githubTokenLabelSchema = z.string().trim().min(1).max(80);
+
+/** `POST /github/tokens`. The token is asked of GitHub before anything is kept, and never returned. */
+export const addGithubTokenSchema = z.object({
+  label: githubTokenLabelSchema,
+  token: z
+    .string()
+    .trim()
+    .min(20)
+    .max(255)
+    .regex(/^[A-Za-z0-9_]+$/, 'A GitHub token is letters, digits and underscores'),
+});
+export type AddGithubTokenDto = z.infer<typeof addGithubTokenSchema>;
+
+/** `PATCH /github/tokens/:id`. */
+export const renameGithubTokenSchema = z.object({ label: githubTokenLabelSchema });
+export type RenameGithubTokenDto = z.infer<typeof renameGithubTokenSchema>;
+
+/** `PUT /github/tokens/pins/:githubRepoId`: which of the caller's tokens reads the repository. */
+export const pinGithubTokenSchema = z.object({ tokenId: z.string().uuid() });
+export type PinGithubTokenDto = z.infer<typeof pinGithubTokenSchema>;
