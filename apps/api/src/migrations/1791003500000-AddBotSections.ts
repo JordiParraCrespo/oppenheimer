@@ -15,8 +15,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - A per-section join table was considered and not taken: four values, no
  *   order and no attributes of their own.
  */
-export class AddBotSections1791003400000 implements MigrationInterface {
-  name = 'AddBotSections1791003400000';
+export class AddBotSections1791003500000 implements MigrationInterface {
+  name = 'AddBotSections1791003500000';
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
