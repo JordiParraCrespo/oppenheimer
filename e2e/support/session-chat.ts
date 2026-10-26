@@ -49,8 +49,8 @@ async function distanceFromEnd(page: Page): Promise<number> {
 /**
  * Nothing of the terminal under the chat paints or takes a pointer over it:
  * the topmost element at points across the chat's area is the chat's own,
- * never xterm's layers or the latency readout (a z-index inside the grid
- * once reached over the cover, greying a band and eating clicks).
+ * never xterm's layers (a z-index inside the grid once reached over the
+ * cover, greying a band and eating clicks).
  */
 export async function expectChatOnTop(page: Page): Promise<void> {
   const box = await scroller(page).boundingBox();
@@ -60,14 +60,13 @@ export async function expectChatOnTop(page: Page): Promise<void> {
     // they still paint: for the sampling, everything of the terminal takes
     // one, which makes the topmost element the topmost painted.
     const probe = document.createElement('style');
-    probe.textContent =
-      '.xterm, .xterm *, [data-testid="terminal-latency"] { pointer-events: auto !important; }';
+    probe.textContent = '.xterm, .xterm * { pointer-events: auto !important; }';
     document.head.appendChild(probe);
     const found: string[] = [];
     for (let x = b.x + 4; x < b.x + b.width; x += b.width / 12) {
       for (let y = b.y + 4; y < b.y + b.height; y += b.height / 12) {
         const el = document.elementFromPoint(x, y);
-        if (el?.closest('.xterm, [data-testid="terminal-latency"]')) {
+        if (el?.closest('.xterm')) {
           found.push(
             `${Math.round(x)},${Math.round(y)}: ${el.className || el.getAttribute('style') || el.tagName}`,
           );

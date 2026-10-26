@@ -1,5 +1,5 @@
 import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { BotEngineEvent } from '../bot-engine';
+import type { BotEngineEvent, BotTurnContext } from '../bot-engine';
 import { failed, type ToolCallData } from '../turn';
 import { botToolName } from './claude-tool-server';
 
@@ -7,6 +7,16 @@ type ContentBlock = { type: string; [key: string]: unknown };
 
 function blocksOf(content: unknown): ContentBlock[] {
   return Array.isArray(content) ? (content as ContentBlock[]) : [];
+}
+
+/** What one model call was sent, cached or not, off its usage; none when it says nothing. */
+function sentTokens(usage: unknown): number | null {
+  if (typeof usage !== 'object' || usage === null) return null;
+  const counts = usage as Record<string, unknown>;
+  const count = (key: string) => (typeof counts[key] === 'number' ? (counts[key] as number) : 0);
+  const sent =
+    count('input_tokens') + count('cache_read_input_tokens') + count('cache_creation_input_tokens');
+  return sent > 0 ? sent : null;
 }
 
 /** A tool result's content as text: a string as it is, text blocks joined. */
@@ -29,6 +39,10 @@ function resultText(content: unknown): string {
  *   chat's activity line counts what a subagent did with our tools.
  * - A synthetic assistant message carrying an `error` (a refused key, an
  *   unknown model) is the failure's reason, never the bot's text.
+ * - The context is what the main thread's last answer was sent, read off
+ *   that message's own usage (the run's usage sums every call, which is
+ *   not what the context held), against the window the run's `modelUsage`
+ *   gives the model it ran on.
  * - A failure the provider refused for rate or quota (the SDK's
  *   `rate_limit` error, a `429` status, a rejected rate-limit event) ends
  *   with `rateLimit`, and with when it may be called again when the SDK
@@ -41,6 +55,8 @@ export class ClaudeEventTranslator {
   private lastError: string | undefined;
   private rateLimited = false;
   private resetAt: Date | null = null;
+  /** What the main thread's last answer was sent; none before the first. */
+  private contextTokens: number | null = null;
 
   /** `made`: what our tools' calls made, recorded by the tool server as they ran. */
   constructor(private readonly made: ToolCallData) {}
@@ -53,6 +69,9 @@ export class ClaudeEventTranslator {
           message.parent_tool_use_id,
         );
       case 'assistant':
+        if (message.parent_tool_use_id === null && message.error === undefined) {
+          this.contextTokens = sentTokens(message.message.usage) ?? this.contextTokens;
+        }
         return this.fromAssistant(
           message.message.content,
           message.parent_tool_use_id,
@@ -91,6 +110,7 @@ export class ClaudeEventTranslator {
     }
     if (result.subtype === 'success' && result.api_error_status === 429) this.rateLimited = true;
     const { usage } = result;
+    const context = this.contextOf(result);
     const events: BotEngineEvent[] = [
       {
         type: 'usage',
@@ -99,6 +119,7 @@ export class ClaudeEventTranslator {
           (usage.cache_read_input_tokens ?? 0) +
           (usage.cache_creation_input_tokens ?? 0),
         outputTokens: usage.output_tokens ?? 0,
+        ...(context ? { context } : {}),
       },
     ];
     if (result.subtype === 'success') {
@@ -115,6 +136,26 @@ export class ClaudeEventTranslator {
       events.push(this.failed(result.errors.join('; ') || this.lastError || result.subtype));
     }
     return events;
+  }
+
+  /**
+   * The context at the last answer, against the window of the model that
+   * did most of the run's reading (a subagent on a smaller model reads
+   * less), when the run reported one.
+   */
+  private contextOf(result: SDKResultMessage): BotTurnContext | null {
+    if (this.contextTokens === null) return null;
+    let window: number | null = null;
+    let read = -1;
+    for (const model of Object.values(result.modelUsage ?? {})) {
+      const modelRead =
+        model.inputTokens + model.cacheReadInputTokens + model.cacheCreationInputTokens;
+      if (modelRead > read && model.contextWindow > 0) {
+        read = modelRead;
+        window = model.contextWindow;
+      }
+    }
+    return { tokens: this.contextTokens, window };
   }
 
   /** A failed end, marked as a rate limit when the provider refused for one. */

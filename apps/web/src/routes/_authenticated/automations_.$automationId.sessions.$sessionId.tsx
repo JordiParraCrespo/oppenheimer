@@ -13,13 +13,14 @@ import { SessionScreen } from '@/features/sessions/screens/session';
  * The route is where the two features meet, which is the only place they may:
  * the terminal is `sessions`, and what a *run* says when its terminal is gone
  * is `automations`. The session screen draws the pane and hands this one the
- * closed state to fill, so neither feature imports the other.
+ * closed state to fill, so neither feature imports the other. The session's
+ * bar is the screen's (`bar: 'own'`), as on the sessions route.
  */
 export const Route = createFileRoute(
   '/_authenticated/automations_/$automationId/sessions/$sessionId',
 )({
   component: RunSessionRoute,
-  staticData: { pane: 'full' },
+  staticData: { pane: 'full', bar: 'own' },
 });
 
 function RunSessionRoute() {
@@ -29,6 +30,7 @@ function RunSessionRoute() {
     <SessionScreen
       key={sessionId}
       sessionId={sessionId}
+      bar={{}}
       closed={({ branch, restart, restarting }) => (
         <RunClosed
           branch={branch}

@@ -1,6 +1,6 @@
-import { Button } from '@oppenheimer/design-system-web';
+import { Button, Skeleton } from '@oppenheimer/design-system-web';
 import { isSessionNotFound } from '@oppenheimer/frontend-consumer';
-import { QueryState, RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
+import { PageBar, QueryState, RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,22 +16,27 @@ import { SessionTerminal } from '../sections/session-terminal';
  * that will never exist, said with the kit's 404, like the catch-all route's —
  * a feature may not import another feature's screen, and what they share is
  * the pane, not the button under it.
+ *
+ * With `bar`, the route has declared `staticData.bar: 'own'` and this screen
+ * draws the session's bar in every state: a bar of the name's width while
+ * the session is read, the toggle alone over a failure, `SessionBar` once it
+ * answers.
  */
 export function SessionScreen({
   sessionId,
   initialView,
   closed,
-  statusItem,
+  bar,
 }: {
   sessionId: string;
   /** The view the pane opens on, Terminal unless the route says Chat. */
   initialView?: SessionView;
   /**
-   * A chip at the head of the terminal's status bar: the task this session is
-   * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
-   * the task is the tasks feature's.
+   * Present: the screen draws the session's bar. `back` leads it with the task
+   * this session is on ("Back to task", `18-plan-product.md` §4); the route
+   * composes it, since the task is the tasks feature's.
    */
-  statusItem?: ReactNode;
+  bar?: { back?: ReactNode };
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -54,31 +59,37 @@ export function SessionScreen({
   return (
     <QueryState>
       <QueryState.Pending>
+        {bar ? <PageBar title={<Skeleton className="h-4 w-40" />} /> : null}
         <SessionSkeleton />
       </QueryState.Pending>
       <QueryState.Error>
-        {(error, retry) =>
-          isSessionNotFound(error) ? (
-            <RouteNotFound>
-              <Button variant="secondary" render={<Link to="/sessions/new" />}>
-                {t('nav.newSession')}
-              </Button>
-            </RouteNotFound>
-          ) : (
-            <RouteError error={error} onRetry={retry} />
-          )
-        }
+        {(error, retry) => (
+          <>
+            {bar ? <PageBar title={null} /> : null}
+            {isSessionNotFound(error) ? (
+              <RouteNotFound>
+                <Button variant="secondary" render={<Link to="/sessions/new" />}>
+                  {t('nav.newSession')}
+                </Button>
+              </RouteNotFound>
+            ) : (
+              <RouteError error={error} onRetry={retry} />
+            )}
+          </>
+        )}
       </QueryState.Error>
       <QueryState.Data>
         <SessionPane
           sessionId={sessionId}
           initialView={initialView}
           closed={closed}
-          terminal={(session, reading) => (
+          bar={bar}
+          terminal={(session, reading, statusItems) => (
             <SessionTerminal
               sessionId={session.id}
               hostId={session.hostId}
-              statusItem={statusItem}
+              statusItems={statusItems}
+              showLive={!bar}
               reading={reading}
             />
           )}

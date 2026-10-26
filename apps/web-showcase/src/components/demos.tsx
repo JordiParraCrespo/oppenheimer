@@ -30,7 +30,7 @@ import {
 import { SlugInput, type SlugStatus } from '@oppenheimer/design-system-web/slug-input';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { DictationButton, VoiceRecorderBar } from '@oppenheimer/design-system-web/chat-composer-extras';
-import { Composer } from '@oppenheimer/design-system-web/composer';
+import { Composer, ComposerChoices, ComposerPill } from '@oppenheimer/design-system-web/composer';
 import {
   Dialog,
   DialogBody,
@@ -517,7 +517,18 @@ export const PERMISSIONS = [
 
 export function AgentModelDemo() {
   const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5-5' });
-  return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
+  const [favourites, setFavourites] = React.useState<string[]>(['claude-code:claude-opus-5-5']);
+  const [effort, setEffort] = React.useState<EffortLevel>('medium');
+  return (
+    <AgentModelSelect
+      agents={HARNESSES}
+      value={engine}
+      onValueChange={setEngine}
+      favourites={favourites}
+      onFavouritesChange={setFavourites}
+      effort={engine.model ? { stops: EFFORT_LEVELS, value: effort, onValueChange: setEffort } : undefined}
+    />
+  );
 }
 
 // A model's own levels, as the console passes them: the stops are the caller's.
@@ -818,6 +829,36 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
         }
         scope={full ? <ScopeChips variant="tab" /> : undefined}
       />
+    </div>
+  );
+}
+
+/** New session's box: the pill, the project over it, the choices under it. */
+export function ComposerPillDemo() {
+  const [value, setValue] = React.useState('');
+  const [files, setFiles] = React.useState<{ id: string; name: string }[]>([]);
+  return (
+    <div className="flex w-full max-w-190 flex-col gap-2.5">
+      <ComposerPill
+        value={value}
+        onValueChange={setValue}
+        onSubmit={() => setValue('')}
+        attachments={files}
+        onRemoveAttachment={(id) => setFiles((f) => f.filter((x) => x.id !== id))}
+        onAttach={() => setFiles((f) => [...f, { id: String(Date.now()), name: 'pricing-brief.pdf' }])}
+        dictation={{ mic: <DictationButton recording={false} onClick={() => {}} /> }}
+      />
+      <ComposerChoices
+        engine={
+          <>
+            <AgentModelDemo />
+            <EffortDemo />
+          </>
+        }
+      >
+        <ScopeChips variant="tab" />
+        <PermissionDemo />
+      </ComposerChoices>
     </div>
   );
 }

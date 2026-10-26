@@ -15,8 +15,13 @@ export {
 export {
   BotConversationEntity,
   BotMessageEntity,
+  type BotPlanLimits,
+  type BotPlanWindow,
+  type BotRoomLeft,
   type BotToolStep,
+  type BotTurnContext,
   BotTurnEntity,
+  type BotWaitingMessage,
 } from './bot-conversation.entity';
 export { BotsModule } from './bots.module';
 export { BotsRepository } from './bots.repository';

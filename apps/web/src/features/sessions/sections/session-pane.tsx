@@ -1,4 +1,3 @@
-import { cn } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useRestartSession,
@@ -9,12 +8,16 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatViewToggle } from '../components/chat-view-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
+import { LatencyReadout } from './latency-readout';
+import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionProvisioning } from './session-provisioning';
+import { SessionShareButton } from './session-share-button';
 
 /**
  * One session once it has answered, in `SessionScreen`'s `QueryState.Data`:
@@ -24,11 +27,18 @@ import { SessionProvisioning } from './session-provisioning';
  * Suspense, and shared by every branch. A refetch that fails is said beside
  * a pane that is not the terminal; the terminal streams on its own link and
  * says what that link is doing itself.
+ *
+ * With `bar`, the route draws no bar of its own (`staticData.bar: 'own'`) and
+ * this pane draws the session's (`SessionBar`) over every branch, with the
+ * view switch and Share in it. Without one (a pull request's review session,
+ * under the pull request's toolbar), those two close the terminal's status
+ * line instead.
  */
 export function SessionPane({
   sessionId,
   initialView = 'terminal',
   closed,
+  bar,
   terminal,
 }: {
   sessionId: string;
@@ -41,12 +51,14 @@ export function SessionPane({
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
-   * the pane reads it, held here because the frame changes with it (the chat
-   * sits on the console's own ground, the grid on the terminal's) and the
-   * chat is a view of its own, beside the terminal rather than inside it:
-   * the terminal feeds it and draws it over its grid as `cover`.
+   * the pane reads it, held here because the chat is a view of its own, beside the terminal rather than inside it:
+   * the terminal feeds it and draws it over its grid as `cover`. `status` is
+   * what the terminal's status line carries beside the link: the view switch
+   * and Share when there is no bar to hold them, else nothing.
    */
-  terminal: (session: SessionEntity, reading: PaneReading) => ReactNode;
+  terminal: (session: SessionEntity, reading: PaneReading, status: ReactNode) => ReactNode;
+  /** Present: the pane draws the session's bar, led by `back` ("Back to task"). */
+  bar?: { back?: ReactNode };
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -77,9 +89,8 @@ export function SessionPane({
     cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
     files,
   };
-  // The ground is the view on screen, not the one picked: a pane opened on
-  // Chat shows the terminal until the transcript comes, on the terminal's.
-  const { shown: chatShown } = useChatReading(reading);
+  // Whether the transcript has come, so the view switch is offered.
+  const { offered: chatOffered } = useChatReading(reading);
   const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
@@ -88,7 +99,33 @@ export function SessionPane({
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
 
-  const alert = <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />;
+  // The view switch and Share have one home, decided here once: the session's
+  // bar when the route lets this pane draw one, else the terminal's status
+  // line. Nothing below chooses again; each place takes what it is handed.
+  const viewToggle = chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null;
+  const { head, statusItems } = bar
+    ? {
+        head: (
+          <SessionBar session={session} back={bar.back} tabs={session.isLive ? viewToggle : null} />
+        ),
+        statusItems: null,
+      }
+    : {
+        head: null,
+        statusItems: (
+          <>
+            <LatencyReadout sessionId={session.id} />
+            {viewToggle}
+            <SessionShareButton sessionId={session.id} place="status" />
+          </>
+        ),
+      };
+  const alert = (
+    <>
+      {head}
+      <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
+    </>
+  );
 
   // The **lifecycle** decides which pane this is, never the derived group: the
   // group is organised by what needs you, so an `idle` session has a live PTY
@@ -145,28 +182,20 @@ export function SessionPane({
   }
 
   return (
-    /* The artboard frames the terminal rather than bleeding it: 14px of canvas
-       around a 1040px card, so mono output keeps a readable measure on a wide
-       display. The frame has **no radius** (`SessionsConsole.dc.html` sets
-       `border-radius: 0`): rounded, it reads as a widget tucked into a card
-       rather than the console surface `terminal.css` asks for. It is the
-       terminal's colour, as the artboard's is, so frame and pane read as one
-       surface in dark mode. Read as a chat, the frame paints nothing: the
-       chat, the bar and the frame are all the shell's own ground.
-
-       `data-pane-ground` is the pane's **public contract** with whatever
-       frames it, not a detail of this file: `terminal` or `chat`, the ground
-       on screen. An ancestor matches it with `group-has-[[data-pane-ground=…]]`
-       to stand on the same colour — the shell's page bar (`app-shell.tsx`)
-       and a pull request's review bar (`pull-request-chat.tsx`). Renaming it,
-       or setting it anywhere but the pane's root, changes both. */
-    <div
-      data-pane-ground={chatShown ? 'chat' : 'terminal'}
-      className={cn('flex min-h-0 flex-1 flex-col p-3.5', !chatShown && 'bg-term-bg')}
-    >
-      <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        {terminal(session, reading)}
+    /* The terminal runs from the bar to the pane's foot with no frame around
+       it (the 2026-10-25 export dropped the 14px of canvas), on a 1040px
+       column so mono output keeps a readable measure on a wide display; the
+       ground either side is the terminal's colour, so column and pane read as
+       one surface. Read as a chat it is the same colour: the chat's ground is
+       the terminal's (`--chat-ground`), so switching views changes what is
+       drawn and never the pane's colour or the bar's. */
+    <>
+      {head}
+      <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
+        <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
+          {terminal(session, reading, statusItems)}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

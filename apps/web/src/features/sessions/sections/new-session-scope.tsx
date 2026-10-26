@@ -1,24 +1,22 @@
-import { Separator } from '@oppenheimer/design-system-web';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { NewSessionBranch } from './new-session-branch';
 import { NewSessionFolder } from './new-session-folder';
-import { NewSessionHost } from './new-session-host';
-import { NewSessionProject } from './new-session-project';
+import { NewSessionPlace } from './new-session-place';
 import { NewSessionRepositories } from './new-session-repositories';
-import { NewSessionWhere } from './new-session-where';
 
 /**
- * The scope band's chips, in the order the place reads
- * (`product/versions/mvp/24-session-places.md` §5): Where first, then for a
- * new worktree Project, Host, Repository and Branch — the project first,
- * because picking one prefills the rest — and for a folder on the host Host,
- * Folder and Project, the project optional and Unassigned until picked.
+ * Where the session runs, on the row under New session's box
+ * (`NewSessionComposer.dc.html`), in the order the place reads
+ * (`product/versions/mvp/24-session-places.md` §5): the host and where on it
+ * first, as one chip, then for a new worktree Repository and Branch, and for
+ * a folder on the host Folder. The project is not here: it sits over the box,
+ * since picking one fills these in (`NewSessionForm`).
  *
  * It reads only `where`, so a pick of anything else leaves it still; the
- * chips are keyed, so the project and host chips keep their state when the
- * place moves them.
+ * place chip sits outside the swapped list, so it keeps its state when the
+ * place changes under it.
  *
  * A fieldset rather than a div with `role="group"`: the chips are one
  * decision — where this session runs — and a screen reader announces the
@@ -31,22 +29,12 @@ export function NewSessionScope() {
 
   const chips =
     where === 'folder'
-      ? [
-          <NewSessionHost key="host" />,
-          <NewSessionFolder key="folder" />,
-          <NewSessionProject key="project" />,
-        ]
-      : [
-          <NewSessionProject key="project" />,
-          <NewSessionHost key="host" />,
-          <NewSessionRepositories key="repositories" />,
-          <NewSessionBranch key="branch" />,
-        ];
+      ? [<NewSessionFolder key="folder" />]
+      : [<NewSessionRepositories key="repositories" />, <NewSessionBranch key="branch" />];
 
   return (
     <fieldset aria-label={t('sessions.new.title')} className="contents">
-      <NewSessionWhere />
-      <Separator orientation="vertical" className="mx-1 h-4 self-center" />
+      <NewSessionPlace />
       {chips}
     </fieldset>
   );

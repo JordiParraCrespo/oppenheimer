@@ -100,6 +100,11 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			return app.CredentialHelper(ctx, operation, os.Stdin, os.Stdout)
 		})
+	case "statusline":
+		// Claude Code calls this for a session's status line, the payload on
+		// stdin; it never fails the CLI.
+		_ = cli.StatusLine(ctx, os.Stdin, os.Stdout)
+		return cli.ExitOK, nil
 	case "selfcheck":
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			report, err := app.SelfCheck(ctx)

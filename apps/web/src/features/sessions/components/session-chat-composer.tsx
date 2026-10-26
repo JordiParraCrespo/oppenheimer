@@ -8,8 +8,11 @@ import {
   FieldError,
 } from '@oppenheimer/design-system-web';
 import { ListChecks } from '@oppenheimer/design-system-web/icons';
-import type { ChatTodo } from '@oppenheimer/frontend-consumer';
+import type { ChatLimit, ChatQueued, ChatTodo } from '@oppenheimer/frontend-consumer';
 import {
+  ChatQueuedRow,
+  ChatUsage,
+  type ChatUsageContext,
   dictateInto,
   dictationSlots,
   useDictation,
@@ -36,6 +39,13 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * The mic before send dictates into the draft, added to its end, to be read
  * before it is sent.
  *
+ * **The queue**: a message sent while the agent works waits on the stack,
+ * under the tasks, until the turn ends (`SessionChat.post`). Each can be
+ * sent now, taken back into the field to edit (ahead of whatever is being
+ * written), or dropped. **The room left**: how full the agent's context is,
+ * beside the model, opening to the context in tokens (with Compact) and the
+ * plan's usage limits (`ChatUsage`).
+ *
  * **Files**, when the pane hands them in (`files`): the paperclip, a paste on
  * the chat and a drop on the pane all go through `useHeldFiles`, New
  * session's rule, and wait as chips over the field until the message goes.
@@ -49,8 +59,14 @@ export function SessionChatComposer({
   model,
   voice,
   files: handOff,
+  queued,
+  context,
+  limits,
   onSend,
   onStop,
+  onSendQueued,
+  onUnqueue,
+  onCompact,
 }: {
   /** Who hears a recording: the workspace's dictation, when it has one. */
   voice: VoiceInput;
@@ -60,8 +76,18 @@ export function SessionChatComposer({
   model: string | null;
   /** Where the pane hands the files it catches; present, a message can carry files. */
   files?: FileHandOff;
+  /** Messages written while the agent worked, waiting for its turn to end. */
+  queued: readonly ChatQueued[];
+  /** How full the agent's context is, once the host sends its counts. */
+  context: ChatUsageContext | null;
+  /** The plan's usage windows, from the agent's status line on the host. */
+  limits: { fiveHour: ChatLimit | null; sevenDay: ChatLimit | null };
   onSend: (text: string, files: HeldFile[]) => Promise<ChatSendResult>;
   onStop: () => void;
+  onSendQueued: (id: string) => void;
+  /** Takes a queued message back; its text, when it was still there. */
+  onUnqueue: (id: string) => string | null;
+  onCompact: () => void;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -72,28 +98,53 @@ export function SessionChatComposer({
   useTakeFiles(handOff, hold);
   const done = todos?.filter((todo) => todo.status === 'completed').length ?? 0;
   // A list the agent has finished is history, which the turn already tells.
-  const above =
+  const tasks =
     todos && todos.length > 0 && done < todos.length ? (
+      <div className="flex flex-col">
+        <ComposerStackRow icon={<ListChecks />} muted>
+          {t('sessions.chat.tasks', { done, count: todos.length })}
+        </ComposerStackRow>
+        <ComposerTaskList
+          tasks={todos.map((todo, index) => ({
+            id: String(index),
+            label: todo.content,
+            state:
+              todo.status === 'completed'
+                ? 'done'
+                : todo.status === 'in_progress'
+                  ? 'running'
+                  : 'todo',
+          }))}
+        />
+      </div>
+    ) : null;
+  const above =
+    tasks || queued.length > 0 ? (
       <ComposerStack>
-        <div className="flex flex-col">
-          <ComposerStackRow icon={<ListChecks />} muted>
-            {t('sessions.chat.tasks', { done, count: todos.length })}
-          </ComposerStackRow>
-          <ComposerTaskList
-            tasks={todos.map((todo, index) => ({
-              id: String(index),
-              label: todo.content,
-              state:
-                todo.status === 'completed'
-                  ? 'done'
-                  : todo.status === 'in_progress'
-                    ? 'running'
-                    : 'todo',
-            }))}
+        {tasks}
+        {queued.map((message) => (
+          <ChatQueuedRow
+            key={message.id}
+            text={message.text}
+            onSendNow={() => onSendQueued(message.id)}
+            onEdit={() => {
+              const text = onUnqueue(message.id);
+              if (text !== null) setDraft((current) => (current ? `${text}\n${current}` : text));
+            }}
+            onRemove={() => onUnqueue(message.id)}
           />
-        </div>
+        ))}
       </ComposerStack>
     ) : undefined;
+  const meter =
+    context || limits.fiveHour || limits.sevenDay ? (
+      <ChatUsage
+        context={context}
+        fiveHour={limits.fiveHour}
+        sevenDay={limits.sevenDay}
+        onCompact={onCompact}
+      />
+    ) : null;
 
   async function submit(text: string) {
     const carried = files;
@@ -160,7 +211,14 @@ export function SessionChatComposer({
             {t('sessions.chat.composer.agent')}
           </span>
         }
-        engine={model ?? undefined}
+        engine={
+          meter || model ? (
+            <>
+              {meter}
+              {model}
+            </>
+          ) : undefined
+        }
         labels={{
           send: t('sessions.chat.composer.send'),
           stop: t('sessions.chat.composer.stop'),
