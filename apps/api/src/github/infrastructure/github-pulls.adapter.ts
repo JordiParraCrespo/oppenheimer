@@ -2,9 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
+import {
+  OPEN_PULLS_PAGES,
+  OPEN_PULLS_QUERY,
+  type OpenPullsBody,
+  openPullRequestsOf,
+} from './github-open-pulls.util';
 import type {
   GithubChecks,
   GithubCredential,
+  GithubOpenPullRequest,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
@@ -139,6 +146,27 @@ export class GithubPullsAdapter implements GithubPullsPort {
       maxPages,
     );
     return raw.map(toSummary);
+  }
+
+  async listOpenPullRequests(
+    credential: GithubCredential,
+    fullName: string,
+  ): Promise<GithubOpenPullRequest[]> {
+    const [owner, name] = fullName.split('/');
+    const pulls: GithubOpenPullRequest[] = [];
+    let after: string | null = null;
+    for (let page = 0; page < OPEN_PULLS_PAGES; page += 1) {
+      const { body } = await this.request<OpenPullsBody>(`${this.http.api}/graphql`, {
+        credential,
+        method: 'POST',
+        body: { query: OPEN_PULLS_QUERY, variables: { owner, name, after } },
+      });
+      const read = openPullRequestsOf(body);
+      pulls.push(...read.pulls);
+      after = read.next;
+      if (!after) break;
+    }
+    return pulls;
   }
 
   async readPullRequest(

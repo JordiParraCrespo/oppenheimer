@@ -115,6 +115,26 @@ export interface GithubChecks {
   pending: number;
 }
 
+/**
+ * An open pull request read whole in one request: its detail, the paths it
+ * touches, its checks on the head commit and its reviews. A part GitHub
+ * refused, or one longer than the read's page, is a `Part` of its own kind:
+ * refused carries GitHub's refusal, and `overflow` says the read stopped
+ * short, so the caller reads that pull request the long way rather than
+ * show part of a list as all of it (#244).
+ */
+export interface GithubOpenPullRequest {
+  pull: GithubPullRequestDetail;
+  files: GithubPart<string[]>;
+  checks: GithubPart<GithubChecks>;
+  reviews: GithubPart<GithubPullRequestReview[]>;
+}
+
+export type GithubPart<T> =
+  | { value: T; refusal: null }
+  | { value: null; refusal: GithubRefusal }
+  | { value: null; refusal: null; overflow: true };
+
 export interface GithubReviewInput {
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
   body?: string;
@@ -143,6 +163,15 @@ export interface GithubPullsPort {
     state: 'open' | 'closed',
     maxPages: number,
   ): Promise<GithubPullRequestSummary[]>;
+  /**
+   * Every open pull request of a repository, newest update first, each with
+   * its paths, checks and reviews: one GraphQL request a page, in place of a
+   * listing and four requests per pull request.
+   */
+  listOpenPullRequests(
+    credential: GithubCredential,
+    fullName: string,
+  ): Promise<GithubOpenPullRequest[]>;
   readPullRequest(
     credential: GithubCredential,
     fullName: string,
