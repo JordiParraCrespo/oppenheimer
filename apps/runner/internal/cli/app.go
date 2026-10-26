@@ -22,6 +22,8 @@ import (
 	pairtoken "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/token"
 	pairapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports"
+	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/launchd"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/systemd"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
@@ -77,6 +79,9 @@ type App struct {
 	// Devices is the simulators and emulators this host offers its sessions,
 	// one each; nil is a host that offers none.
 	Devices *devapp.Service
+	// Ports is the TCP ports sessions' processes listen on, for the
+	// console's preview; nil where the runner cannot read them.
+	Ports *portsapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -156,6 +161,7 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	app.Devices = devices
+	app.Ports = ports.New()
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -166,9 +172,11 @@ func New(version string) (*App, error) {
 		Layout:     layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			for key, value := range pinDevice(devices, session) {
+			pinned, device := pinDevice(devices, session)
+			for key, value := range pinned {
 				env[key] = value
 			}
+			writeSessionNote(session, app.Ports != nil, device)
 			return env
 		},
 		// A session never starts an agent CLI its updater is replacing.

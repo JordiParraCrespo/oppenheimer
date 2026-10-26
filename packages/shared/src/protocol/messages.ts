@@ -78,6 +78,12 @@ export const RUNNER_CAPABILITIES = [
    * `device.input` (`product/research/device-streaming.md`).
    */
   'device.screen',
+  /**
+   * Answers `port.list` and `port.open`: the TCP ports a session's own
+   * processes listen on, each reachable as an attachment of raw bytes, for the
+   * console's Browser tab (`product/versions/mvp/28-session-previews.md`).
+   */
+  'port.forward',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -897,6 +903,80 @@ export const deviceDetachSchema = z.object({
 
 export type DeviceDetachMessage = z.infer<typeof deviceDetachSchema>;
 
+/* ------------------------------------------------------------------ a session's ports (28) */
+
+/** A TCP port a preview may reach: the session's own, never a system one. A fresh schema per use, like `sdp`. */
+const forwardedPort = () => z.number().int().min(1024).max(65535);
+
+/** How many ports one `port.listing` names at most. */
+export const PORT_LISTING_MAX_ENTRIES = 64;
+
+/**
+ * The ports the session's own processes listen on. Sent only to a runner
+ * whose hello named `port.forward`; answered by `port.listing` with the same
+ * `commandId`, or by `command.failed` (`PORT_003` the host cannot tell).
+ */
+export const portListSchema = z.object({
+  type: z.literal('port.list'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+});
+
+export type PortListMessage = z.infer<typeof portListSchema>;
+
+/** The session's listening ports, one per port, in order. */
+export const portListingSchema = z.object({
+  type: z.literal('port.listing'),
+  commandId: commandIdSchema,
+  ports: z
+    .array(
+      z.object({
+        port: forwardedPort(),
+        /** The command holding it ("node"), for the console's picker. */
+        process: z.string().max(100).optional(),
+      }),
+    )
+    .max(PORT_LISTING_MAX_ENTRIES),
+});
+
+export type PortListingMessage = z.infer<typeof portListingSchema>;
+
+/**
+ * Open one TCP connection to a port the session listens on, as an
+ * attachment: from `port.opened` on, binary frames under the id carry its
+ * bytes both ways, each direction under its own `attachment.credit` window.
+ * Refused with `command.failed`: `PORT_001` the session does not listen on
+ * it, `PORT_002` nothing answered.
+ */
+export const portOpenSchema = z.object({
+  type: z.literal('port.open'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  attachmentId: attachmentIdSchema,
+  port: forwardedPort(),
+});
+
+export type PortOpenMessage = z.infer<typeof portOpenSchema>;
+
+/** The runner connected; bytes may flow. */
+export const portOpenedSchema = z.object({
+  type: z.literal('port.opened'),
+  attachmentId: attachmentIdSchema,
+});
+
+export type PortOpenedMessage = z.infer<typeof portOpenedSchema>;
+
+/**
+ * The control plane hangs up a port attachment: the runner closes the
+ * connection. The runner's own hang-up is `attachment.closed`.
+ */
+export const portCloseSchema = z.object({
+  type: z.literal('port.close'),
+  attachmentId: attachmentIdSchema,
+});
+
+export type PortCloseMessage = z.infer<typeof portCloseSchema>;
+
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -944,6 +1024,11 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   deviceInfoSchema,
   deviceInputSchema,
   deviceDetachSchema,
+  portListSchema,
+  portListingSchema,
+  portOpenSchema,
+  portOpenedSchema,
+  portCloseSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

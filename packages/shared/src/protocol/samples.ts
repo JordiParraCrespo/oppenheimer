@@ -139,6 +139,15 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   },
   'device.input': { type: 'device.input', attachmentId: 9, kind: 'tap', x: 0.5, y: 0.42 },
   'device.detach': { type: 'device.detach', commandId, sessionId, attachmentId: 9 },
+  'port.list': { type: 'port.list', commandId, sessionId },
+  'port.listing': {
+    type: 'port.listing',
+    commandId,
+    ports: [{ port: 3001, process: 'node' }, { port: 5173, process: 'node' }],
+  },
+  'port.open': { type: 'port.open', commandId, sessionId, attachmentId: 11, port: 5173 },
+  'port.opened': { type: 'port.opened', attachmentId: 11 },
+  'port.close': { type: 'port.close', attachmentId: 11 },
   'session.create': {
     type: 'session.create',
     commandId,

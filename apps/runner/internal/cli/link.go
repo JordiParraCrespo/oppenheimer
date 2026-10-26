@@ -16,6 +16,7 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
+	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -42,6 +43,7 @@ const (
 	laneHostPreflight = "host:preflight"
 	laneRepoPrepare   = "repo:"
 	laneFsList        = "fs:list"
+	lanePortList      = "port:list:"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -88,11 +90,16 @@ type linkHandler struct {
 	// devices is the session's device context (link_devices.go); nil is a
 	// host that offers none, and its hello does not name the capability.
 	devices *devapp.Service
+	// ports is the session's listening ports (link_ports.go); nil is a
+	// platform the runner cannot read them on.
+	ports *portsapp.Service
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	// screens are the browsers watching a session's device, by attachment id.
 	screens map[uint32]*deviceAttachment
+	// tunnels are the relay's connections to sessions' ports, by attachment id.
+	tunnels map[uint32]*tunnel
 	// earlyResize holds a viewport that arrived before its attachment was
 	// registered, by attachment id. The browser sends its size the moment the
 	// socket opens, which is while the host is still opening the PTY; applied
@@ -163,6 +170,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
+		ports: a.Ports, tunnels: map[uint32]*tunnel{},
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -285,6 +293,9 @@ func (h *linkHandler) capabilities() []string {
 	if h.devices != nil {
 		named = append(named, link.CapabilityDeviceScreen)
 	}
+	if h.ports != nil {
+		named = append(named, link.CapabilityPortForward)
+	}
 	return named
 }
 
@@ -338,18 +349,25 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.attachments = map[uint32]*attachment{}
 	screens := h.screens
 	h.screens = map[uint32]*deviceAttachment{}
+	tunnels := h.tunnels
+	h.tunnels = map[uint32]*tunnel{}
 	h.linkUp = false
 	h.mu.Unlock()
 	for _, att := range open {
 		att.stop()
 	}
 	h.stopScreens(screens)
+	stopTunnels(tunnels)
 }
 
 // Frame is a browser's keystrokes for an attachment. It runs on the read
 // loop, so it only queues them: the attachment's inputPump writes them to the
 // PTY, whose write blocks once the client behind it stops reading.
 func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte) {
+	if t := h.tunnelByID(attachmentID); t != nil {
+		h.tunnelFrame(t, bytes)
+		return
+	}
 	att := h.attachmentByID(attachmentID)
 	if att == nil || att.readOnly {
 		return
@@ -474,6 +492,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			if att := h.attachmentByID(m.AttachmentID); att != nil {
 				att.flow.credit(m.Bytes)
+			} else if t := h.tunnelByID(m.AttachmentID); t != nil {
+				t.credit(m.Bytes)
 			} else if screen := h.screenByID(m.AttachmentID); screen != nil {
 				screen.credit(m.Bytes)
 			}
@@ -500,6 +520,28 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
+		}
+	case link.TypePortList:
+		var m link.PortList
+		if msg.Decode(&m) == nil {
+			// Reading every process's sockets takes a moment: off the read loop.
+			h.lanes.run(lanePortList+m.SessionID, func() { h.portList(h.life, m) })
+		}
+	case link.TypePortOpen:
+		var m link.PortOpen
+		if msg.Decode(&m) == nil {
+			// One per connection a page makes, so never queued behind another.
+			epoch := h.currentEpoch()
+			go func() {
+				if h.liveEpoch(epoch) {
+					h.portOpen(m, epoch)
+				}
+			}()
+		}
+	case link.TypePortClose:
+		var m link.PortClose
+		if msg.Decode(&m) == nil {
+			h.dropTunnel(m.AttachmentID)
 		}
 	case "credentials.grant":
 		var m link.CredentialsGrant
