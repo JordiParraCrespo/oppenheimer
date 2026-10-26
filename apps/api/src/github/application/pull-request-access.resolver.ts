@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
@@ -73,6 +73,7 @@ const PULLS_PER_PAGE = 100;
  */
 @Injectable()
 export class PullRequestAccessResolver implements PullRequestAccessPort {
+  private readonly logger = new Logger(PullRequestAccessResolver.name);
   /** One fill per snapshot key at a time; see {@link once}. */
   private readonly inFlight = new Map<string, Promise<unknown>>();
 
@@ -181,6 +182,16 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     } catch (error) {
       const refusal = refusalOf(error);
       if (refusal === 'rate_limited') return refusedRepository(repository, refusal);
+      // Logged, because a fallback that answers is otherwise invisible: a
+      // GraphQL answer this module misreads would quietly cost the old fan-out.
+      this.logger.warn(
+        {
+          message: 'The open pull requests read fell back to REST',
+          repository: repository.fullName,
+          refusal,
+        },
+        error instanceof Error ? error.stack : String(error),
+      );
       return this.openPullRequestsByRest(scope, repository, budget);
     }
     const whole: PullRequestSnapshot[] = [];
