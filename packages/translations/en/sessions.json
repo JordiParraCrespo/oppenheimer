@@ -572,5 +572,25 @@
       "nextQuestion": "Next question",
       "of": "{{n}} of {{total}}"
     }
+  },
+  "preview": {
+    "show": "Show preview",
+    "hide": "Hide preview",
+    "label": "Preview",
+    "simulator": "Simulator",
+    "close": "Close preview",
+    "frame": "App running on {{name}}",
+    "title": "{{name}} running on this session's host",
+    "connecting": "Connecting to the session's device…",
+    "connectingDetail": "The screen appears once the host has started streaming it.",
+    "unavailable": "No device for this session",
+    "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
+    "offline": "The host is offline",
+    "offlineDetail": "The device comes back when the host reconnects.",
+    "ended": "The session has ended",
+    "typeHint": "Click the screen to tap, drag to swipe, type to send keys.",
+    "back": "Back",
+    "home": "Home",
+    "apps": "Recent apps"
   }
 }

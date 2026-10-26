@@ -13,6 +13,7 @@ import type {
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
 import { LocalFirstSessionStream, type LocalTerminals } from './stream/local-first-stream';
+import { AttachDeviceStream, type DeviceStream } from './stream/device-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
@@ -119,6 +120,18 @@ export class SessionsService {
    * renders what it delivers. `direct` says whether to take a direct path when
    * the relay offers one (22); it is asked at each offer.
    */
+  /**
+   * The session's device, live: its screen as JPEG frames and the reader's
+   * taps and keys back, over the attach socket with a device ticket. The
+   * browser never names a device; the host gives the session its own.
+   */
+  openDeviceStream(id: string): DeviceStream {
+    return new AttachDeviceStream({
+      apiBaseUrl: this.apiBaseUrl,
+      issueTicket: () => this.repository.issueAttachTicket(id, 0, 'device'),
+    });
+  }
+
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
     const remote = () =>
       new AttachSessionStream({

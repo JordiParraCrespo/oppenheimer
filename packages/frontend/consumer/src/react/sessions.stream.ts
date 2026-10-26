@@ -1,6 +1,6 @@
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useCallback, useEffect, useRef } from 'react';
-import type { SessionStream } from '../modules/sessions';
+import type { DeviceStream, SessionStream } from '../modules/sessions';
 import { useConsumerApp } from './context';
 
 /**
@@ -24,6 +24,15 @@ export function useSessionStream(sessionId: string, window = 0): () => SessionSt
     () => app.sessions.openStream(sessionId, window, { direct: () => directRef.current }),
     [app, sessionId, window],
   );
+}
+
+/**
+ * A stable factory for the session's device stream, built and disposed by
+ * the effect that shows it, as a terminal's is.
+ */
+export function useSessionDeviceStream(sessionId: string): () => DeviceStream {
+  const app = useConsumerApp();
+  return useCallback(() => app.sessions.openDeviceStream(sessionId), [app, sessionId]);
 }
 
 /**

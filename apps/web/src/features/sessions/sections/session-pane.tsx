@@ -4,17 +4,21 @@ import {
   useSessionOpening,
   useSuspenseSession,
 } from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatViewToggle } from '../components/chat-view-toggle';
+import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
+import { rememberPreviewOpen, storedPreviewOpen } from '../lib/preview-open';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
+import { SessionPreview } from './session-preview';
 import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
 
@@ -77,6 +81,14 @@ export function SessionPane({
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<SessionView>(initialView);
+  // The preview pane beside the terminal: its toggle is in the bar, the pane
+  // in the row under it, so the one state both read lives here.
+  const previewOffered = useFeatureFlag('session_device_preview') && Boolean(bar);
+  const [previewOpen, setPreviewOpen] = useState(storedPreviewOpen);
+  const togglePreview = (open: boolean) => {
+    setPreviewOpen(open);
+    rememberPreviewOpen(open);
+  };
   const chat = useSessionChat();
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
@@ -105,7 +117,16 @@ export function SessionPane({
   const { head, statusItems } = bar
     ? {
         head: (
-          <SessionBar session={session} back={bar.back} tabs={session.isLive ? viewToggle : null} />
+          <SessionBar
+            session={session}
+            back={bar.back}
+            tabs={session.isLive ? viewToggle : null}
+            preview={
+              session.isLive && previewOffered ? (
+                <PreviewToggle open={previewOpen} onToggle={() => togglePreview(!previewOpen)} />
+              ) : null
+            }
+          />
         ),
         statusItems: null,
       }
@@ -189,10 +210,18 @@ export function SessionPane({
        drawn and never the pane's colour or the bar's. */
     <>
       {head}
-      <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
-        <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-          {terminal(session, reading, statusItems)}
+      {/* The terminal's column, and beside it the preview pane when it is
+          open (`SessionsConsole.dc.html`): a row, so the terminal keeps the
+          width the pane leaves it. */}
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-term-bg">
+          <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
+            {terminal(session, reading, statusItems)}
+          </div>
         </div>
+        {previewOffered && previewOpen ? (
+          <SessionPreview sessionId={session.id} onClose={() => togglePreview(false)} />
+        ) : null}
       </div>
     </>
   );

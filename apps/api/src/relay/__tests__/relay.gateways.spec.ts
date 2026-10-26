@@ -1731,3 +1731,130 @@ describe('browser attach socket', () => {
     }
   });
 });
+
+describe('device attach socket', () => {
+  function deviceTicket(share?: AttachTicket['share']): string {
+    const ticket = `d-${Math.random().toString(36).slice(2)}`;
+    h.tickets.set(`attach:${ticket}`, {
+      sessionId: SESSION,
+      organizationId: ORG,
+      window: 0,
+      userId: USER,
+      target: 'device',
+      ...(share ? { share } : {}),
+    });
+    return ticket;
+  }
+
+  it('opens the session’s device on a runner that streams one, relays its frames, credit and input, and detaches', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    const runner = await runnerUp(h, { capabilities: ['device.screen'] });
+    sockets.push(runner);
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [deviceTicket()]);
+    sockets.push(browser);
+    const attachedLater = nextMessage(browser);
+    await opened(browser);
+
+    // No viewport to wait for: the device is asked for at once, by session,
+    // never by a device the browser names.
+    const attach = await nextMessage(runner);
+    expect(attach.text).toMatchObject({ type: 'device.attach', sessionId: SESSION, attachmentId: 1 });
+    expect((await attachedLater).text).toEqual({ type: 'attached', window: 0 });
+
+    const info = nextMessage(browser);
+    runner.send(
+      JSON.stringify({
+        type: 'device.info',
+        attachmentId: 1,
+        serial: 'emulator-5554',
+        name: 'Android emulator',
+        platform: 'android',
+      }),
+    );
+    expect((await info).text).toEqual({
+      type: 'device',
+      serial: 'emulator-5554',
+      name: 'Android emulator',
+      platform: 'android',
+    });
+
+    // A frame of the screen reaches the browser bare.
+    const jpeg = Buffer.from([0xff, 0xd8, 1, 2, 3, 0xff, 0xd9]);
+    const frame = nextMessage(browser);
+    runner.send(Buffer.concat([Buffer.from([0, 0, 0, 1]), jpeg]), { binary: true });
+    expect((await frame).bytes).toEqual(jpeg);
+
+    const credit = nextMessage(runner);
+    browser.send(JSON.stringify({ type: 'credit', bytes: jpeg.length }));
+    expect((await credit).text).toEqual({ type: 'attachment.credit', attachmentId: 1, bytes: 7 });
+
+    const tap = nextMessage(runner);
+    browser.send(JSON.stringify({ type: 'device.input', kind: 'tap', x: 0.5, y: 0.25 }));
+    expect((await tap).text).toEqual({
+      type: 'device.input',
+      attachmentId: 1,
+      kind: 'tap',
+      x: 0.5,
+      y: 0.25,
+    });
+
+    const detach = nextMessage(runner);
+    browser.close();
+    expect((await detach).text).toMatchObject({ type: 'device.detach', attachmentId: 1 });
+    expect(h.registry.find(HOST)?.attachmentCount).toBe(0);
+  });
+
+  it('refuses a device on a host whose runner cannot stream one, without asking it', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const sent = vi.fn();
+    runner.on('message', sent);
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [deviceTicket()]);
+    sockets.push(browser);
+    const refusal = nextMessage(browser);
+    await opened(browser);
+    expect((await refusal).text).toMatchObject({ type: 'refused', code: 'DEV_001' });
+    await expect(closed(browser)).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.REFUSED });
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it('refuses a device to someone the session_device_preview flag is off for', async () => {
+    const runner = await runnerUp(h, { capabilities: ['device.screen'] });
+    sockets.push(runner);
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [deviceTicket()]);
+    sockets.push(browser);
+    const refusal = nextMessage(browser);
+    await opened(browser);
+    expect((await refusal).text).toMatchObject({ type: 'refused', code: 'DEV_001' });
+    expect(h.flags.isEnabled).toHaveBeenCalledWith('session_device_preview', {
+      userId: USER,
+      organizationId: ORG,
+    });
+  });
+
+  it('drops a watcher’s input: a read-only share sees the device and cannot touch it', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    vi.mocked(h.lookup.shareAdmits).mockResolvedValue(true);
+    vi.mocked(h.owners.findActiveOwner).mockResolvedValue({
+      id: USER,
+      email: 'guest@example.com',
+      emailVerified: true,
+    } as never);
+    const runner = await runnerUp(h, { capabilities: ['device.screen'] });
+    sockets.push(runner);
+    const sent: unknown[] = [];
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [
+      deviceTicket({ shareId: 'share-1', readOnly: true, viewerUserId: USER }),
+    ]);
+    sockets.push(browser);
+    await opened(browser);
+    await nextMessage(runner); // device.attach
+    runner.on('message', (data) => sent.push(String(data)));
+    browser.send(JSON.stringify({ type: 'device.input', kind: 'tap', x: 0.5, y: 0.5 }));
+    browser.send(JSON.stringify({ type: 'credit', bytes: 10 }));
+    const credit = await nextMessage(runner);
+    expect(credit.text).toMatchObject({ type: 'attachment.credit' });
+    expect(sent.some((text) => String(text).includes('device.input'))).toBe(false);
+  });
+});

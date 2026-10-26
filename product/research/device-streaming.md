@@ -6,6 +6,11 @@ session? This note reads the tools that do it today, sketches the shape it
 would take here, and records a proof of concept run on 2026-10-17
 (`poc/device-stream/` at the repository root). It decides nothing.
 
+What was decided from it is in the notes that own it: on 2026-10-26 the
+console's preview pane got its Simulator, a session's device streamed over
+the link and driven through Argent (`../versions/mvp/05-screens.md`). The
+open questions below are still open for that build.
+
 ## What exists
 
 | Tool | What it is | Streams to a browser | Agent control |

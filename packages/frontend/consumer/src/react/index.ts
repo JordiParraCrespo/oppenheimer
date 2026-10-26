@@ -215,7 +215,11 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream, useSharedSessionStream } from './sessions.stream';
+export {
+  useSessionDeviceStream,
+  useSessionStream,
+  useSharedSessionStream,
+} from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
