@@ -60,7 +60,8 @@ export function useConsoleList(): ConsoleList {
       // The queue and analytics under the `pulls` layout, and a pull request un-nested from it (`pulls_`).
       if (ids.some((id) => id.startsWith('/_authenticated/pulls'))) return 'pulls';
       if (ids.some((id) => id.startsWith('/_authenticated/plan/calendar'))) return 'calendar';
-      if (ids.some((id) => id.startsWith('/_authenticated/plan/'))) return 'tasks';
+      // Plan's pages, and a bot's chat un-nested from them (`plan_`).
+      if (ids.some((id) => /^\/_authenticated\/plan_?\//.test(id))) return 'tasks';
       return 'sessions';
     },
   });

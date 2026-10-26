@@ -4,8 +4,9 @@ import { DeleteBotDialog } from '../dialogs/delete-bot';
 
 /**
  * Where Delete bot leaves a reader: off every page of the bot that is gone,
- * its chat inside Pull requests included (`28-bots-in-sections.md`), and
- * where they were when the page they read was another.
+ * its chat inside a section included, onto that section's own page
+ * (`28-bots-in-sections.md`), and where they were when the page they read was
+ * another.
  */
 
 vi.mock('react-i18next', () => ({
@@ -53,9 +54,12 @@ afterEach(() => {
 });
 
 describe('DeleteBotDialog', () => {
-  it('leaves the bot’s chat inside Pull requests for the queue', () => {
+  it('leaves the bot’s chat inside a section for that section’s own page', () => {
     deleteFrom('/pulls/bots/b1');
-    expect(navigate).toHaveBeenCalledWith({ to: '/pulls' });
+    expect(navigate).toHaveBeenLastCalledWith({ to: '/pulls' });
+    cleanup();
+    deleteFrom('/sessions/bots/b1');
+    expect(navigate).toHaveBeenLastCalledWith({ to: '/sessions' });
   });
 
   it('leaves the bot’s own pages for Employees', () => {
