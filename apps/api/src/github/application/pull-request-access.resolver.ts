@@ -252,7 +252,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     try {
       const read = await this.cache.getOrSet(
-        `github:pulls:open-graph:${credential.bucket}:${repository.githubRepoId}`,
+        `github:pulls:open-graph:${cacheScopeOf(credential)}:${repository.githubRepoId}`,
         OPEN_TTL_SECONDS,
         () => this.pulls.listOpenPullRequests(credential, repository.fullName),
       );
@@ -356,7 +356,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     try {
       const credential = await this.access.readCredential(scope, repository);
       const pulls = await this.cache.getOrSet(
-        `github:pulls:${state}:${credential.bucket}:${repository.githubRepoId}`,
+        `github:pulls:${state}:${cacheScopeOf(credential)}:${repository.githubRepoId}`,
         ttlSeconds,
         () => this.pulls.listPullRequests(credential, repository.fullName, state, 1),
       );
@@ -474,7 +474,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     credential: GithubCredential,
     repository: WorkspaceRepository,
   ): Promise<void> {
-    const at = `${credential.bucket}:${repository.githubRepoId}`;
+    const at = `${cacheScopeOf(credential)}:${repository.githubRepoId}`;
     await Promise.all([
       this.cache.del(`github:pulls:open-graph:${at}`),
       this.cache.del(`github:pulls:open:${at}`),
@@ -679,8 +679,17 @@ function partGaps(snapshot: PullRequestRead & { checks?: Part<GithubChecks> }): 
 }
 
 /**
- * A snapshot's cache key, under the credential's bucket: what GitHub answers
- * one installation, or one person's tokens (§6.2), is never served to a read
+ * Whose answers a read may share: the installation, or the one token of a
+ * person's that made it (§6.2). Never another's: two tokens of one GitHub
+ * account share a budget, not what they can see.
+ */
+function cacheScopeOf(credential: GithubCredential): string {
+  return credential.cacheScope ?? credential.bucket;
+}
+
+/**
+ * A snapshot's cache key, under the credential's cache scope: what GitHub
+ * answers one installation, or one token (§6.2), is never served to a read
  * made with another. `withChecks` is part of it because a read that left
  * the checks out must not be found by one that needs them: storing both under
  * one key meant opening a closed pull request within the six-hour window
@@ -693,7 +702,7 @@ function snapshotKey(
   updatedAt: string,
   withChecks: boolean,
 ): string {
-  const parts = `${credential.bucket}:${repository.githubRepoId}:${number}:${updatedAt}`;
+  const parts = `${cacheScopeOf(credential)}:${repository.githubRepoId}:${number}:${updatedAt}`;
   return withChecks ? `github:pulls:snapshot:${parts}` : `github:pulls:snapshot:nochecks:${parts}`;
 }
 

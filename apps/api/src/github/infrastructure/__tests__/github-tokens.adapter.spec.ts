@@ -1,6 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { type GithubFetch, GithubHttp } from '../github-http.adapter';
+import { GithubPullsAdapter } from '../github-pulls.adapter';
 import { GithubTokensAdapter } from '../github-tokens.adapter';
 
 /**
@@ -32,7 +33,7 @@ function build(answers: Answer[]) {
     { get: () => undefined } as unknown as ConfigService,
     impl as unknown as GithubFetch,
   );
-  return { adapter: new GithubTokensAdapter(http), calls };
+  return { adapter: new GithubTokensAdapter(http), pulls: new GithubPullsAdapter(http), calls };
 }
 
 const USER = { body: { id: 583231, login: 'ana-dev' } };
@@ -96,5 +97,31 @@ describe('asking GitHub about a token', () => {
         'Bearer github_pat_SECRET',
       );
     }
+  });
+});
+
+describe('a read GitHub refuses with a 401', () => {
+  it('tells the credential before the refusal is thrown', async () => {
+    const { pulls } = build([{ status: 401, body: { message: 'Bad credentials' } }]);
+    const onUnauthorized = vi.fn().mockResolvedValue(undefined);
+
+    await expect(
+      pulls.readPullRequest(
+        { token: 'github_pat_revoked', bucket: 'user:1', onUnauthorized },
+        'other-org/billing',
+        5,
+      ),
+    ).rejects.toMatchObject({ extensions: { upstreamStatus: 401 } });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not tell it about any other refusal', async () => {
+    const { pulls } = build([{ status: 403, body: { message: 'Forbidden' } }]);
+    const onUnauthorized = vi.fn();
+
+    await expect(
+      pulls.readPullRequest({ token: 't', bucket: 'user:1', onUnauthorized }, 'acme/a', 5),
+    ).rejects.toBeDefined();
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 });

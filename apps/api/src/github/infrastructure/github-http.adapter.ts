@@ -51,6 +51,8 @@ export interface GithubRequest {
    */
   onStatus?: StatusMap;
   unauthorized: ErrorDefinition;
+  /** Told when GitHub answers `401`, before the refusal is thrown; its own failure is only logged. */
+  onUnauthorized?: () => Promise<void>;
 }
 
 /**
@@ -144,6 +146,16 @@ export class GithubHttp {
         url: pathOf(url),
         status: response.status,
       });
+      if (response.status === 401 && options.onUnauthorized) {
+        await options
+          .onUnauthorized()
+          .catch((error: unknown) =>
+            this.logger.warn(
+              { message: 'A refused GitHub credential could not be marked', url: pathOf(url) },
+              error instanceof Error ? error.stack : String(error),
+            ),
+          );
+      }
       const named =
         options.onStatus?.[response.status] ??
         (response.status === 401 ? options.unauthorized : GithubErrors.UPSTREAM_FAILED);

@@ -677,14 +677,15 @@ describe('a repository read through the person’s own token', () => {
     expect(readPullRequest).not.toHaveBeenCalled();
   });
 
-  // Keyed by installation alone, a snapshot one person's token read was served
-  // to anyone else whose token opened the same repository.
-  it('never serves one person’s token read to another', async () => {
+  // Keyed by installation alone, a snapshot one token read was served to any
+  // other read of the repository, even another token of the same GitHub
+  // account that cannot see its checks.
+  it('never serves one token’s read to another, even of the same GitHub account', async () => {
     const listFiles = vi.fn().mockResolvedValue([]);
     const credentialFor = vi
       .fn()
-      .mockResolvedValueOnce({ token: 'github_pat_ana', bucket: 'user:1' })
-      .mockResolvedValueOnce({ token: 'github_pat_bruno', bucket: 'user:2' });
+      .mockResolvedValueOnce({ token: 'github_pat_a', bucket: 'user:1', cacheScope: 'token:a' })
+      .mockResolvedValueOnce({ token: 'github_pat_b', bucket: 'user:1', cacheScope: 'token:b' });
     const { resolver } = build(
       {
         readPullRequest: vi.fn().mockResolvedValue({ ...PULL, number: 5 }),

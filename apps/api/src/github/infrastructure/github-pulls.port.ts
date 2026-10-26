@@ -161,6 +161,14 @@ export type GithubBucket =
 export interface GithubCredential {
   token: string;
   bucket: GithubBucket;
+  /**
+   * Whose answers a read with this credential may share a cache with; the
+   * bucket when absent. A person's own token names itself: two tokens of one
+   * GitHub account share a budget but not necessarily what they can see.
+   */
+  cacheScope?: string;
+  /** Called when GitHub answers `401`, so a refused credential stops being chosen (§6.2). */
+  onUnauthorized?: () => Promise<void>;
 }
 
 export interface GithubPullsPort {

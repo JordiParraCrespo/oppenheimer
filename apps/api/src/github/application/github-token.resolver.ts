@@ -8,6 +8,7 @@ import type {
 import { GithubErrors } from '../domain/github.errors';
 import { chooseToken, isUsable, type TokenCandidate } from '../domain/token-key.policy';
 import { GITHUB_TOKEN_REPOSITORY, GITHUB_TOKENS, USER_TOKEN_SEALER } from '../github.di-tokens';
+import { GithubTokenMapper } from '../github-token.mapper';
 import type { GithubCredential } from '../infrastructure/github-pulls.port';
 import type { GithubTokenInspection, GithubTokensPort } from '../infrastructure/github-tokens.port';
 import type { UserTokenSealerPort } from '../infrastructure/user-token-sealer.port';
@@ -39,6 +40,7 @@ export class GithubTokenResolver {
     private readonly github: GithubTokensPort,
     @Inject(USER_TOKEN_SEALER)
     private readonly sealer: UserTokenSealerPort,
+    private readonly mapper: GithubTokenMapper,
   ) {}
 
   isConfigured(): boolean {
@@ -57,7 +59,7 @@ export class GithubTokenResolver {
       userId,
       label,
       tokenSealed: this.sealer.seal(secret),
-      ...this.checkOf(inspection, now),
+      ...this.mapper.toCheck(inspection, now),
     });
     if (added === 'label_taken') throw labelTaken(label);
     return added.id;
@@ -79,7 +81,7 @@ export class GithubTokenResolver {
       }
       throw error;
     }
-    await this.tokens.recordCheck(userId, id, this.checkOf(inspection, now));
+    await this.tokens.recordCheck(userId, id, this.mapper.toCheck(inspection, now));
   }
 
   async relabel(userId: string, id: string, label: string): Promise<void> {
@@ -162,7 +164,14 @@ export class GithubTokenResolver {
         detail: `No GitHub token of yours that still works opens repository ${githubRepoId}`,
       });
     }
-    return { token: this.sealer.open(token.tokenSealed), bucket: `user:${token.githubUserId}` };
+    return {
+      token: this.sealer.open(token.tokenSealed),
+      bucket: `user:${token.githubUserId}`,
+      cacheScope: `token:${token.id}`,
+      // A token revoked on GitHub stops being chosen at once, and another
+      // that opens the repository takes over on the next read.
+      onUnauthorized: () => this.tokens.recordRefusal(userId, token.id, new Date()),
+    };
   }
 
   /** Whether the token is one GitHub still accepts, for the settings list. */
@@ -174,25 +183,6 @@ export class GithubTokenResolver {
     const token = await this.tokens.findOneOwn(userId, id);
     if (!token) throw notFound(id);
     return token;
-  }
-
-  private checkOf(inspection: GithubTokenInspection, now: Date) {
-    return {
-      kind: inspection.kind,
-      githubUserId: inspection.githubUserId,
-      login: inspection.login,
-      scopes: inspection.scopes,
-      expiresAt: inspection.expiresAt,
-      repositories: inspection.repositories.map((repository) => ({
-        githubRepoId: repository.githubRepoId,
-        name: repository.name,
-        fullName: repository.fullName,
-        defaultBranch: repository.defaultBranch,
-        private: repository.private,
-        archived: repository.archived,
-      })),
-      checkedAt: now,
-    };
   }
 
   private assertConfigured(): void {

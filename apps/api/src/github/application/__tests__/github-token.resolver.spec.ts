@@ -5,6 +5,7 @@ import type {
   GithubTokenRepositoryPort,
 } from '../../database/github-token.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
+import { GithubTokenMapper } from '../../github-token.mapper';
 import type {
   GithubTokenInspection,
   GithubTokensPort,
@@ -84,7 +85,11 @@ function build(
     seal: (plaintext) => Buffer.from(`sealed:${plaintext}`),
     open: (sealed) => sealed.toString().replace(/^sealed:/, ''),
   };
-  return { resolver: new GithubTokenResolver(store, github, sealer), store, github };
+  return {
+    resolver: new GithubTokenResolver(store, github, sealer, new GithubTokenMapper()),
+    store,
+    github,
+  };
 }
 
 const refused = () => new AppError(GithubErrors.TOKEN_REFUSED, { detail: 'Bad credentials' });
@@ -204,7 +209,7 @@ describe('the repositories a person’s tokens open', () => {
 });
 
 describe('the credential that reads a repository', () => {
-  it('opens the chosen token and counts it against the person', async () => {
+  it('opens the chosen token, counts it against the person and caches under the token', async () => {
     const { resolver } = build({
       tokens: [
         record('org-wide', [repository(1, 'acme/a'), repository(2, 'acme/b')]),
@@ -212,10 +217,22 @@ describe('the credential that reads a repository', () => {
       ],
     });
 
-    expect(await resolver.credentialFor('ana', 2, NOW)).toEqual({
+    expect(await resolver.credentialFor('ana', 2, NOW)).toMatchObject({
       token: 'one-repo',
       bucket: 'user:583231',
+      cacheScope: 'token:one-repo',
     });
+  });
+
+  // GitHub revoking a token is found by a read, not by a check: marked there,
+  // the next read is made with another token that opens the repository.
+  it('marks the token refused when a read with it gets a 401', async () => {
+    const { resolver, store } = build({ tokens: [record('t1', [repository(7, 'acme/a')])] });
+
+    const credential = await resolver.credentialFor('ana', 7, NOW);
+    await credential.onUnauthorized?.();
+
+    expect(store.recordRefusal).toHaveBeenCalledWith('ana', 't1', expect.any(Date));
   });
 
   it('is GITHUB_023 when the only token that opened the repository was refused', async () => {
