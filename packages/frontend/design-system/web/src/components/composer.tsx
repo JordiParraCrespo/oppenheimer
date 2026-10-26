@@ -420,7 +420,10 @@ function ComposerPill({
  * level), then, pushed to the right, who drives it (`engine`: the agent and
  * model, the effort). It is always one line: when it runs out of room the
  * choices on the left give way, each truncating its label, and the engine
- * keeps its full width at the right edge.
+ * keeps its full width at the right edge. On a row 672px or wider each
+ * choice keeps 72px, so a short label is not cut first; narrower, they
+ * shrink to their icons. The row's own width decides, not the viewport's,
+ * because the pane beside an open sidebar is narrower than the window.
  */
 function ComposerChoices({
   engine,
@@ -431,10 +434,10 @@ function ComposerChoices({
   return (
     <div
       data-slot="composer-choices"
-      className={cn('flex min-h-8.5 items-center gap-0.5 px-0.5', className)}
+      className={cn('@container flex min-h-8.5 items-center gap-0.5 px-0.5', className)}
       {...props}
     >
-      <span className="flex min-w-0 flex-1 items-center gap-0.5 [&_button]:min-w-0 [&_button]:shrink sm:[&_button]:min-w-18">
+      <span className="flex min-w-0 flex-1 items-center gap-0.5 [&_button]:min-w-0 [&_button]:shrink @2xl:[&_button]:min-w-18">
         {children}
       </span>
       {engine ? <span className="flex shrink-0 items-center gap-0.5">{engine}</span> : null}

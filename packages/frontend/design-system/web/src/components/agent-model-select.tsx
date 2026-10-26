@@ -378,7 +378,11 @@ function AgentModelSelect<V extends string = string>({
         >
           {rows.map((row) => {
             const key = rowKey(row);
-            const name = row.model?.label ?? row.agent.label;
+            // A mark is aria-hidden: where agents mix, the name says whose row it is,
+            // since two agents can offer the same model.
+            const name = mixed && row.model
+              ? `${row.model.label} · ${row.agent.label}`
+              : (row.model?.label ?? row.agent.label);
             return (
               <div key={key} className="flex items-center">
                 <ChipSelectItem
@@ -386,12 +390,13 @@ function AgentModelSelect<V extends string = string>({
                   selected={value.agent === row.agent.id && value.model === (row.model?.value ?? null)}
                   leading={mixed ? <AgentMark agent={row.agent.id} /> : undefined}
                   className="min-w-0 flex-1"
+                  aria-label={name}
                   onClick={() => {
                     onValueChange({ agent: row.agent.id, model: row.model?.value ?? null });
                     onOpenChange(false);
                   }}
                 >
-                  {name}
+                  {row.model?.label ?? row.agent.label}
                 </ChipSelectItem>
                 {onFavouritesChange ? (
                   <AgentModelStar
