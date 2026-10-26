@@ -37,6 +37,9 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  * the design system's, so a picker cannot drift from what the API answered.
  */
 
+/** A host row of the place chip: the option, and whether the machine is reachable now. */
+export type PlaceHost = ChipSelectOption & { online: boolean };
+
 /**
  * A host that is offline is shown and selectable rather than hidden: the
  * session is recorded and the work is owed to that machine the moment its
@@ -46,9 +49,10 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
 export function toHostOptions(
   hosts: readonly HostEntity[],
   labels: { offline: string },
-): ChipSelectOption[] {
+): PlaceHost[] {
   return hosts.map((host) => ({
     value: host.id,
+    online: host.online,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,

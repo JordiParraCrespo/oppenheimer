@@ -136,8 +136,10 @@
   dropped on the pane attaches to the first task as a removable chip over
   the line — an image, a PDF or a text file; a file it cannot take is
   refused under the box with the reason, never dropped). Under the box
-  one row of choices: where it runs, host, repository and branch (or
-  folder), and the permission level on the left (ask for approval,
+  one row of choices: the host and where on it as one chip ("mac-studio ·
+  New worktree", a Hosts tab whose host opens its Start in pane: New
+  worktree or Folder on host; changed 2026-10-26, they were two chips),
+  repository and branch (or folder), and the permission level on the left (ask for approval,
   approve for me, full access, the last in a warning tone because it
   changes a machine unattended); the agent and model and the effort on
   the right. The frame's cloud environments are not built. The project
