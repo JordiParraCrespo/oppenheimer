@@ -102,10 +102,26 @@ export function SessionPane({
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
 
+  // The view switch and Share have one home, decided here once: the session's
+  // bar when the route lets this pane draw one, else the terminal's status
+  // line. Nothing below chooses again; each place takes what it is handed.
   const viewToggle = chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null;
-  const head = bar ? (
-    <SessionBar session={session} back={bar.back} tabs={session.isLive ? viewToggle : null} />
-  ) : null;
+  const { head, statusItems } = bar
+    ? {
+        head: (
+          <SessionBar session={session} back={bar.back} tabs={session.isLive ? viewToggle : null} />
+        ),
+        statusItems: null,
+      }
+    : {
+        head: null,
+        statusItems: (
+          <>
+            {viewToggle}
+            <SessionShareButton sessionId={session.id} place="status" />
+          </>
+        ),
+      };
   const alert = (
     <>
       {head}
@@ -188,16 +204,7 @@ export function SessionPane({
         className={cn('flex min-h-0 flex-1 flex-col', !chatShown && 'bg-term-bg')}
       >
         <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-          {terminal(
-            session,
-            reading,
-            bar ? null : (
-              <>
-                {viewToggle}
-                <SessionShareButton sessionId={session.id} place="status" />
-              </>
-            ),
-          )}
+          {terminal(session, reading, statusItems)}
         </div>
       </div>
     </>

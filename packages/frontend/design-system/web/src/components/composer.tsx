@@ -31,6 +31,58 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
 };
 
 /**
+ * What `Composer` and `ComposerPill` draw alike, kept in one place so a rule
+ * changed for one is changed for both: the files held for the message, the
+ * send button's glyph (the arrow, or stop while busy), and the dictation
+ * notice under the box. The send rules themselves are
+ * `internal/composer-send`'s. Each composer keeps its own frame, because
+ * the frame is what differs.
+ */
+function ComposerFileList({
+  attachments,
+  removeLabel,
+  onRemove,
+  className,
+}: {
+  attachments?: ComposerAttachment[];
+  removeLabel: (name: string) => string;
+  onRemove?: (id: string) => void;
+  className?: string;
+}) {
+  if (!attachments || attachments.length === 0) return null;
+  return (
+    <div data-slot="composer-attachments" className={cn('flex flex-wrap gap-1.5', className)}>
+      {attachments.map((file) => (
+        <ComposerFile
+          key={file.id}
+          name={file.name}
+          removeLabel={removeLabel(file.name)}
+          onRemove={() => onRemove?.(file.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ComposerSendGlyph({ busy }: { busy: boolean }) {
+  return busy ? (
+    <SquareIcon className="size-3.5 fill-current" />
+  ) : (
+    <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+  );
+}
+
+function ComposerNoticeFrame({ notice, children }: { notice?: React.ReactNode; children: React.ReactNode }) {
+  if (!notice) return children;
+  return (
+    <div data-slot="composer-dictation" className="flex flex-col gap-2">
+      {children}
+      <div className="mx-4.5">{notice}</div>
+    </div>
+  );
+}
+
+/**
  * Composer — the prompt box: an 18px-radius field holding a growing textarea,
  * then a foot row with the tools. Focus takes the blue border and ring. Enter
  * submits, Shift+Enter inserts a newline; while `busy` the send button becomes
@@ -173,18 +225,12 @@ function Composer({
             scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
           )}
         />
-        {attachments && attachments.length > 0 ? (
-          <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
-            {attachments.map((file) => (
-              <ComposerFile
-                key={file.id}
-                name={file.name}
-                removeLabel={label.removeAttachment(file.name)}
-                onRemove={() => onRemoveAttachment?.(file.id)}
-              />
-            ))}
-          </div>
-        ) : null}
+        <ComposerFileList
+          attachments={attachments}
+          removeLabel={label.removeAttachment}
+          onRemove={onRemoveAttachment}
+          className="px-3 pb-2.5"
+        />
         {dictation?.recorder ? (
           // The bar is 16px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
@@ -223,24 +269,14 @@ function Composer({
             onClick={submit}
             className="size-8"
           >
-            {busy ? (
-              <SquareIcon className="size-3.5 fill-current" />
-            ) : (
-              <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
-            )}
+            <ComposerSendGlyph busy={busy} />
           </ComposerSendButton>
         </ComposerFoot>
         )}
       </div>
     </ComposerFrame>
   );
-  if (!dictation?.notice) return box;
-  return (
-    <div data-slot="composer-dictation" className="flex flex-col gap-2">
-      {box}
-      <div className="mx-4.5">{dictation.notice}</div>
-    </div>
-  );
+  return <ComposerNoticeFrame notice={dictation?.notice}>{box}</ComposerNoticeFrame>;
 }
 
 /**
@@ -318,18 +354,12 @@ function ComposerPill({
       )}
       {...props}
     >
-      {attachments && attachments.length > 0 ? (
-        <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pt-2">
-          {attachments.map((file) => (
-            <ComposerFile
-              key={file.id}
-              name={file.name}
-              removeLabel={label.removeAttachment(file.name)}
-              onRemove={() => onRemoveAttachment?.(file.id)}
-            />
-          ))}
-        </div>
-      ) : null}
+      <ComposerFileList
+        attachments={attachments}
+        removeLabel={label.removeAttachment}
+        onRemove={onRemoveAttachment}
+        className="px-3 pt-2"
+      />
       <div className="flex items-end gap-1">
         {onAttach ? (
           <IconButton
@@ -368,11 +398,7 @@ function ComposerPill({
               onClick={submit}
               className="ml-1 size-8"
             >
-              {busy ? (
-                <SquareIcon className="size-3.5 fill-current" />
-              ) : (
-                <ArrowUpIcon className="size-4" strokeWidth={2.2} />
-              )}
+              <ComposerSendGlyph busy={busy} />
             </ComposerSendButton>
           </span>
         )}
@@ -384,13 +410,7 @@ function ComposerPill({
       ) : null}
     </div>
   );
-  if (!dictation?.notice) return box;
-  return (
-    <div data-slot="composer-dictation" className="flex flex-col gap-2">
-      {box}
-      <div className="mx-4.5">{dictation.notice}</div>
-    </div>
-  );
+  return <ComposerNoticeFrame notice={dictation?.notice}>{box}</ComposerNoticeFrame>;
 }
 
 /**
