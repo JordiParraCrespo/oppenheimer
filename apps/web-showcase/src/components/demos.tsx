@@ -517,7 +517,18 @@ export const PERMISSIONS = [
 
 export function AgentModelDemo() {
   const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5-5' });
-  return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
+  const [favourites, setFavourites] = React.useState<string[]>(['claude-code:claude-opus-5-5']);
+  const [effort, setEffort] = React.useState<EffortLevel>('medium');
+  return (
+    <AgentModelSelect
+      agents={HARNESSES}
+      value={engine}
+      onValueChange={setEngine}
+      favourites={favourites}
+      onFavouritesChange={setFavourites}
+      effort={engine.model ? { stops: EFFORT_LEVELS, value: effort, onValueChange: setEffort } : undefined}
+    />
+  );
 }
 
 // A model's own levels, as the console passes them: the stops are the caller's.

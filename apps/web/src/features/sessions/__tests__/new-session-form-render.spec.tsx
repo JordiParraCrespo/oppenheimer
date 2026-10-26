@@ -37,13 +37,29 @@ vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'de
 vi.mock('../components/permission-select', () => ({
   PermissionSelect: chip('permission', 'ask'),
 }));
-vi.mock('../components/agent-select', () => ({
-  AgentSelect: chip(
+// The engine button holds the effort too: its `effort` button picks a level.
+vi.mock('../components/agent-select', () => {
+  const Agent = chip(
     'agent',
     { agent: 'codex', model: null },
     { shell: { agent: 'shell', model: null } },
-  ),
-}));
+  );
+  return {
+    AgentSelect: (props: {
+      onValueChange: (value: unknown) => void;
+      effort?: { onValueChange: (value: string) => void };
+    }) => (
+      <>
+        <Agent onValueChange={props.onValueChange} />
+        {props.effort ? (
+          <button type="button" onClick={() => props.effort?.onValueChange('high')}>
+            effort
+          </button>
+        ) : null}
+      </>
+    ),
+  };
+});
 vi.mock('../components/where-select', () => ({
   WhereSelect: chip('where', 'folder', { worktree: 'worktree' }),
 }));
@@ -62,7 +78,6 @@ vi.mock('../sections/new-session-folder-browser', () => ({
     </button>
   ),
 }));
-vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'high') }));
 
 /**
  * The reads, from a store the test can settle. `useSyncExternalStore` is what
@@ -195,9 +210,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NewSessionForm', () => {
-  it('renders only the effort chip when an effort is picked', () => {
+  it('renders only the engine button when an effort is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'effort' }));
-    expect(rendered()).toEqual(['effort']);
+    expect(rendered()).toEqual(['agent']);
   });
 
   it('renders only the permission chip when a level is picked', () => {
@@ -236,10 +251,10 @@ describe('NewSessionForm', () => {
     });
   });
 
-  /** An agent switch decides which foot controls exist, so those three redraw. */
+  /** An agent switch decides which foot controls exist, so those two redraw. */
   it('renders the engine and the agent-dependent controls when the agent changes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'agent' }));
-    expect(rendered()).toEqual(['agent', 'effort', 'permission']);
+    expect(rendered()).toEqual(['agent', 'permission']);
   });
 
   /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */

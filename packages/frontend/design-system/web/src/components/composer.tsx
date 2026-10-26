@@ -418,8 +418,9 @@ function ComposerPill({
  * quiet 30px choices that read left to right as where it runs and what it may
  * touch (`children`: the place, the repositories and branch, the permission
  * level), then, pushed to the right, who drives it (`engine`: the agent and
- * model, the effort). It wraps onto a second line on a narrow screen, the
- * engine keeping the right edge.
+ * model, the effort). It is always one line: when it runs out of room the
+ * choices on the left give way, each truncating its label, and the engine
+ * keeps its full width at the right edge.
  */
 function ComposerChoices({
   engine,
@@ -430,11 +431,13 @@ function ComposerChoices({
   return (
     <div
       data-slot="composer-choices"
-      className={cn('flex min-h-8.5 flex-wrap items-center gap-x-0.5 gap-y-1 px-0.5', className)}
+      className={cn('flex min-h-8.5 items-center gap-0.5 px-0.5', className)}
       {...props}
     >
-      {children}
-      {engine ? <span className="ml-auto flex flex-wrap items-center gap-0.5">{engine}</span> : null}
+      <span className="flex min-w-0 flex-1 items-center gap-0.5 [&_button]:min-w-0 [&_button]:shrink sm:[&_button]:min-w-18">
+        {children}
+      </span>
+      {engine ? <span className="flex shrink-0 items-center gap-0.5">{engine}</span> : null}
     </div>
   );
 }

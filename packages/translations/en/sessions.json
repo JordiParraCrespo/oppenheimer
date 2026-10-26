@@ -131,7 +131,11 @@
     "agent": {
       "label": "Agent and model",
       "search": "Search models…",
-      "empty": "No model matches “{{query}}”."
+      "empty": "No model matches “{{query}}”.",
+      "favourites": "Favourites",
+      "favouritesEmpty": "Star a model to keep it here.",
+      "addFavourite": "Add {{model}} to favourites",
+      "removeFavourite": "Remove {{model}} from favourites"
     },
     "permission": {
       "label": "Permission level",

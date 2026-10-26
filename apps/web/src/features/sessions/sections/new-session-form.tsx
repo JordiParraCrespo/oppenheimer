@@ -6,7 +6,6 @@ import {
   useNewSessionForm,
 } from '../hooks/use-new-session-form';
 import { NewSessionAgent } from './new-session-agent';
-import { NewSessionEffort } from './new-session-effort';
 import { NewSessionPermission } from './new-session-permission';
 import { NewSessionPrepare } from './new-session-prepare';
 import { NewSessionProject } from './new-session-project';
@@ -53,12 +52,7 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
           // screen forbids — which none of these are.
           scope={<NewSessionScope />}
           tools={<NewSessionPermission />}
-          engine={
-            <>
-              <NewSessionAgent />
-              <NewSessionEffort />
-            </>
-          }
+          engine={<NewSessionAgent />}
         />
       </NewSessionLandingContext.Provider>
     </NewSessionFormContext.Provider>
