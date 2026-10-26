@@ -19,7 +19,7 @@ export type {
  * API answers its installation as null and takes this segment in its place
  * (`product/next-steps/0.2-pull-requests.md` §6.2).
  */
-export const TOKENS_SOURCE = 'tokens';
+const TOKENS_SOURCE = 'tokens';
 
 /** The installation a row names, or {@link TOKENS_SOURCE} for one read through a token. */
 export function sourceOf(installationId: string | null): string {
