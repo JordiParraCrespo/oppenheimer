@@ -56,14 +56,18 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   and the current ink otherwise. An agent with no published mark takes the
   neutral glyph; never a redrawn imitation.
 - **The composer's foot row reads scope of action, then engine.** Left:
-  attach and the `PermissionMenu`. Right: `AgentModelSelect` (harness first,
-  then its models, so the pair is always valid), `EffortPicker`, mic, send.
+  attach and the `PermissionMenu`. Right: `AgentModelSelect`, one button
+  for agent, model and effort (a tab per agent and one of starred
+  Favourites, a search across every agent, the effort slider at its foot;
+  picking a model picks its agent, so the pair is always valid), mic, send.
+  `EffortPicker` stays for a surface with no engine button (a bot's chat).
   All of them hang from `ComposerToolButton`. Full access is the one setting
   allowed the warning tone, because it can change a machine unattended. New
   session is `ComposerPill` (2026-10-25 export): one line with Add files,
   the mic and send, and under it a `ComposerChoices` row in the same order,
   where it runs and what it may touch on the left, the engine on the right,
-  each place chip a `ChipSelectTrigger` in its `tab` variant. `Composer`'s
+  each place chip a `ChipSelectTrigger` in its `tab` variant. That row never
+  wraps: the place chips truncate and the engine keeps its width. `Composer`'s
   `scope` band, the tabbed form it replaced, has no caller in the console.
 - **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
   switches between the sessions and routines lists (under 768px it is a
@@ -76,8 +80,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **A pane, not a submenu, when the pick belongs to the row.** Appearance
   and Language in the account menu, and Move to project… in a row's menu,
   slide the same menu to a pane (`DropdownMenuPaneItem`, then
-  `DropdownMenuBack` on top of it), the way the engine button slides to its
-  models. `DropdownMenuSub` stays for the filter facets, which are several
+  `DropdownMenuBack` on top of it). `DropdownMenuSub` stays for the filter facets, which are several
   independent picks.
 - **A trigger reads as a sentence.** In the routine editor every variable
   part of a trigger is an `InlineToken` in a `TokenSentence` ("Every

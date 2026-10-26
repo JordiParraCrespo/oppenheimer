@@ -617,7 +617,11 @@
       "agent": {
         "label": "Agente y modelo",
         "search": "Buscar modelos…",
-        "empty": "Ningún modelo coincide con «{{query}}»."
+        "empty": "Ningún modelo coincide con «{{query}}».",
+        "favourites": "Favoritos",
+        "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+        "addFavourite": "Añadir {{model}} a favoritos",
+        "removeFavourite": "Quitar {{model}} de favoritos"
       },
       "permission": {
         "label": "Nivel de permisos",

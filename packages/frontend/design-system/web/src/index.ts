@@ -1,8 +1,14 @@
 export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
-export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
-export { AgentModelSelect } from './components/agent-model-select';
+export type {
+  AgentModel,
+  AgentModelEffort,
+  AgentModelSelectLabels,
+  AgentOption,
+  Engine,
+} from './components/agent-model-select';
+export { AgentModelSelect, engineKey } from './components/agent-model-select';
 export type { AlertTone } from './components/alert';
 export {
   Alert,
