@@ -25,14 +25,8 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`Brain`](version1/Brain.dc.html) | Inbox — the console's new landing page and first rail item: what needs you, suggestions, and what is done |
-| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer |
-| [`SessionsConsole (where)`](version1/SessionsConsole%20(where).dc.html) | The console with where a session runs as a choice: a new worktree, a folder on the host, or a blank terminal; projects that hold folder sessions only |
-| [`SessionsConsole (cloud)`](version1/SessionsConsole%20(cloud).dc.html) | `SessionsConsole (where)` with Cloud beside Hosts: a session or an automation launched as a cloud agent (Cursor, or Claude Code on claude.ai/code) |
-| [`SessionsConsole (teleport)`](version1/SessionsConsole%20(teleport).dc.html) | `SessionsConsole (cloud)` with Claude Code cloud environments, and Teleport to another host from a session's menu |
-| [`SessionsConsole (preview)`](version1/SessionsConsole%20(preview).dc.html) | `SessionsConsole (teleport)` with a live preview beside the session (a phone simulator for a mobile app) and Claude Code cloud launched from a signed-in host (`claude --cloud`) |
+| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer; since 2026-10-26 also where a session runs (worktree, folder, blank terminal, cloud), Teleport, the preview pane and Share |
 | [`NewSessionComposer`](version1/NewSessionComposer.dc.html) | New session as one composer: where it runs, up to two repositories with a branch each, permissions, agent and model, and a New environment dialog |
-| [`New Session (final)`](version1/New%20Session%20(final).dc.html) | Canvas comparing two layouts of that composer: a chip per decision, or one workspace chip |
-| [`Cursor Cloud`](version1/Cursor%20Cloud.dc.html) | Canvas handoff for Cursor's cloud agent: connecting Cursor, repository access through its GitHub app, Where with Cloud, a running Cursor session and its failures |
 | [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
@@ -40,11 +34,8 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Bots`](version1/Bots.dc.html) | Employees — the rail's second item: bots in sidebar groups, each a chat with a model, effort and approval mode, slash commands and a collapsible trace |
 | [`BotSettings`](version1/BotSettings.dc.html) | A bot's settings — identity and photo, instructions with revisions, memory, projects and repositories, tools and connectors, limits, host, bot-to-bot messages, routines and notifications |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace, watched repositories and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
-| [`Settings (where)`](version1/Settings%20(where).dc.html) | `Settings` as `SessionsConsole (where)` links to it: Back to console, and Open terminal on a host |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
-| [`Chat Components`](version1/Chat%20Components.dc.html) | Inventory of the agent chat — transcript, work and tools, cards, dividers and status, the composer and what sits above it, decisions, header, find and empty state |
-| [`AI Elements`](version1/AI%20Elements.dc.html) | The rest of the agent chat — markers, attachments, suggestions, a questionnaire, a confirmation, plan, subagent, sources and citations, test results, stack trace, file tree, queue and context |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
@@ -197,6 +188,21 @@ become one general bot, Oppenheimer, that merges pull requests, opens
 issues and runs Plan: `Bots`, `BotSettings`, `Tasks` and `PullRequests`
 list it under a Bots heading with the workspace's other bots.
 
+The 2026-10-26 export folds the variants into the frames they varied
+and drops the rest of the record. `SessionsConsole` already carried
+Where, Cloud, Teleport, the preview and Share; it now links to
+`Settings` instead of `Settings (where)`, and a cloud session's row
+draws its agent's mark as a masked glyph. The export no longer holds
+`SessionsConsole (where)`, `(cloud)`, `(pages)`, `(teleport)` and
+`(preview)`, `Settings (where)`, `AddHost (cards)` and
+`AddHost (command-first)`, `Cursor Cloud`, `New Session (final)`,
+`Chat Components` or `AI Elements`, and they were removed here too; git
+history keeps them, and the paragraphs above that name them are the
+record of the exports that added them. In `Brain` an item can be snoozed
+into a Snoozed list and brought back. `NewSessionComposer` adds a
+project to a new session (or No project) and a branch menu that can
+create and check out a new branch.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -247,8 +253,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - The console's dialogs — New project and Project settings, Add a host,
   the automation editor — and the onboarding step's copy buttons and
   Inspect fold are in `../05-screens.md` and `../13-automations.md`;
-  `SessionsConsole (pages)` and `AddHost (cards)` are the frames they
-  replaced, kept for the record. Three departures: Delete project on the
+  `SessionsConsole (pages)` and `AddHost (cards)` were the frames they
+  replaced, kept until the 2026-10-26 export. Three departures: Delete project on the
   dialog's footer opens the confirm the inventory draws rather than
   deleting outright; the Inspect fold's panel keeps its own Copy, as
   `CodeBlock`'s panel band has one; and the editor holds its Task step
@@ -292,7 +298,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   Settings policy reads "These apply to every watched repository."
   `explore-oppenheimer-agent.dc.html` is not in that export either and
   stays as it was. The 2026-10-14 and 2026-10-25 exports still lack all
-  three, and were merged the same way.
+  three, and were merged the same way. The 2026-10-26 export leaves
+  `PullRequests` and `Settings` as they were, so both stay as they are.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).

@@ -241,6 +241,38 @@ describe('SessionChat', () => {
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
   });
+
+  it('reads a long conversation line by line as the whole transcript reads, keeping closed turns', () => {
+    const entries = [
+      user('u1', 'One'),
+      assistant('a1', [
+        { type: 'tool_use', id: 'bg', name: 'Bash', input: { command: 'pnpm dev' } },
+      ]),
+      assistant('a2', [{ type: 'text', text: 'Started it.' }]),
+      user('u2', 'Two'),
+      assistant('a3', [{ type: 'tool_use', id: 't2', name: 'Read', input: { file_path: 'a.ts' } }]),
+      user('r2', [{ type: 'tool_result', tool_use_id: 't2', content: 'code' }]),
+      assistant('a4', [{ type: 'text', text: 'Read it.' }]),
+      user('u3', 'Three'),
+      // The first turn's command ends while the third turn runs.
+      user('r1', [{ type: 'tool_result', tool_use_id: 'bg', content: 'stopped', is_error: true }]),
+      assistant('a5', [{ type: 'text', text: 'Done.' }]),
+    ];
+    const chat = new SessionChat();
+    const seen: ReturnType<SessionChat['snapshot']>[] = [];
+    for (const entry of entries) {
+      chat.apply({ entries: [JSON.stringify(entry)] });
+      seen.push(chat.snapshot());
+    }
+
+    expect(chat.snapshot().turns).toEqual(toTurns(entries));
+    // A closed turn is the same object while later lines go to the open one.
+    expect(seen[6]?.turns[0]).toBe(seen[4]?.turns[0]);
+    expect(seen[9]?.turns[1]).toBe(seen[8]?.turns[1]);
+    // A result for a closed turn's call still lands on it.
+    const first = chat.snapshot().turns[0]?.steps[0];
+    expect(first?.kind === 'tool' && first.call.status).toBe('failed');
+  });
 });
 
 describe('classify', () => {
@@ -318,9 +350,9 @@ describe('typing into the session', () => {
       multiSelect: false,
       options: [{ label: 'A', description: null }],
     };
-    chat.answer([question], [{ picks: [0], other: null }]);
+    expect(chat.answer([question], [{ picks: [0], other: null }])).toBe(false);
     chat.connect((data) => typed.push(data));
-    chat.answer([question], [{ picks: [], other: 'Mine' }]);
+    expect(chat.answer([question], [{ picks: [], other: 'Mine' }])).toBe(true);
     vi.advanceTimersByTime(0);
     expect(typed).toEqual(['2']);
     vi.advanceTimersByTime(120);

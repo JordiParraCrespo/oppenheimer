@@ -21,7 +21,28 @@ img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
 </helmet>
 <sc-for list="{{ variants }}" as="v" hint-placeholder-count="1">
 <div onClick="{{ v.onBg }}" style="width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px;font-family:var(--font-sans);color:var(--fg);text-align:left">
-<h2 style="margin:0 0 14px 4px;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em;color:var(--fg)">What should we work on?</h2>
+<h2 style="margin:0 0 8px 4px;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em;color:var(--fg)">What should we work on?</h2>
+<div style="display:flex;align-items:center;min-height:30px;margin-top:-6px;padding:0 2px">
+<div style="position:relative;flex:none">
+<button type="button" onClick="{{ v.onProj }}" title="Project" aria-haspopup="listbox" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.projBg }};font:inherit;font-size:13.5px;color:{{ v.projColor }};cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import>{{ v.projLabel }}</button>
+<sc-if value="{{ v.projOpen }}">
+<div onClick="{{ stop }}" role="listbox" aria-label="Add to project" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:280px;display:flex;flex-direction:column;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;height:34px;margin-bottom:4px;padding:0 12px;border-radius:10px;background:var(--hover-surface)"><span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input type="text" value="{{ v.projQ }}" onChange="{{ v.onProjQ }}" placeholder="Search projects…" aria-label="Search projects" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)"></div>
+<div class="op-tpop__label" style="padding:6px 10px 4px">Add to project</div>
+<div style="max-height:240px;overflow-y:auto">
+<sc-for list="{{ v.projs }}" as="p" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" data-selected="{{ p.sel }}" onClick="{{ p.pick }}" style="padding:7px 10px;gap:10px;font-size:13.5px"><span class="op-option__stack" style="min-width:0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.label }}</span></span><span class="op-option__check">✓</span></button>
+</sc-for>
+<sc-if value="{{ v.projNone }}"><div style="padding:12px 10px;font-size:13px;color:var(--fg-muted)">No project matches “{{ v.projQ }}”.</div></sc-if>
+</div>
+<div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)">
+<button class="op-option" type="button" role="option" data-selected="{{ v.projNoneSel }}" onClick="{{ v.pickNoProj }}" style="padding:7px 10px;gap:10px;font-size:13.5px;color:var(--fg-muted)"><span class="op-option__stack"><span>No project</span></span><span class="op-option__check">✓</span></button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+
 
 <div style="display:flex;flex-direction:column;gap:6px;padding:6px;border:1px solid {{ v.boxBorder }};border-radius:28px;background:var(--card);transition:border-color 80ms cubic-bezier(.4,0,.2,1)">
 <sc-if value="{{ v.attach }}">
@@ -37,14 +58,13 @@ img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
 </div>
 </div>
 
-<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;min-height:34px;padding:0 2px">
-
-<div style="position:relative;flex:none">
-<button type="button" onClick="{{ v.onEnv }}" title="Where it runs" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.envBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)">
+<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;min-height:34px;padding:0 2px;min-width:0">
+<div style="position:relative;flex:0 1 auto;min-width:0">
+<button type="button" onClick="{{ v.onEnv }}" title="Where it runs" style="max-width:100%;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.envBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)">
 <sc-if value="{{ v.envIsCloud }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></sc-if>
 <sc-if value="{{ v.envIsCursor }}"><img src="{{ v.envLogo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if>
 <sc-if value="{{ v.envIsHost }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ v.envIcon }}" size="14" hint-size="14px,14px"></x-import></sc-if>
-<span>{{ v.envLabel }}</span><sc-if value="{{ v.isB }}"><span style="color:var(--fg-subtle)">·</span><span style="color:var(--fg-muted)">{{ v.wsRepos }}</span></sc-if>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.envLabel }}</span><sc-if value="{{ v.isB }}"><span style="color:var(--fg-subtle)">·</span><span style="color:var(--fg-muted)">{{ v.wsRepos }}</span></sc-if>
 </button>
 
 <sc-if value="{{ v.envMenu.open }}">
@@ -257,6 +277,44 @@ img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
 </div>
 
 <sc-if value="{{ v.isA }}">
+<sc-if value="{{ v.multi }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;flex:0 1 auto;min-width:0">
+<button type="button" onClick="{{ v.mr.onOpen }}" title="{{ v.mr.title }}" aria-haspopup="listbox" style="max-width:100%;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.mr.bg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="database" size="14" hint-size="14px,14px"></x-import><span style="min-width:0;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.mr.label }}</span><sc-if value="{{ v.mr.more }}"><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ v.mr.more }}</span></sc-if></button>
+<sc-if value="{{ v.mr.open }}">
+<div onClick="{{ stop }}" role="listbox" aria-multiselectable="true" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1);width:380px">
+<div style="display:flex;align-items:center;gap:8px;height:36px;margin-bottom:4px;padding:0 6px 0 12px;border-radius:10px;background:var(--hover-surface)"><span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input type="text" value="{{ v.mr.q }}" onChange="{{ v.mr.onQ }}" placeholder="Search all repositories…" aria-label="Search all repositories" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13.5px;color:var(--fg)"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Refresh repositories" title="Refresh repositories"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="refresh-cw" size="14" hint-size="14px,14px"></x-import></button><a class="op-iconbtn op-iconbtn--sm" href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" aria-label="Manage repository access" title="Manage repository access" style="color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></a></div>
+<div style="max-height:320px;overflow-y:auto">
+<sc-for list="{{ v.mr.rows }}" as="r" hint-placeholder-count="6">
+<sc-if value="{{ r.sep }}"><div style="height:1px;margin:4px 10px;background:var(--border-subtle)"></div></sc-if>
+<button class="op-option" type="button" role="option" aria-selected="{{ r.selS }}" onClick="{{ r.toggle }}" style="padding:7px 10px;gap:10px;font-size:13.5px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">{{ r.label }}</span><sc-if value="{{ r.sel }}"><span style="flex:none;display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="15" hint-size="15px,15px"></x-import></span></sc-if></button>
+</sc-for>
+<sc-if value="{{ v.mr.none }}"><div style="padding:14px 10px;font-size:13px;color:var(--fg-muted)">No repository matches “{{ v.mr.q }}”.</div></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+<div style="position:relative;flex:0 1 auto;min-width:0">
+<button type="button" onClick="{{ v.mb.onOpen }}" title="Branches" aria-haspopup="menu" style="max-width:100%;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.mb.bg }};font:inherit;font-size:13.5px;color:var(--fg-muted);cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="14" hint-size="14px,14px"></x-import><span style="min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.mb.label }}</span></button>
+<sc-if value="{{ v.mb.open }}">
+<div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1);width:360px">
+<sc-if value="{{ v.mb.list }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ v.mb.rows }}" as="r" hint-placeholder-count="2">
+<button class="op-option" type="button" onClick="{{ r.open }}" style="padding:7px 8px 7px 10px;gap:10px;font-size:13.5px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">{{ r.repo }}</span><span style="flex:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--fg-subtle)">{{ r.branch }}</span><span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import></span></button>
+</sc-for>
+</sc-if>
+<sc-if value="{{ v.mb.detail }}">
+<button class="op-option" type="button" onClick="{{ v.mb.back }}" style="padding:7px 10px;gap:8px;font-size:13px;color:var(--fg-muted)"><span style="flex:none;display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">{{ v.mb.repo }}</span></button>
+<div style="display:flex;align-items:center;gap:8px;height:34px;margin:2px 0 4px;padding:0 12px;border-radius:10px;background:var(--hover-surface)"><span style="flex:none;display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import></span><input type="text" value="{{ v.mb.q }}" onChange="{{ v.mb.onQ }}" placeholder="Search branches…" aria-label="Search branches" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)"></div>
+<sc-for list="{{ v.mb.branches }}" as="b" hint-placeholder-count="4">
+<button class="op-option" type="button" role="option" data-selected="{{ b.sel }}" onClick="{{ b.pick }}" style="padding:7px 10px;gap:10px;font-size:13px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-family:var(--font-mono)">{{ b.label }}</span><span class="op-option__check">✓</span></button>
+</sc-for>
+<div style="margin:4px -4px 0;padding:4px 4px 0;border-top:1px solid var(--border-subtle)"><button class="op-option" type="button" style="padding:7px 10px;gap:10px;font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>Create and check out new branch…</button></div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ v.notMulti }}">
 <sc-for list="{{ v.slots }}" as="s" hint-placeholder-count="1">
 <div style="position:relative;flex:none;display:flex;align-items:center">
 <button type="button" onClick="{{ s.onRepo }}" disabled="{{ s.locked }}" title="{{ s.full }}" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 4px 0 10px;border:0;border-radius:980px 0 0 980px;background:{{ s.repoBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:{{ s.repoCursor }}" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ s.icon }}" size="14" hint-size="14px,14px"></x-import>{{ s.short }}</button>
@@ -290,10 +348,12 @@ img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
 </div>
 </sc-if>
 </sc-if>
+</sc-if>
+
 
 <sc-if value="{{ v.showPerm }}" hint-placeholder-val="{{ true }}">
-<div style="position:relative;flex:none">
-<button type="button" onClick="{{ v.onPerm }}" title="Permissions" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.permBg }};font:inherit;font-size:13.5px;color:{{ v.permColor }};cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="14" hint-size="14px,14px"></x-import>{{ v.permLabel }}</button>
+<div style="position:relative;flex:0 1 auto;min-width:0">
+<button type="button" onClick="{{ v.onPerm }}" title="Permissions" style="max-width:100%;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.permBg }};font:inherit;font-size:13.5px;color:{{ v.permColor }};cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="14" hint-size="14px,14px"></x-import><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.permLabel }}</span></button>
 <sc-if value="{{ v.permOpen }}">
 <div onClick="{{ stop }}" style="position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;width:320px;box-sizing:border-box;padding:4px;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
 <div class="op-tpop__label" style="padding:8px 10px 4px">Permissions · this session</div>
@@ -308,8 +368,8 @@ img[src$="codex.svg"]{filter:var(--brand-glyph-filter,none)}
 
 <div style="flex:1"></div>
 
-<div style="position:relative;flex:none">
-<button type="button" onClick="{{ v.onModel }}" title="Agent and model" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:0;border-radius:980px;background:{{ v.modelBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><sc-if value="{{ v.provImg }}" hint-placeholder-val="{{ true }}"><img src="{{ v.provLogo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ v.provTerm }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></sc-if><span>{{ v.modelLabel }}</span><span style="color:var(--fg-muted)">{{ v.effortLabel }}</span></button>
+<div style="position:relative;flex:none;margin-left:auto">
+<button type="button" onClick="{{ v.onModel }}" title="Agent and model" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 8px;border:0;border-radius:980px;background:{{ v.modelBg }};font:inherit;font-size:13.5px;color:var(--fg);cursor:pointer" style-hover="background:var(--hover-surface)"><sc-if value="{{ v.provImg }}" hint-placeholder-val="{{ true }}"><img src="{{ v.provLogo }}" alt="" style="width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ v.provTerm }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></sc-if><span>{{ v.modelLabel }}</span><span style="color:var(--fg-muted)">{{ v.effortLabel }}</span></button>
 <sc-if value="{{ v.modelOpen }}">
 <div onClick="{{ stop }}" style="position:absolute;right:0;bottom:calc(100% + 8px);z-index:20;width:340px;box-sizing:border-box;border:1px solid var(--border-subtle);border-radius:14px;background:var(--card);box-shadow:var(--shadow-popover);overflow:hidden;animation:op-rise-in 140ms cubic-bezier(.16,1,.3,1)">
 <div role="tablist" aria-label="Agent" style="display:flex;gap:2px;padding:6px 6px 0;border-bottom:1px solid var(--border-subtle)">
@@ -472,7 +532,17 @@ const REPOS = [
   { r: 'flama-ai/web', d: 'Updated yesterday' },
   { r: 'flama-ai/api', d: 'Updated 3 days ago' },
   { r: 'flama-ai/xrp-mobile', d: 'Updated last week' },
+  { r: 'JordiParraCrespo/cosmos-agent-sandbox', d: '' },
+  { r: 'JordiParraCrespo/xrplevm-node', d: '' },
+  { r: 'Adriagc8/GestioUsuaris', d: '', b: 'master' },
+  { r: 'adrirodrigocoding/kit-digital-2.0-BRAIN', d: '' },
+  { r: 'adrirodrigocoding/kit-digital-referidos', d: '' },
+  { r: 'adrirodrigocoding/terminator-seo', d: '' },
+  { r: 'akaKush/SAD', d: '' },
+  { r: 'alexgg7799/reactodo', d: '' },
+  { r: 'erikhsu70/Adri-Webs-KD', d: '' },
 ];
+const PROJECTS = ['XRP Mobile', 'Oppenheimer', 'Cosmos explorer', 'XRPL EVM node', 'Kit Digital', 'Terminator SEO', 'Gestió Usuaris', 'Adri Webs', 'Flama web', 'Flama API', 'Design system', 'Internal tools'];
 const BRANCHES = ['main', 'develop', 'docs/design-export-2026-10-15', 'frontend-audit/fix-2026-10-12'];
 const PERMS = [
   { id: 'auto', label: 'Auto', desc: 'The agent handles permission decisions' },
@@ -778,7 +848,7 @@ class Component extends DCLogic {
         if (!this.props.onStart) return this.set(v, { sent: true });
         const r0 = s.repos[0];
         this.props.onStart({ host: cloud ? null : env.id, cloud: cloud ? cloud.id : null, where: home ? 'home' : folder ? 'folder' : 'worktree',
-          folder: folder ? folder.p : null, repo: folder ? folder.repo : home ? null : r0.r, repos: s.repos, agent: prov.id, model: s.model, effort: EFFORT[s.effort], perm: s.perm, text,
+          folder: folder ? folder.p : null, repo: folder ? folder.repo : home ? null : r0.r, repos: s.repos, agent: prov.id, model: s.model, effort: EFFORT[s.effort], perm: s.perm, text, project: s.project !== undefined ? s.project : (this.props.project ?? 'XRP Mobile'),
           scope: folder ? short(folder.p) : home ? '~' : s.repos.map(x => short(x.r)).join(' + '),
           meta: [prov.label, term ? 'tmux' : s.model, envLabel].join(' · ') });
         this.set(v, { text: '', attach: false, rec: false, open: null });
@@ -794,8 +864,35 @@ class Component extends DCLogic {
       wsRepoList: T(s.wsCol === 'repos'), wsPick: T(s.wsCol !== 'repos'), wsBack: S({ wsCol: 'repos' }),
       wsRightTitle: folder ? 'Folder' : 'Repositories',
       wsFoot: folder ? 'The repository comes from the folder. Switching branch checks it out in place.' : cloud ? 'The cloud clones each repository at the branch you pick.' : 'Each repository gets its own worktree on ' + env.id + ', branched from the branch you pick.',
+      multi: T(!folder && !home), notMulti: T(folder),
+      mr: (() => { const q = (s.repoQ || '').trim().toLowerCase(), sel = s.repos.map(x => x.r);
+        const match = r => !q || r.toLowerCase().indexOf(q) > -1;
+        const tog = r => S(st => { const has = st.repos.some(x => x.r === r);
+          if (has && st.repos.length === 1) return {};
+          return { repos: has ? st.repos.filter(x => x.r !== r) : st.repos.concat([{ r, b: (REPOS.find(x => x.r === r) || {}).b || 'main' }]) }; });
+        const top = sel.filter(match), rest = REPOS.map(x => x.r).filter(r => sel.indexOf(r) < 0 && match(r));
+        const rows = top.map(r => ({ label: r, sel: T(1), selS: 'true', toggle: tog(r) })).concat(rest.map((r, i) => ({ label: r, sel: undefined, selS: 'false', sep: T(i === 0 && top.length), toggle: tog(r) })));
+        return { label: short(sel[0]), more: sel.length > 1 ? '+' + (sel.length - 1) : '', title: sel.join(', '), open: T(s.open === 'mrepo'), bg: s.open === 'mrepo' ? 'var(--hover-surface)' : 'transparent',
+          onOpen: S(st => ({ open: st.open === 'mrepo' ? null : 'mrepo', repoQ: '' })), q: s.repoQ || '', onQ: e => this.set(v, { repoQ: e.target.value }), rows, none: T(!rows.length) }; })(),
+      mb: (() => { const m = /^mbr:(\d+)$/.exec(s.open || ''), i = m ? +m[1] : -1, cur = s.repos[i];
+        const q = (s.brQ || '').trim().toLowerCase();
+        const uniq = [...new Set(s.repos.map(x => x.b))];
+        const list = cur ? [cur.b].concat(BRANCHES.filter(b => b !== cur.b)).filter(b => !q || b.toLowerCase().indexOf(q) > -1) : [];
+        return { label: 'Branches', open: T(s.open === 'mbr' || m), bg: s.open === 'mbr' || m ? 'var(--hover-surface)' : 'transparent',
+          onOpen: S(st => ({ open: st.open === 'mbr' || /^mbr:/.test(st.open || '') ? null : 'mbr' })),
+          list: T(!m), detail: T(m), repo: cur ? cur.r : '', back: S({ open: 'mbr', brQ: '' }),
+          rows: s.repos.map((x, j) => ({ repo: x.r, branch: x.b, open: S({ open: 'mbr:' + j, brQ: '' }) })),
+          q: s.brQ || '', onQ: e => this.set(v, { brQ: e.target.value }),
+          branches: list.map(b => ({ label: b, sel: T(cur && cur.b === b), pick: S(st => ({ repos: st.repos.map((y, j) => j === i ? { ...y, b } : y), open: 'mbr', brQ: '' })) })) }; })(),
       slots, canAdd: T(canAdd), onAdd: isB ? S({ wsCol: 'add' }) : toggle('add'), addOpen: T(!isB && s.open === 'add'), addBg: s.open === 'add' ? 'var(--hover-surface)' : 'transparent',
       pick,
+      ...(() => { const cur = s.project !== undefined ? s.project : (this.props.project ?? 'XRP Mobile');
+        const q = (s.projQ || '').trim().toLowerCase();
+        const list = PROJECTS.filter(p => !q || p.toLowerCase().indexOf(q) > -1);
+        return { projLabel: cur || 'No project', projColor: cur ? 'var(--fg)' : 'var(--fg-muted)', projBg: s.open === 'proj' ? 'var(--hover-surface)' : 'transparent', projOpen: T(s.open === 'proj'), onProj: S(st => ({ open: st.open === 'proj' ? null : 'proj', projQ: '' })),
+          projQ: s.projQ || '', onProjQ: e => this.set(v, { projQ: e.target.value }), projNone: T(!list.length),
+          projNoneSel: T(cur === null), pickNoProj: S({ project: null, open: null }),
+          projs: list.map(p => ({ label: p, sel: T(cur === p), pick: S({ project: p, open: null }) })) }; })(),
       permLabel: perm.label, permColor: perm.danger ? 'var(--danger)' : 'var(--fg)', permBg: s.open === 'perm' ? 'var(--hover-surface)' : 'transparent', permOpen: T(s.open === 'perm'), onPerm: toggle('perm'),
       perms: PERMS.map(p => ({ label: p.label, desc: p.desc, sel: T(s.perm === p.id), sep: T(p.danger), color: p.danger ? 'var(--danger)' : 'var(--fg)', pick: S({ perm: p.id, open: null }) })),
       provLogo: prov.logo, modelLabel: term ? 'Terminal' : s.model, effortLabel: term ? 'tmux' : EFFORT[s.effort], chipEffort: EFFORT[s.effort],
