@@ -466,13 +466,63 @@ describe('the queue', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: working });
+    chat.post('/clear');
+    chat.post('Go on');
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['/clear', '\r']);
+    vi.advanceTimersByTime(5_000);
+    expect(typed).toEqual(['/clear', '\r', 'Go on', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('reads a command the CLI answered itself as a turn that ended, so the queue goes on', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
     chat.post('/cost');
     chat.post('Go on');
     chat.apply({ entries: [settled('a1')] });
     vi.advanceTimersByTime(100);
     expect(typed).toEqual(['/cost', '\r']);
-    vi.advanceTimersByTime(5_000);
+    chat.apply({
+      entries: [
+        JSON.stringify(
+          user('c1', '<command-name>/cost</command-name>\n<command-args></command-args>'),
+        ),
+        JSON.stringify(
+          user('c2', '<local-command-stdout>Total cost: $0.42</local-command-stdout>'),
+        ),
+      ],
+    });
+    expect(chat.snapshot().turns.at(-1)).toMatchObject({
+      prompt: { text: '/cost' },
+      working: false,
+    });
+    vi.advanceTimersByTime(100);
     expect(typed).toEqual(['/cost', '\r', 'Go on', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('waits for a reconnect to replay the turn it was written during before sending', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    const earlier = [JSON.stringify(user('u0', 'Look first')), settled('a0')];
+    chat.apply({ reset: true, entries: [...earlier, ...working] });
+    chat.post('Then ship it');
+    // The history comes back in parts: the first ends on an older, settled turn.
+    chat.apply({ reset: true, entries: earlier });
+    vi.advanceTimersByTime(6_000);
+    chat.apply({ entries: working });
+    vi.advanceTimersByTime(6_000);
+    expect(typed).toEqual([]);
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then ship it', '\r']);
     vi.useRealTimers();
   });
 });

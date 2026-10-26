@@ -200,6 +200,13 @@ export class SessionChat {
   private readonly listeners = new Set<() => void>();
   /** The last queued message sent: how many turns there were, and when. */
   private sentQueued: { turns: number; at: number } | null = null;
+  /**
+   * The turn the queue was started during. Nothing goes until it is in the
+   * chat again and has ended: a reconnect replays the history in several
+   * batches, and one that ends on an older, settled turn is not the agent
+   * being free.
+   */
+  private queuedDuring: string | null = null;
   private queuedIds = 0;
 
   apply(batch: ChatBatch): void {
@@ -267,6 +274,7 @@ export class SessionChat {
       return;
     }
     this.queuedIds += 1;
+    if (this.state.queued.length === 0) this.queuedDuring = this.state.turns.at(-1)?.id ?? null;
     this.publish({
       ...this.state,
       queued: [...this.state.queued, { id: `queued-${this.queuedIds}`, text: message }],
@@ -296,6 +304,9 @@ export class SessionChat {
   private flush(): void {
     const [next, ...rest] = this.state.queued;
     if (!next || !this.type || this.busy()) return;
+    const during = this.queuedDuring;
+    if (during && !this.state.turns.some((turn) => turn.id === during)) return;
+    this.queuedDuring = null;
     const waiting = this.sentQueued;
     if (
       waiting &&
@@ -411,6 +422,8 @@ type Reading =
       contextTokens?: number | null;
     }
   | { kind: 'results'; results: ChatResult[]; at: Date | null }
+  /** A command the CLI answered itself (`/cost`): its output ends the turn it opened. */
+  | { kind: 'answered'; at: Date | null }
   | null;
 
 interface ChatResult {
@@ -467,6 +480,9 @@ export function classify(value: unknown, index: number): Reading {
   );
   if (results.length > 0) return { kind: 'results', results, at };
   if (entry.isMeta === true) return null;
+  if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
+    return { kind: 'answered', at };
+  }
   const typed = typedPrompt(
     typeof content === 'string'
       ? content
@@ -518,6 +534,7 @@ function buildTurns(
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
   const calls = new Map<string, ChatToolCall>();
+  const answered = new Set<ChatTurn>();
   const current = (id: string, at: Date | null, index: number): ChatTurn => {
     const last = turns.at(-1);
     if (last) return last;
@@ -544,6 +561,14 @@ function buildTurns(
         }
         continue;
       }
+      case 'answered': {
+        const turn = turns.at(-1);
+        if (turn) {
+          answered.add(turn);
+          if (reading.at) turn.lastAt = reading.at;
+        }
+        continue;
+      }
       case 'results':
         for (const result of reading.results) {
           const call = calls.get(result.toolUseId);
@@ -559,7 +584,7 @@ function buildTurns(
   }
 
   const last = turns.at(-1);
-  if (last) last.working = isWorking(last);
+  if (last) last.working = !answered.has(last) && isWorking(last);
   return { turns, starts };
 }
 
