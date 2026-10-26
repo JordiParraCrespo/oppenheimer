@@ -276,7 +276,10 @@
       "save": "Save changes",
       "saving": "Saving…",
       "saved": "Saved",
-      "failed": "Could not save the bot."
+      "failed": "Could not save the bot.",
+      "showsIn": "Shows in",
+      "showsInHint": "Sidebars that list it, beside Employees",
+      "showsInFailed": "Could not save where the bot shows."
     },
     "instructions": {
       "title": "Instructions",
@@ -389,5 +392,9 @@
     "confirm": "Delete bot",
     "pending": "Deleting…",
     "failed": "Could not delete the bot."
+  },
+  "section": {
+    "heading": "Bots",
+    "empty": "No bots here yet."
   }
 }

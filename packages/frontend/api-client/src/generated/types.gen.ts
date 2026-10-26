@@ -3033,6 +3033,10 @@ export type BotResponseDto = {
      * Whether what it decides to remember is saved without asking.
      */
     learnAutomatically: boolean;
+    /**
+     * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
+     */
+    sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
     createdAt: string;
     updatedAt: string;
     /**
@@ -3052,6 +3056,7 @@ export type CreateBotRequest = {
     groupId?: string | null;
     homeHostId?: string | null;
     provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
 export type UpdateBotRequest = {
@@ -3066,6 +3071,7 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
+    sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
 export type BotDocumentResponseDto = {

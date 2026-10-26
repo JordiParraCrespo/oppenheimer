@@ -283,7 +283,10 @@
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "saved": "Guardado",
-      "failed": "No se ha podido guardar el bot."
+      "failed": "No se ha podido guardar el bot.",
+      "showsIn": "Aparece en",
+      "showsInHint": "Barras laterales que lo muestran, además de Empleados",
+      "showsInFailed": "No se pudo guardar dónde aparece el bot."
     },
     "instructions": {
       "title": "Instrucciones",
@@ -396,5 +399,9 @@
     "confirm": "Eliminar bot",
     "pending": "Eliminando…",
     "failed": "No se ha podido eliminar el bot."
+  },
+  "section": {
+    "heading": "Bots",
+    "empty": "Aún no hay bots aquí."
   }
 }

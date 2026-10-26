@@ -7,6 +7,7 @@ import type {
   BotDocumentName,
   BotPermission,
   BotProvider,
+  BotSection,
 } from '@oppenheimer/shared/schemas/bot';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
@@ -41,6 +42,8 @@ export class BotEntity {
     public readonly lastActivityAt: Date,
     /** The start of its last message; `null` before the first. */
     public readonly lastMessagePreview: string | null = null,
+    /** The console sections whose sidebar lists it beside Employees, in catalog order. */
+    public readonly sections: BotSection[] = [],
   ) {}
 
   /**
@@ -140,6 +143,8 @@ export interface UpdateBotInput {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  /** The whole set; `[]` shows it in Employees only. */
+  sections?: BotSection[];
 }
 
 /** `PUT /bots/:id/documents/:name`: the text, over the revision the editor loaded. */

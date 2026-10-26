@@ -26333,6 +26333,14 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
+          "sections": {
+            "type": "array",
+            "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -26366,6 +26374,7 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
+          "sections",
           "createdAt",
           "updatedAt",
           "lastActivityAt",
@@ -26401,6 +26410,14 @@
           "provider": {
             "type": "string",
             "enum": ["anthropic", "glm", "openai", "chatgpt"]
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
           }
         }
       },
@@ -26458,6 +26475,14 @@
           },
           "learnAutomatically": {
             "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
           }
         }
       },
