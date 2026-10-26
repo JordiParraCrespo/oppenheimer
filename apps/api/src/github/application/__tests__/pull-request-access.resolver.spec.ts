@@ -60,6 +60,7 @@ const PULL = {
 
 it('keeps the refusal GitHub gave for a pull request it would not read, beside the ones it did', async () => {
   const { resolver, repository } = build({
+    ...BY_REST(),
     listPullRequests: vi.fn().mockResolvedValue([PULL, { ...PULL, number: 13 }]),
     readPullRequest: vi.fn(async (_t: string, _r: string, number: number) => {
       if (number === 13) throw refused(403);
@@ -83,6 +84,9 @@ const refused = (status: number) =>
     detail: 'refused',
     extensions: { upstreamStatus: status },
   });
+
+/** The GraphQL read failing, so the queue falls back to the REST read a spec is about. */
+const BY_REST = () => ({ listOpenPullRequests: vi.fn().mockRejectedValue(refused(502)) });
 
 function build(
   pulls: Partial<Record<keyof GithubPullsPort, unknown>>,
@@ -116,9 +120,9 @@ function build(
     ]),
   } as unknown as GithubAppPort;
   const grants = userGrants as GithubUserGrantResolver;
-  // Unless a spec gives the one GraphQL read an answer, it fails, and the
-  // queue reads the long way: the REST read most of these specs are about.
-  const withGraph = { listOpenPullRequests: vi.fn().mockRejectedValue(refused(502)), ...pulls };
+  // The GraphQL read is the queue's: it answers nothing unless a spec gives it
+  // something, and a spec about the REST read says so with `BY_REST`.
+  const withGraph = { listOpenPullRequests: vi.fn().mockResolvedValue([]), ...pulls };
   const resolver = new PullRequestAccessResolver(
     installations,
     app,
@@ -141,6 +145,7 @@ function build(
 describe('a pull request GitHub answers only in part', () => {
   it('keeps the pull request, its files and reviews when its checks are refused, and says why', async () => {
     const { resolver, repository, store } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue([PULL]),
       readPullRequest: vi.fn().mockResolvedValue(PULL),
       listFiles: vi.fn().mockResolvedValue([{ path: 'src/auth/keychain.ts' }]),
@@ -161,6 +166,7 @@ describe('a pull request GitHub answers only in part', () => {
 
   it('names a repository whose listing GitHub refuses instead of failing the read', async () => {
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockRejectedValue(refused(404)),
     });
 
@@ -172,6 +178,7 @@ describe('a pull request GitHub answers only in part', () => {
 
   it('reads a rate limit as "wait", not as GitHub failing', async () => {
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi
         .fn()
         .mockRejectedValue(
@@ -228,7 +235,7 @@ describe('the open pull requests read in one request', () => {
         .fn()
         .mockResolvedValue([
           whole(1),
-          { ...whole(2), files: { value: null, refusal: null, overflow: true } },
+          { ...whole(2), files: { value: null, refusal: 'past_page' } },
         ]),
       readPullRequest,
       listFiles,
@@ -279,7 +286,7 @@ describe('the open pull requests read in one request', () => {
 
   it('falls back to the REST read when the GraphQL read fails', async () => {
     const { resolver, repository } = build({
-      listOpenPullRequests: vi.fn().mockRejectedValue(refused(502)),
+      ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue([PULL]),
       readPullRequest: vi.fn().mockResolvedValue(PULL),
       listFiles: vi.fn().mockResolvedValue([]),
@@ -428,6 +435,7 @@ describe('what one read spends', () => {
     );
     const pulls = Array.from({ length: count }, (_, i) => pullNumbered(i + 1));
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue(pulls),
       readPullRequest,
       listFiles,

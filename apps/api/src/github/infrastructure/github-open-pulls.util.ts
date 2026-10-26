@@ -1,5 +1,11 @@
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
+import {
+  checkRunOutcome,
+  checksOf,
+  commitStatusOutcome,
+  fromForkOf,
+} from './github-pull-rules.util';
 import type {
   GithubChecks,
   GithubOpenPullRequest,
@@ -29,8 +35,9 @@ export const OPEN_PULLS_QUERY = `query($owner: String!, $name: String!, $after: 
       nodes {
         id number title url body isDraft state merged mergedAt closedAt createdAt updatedAt
         author { __typename login }
-        headRefName headRefOid baseRefName isCrossRepository
+        headRefName headRefOid baseRefName
         headRepository { id }
+        baseRepository { id }
         additions deletions changedFiles mergeable mergeStateStatus
         reviewRequests(first: 50) { nodes { requestedReviewer { __typename ... on User { login } } } }
         files(first: 100) { pageInfo { hasNextPage } nodes { path } }
@@ -78,8 +85,8 @@ interface RawGraphPull {
   headRefName: string;
   headRefOid: string;
   baseRefName: string;
-  isCrossRepository: boolean;
   headRepository: { id: string } | null;
+  baseRepository: { id: string } | null;
   additions: number;
   deletions: number;
   changedFiles: number;
@@ -130,9 +137,11 @@ export interface OpenPullsBody {
 /**
  * One page of the answer in this module's vocabulary, and the cursor to the
  * next one. GraphQL answers `200` with an `errors` list either way: an error
- * that names a part of one pull request (`…nodes.3.files`) costs that part,
- * and one that leaves no repository costs the read, as the REST listing's
- * refusal did.
+ * that names a part of one pull request (`…nodes.3.files`) costs that part.
+ * Anything else fails the read: one that leaves no repository as the REST
+ * listing's refusal did, and one this cannot place (a pull request GitHub
+ * nulled whole, a path of another shape) as GitHub failing, so the caller
+ * falls back rather than drop a pull request without a word.
  */
 export function openPullRequestsOf(body: OpenPullsBody): {
   pulls: GithubOpenPullRequest[];
@@ -142,9 +151,10 @@ export function openPullRequestsOf(body: OpenPullsBody): {
   const connection = body.data?.repository?.pullRequests;
   if (!connection) throw refusedRead(errors);
   const refusals = partRefusals(errors);
-  const pulls = connection.nodes.flatMap((raw, index) =>
-    raw ? [openPullRequestOf(raw, refusals.get(index) ?? new Map())] : [],
-  );
+  const pulls = connection.nodes.map((raw, index) => {
+    if (!raw) throw unplaced(`pull request ${index} came back empty`, errors);
+    return openPullRequestOf(raw, refusals.get(index) ?? new Map());
+  });
   return {
     pulls,
     next: connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null,
@@ -152,16 +162,26 @@ export function openPullRequestsOf(body: OpenPullsBody): {
 }
 
 type PartName = 'files' | 'reviews' | 'commits';
+const PARTS = new Set<unknown>(['files', 'reviews', 'commits']);
 
-/** Which part of which pull request each error names, and GitHub's refusal for it. */
+/**
+ * Which part of which pull request each error names, and GitHub's refusal for
+ * it. The place is read from the path itself, the index after `nodes` and the
+ * field after that, never from a fixed prefix; an error placed nowhere fails
+ * the read.
+ */
 function partRefusals(errors: GraphError[]): Map<number, Map<PartName, GithubRefusal>> {
   const byPull = new Map<number, Map<PartName, GithubRefusal>>();
   for (const error of errors) {
-    const [, , , index, part] = error.path ?? [];
-    if (typeof index !== 'number') continue;
-    if (part !== 'files' && part !== 'reviews' && part !== 'commits') continue;
+    const path = error.path ?? [];
+    const at = path.indexOf('nodes');
+    const index = at < 0 ? undefined : path[at + 1];
+    const part = at < 0 ? undefined : path[at + 2];
+    if (typeof index !== 'number' || !PARTS.has(part)) {
+      throw unplaced(`an error at ${path.join('.') || 'no path'}`, errors);
+    }
     const parts = byPull.get(index) ?? new Map<PartName, GithubRefusal>();
-    parts.set(part, refusalOfType(error.type));
+    parts.set(part as PartName, refusalOfType(error.type));
     byPull.set(index, parts);
   }
   return byPull;
@@ -203,8 +223,7 @@ function openPullRequestOf(
         raw.mergeable === 'MERGEABLE' ? true : raw.mergeable === 'CONFLICTING' ? false : null,
       // GitHub's REST `mergeable_state` is this enum in lower case.
       mergeableState: raw.mergeStateStatus.toLowerCase(),
-      // A head whose repository is gone (a deleted fork) is a fork's too.
-      fromFork: raw.isCrossRepository || raw.headRepository === null,
+      fromFork: fromForkOf(raw.headRepository?.id, raw.baseRepository?.id),
     },
     files: partOf(refused.get('files'), raw.files, (nodes) => nodes.map((file) => file.path)),
     reviews: partOf(refused.get('reviews'), raw.reviews, (nodes) =>
@@ -215,7 +234,7 @@ function openPullRequestOf(
         submittedAt: review.submittedAt,
       })),
     ),
-    checks: checksOf(refused.get('commits'), raw.commits),
+    checks: checksPartOf(refused.get('commits'), raw.commits),
   };
 }
 
@@ -226,7 +245,7 @@ function partOf<TNode, T>(
 ): GithubPart<T> {
   if (refusal) return { value: null, refusal };
   if (!page) return { value: null, refusal: 'failed' };
-  if (page.pageInfo?.hasNextPage) return { value: null, refusal: null, overflow: true };
+  if (page.pageInfo?.hasNextPage) return { value: null, refusal: 'past_page' };
   return { value: map(present(page.nodes)), refusal: null };
 }
 
@@ -234,42 +253,22 @@ function partOf<TNode, T>(
  * Check runs and the older commit statuses together, as the REST read
  * counted them: a repository may use either, and the rollup lists both.
  */
-function checksOf(
+function checksPartOf(
   refusal: GithubRefusal | undefined,
   commits: RawGraphPull['commits'],
 ): GithubPart<GithubChecks> {
   if (refusal) return { value: null, refusal };
   if (!commits) return { value: null, refusal: 'failed' };
   const contexts = present(commits.nodes)[0]?.commit.statusCheckRollup?.contexts;
-  if (contexts?.pageInfo?.hasNextPage) return { value: null, refusal: null, overflow: true };
-  const outcomes = present(contexts?.nodes).map((context) => {
-    if (context.__typename === 'CheckRun') {
-      if (context.status !== 'COMPLETED') return 'pending';
-      return ['SUCCESS', 'NEUTRAL', 'SKIPPED'].includes(context.conclusion ?? '')
-        ? 'passed'
-        : 'failed';
-    }
-    if (context.state === 'SUCCESS') return 'passed';
-    return context.state === 'PENDING' || context.state === 'EXPECTED' ? 'pending' : 'failed';
-  });
-  const count = (outcome: string) => outcomes.filter((o) => o === outcome).length;
-  const failed = count('failed');
-  const pending = count('pending');
+  if (contexts?.pageInfo?.hasNextPage) return { value: null, refusal: 'past_page' };
   return {
-    value: {
-      state:
-        outcomes.length === 0
-          ? 'none'
-          : failed > 0
-            ? 'failing'
-            : pending > 0
-              ? 'running'
-              : 'passing',
-      total: outcomes.length,
-      passed: count('passed'),
-      failed,
-      pending,
-    },
+    value: checksOf(
+      present(contexts?.nodes).map((context) =>
+        context.__typename === 'CheckRun'
+          ? checkRunOutcome(context.status ?? '', context.conclusion)
+          : commitStatusOutcome(context.state ?? ''),
+      ),
+    ),
     refusal: null,
   };
 }
@@ -289,6 +288,21 @@ function refusalOfType(type: string | undefined): GithubRefusal {
   if (type === 'NOT_FOUND') return 'not_found';
   if (type === 'RATE_LIMITED') return 'rate_limited';
   return 'failed';
+}
+
+/** An answer with something this read cannot place: GitHub failing, so the caller falls back. */
+function unplaced(what: string, errors: GraphError[]): AppError {
+  if (errors.some((error) => error.type === 'RATE_LIMITED')) {
+    return new AppError(GithubErrors.RATE_LIMITED, { detail: describe(errors) });
+  }
+  return new AppError(GithubErrors.UPSTREAM_FAILED, {
+    detail: `GitHub answered the open pull requests with ${what}: ${describe(errors)}`,
+    extensions: { upstreamStatus: 200 },
+  });
+}
+
+function describe(errors: GraphError[]): string {
+  return errors.map((error) => error.message ?? error.type ?? 'unknown').join('; ') || 'no error';
 }
 
 /** A read that came back with no repository, in the codes the REST listing's refusals had. */

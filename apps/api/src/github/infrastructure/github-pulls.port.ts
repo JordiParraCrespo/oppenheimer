@@ -117,11 +117,7 @@ export interface GithubChecks {
 
 /**
  * An open pull request read whole in one request: its detail, the paths it
- * touches, its checks on the head commit and its reviews. A part GitHub
- * refused, or one longer than the read's page, is a `Part` of its own kind:
- * refused carries GitHub's refusal, and `overflow` says the read stopped
- * short, so the caller reads that pull request the long way rather than
- * show part of a list as all of it (#244).
+ * touches, its checks on the head commit and its reviews.
  */
 export interface GithubOpenPullRequest {
   pull: GithubPullRequestDetail;
@@ -130,10 +126,16 @@ export interface GithubOpenPullRequest {
   reviews: GithubPart<GithubPullRequestReview[]>;
 }
 
+/**
+ * One part of that read: the value, GitHub's refusal, or `past_page` when
+ * the part ran longer than the read's page. That one is not a refusal: the
+ * caller reads the pull request the long way rather than show part of a list
+ * as all of it (#244).
+ */
 export type GithubPart<T> =
   | { value: T; refusal: null }
   | { value: null; refusal: GithubRefusal }
-  | { value: null; refusal: null; overflow: true };
+  | { value: null; refusal: 'past_page' };
 
 export interface GithubReviewInput {
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';

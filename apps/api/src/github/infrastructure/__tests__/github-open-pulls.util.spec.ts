@@ -26,8 +26,8 @@ function node(overrides: Record<string, unknown> = {}) {
     headRefName: 'oppenheimer/keychain',
     headRefOid: 'abc',
     baseRefName: 'main',
-    isCrossRepository: false,
     headRepository: { id: 'R_1' },
+    baseRepository: { id: 'R_1' },
     additions: 10,
     deletions: 2,
     changedFiles: 1,
@@ -148,7 +148,7 @@ describe('one page of open pull requests', () => {
       answer([node({ files: { pageInfo: { hasNextPage: true }, nodes: [{ path: 'a.ts' }] } })]),
     ).pulls;
 
-    expect(read?.files).toEqual({ value: null, refusal: null, overflow: true });
+    expect(read?.files).toEqual({ value: null, refusal: 'past_page' });
   });
 
   // An installation without Checks: read gets the pull request and an error naming its checks.
@@ -168,6 +168,33 @@ describe('one page of open pull requests', () => {
 
     expect(pulls[0]?.checks).toEqual({ value: null, refusal: 'forbidden' });
     expect(pulls[1]?.checks.refusal).toBeNull();
+  });
+
+  it('reads a head in another repository as a fork', () => {
+    const [read] = openPullRequestsOf(answer([node({ headRepository: { id: 'R_2' } })])).pulls;
+
+    expect(read?.pull.fromFork).toBe(true);
+  });
+
+  // GitHub nulls a whole pull request when a field it cannot leave out fails.
+  // Dropping it would show the queue without it and say nothing.
+  it('fails the read rather than drop a pull request GitHub nulled', () => {
+    expect(() =>
+      openPullRequestsOf(
+        answer(
+          [node(), null],
+          [{ type: 'FORBIDDEN', path: ['repository', 'pullRequests', 'nodes', 1, 'author'] }],
+        ),
+      ),
+    ).toThrow(expect.objectContaining({ code: 'GITHUB_009' }));
+  });
+
+  it('fails the read on an error it cannot place on a part', () => {
+    expect(() =>
+      openPullRequestsOf(
+        answer([node()], [{ type: 'INTERNAL', path: ['repository', 'pullRequests'] }]),
+      ),
+    ).toThrow(expect.objectContaining({ code: 'GITHUB_009' }));
   });
 
   it('gives the cursor to the next page while GitHub has one', () => {

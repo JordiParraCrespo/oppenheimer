@@ -156,32 +156,97 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   /**
    * One GraphQL read answers every open pull request with its paths, checks
    * and reviews, so the queue is whole on its first answer and spends no
-   * budget. A pull request longer than that read's page (files, reviews or
-   * checks past a hundred) is read the long way, on the budget, as every one
-   * was before. A read GraphQL fails for any reason but a rate limit falls
-   * back to the REST read, whose refusals the queue already knows how to show.
+   * budget. What that read could not fill (a part past its page), or every
+   * pull request when the read fell back to REST, is filled the long way on
+   * the budget, by the one flow both sources share.
    */
   async openPullRequests(
     scope: AccessScope,
     repository: WorkspaceRepository,
     budget: ReadBudget,
   ): Promise<RepositoryPulls<PullRequestSnapshot>> {
+    const read = await this.openRead(scope, repository);
+    if (!read.ok) return refusedRepository(repository, read.refusal);
+    // Kept under the key each pull request's own screen looks for, so opening
+    // one from the queue reads nothing but its `updated_at`.
+    await Promise.all(
+      read.whole.map((snapshot) =>
+        this.cache.set(
+          snapshotKey(repository, snapshot.pull.number, snapshot.pull.updatedAt, true),
+          snapshot,
+          ttlFor(
+            [snapshot.files.refusal, snapshot.checks.refusal, snapshot.reviews.refusal],
+            OPEN_TTL_SECONDS,
+          ),
+        ),
+      ),
+    );
+    const filled = await this.readMany(
+      repository,
+      read.unfilled,
+      budget,
+      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, true),
+      (entry) =>
+        this.fill(
+          read.credential,
+          repository,
+          entry.pull.number,
+          read.known.get(entry.pull.number) ?? null,
+          entry.key,
+          OPEN_TTL_SECONDS,
+        ),
+    );
+    return {
+      repository,
+      snapshots: [...read.whole, ...filled.snapshots],
+      deferred: filled.deferred,
+      gaps: [...read.whole.flatMap(partGaps), ...filled.gaps],
+    };
+  }
+
+  /**
+   * A repository's open pull requests as far as one read answers them: the
+   * ones it gave whole, and the ones still to fill, with the detail already
+   * read for each where there is one. The GraphQL read is the source; one it
+   * fails for any reason but a rate limit falls back to the REST listing,
+   * which leaves every pull request to fill.
+   */
+  private async openRead(
+    scope: AccessScope,
+    repository: WorkspaceRepository,
+  ): Promise<
+    | {
+        ok: true;
+        credential: GithubCredential;
+        whole: PullRequestSnapshot[];
+        unfilled: GithubPullRequestSummary[];
+        known: Map<number, GithubPullRequestDetail>;
+      }
+    | { ok: false; refusal: GithubRefusal }
+  > {
     let credential: GithubCredential;
     try {
       credential = await this.access.readCredential(scope, repository.installationId);
     } catch (error) {
-      return refusedRepository(repository, refusalOf(error));
+      return { ok: false, refusal: refusalOf(error) };
     }
-    let read: GithubOpenPullRequest[];
     try {
-      read = await this.cache.getOrSet(
+      const read = await this.cache.getOrSet(
         `github:pulls:open-graph:${repository.installationId}:${repository.githubRepoId}`,
         OPEN_TTL_SECONDS,
         () => this.pulls.listOpenPullRequests(credential, repository.fullName),
       );
+      const whole: PullRequestSnapshot[] = [];
+      const known = new Map<number, GithubPullRequestDetail>();
+      for (const entry of read) {
+        const snapshot = wholeSnapshot(repository, entry);
+        if (snapshot) whole.push(snapshot);
+        else known.set(entry.pull.number, entry.pull);
+      }
+      return { ok: true, credential, whole, unfilled: [...known.values()], known };
     } catch (error) {
       const refusal = refusalOf(error);
-      if (refusal === 'rate_limited') return refusedRepository(repository, refusal);
+      if (refusal === 'rate_limited') return { ok: false, refusal };
       // Logged, because a fallback that answers is otherwise invisible: a
       // GraphQL answer this module misreads would quietly cost the old fan-out.
       this.logger.warn(
@@ -192,66 +257,16 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
         },
         error instanceof Error ? error.stack : String(error),
       );
-      return this.openPullRequestsByRest(scope, repository, budget);
+      const listing = await this.list(scope, repository, 'open', OPEN_TTL_SECONDS);
+      if (!listing.ok) return listing;
+      return {
+        ok: true,
+        credential: listing.credential,
+        whole: [],
+        unfilled: listing.pulls,
+        known: new Map(),
+      };
     }
-    const whole: PullRequestSnapshot[] = [];
-    const long: GithubPullRequestDetail[] = [];
-    for (const entry of read) {
-      const snapshot = wholeSnapshot(repository, entry);
-      if (!snapshot) {
-        long.push(entry.pull);
-        continue;
-      }
-      whole.push(snapshot);
-      // Kept under the key the pull request's own screen looks for, so opening
-      // one from the queue reads nothing but its `updated_at`.
-      await this.cache.set(
-        snapshotKey(repository, entry.pull.number, entry.pull.updatedAt, true),
-        snapshot,
-        ttlFor(
-          [snapshot.files.refusal, snapshot.checks.refusal, snapshot.reviews.refusal],
-          OPEN_TTL_SECONDS,
-        ),
-      );
-    }
-    const rest = await this.readMany(
-      repository,
-      long,
-      budget,
-      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, true),
-      (entry) =>
-        this.fill(
-          credential,
-          repository,
-          entry.pull.number,
-          entry.pull,
-          entry.key,
-          OPEN_TTL_SECONDS,
-        ),
-    );
-    return {
-      repository,
-      snapshots: [...whole, ...rest.snapshots],
-      deferred: rest.deferred,
-      gaps: [...whole.flatMap(partGaps), ...rest.gaps],
-    };
-  }
-
-  /** The read before GraphQL: the listing, then each pull request's parts on the budget. */
-  private async openPullRequestsByRest(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-    budget: ReadBudget,
-  ): Promise<RepositoryPulls<PullRequestSnapshot>> {
-    const listing = await this.list(scope, repository, 'open', OPEN_TTL_SECONDS);
-    if (!listing.ok) return refusedRepository(repository, listing.refusal);
-    return this.snapshotsOf(
-      listing.credential,
-      repository,
-      listing.pulls,
-      OPEN_TTL_SECONDS,
-      budget,
-    );
   }
 
   async closedPullRequests(
@@ -439,23 +454,6 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     ]);
   }
 
-  /** Each open pull request's snapshot, and every gap with the refusal GitHub gave for it. */
-  private snapshotsOf(
-    credential: GithubCredential,
-    repository: WorkspaceRepository,
-    pulls: GithubPullRequestSummary[],
-    ttlSeconds: number,
-    budget: ReadBudget,
-  ): Promise<RepositoryPulls<PullRequestSnapshot>> {
-    return this.readMany(
-      repository,
-      pulls,
-      budget,
-      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, true),
-      (entry) => this.fill(credential, repository, entry.pull.number, null, entry.key, ttlSeconds),
-    );
-  }
-
   /**
    * The same for the closed pull requests the figures read. Their checks are
    * not read — nothing shows a closed pull request's checks, and they cost two
@@ -641,15 +639,14 @@ function wholeSnapshot(
 }
 
 function settled<T>(part: GithubPart<T>): Part<T> | null {
-  return 'overflow' in part ? null : part;
+  return part.refusal === 'past_page' ? null : part;
 }
 
 /** The parts GitHub refused on one snapshot, each with its refusal. */
-function partGaps(snapshot: PullRequestRead): ReadGap[] {
+function partGaps(snapshot: PullRequestRead & { checks?: Part<GithubChecks> }): ReadGap[] {
   const gaps: ReadGap[] = [];
   if (snapshot.files.refusal) gaps.push({ what: 'files', refusal: snapshot.files.refusal });
-  const checks = (snapshot as { checks?: Part<GithubChecks> }).checks;
-  if (checks?.refusal) gaps.push({ what: 'checks', refusal: checks.refusal });
+  if (snapshot.checks?.refusal) gaps.push({ what: 'checks', refusal: snapshot.checks.refusal });
   if (snapshot.reviews.refusal) gaps.push({ what: 'reviews', refusal: snapshot.reviews.refusal });
   return gaps;
 }
