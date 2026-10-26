@@ -4,7 +4,7 @@
  * (`engineKey`, the agent and the model), in the order they were starred. A
  * favourite is the reader's, not the workspace's, so the API never hears of it.
  */
-export const MODEL_FAVOURITES_KEY = 'oppenheimer.engine.favourites';
+const MODEL_FAVOURITES_KEY = 'oppenheimer.engine.favourites';
 
 /** Anything unreadable, or storage switched off, is no favourite. */
 export function storedModelFavourites(): string[] {
