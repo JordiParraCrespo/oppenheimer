@@ -40,7 +40,8 @@ const AGENT_WINDOW = 0;
  * is out of sight under the chat.
  *
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
- * the link is live or blipping, and while the host is away a banner in its
+ * the link is live or blipping (without the link while it is live when the
+ * session's bar above already says its state, `showLive` off), and while the host is away a banner in its
  * place that says so, counts the time, and opens the fix from How to fix.
  * It comes back on its own; the fix is for when it does not. What else the
  * line carries is the pane's (`statusItems`): nothing when the session has a bar
@@ -64,6 +65,7 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItems,
+  showLive = true,
   reading,
 }: {
   sessionId: string;
@@ -72,6 +74,8 @@ export function SessionTerminal({
   reading: PaneReading;
   /** What the status line carries beside the link, from the pane. */
   statusItems?: ReactNode;
+  /** Say Live while the link holds; off under a bar that says the session's state. */
+  showLive?: boolean;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
@@ -186,6 +190,7 @@ export function SessionTerminal({
               ) : undefined
             }
             fix={<HostLinkFix host={host} />}
+            showLive={showLive}
           >
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the
