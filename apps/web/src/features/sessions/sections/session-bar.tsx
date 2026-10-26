@@ -3,8 +3,8 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { PageBar } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLatencyReadout } from '../hooks/use-latency-readout';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
+import { LatencyReadout } from './latency-readout';
 import { SessionShareButton } from './session-share-button';
 
 /**
@@ -35,7 +35,6 @@ export function SessionBar({
 }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
-  const latency = useLatencyReadout(session.id);
   return (
     <PageBar
       leading={back}
@@ -51,15 +50,7 @@ export function SessionBar({
           >
             {t(`sessions.session.state.${stateWordFor(session)}`)}
           </StatusDot>
-          {latency ? (
-            <span
-              aria-hidden="true"
-              data-testid="terminal-latency"
-              className="shrink-0 truncate font-mono text-xs text-fg-muted tabular-nums"
-            >
-              {latency}
-            </span>
-          ) : null}
+          <LatencyReadout sessionId={session.id} />
         </>
       }
       tabs={tabs}
