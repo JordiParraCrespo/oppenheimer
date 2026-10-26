@@ -170,3 +170,36 @@ for these; they were settled with the defaults below and can be changed.
 4. **Delete** is kept, as the frame draws it: it hides the occurrence
    with no log line, and clears a done item from *Show done*.
 5. **A `release` flag `inbox`**, on by default, expiring 2026-12-31.
+
+## As built: the console (2026-10-26)
+
+Slices 2 and 3 together: the rail item and `/inbox`, the list in the
+console's sidebar, the pane, and the row menu with the Snoozed list.
+Where it departs from the note above:
+
+- **The keys' inputs.** No read reported what §3 keys by, so two small
+  additions came with it: a session now answers `observedSince` and
+  `stateSeq`, and every pull request row its `headSha` (only the briefing
+  had it). A blocked session is `session:<id>:<observedSince>`; a failed
+  or stuck launch, which records no moment its wait began, is
+  `session:<id>:s<stateSeq>` (one failure is told from the next by the
+  change count). Approvals, pull requests and runs are as §3 says.
+- **An approval's project** is that of the session it started or the one
+  its call names (`session_id`); a pending card has started none, so most
+  are under No project until bots carry projects of their own.
+- **Failed runs** are the workspace's automations' (`GET
+  /automation-runs` lists session automations only); a bot's routine
+  that fails is answered in its bot's chat. *Run again* also marks the
+  failed run done: it stays failed for the day it shows.
+- **Answering** an approval or a merge hides the item at once and logs it
+  without storing a mark (its source drops it); *Open session* only opens.
+- **The row menu's keys**: E and L act on the item in the pane and are
+  painted on its row only; Delete has no key.
+- **Show done** is on by default, as the frame draws it, and lists only
+  what was marked done on this visit; the list's facets, Show done and
+  the item in the pane are the address's search (`?type`, `?project`,
+  `?hideDone`, `?item`). The log, Later and Show done are the page's
+  memory, cleared on leaving the Inbox.
+- **Snooze until tomorrow** brings it back at 09:00 the reader's time.
+- **Off flag**: the rail drops the item and `/inbox` goes on to New
+  session, which is where the console landed before.

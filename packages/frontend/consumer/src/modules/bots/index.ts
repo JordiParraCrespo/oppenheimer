@@ -17,6 +17,7 @@ export {
   BotMessageEntity,
   type BotToolStep,
   BotTurnEntity,
+  type WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
 export { BotsModule } from './bots.module';
 export { BotsRepository } from './bots.repository';

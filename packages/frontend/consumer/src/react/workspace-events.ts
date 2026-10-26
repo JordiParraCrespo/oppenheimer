@@ -8,7 +8,7 @@ import { automationsKeys } from './automations.queries';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
-import { inboxKeys } from './inbox.queries';
+import { inboxKeys } from './inbox.keys';
 import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';

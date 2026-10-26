@@ -1,4 +1,11 @@
-import { Bot, GitPullRequest, Layers, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import {
+  Bell,
+  Bot,
+  GitPullRequest,
+  Layers,
+  Terminal,
+  Zap,
+} from '@oppenheimer/design-system-web/icons';
 import type { ConsoleList } from '@/lib/console';
 import { RAIL_ROUTES, type RailItemId } from './rail-landing';
 
@@ -8,6 +15,7 @@ import { RAIL_ROUTES, type RailItemId } from './rail-landing';
  * glyph. The ids, routes and order are `rail-landing.ts`'s.
  */
 const LOOK = {
+  inbox: { lists: ['inbox'], labelKey: 'nav.inbox', Icon: Bell },
   bots: { lists: ['bots'], labelKey: 'nav.employees', Icon: Bot },
   sessions: { lists: ['sessions'], labelKey: 'nav.sessions', Icon: Terminal },
   pulls: { lists: ['pulls'], labelKey: 'nav.pullRequests', Icon: GitPullRequest },

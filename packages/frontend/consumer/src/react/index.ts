@@ -112,6 +112,13 @@ export {
   useUpdateHostRunner,
 } from './hosts.queries';
 export {
+  type PutInboxMarkVariables,
+  useDeleteInboxMark,
+  useInboxCount,
+  usePutInboxMark,
+  useSuspenseInbox,
+} from './inbox.queries';
+export {
   type ConnectInstallationVariables,
   useConnectInstallation,
   useInstallationRepositories,

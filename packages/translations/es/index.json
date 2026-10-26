@@ -2402,6 +2402,134 @@
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
   },
+  "inbox": {
+    "title": "Bandeja",
+    "bar": {
+      "meta": "{{needs}} · {{running}}",
+      "needs_zero": "Nada te necesita",
+      "needs_one": "{{count}} te necesita",
+      "needs_other": "{{count}} te necesitan",
+      "running_one": "{{count}} sesión en marcha",
+      "running_other": "{{count}} sesiones en marcha"
+    },
+    "list": {
+      "head": "Te necesita",
+      "empty": "Nada te necesita.",
+      "noneMatching": "Nada con estos filtros te necesita.",
+      "low": "Baja",
+      "snoozed": "Pospuestos",
+      "bringBack": "Recuperar",
+      "failed": "No se pudo cargar la bandeja.",
+      "markFailed": "No se pudo guardar. Inténtalo de nuevo.",
+      "back": "Vuelve {{when}}"
+    },
+    "filter": {
+      "label": "Filtrar la bandeja",
+      "type": "Tipo",
+      "project": "Proyecto",
+      "any": "Cualquiera",
+      "showDone": "Mostrar hechos",
+      "clear": "Quitar filtros",
+      "remove": "Quitar filtro",
+      "typeChip": "Tipo: {{value}}",
+      "projectChip": "Proyecto: {{value}}"
+    },
+    "type": {
+      "all": "Todos",
+      "pull": "Pull requests",
+      "approval": "Aprobaciones de bots",
+      "session": "Sesiones",
+      "run": "Automatizaciones"
+    },
+    "project": {
+      "all": "Todos los proyectos",
+      "none": "Sin proyecto"
+    },
+    "menu": {
+      "label": "Acciones del elemento",
+      "done": "Marcar como hecho",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snoozeHour": "Posponer 1 hora",
+      "snoozeTomorrow": "Posponer hasta mañana",
+      "delete": "Eliminar"
+    },
+    "from": {
+      "session": "Sesión",
+      "approval": "{{bot}} · Aprobación de bot",
+      "run": "Automatización"
+    },
+    "session": {
+      "blockedShort": "{{name}} te está esperando",
+      "blockedTitle": "{{name}} te está esperando",
+      "blockedBody": "Su agente se detuvo para pedir algo. Abre la sesión para responderle allí.",
+      "failedShort": "{{name}} falló",
+      "failedTitle": "{{name}} falló",
+      "failedBody": "La sesión se detuvo por un fallo. Ábrela para ver qué pasó e iniciarla de nuevo.",
+      "startingShort": "{{name}} no ha arrancado",
+      "startingTitle": "{{name}} no ha arrancado",
+      "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
+      "open": "Abrir sesión"
+    },
+    "approval": {
+      "short": "Aprobar {{bot}} · {{tool}}",
+      "title": "{{bot}} quiere ejecutar {{tool}}",
+      "approve": "Aprobar",
+      "deny": "Denegar",
+      "openChat": "Abrir chat"
+    },
+    "pull": {
+      "requestedShort": "Revisar #{{number}} {{title}}",
+      "requestedTitle": "¿Revisar #{{number}} · {{title}}?",
+      "requestedBody": "{{author}} te pidió una revisión.",
+      "readyShort": "Fusionar #{{number}} {{title}}",
+      "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
+      "readyBody": "Nada lo bloquea: se puede fusionar ya.",
+      "review": "Revisar",
+      "merge": "Fusionar",
+      "checks": {
+        "passing": "Checks en verde",
+        "failing": "Checks fallando",
+        "running": "Checks en curso",
+        "none": "Sin checks",
+        "unavailable": "Checks no legibles"
+      }
+    },
+    "run": {
+      "short": "{{name}} falló",
+      "title": "{{name}} falló",
+      "body": "La ejecución terminó en fallo. Ábrela para ver por qué, o vuelve a ejecutarla.",
+      "again": "Ejecutar de nuevo",
+      "open": "Abrir ejecución"
+    },
+    "card": {
+      "later": "Más tarde",
+      "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
+    },
+    "log": {
+      "done": "Marcado como hecho · {{title}}",
+      "approved": "Aprobado {{bot}} · {{tool}}",
+      "denied": "Denegado {{bot}} · {{tool}}",
+      "merged": "Fusionado #{{number}} en {{repository}}",
+      "ranAgain": "{{name}} ejecutado de nuevo"
+    },
+    "pane": {
+      "greeting": {
+        "morning": "Buenos días.",
+        "afternoon": "Buenas tardes.",
+        "evening": "Buenas noches."
+      },
+      "running_one": "{{count}} sesión está en marcha.",
+      "running_other": "{{count}} sesiones están en marcha.",
+      "needs_one": "Una cosa te necesita.",
+      "needs_other": "{{count}} cosas te necesitan, de una en una.",
+      "nothing": "Ahora mismo nada te necesita.",
+      "clearTitle": "Todo al día",
+      "clear": "Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo próximo que te necesite aparecerá aquí."
+    }
+  },
   "settings": {
     "nav": {
       "back": "Volver a la consola",
@@ -2581,7 +2709,8 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "inbox": "Bandeja"
   },
   "language": {
     "label": "Idioma",

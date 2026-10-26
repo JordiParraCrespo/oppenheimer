@@ -10,7 +10,7 @@ import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { automationsKeys } from '../automations.queries';
 import { botsKeys } from '../bots.queries';
 import { hostsKeys, useHostPresence } from '../hosts.queries';
-import { inboxKeys } from '../inbox.queries';
+import { inboxKeys } from '../inbox.keys';
 import { LIVE_POLL } from '../live-poll';
 import { pullRequestsKeys } from '../pull-requests.queries';
 import {

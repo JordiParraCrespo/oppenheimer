@@ -97,6 +97,9 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.closeRefusal
       ? { code: data.closeRefusal.code, detail: data.closeRefusal.detail ?? null }
       : null,
+    data.observedSince ? new Date(data.observedSince) : null,
+    data.lastEventAt ? new Date(data.lastEventAt) : null,
+    data.stateSeq ?? 0,
   );
 }
 
