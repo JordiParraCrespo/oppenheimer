@@ -10,13 +10,18 @@ const answered = (answer: ChatAnswer | undefined) =>
 
 /**
  * The questions the agent stopped on (`AskUserQuestion`), answered where the
- * composer was, one at a time, as its terminal picker asks them. An option
- * is picked by its row or its number; where the agent allows several, each
- * toggles. The person may answer in their own words instead (one choice) or
- * as well (several). Picking the one choice moves on to the next question;
- * the last one is sent with Submit, all answers together, and Dismiss is
- * Escape, which the agent reads as declining. Nothing reaches the agent
- * until Submit, so moving back and forth changes nothing there.
+ * composer was, one at a time, as its terminal picker asks them, each under
+ * the agent's tag for it. Focus lands on the first option as the panel
+ * appears, so an option is picked by its number at once, or by its row;
+ * where the agent allows several, each toggles. The person may answer in
+ * their own words instead (one choice) or as well (several), and Enter in
+ * the field moves on. Picking the one choice moves on to the next question;
+ * a lone question of one choice is answered by the pick itself, as the
+ * picker does. Otherwise the last one is sent with Submit, all answers
+ * together, and Dismiss is Escape, which the agent reads as declining.
+ * Nothing reaches the agent until then, so moving back and forth changes
+ * nothing there. `onAnswer` says whether the answers went; when they could
+ * not, the panel stays to be sent again.
  */
 export function SessionChatQuestion({
   questions,
@@ -24,7 +29,7 @@ export function SessionChatQuestion({
   onDismiss,
 }: {
   questions: readonly ChatQuestion[];
-  onAnswer: (answers: ChatAnswer[]) => void;
+  onAnswer: (answers: ChatAnswer[]) => boolean;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
@@ -35,24 +40,43 @@ export function SessionChatQuestion({
   if (!question) return null;
   const answer = answers[index] ?? UNANSWERED;
   const last = index === questions.length - 1;
+  const ready = answers.every(answered);
 
-  const update = (next: ChatAnswer) =>
-    setAnswers((held) => held.map((current, i) => (i === index ? next : current)));
+  const update = (next: ChatAnswer) => {
+    const held = answers.map((current, i) => (i === index ? next : current));
+    setAnswers(held);
+    return held;
+  };
+
+  function submit(held: ChatAnswer[]) {
+    if (sent || !held.every(answered)) return;
+    setSent(onAnswer(held));
+  }
 
   function pick(option: number) {
+    if (sent) return;
     if (question?.multiSelect) {
       const picks = answer.picks.includes(option)
-        ? answer.picks.filter((held) => held !== option)
+        ? answer.picks.filter((kept) => kept !== option)
         : [...answer.picks, option].sort((a, b) => a - b);
       update({ ...answer, picks });
       return;
     }
-    update({ picks: [option], other: null });
+    const held = update({ picks: [option], other: null });
     if (!last) setIndex(index + 1);
+    else if (questions.length === 1) submit(held);
+  }
+
+  function goOn() {
+    if (!answered(answer)) return;
+    if (last) submit(answers);
+    else setIndex(index + 1);
   }
 
   return (
     <QuestionPanel
+      autoFocus
+      header={question.header ?? undefined}
       question={question.question}
       options={question.options.map((option) => ({
         label: option.label,
@@ -73,10 +97,17 @@ export function SessionChatQuestion({
         <Textarea
           rows={1}
           value={answer.other ?? ''}
+          disabled={sent}
           onChange={(event) => {
             const other = event.target.value;
             // One choice is the option or the words, never both.
             update({ picks: question.multiSelect ? answer.picks : [], other });
+          }}
+          onKeyDown={(event) => {
+            // The words go to the picker on one line, so Enter is never a newline here.
+            if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            goOn();
           }}
           placeholder={t('sessions.chat.question.ownAnswer')}
           aria-label={t('sessions.chat.question.ownAnswerLabel')}
@@ -91,6 +122,7 @@ export function SessionChatQuestion({
                   question.multiSelect
                     ? 'sessions.chat.question.several'
                     : 'sessions.chat.question.one',
+                  { last: question.options.length },
                 )}
           </span>
           <Button variant="ghost" size="sm" disabled={sent} onClick={onDismiss}>
@@ -99,18 +131,15 @@ export function SessionChatQuestion({
           {last ? (
             <Button
               size="sm"
-              disabled={!answers.every(answered)}
+              disabled={!ready}
               pending={sent}
               pendingLabel={t('sessions.chat.question.sending')}
-              onClick={() => {
-                setSent(true);
-                onAnswer(answers);
-              }}
+              onClick={() => submit(answers)}
             >
               {t('sessions.chat.question.submit')}
             </Button>
           ) : (
-            <Button size="sm" disabled={!answered(answer)} onClick={() => setIndex(index + 1)}>
+            <Button size="sm" disabled={!answered(answer)} onClick={goOn}>
               {t('sessions.chat.question.next')}
             </Button>
           )}
