@@ -576,22 +576,6 @@
       "previous": "Pregunta anterior",
       "nextQuestion": "Pregunta siguiente",
       "of": "{{n}} de {{total}}"
-    },
-    "queue": {
-      "queued": "En cola",
-      "sendNow": "Enviar ahora",
-      "edit": "Editar",
-      "remove": "Quitar de la cola"
-    },
-    "usage": {
-      "open": "{{percent}}% del contexto usado. Ver el contexto y el uso del plan.",
-      "context": "Contexto",
-      "tokens": "{{used}} de {{window}} tokens",
-      "compact": "Compactar",
-      "plan": "Límites de uso del plan",
-      "fiveHour": "Límite de 5 horas",
-      "sevenDay": "Límite semanal",
-      "resets": "Se reinicia {{when}}"
     }
   }
 }

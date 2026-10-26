@@ -20,10 +20,15 @@ import {
 const message = (id: string, turnId: string | null, role: BotMessageEntity['role']) =>
   ({ id, turnId, role }) as BotMessageEntity;
 const turn = (id: string) => ({ id }) as BotTurnEntity;
-const conversation = (messages: BotMessageEntity[], turns: BotTurnEntity[]) =>
+const conversation = (
+  messages: BotMessageEntity[],
+  turns: BotTurnEntity[],
+  waiting: string[] = [],
+) =>
   ({
     messages,
     turns,
+    waitingMessages: waiting.map((turnId) => ({ turnId, text: '', images: 0 })),
     turn: (id: string) => turns.find((row) => row.id === id),
   }) as unknown as BotConversationEntity;
 
@@ -50,6 +55,19 @@ describe('chatTurns', () => {
       ['t1', ['m1'], ['m2', 'm3']],
       ['t2', ['m4'], []],
     ]);
+  });
+
+  // What breaks this: a message sent while the bot works drawn twice, in the
+  // transcript as a queued turn and on the composer as waiting.
+  it('leaves out a message waiting behind the turn under way, which the composer shows', () => {
+    const blocks = chatTurns(
+      conversation(
+        [message('m1', 't1', 'user'), message('m2', 't1', 'activity'), message('m3', 't2', 'user')],
+        [turn('t1'), turn('t2')],
+        ['t2'],
+      ),
+    );
+    expect(blocks.map((block) => block.turnId)).toEqual(['t1']);
   });
 
   // What breaks this: a routine's line outside any turn folded into the turn

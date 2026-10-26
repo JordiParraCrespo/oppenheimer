@@ -4,7 +4,9 @@
  * request, history goes in as input items, a tool call runs our tool and
  * its output goes back to the model, and the stream comes out as the
  * engine's events. What the scripted spec cannot see: that the SDK is
- * wired as the adapter assumes.
+ * wired as the adapter assumes. The server answers as ChatGPT's backend
+ * does, with the subscription's usage windows in its headers, which only a
+ * ChatGPT turn reads.
  */
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -112,7 +114,16 @@ beforeEach(async () => {
         headers: req.headers,
         body: JSON.parse(body),
       });
-      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      // The windows move with each answer: the turn reports the last one's.
+      const used = 10 * requests.length;
+      res.writeHead(200, {
+        'content-type': 'text/event-stream',
+        'x-codex-primary-used-percent': String(used + 0.5),
+        'x-codex-primary-window-minutes': '300',
+        'x-codex-primary-reset-at': '1793040000',
+        'x-codex-secondary-used-percent': String(used),
+        'x-codex-secondary-window-minutes': '10080',
+      });
       res.end(replies.shift());
     });
   });
@@ -169,7 +180,13 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         { type: 'text.delta', text: 'It is ' },
         { type: 'text.delta', text: '13:37.' },
         { type: 'text.done', text: 'It is 13:37.' },
-        { type: 'usage', inputTokens: 22, outputTokens: 6 },
+        // What the last call was sent; a key's turn reads no plan windows.
+        {
+          type: 'usage',
+          inputTokens: 22,
+          outputTokens: 6,
+          context: { tokens: 11, window: null },
+        },
         { type: 'done', reason: 'completed' },
       ]);
 
@@ -231,6 +248,13 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       }
 
       expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+      // The subscription's windows as the last answer said them.
+      expect(events.find((event) => event.type === 'usage')).toMatchObject({
+        limits: {
+          fiveHour: { usedPercent: 20.5, resetsAt: new Date(1_793_040_000_000) },
+          sevenDay: { usedPercent: 20, resetsAt: null },
+        },
+      });
       expect(requests).toHaveLength(2);
       for (const sent of requests) {
         expect(sent.url).toBe('/v1/responses');

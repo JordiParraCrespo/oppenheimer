@@ -718,3 +718,4 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   agent SDK, with owner-set tool permissions and bots that edit
   themselves; see [25](25-bots.md) "Decided".
 - 2026-10-22: **a bot follows a session it delegated with a subscription** (27, issue #445): a `bot_subscription` row whose wakes are queued turns keyed once per task and state, re-reading the session as the owner. It changes 26's "no watch table" for a bot's own sessions; 26 §5's trigger stays for automations.
+- 2026-10-26: **a bot's chat queues what you write while it works and shows the room it has left** ([25](25-bots.md) §2): waiting messages over the composer with Remove, Edit and Send now, and the context meter with a ChatGPT sign-in's plan windows; the meter is no longer "not built yet".
