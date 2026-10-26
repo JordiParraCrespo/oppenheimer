@@ -761,6 +761,22 @@ A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
 
+## Inbox
+
+The marks a person leaves on Inbox items: done, low, snoozed until a time,
+or deleted. See `product/versions/mvp/28-inbox.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `INBOX_001` <a id="inbox_001" />     | The Inbox belongs to a workspace                             | 400  |
+| `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
+| `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
+| `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+
+An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
+characters, URL-encoded in the path. `INBOX_003` compares `until` with the
+server's clock.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or

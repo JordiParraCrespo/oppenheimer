@@ -113,6 +113,7 @@ export type {
   HostTimelineEntryResponseDto,
   HostTimelinePageResponseDto,
   HostVitalsResponseDto,
+  InboxMarkResponseDto,
   InstallationResponseDto,
   InstallStartResponseDto,
   InvalidParamDto,
@@ -169,6 +170,7 @@ export type {
   PullRequestReviewerDto,
   PullRequestRowDto,
   PullRequestScopeCountsDto,
+  PutInboxMarkRequest,
   PutModelProviderCredentialRequest,
   PutSessionShareRequest,
   ReadinessChecksDto,
@@ -252,6 +254,7 @@ export type {
   VoiceStatusResponseDto,
   VoiceTranscriptionResponseDto,
   WatchedRepositoryDto,
+  WorkspaceBotApprovalResponseDto,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './generated/types.gen';

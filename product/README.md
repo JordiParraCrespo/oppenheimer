@@ -691,3 +691,7 @@ earlier note:
   rail's default order, and the console opens on the rail's first item,
   so a reader who drags another item to the top opens there instead
   (`versions/mvp/05-screens.md`, `25-bots.md`).
+- `versions/mvp/28-inbox.md` §4 had the cross-bot approvals read list the
+  bots the caller may update. Built on 2026-10-26, it lists the bots the
+  caller may read, as the per-bot read it mirrors does; deciding a card
+  still asks `update`.

@@ -8,7 +8,9 @@ import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { automationsKeys } from '../automations.queries';
+import { botsKeys } from '../bots.queries';
 import { hostsKeys, useHostPresence } from '../hosts.queries';
+import { inboxKeys } from '../inbox.queries';
 import { LIVE_POLL } from '../live-poll';
 import { pullRequestsKeys } from '../pull-requests.queries';
 import {
@@ -122,6 +124,15 @@ describe('useWorkspaceEvents', () => {
       automationsKeys.runs(),
       automationsKeys.detail('a-1'),
     ]);
+
+    invalidated.length = 0;
+    await send({ type: 'botApproval.changed', id: 'ap-1', botId: 'b-1' });
+    expect(invalidated).toEqual([botsKeys.pendingApprovals(), botsKeys.approvals('b-1')]);
+    expect(botsKeys.pendingApprovals()).toEqual(['bots', 'approvals', 'pending']);
+
+    invalidated.length = 0;
+    await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });
+    expect(invalidated).toEqual([inboxKeys.marks()]);
   });
 
   /**

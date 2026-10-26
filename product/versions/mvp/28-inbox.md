@@ -85,10 +85,14 @@ items. Three of the reads exist. Three things are missing:
 1. **Pending approvals across bots.** Today only
    `GET /v1/bots/:id/approvals` exists, one bot at a time. Add
    `GET /v1/bot-approvals?status=pending` to `bots-chat`: the workspace's
-   pending approvals on bots the caller may update, newest first, with the
+   pending approvals on bots the caller may read, newest first, with the
    bot's name. It needs an index on `(organizationId, status, createdAt)`
    or a partial one on `organizationId` where `status = 'pending'`
    (`.agents/rules/database-design.md`). Scope `bots:read`.
+   *Built 2026-10-26:* "may read", as the per-bot `GET /bots/:id/approvals`
+   it mirrors (deciding still asks `update`), and the full
+   `IDX_bot_approval_org_status ("organizationId", status, "createdAt", id)`,
+   since the route takes any status (`pending` by default), at most 100.
 2. **A workspace event for approvals.** Approvals only stream on the
    per-bot SSE. Add `{ type: 'botApproval.changed'; id; botId }` to
    `WorkspaceEvent`, published when an approval is created or decided,

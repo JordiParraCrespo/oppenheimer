@@ -5,8 +5,10 @@ import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { automationsKeys } from './automations.queries';
+import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.queries';
+import { inboxKeys } from './inbox.queries';
 import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';
@@ -45,6 +47,12 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
     case 'milestone.changed':
       // Moving a milestone to another project moves its tasks with it.
       return [tasksKeys.milestones(), tasksKeys.lists()];
+    case 'botApproval.changed':
+      // The Inbox's list across bots, and the bot's own cards, which its chat
+      // also hears on the bot's stream.
+      return [botsKeys.pendingApprovals(), botsKeys.approvals(event.botId)];
+    case 'inboxMark.changed':
+      return [inboxKeys.marks()];
   }
 }
 
@@ -66,6 +74,9 @@ function keysFor(event: WorkspaceEvent): readonly (readonly unknown[])[] {
  *   session, and `session.changed` does not name automation reads.
  * - Plan's tasks and milestones: every write raises `task.changed` or
  *   `milestone.changed`, an agent's included, so the board's poll stands down.
+ * - The workspace's bot approvals: raising, deciding, expiring and running one
+ *   each raise `botApproval.changed`, so the Inbox's read stands down.
+ * - The caller's Inbox marks: every put and delete raises `inboxMark.changed`.
  */
 const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
   { key: sessionsKeys.lists(), pollStandsDown: true },
@@ -77,6 +88,8 @@ const COVERAGE: readonly { key: QueryKey; pollStandsDown: boolean }[] = [
   { key: automationsKeys.details(), pollStandsDown: false },
   { key: automationsKeys.runs(), pollStandsDown: false },
   { key: tasksKeys.all, pollStandsDown: true },
+  { key: botsKeys.workspaceApprovals(), pollStandsDown: true },
+  { key: inboxKeys.marks(), pollStandsDown: true },
 ];
 
 const CATCH_UP = COVERAGE.map((entry) => entry.key);

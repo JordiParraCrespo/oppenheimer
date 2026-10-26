@@ -622,6 +622,18 @@ export type FindBotApprovalsDto = z.infer<typeof findBotApprovalsSchema>;
 export const BOT_APPROVALS_PAGE_MAX = 50;
 
 /**
+ * `GET /bot-approvals`: the workspace's approvals across its bots, in one
+ * status, `pending` unless another is named (the Inbox, `28-inbox.md` §4).
+ */
+export const findWorkspaceBotApprovalsSchema = z.object({
+  status: z.enum(BOT_APPROVAL_STATUSES).default('pending'),
+});
+export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprovalsSchema>;
+
+/** The most approvals the workspace read returns, newest first. */
+export const WORKSPACE_BOT_APPROVALS_MAX = 100;
+
+/**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
  * turn writes it, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is

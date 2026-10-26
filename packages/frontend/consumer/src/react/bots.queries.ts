@@ -56,6 +56,10 @@ export const botsKeys = {
     [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
+  // The workspace's approvals across its bots (the Inbox): apart from any one
+  // bot's, and announced by `botApproval.changed`.
+  workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,
+  pendingApprovals: () => [...botsKeys.workspaceApprovals(), 'pending'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
   groupLists: () => [...botsKeys.groups(), 'list'] as const,
   groupList: () => [...botsKeys.groupLists()] as const,
