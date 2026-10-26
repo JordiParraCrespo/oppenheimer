@@ -5,7 +5,7 @@ import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, STUB_REPOSITORIES } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * Files attached to the first task (an image, a PDF, Markdown), end to end on
@@ -133,6 +133,6 @@ test('files attached to the first task reach the agent with it', async ({ page }
   const shown = () => screen.replace(escapes, '').replace(/\s+/g, '');
   await expect.poll(shown, { timeout: 120_000 }).toContain('CLAUDE-SHIMargv=');
   await expect.poll(shown).toContain(`Matchthismockup${saved}${savedPdf}${savedNotes}`);
-  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await expect(linkLive(page)).toBeVisible();
   await shot('4-session-terminal');
 });
