@@ -614,6 +614,8 @@ export class WorkSessionMapper
     dto.cwdCheckoutId = entity.cwdCheckoutId;
     dto.agentSessionId = entity.agentSessionId;
     dto.lastEventAt = entity.lastEventAt;
+    dto.observedSince = entity.fold.observedSince;
+    dto.stateSeq = entity.stateSeq;
     dto.stoppedAt = entity.stoppedAt;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;

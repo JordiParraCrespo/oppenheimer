@@ -1510,6 +1510,14 @@ export type SessionResponseDto = {
     agentSessionId?: string | null;
     lastEventAt?: string | null;
     /**
+     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/28-inbox.md` §3).
+     */
+    observedSince?: string | null;
+    /**
+     * Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it).
+     */
+    stateSeq: number;
+    /**
      * When the agent and the tmux session last ended. The checkouts stay on disk.
      */
     stoppedAt?: string | null;
@@ -2606,6 +2614,10 @@ export type PullRequestRowDto = {
      */
     authorKind: 'session' | 'person';
     headRef: string;
+    /**
+     * The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.
+     */
+    headSha: string;
     scope: 'mine' | 'requested' | 'watching';
     lane: 'deep' | 'medium' | 'quick';
     laneReason: PullRequestLaneReasonDto;
@@ -2848,6 +2860,10 @@ export type PullRequestDetailResponseDto = {
      */
     authorKind: 'session' | 'person';
     headRef: string;
+    /**
+     * The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.
+     */
+    headSha: string;
     scope: 'mine' | 'requested' | 'watching';
     lane: 'deep' | 'medium' | 'quick';
     laneReason: PullRequestLaneReasonDto;
@@ -2884,10 +2900,6 @@ export type PullRequestDetailResponseDto = {
      */
     body: string;
     baseRef: string;
-    /**
-     * The head commit this read saw. A merge that names it is refused once newer commits land.
-     */
-    headSha: string;
     /**
      * Whether the head branch is in another repository (a fork), which a session cannot check out yet.
      */

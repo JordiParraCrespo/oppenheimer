@@ -22624,6 +22624,16 @@
             "type": "string",
             "nullable": true
           },
+          "observedSince": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/28-inbox.md` §3).",
+            "nullable": true
+          },
+          "stateSeq": {
+            "type": "number",
+            "description": "Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it)."
+          },
           "stoppedAt": {
             "format": "date-time",
             "type": "string",
@@ -22685,6 +22695,7 @@
           "launch",
           "state",
           "lifecycle",
+          "stateSeq",
           "checkouts",
           "hints",
           "createdAt",
@@ -25590,6 +25601,10 @@
             "type": "string",
             "example": "oppenheimer/keychain-tokens"
           },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox."
+          },
           "scope": {
             "type": "string",
             "enum": ["mine", "requested", "watching"]
@@ -25666,6 +25681,7 @@
           "author",
           "authorKind",
           "headRef",
+          "headSha",
           "scope",
           "lane",
           "laneReason",
@@ -26161,6 +26177,10 @@
             "type": "string",
             "example": "oppenheimer/keychain-tokens"
           },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox."
+          },
           "scope": {
             "type": "string",
             "enum": ["mine", "requested", "watching"]
@@ -26234,10 +26254,6 @@
           "baseRef": {
             "type": "string"
           },
-          "headSha": {
-            "type": "string",
-            "description": "The head commit this read saw. A merge that names it is refused once newer commits land."
-          },
           "fromFork": {
             "type": "boolean",
             "description": "Whether the head branch is in another repository (a fork), which a session cannot check out yet."
@@ -26285,6 +26301,7 @@
           "author",
           "authorKind",
           "headRef",
+          "headSha",
           "scope",
           "lane",
           "laneReason",
@@ -26299,7 +26316,6 @@
           "htmlUrl",
           "body",
           "baseRef",
-          "headSha",
           "fromFork",
           "state",
           "changedFiles",

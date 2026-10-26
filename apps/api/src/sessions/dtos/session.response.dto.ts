@@ -212,6 +212,20 @@ export class SessionResponseDto {
   lastEventAt!: Date | null;
 
   @ApiPropertyOptional({
+    description:
+      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/28-inbox.md` §3).',
+    nullable: true,
+    type: Date,
+  })
+  observedSince!: Date | null;
+
+  @ApiProperty({
+    description:
+      'Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it).',
+  })
+  stateSeq!: number;
+
+  @ApiPropertyOptional({
     description: 'When the agent and the tmux session last ended. The checkouts stay on disk.',
     nullable: true,
     type: Date,
