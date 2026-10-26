@@ -587,10 +587,6 @@
     "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
     "offline": "The host is offline",
     "offlineDetail": "The device comes back when the host reconnects.",
-    "ended": "The session has ended",
-    "typeHint": "Click the screen to tap, drag to swipe, type to send keys.",
-    "back": "Back",
-    "home": "Home",
-    "apps": "Recent apps"
+    "ended": "The session has ended"
   }
 }

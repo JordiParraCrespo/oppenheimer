@@ -30,7 +30,7 @@ export function useSessionStream(sessionId: string, window = 0): () => SessionSt
  * A stable factory for the session's device stream, built and disposed by
  * the effect that shows it, as a terminal's is.
  */
-export function useSessionDeviceStream(sessionId: string): () => DeviceStream {
+export function useSessionDeviceStream(sessionId: string): () => Promise<DeviceStream> {
   const app = useConsumerApp();
   return useCallback(() => app.sessions.openDeviceStream(sessionId), [app, sessionId]);
 }

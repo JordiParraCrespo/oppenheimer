@@ -70,7 +70,7 @@ func NewScreens(opts ScreensOptions) *Screens {
 
 // Open starts (or reuses) the device's simulator-server and opens one stream.
 func (s *Screens) Open(ctx context.Context, device domain.Device) (app.Screen, error) {
-	url, err := s.streamFor(device)
+	url, err := s.streamFor(ctx, device)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *Screens) Close() {
 	}
 }
 
-func (s *Screens) streamFor(device domain.Device) (string, error) {
+func (s *Screens) streamFor(ctx context.Context, device domain.Device) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if srv, ok := s.servers[device.Serial]; ok {
@@ -114,7 +114,7 @@ func (s *Screens) streamFor(device domain.Device) (string, error) {
 			return srv.stream, nil
 		}
 	}
-	srv, err := s.start(device)
+	srv, err := s.start(ctx, device)
 	if err != nil {
 		return "", err
 	}
@@ -122,11 +122,13 @@ func (s *Screens) streamFor(device domain.Device) (string, error) {
 	return srv.stream, nil
 }
 
-func (s *Screens) start(device domain.Device) (*server, error) {
+// start runs the device's simulator-server. It outlives the viewer that
+// asked for it, so it does not end with that viewer's context; Close ends it.
+func (s *Screens) start(ctx context.Context, device domain.Device) (*server, error) {
 	if s.opts.Binary == "" {
 		return nil, errors.New("no Argent simulator-server is configured")
 	}
-	cmd := exec.Command(s.opts.Binary, string(device.Platform), "--id", device.Serial)
+	cmd := exec.CommandContext(context.WithoutCancel(ctx), s.opts.Binary, string(device.Platform), "--id", device.Serial) //nolint:gosec // the host's own configured binary, and a serial from its own device list
 	cmd.Env = os.Environ()
 	if s.opts.AndroidHome != "" {
 		cmd.Env = append(cmd.Env, "ANDROID_HOME="+s.opts.AndroidHome)

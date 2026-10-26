@@ -1758,7 +1758,11 @@ describe('device attach socket', () => {
     // No viewport to wait for: the device is asked for at once, by session,
     // never by a device the browser names.
     const attach = await nextMessage(runner);
-    expect(attach.text).toMatchObject({ type: 'device.attach', sessionId: SESSION, attachmentId: 1 });
+    expect(attach.text).toMatchObject({
+      type: 'device.attach',
+      sessionId: SESSION,
+      attachmentId: 1,
+    });
     expect((await attachedLater).text).toEqual({ type: 'attached', window: 0 });
 
     const info = nextMessage(browser);

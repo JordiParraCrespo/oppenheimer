@@ -12,8 +12,8 @@ import type {
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
+import type { DeviceStream } from './stream/device-stream';
 import { LocalFirstSessionStream, type LocalTerminals } from './stream/local-first-stream';
-import { AttachDeviceStream, type DeviceStream } from './stream/device-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
@@ -124,8 +124,10 @@ export class SessionsService {
    * The session's device, live: its screen as JPEG frames and the reader's
    * taps and keys back, over the attach socket with a device ticket. The
    * browser never names a device; the host gives the session its own.
+   * Loaded on demand: a reader who never opens the pane never downloads it.
    */
-  openDeviceStream(id: string): DeviceStream {
+  async openDeviceStream(id: string): Promise<DeviceStream> {
+    const { AttachDeviceStream } = await import('./stream/device-stream');
     return new AttachDeviceStream({
       apiBaseUrl: this.apiBaseUrl,
       issueTicket: () => this.repository.issueAttachTicket(id, 0, 'device'),

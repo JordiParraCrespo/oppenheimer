@@ -32,40 +32,53 @@ export function useSessionDevice(sessionId: string) {
 
   // The device's socket: opened with the pane, closed with it.
   useEffect(() => {
-    const stream = open();
-    streamRef.current = stream;
+    let stream: DeviceStream | null = null;
+    let closed = false;
     // The frame on screen and the one waiting to be drawn. A frame replaced
     // before the image drew it is credited all the same: its bytes are
     // consumed, and a credit lost to a skipped frame would starve the stream.
     let shown: string | null = null;
     let waiting: { url: string; credit: () => void } | null = null;
-    const offStatus = stream.onStatus(setStatus);
-    const offDevice = stream.onDevice(setDevice);
-    const offFrame = stream.onFrame((blob, credit) => {
-      if (waiting) {
-        waiting.credit();
-        URL.revokeObjectURL(waiting.url);
+    const subscribe = (opened: DeviceStream) => [
+      opened.onStatus(setStatus),
+      opened.onDevice(setDevice),
+      opened.onFrame((blob, credit) => {
+        if (waiting) {
+          waiting.credit();
+          URL.revokeObjectURL(waiting.url);
+        }
+        const url = URL.createObjectURL(blob);
+        const frame = { url, credit };
+        waiting = frame;
+        setFrame({
+          url,
+          drawn: () => {
+            if (waiting !== frame) return;
+            waiting = null;
+            credit();
+            // The frame before this one is off screen once this one is drawn.
+            if (shown) URL.revokeObjectURL(shown);
+            shown = url;
+          },
+        });
+      }),
+    ];
+    let unsubscribe: (() => void)[] = [];
+    // The stream's code loads with the pane; one closed before it arrives
+    // never opens a socket.
+    void open().then((opened) => {
+      if (closed) {
+        opened.dispose();
+        return;
       }
-      const url = URL.createObjectURL(blob);
-      const frame = { url, credit };
-      waiting = frame;
-      setFrame({
-        url,
-        drawn: () => {
-          if (waiting !== frame) return;
-          waiting = null;
-          credit();
-          // The frame before this one is off screen once this one is drawn.
-          if (shown) URL.revokeObjectURL(shown);
-          shown = url;
-        },
-      });
+      stream = opened;
+      streamRef.current = opened;
+      unsubscribe = subscribe(opened);
     });
     return () => {
-      offStatus();
-      offDevice();
-      offFrame();
-      stream.dispose();
+      closed = true;
+      for (const off of unsubscribe) off();
+      stream?.dispose();
       streamRef.current = null;
       if (shown) URL.revokeObjectURL(shown);
       if (waiting) URL.revokeObjectURL(waiting.url);

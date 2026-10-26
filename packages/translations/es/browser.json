@@ -1076,11 +1076,7 @@
       "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
       "offline": "El host está desconectado",
       "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
-      "ended": "La sesión ha terminado",
-      "typeHint": "Haz clic en la pantalla para tocar, arrastra para deslizar y escribe para enviar teclas.",
-      "back": "Atrás",
-      "home": "Inicio",
-      "apps": "Apps recientes"
+      "ended": "La sesión ha terminado"
     }
   },
   "bots": {

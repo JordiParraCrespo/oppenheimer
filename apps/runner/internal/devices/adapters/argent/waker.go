@@ -34,6 +34,7 @@ func (w ADBWaker) Wake(ctx context.Context, device domain.Device) error {
 		{"shell", "svc", "power", "stayon", "true"},
 		{"shell", "input", "keyevent", "KEYCODE_WAKEUP"},
 	} {
+		//nolint:gosec // the host's adb, a serial from its own device list, fixed arguments
 		if err := exec.CommandContext(ctx, adb, append([]string{"-s", device.Serial}, args...)...).Run(); err != nil {
 			return err
 		}

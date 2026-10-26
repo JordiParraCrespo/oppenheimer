@@ -63,7 +63,7 @@ watches and taps the same device from the console, beside the terminal.
 `, device.Name, device.Serial)
 		// Best effort: the device is the session's either way, and the
 		// environment still names it.
-		_ = os.WriteFile(filepath.Join(session.Dir, deviceNote), []byte(note), 0o644)
+		_ = os.WriteFile(filepath.Join(session.Dir, deviceNote), []byte(note), 0o600)
 	}
 	return env
 }

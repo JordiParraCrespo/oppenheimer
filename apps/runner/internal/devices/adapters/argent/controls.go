@@ -59,7 +59,7 @@ func (c *Controls) Apply(ctx context.Context, device domain.Device, in domain.In
 	if err != nil {
 		return fmt.Errorf("argent %s: %w", tool, err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode/100 != 2 {
 		detail, _ := io.ReadAll(io.LimitReader(res.Body, 300))
 		return fmt.Errorf("argent %s answered %s: %s", tool, res.Status, strings.TrimSpace(string(detail)))
