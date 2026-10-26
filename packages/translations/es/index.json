@@ -579,7 +579,9 @@
         "folder": {
           "label": "Carpeta del host",
           "description": "Abre un directorio existente tal como está · no se clona nada"
-        }
+        },
+        "hosts": "Hosts",
+        "startIn": "Empezar en"
       },
       "project": {
         "label": "Proyecto",

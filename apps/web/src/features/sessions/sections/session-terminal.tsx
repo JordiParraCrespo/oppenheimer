@@ -40,7 +40,8 @@ const AGENT_WINDOW = 0;
  * is out of sight under the chat.
  *
  * The bottom band is the host link (`HostLinkChrome`): the status bar while
- * the link is live or blipping, and while the host is away a banner in its
+ * the link is live or blipping (without the link while it is live when the
+ * session's bar above already says its state, `showLive` off), and while the host is away a banner in its
  * place that says so, counts the time, and opens the fix from How to fix.
  * It comes back on its own; the fix is for when it does not. What else the
  * line carries is the pane's (`statusItems`): nothing when the session has a bar
@@ -64,6 +65,7 @@ export function SessionTerminal({
   sessionId,
   hostId,
   statusItems,
+  showLive = true,
   reading,
 }: {
   sessionId: string;
@@ -72,6 +74,8 @@ export function SessionTerminal({
   reading: PaneReading;
   /** What the status line carries beside the link, from the pane. */
   statusItems?: ReactNode;
+  /** Say Live while the link holds; off under a bar that says the session's state. */
+  showLive?: boolean;
 }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
@@ -87,6 +91,7 @@ export function SessionTerminal({
     onFiles: upload.send,
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
+    latencyKey: sessionId,
   });
   const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
   const phase = hostLinkPhaseOf({
@@ -109,8 +114,8 @@ export function SessionTerminal({
           xterm owns everything inside the inner element, scrollbar included. */}
         <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
           {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
-            the latency readout, each with a z-index) inside the grid, so the
-            covers below paint over all of them rather than under some. */}
+            each with a z-index) inside the grid, so the covers below paint
+            over all of them rather than under some. */}
           <div ref={containerRef} className="isolate size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
@@ -185,6 +190,7 @@ export function SessionTerminal({
               ) : undefined
             }
             fix={<HostLinkFix host={host} />}
+            showLive={showLive}
           >
             {/* Between reconnects the ladder may be waiting up to thirty
                 seconds; this skips the wait. Not while the host is away: the

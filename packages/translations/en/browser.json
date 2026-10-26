@@ -577,7 +577,9 @@
         "folder": {
           "label": "Folder on host",
           "description": "Open an existing directory as it is · nothing is cloned"
-        }
+        },
+        "hosts": "Hosts",
+        "startIn": "Start in"
       },
       "project": {
         "label": "Project",
