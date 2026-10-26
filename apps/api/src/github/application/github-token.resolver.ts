@@ -6,24 +6,13 @@ import type {
   GithubTokenRepositoryPort,
 } from '../database/github-token.repository.port';
 import { GithubErrors } from '../domain/github.errors';
+import type { TokenRepository } from '../domain/github-token.types';
 import { chooseToken, isUsable, type TokenCandidate } from '../domain/token-key.policy';
 import { GITHUB_TOKEN_REPOSITORY, GITHUB_TOKENS, USER_TOKEN_SEALER } from '../github.di-tokens';
 import { GithubTokenMapper } from '../github-token.mapper';
 import type { GithubCredential } from '../infrastructure/github-pulls.port';
 import type { GithubTokenInspection, GithubTokensPort } from '../infrastructure/github-tokens.port';
 import type { UserTokenSealerPort } from '../infrastructure/user-token-sealer.port';
-
-/** A repository the person's tokens open, and the token that reads it now; null when none still works. */
-export interface TokenRepository {
-  githubRepoId: number;
-  name: string;
-  fullName: string;
-  defaultBranch: string;
-  private: boolean;
-  tokenId: string | null;
-  /** Whether the person pinned the token that reads it. */
-  pinned: boolean;
-}
 
 /**
  * A person's own GitHub tokens (`product/next-steps/0.2-pull-requests.md`

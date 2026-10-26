@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { TokenRepository } from './application/github-token.resolver';
 import type { GithubTokenCheck, GithubTokenRecord } from './database/github-token.repository.port';
+import type { TokenRepository } from './domain/github-token.types';
 import type {
   GithubTokenReadsResponseDto,
   GithubTokenResponseDto,
