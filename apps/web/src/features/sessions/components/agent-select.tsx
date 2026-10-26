@@ -1,7 +1,7 @@
 import { AgentModelSelect, type AgentOption, type Engine } from '@oppenheimer/design-system-web';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
-import { toEffortStops } from '../lib/session-options';
+import { type EffortChoice, toEffortStops } from '../lib/session-options';
 
 /**
  * The composer's engine button: the agent, its model and how hard it thinks,
@@ -14,8 +14,10 @@ import { toEffortStops } from '../lib/session-options';
  * this host has the agent on `PATH` is a hint, never a gate, so no row is
  * disabled.
  *
- * `effort` is the current model's levels; a model with no notion of effort
- * passes none, and the popup has no slider.
+ * `effort` is the draft's choice for the current model (`effortChoiceFor`);
+ * a model with no notion of effort passes null, and the popup has no
+ * slider. This is the one place that knows the effort levels' and the
+ * favourites' words.
  */
 export function AgentSelect({
   agents,
@@ -24,6 +26,7 @@ export function AgentSelect({
   favourites,
   onFavouritesChange,
   effort,
+  onEffortChange,
   disabled,
 }: {
   agents: AgentOption[];
@@ -31,11 +34,9 @@ export function AgentSelect({
   onValueChange: (value: Engine) => void;
   favourites: readonly string[];
   onFavouritesChange: (favourites: string[]) => void;
-  effort?: {
-    levels: readonly SessionEffort[];
-    value: SessionEffort;
-    onValueChange: (value: SessionEffort) => void;
-  };
+  /** The current model's levels and the one shown; none for a model without effort. */
+  effort: Pick<EffortChoice, 'levels' | 'value'> | null;
+  onEffortChange: (value: SessionEffort) => void;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -51,7 +52,7 @@ export function AgentSelect({
         effort
           ? {
               value: effort.value,
-              onValueChange: effort.onValueChange,
+              onValueChange: onEffortChange,
               stops: toEffortStops(effort.levels, {
                 none: t('sessions.new.effort.none'),
                 minimal: t('sessions.new.effort.minimal'),

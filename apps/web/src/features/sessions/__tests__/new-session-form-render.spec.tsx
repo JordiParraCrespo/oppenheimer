@@ -47,12 +47,13 @@ vi.mock('../components/agent-select', () => {
   return {
     AgentSelect: (props: {
       onValueChange: (value: unknown) => void;
-      effort?: { onValueChange: (value: string) => void };
+      effort: unknown;
+      onEffortChange: (value: string) => void;
     }) => (
       <>
         <Agent onValueChange={props.onValueChange} />
         {props.effort ? (
-          <button type="button" onClick={() => props.effort?.onValueChange('high')}>
+          <button type="button" onClick={() => props.onEffortChange('high')}>
             effort
           </button>
         ) : null}

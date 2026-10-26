@@ -53,6 +53,7 @@ const DEFAULT_LABELS: AgentModelSelectLabels = {
 /** Rows visible before the list scrolls. */
 const VISIBLE_ROWS = 7;
 
+/** The Favourites tab's id; no agent is called this. */
 const FAVOURITES = '★';
 
 const defaultEmptyText = (query: string): React.ReactNode => `No model matches “${query}”.`;
@@ -71,21 +72,182 @@ function rowsOf(agent: AgentOption): Row[] {
     : [{ agent, model: null }];
 }
 
+function rowKey(row: Row): string {
+  return engineKey({ agent: row.agent.id, model: row.model?.value ?? null });
+}
+
+/**
+ * The popup's three modes, as rows: a search spans every agent, the
+ * Favourites tab the starred rows, an agent's tab that agent's. `total` sizes
+ * the list from the whole set the mode draws from, so a search does not
+ * resize it under the cursor; `mixed` says the rows are from several agents
+ * and each should wear its mark.
+ */
+function rowsFor(
+  agents: readonly AgentOption[],
+  { term, tab, favourites }: { term: string; tab: string; favourites: readonly string[] },
+): { rows: Row[]; total: number; mixed: boolean } {
+  const all = agents.flatMap(rowsOf);
+  if (term) {
+    const rows = all.filter(({ agent, model }) =>
+      `${model?.label ?? ''} ${agent.label}`.toLowerCase().includes(term),
+    );
+    return { rows, total: all.length, mixed: true };
+  }
+  if (tab === FAVOURITES) {
+    const rows = all.filter((row) => favourites.includes(rowKey(row)));
+    return { rows, total: rows.length, mixed: true };
+  }
+  const agent = agents.find((candidate) => candidate.id === tab);
+  const rows = agent ? rowsOf(agent) : [];
+  return { rows, total: rows.length, mixed: false };
+}
+
+/** The tab strip: Favourites when the caller keeps them, then one tab per agent's mark. */
+function AgentModelTabs({
+  tabs,
+  selected,
+  onSelect,
+  'aria-label': ariaLabel,
+}: {
+  tabs: { id: string; label: string }[];
+  selected: string | null;
+  onSelect: (id: string) => void;
+  'aria-label': string;
+}) {
+  return (
+    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 px-1.5 pt-1.5">
+      {tabs.map((item) => {
+        const on = selected === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            aria-label={item.label}
+            title={item.label}
+            onClick={() => onSelect(item.id)}
+            className="group/tab flex flex-1 flex-col items-center gap-1.5 pt-1.5 outline-none"
+          >
+            <span
+              className={cn(
+                'flex h-7 w-8 items-center justify-center rounded-sm text-fg-muted transition-[background-color,opacity] duration-fast group-hover/tab:bg-hover-surface group-focus-visible/tab:outline-2 group-focus-visible/tab:outline-ring',
+                on ? 'opacity-100' : 'opacity-55',
+              )}
+            >
+              {item.id === FAVOURITES ? (
+                <StarIcon className="size-4.5" fill="currentColor" strokeWidth={0} aria-hidden />
+              ) : (
+                <AgentMark agent={item.id} className="[&_svg]:size-4.5" />
+              )}
+            </span>
+            <span className={cn('h-0.5 w-5 rounded-pill', on ? 'bg-fg' : 'bg-transparent')} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A row's star: whether it is in Favourites, and the toggle. */
+function AgentModelStar({
+  starred,
+  name,
+  labels,
+  onToggle,
+}: {
+  starred: boolean;
+  name: string;
+  labels: Pick<AgentModelSelectLabels, 'addFavourite' | 'removeFavourite'>;
+  onToggle: () => void;
+}) {
+  const label = starred ? labels.removeFavourite(name) : labels.addFavourite(name);
+  return (
+    <button
+      type="button"
+      aria-pressed={starred}
+      aria-label={label}
+      title={label}
+      onClick={onToggle}
+      className={cn(
+        'flex shrink-0 rounded-pill p-1.5 outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring',
+        starred ? 'text-warning' : 'text-fg-subtle',
+      )}
+    >
+      <StarIcon
+        className="size-3.5"
+        fill={starred ? 'currentColor' : 'none'}
+        strokeWidth={1.8}
+        aria-hidden
+      />
+    </button>
+  );
+}
+
+/** The popup's foot: "Effort · Medium", the hint glyph, Faster and Smarter, and the slider. */
+function AgentModelEffortFoot<V extends string>({
+  effort,
+  labels,
+}: {
+  effort: AgentModelEffort<V>;
+  labels: Pick<AgentModelSelectLabels, 'effort' | 'faster' | 'smarter' | 'effortHint'>;
+}) {
+  const hintId = React.useId();
+  const current = effort.stops.find((stop) => stop.value === effort.value) ?? effort.stops[0];
+  return (
+    <div
+      data-slot="agent-model-effort"
+      className="flex flex-col gap-[11px] border-t border-border-subtle px-3.5 py-[13px]"
+    >
+      <div className="flex items-center gap-2 text-[13px]">
+        <span className="text-fg-muted">{labels.effort}</span>
+        <span key={effort.value} className="motion-safe:animate-effort-in text-fg">
+          {current?.label}
+        </span>
+        <span className="flex-1" />
+        {/* The glyph is the pointer's way to the hint; the slider carries it as its description. */}
+        <span className="flex text-fg-subtle" title={labels.effortHint}>
+          <CircleQuestionMarkIcon className="size-[15px]" aria-hidden />
+        </span>
+        <span id={hintId} className="sr-only">
+          {labels.effortHint}
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between text-xs text-fg-muted">
+          <span>{labels.faster}</span>
+          <span>{labels.smarter}</span>
+        </div>
+        <EffortSlider
+          stops={effort.stops}
+          value={effort.value}
+          onValueChange={effort.onValueChange}
+          aria-label={labels.effort}
+          aria-describedby={hintId}
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * AgentModelSelect — the engine button in the composer's foot row: the
  * agent's mark, the model's name and, muted after it, the effort. One button
  * for all three, so the row stays one line.
  *
- * It opens on a strip of tabs: Favourites (a star), then one per agent, its
- * mark. The current agent's tab is open first; its models list below a search
- * row, the current one checked. Typing searches every agent's models at once,
- * and a row from another agent wears that agent's mark. Each row ends in a
- * star that keeps it in Favourites, which is the one tab mixing agents.
- * Picking a model picks its agent with it, so the pair is always valid.
+ * It opens on a strip of tabs, one per agent's mark, the current agent's
+ * open; its models list below a search row, the current one checked. Typing
+ * searches every agent's models at once, and a row from another agent wears
+ * that agent's mark. Picking a model picks its agent with it, so the pair is
+ * always valid.
  *
- * With `effort`, the popup ends in the effort slider for the current model,
- * and the button names the level. With `onFavouritesChange`, the Favourites
- * tab and the stars show; the caller keeps the list (as `engineKey`s).
+ * Two parts are the caller's to switch on. With `onFavouritesChange`, a
+ * Favourites tab leads the strip and each row ends in a star; the caller keeps
+ * the list, as `engineKey`s. With `effort`, the popup ends in the effort
+ * slider for the current model and the button names the level, in a cell as
+ * wide as the longest level so the button never changes width under the
+ * popup anchored to it.
  *
  * ```tsx
  * <AgentModelSelect
@@ -133,64 +295,24 @@ function AgentModelSelect<V extends string = string>({
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState('');
-  // The level a drag started from, shown by the button until it ends: the
-  // popup is anchored to the button, so a live label would move both.
-  const [held, setHeld] = React.useState<V | null>(null);
-  const hintId = React.useId();
 
-  const starrable = onFavouritesChange !== undefined;
   const current = agents.find((agent) => agent.id === value.agent);
   const currentModel = current?.models.find((model) => model.value === value.model);
-  const shownTab = tab ?? value.agent;
   const term = query.trim().toLowerCase();
-
-  const allRows = agents.flatMap(rowsOf);
-  let rows: Row[];
-  let total: number;
-  if (term) {
-    rows = allRows.filter(({ agent, model }) =>
-      `${model?.label ?? ''} ${agent.label}`.toLowerCase().includes(term),
-    );
-    total = allRows.length;
-  } else if (shownTab === FAVOURITES) {
-    rows = allRows.filter((row) =>
-      favourites.includes(engineKey({ agent: row.agent.id, model: row.model?.value ?? null })),
-    );
-    total = rows.length;
-  } else {
-    const agent = agents.find((candidate) => candidate.id === shownTab);
-    rows = agent ? rowsOf(agent) : [];
-    total = rows.length;
-  }
-  // A list that mixes agents says whose each row is.
-  const mixed = Boolean(term) || shownTab === FAVOURITES;
-
-  const effortShown = effort
-    ? (effort.stops.find((stop) => stop.value === (held ?? effort.value)) ?? effort.stops[0])
-    : undefined;
-  const effortCurrent = effort
-    ? (effort.stops.find((stop) => stop.value === effort.value) ?? effort.stops[0])
-    : undefined;
+  const shownTab = tab ?? value.agent;
+  const { rows, total, mixed } = rowsFor(agents, { term, tab: shownTab, favourites });
+  const tabs = [
+    ...(onFavouritesChange ? [{ id: FAVOURITES, label: label.favourites }] : []),
+    ...agents.map((agent) => ({ id: agent.id, label: agent.label })),
+  ];
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (!next) {
       setTab(null);
       setQuery('');
-      setHeld(null);
     }
   }
-
-  function toggleFavourite(key: string) {
-    onFavouritesChange?.(
-      favourites.includes(key) ? favourites.filter((kept) => kept !== key) : [...favourites, key],
-    );
-  }
-
-  const tabs = [
-    ...(starrable ? [{ id: FAVOURITES, label: label.favourites }] : []),
-    ...agents.map((agent) => ({ id: agent.id, label: agent.label })),
-  ];
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -204,17 +326,16 @@ function AgentModelSelect<V extends string = string>({
             className={className}
           >
             {currentModel?.label ?? current?.label ?? value.agent}
-            {effort && effortShown ? (
-              // Every stop in one cell: the cell is as wide as the longest, so a
-              // new level never moves the button.
+            {effort ? (
+              // Every stop in one cell: as wide as the longest, only the current one paints.
               <span className="ml-[7px] inline-grid text-fg-muted">
                 {effort.stops.map((stop) => (
                   <span
                     key={stop.value}
-                    aria-hidden={stop.value !== effortShown.value}
+                    aria-hidden={stop.value !== effort.value}
                     className={cn(
                       'col-start-1 row-start-1',
-                      stop.value !== effortShown.value && 'invisible',
+                      stop.value !== effort.value && 'invisible',
                     )}
                   >
                     {stop.label}
@@ -226,46 +347,15 @@ function AgentModelSelect<V extends string = string>({
         }
       />
       <ChipSelectPopup density="menu" side="top" align="end" width={340} className="p-0">
-        <div
-          role="tablist"
+        <AgentModelTabs
+          tabs={tabs}
+          selected={term ? null : shownTab}
+          onSelect={(id) => {
+            setTab(id);
+            setQuery('');
+          }}
           aria-label={ariaLabel}
-          className="flex gap-0.5 px-1.5 pt-1.5"
-        >
-          {tabs.map((item) => {
-            const selected = !term && shownTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                aria-label={item.label}
-                title={item.label}
-                onClick={() => {
-                  setTab(item.id);
-                  setQuery('');
-                }}
-                className="group/tab flex flex-1 flex-col items-center gap-1.5 pt-1.5 outline-none"
-              >
-                <span
-                  className={cn(
-                    'flex h-7 w-8 items-center justify-center rounded-sm text-fg-muted transition-[background-color,opacity] duration-fast group-hover/tab:bg-hover-surface group-focus-visible/tab:outline-2 group-focus-visible/tab:outline-ring',
-                    selected ? 'opacity-100' : 'opacity-55',
-                  )}
-                >
-                  {item.id === FAVOURITES ? (
-                    <StarIcon className="size-4.5" fill="currentColor" strokeWidth={0} aria-hidden />
-                  ) : (
-                    <AgentMark agent={item.id} className="[&_svg]:size-4.5" />
-                  )}
-                </span>
-                <span
-                  className={cn('h-0.5 w-5 rounded-pill', selected ? 'bg-fg' : 'bg-transparent')}
-                />
-              </button>
-            );
-          })}
-        </div>
+        />
         <div className="px-1">
           <ChipSelectSearch
             density="menu"
@@ -286,83 +376,42 @@ function AgentModelSelect<V extends string = string>({
           emptyText={term ? emptyText(query) : label.favouritesEmpty}
           className="px-1 pb-1"
         >
-          {rows.map(({ agent, model }) => {
-            const key = engineKey({ agent: agent.id, model: model?.value ?? null });
-            const starred = favourites.includes(key);
-            const name = model?.label ?? agent.label;
+          {rows.map((row) => {
+            const key = rowKey(row);
+            const name = row.model?.label ?? row.agent.label;
             return (
               <div key={key} className="flex items-center">
                 <ChipSelectItem
                   density="menu"
-                  selected={value.agent === agent.id && value.model === (model?.value ?? null)}
-                  leading={mixed ? <AgentMark agent={agent.id} /> : undefined}
+                  selected={value.agent === row.agent.id && value.model === (row.model?.value ?? null)}
+                  leading={mixed ? <AgentMark agent={row.agent.id} /> : undefined}
                   className="min-w-0 flex-1"
                   onClick={() => {
-                    onValueChange({ agent: agent.id, model: model?.value ?? null });
+                    onValueChange({ agent: row.agent.id, model: row.model?.value ?? null });
                     onOpenChange(false);
                   }}
                 >
                   {name}
                 </ChipSelectItem>
-                {starrable ? (
-                  <button
-                    type="button"
-                    aria-pressed={starred}
-                    aria-label={starred ? label.removeFavourite(name) : label.addFavourite(name)}
-                    title={starred ? label.removeFavourite(name) : label.addFavourite(name)}
-                    onClick={() => toggleFavourite(key)}
-                    className={cn(
-                      'flex shrink-0 rounded-pill p-1.5 outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring',
-                      starred ? 'text-warning' : 'text-fg-subtle',
-                    )}
-                  >
-                    <StarIcon
-                      className="size-3.5"
-                      fill={starred ? 'currentColor' : 'none'}
-                      strokeWidth={1.8}
-                      aria-hidden
-                    />
-                  </button>
+                {onFavouritesChange ? (
+                  <AgentModelStar
+                    starred={favourites.includes(key)}
+                    name={name}
+                    labels={label}
+                    onToggle={() =>
+                      onFavouritesChange(
+                        favourites.includes(key)
+                          ? favourites.filter((kept) => kept !== key)
+                          : [...favourites, key],
+                      )
+                    }
+                  />
                 ) : null}
               </div>
             );
           })}
         </ChipSelectList>
-        {effort && effortCurrent ? (
-          <div
-            data-slot="agent-model-effort"
-            className="flex flex-col gap-[11px] border-t border-border-subtle px-3.5 py-[13px]"
-          >
-            <div className="flex items-center gap-2 text-[13px]">
-              <span className="text-fg-muted">{label.effort}</span>
-              <span key={effort.value} className="motion-safe:animate-effort-in text-fg">
-                {effortCurrent.label}
-              </span>
-              <span className="flex-1" />
-              {/* The glyph is the pointer's way to the hint; the slider carries it as its description. */}
-              <span className="flex text-fg-subtle" title={label.effortHint}>
-                <CircleQuestionMarkIcon className="size-[15px]" aria-hidden />
-              </span>
-              <span id={hintId} className="sr-only">
-                {label.effortHint}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between text-xs text-fg-muted">
-                <span>{label.faster}</span>
-                <span>{label.smarter}</span>
-              </div>
-              <EffortSlider
-                stops={effort.stops}
-                value={effort.value}
-                onValueChange={effort.onValueChange}
-                onDraggingChange={(dragging) => setHeld(dragging ? effort.value : null)}
-                aria-label={label.effort}
-                aria-describedby={hintId}
-              />
-            </div>
-          </div>
-        ) : null}
+        {effort ? <AgentModelEffortFoot effort={effort} labels={label} /> : null}
       </ChipSelectPopup>
     </Popover>
   );

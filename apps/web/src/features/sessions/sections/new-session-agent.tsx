@@ -18,8 +18,6 @@ export function NewSessionAgent() {
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
 
-  const choice = effortChoiceFor(agent, model, efforts.value[agent]);
-
   return (
     <AgentSelect
       agents={toAgentOptions()}
@@ -31,15 +29,8 @@ export function NewSessionAgent() {
       }}
       favourites={favourites}
       onFavouritesChange={setFavourites}
-      effort={
-        choice
-          ? {
-              levels: choice.levels,
-              value: choice.value,
-              onValueChange: (level) => efforts.onChange({ ...efforts.value, [agent]: level }),
-            }
-          : undefined
-      }
+      effort={effortChoiceFor(agent, model, efforts.value[agent])}
+      onEffortChange={(level) => efforts.onChange({ ...efforts.value, [agent]: level })}
     />
   );
 }
