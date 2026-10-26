@@ -83,19 +83,22 @@ func TestThePersonsOwnStatusLineStillDrawsTheLine(t *testing.T) {
 	}
 }
 
-func TestTheRunnersOwnStatusLineInTheSettingsIsNotRunAgain(t *testing.T) {
+func TestAStatusLineRunByTheRunnersOwnIsNeverRunAgain(t *testing.T) {
 	home, project := statusHome(t)
-	self, err := os.Executable()
-	if err != nil {
-		t.Fatal(err)
-	}
-	body := `{"statusLine":{"type":"command","command":` + quoteJSON("'"+self+"' statusline") + `}}`
+	body := `{"statusLine":{"type":"command","command":` + quoteJSON(`cat >/dev/null; echo "nested=$OPPENHEIMER_STATUSLINE"`) + `}}`
 	if err := os.MkdirAll(filepath.Join(home, ".claude"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(home, ".claude", "settings.json"), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	// Their status line knows it is run by the runner's...
+	if got := runStatusLine(t, statusPayload(project)); got != "nested=1\n" {
+		t.Fatalf("line = %q", got)
+	}
+	// ...so a `runner statusline` it runs draws the figures instead of
+	// running theirs again, however their settings name the runner.
+	t.Setenv("OPPENHEIMER_STATUSLINE", "1")
 	if got := runStatusLine(t, statusPayload(project)); got != "ctx 32% · 5h 23%\n" {
 		t.Fatalf("line = %q", got)
 	}

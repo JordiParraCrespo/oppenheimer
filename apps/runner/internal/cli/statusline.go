@@ -22,6 +22,12 @@ const statusLineTimeout = 5 * time.Second
 // statusLinePayloadMax bounds what is read of Claude Code's payload.
 const statusLinePayloadMax = 256 << 10
 
+// statusLineNested marks the person's own status line as run by the
+// runner's. A `runner statusline` that finds it set is inside one (their
+// settings name the runner's own, copied from a session), so it draws its
+// line instead of running theirs again.
+const statusLineNested = "OPPENHEIMER_STATUSLINE"
+
 // StatusLine is `runner statusline`, the status line a session's Claude Code
 // runs (domain.Launch.StatusLine). It keeps the figures the CLI hands it for
 // the chat (transcript.SaveStatus), then draws the line: the person's own
@@ -35,10 +41,11 @@ func StatusLine(ctx context.Context, in io.Reader, out io.Writer) error {
 		return nil //nolint:nilerr // a status line has nowhere to report to
 	}
 	status, _ := transcript.SaveStatus(StatusDir(paths), payload)
-	self, _ := os.Executable()
-	if command, dir := ownStatusLine(paths.UserHome, payload, self); command != "" {
-		runStatusLine(ctx, command, dir, payload, out)
-		return nil
+	if os.Getenv(statusLineNested) == "" {
+		if command, dir := ownStatusLine(paths.UserHome, payload); command != "" {
+			runStatusLine(ctx, command, dir, payload, out)
+			return nil
+		}
 	}
 	if text := status.Text(); text != "" {
 		_, _ = fmt.Fprintln(out, text)
@@ -66,8 +73,8 @@ func statusLineCommand() string {
 // ownStatusLine is the status line the person configured, which the
 // runner's would otherwise hide, and the folder to run it in: the project's
 // local settings, then the project's, then their own, the order Claude Code
-// reads them in. None when it is the runner's own.
-func ownStatusLine(userHome string, payload []byte, self string) (command, dir string) {
+// reads them in.
+func ownStatusLine(userHome string, payload []byte) (command, dir string) {
 	var in struct {
 		Cwd       string `json:"cwd"`
 		Workspace struct {
@@ -115,9 +122,6 @@ func ownStatusLine(userHome string, payload []byte, self string) (command, dir s
 		if line.Type != "command" || strings.TrimSpace(line.Command) == "" {
 			continue
 		}
-		if self != "" && strings.Contains(line.Command, self) {
-			return "", dir
-		}
 		return line.Command, dir
 	}
 	return "", dir
@@ -131,6 +135,7 @@ func runStatusLine(ctx context.Context, command, dir string, payload []byte, out
 	cmd := exec.CommandContext(ctx, "sh", "-c", command) //nolint:gosec // the person's own status line, from their own settings
 	cmd.Stdin = bytes.NewReader(payload)
 	cmd.Stdout = out
+	cmd.Env = append(os.Environ(), statusLineNested+"=1")
 	if dir != "" {
 		cmd.Dir = dir
 	}
