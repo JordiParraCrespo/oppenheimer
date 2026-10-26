@@ -136,15 +136,15 @@ export class GithubAccessResolver {
     scope: AccessScope,
     githubRepoId: number,
   ): Promise<WorkspaceRepository> {
-    const repository = (await this.tokenRepositories(scope)).find(
-      (candidate) => candidate.githubRepoId === githubRepoId,
-    );
-    if (!repository) {
-      throw new AppError(GithubErrors.NO_TOKEN_FOR_REPOSITORY, {
-        detail: `None of your GitHub tokens opens repository ${githubRepoId}`,
-      });
-    }
-    return repository;
+    const repository = await this.tokens.repositoryOf(scope.userId, githubRepoId, new Date());
+    return {
+      installationId: null,
+      githubRepoId: repository.githubRepoId,
+      name: repository.name,
+      fullName: repository.fullName,
+      defaultBranch: repository.defaultBranch,
+      private: repository.private,
+    };
   }
 
   async usableInstallation(

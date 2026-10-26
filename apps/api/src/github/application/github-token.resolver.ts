@@ -105,6 +105,38 @@ export class GithubTokenResolver {
    * which token to replace.
    */
   async repositoriesOf(userId: string, now: Date): Promise<TokenRepository[]> {
+    return (await this.choices(userId, now)).map(toTokenRepository);
+  }
+
+  /** One repository the person's tokens open; `GITHUB_023` when none does. */
+  async repositoryOf(userId: string, githubRepoId: number, now: Date): Promise<TokenRepository> {
+    return toTokenRepository(await this.choiceFor(userId, githubRepoId, now));
+  }
+
+  /**
+   * The credential that reads the repository now, counted against the person
+   * the token belongs to. `GITHUB_023` when no token of theirs that still works
+   * opens it.
+   */
+  async credentialFor(userId: string, githubRepoId: number, now: Date): Promise<GithubCredential> {
+    this.assertConfigured();
+    const { token } = await this.choiceFor(userId, githubRepoId, now);
+    if (!token) throw noToken(githubRepoId);
+    return {
+      token: this.sealer.open(token.tokenSealed),
+      bucket: `user:${token.githubUserId}`,
+      cacheScope: `token:${token.id}`,
+      // A token revoked on GitHub stops being chosen at once, and another
+      // that opens the repository takes over on the next read.
+      onUnauthorized: () => this.tokens.recordRefusal(userId, token.id, new Date()),
+    };
+  }
+
+  /**
+   * The one place the person's tokens and pins are loaded and the policy asked:
+   * each repository they open, archived ones aside, with the token that reads it.
+   */
+  private async choices(userId: string, now: Date): Promise<TokenChoice[]> {
     const [tokens, pins] = await Promise.all([
       this.tokens.findOwn(userId),
       this.tokens.findPins(userId),
@@ -122,45 +154,17 @@ export class GithubTokenResolver {
     return [...seen.values()].map((repository) => {
       const pinnedId = pinOf.get(repository.githubRepoId) ?? null;
       const chosen = chooseToken(repository.githubRepoId, candidates, pinnedId, now);
-      return {
-        githubRepoId: repository.githubRepoId,
-        name: repository.name,
-        fullName: repository.fullName,
-        defaultBranch: repository.defaultBranch,
-        private: repository.private,
-        tokenId: chosen?.id ?? null,
-        pinned: chosen !== null && chosen.id === pinnedId,
-      };
+      const token = tokens.find((candidate) => candidate.id === chosen?.id) ?? null;
+      return { repository, token, pinned: token !== null && token.id === pinnedId };
     });
   }
 
-  /**
-   * The credential that reads the repository now, counted against the person
-   * the token belongs to. `GITHUB_023` when no token of theirs that still works
-   * opens it.
-   */
-  async credentialFor(userId: string, githubRepoId: number, now: Date): Promise<GithubCredential> {
-    this.assertConfigured();
-    const [tokens, pins] = await Promise.all([
-      this.tokens.findOwn(userId),
-      this.tokens.findPins(userId),
-    ]);
-    const pinned = pins.find((pin) => pin.githubRepoId === githubRepoId)?.tokenId ?? null;
-    const chosen = chooseToken(githubRepoId, tokens.map(candidateOf), pinned, now);
-    const token = tokens.find((candidate) => candidate.id === chosen?.id);
-    if (!token) {
-      throw new AppError(GithubErrors.NO_TOKEN_FOR_REPOSITORY, {
-        detail: `No GitHub token of yours that still works opens repository ${githubRepoId}`,
-      });
-    }
-    return {
-      token: this.sealer.open(token.tokenSealed),
-      bucket: `user:${token.githubUserId}`,
-      cacheScope: `token:${token.id}`,
-      // A token revoked on GitHub stops being chosen at once, and another
-      // that opens the repository takes over on the next read.
-      onUnauthorized: () => this.tokens.recordRefusal(userId, token.id, new Date()),
-    };
+  private async choiceFor(userId: string, githubRepoId: number, now: Date): Promise<TokenChoice> {
+    const choice = (await this.choices(userId, now)).find(
+      (candidate) => candidate.repository.githubRepoId === githubRepoId,
+    );
+    if (!choice) throw noToken(githubRepoId);
+    return choice;
   }
 
   /** Whether the token is one GitHub still accepts, for the settings list. */
@@ -180,6 +184,31 @@ export class GithubTokenResolver {
       detail: 'Set GITHUB_USER_TOKEN_KEY to keep GitHub tokens on this server.',
     });
   }
+}
+
+/** A repository the person's tokens open, and the token that reads it now; null when none still works. */
+interface TokenChoice {
+  repository: GithubTokenRepositoryRecord;
+  token: GithubTokenRecord | null;
+  pinned: boolean;
+}
+
+function toTokenRepository({ repository, token, pinned }: TokenChoice): TokenRepository {
+  return {
+    githubRepoId: repository.githubRepoId,
+    name: repository.name,
+    fullName: repository.fullName,
+    defaultBranch: repository.defaultBranch,
+    private: repository.private,
+    tokenId: token?.id ?? null,
+    pinned,
+  };
+}
+
+function noToken(githubRepoId: number): AppError {
+  return new AppError(GithubErrors.NO_TOKEN_FOR_REPOSITORY, {
+    detail: `No GitHub token of yours that still works opens repository ${githubRepoId}`,
+  });
 }
 
 function candidateOf(token: GithubTokenRecord): TokenCandidate {

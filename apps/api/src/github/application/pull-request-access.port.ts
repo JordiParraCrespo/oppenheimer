@@ -138,8 +138,13 @@ export interface ReviewSubmission {
  * person did. With no user token a write is `GITHUB_012`, never somebody else's.
  */
 export interface PullRequestAccessPort {
-  /** Every repository the workspace's usable installations cover. */
+  /** Every repository the workspace's usable installations cover, then the ones only the caller's tokens open. */
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
+  /**
+   * The installation an address reaches, for what only the App can do (a
+   * session clones through it); `GITHUB_022` for one read through a token.
+   */
+  requireApp(address: RepositoryAddress): string;
   /** The caller's GitHub login: their stored grant's, or the account of a personal installation they connected. */
   viewerLogin(scope: AccessScope): Promise<string | null>;
   /**

@@ -2,7 +2,6 @@ import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { GithubErrors } from '../../../github/domain/github.errors';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
@@ -39,13 +38,8 @@ export class StartReviewSessionCommandHandler
 
   async execute(command: StartReviewSessionCommand): Promise<SessionCommandResult> {
     const { scope, userId, address } = command;
-    // A session clones through the App; a repository read through a token has none.
-    const installationId = address.installationId;
-    if (installationId === null) {
-      throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
-        detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
-      });
-    }
+    // A session clones through the App.
+    const installationId = this.access.requireApp(address);
     const { repository, pull } = await this.access.pullRequest(scope, address);
     if (pull.fromFork)
       throw new AppError(PullRequestsErrors.REVIEW_FROM_FORK, {

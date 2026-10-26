@@ -628,7 +628,10 @@ describe('a repository read through the person’s own token', () => {
   };
   const tokens = (): Partial<GithubTokenResolver> => ({
     isConfigured: () => true,
-    repositoriesOf: vi.fn().mockResolvedValue([TOKEN_REPOSITORY]),
+    repositoryOf: vi.fn(async (_userId: string, githubRepoId: number) => {
+      if (githubRepoId === TOKEN_REPOSITORY.githubRepoId) return TOKEN_REPOSITORY;
+      throw new AppError(GithubErrors.NO_TOKEN_FOR_REPOSITORY, { detail: 'none' });
+    }),
     credentialFor: vi.fn().mockResolvedValue({ token: 'github_pat_ana', bucket: 'user:1' }),
   });
   const address = { installationId: null, githubRepoId: 99, number: 5 };
@@ -703,6 +706,18 @@ describe('a repository read through the person’s own token', () => {
     await resolver.pullRequest({ ...SCOPE, userId: 'bruno' } as AccessScope, address);
 
     expect(listFiles).toHaveBeenCalledTimes(2);
+  });
+
+  // A review session clones through the App, which a token repository has none of.
+  it('gives no installation to start a session on, with GITHUB_022', () => {
+    const { resolver, repository } = build({});
+
+    expect(() => resolver.requireApp(address)).toThrow(
+      expect.objectContaining({ code: 'GITHUB_022' }),
+    );
+    expect(resolver.requireApp({ ...address, installationId: repository.installationId })).toBe(
+      repository.installationId,
+    );
   });
 
   it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {

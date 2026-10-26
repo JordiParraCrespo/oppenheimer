@@ -31,6 +31,7 @@ import {
   type PullRequestSnapshot,
   type ReadBudget,
   type ReadGap,
+  type RepositoryAddress,
   type RepositoryPulls,
   type ReviewSubmission,
   type WorkspaceRepository,
@@ -101,6 +102,13 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     ]);
     const covered = new Set(installed.map((repository) => repository.githubRepoId));
     return [...installed, ...tokens.filter((repository) => !covered.has(repository.githubRepoId))];
+  }
+
+  requireApp(address: RepositoryAddress): string {
+    if (address.installationId !== null) return address.installationId;
+    throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
+      detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
+    });
   }
 
   private async installedRepositories(scope: AccessScope): Promise<WorkspaceRepository[]> {

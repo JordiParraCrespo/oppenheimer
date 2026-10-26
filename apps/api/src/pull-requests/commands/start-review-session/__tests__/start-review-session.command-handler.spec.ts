@@ -34,7 +34,8 @@ function setup(fromFork = false) {
         fromFork,
       },
     }),
-  } satisfies Pick<PullRequestAccessPort, 'pullRequest'>;
+    requireApp: vi.fn((address: { installationId: string | null }) => address.installationId ?? ''),
+  } satisfies Pick<PullRequestAccessPort, 'pullRequest' | 'requireApp'>;
   const reviews = {
     link: vi.fn().mockResolvedValue(undefined),
     findOpen: vi.fn(),
