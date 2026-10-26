@@ -87,6 +87,7 @@ export function SessionTerminal({
     onFiles: upload.send,
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
+    latencyKey: sessionId,
   });
   const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
   const phase = hostLinkPhaseOf({
@@ -109,8 +110,8 @@ export function SessionTerminal({
           xterm owns everything inside the inner element, scrollbar included. */}
         <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
           {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
-            the latency readout, each with a z-index) inside the grid, so the
-            covers below paint over all of them rather than under some. */}
+            each with a z-index) inside the grid, so the covers below paint
+            over all of them rather than under some. */}
           <div ref={containerRef} className="isolate size-full" />
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
