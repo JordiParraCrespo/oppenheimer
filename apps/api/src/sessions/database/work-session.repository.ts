@@ -480,6 +480,21 @@ export class WorkSessionRepository
     };
   }
 
+  async findLatestEvents(
+    session: WorkSessionEntity,
+    limit: number,
+  ): Promise<WorkSessionEventEntity[]> {
+    // Backwards along IDX_work_session_event_session_seq, then put back in order.
+    const records = await this.repository.manager
+      .getRepository(WorkSessionEventOrmEntity)
+      .createQueryBuilder('event')
+      .where('event.sessionId = :sessionId', { sessionId: session.id })
+      .orderBy('event.seq', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.reverse().map((record) => this.mapper.eventToDomain(record));
+  }
+
   async findRecentFolders(
     scope: AccessScope,
     hostId: string,

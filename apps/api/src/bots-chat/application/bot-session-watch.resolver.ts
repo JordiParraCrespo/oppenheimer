@@ -61,6 +61,21 @@ export class BotSessionWatchResolver {
     }
   }
 
+  /**
+   * Follows the task a bot's follow-up prompt opened, and says so in words
+   * for `send_to_session`'s answer. Like {@link watchStarted}, a watch that
+   * cannot be stored is said, never thrown: the prompt was sent.
+   */
+  async watchSent(context: BotToolCallContext, sessionId: string): Promise<string> {
+    try {
+      await this.watch(context, sessionId, { until: 'task', purpose: null, from: 'now' });
+      return 'You are subscribed to it and will be woken when the task needs input or ends: end your turn now, and report when you are.';
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return `It could not be watched (${reason}); read it later with get_session.`;
+    }
+  }
+
   async watch(
     context: BotToolCallContext,
     sessionId: string,

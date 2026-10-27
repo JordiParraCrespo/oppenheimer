@@ -265,6 +265,12 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionEventPage>;
 
   /**
+   * The last `limit` entries of the log, oldest first: what a session did
+   * lately, without paging through all of it. The session is the authorization.
+   */
+  findLatestEvents(session: WorkSessionEntity, limit: number): Promise<WorkSessionEventEntity[]>;
+
+  /**
    * The one question archiving a project has to ask (`SessionProjectUsage`): a
    * placeholder answering "none" would be fail-open on a destructive path.
    */
