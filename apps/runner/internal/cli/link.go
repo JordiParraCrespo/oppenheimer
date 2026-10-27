@@ -100,6 +100,9 @@ type linkHandler struct {
 	screens map[uint32]*deviceAttachment
 	// tunnels are the relay's connections to sessions' ports, by attachment id.
 	tunnels map[uint32]*tunnel
+	// opening holds the port attachments still being dialled, true once the
+	// relay hung one up meanwhile: the open sees it and closes what it dialled.
+	opening map[uint32]bool
 	// earlyResize holds a viewport that arrived before its attachment was
 	// registered, by attachment id. The browser sends its size the moment the
 	// socket opens, which is while the host is still opening the PTY; applied
@@ -170,7 +173,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
-		ports: a.Ports, tunnels: map[uint32]*tunnel{},
+		ports: a.Ports, tunnels: map[uint32]*tunnel{}, opening: map[uint32]bool{},
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -531,7 +534,12 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.PortOpen
 		if msg.Decode(&m) == nil {
 			// One per connection a page makes, so never queued behind another.
+			// Known as opening from here, so a port.close that overtakes the
+			// dial is not lost.
 			epoch := h.currentEpoch()
+			h.mu.Lock()
+			h.opening[m.AttachmentID] = false
+			h.mu.Unlock()
 			go func() {
 				if h.liveEpoch(epoch) {
 					h.portOpen(m, epoch)
@@ -541,7 +549,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypePortClose:
 		var m link.PortClose
 		if msg.Decode(&m) == nil {
-			h.dropTunnel(m.AttachmentID)
+			h.closePort(m.AttachmentID)
 		}
 	case "credentials.grant":
 		var m link.CredentialsGrant

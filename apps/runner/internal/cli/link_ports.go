@@ -76,11 +76,13 @@ func (h *linkHandler) portList(ctx context.Context, m link.PortList) {
 // portOpen dials one of the session's ports for the relay, and pumps it.
 func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 	if h.ports == nil {
+		h.forgetOpening(m.AttachmentID)
 		h.fail(m.CommandID, portsdomain.ErrUnsupported)
 		return
 	}
 	conn, _, err := h.ports.Open(h.life, m.SessionID, m.Port)
 	if err != nil {
+		h.forgetOpening(m.AttachmentID)
 		h.fail(m.CommandID, err)
 		return
 	}
@@ -90,7 +92,9 @@ func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 		flow: newFlowWindow(), input: make(chan []byte, tunnelInput),
 	}
 	h.mu.Lock()
-	if !h.linkUp || h.epoch != epoch {
+	cancelled := h.opening[t.id]
+	delete(h.opening, t.id)
+	if cancelled || !h.linkUp || h.epoch != epoch {
 		h.mu.Unlock()
 		t.close()
 		return
@@ -161,6 +165,23 @@ func (h *linkHandler) endTunnel(t *tunnel, reason string) {
 		return
 	}
 	_ = h.client.Send(link.AttachmentClosed{Type: "attachment.closed", AttachmentID: t.id, Reason: reason})
+}
+
+// closePort is the relay hanging up a port attachment: an open tunnel
+// closes, and one still being dialled is closed when its dial returns.
+func (h *linkHandler) closePort(id uint32) {
+	h.mu.Lock()
+	if _, opening := h.opening[id]; opening {
+		h.opening[id] = true
+	}
+	h.mu.Unlock()
+	h.dropTunnel(id)
+}
+
+func (h *linkHandler) forgetOpening(id uint32) {
+	h.mu.Lock()
+	delete(h.opening, id)
+	h.mu.Unlock()
 }
 
 // dropTunnel forgets and closes a tunnel, and reports whether it was open.

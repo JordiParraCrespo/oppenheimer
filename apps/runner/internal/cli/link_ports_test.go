@@ -69,6 +69,7 @@ func portsHandler(t *testing.T, listeners sessionListeners) (*linkHandler, *capt
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{},
 		life: context.Background(), lanes: newLanes(),
 		ports: portsapp.New(portsapp.Options{Listeners: listeners}), tunnels: map[uint32]*tunnel{},
+		opening: map[uint32]bool{},
 	}
 	t.Cleanup(func() { h.lanes.close(time.Second) })
 	h.Connected(context.Background(), 1)
@@ -174,5 +175,62 @@ func TestPortListNamesTheSessionsPorts(t *testing.T) {
 	}).(link.PortListing)
 	if len(listing.Ports) != 2 || listing.Ports[0].Port != 3001 || listing.Ports[1].Port != 5173 {
 		t.Fatalf("listed %+v, want 3001 and 5173", listing.Ports)
+	}
+}
+
+// gatedListeners holds every lookup until released, so a test can act while
+// a port is being dialled.
+type gatedListeners struct {
+	sessionListeners
+	gate chan struct{}
+}
+
+func (g gatedListeners) Of(ctx context.Context, sessionID string) ([]portsdomain.Listener, error) {
+	<-g.gate
+	return g.sessionListeners.Of(ctx, sessionID)
+}
+
+// A port.close that overtakes the dial still hangs the port up: the open
+// finds it cancelled and closes what it dialled, rather than keeping a
+// connection the relay has already forgotten.
+func TestPortCloseWhileDiallingClosesWhatTheDialOpens(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = ln.Close() }()
+	accepted := make(chan net.Conn, 1)
+	go func() {
+		conn, err := ln.Accept()
+		if err == nil {
+			accepted <- conn
+		}
+	}()
+	port := ln.Addr().(*net.TCPAddr).Port
+	gate := make(chan struct{})
+	h, sent := portsHandler(t, sessionListeners{})
+	h.ports = portsapp.New(portsapp.Options{Listeners: gatedListeners{sessionListeners{portsSession: {port}}, gate}})
+
+	h.Message(context.Background(), message(t, link.TypePortOpen, map[string]any{
+		"commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e", "sessionId": portsSession,
+		"attachmentId": 14, "port": port,
+	}))
+	h.Message(context.Background(), message(t, link.TypePortClose, map[string]any{"attachmentId": 14}))
+	close(gate)
+
+	conn := <-accepted
+	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	if _, err := conn.Read(make([]byte, 1)); err == nil {
+		t.Fatal("the dialled connection was kept open after the relay hung up")
+	}
+	if h.tunnelByID(14) != nil {
+		t.Fatal("a hung-up attachment was registered as a tunnel")
+	}
+	sent.mu.Lock()
+	defer sent.mu.Unlock()
+	for _, m := range sent.sent {
+		if opened, ok := m.(link.PortOpened); ok && opened.AttachmentID == 14 {
+			t.Fatal("port.opened was sent for an attachment the relay hung up")
+		}
 	}
 }
