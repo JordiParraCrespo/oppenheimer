@@ -787,9 +787,7 @@
       "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
       "select": "Select",
       "selected": "Selected",
-      "allHidden": "Every project is hidden. Show them again from the filter menu.",
-      "hideProject": "Hide {{name}}",
-      "showProject": "Show {{name}}"
+      "allHidden": "Every project is hidden. Show them again from the filter menu."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",

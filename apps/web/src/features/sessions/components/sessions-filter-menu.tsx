@@ -1,5 +1,6 @@
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -12,7 +13,7 @@ import {
   DropdownMenuValue,
   IconButton,
 } from '@oppenheimer/design-system-web';
-import { Eye, EyeOff, SlidersVertical } from '@oppenheimer/design-system-web/icons';
+import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
@@ -27,7 +28,7 @@ const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
- * options with an open eye, the ones in `hidden` with a closed one. Hiding is not
+ * options with a check, the ones in `hidden` without. Hiding is not
  * filtering, so Clear filters leaves it.
  */
 export interface ProjectVisibility {
@@ -104,8 +105,8 @@ export function SessionsFilterMenu({
 
         <DropdownMenuSeparator />
 
-        {/* An eye per project, open while it is shown; the menu stays open
-            so several can be toggled in one go. */}
+        {/* A check per project; the menu stays open so several can be
+            toggled in one go. */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={projects.length === 0}>
             {t('sessions.filters.shown')}
@@ -119,23 +120,16 @@ export function SessionsFilterMenu({
             </DropdownMenuValue>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-            {projects.map((project) => {
-              const shown = !visibility.hidden.includes(project.value);
-              return (
-                <DropdownMenuItem
-                  key={project.value}
-                  aria-label={t(
-                    shown ? 'sessions.sidebar.hideProject' : 'sessions.sidebar.showProject',
-                    { name: project.label },
-                  )}
-                  onClick={() => visibility.onShownChange(project.value, !shown)}
-                  closeOnClick={false}
-                >
-                  {shown ? <Eye /> : <EyeOff />}
-                  {project.label}
-                </DropdownMenuItem>
-              );
-            })}
+            {projects.map((project) => (
+              <DropdownMenuCheckboxItem
+                key={project.value}
+                checked={!visibility.hidden.includes(project.value)}
+                onCheckedChange={(shown) => visibility.onShownChange(project.value, shown)}
+                closeOnClick={false}
+              >
+                {project.label}
+              </DropdownMenuCheckboxItem>
+            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               disabled={visibility.hiddenCount === 0}

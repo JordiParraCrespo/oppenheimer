@@ -6,7 +6,7 @@ import {
   SortableGroup,
   SortableSidebarProjectGroup,
 } from '@oppenheimer/design-system-web';
-import { Eye, EyeOff, Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
+import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -33,8 +33,6 @@ export function ProjectGroup({
   query,
   onNewSessionHere,
   onSettings,
-  hidden,
-  onHiddenChange,
   onShare,
   onDelete,
   onWrite,
@@ -53,12 +51,6 @@ export function ProjectGroup({
   query: string;
   onNewSessionHere: (project: ProjectEntity) => void;
   onSettings: (project: ProjectEntity) => void;
-  /**
-   * Whether the reader hid the project: a hidden one is drawn only while the
-   * project filter picks it, and its eye shows it again.
-   */
-  hidden: boolean;
-  onHiddenChange: (project: ProjectEntity, hidden: boolean) => void;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
@@ -107,17 +99,6 @@ export function ProjectGroup({
                 onClick={() => onSettings(project)}
               >
                 <Settings2 />
-              </IconButton>
-              <IconButton
-                size="xs"
-                variant="quiet"
-                aria-label={t(
-                  hidden ? 'sessions.sidebar.showProject' : 'sessions.sidebar.hideProject',
-                  { name: label },
-                )}
-                onClick={() => onHiddenChange(project, !hidden)}
-              >
-                {hidden ? <Eye /> : <EyeOff />}
               </IconButton>
             </>
           ) : undefined
