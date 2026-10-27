@@ -3,7 +3,15 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-type AgentId = 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | (string & {});
+type AgentId =
+  | 'claude-code'
+  | 'codex'
+  | 'opencode'
+  | 'grok'
+  | 'glm'
+  | 'chatgpt'
+  | 'shell'
+  | (string & {});
 
 const CLAUDE_ORANGE = '#D97757';
 
@@ -40,18 +48,50 @@ function GrokMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+function ZaiMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden {...props}>
+      <path d="M12.105 2L9.927 4.953H.653L2.83 2h9.276zM23.254 19.048L21.078 22h-9.242l2.174-2.952h9.244zM24 2L9.264 22H0L14.736 2H24z" />
+    </svg>
+  );
+}
+
+const SHARED = 'size-[15px] shrink-0';
+const INKED = cn(SHARED, 'text-fg');
+
+/** The mark per known id; anything else draws the bot glyph. */
+const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
+  'claude-code': () => <ClaudeMark className={SHARED} />,
+  codex: () => <OpenAIMark className={INKED} />,
+  opencode: () => <OpenCodeMark className={INKED} />,
+  grok: () => <GrokMark className={INKED} />,
+  glm: () => <ZaiMark className={INKED} />,
+  chatgpt: () => <OpenAIMark className={INKED} />,
+  shell: () => <SquareTerminalIcon className={SHARED} strokeWidth={2} aria-hidden />,
+};
+
+function markOf(agent: AgentId): React.ReactNode {
+  return Object.hasOwn(MARKS, agent) ? (
+    MARKS[agent]()
+  ) : (
+    <BotIcon className={SHARED} strokeWidth={2} aria-hidden />
+  );
+}
+
 /**
  * AgentMark — the coding agent's mark, 15px, in the agent and model picker
- * and wherever a session names its harness. Claude Code carries Anthropic's
- * orange (a brand colour, so it does not re-point in dark); Codex, OpenCode and
- * Grok draw in the current ink and invert with the theme. "Blank terminal"
- * takes a terminal glyph, and an unknown id the neutral bot glyph.
+ * and wherever a session names its harness; a bot's model picker draws its
+ * providers with it too. Claude Code carries Anthropic's orange (a brand
+ * colour, so it does not re-point in dark); Codex, OpenCode, Grok, GLM and
+ * ChatGPT draw in the current ink and invert with the theme. ChatGPT has no
+ * published mark of its own and wears OpenAI's, as Codex does. "Blank
+ * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
  * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
- * in github.com/sst/opencode; Grok's from Lobe Icons
- * (`@lobehub/icons-static-svg` `icons/grok.svg`, MIT).
+ * in github.com/sst/opencode; Grok's and GLM's (Z.ai's) from Lobe Icons
+ * (`@lobehub/icons-static-svg` `icons/grok.svg` and `icons/zai.svg`, MIT).
  *
  * ```tsx
  * <AgentMark agent="claude-code" />
@@ -63,7 +103,6 @@ function AgentMark({
   className,
   ...props
 }: Omit<React.ComponentProps<'span'>, 'children'> & { agent: AgentId }) {
-  const shared = 'size-[15px] shrink-0';
   return (
     <span
       data-slot="agent-mark"
@@ -71,19 +110,7 @@ function AgentMark({
       className={cn('inline-flex shrink-0 items-center justify-center text-fg-subtle', className)}
       {...props}
     >
-      {agent === 'claude-code' ? (
-        <ClaudeMark className={shared} />
-      ) : agent === 'codex' ? (
-        <OpenAIMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'opencode' ? (
-        <OpenCodeMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'grok' ? (
-        <GrokMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'shell' ? (
-        <SquareTerminalIcon className={shared} strokeWidth={2} aria-hidden />
-      ) : (
-        <BotIcon className={shared} strokeWidth={2} aria-hidden />
-      )}
+      {markOf(agent)}
     </span>
   );
 }

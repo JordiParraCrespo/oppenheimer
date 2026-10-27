@@ -83,6 +83,45 @@ describe('the turn fold (interactive)', () => {
   });
 });
 
+describe('the turn fold (a bot’s follow-up prompt)', () => {
+  const finished = () => replay([prompt, started, observed('working'), observed('idle')]);
+  const sent = entry(SESSION_EVENT_KINDS.PROMPT_SENT, {
+    text: 'Now run the tests',
+    sender: { kind: 'bot', botId: 'bot-1', turnId: 'turn-1' },
+  });
+
+  it('opens the next turn as a follow-up, which the screen then runs and finishes', () => {
+    const next = foldTurnEvent(finished(), sent, 'automation');
+    expect(next).toMatchObject({
+      seq: 2,
+      origin: 'follow_up',
+      drive: 'interactive',
+      state: 'queued',
+      prompt: 'Now run the tests',
+    });
+    const done = [observed('working'), observed('idle')].reduce(
+      (turn, event) => foldTurnEvent(turn, event, 'automation'),
+      next,
+    );
+    expect(done?.state).toBe('completed');
+  });
+
+  it('joins a turn still live rather than leaving it open for ever', () => {
+    const live = replay([prompt, started, observed('working')]);
+    expect(foldTurnEvent(live, sent, 'automation')).toBe(live);
+  });
+
+  it('cancels the turn a prompt opened when its keys never reached the host', () => {
+    const next = foldTurnEvent(finished(), sent, 'automation');
+    const undelivered = foldTurnEvent(
+      next,
+      entry(SESSION_EVENT_KINDS.PROMPT_UNDELIVERED, { id: 'command-1' }),
+      'automation',
+    );
+    expect(undelivered).toMatchObject({ seq: 2, state: 'cancelled' });
+  });
+});
+
 describe('the turn fold (headless)', () => {
   it('ends on the wrapper’s exit code, whatever the screen said', () => {
     const turn = replay([

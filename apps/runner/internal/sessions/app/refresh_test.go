@@ -89,6 +89,8 @@ func (r *syncRecorder) SessionChanged(s domain.Session) {
 
 func (r *syncRecorder) FirstPrompt(domain.Session, string, func()) bool { return true }
 
+func (r *syncRecorder) DecisionChanged(domain.Session, *domain.Decision) {}
+
 func (r *syncRecorder) seen() []domain.State {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -126,6 +126,22 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
+   * The session pane's Browser tab (`product/versions/mvp/30-session-previews.md`):
+   * a session's dev server, served through the runner's link on a preview
+   * domain of the deployment's. Read by the console, which offers the tab,
+   * and by the API, which refuses the preview routes and the proxy when off.
+   */
+  session_browser_preview: {
+    description: "Show a session's dev server in the preview pane's Browser tab.",
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    bucketBy: 'user',
+    expiresAt: '2027-04-30',
+  },
+  /**
    * The chat view of a Claude Code session
    * (`product/next-steps/0.7-terminal-and-chat.md`): beside the terminal, the
    * conversation read off the agent's own transcript, which the host follows
@@ -166,6 +182,20 @@ export const FEATURE_FLAGS = {
     defaultValue: true,
     client: true,
     bucketBy: 'user',
+  },
+  /**
+   * The Inbox (`product/versions/mvp/29-inbox.md`): one place for what needs
+   * you, and the marks a person leaves on its items. Gates the rail item and
+   * the `/v1/inbox/marks` routes while it settles.
+   */
+  inbox: {
+    description: 'Show the Inbox: what needs you, one item at a time, with done, low and snooze.',
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    expiresAt: '2026-12-31',
   },
 } as const satisfies Record<string, FlagDefinition>;
 

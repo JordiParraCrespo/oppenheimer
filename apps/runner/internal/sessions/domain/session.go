@@ -168,12 +168,18 @@ type Session struct {
 	// CheckoutID and GithubRepoID name the control plane's checkout row for
 	// the repository, which is what a credential ask is keyed by. Empty for
 	// a session the CLI made.
-	CheckoutID   string    `json:"checkoutId,omitempty"`
-	GithubRepoID int64     `json:"githubRepoId,omitempty"`
-	State        State     `json:"state"`
-	Windows      []Window  `json:"windows"`
-	Created      time.Time `json:"created"`
-	Updated      time.Time `json:"updated"`
+	CheckoutID   string `json:"checkoutId,omitempty"`
+	GithubRepoID int64  `json:"githubRepoId,omitempty"`
+	// More are the checkouts past the first, for a session over several
+	// repositories: each one a worktree of its own store beside the first, in
+	// the session's folder, on the same Branch. The first stays in the fields
+	// above, so a state file an older runner wrote, which knew only one,
+	// still loads as the session it was.
+	More    []Checkout `json:"moreCheckouts,omitempty"`
+	State   State      `json:"state"`
+	Windows []Window   `json:"windows"`
+	Created time.Time  `json:"created"`
+	Updated time.Time  `json:"updated"`
 	// LoginURL is the vendor login link the classifier saw, if any. The
 	// console turns it into a button; nothing else is ever linkified (F3).
 	LoginURL string `json:"loginUrl,omitempty"`
@@ -195,20 +201,86 @@ var (
 	ErrNoSuchWindow = errors.New("no such window")
 )
 
-// Cwd is where the session's agent and its tabs run: the checkout of a
-// worktree session, the folder of a folder session.
+// Checkout is one repository a worktree session checked out: a worktree of
+// that repository's store, in the session's folder, on the session's branch.
+type Checkout struct {
+	// Repo is `owner/name`.
+	Repo string `json:"repo"`
+	// BaseBranch is what the session's branch was cut from in this
+	// repository.
+	BaseBranch string `json:"baseBranch,omitempty"`
+	// Worktree is the checkout's absolute path, `<Dir>/<directory name>`.
+	Worktree string `json:"worktree"`
+	// CheckoutID and GithubRepoID name the control plane's checkout row,
+	// which a credential ask for this repository is keyed by. Empty for a
+	// session the CLI made.
+	CheckoutID   string `json:"checkoutId,omitempty"`
+	GithubRepoID int64  `json:"githubRepoId,omitempty"`
+}
+
+// Checkouts is every checkout of a worktree session, the first one first;
+// none for a folder session, or for one this host holds no record of.
+func (s Session) Checkouts() []Checkout {
+	if s.Place == PlaceFolder || (s.Repo == "" && s.Worktree == "" && s.CheckoutID == "") {
+		return nil
+	}
+	first := Checkout{
+		Repo: s.Repo, BaseBranch: s.BaseBranch, Worktree: s.Worktree,
+		CheckoutID: s.CheckoutID, GithubRepoID: s.GithubRepoID,
+	}
+	return append([]Checkout{first}, s.More...)
+}
+
+// CheckoutFor is the checkout a git request for path is about. A session of
+// one checkout answers it whatever the path, as it did before there could be
+// more: a store fetched under a repository's old name still sends that name.
+// With several, path picks one: it is what git hands a credential helper
+// under `credential.useHttpPath`, `owner/name.git` for a GitHub remote,
+// matched as GitHub matches names, without regard to case. No path, or one
+// that names none of them, answers none rather than a token for the wrong
+// repository.
+func (s Session) CheckoutFor(path string) (Checkout, bool) {
+	checkouts := s.Checkouts()
+	if len(checkouts) == 1 {
+		return checkouts[0], true
+	}
+	path = strings.TrimSuffix(strings.Trim(path, "/"), ".git")
+	if path == "" {
+		return Checkout{}, false
+	}
+	for _, checkout := range checkouts {
+		if strings.EqualFold(checkout.Repo, path) {
+			return checkout, true
+		}
+	}
+	return Checkout{}, false
+}
+
+// Cwd is where the session's agent and its tabs run: the folder of a folder
+// session; the checkout of a worktree session with one; the session's own
+// folder for one with several, which holds each checkout as a subfolder, so
+// the agent sees every repository it was given.
 func (s Session) Cwd() string {
 	if s.Place == PlaceFolder {
 		return s.Folder
 	}
+	if len(s.More) > 0 {
+		return s.Dir
+	}
 	return s.Worktree
 }
 
-// Repository names the store a worktree session's checkout was made from.
+// Repository names the store a worktree session's first checkout was made
+// from.
 func (s Session) Repository() Repository {
+	return s.RepositoryOf(Checkout{Repo: s.Repo, GithubRepoID: s.GithubRepoID})
+}
+
+// RepositoryOf names the store one of the session's checkouts was made from.
+func (s Session) RepositoryOf(checkout Checkout) Repository {
 	return Repository{
 		Tenant:   Tenant{Account: s.AccountID, Workspace: s.WorkspaceID},
-		FullName: s.Repo, GithubID: s.GithubRepoID,
+		FullName: checkout.Repo, GithubID: checkout.GithubRepoID,
 	}
 }
 
@@ -248,6 +320,9 @@ func (s Session) NextWindow() int {
 // state from outside it.
 func (s Session) Clone() Session {
 	s.Windows = append([]Window(nil), s.Windows...)
+	if s.More != nil {
+		s.More = append([]Checkout(nil), s.More...)
+	}
 	return s
 }
 

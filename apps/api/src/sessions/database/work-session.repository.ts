@@ -6,7 +6,8 @@ import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
-import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
+import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
+import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
   payloadBytes,
@@ -174,6 +175,23 @@ export class WorkSessionRepository
     return outcome;
   }
 
+  async appendEventsIf(
+    session: WorkSessionEntity,
+    events: NewSessionEvent[],
+    holds: (fold: SessionFold, latestTurn: SessionTurnFold | null) => boolean,
+  ): Promise<SessionAppendOutcome | null> {
+    const outcome = await this.outbox.transaction(async (manager) => {
+      const locked = await this.lock(manager, session.id);
+      if (!locked) return null;
+      session.reseatFold(this.mapper.foldOf(locked));
+      await this.reseatLatestTurn(manager, session);
+      if (!holds(session.fold, session.latestTurn)) return null;
+      return this.appendLocked(manager, session, events);
+    });
+    session.clearEvents();
+    return outcome;
+  }
+
   async appendEventsForHost(
     hostId: string,
     sessionId: string,
@@ -314,6 +332,19 @@ export class WorkSessionRepository
   async findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>> {
     const record = await this.scopedQuery(scope).andWhere('session.id = :id', { id }).getOne();
     return this.withCheckouts(record);
+  }
+
+  async findCloudByCloudIds(
+    scope: AccessScope,
+    cloudIds: readonly string[],
+  ): Promise<WorkSessionEntity[]> {
+    if (cloudIds.length === 0) return [];
+    const records = await this.scopedQuery(scope)
+      .andWhere(`session.place = 'cloud'`)
+      .andWhere('session.agentSessionId IN (:...cloudIds)', { cloudIds })
+      .andWhere(`session.state <> 'resolved'`)
+      .getMany();
+    return this.withCheckoutsAll(records);
   }
 
   async findOneByIdempotencyKey(
@@ -464,6 +495,21 @@ export class WorkSessionRepository
     };
   }
 
+  async findLatestEvents(
+    session: WorkSessionEntity,
+    limit: number,
+  ): Promise<WorkSessionEventEntity[]> {
+    // Backwards along IDX_work_session_event_session_seq, then put back in order.
+    const records = await this.repository.manager
+      .getRepository(WorkSessionEventOrmEntity)
+      .createQueryBuilder('event')
+      .where('event.sessionId = :sessionId', { sessionId: session.id })
+      .orderBy('event.seq', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.reverse().map((record) => this.mapper.eventToDomain(record));
+  }
+
   async findRecentFolders(
     scope: AccessScope,
     hostId: string,
@@ -527,6 +573,15 @@ export class WorkSessionRepository
    * the latest turn, the one `INSERT` for the batch, the fold over what landed,
    * the row update, the turns and the outbox.
    */
+  /** The latest turn is folded like the row, so it is read under the same lock. */
+  private async reseatLatestTurn(manager: EntityManager, session: WorkSessionEntity) {
+    const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
+      `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
+      [session.id],
+    );
+    session.reseatLatestTurn(latestTurn ? this.mapper.turnToDomain(latestTurn) : null);
+  }
+
   private async appendLocked(
     manager: EntityManager,
     session: WorkSessionEntity,
@@ -534,12 +589,7 @@ export class WorkSessionRepository
   ): Promise<SessionAppendOutcome> {
     const rejected: SessionAppendOutcome['rejected'] = [];
 
-    // The latest turn is folded like the row, so it is read under the same lock.
-    const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
-      `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
-      [session.id],
-    );
-    session.reseatLatestTurn(latestTurn ? this.mapper.turnToDomain(latestTurn) : null);
+    await this.reseatLatestTurn(manager, session);
 
     const candidates = events.filter((event) => {
       if (payloadBytes(event.payload) <= SESSION_EVENT_PAYLOAD_MAX_BYTES) return true;
@@ -588,6 +638,7 @@ export class WorkSessionRepository
                 "projectId" = $17,
                 "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
                 "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
+                "pendingDecision" = $22::jsonb,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -612,6 +663,7 @@ export class WorkSessionRepository
           record.closeAcceptsUnpushedWork,
           record.closeRefusalCode,
           record.closeRefusalDetail,
+          record.pendingDecision === null ? null : JSON.stringify(record.pendingDecision),
         ],
       );
       await this.writeTurns(manager, session);

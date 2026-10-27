@@ -57,6 +57,12 @@
         }
       ]
     },
+    "extension": {
+      "title": "Chrome extension",
+      "summary": "apps/extension — Manifest V3 extension that tracks your Claude Code cloud sessions and says which need you",
+      "identifiers": ["apps/extension", "@oppenheimer/extension"],
+      "paths": ["apps/extension"]
+    },
     "docs": {
       "title": "Documentation site",
       "summary": "apps/docs — Docusaurus site (architecture, deployment, error catalog)",
@@ -93,7 +99,8 @@
         "e2e/netsim",
         "e2e/support/netsim.ts",
         "e2e/tests/netsim",
-        ".agents/skills/netsim"
+        ".agents/skills/netsim",
+        ".agents/skills/session-previews"
       ],
       "scripts": ["dev:mvp", "check:runner-release"]
     },
@@ -127,7 +134,7 @@
   "shared": {
     "packages/frontend/design-system/web": {
       "identifiers": ["packages/frontend/design-system/web", "@oppenheimer/design-system-web"],
-      "neededBy": ["web", "web-showcase"]
+      "neededBy": ["web", "web-showcase", "extension"]
     },
     "packages/frontend/core": {
       "identifiers": ["packages/frontend/core", "@oppenheimer/frontend-core"],

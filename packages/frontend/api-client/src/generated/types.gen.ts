@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'pulls' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'pulls' | 'repositories' | 'flags' | 'inbox';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1393,6 +1393,54 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
+export type SessionDecisionQuestionOptionResponseDto = {
+    label: string;
+    description: string | null;
+};
+
+export type SessionDecisionQuestionResponseDto = {
+    /**
+     * The chip over it in the terminal.
+     */
+    header: string | null;
+    question: string;
+    /**
+     * Several options may be picked.
+     */
+    multiSelect: boolean;
+    options: Array<SessionDecisionQuestionOptionResponseDto>;
+};
+
+export type SessionQuestionDecisionResponseDto = {
+    kind: 'question';
+    /**
+     * The call’s `tool_use_id`.
+     */
+    id: string;
+    questions: Array<SessionDecisionQuestionResponseDto>;
+};
+
+export type SessionPermissionOptionResponseDto = {
+    label: string;
+};
+
+export type SessionPermissionDecisionResponseDto = {
+    kind: 'permission';
+    /**
+     * A hash of what the dialog says: stable while it is on screen.
+     */
+    id: string;
+    title: string;
+    /**
+     * What it asks about, above the question: a command, a file.
+     */
+    detail: string | null;
+    /**
+     * In screen order; the answer names one by its index.
+     */
+    options: Array<SessionPermissionOptionResponseDto>;
+};
+
 export type SessionLaunchResponseDto = {
     /**
      * The model the agent was launched with; null runs that agent’s own default.
@@ -1487,13 +1535,17 @@ export type SessionResponseDto = {
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     /**
-     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.
      */
-    place: 'worktree' | 'folder';
+    place: 'worktree' | 'folder' | 'cloud';
     /**
      * The absolute path on the host a folder session runs in. Null for a worktree session.
      */
     folderPath?: string | null;
+    /**
+     * A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.
+     */
+    cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
     /**
      * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
@@ -1509,6 +1561,14 @@ export type SessionResponseDto = {
     cwdCheckoutId?: string | null;
     agentSessionId?: string | null;
     lastEventAt?: string | null;
+    /**
+     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).
+     */
+    observedSince?: string | null;
+    /**
+     * Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it).
+     */
+    stateSeq: number;
     /**
      * When the agent and the tmux session last ended. The checkouts stay on disk.
      */
@@ -1526,6 +1586,10 @@ export type SessionResponseDto = {
      * Why the host refused the last close. Null when it did not, or it was asked again.
      */
     closeRefusal?: SessionCloseRefusalResponseDto | null;
+    /**
+     * What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.
+     */
+    decision: SessionQuestionDecisionResponseDto | SessionPermissionDecisionResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -1569,6 +1633,7 @@ export type CreateSessionRequest = {
         baseBranch?: string;
     }>;
     folder?: string;
+    cloud?: boolean;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -1638,6 +1703,23 @@ export type IssueAttachTicketRequest = {
     target?: 'terminal' | 'device';
 };
 
+export type IssueSessionPreviewRequest = {
+    port: number;
+    path?: string;
+    embed?: boolean;
+};
+
+export type SessionPreviewResponseDto = {
+    /**
+     * Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.
+     */
+    url: string;
+    /**
+     * The ticket in `url` is refused after this.
+     */
+    expiresAt: string;
+};
+
 export type SetSessionSharePeopleRequest = {
     people: Array<string>;
 };
@@ -1689,15 +1771,36 @@ export type PutSessionShareRequest = {
     lifetime: '1h' | '8h' | '24h' | '7d' | null;
 };
 
+export type AnswerSessionDecisionRequest = {
+    id: string;
+    answers?: Array<{
+        picks: Array<number>;
+        other: string | null;
+    }>;
+    option?: number;
+};
+
+export type ReportCloudStatusRequest = {
+    sessions: Array<{
+        cloudSessionId: string;
+        state: 'running' | 'needs-input' | 'failed' | 'done' | 'stopped';
+    }>;
+};
+
+export type ReportCloudStatusResponse = {
+    /**
+     * How many of the reported cloud sessions this workspace launched.
+     */
+    matched: number;
+};
+
 export type PrepareSessionRequest = {
     hostId: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
 };
 
 export type PrepareSessionResponseDto = {
@@ -1773,6 +1876,25 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type SessionPortDto = {
+    port: number;
+    /**
+     * The command listening on it.
+     */
+    process?: string;
+};
+
+export type SessionPortsResponseDto = {
+    /**
+     * `listed`: `ports` is what the session listens on now. `host_offline`: the host has no link. `not_supported`: its runner cannot list ports.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    /**
+     * The TCP ports the session’s own processes listen on, from 1024 up, in order.
+     */
+    ports: Array<SessionPortDto>;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -2297,6 +2419,7 @@ export type StartTaskSessionRequest = {
             baseBranch?: string;
         }>;
         folder?: string;
+        cloud?: boolean;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -2607,6 +2730,10 @@ export type PullRequestRowDto = {
      */
     authorKind: 'session' | 'person';
     headRef: string;
+    /**
+     * The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.
+     */
+    headSha: string;
     scope: 'mine' | 'requested' | 'watching';
     lane: 'deep' | 'medium' | 'quick';
     laneReason: PullRequestLaneReasonDto;
@@ -2849,6 +2976,10 @@ export type PullRequestDetailResponseDto = {
      */
     authorKind: 'session' | 'person';
     headRef: string;
+    /**
+     * The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.
+     */
+    headSha: string;
     scope: 'mine' | 'requested' | 'watching';
     lane: 'deep' | 'medium' | 'quick';
     laneReason: PullRequestLaneReasonDto;
@@ -2885,10 +3016,6 @@ export type PullRequestDetailResponseDto = {
      */
     body: string;
     baseRef: string;
-    /**
-     * The head commit this read saw. A merge that names it is refused once newer commits land.
-     */
-    headSha: string;
     /**
      * Whether the head branch is in another repository (a fork), which a session cannot check out yet.
      */
@@ -3490,6 +3617,52 @@ export type BotApprovalResponseDto = {
     createdAt: string;
 };
 
+export type WorkspaceBotApprovalResponseDto = {
+    id: string;
+    /**
+     * The turn whose tool call asked.
+     */
+    turnId: string;
+    /**
+     * The tool, as the bot knows it (`start_session`).
+     */
+    tool: string;
+    /**
+     * The call exactly as it will run on a yes.
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * What will happen, in words.
+     */
+    summary: string;
+    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    /**
+     * What the call answered when it ran on a yes; null before, and for a no.
+     */
+    result: string | null;
+    /**
+     * What the person added to a no.
+     */
+    note: string | null;
+    decidedByUserId: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+    /**
+     * The bot that asked.
+     */
+    botId: string;
+    /**
+     * The bot's name, as the console shows it.
+     */
+    botName: string;
+    /**
+     * The session the call started when it ran on a yes; null before, and when it started none.
+     */
+    sessionId: string | null;
+};
+
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
@@ -3525,6 +3698,27 @@ export type VoiceStatusResponseDto = {
     providers: Array<'chatgpt' | 'speech_key'>;
 };
 
+export type InboxMarkResponseDto = {
+    /**
+     * The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`.
+     */
+    itemKey: string;
+    mark: 'done' | 'low' | 'snoozed' | 'deleted';
+    /**
+     * When a snooze ends; null for every other mark.
+     */
+    until: string | null;
+    /**
+     * When the mark was last set.
+     */
+    updatedAt: string;
+};
+
+export type PutInboxMarkRequest = {
+    mark: 'done' | 'low' | 'snoozed' | 'deleted';
+    until?: string;
+};
+
 export type LivenessResponseDto = {
     /**
      * Always `ok`: the process answered.
@@ -3557,6 +3751,10 @@ export type CapabilitiesResponseDto = {
      * A workspace can store model provider keys, which bots run on.
      */
     bot_providers: boolean;
+    /**
+     * A session's dev server can be opened in the console (a preview domain).
+     */
+    session_previews: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -8105,6 +8303,56 @@ export type IssueAttachTicketResponses = {
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
 
+export type IssueSessionPreviewData = {
+    body: IssueSessionPreviewRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/previews';
+};
+
+export type IssueSessionPreviewErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "session_browser_preview" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_035 — Previews are not configured
+     */
+    501: ProblemDetailsDto;
+    /**
+     * SESSIONS_008 — A ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueSessionPreviewError = IssueSessionPreviewErrors[keyof IssueSessionPreviewErrors];
+
+export type IssueSessionPreviewResponses = {
+    201: SessionPreviewResponseDto;
+};
+
+export type IssueSessionPreviewResponse = IssueSessionPreviewResponses[keyof IssueSessionPreviewResponses];
+
 export type SetSessionSharePeopleData = {
     body: SetSessionSharePeopleRequest;
     path: {
@@ -8308,6 +8556,58 @@ export type PasteSessionImageResponses = {
     202: unknown;
 };
 
+export type AnswerSessionDecisionData = {
+    body: AnswerSessionDecisionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/decision';
+};
+
+export type AnswerSessionDecisionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_032 — Already answered or changed
+     *
+     * SESSIONS_014 — That session is stopped
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_033 — The answer does not fit
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_034 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type AnswerSessionDecisionError = AnswerSessionDecisionErrors[keyof AnswerSessionDecisionErrors];
+
+export type AnswerSessionDecisionResponses = {
+    200: SessionResponseDto;
+};
+
+export type AnswerSessionDecisionResponse = AnswerSessionDecisionResponses[keyof AnswerSessionDecisionResponses];
+
 export type StopSessionData = {
     body?: never;
     path: {
@@ -8343,6 +8643,32 @@ export type StopSessionResponses = {
 };
 
 export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
+
+export type RecordCloudStatusData = {
+    body: ReportCloudStatusRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-status';
+};
+
+export type RecordCloudStatusErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RecordCloudStatusError = RecordCloudStatusErrors[keyof RecordCloudStatusErrors];
+
+export type RecordCloudStatusResponses = {
+    200: ReportCloudStatusResponse;
+};
+
+export type RecordCloudStatusResponse = RecordCloudStatusResponses[keyof RecordCloudStatusResponses];
 
 export type PrepareSessionData = {
     body: PrepareSessionRequest;
@@ -8447,7 +8773,7 @@ export type AddCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_010 — A session checks out one repository
+     * SESSIONS_010 — A running session keeps the repositories it was created with
      *
      * SESSIONS_005 — That session is closed
      *
@@ -8698,6 +9024,48 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type FindSessionPortsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/ports';
+};
+
+export type FindSessionPortsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "session_browser_preview" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionPortsError = FindSessionPortsErrors[keyof FindSessionPortsErrors];
+
+export type FindSessionPortsResponses = {
+    200: SessionPortsResponseDto;
+};
+
+export type FindSessionPortsResponse = FindSessionPortsResponses[keyof FindSessionPortsResponses];
 
 export type FindAutomationsData = {
     body?: never;
@@ -12162,6 +12530,34 @@ export type FindBotApprovalsResponses = {
 
 export type FindBotApprovalsResponse = FindBotApprovalsResponses[keyof FindBotApprovalsResponses];
 
+export type FindWorkspaceBotApprovalsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    };
+    url: '/api/v1/bot-approvals';
+};
+
+export type FindWorkspaceBotApprovalsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindWorkspaceBotApprovalsError = FindWorkspaceBotApprovalsErrors[keyof FindWorkspaceBotApprovalsErrors];
+
+export type FindWorkspaceBotApprovalsResponses = {
+    200: Array<WorkspaceBotApprovalResponseDto>;
+};
+
+export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
+
 export type DecideBotApprovalData = {
     body: DecideBotApprovalRequest;
     path: {
@@ -12290,6 +12686,117 @@ export type FindVoiceStatusResponses = {
 };
 
 export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
+
+export type FindInboxMarksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/inbox/marks';
+};
+
+export type FindInboxMarksErrors = {
+    /**
+     * INBOX_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindInboxMarksError = FindInboxMarksErrors[keyof FindInboxMarksErrors];
+
+export type FindInboxMarksResponses = {
+    200: Array<InboxMarkResponseDto>;
+};
+
+export type FindInboxMarksResponse = FindInboxMarksResponses[keyof FindInboxMarksResponses];
+
+export type DeleteInboxMarkData = {
+    body?: never;
+    path: {
+        /**
+         * The occurrence, e.g. `approval:<id>`.
+         */
+        itemKey: string;
+    };
+    query?: never;
+    url: '/api/v1/inbox/marks/{itemKey}';
+};
+
+export type DeleteInboxMarkErrors = {
+    /**
+     * INBOX_002 — Not an Inbox item key
+     *
+     * INBOX_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+};
+
+export type DeleteInboxMarkError = DeleteInboxMarkErrors[keyof DeleteInboxMarkErrors];
+
+export type DeleteInboxMarkResponses = {
+    /**
+     * The occurrence has no mark.
+     */
+    204: void;
+};
+
+export type DeleteInboxMarkResponse = DeleteInboxMarkResponses[keyof DeleteInboxMarkResponses];
+
+export type PutInboxMarkData = {
+    body: PutInboxMarkRequest;
+    path: {
+        /**
+         * The occurrence, e.g. `approval:<id>`.
+         */
+        itemKey: string;
+    };
+    query?: never;
+    url: '/api/v1/inbox/marks/{itemKey}';
+};
+
+export type PutInboxMarkErrors = {
+    /**
+     * INBOX_002 — Not an Inbox item key
+     *
+     * INBOX_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_003 — Snooze not in the future
+     */
+    422: ProblemDetailsDto;
+};
+
+export type PutInboxMarkError = PutInboxMarkErrors[keyof PutInboxMarkErrors];
+
+export type PutInboxMarkResponses = {
+    200: InboxMarkResponseDto;
+};
+
+export type PutInboxMarkResponse = PutInboxMarkResponses[keyof PutInboxMarkResponses];
 
 export type CheckData = {
     body?: never;

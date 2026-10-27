@@ -47,7 +47,7 @@ func TestTheBrokerAnswersForASessionWhileItsCloneRuns(t *testing.T) {
 	h.Message(context.Background(), createMessage(t, "11111111-1111-4111-8111-111111111111"))
 	waitForState(t, svc, sessionsdomain.StateCreating)
 
-	token, err := broker.Get(context.Background(), sessionUnderTest)
+	token, err := broker.Get(context.Background(), sessionUnderTest, "")
 	if err != nil || token != "token-for-c-1" {
 		t.Fatalf("token = %q, err = %v", token, err)
 	}
@@ -56,7 +56,7 @@ func TestTheBrokerAnswersForASessionWhileItsCloneRuns(t *testing.T) {
 	}
 
 	for _, other := range []string{"", "someone-else"} {
-		if _, err := broker.Get(context.Background(), other); !errors.Is(err, errNoCredential) {
+		if _, err := broker.Get(context.Background(), other, ""); !errors.Is(err, errNoCredential) {
 			t.Fatalf("session %q: err = %v, want errNoCredential", other, err)
 		}
 	}
@@ -118,7 +118,7 @@ func TestConcurrentAsksForOneSessionShareOneRequest(t *testing.T) {
 	answers := make(chan answer, callers)
 	for range callers {
 		go func() {
-			token, err := broker.Get(context.Background(), "session-1")
+			token, err := broker.Get(context.Background(), "session-1", "")
 			answers <- answer{token, err}
 		}()
 	}
@@ -138,7 +138,7 @@ func TestConcurrentAsksForOneSessionShareOneRequest(t *testing.T) {
 		t.Fatalf("credentials.token sent %d times, want 1", n)
 	}
 	// And the next caller is answered from the cache.
-	if token, err := broker.Get(context.Background(), "session-1"); err != nil || token != "ghs_token" || sender.count() != 1 {
+	if token, err := broker.Get(context.Background(), "session-1", ""); err != nil || token != "ghs_token" || sender.count() != 1 {
 		t.Fatalf("cached = %q, %v; asks = %d", token, err, sender.count())
 	}
 }
@@ -149,14 +149,14 @@ func TestACancelledCallerDoesNotFailTheOthers(t *testing.T) {
 	first, cancelFirst := context.WithCancel(context.Background())
 	firstDone := make(chan answer, 1)
 	go func() {
-		token, err := broker.Get(first, "session-1")
+		token, err := broker.Get(first, "session-1", "")
 		firstDone <- answer{token, err}
 	}()
 	ask := <-sender.sent
 
 	secondDone := make(chan answer, 1)
 	go func() {
-		token, err := broker.Get(context.Background(), "session-1")
+		token, err := broker.Get(context.Background(), "session-1", "")
 		secondDone <- answer{token, err}
 	}()
 	time.Sleep(50 * time.Millisecond) // let the second caller join the ask
@@ -183,7 +183,7 @@ func TestAPreparesTokenIsHeldForItsGitAndNoLonger(t *testing.T) {
 	id := preparePrefix + "cmd-1"
 	broker.Hold(id, "ghs_prepare", time.Now().Add(time.Hour))
 
-	token, err := broker.Get(context.Background(), id)
+	token, err := broker.Get(context.Background(), id, "")
 	if err != nil || token != "ghs_prepare" {
 		t.Fatalf("Get = %q, %v; want the held token", token, err)
 	}
@@ -192,10 +192,54 @@ func TestAPreparesTokenIsHeldForItsGitAndNoLonger(t *testing.T) {
 	}
 
 	broker.Forget(id)
-	if _, err := broker.Get(context.Background(), id); err == nil {
+	if _, err := broker.Get(context.Background(), id, ""); err == nil {
 		t.Fatal("a prepare's token outlived its command")
 	}
 	if sender.count() != 0 {
 		t.Fatal("a prepare with no token asked the link for one")
+	}
+}
+
+// A token is minted for one repository, so a session over two asks for each
+// by the path git names, holds each on its own, and answers nothing for a
+// request that names neither — rather than one repository's token for the
+// other's.
+func TestASessionOverTwoRepositoriesAsksForEachCheckoutByPath(t *testing.T) {
+	control := &grantingLink{}
+	broker := newCredentialBroker(control, func(sealed []byte) ([]byte, error) { return sealed, nil },
+		func(id string) (sessionsdomain.Session, error) {
+			return sessionsdomain.Session{
+				ID: id, Place: sessionsdomain.PlaceWorktree, Dir: "/w/s",
+				Repo: "acme/web", Worktree: "/w/s/web", CheckoutID: "c-web", GithubRepoID: 1,
+				More: []sessionsdomain.Checkout{{Repo: "acme/api", Worktree: "/w/s/api", CheckoutID: "c-api", GithubRepoID: 2}},
+			}, nil
+		})
+	control.broker = broker
+
+	for _, tc := range []struct{ path, want string }{
+		{"acme/api.git", "token-for-c-api"},
+		{"acme/web.git", "token-for-c-web"},
+		{"acme/api.git", "token-for-c-api"}, // from the cache
+	} {
+		if token, err := broker.Get(context.Background(), "session-1", tc.path); err != nil || token != tc.want {
+			t.Fatalf("Get(%q) = %q, %v; want %q", tc.path, token, err, tc.want)
+		}
+	}
+	if len(control.asked) != 2 || control.asked[0].GithubRepoID != 2 || control.asked[1].GithubRepoID != 1 {
+		t.Fatalf("asked %+v, want the api's checkout then the web's, once each", control.asked)
+	}
+	for _, path := range []string{"", "acme/other.git"} {
+		if _, err := broker.Get(context.Background(), "session-1", path); !errors.Is(err, errNoCredential) {
+			t.Fatalf("Get(%q): err = %v, want errNoCredential", path, err)
+		}
+	}
+
+	// A revoke naming one checkout drops that token only.
+	broker.Revoke("session-1", "c-api")
+	if _, err := broker.Get(context.Background(), "session-1", "acme/web.git"); err != nil || len(control.asked) != 2 {
+		t.Fatalf("the web's token went with the api's: err = %v, asks = %d", err, len(control.asked))
+	}
+	if _, err := broker.Get(context.Background(), "session-1", "acme/api.git"); err != nil || len(control.asked) != 3 {
+		t.Fatalf("the revoked token was not asked for again: err = %v, asks = %d", err, len(control.asked))
 	}
 }

@@ -17,10 +17,13 @@ const namespaces = JSON.parse(readFileSync(join(root, 'namespaces.json'), 'utf8'
  * app bundles the default locale's catalog in its entry chunk, and a namespace
  * no screen renders is weight every first visit pays.
  *
- * - `emails`: the API's email templates. A screen that starts reading a
- *   namespace on this list takes it off.
+ * - `emails`: the API's email templates.
+ * - `extension`: the Chrome extension's popup, notifications and listing,
+ *   which it imports from `{locale}/extension.json` directly.
+ *
+ * A screen that starts reading a namespace on this list takes it off.
  */
-const NOT_IN_BROWSER = ['emails'];
+const NOT_IN_BROWSER = ['emails', 'extension'];
 
 for (const locale of readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && /^[a-z]{2}$/.test(entry.name))

@@ -75,6 +75,11 @@
         "sendNow": "Enviar ahora",
         "edit": "Editar",
         "remove": "Quitar de la cola"
+      },
+      "json": {
+        "tree": "Árbol",
+        "raw": "Texto",
+        "more": "Mostrar {{count}} más"
       }
     }
   },
@@ -206,7 +211,7 @@
       "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
       "SESSIONS_009": "Elige un proyecto para esta sesión.",
-      "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
+      "SESSIONS_010": "Una sesión en marcha conserva los repositorios con los que empezó. Elige hasta cinco al iniciar una sesión.",
       "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
       "HOSTS_002": "No se ha encontrado ese token de vinculación.",
@@ -245,6 +250,10 @@
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
+      "INBOX_001": "La bandeja de entrada necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
+      "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
+      "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -326,6 +335,13 @@
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
       "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "SESSIONS_032": "Esa pregunta ya se respondió o cambió. Abre la sesión para ver qué pregunta ahora.",
+      "SESSIONS_033": "Esa respuesta no encaja con la pregunta. Elige entre sus opciones e inténtalo de nuevo.",
+      "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
+      "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
+      "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
+      "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -343,7 +359,13 @@
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
     },
-    "code": "Código: {{code}}"
+    "code": "Código: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "Este host crea sesiones con un solo repositorio."
+      },
+      "details": "Detalles del host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Correo electrónico",
@@ -542,11 +564,7 @@
           "shell": "Iniciar shell"
         }
       },
-      "progressFailed": "No se pudo cargar el progreso del inicio.",
-      "codes": {
-        "SESS_002": "Este host crea sesiones con un solo repositorio."
-      },
-      "details": "Detalles del host: {{detail}}"
+      "progressFailed": "No se pudo cargar el progreso del inicio."
     },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
@@ -579,6 +597,10 @@
         "folder": {
           "label": "Carpeta del host",
           "description": "Abre un directorio existente tal como está · no se clona nada"
+        },
+        "cloud": {
+          "label": "Nube de Claude Code",
+          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
         "hosts": "Hosts",
         "startIn": "Empezar en"
@@ -1015,6 +1037,12 @@
         "interrupted": "Detuviste este turno",
         "compacted": "Contexto compactado"
       },
+      "task": {
+        "completed": "Tarea en segundo plano terminada",
+        "failed": "Tarea en segundo plano fallida",
+        "killed": "Tarea en segundo plano detenida",
+        "unknown": "Tarea en segundo plano finalizada"
+      },
       "verb": {
         "command": "Ejecutó",
         "read": "Leyó",
@@ -1098,7 +1126,33 @@
       "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
       "offline": "El host está desconectado",
       "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
-      "ended": "La sesión ha terminado"
+      "ended": "La sesión ha terminado",
+      "browser": "Navegador",
+      "address": "localhost:{{port}}",
+      "port": "Puerto",
+      "portSearch": "Buscar un puerto",
+      "portEmpty": "Ningún puerto",
+      "reload": "Recargar",
+      "openTab": "Abrir en una pestaña nueva",
+      "browserFrame": "localhost:{{port}} en el host de esta sesión",
+      "lookingForPorts": "Buscando un servidor de desarrollo…",
+      "waiting": "Esperando un servidor de desarrollo",
+      "waitingDetail": "Arranca uno en el terminal, o pídeselo al agente. Cualquier puerto en el que escuche esta sesión, desde el 1024, se abre aquí.",
+      "hostOffline": "El host está desconectado",
+      "hostOfflineDetail": "La vista previa vuelve cuando el host se reconecte.",
+      "notSupported": "Este host no puede compartir sus puertos",
+      "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
+      "portsFailed": "No se pudieron listar los puertos de la sesión",
+      "previewFailed": "No se pudo abrir la vista previa",
+      "opening": "Abriendo localhost:{{port}}…"
+    },
+    "cloud": {
+      "eyebrow": "Nube de Claude Code",
+      "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
+      "open": "Abrir en claude.ai",
+      "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+      "copy": "Copiar comando",
+      "copied": "Copiado"
     }
   },
   "bots": {
@@ -2427,6 +2481,150 @@
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
   },
+  "inbox": {
+    "title": "Bandeja",
+    "bar": {
+      "meta": "{{needs}} · {{running}}",
+      "needs_zero": "Nada te necesita",
+      "needs_one": "{{count}} te necesita",
+      "needs_other": "{{count}} te necesitan",
+      "running_one": "{{count}} sesión en marcha",
+      "running_other": "{{count}} sesiones en marcha"
+    },
+    "list": {
+      "head": "Te necesita",
+      "empty": "Nada te necesita.",
+      "noneMatching": "Nada con estos filtros te necesita.",
+      "low": "Baja",
+      "snoozed": "Pospuestos",
+      "bringBack": "Recuperar",
+      "failed": "No se pudo cargar la bandeja.",
+      "markFailed": "No se pudo guardar. Inténtalo de nuevo.",
+      "back": "Vuelve {{when}}"
+    },
+    "filter": {
+      "label": "Filtrar la bandeja",
+      "type": "Tipo",
+      "project": "Proyecto",
+      "any": "Cualquiera",
+      "showDone": "Mostrar hechos",
+      "clear": "Quitar filtros",
+      "remove": "Quitar filtro",
+      "typeChip": "Tipo: {{value}}",
+      "projectChip": "Proyecto: {{value}}"
+    },
+    "type": {
+      "all": "Todos",
+      "pull": "Pull requests",
+      "approval": "Aprobaciones de bots",
+      "session": "Sesiones",
+      "run": "Automatizaciones"
+    },
+    "project": {
+      "all": "Todos los proyectos",
+      "none": "Sin proyecto"
+    },
+    "menu": {
+      "label": "Acciones del elemento",
+      "done": "Marcar como hecho",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snoozeHour": "Posponer 1 hora",
+      "snoozeTomorrow": "Posponer hasta mañana",
+      "delete": "Eliminar"
+    },
+    "from": {
+      "session": "Sesión",
+      "approval": "{{bot}} · Aprobación de bot",
+      "run": "Automatización"
+    },
+    "session": {
+      "blockedShort": "{{name}} te está esperando",
+      "blockedTitle": "{{name}} te está esperando",
+      "blockedBody": "Su agente se detuvo para pedir algo. Abre la sesión para responderle allí.",
+      "failedShort": "{{name}} falló",
+      "failedTitle": "{{name}} falló",
+      "failedBody": "Su host no pudo arrancarla. Ábrela para ver qué paso falló.",
+      "startingShort": "{{name}} no ha arrancado",
+      "startingTitle": "{{name}} no ha arrancado",
+      "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
+      "open": "Abrir sesión",
+      "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
+      "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
+      "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+      "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
+      "send": "Enviar respuestas",
+      "sending": "Enviando…",
+      "other": "Otra…",
+      "otherLabel": "Tu propia respuesta a la pregunta {{n}}",
+      "optionsLabel": "Respuestas a la pregunta {{n}}",
+      "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
+    },
+    "approval": {
+      "short": "Aprobar {{bot}} · {{tool}}",
+      "title": "{{bot}} quiere ejecutar {{tool}}",
+      "approve": "Aprobar",
+      "deny": "Denegar",
+      "openChat": "Abrir chat"
+    },
+    "pull": {
+      "requestedShort": "Revisar #{{number}} {{title}}",
+      "requestedTitle": "¿Revisar #{{number}} · {{title}}?",
+      "requestedBody": "{{author}} te pidió una revisión.",
+      "readyShort": "Fusionar #{{number}} {{title}}",
+      "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
+      "readyBody": "Nada lo bloquea: se puede fusionar ya.",
+      "by": "de {{author}}",
+      "open": "Abrir",
+      "viewOnGithub": "Ver en GitHub",
+      "merge": "Fusionar",
+      "checks": {
+        "passing": "Checks en verde",
+        "failing": "Checks fallando",
+        "running": "Checks en curso",
+        "none": "Sin checks",
+        "unavailable": "Checks no legibles"
+      }
+    },
+    "run": {
+      "short": "{{name}} falló",
+      "title": "{{name}} falló",
+      "body": "La ejecución terminó en fallo. Ábrela para ver por qué, o vuelve a ejecutarla.",
+      "plainBody": "La ejecución terminó en fallo.",
+      "exit": "Salida {{code}}",
+      "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
+      "again": "Ejecutar de nuevo",
+      "open": "Abrir ejecución"
+    },
+    "card": {
+      "later": "Más tarde",
+      "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
+    },
+    "log": {
+      "done": "Marcado como hecho · {{title}}",
+      "approved": "Aprobado {{bot}} · {{tool}}",
+      "denied": "Denegado {{bot}} · {{tool}}",
+      "merged": "Fusionado #{{number}} en {{repository}}",
+      "ranAgain": "{{name}} ejecutado de nuevo",
+      "answered": "Respondido a {{name}}: {{answer}}"
+    },
+    "pane": {
+      "greeting": {
+        "morning": "Buenos días.",
+        "afternoon": "Buenas tardes.",
+        "evening": "Buenas noches."
+      },
+      "running_one": "{{count}} sesión está en marcha.",
+      "running_other": "{{count}} sesiones están en marcha.",
+      "needs_one": "Una cosa te necesita.",
+      "needs_other": "{{count}} cosas te necesitan, de una en una.",
+      "nothing": "Ahora mismo nada te necesita.",
+      "clearTitle": "Todo al día",
+      "clear": "Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo próximo que te necesite aparecerá aquí."
+    }
+  },
   "settings": {
     "nav": {
       "back": "Volver a la consola",
@@ -2606,7 +2804,8 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "inbox": "Bandeja"
   },
   "language": {
     "label": "Idioma",
@@ -2972,6 +3171,78 @@
       "unknownPlace": "una red desconocida",
       "attribution": "Geolocalización IP de DB-IP.",
       "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+    }
+  },
+  "extension": {
+    "chrome": {
+      "extName": "Oppenheimer — sesiones de Claude Code",
+      "extShortName": "Sesiones de Claude",
+      "extDescription": "Te avisa cuando una sesión de Claude Code en la nube te necesita.",
+      "actionTitle": "Sesiones de Claude Code"
+    },
+    "title": "Sesiones de Claude Code",
+    "checkNow": "Comprobar ahora",
+    "badge": {
+      "none": "Sesiones de Claude Code",
+      "needsYou_one": "{{count}} sesión de Claude Code te necesita",
+      "needsYou_other": "{{count}} sesiones de Claude Code te necesitan"
+    },
+    "groups": {
+      "needsYou": "Te necesitan",
+      "running": "En curso",
+      "done": "Terminadas",
+      "showDone": "Mostrar terminadas"
+    },
+    "clear": {
+      "title": "Todo al día",
+      "nothingRunning": "No hay nada en curso.",
+      "stillRunning_one": "{{count}} sesión sigue en curso.",
+      "stillRunning_other": "{{count}} sesiones siguen en curso.",
+      "notify": "Recibirás un aviso cuando alguna te necesite."
+    },
+    "openClaude": "Abrir claude.ai/code",
+    "sync": {
+      "checking": "Comprobando tus sesiones…",
+      "signedOut": "Inicia sesión en claude.ai en este Chrome y vuelve a comprobar.",
+      "notFound": "Aún no encontramos tus sesiones. Abre claude.ai/code una vez y la extensión aprenderá dónde están.",
+      "unreachable": "No se pudo contactar con claude.ai. Lo volverá a intentar en un minuto."
+    },
+    "row": {
+      "copyCommand": "Copiar comando",
+      "copied": "Copiado"
+    },
+    "state": {
+      "needs-input": "Te necesita",
+      "failed": "Falló",
+      "done": "Terminada",
+      "running": "En curso",
+      "stopped": "En pausa"
+    },
+    "reason": {
+      "tool": "Quiere usar {{tool}}",
+      "plan": "Tiene un plan para que lo apruebes",
+      "question": "Esperando tu respuesta",
+      "provision": "No se pudo preparar el entorno en la nube",
+      "start": "El entorno en la nube no arrancó",
+      "turn": "El último turno falló",
+      "paused": "En pausa · responde para reanudar",
+      "reconnecting": "Reconectando"
+    },
+    "notification": {
+      "open": "Abrir la sesión"
+    },
+    "oppenheimer": {
+      "label": "Oppenheimer",
+      "apiUrl": "URL de la API de Oppenheimer",
+      "token": "Token de API",
+      "connect": "Conectar",
+      "disconnect": "Desconectar",
+      "reportingTo": "Informando a {{host}}",
+      "launched": "Informando a {{host}} · {{count}} iniciadas allí",
+      "notReporting": "Sin informar: {{detail}}",
+      "notAUrl": "Eso no es una URL.",
+      "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
+      "refused": "Oppenheimer lo rechazó: {{detail}}"
     }
   }
 }

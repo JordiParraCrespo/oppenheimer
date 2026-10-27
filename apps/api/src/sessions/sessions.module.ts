@@ -12,10 +12,12 @@ import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLaunchCredentials } from './application/session-launch-credentials.resolver';
 import { SessionLoaderResolver } from './application/session-loader.resolver';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
@@ -25,12 +27,16 @@ import { SessionReconciliationResolver } from './application/session-reconciliat
 import { SessionShareAccessResolver } from './application/session-share-access.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
+import { AnswerSessionDecisionCommandHandler } from './commands/answer-session-decision/answer-session-decision.command-handler';
+import { AnswerSessionDecisionHttpController } from './commands/answer-session-decision/answer-session-decision.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
+import { IssueSessionPreviewHttpController } from './commands/issue-session-preview/issue-session-preview.http.controller';
 import { IssueSharedAttachTicketCommandHandler } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.command-handler';
 import { IssueSharedAttachTicketHttpController } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.http.controller';
 import { MoveSessionCommandHandler } from './commands/move-session/move-session.command-handler';
@@ -41,6 +47,8 @@ import { PrepareSessionCommandHandler } from './commands/prepare-session/prepare
 import { PrepareSessionHttpController } from './commands/prepare-session/prepare-session.http.controller';
 import { PutSessionShareCommandHandler } from './commands/put-session-share/put-session-share.command-handler';
 import { PutSessionShareHttpController } from './commands/put-session-share/put-session-share.http.controller';
+import { RecordCloudStatusCommandHandler } from './commands/record-cloud-status/record-cloud-status.command-handler';
+import { RecordCloudStatusHttpController } from './commands/record-cloud-status/record-cloud-status.http.controller';
 import { RecordSessionEventsCommandHandler } from './commands/record-session-events/record-session-events.command-handler';
 import { RemoveCheckoutCommandHandler } from './commands/remove-checkout/remove-checkout.command-handler';
 import { RemoveCheckoutHttpController } from './commands/remove-checkout/remove-checkout.http.controller';
@@ -48,6 +56,7 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
@@ -66,10 +75,13 @@ import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { FindHostFoldersHttpController } from './queries/find-host-folders/find-host-folders.http.controller';
 import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-host-folders.query-handler';
+import { FindLatestSessionEventsQueryHandler } from './queries/find-latest-session-events/find-latest-session-events.query-handler';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
 import { FindSessionEventsQueryHandler } from './queries/find-session-events/find-session-events.query-handler';
+import { FindSessionPortsHttpController } from './queries/find-session-ports/find-session-ports.http.controller';
+import { FindSessionPortsQueryHandler } from './queries/find-session-ports/find-session-ports.query-handler';
 import { FindSessionShareHttpController } from './queries/find-session-share/find-session-share.http.controller';
 import { FindSessionShareQueryHandler } from './queries/find-session-share/find-session-share.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
@@ -102,12 +114,15 @@ const httpControllers = [
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
+  IssueSessionPreviewHttpController,
   SetSessionSharePeopleHttpController,
   FindSessionShareHttpController,
   PutSessionShareHttpController,
   StopSessionShareHttpController,
   PasteSessionImageHttpController,
+  AnswerSessionDecisionHttpController,
   StopSessionHttpController,
+  RecordCloudStatusHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
   AddCheckoutHttpController,
@@ -118,6 +133,7 @@ const httpControllers = [
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
+  FindSessionPortsHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -125,17 +141,21 @@ const commandHandlers: Provider[] = [
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
+  RecordCloudStatusCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
   IssueAttachTicketCommandHandler,
+  IssueSessionPreviewCommandHandler,
   PutSessionShareCommandHandler,
   SetSessionSharePeopleCommandHandler,
   StopSessionShareCommandHandler,
   IssueSharedAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
+  AnswerSessionDecisionCommandHandler,
+  SendSessionPromptCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
@@ -144,9 +164,11 @@ const queryHandlers: Provider[] = [
   FindSessionsQueryHandler,
   FindSessionQueryHandler,
   FindSessionEventsQueryHandler,
+  FindLatestSessionEventsQueryHandler,
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
+  FindSessionPortsQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -196,6 +218,8 @@ const adapters: Provider[] = [
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,
+    SessionLaunchCredentials,
+    RepositoryTokenFactory,
     SessionNamingResolver,
     SessionLoaderResolver,
     SessionAttachmentsResolver,

@@ -75,6 +75,11 @@
         "sendNow": "Send now",
         "edit": "Edit",
         "remove": "Remove from the queue"
+      },
+      "json": {
+        "tree": "Tree",
+        "raw": "Raw",
+        "more": "Show {{count}} more"
       }
     }
   },
@@ -206,7 +211,7 @@
       "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
       "SESSIONS_009": "Choose a project for this session.",
-      "SESSIONS_010": "A session works on one repository. Start a new session for another.",
+      "SESSIONS_010": "A running session keeps the repositories it started with. Pick up to five when you start a session.",
       "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
       "HOSTS_001": "That host could not be found.",
       "HOSTS_002": "That pairing token could not be found.",
@@ -245,6 +250,10 @@
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
       "HOSTS_007": "No file is waiting for that command.",
       "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
+      "INBOX_001": "The Inbox needs a workspace. Open one and try again.",
+      "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
+      "INBOX_003": "A snooze has to end in the future. Pick a later time.",
+      "INBOX_004": "That item has no mark any more. Reload the Inbox.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_002": "Choose a workspace before working with automations.",
       "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
@@ -326,6 +335,13 @@
       "SESSIONS_029": "That path is a file, not a folder.",
       "SESSIONS_030": "That folder can’t be read on the host.",
       "SESSIONS_031": "The host didn’t answer in time. Try again.",
+      "SESSIONS_032": "That question was already answered or changed. Open the session to see what it asks now.",
+      "SESSIONS_033": "That answer doesn’t fit the question. Pick from its options and try again.",
+      "SESSIONS_034": "The host is offline, so the answer was not sent.",
+      "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
+      "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
+      "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
+      "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -343,7 +359,13 @@
       "title": "This screen could not be drawn",
       "retry": "Try again"
     },
-    "code": "Code: {{code}}"
+    "code": "Code: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "This host makes sessions with one repository."
+      },
+      "details": "Details from the host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Email",
@@ -540,11 +562,7 @@
           "shell": "Start shell"
         }
       },
-      "progressFailed": "Could not load how the start is going.",
-      "codes": {
-        "SESS_002": "This host makes sessions with one repository."
-      },
-      "details": "Details from the host: {{detail}}"
+      "progressFailed": "Could not load how the start is going."
     },
     "closed": {
       "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
@@ -577,6 +595,10 @@
         "folder": {
           "label": "Folder on host",
           "description": "Open an existing directory as it is · nothing is cloned"
+        },
+        "cloud": {
+          "label": "Claude Code cloud",
+          "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
         "hosts": "Hosts",
         "startIn": "Start in"
@@ -1010,6 +1032,12 @@
         "interrupted": "You stopped this turn",
         "compacted": "Context compacted"
       },
+      "task": {
+        "completed": "Background task finished",
+        "failed": "Background task failed",
+        "killed": "Background task stopped",
+        "unknown": "Background task ended"
+      },
       "verb": {
         "command": "Ran",
         "read": "Read",
@@ -1093,7 +1121,33 @@
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
       "offlineDetail": "The device comes back when the host reconnects.",
-      "ended": "The session has ended"
+      "ended": "The session has ended",
+      "browser": "Browser",
+      "address": "localhost:{{port}}",
+      "port": "Port",
+      "portSearch": "Find a port",
+      "portEmpty": "No port",
+      "reload": "Reload",
+      "openTab": "Open in a new tab",
+      "browserFrame": "localhost:{{port}} on this session's host",
+      "lookingForPorts": "Looking for a dev server…",
+      "waiting": "Waiting for a dev server",
+      "waitingDetail": "Start one in the terminal, or ask the agent to. Any port this session listens on, from 1024 up, opens here.",
+      "hostOffline": "The host is offline",
+      "hostOfflineDetail": "The preview comes back when the host reconnects.",
+      "notSupported": "This host can't share its ports",
+      "notSupportedDetail": "Update its runner to open the session's dev server here.",
+      "portsFailed": "Couldn't list the session's ports",
+      "previewFailed": "Couldn't open the preview",
+      "opening": "Opening localhost:{{port}}…"
+    },
+    "cloud": {
+      "eyebrow": "Claude Code cloud",
+      "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+      "open": "Open in claude.ai",
+      "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+      "copy": "Copy command",
+      "copied": "Copied"
     }
   },
   "bots": {
@@ -2411,6 +2465,150 @@
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
     }
   },
+  "inbox": {
+    "title": "Inbox",
+    "bar": {
+      "meta": "{{needs}} · {{running}}",
+      "needs_zero": "Nothing needs you",
+      "needs_one": "{{count}} needs you",
+      "needs_other": "{{count}} need you",
+      "running_one": "{{count}} session running",
+      "running_other": "{{count}} sessions running"
+    },
+    "list": {
+      "head": "Needs you",
+      "empty": "Nothing needs you.",
+      "noneMatching": "Nothing matching these filters needs you.",
+      "low": "Low",
+      "snoozed": "Snoozed",
+      "bringBack": "Bring back",
+      "failed": "Could not load the Inbox.",
+      "markFailed": "Could not save that. Try again.",
+      "back": "Back {{when}}"
+    },
+    "filter": {
+      "label": "Filter the Inbox",
+      "type": "Type",
+      "project": "Project",
+      "any": "Any",
+      "showDone": "Show done",
+      "clear": "Clear filters",
+      "remove": "Clear filter",
+      "typeChip": "Type: {{value}}",
+      "projectChip": "Project: {{value}}"
+    },
+    "type": {
+      "all": "All",
+      "pull": "Pull requests",
+      "approval": "Bot approvals",
+      "session": "Sessions",
+      "run": "Automations"
+    },
+    "project": {
+      "all": "All projects",
+      "none": "No project"
+    },
+    "menu": {
+      "label": "Item actions",
+      "done": "Mark as done",
+      "low": "Deprioritize",
+      "restore": "Restore priority",
+      "snoozeHour": "Snooze 1 hour",
+      "snoozeTomorrow": "Snooze until tomorrow",
+      "delete": "Delete"
+    },
+    "from": {
+      "session": "Session",
+      "approval": "{{bot}} · Bot approval",
+      "run": "Automation"
+    },
+    "session": {
+      "blockedShort": "{{name}} is waiting on you",
+      "blockedTitle": "{{name}} is waiting on you",
+      "blockedBody": "Its agent stopped to ask for something. Open the session to answer it there.",
+      "failedShort": "{{name}} failed",
+      "failedTitle": "{{name}} failed",
+      "failedBody": "Its host could not start it. Open it to see which step failed.",
+      "startingShort": "{{name}} has not started",
+      "startingTitle": "{{name}} has not started",
+      "startingBody": "Its host has not finished starting it for over a minute. Open it to see where it stands.",
+      "open": "Open session",
+      "permissionBody": "Its agent stopped to ask before it goes on. Your answer is typed into its terminal.",
+      "questionTitle_one": "A question before {{name}} continues",
+      "questionTitle_other": "{{count}} questions before {{name}} continues",
+      "questionBody": "Pick an answer for each, or write your own, and it picks up where it stopped.",
+      "send": "Send answers",
+      "sending": "Sending…",
+      "other": "Other…",
+      "otherLabel": "Your own answer to question {{n}}",
+      "optionsLabel": "Answers to question {{n}}",
+      "answerFailed": "Could not send the answer. Try again."
+    },
+    "approval": {
+      "short": "Approve {{bot}} · {{tool}}",
+      "title": "{{bot}} wants to run {{tool}}",
+      "approve": "Approve",
+      "deny": "Deny",
+      "openChat": "Open chat"
+    },
+    "pull": {
+      "requestedShort": "Review #{{number}} {{title}}",
+      "requestedTitle": "Review #{{number}} · {{title}}?",
+      "requestedBody": "{{author}} asked for your review.",
+      "readyShort": "Merge #{{number}} {{title}}",
+      "readyTitle": "Merge #{{number}} · {{title}}?",
+      "readyBody": "Nothing is holding it: it can merge now.",
+      "by": "by {{author}}",
+      "open": "Open",
+      "viewOnGithub": "View on GitHub",
+      "merge": "Merge",
+      "checks": {
+        "passing": "Checks passing",
+        "failing": "Checks failing",
+        "running": "Checks running",
+        "none": "No checks",
+        "unavailable": "Checks not readable"
+      }
+    },
+    "run": {
+      "short": "{{name}} failed",
+      "title": "{{name}} failed",
+      "body": "The run ended on a failure. Open it to see why, or run it again.",
+      "plainBody": "The run ended on a failure.",
+      "exit": "Exit {{code}}",
+      "deletedHint": "Its automation was deleted, so it cannot run again.",
+      "again": "Run again",
+      "open": "Open run"
+    },
+    "card": {
+      "later": "Later",
+      "answerFailed": "Could not do that. Try again."
+    },
+    "log": {
+      "done": "Marked done · {{title}}",
+      "approved": "Approved {{bot}} · {{tool}}",
+      "denied": "Denied {{bot}} · {{tool}}",
+      "merged": "Merged #{{number}} into {{repository}}",
+      "ranAgain": "Ran {{name}} again",
+      "answered": "Answered {{name}}: {{answer}}"
+    },
+    "pane": {
+      "greeting": {
+        "morning": "Good morning.",
+        "afternoon": "Good afternoon.",
+        "evening": "Good evening."
+      },
+      "running_one": "{{count}} session is running.",
+      "running_other": "{{count}} sessions are running.",
+      "needs_one": "One thing needs you.",
+      "needs_other": "{{count}} things need you, one at a time.",
+      "nothing": "Nothing needs you right now.",
+      "clearTitle": "You're clear",
+      "clear": "The next thing that needs you comes here.",
+      "clearRunning_one": "{{count}} session is still running. The next thing that needs you comes here.",
+      "clearRunning_other": "{{count}} sessions are still running. The next thing that needs you comes here."
+    }
+  },
   "settings": {
     "nav": {
       "back": "Back to console",
@@ -2590,7 +2788,8 @@
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Employees"
+    "employees": "Employees",
+    "inbox": "Inbox"
   },
   "language": {
     "label": "Language",

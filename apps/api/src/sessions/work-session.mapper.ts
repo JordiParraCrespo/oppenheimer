@@ -3,10 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
 import {
+  type CloudSessionState,
   type CreateSessionDto,
+  placeOfCreate,
   SESSION_SORTS,
   type SessionAttachmentDto,
+  type SessionDecision,
   type SessionSortDto,
+  sessionDecisionSchema,
 } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
@@ -25,6 +29,7 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import type { SessionLaunchFile } from './domain/session-launch-file.types';
 import {
+  type AgentObservedState,
   launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
@@ -49,6 +54,7 @@ import {
   SessionPageMetaDto,
   SessionResponseDto,
 } from './dtos/session.response.dto';
+import type { SessionDecisionResponseDto } from './dtos/session-decision.response.dto';
 import { SessionEventResponseDto } from './dtos/session-event.response.dto';
 
 /**
@@ -81,6 +87,14 @@ export interface AppendedEventRow {
  * the row alone, every input being a column the fold projects, so a listing needs no
  * log walk and a mapper cannot be handed an observation the log never recorded.
  */
+const CLOUD_OBSERVED: Record<CloudSessionState, AgentObservedState> = {
+  running: 'working',
+  'needs-input': 'blocked',
+  failed: 'blocked',
+  done: 'done',
+  stopped: 'done',
+};
+
 @Injectable()
 export class WorkSessionMapper
   implements Mapper<WorkSessionEntity, WorkSessionOrmEntity, SessionResponseDto>
@@ -118,6 +132,7 @@ export class WorkSessionMapper
     record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
     record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
+    record.pendingDecision = fold.pendingDecision;
     return record;
   }
 
@@ -135,8 +150,8 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
-        // The place is read off the folder; the row's `place` column and its
-        // CHECK are the store's own guard that the two agree.
+        // The row's CHECKs hold the place and the folder to each other.
+        place: record.place,
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
@@ -152,6 +167,16 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /**
+   * The stored decision, read back through its schema: a `jsonb` value is only as
+   * typed as whatever wrote it, and one this build cannot read is no decision.
+   */
+  decisionOf(value: unknown): SessionDecision | null {
+    if (value === null || value === undefined) return null;
+    const parsed = sessionDecisionSchema.safeParse(value);
+    return parsed.success ? parsed.data : null;
   }
 
   /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
@@ -299,6 +324,7 @@ export class WorkSessionMapper
       closeRefusal: record.closeRefusalCode
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
+      pendingDecision: this.decisionOf(record.pendingDecision),
     };
   }
 
@@ -314,6 +340,33 @@ export class WorkSessionMapper
    * `prompt.first` carries the composer's task, and is absent rather than empty
    * when there was none.
    */
+  /**
+   * What the extension saw a cloud session doing on claude.ai, in the observed
+   * vocabulary a runner's screen reading uses, so its dot is drawn by the same
+   * rules as any other (`session-group.policy.ts`). A failed turn waits on the
+   * person as a question does; a finished one is ready for a prompt.
+   */
+  cloudObservedState(cloudState: CloudSessionState): AgentObservedState {
+    return CLOUD_OBSERVED[cloudState];
+  }
+
+  /** The extension's report as the log's `agent.observed`, keyed to its command and session. */
+  toCloudObservedEvent(
+    commandId: string,
+    session: WorkSessionEntity,
+    cloudState: CloudSessionState,
+  ): NewSessionEvent {
+    return {
+      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+        `${commandId}:${session.id}`,
+        SESSION_EVENT_KINDS.AGENT_OBSERVED,
+      ),
+      source: 'api',
+      kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+      payload: { state: this.cloudObservedState(cloudState), cloudState },
+    };
+  }
+
   toRequestEvents(props: {
     commandId: string;
     userId: string;
@@ -334,7 +387,8 @@ export class WorkSessionMapper
           agent: input.agent,
           hostId: input.hostId,
           checkouts: props.checkouts,
-          ...(input.folder ? { place: 'folder', folder: input.folder } : { place: 'worktree' }),
+          place: placeOfCreate(input),
+          ...(input.folder ? { folder: input.folder } : {}),
           requestedByUserId: props.userId,
           launch: this.toLaunch(input.agent, input.launch),
         },
@@ -604,6 +658,7 @@ export class WorkSessionMapper
     dto.agent = entity.agent;
     dto.place = entity.place;
     dto.folderPath = entity.folderPath;
+    dto.cloudSessionId = entity.cloudSessionId;
     dto.launch = {
       model: entity.launch.model,
       permission: entity.launch.permission,
@@ -614,6 +669,8 @@ export class WorkSessionMapper
     dto.cwdCheckoutId = entity.cwdCheckoutId;
     dto.agentSessionId = entity.agentSessionId;
     dto.lastEventAt = entity.lastEventAt;
+    dto.observedSince = entity.fold.observedSince;
+    dto.stateSeq = entity.stateSeq;
     dto.stoppedAt = entity.stoppedAt;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
@@ -628,10 +685,38 @@ export class WorkSessionMapper
     dto.closeRefusal = closeRefusal
       ? { code: closeRefusal.code, detail: closeRefusal.detail }
       : null;
+    dto.decision = this.decisionToResponse(entity.pendingDecision);
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));
     return dto;
+  }
+
+  /** The pending decision as the response states it, every nullable spelled out. */
+  decisionToResponse(decision: SessionDecision | null): SessionDecisionResponseDto | null {
+    if (!decision) return null;
+    if (decision.kind === 'question') {
+      return {
+        kind: 'question',
+        id: decision.id,
+        questions: decision.questions.map((question) => ({
+          header: question.header,
+          question: question.question,
+          multiSelect: question.multiSelect,
+          options: question.options.map((option) => ({
+            label: option.label,
+            description: option.description,
+          })),
+        })),
+      };
+    }
+    return {
+      kind: 'permission',
+      id: decision.id,
+      title: decision.title,
+      detail: decision.detail,
+      options: decision.options.map((option) => ({ label: option.label })),
+    };
   }
 
   checkoutToResponse(entity: SessionCheckoutEntity): SessionCheckoutResponseDto {

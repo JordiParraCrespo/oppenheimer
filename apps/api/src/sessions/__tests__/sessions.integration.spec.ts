@@ -74,7 +74,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       slug: overrides.slug ?? mintSessionSlug(),
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
-      folder: overrides.folder,
+      ...(overrides.folder ? { place: 'folder' as const, folder: overrides.folder } : {}),
     });
   }
 
@@ -669,6 +669,98 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.agentSessionId).toBe('agent-9');
     });
 
+    it('stores the decision a blocked agent waits on, reads it back, and clears it on an answer', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const decision = {
+        kind: 'permission',
+        id: 'perm-1',
+        title: 'Do you want to proceed?',
+        detail: 'pnpm test',
+        options: [{ label: 'Yes' }, { label: 'No' }],
+      };
+
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'run-1:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'run-1:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'blocked' },
+        },
+        {
+          idempotencyKey: 'run-1:3',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+          payload: { decision },
+        },
+      ]);
+      const stored = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(stored.pendingDecision).toEqual(decision);
+
+      await repository.appendEvents(stored, [
+        {
+          idempotencyKey: `api:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+          payload: { id: 'perm-1' },
+        },
+      ]);
+      const [row] = await dataSource.query(
+        `SELECT "pendingDecision" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.pendingDecision).toBeNull();
+    });
+
+    it('lets one of two answers to the same decision append, never both', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const decision = {
+        kind: 'permission',
+        id: 'perm-race',
+        title: 'Do you want to proceed?',
+        detail: null,
+        options: [{ label: 'Yes' }, { label: 'No' }],
+      };
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'race-1:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'race-1:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+          payload: { decision },
+        },
+      ]);
+      // Two requests, each holding the row as it read it: both see the decision pending.
+      const tabs = await Promise.all([
+        repository.findOneById(scope(), work.id),
+        repository.findOneById(scope(), work.id),
+      ]);
+      const outcomes = await Promise.all(
+        tabs.map((tab) =>
+          repository.appendEventsIf(
+            tab.unwrap(),
+            [
+              {
+                idempotencyKey: `api:${randomUUID()}`,
+                source: 'api',
+                kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+                payload: { id: 'perm-race' },
+              },
+            ],
+            (fold) => fold.pendingDecision?.id === 'perm-race',
+          ),
+        ),
+      );
+      expect(outcomes.filter((outcome) => outcome !== null)).toHaveLength(1);
+      const answered = await dataSource.query(
+        `SELECT count(*)::int AS n FROM "work_session_event" WHERE "sessionId" = $1 AND "kind" = $2`,
+        [work.id, SESSION_EVENT_KINDS.DECISION_ANSWERED],
+      );
+      expect(answered[0].n).toBe(1);
+    });
+
     it('keeps seq dense when two coalesced appends race a third', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
@@ -839,8 +931,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         ]),
       ).rejects.toThrow(/CHK_work_session_folder_path/);
       await expect(
-        dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+        dataSource.query(`UPDATE "work_session" SET "place" = 'vm' WHERE "id" = $1`, [work.id]),
       ).rejects.toThrow(/CHK_work_session_place/);
+      // A cloud session has no folder, as a worktree session has none.
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+      ).resolves.toBeDefined();
     });
 
     it('lists the caller’s recent folders on a host: distinct, newest first, bounded', async () => {
@@ -873,6 +969,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           hostId,
           slug: mintSessionSlug(),
           agent: 'shell',
+          place: 'folder',
           folder: '/home/ana',
         }),
         requested(),
@@ -919,6 +1016,26 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const last = await repository.findEvents(work, 3, 10);
       expect(last.events.map((event) => event.seq)).toEqual([4, 5]);
       expect(last.nextSeq).toBeNull();
+    });
+
+    it('reads the last entries of the log, oldest first, and only this session’s', async () => {
+      const work = session();
+      const other = session();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.createIfUnclaimed(other, requested());
+      await repository.appendEvents(
+        work,
+        Array.from({ length: 4 }, (_, index) => ({
+          idempotencyKey: `run-1:${index}`,
+          source: 'runner' as const,
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'working' },
+        })),
+      );
+
+      const latest = await repository.findLatestEvents(work, 3);
+      expect(latest.map((event) => event.seq)).toEqual([3, 4, 5]);
+      expect((await repository.findLatestEvents(other, 10)).map((event) => event.seq)).toEqual([1]);
     });
 
     describe('the session list', () => {

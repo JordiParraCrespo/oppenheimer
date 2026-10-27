@@ -2,6 +2,7 @@ import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
+import type { SealedRepositoryToken } from './repository-token.factory';
 
 export interface SessionDispatchOutcome {
   /** Whether the job reached a live link to the host. */
@@ -52,6 +53,18 @@ export interface SessionLaunchSpec {
    * resends them with it.
    */
   images?: SessionLaunchFile[];
+  /**
+   * A cloud session's repository token, minted for its one checkout and sealed
+   * to the host (`SessionLaunchCredentials`): the host fetches with it, since
+   * nothing on the host names a live checkout for a credential ask to find.
+   */
+  cloud?: SealedRepositoryToken;
+  /**
+   * Why this launch cannot be sent yet, when something it must carry could not
+   * be made: the dispatch answers it as its hint and sends nothing, and the
+   * hello reconciliation builds the launch again.
+   */
+  withheld?: 'host_offline';
 }
 
 export interface SessionCloseSpec {
@@ -88,6 +101,16 @@ export interface SessionFileSpec {
 }
 
 /**
+ * Keys for a window nobody need be watching, typed one write each, `gapMs` apart:
+ * a picker redraws after each key and reads the next against what it drew.
+ */
+export interface SessionKeysSpec {
+  window: number;
+  keys: readonly string[];
+  gapMs: number;
+}
+
+/**
  * What the module that owns the runner link implements so a session's work reaches a
  * host.
  *
@@ -119,6 +142,11 @@ export interface SessionDispatchPort {
   ): Promise<SessionDispatchOutcome>;
   /** Give a window's program an image: saved on the host, its path pasted in. */
   pasteFile(session: WorkSessionEntity, image: SessionFileSpec): Promise<SessionDispatchOutcome>;
+  /**
+   * Type keys into a window as `session.input`, one frame per key, in order.
+   * `delivered` only when every key reached the link.
+   */
+  typeKeys(session: WorkSessionEntity, spec: SessionKeysSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,

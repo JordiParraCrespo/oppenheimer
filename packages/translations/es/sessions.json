@@ -36,11 +36,7 @@
         "shell": "Iniciar shell"
       }
     },
-    "progressFailed": "No se pudo cargar el progreso del inicio.",
-    "codes": {
-      "SESS_002": "Este host crea sesiones con un solo repositorio."
-    },
-    "details": "Detalles del host: {{detail}}"
+    "progressFailed": "No se pudo cargar el progreso del inicio."
   },
   "closed": {
     "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
@@ -73,6 +69,10 @@
       "folder": {
         "label": "Carpeta del host",
         "description": "Abre un directorio existente tal como está · no se clona nada"
+      },
+      "cloud": {
+        "label": "Nube de Claude Code",
+        "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
       },
       "hosts": "Hosts",
       "startIn": "Empezar en"
@@ -509,6 +509,12 @@
       "interrupted": "Detuviste este turno",
       "compacted": "Contexto compactado"
     },
+    "task": {
+      "completed": "Tarea en segundo plano terminada",
+      "failed": "Tarea en segundo plano fallida",
+      "killed": "Tarea en segundo plano detenida",
+      "unknown": "Tarea en segundo plano finalizada"
+    },
     "verb": {
       "command": "Ejecutó",
       "read": "Leyó",
@@ -592,6 +598,32 @@
     "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
     "offline": "El host está desconectado",
     "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
-    "ended": "La sesión ha terminado"
+    "ended": "La sesión ha terminado",
+    "browser": "Navegador",
+    "address": "localhost:{{port}}",
+    "port": "Puerto",
+    "portSearch": "Buscar un puerto",
+    "portEmpty": "Ningún puerto",
+    "reload": "Recargar",
+    "openTab": "Abrir en una pestaña nueva",
+    "browserFrame": "localhost:{{port}} en el host de esta sesión",
+    "lookingForPorts": "Buscando un servidor de desarrollo…",
+    "waiting": "Esperando un servidor de desarrollo",
+    "waitingDetail": "Arranca uno en el terminal, o pídeselo al agente. Cualquier puerto en el que escuche esta sesión, desde el 1024, se abre aquí.",
+    "hostOffline": "El host está desconectado",
+    "hostOfflineDetail": "La vista previa vuelve cuando el host se reconecte.",
+    "notSupported": "Este host no puede compartir sus puertos",
+    "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
+    "portsFailed": "No se pudieron listar los puertos de la sesión",
+    "previewFailed": "No se pudo abrir la vista previa",
+    "opening": "Abriendo localhost:{{port}}…"
+  },
+  "cloud": {
+    "eyebrow": "Nube de Claude Code",
+    "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
+    "open": "Abrir en claude.ai",
+    "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+    "copy": "Copiar comando",
+    "copied": "Copiado"
   }
 }

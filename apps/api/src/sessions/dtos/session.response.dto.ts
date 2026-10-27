@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { nullableEnum, PaginatedResponseDto } from '@oppenheimer/backend-core';
 import type { SessionEffortDto, SessionPermissionDto, SessionPlace } from '@oppenheimer/shared';
 import {
@@ -9,6 +9,11 @@ import {
   SESSION_STATES,
 } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  type SessionDecisionResponseDto,
+  SessionPermissionDecisionResponseDto,
+  SessionQuestionDecisionResponseDto,
+} from './session-decision.response.dto';
 
 /**
  * One repository checked out for this session.
@@ -129,6 +134,7 @@ export class SessionCloseRefusalResponseDto {
   detail!: string | null;
 }
 
+@ApiExtraModels(SessionQuestionDecisionResponseDto, SessionPermissionDecisionResponseDto)
 export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -165,7 +171,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_PLACES,
     description:
-      'Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).',
+      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.",
     example: 'worktree',
   })
   place!: SessionPlace;
@@ -178,6 +184,15 @@ export class SessionResponseDto {
     example: '/home/jordi/notes',
   })
   folderPath!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      "A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.",
+    nullable: true,
+    type: String,
+    example: 'session_014a8EH8DJs95X1iK8ZH9Y82',
+  })
+  cloudSessionId!: string | null;
 
   @ApiProperty({ type: SessionLaunchResponseDto })
   launch!: SessionLaunchResponseDto;
@@ -212,6 +227,20 @@ export class SessionResponseDto {
   lastEventAt!: Date | null;
 
   @ApiPropertyOptional({
+    description:
+      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).',
+    nullable: true,
+    type: Date,
+  })
+  observedSince!: Date | null;
+
+  @ApiProperty({
+    description:
+      'Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it).',
+  })
+  stateSeq!: number;
+
+  @ApiPropertyOptional({
     description: 'When the agent and the tmux session last ended. The checkouts stay on disk.',
     nullable: true,
     type: Date,
@@ -244,6 +273,17 @@ export class SessionResponseDto {
       'Why the host refused the last close. Null when it did not, or it was asked again.',
   })
   closeRefusal!: SessionCloseRefusalResponseDto | null;
+
+  @ApiProperty({
+    oneOf: [
+      { $ref: getSchemaPath(SessionQuestionDecisionResponseDto) },
+      { $ref: getSchemaPath(SessionPermissionDecisionResponseDto) },
+    ],
+    nullable: true,
+    description:
+      'What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.',
+  })
+  decision!: SessionDecisionResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;
@@ -325,4 +365,40 @@ export class AttachTicketResponseDto {
     example: 0,
   })
   window!: number;
+}
+
+export class SessionPreviewResponseDto {
+  @ApiProperty({
+    description:
+      "Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.",
+    example:
+      'http://p5173-3f0d9e2c6a4b4e9a9c3d7b1e5a2f8c40.preview.localhost:3011/__oppenheimer/enter?ticket=…&path=%2F&embed=1',
+  })
+  url!: string;
+
+  @ApiProperty({ description: 'The ticket in `url` is refused after this.' })
+  expiresAt!: Date;
+}
+
+export class SessionPortDto {
+  @ApiProperty({ example: 5173 })
+  port!: number;
+
+  @ApiProperty({ required: false, description: 'The command listening on it.', example: 'node' })
+  process?: string;
+}
+
+export class SessionPortsResponseDto {
+  @ApiProperty({
+    enum: ['listed', 'host_offline', 'not_supported'],
+    description:
+      '`listed`: `ports` is what the session listens on now. `host_offline`: the host has no link. `not_supported`: its runner cannot list ports.',
+  })
+  state!: 'listed' | 'host_offline' | 'not_supported';
+
+  @ApiProperty({
+    type: [SessionPortDto],
+    description: 'The TCP ports the session’s own processes listen on, from 1024 up, in order.',
+  })
+  ports!: SessionPortDto[];
 }

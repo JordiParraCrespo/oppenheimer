@@ -12,21 +12,24 @@ import {
   Popover,
   PopoverTrigger,
 } from '@oppenheimer/design-system-web';
-import { ChevronRight, Folder, GitBranch } from '@oppenheimer/design-system-web/icons';
+import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { filterOptions, type PlaceHost } from '../lib/session-options';
+import { PlaceIcon } from './place-icon';
 
 /**
  * The first chip of New session: the host and where on it the session runs,
  * read as one ("mac-studio · New worktree"), as `NewSessionComposer.dc.html`
  * draws it. The pane lists the hosts under a Hosts heading with their count
- * (the frame's environments and cloud are not built, 05), each with its
- * presence dot and summary; a host opens its Start in pane, and picking a
- * place there picks the host with it
- * (`product/versions/mvp/24-session-places.md` §3). Add host… is the foot.
+ * (the frame's environments are not built, 05), each with its presence dot
+ * and summary; a host opens its Start in pane, and picking a place there picks
+ * the host with it (`product/versions/mvp/24-session-places.md` §3). Claude
+ * Code cloud is a place on a host: that host starts the task in the cloud
+ * with its own `claude` (`product/research/cloud-agents.md` §5B). Add host…
+ * is the foot.
  * Props in, choices out: the section above fetches.
  *
  * Both panes are one list under one search: the hosts, or the host's places.
@@ -67,7 +70,7 @@ export function PlaceSelect({
     value: candidate,
     label: t(`sessions.new.where.${candidate}.label`),
     description: t(`sessions.new.where.${candidate}.description`),
-    leading: candidate === 'folder' ? <Folder /> : <GitBranch />,
+    leading: <PlaceIcon place={candidate} />,
   }));
   const rows = filterOptions<ChipSelectOption>(pane ? places : hosts, query.trim().toLowerCase());
 
@@ -114,7 +117,7 @@ export function PlaceSelect({
       <PopoverTrigger
         render={
           <ChipSelectTrigger
-            icon={place === 'folder' ? <Folder /> : <GitBranch />}
+            icon={<PlaceIcon place={place} />}
             open={open}
             disabled={disabled}
             variant="tab"

@@ -109,7 +109,7 @@
     "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
     "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
     "SESSIONS_009": "Elige un proyecto para esta sesión.",
-    "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
+    "SESSIONS_010": "Una sesión en marcha conserva los repositorios con los que empezó. Elige hasta cinco al iniciar una sesión.",
     "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
     "HOSTS_001": "No se ha encontrado ese equipo.",
     "HOSTS_002": "No se ha encontrado ese token de vinculación.",
@@ -148,6 +148,10 @@
     "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
     "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
     "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
+    "INBOX_001": "La bandeja de entrada necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+    "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
+    "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
+    "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
     "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
     "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
     "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -229,6 +233,13 @@
     "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
     "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
     "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+    "SESSIONS_032": "Esa pregunta ya se respondió o cambió. Abre la sesión para ver qué pregunta ahora.",
+    "SESSIONS_033": "Esa respuesta no encaja con la pregunta. Elige entre sus opciones e inténtalo de nuevo.",
+    "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
+    "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
+    "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
+    "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+    "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
     "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -246,5 +257,11 @@
     "title": "No se ha podido dibujar esta pantalla",
     "retry": "Reintentar"
   },
-  "code": "Código: {{code}}"
+  "code": "Código: {{code}}",
+  "startFailure": {
+    "codes": {
+      "SESS_002": "Este host crea sesiones con un solo repositorio."
+    },
+    "details": "Detalles del host: {{detail}}"
+  }
 }

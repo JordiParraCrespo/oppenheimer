@@ -20,7 +20,7 @@ function codeNodes(nodes: CodeNode[], prefix: string): ReactNode[] {
 /**
  * Code as written, its syntax coloured for `language` (highlight.js's common
  * set) as spans, the plain text when the language is not one it knows. For
- * a caller that draws the block around it (`ChatCodeBlock`).
+ * a caller that draws the block around it (`ChatCode`).
  */
 export function HighlightedCode({ code, language }: { code: string; language?: string }) {
   const highlighted = highlightCode(code, language);

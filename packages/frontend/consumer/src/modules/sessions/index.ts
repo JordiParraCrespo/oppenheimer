@@ -1,4 +1,4 @@
-export type { ChatAnswer } from './chat/question-keys';
+export type { ChatAnswer } from '@oppenheimer/shared/sessions';
 export {
   type ChatBatch,
   type ChatLimit,
@@ -8,6 +8,7 @@ export {
   type ChatState,
   type ChatStatus,
   type ChatStep,
+  type ChatTaskStatus,
   type ChatTodo,
   type ChatTodoStatus,
   type ChatToolCall,
@@ -27,6 +28,9 @@ export {
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,
+  type SessionPort,
+  type SessionPorts,
+  type SessionPreview,
   type SessionShare,
   type SessionState,
   type SharedSession,

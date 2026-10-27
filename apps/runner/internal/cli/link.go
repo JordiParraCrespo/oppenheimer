@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
+	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -42,6 +44,7 @@ const (
 	laneHostPreflight = "host:preflight"
 	laneRepoPrepare   = "repo:"
 	laneFsList        = "fs:list"
+	lanePortList      = "port:list:"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -88,11 +91,22 @@ type linkHandler struct {
 	// devices is the session's device context (link_devices.go); nil is a
 	// host that offers none, and its hello does not name the capability.
 	devices *devapp.Service
+	// ports is the session's listening ports (link_ports.go); nil is a
+	// platform the runner cannot read them on.
+	ports *portsapp.Service
+	// cloudStarts holds the sessions whose `claude --cloud` is running or
+	// done (link_cloud.go), so a create sent again does not start a second.
+	cloudStarts sync.Map
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	// screens are the browsers watching a session's device, by attachment id.
 	screens map[uint32]*deviceAttachment
+	// tunnels are the relay's connections to sessions' ports, by attachment id.
+	tunnels map[uint32]*tunnel
+	// opening holds the port attachments still being dialled, true once the
+	// relay hung one up meanwhile: the open sees it and closes what it dialled.
+	opening map[uint32]bool
 	// earlyResize holds a viewport that arrived before its attachment was
 	// registered, by attachment id. The browser sends its size the moment the
 	// socket opens, which is while the host is still opening the PTY; applied
@@ -163,6 +177,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
+		ports: a.Ports, tunnels: map[uint32]*tunnel{}, opening: map[uint32]bool{},
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -277,13 +292,16 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat,
+		link.CapabilityAttachmentChat, link.CapabilitySessionCloud,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)
 	}
 	if h.devices != nil {
 		named = append(named, link.CapabilityDeviceScreen)
+	}
+	if h.ports != nil {
+		named = append(named, link.CapabilityPortForward)
 	}
 	return named
 }
@@ -338,18 +356,25 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.attachments = map[uint32]*attachment{}
 	screens := h.screens
 	h.screens = map[uint32]*deviceAttachment{}
+	tunnels := h.tunnels
+	h.tunnels = map[uint32]*tunnel{}
 	h.linkUp = false
 	h.mu.Unlock()
 	for _, att := range open {
 		att.stop()
 	}
 	h.stopScreens(screens)
+	stopTunnels(tunnels)
 }
 
 // Frame is a browser's keystrokes for an attachment. It runs on the read
 // loop, so it only queues them: the attachment's inputPump writes them to the
 // PTY, whose write blocks once the client behind it stops reading.
 func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte) {
+	if t := h.tunnelByID(attachmentID); t != nil {
+		h.tunnelFrame(t, bytes)
+		return
+	}
 	att := h.attachmentByID(attachmentID)
 	if att == nil || att.readOnly {
 		return
@@ -474,6 +499,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			if att := h.attachmentByID(m.AttachmentID); att != nil {
 				att.flow.credit(m.Bytes)
+			} else if t := h.tunnelByID(m.AttachmentID); t != nil {
+				t.credit(m.Bytes)
 			} else if screen := h.screenByID(m.AttachmentID); screen != nil {
 				screen.credit(m.Bytes)
 			}
@@ -501,6 +528,33 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
 		}
+	case link.TypePortList:
+		var m link.PortList
+		if msg.Decode(&m) == nil {
+			// Reading every process's sockets takes a moment: off the read loop.
+			h.lanes.run(lanePortList+m.SessionID, func() { h.portList(h.life, m) })
+		}
+	case link.TypePortOpen:
+		var m link.PortOpen
+		if msg.Decode(&m) == nil {
+			// One per connection a page makes, so never queued behind another.
+			// Known as opening from here, so a port.close that overtakes the
+			// dial is not lost.
+			epoch := h.currentEpoch()
+			h.mu.Lock()
+			h.opening[m.AttachmentID] = false
+			h.mu.Unlock()
+			go func() {
+				if h.liveEpoch(epoch) {
+					h.portOpen(m, epoch)
+				}
+			}()
+		}
+	case link.TypePortClose:
+		var m link.PortClose
+		if msg.Decode(&m) == nil {
+			h.closePort(m.AttachmentID)
+		}
 	case "credentials.grant":
 		var m link.CredentialsGrant
 		if msg.Decode(&m) == nil {
@@ -509,7 +563,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "credentials.revoke":
 		var m link.CredentialsRevoke
 		if msg.Decode(&m) == nil {
-			h.credentials.Revoke(m.SessionID)
+			h.credentials.Revoke(m.SessionID, m.CheckoutID)
 		}
 	case "host.preflight":
 		var m link.HostPreflight
@@ -601,6 +655,36 @@ func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, r
 	}
 	h.reporter.AppendSettled(session.ID, "prompt.first", map[string]any{"text": text}, reported)
 	return true
+}
+
+// DecisionChanged is the session service's publisher for what an agent waits
+// on the person for (29-inbox, slice 4): `agent.decision` with the decision,
+// or null once it cleared. A question too large for an event's payload is cut
+// down (descriptions first) until it fits; one that never does is reported as
+// none rather than as an event the control plane would refuse.
+func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *sessionsdomain.Decision) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(session.ID, sessionsdomain.AgentDecisionKind, sessionsdomain.AgentDecisionPayload{Decision: fitDecision(decision)})
+}
+
+// fitDecision is decision cut until its payload fits an event, or nil.
+func fitDecision(decision *sessionsdomain.Decision) *sessionsdomain.Decision {
+	if decision == nil {
+		return nil
+	}
+	fitted := *decision
+	for {
+		body, err := json.Marshal(sessionsdomain.AgentDecisionPayload{Decision: &fitted})
+		if err == nil && len(body) <= link.MaxEventPayloadBytes {
+			return &fitted
+		}
+		var cut bool
+		if fitted, cut = fitted.Shrink(); !cut {
+			return nil
+		}
+	}
 }
 
 func (h *linkHandler) fail(commandID string, err error) {

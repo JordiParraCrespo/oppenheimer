@@ -33,6 +33,10 @@ func (t *typedTranscripts) Follow(context.Context, domain.Agent, string, int, in
 	return app.ErrNoChat
 }
 
+func (t *typedTranscripts) OpenQuestion(domain.Agent, string) (domain.Decision, bool) {
+	return domain.Decision{}, false
+}
+
 func (t *typedTranscripts) typeInto(text string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -51,6 +55,8 @@ type promptRecorder struct {
 }
 
 func (r *promptRecorder) SessionChanged(domain.Session) {}
+
+func (r *promptRecorder) DecisionChanged(domain.Session, *domain.Decision) {}
 
 func (r *promptRecorder) FirstPrompt(_ domain.Session, text string, reported func()) bool {
 	time.Sleep(r.hold)

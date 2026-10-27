@@ -11,8 +11,9 @@ import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
+import type { SessionLaunchCredentials } from '../../../application/session-launch-credentials.resolver';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
-import type { SessionPlanFactory } from '../../../application/session-plan.factory';
+import { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { WorkSessionMapper } from '../../../work-session.mapper';
@@ -58,11 +59,14 @@ function project() {
 }
 
 function launches(): SessionLaunchSpecFactory {
-  return new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+  return new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+  );
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
@@ -346,6 +350,48 @@ describe('CreateSessionCommandHandler', () => {
       await expect(handler.execute(inFolder())).resolves.toMatchObject({ hints: ['host_offline'] });
       expect(sessions.createIfUnclaimed).toHaveBeenCalledOnce();
     });
+  });
+
+  it('checks out several repositories, one directory each, and starts the agent in the first', async () => {
+    // The real factory over a fake GitHub: two repositories sharing a short name
+    // must not land in one directory, and the agent starts in the one asked first.
+    const repositories = {
+      acme: { githubRepoId: 42, fullName: 'acme/app', defaultBranch: 'main' },
+      other: { githubRepoId: 77, fullName: 'other/app', defaultBranch: 'trunk' },
+    };
+    plan = new SessionPlanFactory(
+      {
+        repositoryOf: vi.fn(async (_scope, _installation, githubRepoId: number) =>
+          githubRepoId === 42 ? repositories.acme : repositories.other,
+        ),
+      } as never,
+      { findOneById: vi.fn().mockResolvedValue(Some(project())) } as never,
+    );
+    handler = rebuild();
+
+    await handler.execute(
+      command({
+        input: {
+          ...INPUT,
+          checkouts: [
+            { installationId: 'installation-1', githubRepoId: 42 },
+            { installationId: 'installation-1', githubRepoId: 77 },
+          ],
+        },
+      }),
+    );
+
+    const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    expect(session.checkouts.map((checkout) => checkout.directoryName)).toEqual([
+      'app',
+      'other--app',
+    ]);
+    expect(session.checkouts.map((checkout) => checkout.baseBranch)).toEqual(['main', 'trunk']);
+    expect(new Set(session.checkouts.map((checkout) => checkout.branch)).size).toBe(1);
+    expect(events.find((event) => event.kind === 'session.cwd_set')?.payload).toEqual({
+      checkoutId: session.checkouts[0].id,
+    });
+    expect(dispatch.create).toHaveBeenCalledOnce();
   });
 
   it('sends a worktree session with its branch and the ids its work folder is named by', async () => {

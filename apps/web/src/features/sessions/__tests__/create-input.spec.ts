@@ -4,7 +4,8 @@ import { hasPlace, toCreateInput } from '../lib/session-options';
 
 /**
  * What New session posts for each place (`product/versions/mvp/24-session-places.md`):
- * a folder and no checkouts, or one checkout and no folder — never both, and
+ * a folder and no checkouts, or a checkout per repository and no folder —
+ * never both, and
  * nothing while the draft names no place.
  */
 const draft: NewSessionDraft = {
@@ -33,6 +34,24 @@ describe('toCreateInput', () => {
     expect(input).not.toHaveProperty('folder');
   });
 
+  it('sends a checkout for every picked repository, each on its own base', () => {
+    const input = toCreateInput(
+      {
+        ...draft,
+        scope: [
+          { id: 'installation-1:42', branch: 'main' },
+          { id: 'installation-1:7', branch: 'develop' },
+        ],
+      },
+      extras,
+    );
+
+    expect(input?.checkouts).toEqual([
+      { installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' },
+      { installationId: 'installation-1', githubRepoId: 7, baseBranch: 'develop' },
+    ]);
+  });
+
   it('sends a folder session with its folder and project, and no checkouts', () => {
     const input = toCreateInput({ ...draft, where: 'folder', projectId: 'project-1' }, extras);
 
@@ -44,6 +63,29 @@ describe('toCreateInput', () => {
       launch: { model: null, permission: 'auto' },
       prompt: 'Fix it',
     });
+  });
+
+  it('sends a cloud session as Claude Code with its checkout and task, and no files', () => {
+    const input = toCreateInput(
+      { ...draft, where: 'cloud', agent: 'codex' },
+      { prompt: 'Fix it', attachmentIds: ['file-1'] },
+    );
+
+    expect(input).toMatchObject({
+      hostId: 'host-1',
+      agent: 'claude-code',
+      cloud: true,
+      checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
+      prompt: 'Fix it',
+    });
+    expect(input).not.toHaveProperty('attachmentIds');
+    expect(input).not.toHaveProperty('folder');
+  });
+
+  it('sends no cloud session without a task: the cloud starts from one', () => {
+    expect(
+      toCreateInput({ ...draft, where: 'cloud' }, { prompt: '', attachmentIds: [] }),
+    ).toBeNull();
   });
 
   it('sends the blank terminal with no task and no permission', () => {

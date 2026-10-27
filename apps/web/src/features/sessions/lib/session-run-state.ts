@@ -26,6 +26,15 @@ export function dotFor(session: SessionEntity): SessionDot {
 }
 
 /**
+ * Whether the agent is at work right now, which the row's name shimmers for:
+ * the `working` group of a session that is up, not one the dot merely draws
+ * green (`ready-for-review` is green and done).
+ */
+export function isWorking(session: SessionEntity): boolean {
+  return session.state === 'working' && session.isLive && !session.isClosing;
+}
+
+/**
  * The word beside the dot in a session's header ("Running", the frame's
  * `paneState`), under `sessions.session.state`. The lifecycle speaks first —
  * a session still starting, one that failed to, one stopped or deleted is

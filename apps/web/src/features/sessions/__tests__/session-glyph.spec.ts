@@ -11,6 +11,10 @@ describe('sessionGlyph', () => {
     expect(sessionGlyph({ agent: 'codex', place: 'folder' })).toBe('folder');
   });
 
+  it('draws a cloud for a session in Claude Code cloud', () => {
+    expect(sessionGlyph({ agent: 'claude-code', place: 'cloud' })).toBe('cloud');
+  });
+
   it('draws a terminal for the blank terminal, wherever it runs', () => {
     expect(sessionGlyph({ agent: 'shell', place: 'folder' })).toBe('terminal');
     expect(sessionGlyph({ agent: 'shell', place: 'worktree' })).toBe('terminal');

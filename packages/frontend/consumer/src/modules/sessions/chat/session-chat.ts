@@ -12,7 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
-import { type ChatAnswer, questionKeys } from './question-keys';
+import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 
 /** What a tool call is, for the card it gets; Claude's tools are classified, not listed. */
 export type ChatToolKind =
@@ -78,12 +78,20 @@ export interface ChatToolCall {
   finishedAt: Date | null;
 }
 
+/**
+ * How a background task the agent started ended, as Claude Code reports it;
+ * `unknown` for a status this does not know, never taken for a success.
+ */
+export type ChatTaskStatus = 'completed' | 'failed' | 'killed' | 'unknown';
+
 /** `at` is when the agent wrote the step, from its transcript line. */
 export type ChatStep =
   | { kind: 'reply'; id: string; at: Date | null; text: string; truncated: boolean }
   | { kind: 'thinking'; id: string; at: Date | null; text: string }
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
-  | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' };
+  | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
+  /** A background task finished: the line Claude Code hands the agent, not a prompt. */
+  | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null };
 
 export interface ChatPrompt {
   id: string;
@@ -163,11 +171,6 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
-/**
- * The gap between the keys that answer a question: the picker redraws after
- * each one and reads the next against what it drew.
- */
-const QUESTION_KEY_GAP_MS = 120;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
@@ -483,22 +486,16 @@ export function classify(value: unknown, index: number): Reading {
   if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
     return { kind: 'answered', at };
   }
-  const typed = typedPrompt(
+  const said =
     typeof content === 'string'
       ? content
       : blocks
           .filter((block) => block?.type === 'text')
           .map((block) => String(block?.text ?? ''))
-          .join('\n'),
-  );
-  if (typed === 'interrupted') {
-    return {
-      kind: 'steps',
-      steps: [{ kind: 'notice', id, at, notice: 'interrupted' }],
-      model: null,
-      at,
-    };
-  }
+          .join('\n');
+  const system = systemSteps(said, id, at);
+  if (system) return { kind: 'steps', steps: system, model: null, at };
+  const typed = typedPrompt(said);
   if (typed === null) return null;
   const files = blocks.filter(
     (block) => block?.type === 'image' || block?.type === 'document',
@@ -516,6 +513,36 @@ function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | nu
   if (block?.type === 'tool_use')
     return { kind: 'tool', id, at, call: { ...toolCall(block), startedAt: at } };
   return null;
+}
+
+const TASK_NOTIFICATION = /<task-notification>([\s\S]*?)<\/task-notification>/g;
+const TASK_STATUS = /<status>([\s\S]*?)<\/status>/;
+const TASK_SUMMARY = /<summary>([\s\S]*?)<\/summary>/;
+const TASK_STATUSES: ReadonlySet<string> = new Set(['completed', 'failed', 'killed']);
+
+/**
+ * The steps a user line stands for when the CLI wrote it and nobody typed
+ * it, or `null` for every other line. The note Claude Code writes when the
+ * person stops a turn is a notice. The `<task-notification>` blocks it
+ * writes when a background command or subagent ends, so the agent picks the
+ * result up, are a step each, read off their `<status>` and `<summary>`.
+ */
+function systemSteps(raw: string, id: string, at: Date | null): ChatStep[] | null {
+  const value = raw.trimStart();
+  if (value.startsWith('[Request interrupted')) {
+    return [{ kind: 'notice', id, at, notice: 'interrupted' }];
+  }
+  if (!value.startsWith('<task-notification>')) return null;
+  return [...value.matchAll(TASK_NOTIFICATION)].map(([, body = ''], position) => {
+    const status = TASK_STATUS.exec(body)?.[1]?.trim() ?? '';
+    return {
+      kind: 'task',
+      id: `${id}:${position}`,
+      at,
+      status: TASK_STATUSES.has(status) ? (status as ChatTaskStatus) : 'unknown',
+      summary: TASK_SUMMARY.exec(body)?.[1]?.trim() || null,
+    };
+  });
 }
 
 /** The entries in turns: a turn opens at each prompt the person typed. */
@@ -552,6 +579,9 @@ function buildTurns(
         continue;
       case 'steps': {
         const turn = current(reading.steps[0]?.id ?? `entry-${index}`, reading.at, index);
+        // The agent at work again (a background task's end woke it) after a
+        // command the CLI answered: the turn is no longer settled by that answer.
+        if (reading.steps.length > 0) answered.delete(turn);
         turn.model = reading.model ?? turn.model;
         turn.contextTokens = reading.contextTokens ?? turn.contextTokens;
         if (reading.at) turn.lastAt = reading.at;
@@ -613,15 +643,13 @@ function isWorking(turn: ChatTurn): boolean {
 }
 
 /**
- * The person's words as they typed them, `null` for a line that is the CLI's
- * own (a caveat, a command's output), or `interrupted` for the note Claude
- * Code writes when the person stops a turn. A slash command is written as
+ * The person's words as they typed them, or `null` for a line that is the
+ * CLI's own (a caveat, a command's output). A slash command is written as
  * tags; it reads as `/name arguments`.
  */
-function typedPrompt(raw: string): string | 'interrupted' | null {
+function typedPrompt(raw: string): string | null {
   const value = raw.trim();
   if (value === '') return null;
-  if (value.startsWith('[Request interrupted')) return 'interrupted';
   if (
     value.startsWith('Caveat:') ||
     value.startsWith('<local-command-') ||

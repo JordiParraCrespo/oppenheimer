@@ -100,3 +100,7 @@ where these land is the first open question below.
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
 - 2026-10-24: customers and routes added after channels.
+- 2026-10-27: Claude cloud built ahead of Cursor, at the owner's request: a
+  `cloud` place started by the host's runner with `claude --cloud`, and its
+  status reported by `apps/extension` from claude.ai (`cloud-agents.md`,
+  `../versions/mvp/24-session-places.md` §7).

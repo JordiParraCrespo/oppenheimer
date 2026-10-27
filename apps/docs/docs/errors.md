@@ -492,7 +492,7 @@ are never reissued.
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
-| `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
+| `SESSIONS_010` <a id="sessions_010" /> | A running session keeps the repositories it was created with | 409 |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 | `SESSIONS_012` <a id="sessions_012" /> | That file is too large to give the session      | 413  |
 | `SESSIONS_013` <a id="sessions_013" /> | That is not a file the session can take         | 415  |
@@ -514,6 +514,13 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | That question was already answered or changed   | 409  |
+| `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
+| `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
+| `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
+| `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
+| `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
+| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input on claude.ai, not here | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -539,6 +546,20 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
 
+`SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
+what the session's agent waits on — a question it asked or a permission dialog
+(`product/versions/mvp/29-inbox.md`, slice 4). `032` is an answer whose `id` is not
+the decision pending now: it was answered already, at the terminal or from another
+tab, or the agent moved on to another. `033` is an answer that does not fit the
+pending decision (an option it lacks, several picks for one choice). `034` is a host
+with no link: nothing was typed, and nothing is kept for when it comes back.
+
+`SESSIONS_037` is a cloud session (`place: cloud`, `product/research/cloud-agents.md` §5B)
+for a host whose live runner did not announce `session.cloud`: it would open a terminal
+instead of starting the task in Claude Code's cloud. As with `025`, a host with no link
+right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a pasted
+file for a cloud session: it has no terminal on its host, and is answered on claude.ai.
+
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
@@ -547,10 +568,13 @@ already keys conversation state by.
 `SESSIONS_009` is no longer raised. A session that names no project is listed in the
 workspace's Unassigned project. The code stays reserved so it is never reused.
 
-`SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
-per session, so a second repository is refused here — on create by the body's own
-limit, and on adding one to a session that has one — rather than by the host after
-the session was written.
+`SESSIONS_010` is a repository added to a running session that already checks
+one out. A session picks its repositories at create, up to five
+(`MAX_SESSION_CHECKOUTS`, which the create body's own limit enforces), and a runner
+makes one worktree per checkout then; the wire has no frame that adds a worktree to
+a live session, so a later add is refused here rather than recorded and never made
+on the host. Until 2026-10-26 a session held one repository (#56), which is why the
+code is older than its title.
 
 `SESSIONS_011` is a runner older than the agent that was picked. A runner probes
 the command of every agent it can launch, installed or not, so a host whose last
@@ -761,6 +785,22 @@ A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
 
+## Inbox
+
+The marks a person leaves on Inbox items: done, low, snoozed until a time,
+or deleted. See `product/versions/mvp/29-inbox.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `INBOX_001` <a id="inbox_001" />     | The Inbox belongs to a workspace                             | 400  |
+| `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
+| `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
+| `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+
+An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
+characters, URL-encoded in the path. `INBOX_003` compares `until` with the
+server's clock.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
@@ -906,6 +946,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `DEV_001` <a id="dev_001" />           | This host has no device for the session      | 409  |
 | `DEV_002` <a id="dev_002" />           | The session's device could not be reached    | 502  |
 | `DEV_003` <a id="dev_003" />           | The device does not take that input          | 400  |
+| `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
+| `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
+| `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
@@ -913,6 +956,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
+| `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

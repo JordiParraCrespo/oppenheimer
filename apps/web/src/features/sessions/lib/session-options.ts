@@ -107,7 +107,6 @@ export function toBranchOptions(
   return branches.map((branch) => ({
     value: branch.name,
     label: branch.name,
-    mono: true,
     description: branch.isDefault ? labels.default : undefined,
   }));
 }
@@ -227,9 +226,10 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
 }
 
 /**
- * Whether the draft names somewhere to run, as the create would carry it: one
- * repository `toCheckouts` keeps for a new worktree, a folder for a folder
- * session (`product/versions/mvp/24-session-places.md`).
+ * Whether the draft names somewhere to run, as the create would carry it: a
+ * repository `toCheckouts` keeps for a new worktree or Claude Code's cloud
+ * (the cloud takes the first), a folder for a folder session
+ * (`product/versions/mvp/24-session-places.md`).
  */
 export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
   return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
@@ -238,7 +238,8 @@ export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folde
 /**
  * The draft as `POST /sessions` takes it, or null while it cannot be sent: no
  * host, or no place. A folder session carries its folder and no checkouts; a
- * worktree session its one checkout and no folder — never both. The project
+ * worktree session a checkout per picked repository and no folder — never
+ * both. The project
  * is the caller's to have checked against the workspace's list: an id it
  * leaves out lands the session in Unassigned.
  */
@@ -267,22 +268,25 @@ export function toCreateInput(
     ...(extras.attachmentIds.length > 0 ? { attachmentIds: [...extras.attachmentIds] } : {}),
   };
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
-  const [checkout] = toCheckouts(draft.scope);
-  return checkout ? { ...common, checkouts: [checkout] } : null;
+  const [first, ...rest] = toCheckouts(draft.scope);
+  if (!first) return null;
+  // Claude Code's cloud takes a task and one repository, nothing else: its
+  // files would stay on the host, which the cloud never sees.
+  if (draft.where === 'cloud') {
+    if (!extras.prompt) return null;
+    const { attachmentIds: _files, ...task } = common;
+    return { ...task, agent: 'claude-code', checkouts: [first], cloud: true };
+  }
+  return { ...common, checkouts: [first, ...rest] };
 }
 
 /**
  * The repository selection capped at `MAX_SESSION_CHECKOUTS`, keeping what was
- * just picked: a row added past the cap takes the place of the ones already
- * there. One repository per session in the MVP (#56).
+ * just picked: a row added past the cap takes the place of the oldest ones.
  */
-export function capRepositories(
-  previous: RepositoryScope[],
-  next: RepositoryScope[],
-): RepositoryScope[] {
-  if (next.length <= MAX_SESSION_CHECKOUTS) return next;
-  const added = next.filter((scope) => !previous.some((kept) => kept.id === scope.id));
-  return (added.length ? added : next).slice(-MAX_SESSION_CHECKOUTS);
+export function capRepositories(next: RepositoryScope[]): RepositoryScope[] {
+  // The picker appends a pick, so the oldest rows are the first ones.
+  return next.length <= MAX_SESSION_CHECKOUTS ? next : next.slice(-MAX_SESSION_CHECKOUTS);
 }
 
 /**

@@ -59,6 +59,7 @@ import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos'
 import { DiffDemo } from '../components/diff-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
+import { InboxSpec } from '../components/inbox-demos';
 import {
   AreaChartDemo,
   CalendarAccountsDemo,
@@ -131,6 +132,12 @@ import {
 import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/components/feedback';
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
+
+/** A bot's providers that have no coding agent of their own, drawn with marks of theirs. */
+const PROVIDER_MARKS = [
+  { id: 'glm', label: 'GLM' },
+  { id: 'chatgpt', label: 'ChatGPT' },
+] as const;
 
 export default function Page() {
   return (
@@ -666,7 +673,7 @@ export default function Page() {
         id="agentmark"
         title="AgentMark"
         meta="agent-mark.tsx"
-        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. A bot's providers without a coding agent of their own take theirs: GLM Z.ai's mark, ChatGPT OpenAI's, having none of its own. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
         {CODING_AGENT_IDS.map((agent) => (
@@ -674,6 +681,14 @@ export default function Page() {
             <span className="flex items-center gap-2.5 text-sm text-fg">
               <AgentMark agent={agent} />
               {CODING_AGENTS[agent].label}
+            </span>
+          </Swatch>
+        ))}
+        {PROVIDER_MARKS.map(({ id, label }) => (
+          <Swatch key={id} label={id}>
+            <span className="flex items-center gap-2.5 text-sm text-fg">
+              <AgentMark agent={id} />
+              {label}
             </span>
           </Swatch>
         ))}
@@ -1113,6 +1128,8 @@ export default function Page() {
       >
         <RoutineItemsDemo />
       </Spec>
+
+      <InboxSpec />
 
       <Spec
         id="pilltabs"

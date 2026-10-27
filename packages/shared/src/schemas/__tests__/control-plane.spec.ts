@@ -5,6 +5,7 @@ import { updateProjectSchema } from '../project.schema.js';
 import {
   addCheckoutSchema,
   createSessionSchema,
+  MAX_SESSION_CHECKOUTS,
   renameSessionSchema,
   sessionGroupSchema,
   sessionStateSchema,
@@ -162,6 +163,22 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
+  it('takes a cloud session as Claude Code with one checkout and a task, and nothing else', () => {
+    const cloud = {
+      hostId: uuid,
+      agent: 'claude-code',
+      checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      prompt: 'Fix the wallet list',
+      cloud: true,
+    };
+    expect(createSessionSchema.safeParse(cloud).success).toBe(true);
+    expect(createSessionSchema.safeParse({ ...cloud, prompt: undefined }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ ...cloud, agent: 'codex' }).success).toBe(false);
+    expect(
+      createSessionSchema.safeParse({ ...cloud, checkouts: [], folder: '/home/jordi' }).success,
+    ).toBe(false);
+  });
+
   it('takes a session that names no project: the API lists it in Unassigned', () => {
     expect(
       createSessionSchema.safeParse({
@@ -184,14 +201,37 @@ describe('createSessionSchema', () => {
     expect(parsed.checkouts[0].baseBranch).toBe('develop');
   });
 
-  it('refuses a second repository: a session checks out one in the MVP (#56)', () => {
+  it('accepts several repositories, one worktree each, up to MAX_SESSION_CHECKOUTS', () => {
+    const repositories = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        installationId: otherUuid,
+        githubRepoId: 42 + index,
+      }));
+    const body = { hostId: uuid, projectId: uuid, agent: 'claude-code' };
+
+    expect(
+      createSessionSchema.parse({ ...body, checkouts: repositories(2) }).checkouts,
+    ).toHaveLength(2);
+    expect(
+      createSessionSchema.safeParse({ ...body, checkouts: repositories(MAX_SESSION_CHECKOUTS) })
+        .success,
+    ).toBe(true);
+    const over = createSessionSchema.safeParse({
+      ...body,
+      checkouts: repositories(MAX_SESSION_CHECKOUTS + 1),
+    });
+    expect(over.success).toBe(false);
+    if (!over.success) expect(over.error.issues[0].path).toEqual(['checkouts']);
+  });
+
+  it('refuses one repository twice: a session has one worktree per repository', () => {
     const result = createSessionSchema.safeParse({
       hostId: uuid,
       projectId: uuid,
       agent: 'claude-code',
       checkouts: [
         { installationId: otherUuid, githubRepoId: 42 },
-        { installationId: otherUuid, githubRepoId: 43 },
+        { installationId: otherUuid, githubRepoId: 42, baseBranch: 'develop' },
       ],
     });
     expect(result.success).toBe(false);

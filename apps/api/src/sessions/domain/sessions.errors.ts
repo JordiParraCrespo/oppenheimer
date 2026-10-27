@@ -77,14 +77,16 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A second repository on a session that has one. A runner makes one worktree
-   * per session in the MVP, so a session is one repository (00); the create
-   * body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host (#56).
+   * A repository added to a session that already checks out one. The runner
+   * makes a worktree (and keeps a clone) per checkout, at create only: a create
+   * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
+   * no frame that adds one to a running session, so a later add is refused
+   * before a row is written rather than recorded and never made. The code dates
+   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
    */
-  ONE_REPOSITORY: {
+  TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'A session checks out one repository',
+    message: 'A running session keeps the repositories it was created with',
     httpStatus: 409,
   },
   /**
@@ -237,5 +239,65 @@ export const SessionErrors = {
     code: 'SESSIONS_031',
     message: 'The host did not answer in time',
     httpStatus: 504,
+  },
+  /**
+   * An answer to a decision the session no longer waits on: somebody answered
+   * it already (here or at the terminal), or the agent asked something else.
+   * The answer names the decision it was for, so it never lands on another.
+   */
+  DECISION_STALE: {
+    code: 'SESSIONS_032',
+    message: 'That question was already answered or changed',
+    httpStatus: 409,
+  },
+  /**
+   * An answer that does not fit the pending decision: an option it does not
+   * have, several picks for one choice, none at all, or answers for the
+   * wrong number of questions.
+   */
+  DECISION_ANSWER_INVALID: {
+    code: 'SESSIONS_033',
+    message: 'That answer does not fit the question',
+    httpStatus: 422,
+  },
+  /** The host holds no link, so the keys that answer a decision were not sent. */
+  DECISION_HOST_OFFLINE: {
+    code: 'SESSIONS_034',
+    message: 'The host is offline, so the answer was not sent',
+    httpStatus: 503,
+  },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
+  /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
+  },
+  /**
+   * A cloud session for a host whose live runner did not name `session.cloud`:
+   * it would open a terminal instead of starting the task in the cloud.
+   */
+  CLOUD_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_037',
+    message: "This host's runner cannot start a session in the cloud",
+    httpStatus: 409,
+  },
+  /**
+   * A prompt, an answer or a file for a cloud session: it has no terminal on
+   * its host to type into, and takes them on claude.ai.
+   */
+  CLOUD_TAKES_NO_INPUT: {
+    code: 'SESSIONS_038',
+    message: 'A cloud session takes input on claude.ai, not here',
+    httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

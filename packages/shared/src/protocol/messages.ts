@@ -1,12 +1,19 @@
 import { z } from 'zod/v4';
-import { hintSchema } from './hint.js';
 import {
-  CHAT_BATCH_MAX_ENTRIES,
-  CHAT_ENTRY_MAX_BYTES,
-  DEVICE_BUTTONS,
-  DEVICE_INPUT_KINDS,
-  DEVICE_KEYS,
-} from './link.js';
+  deviceAttachSchema,
+  deviceDetachSchema,
+  deviceInfoSchema,
+  deviceInputSchema,
+} from './devices.js';
+import { hintSchema } from './hint.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import {
+  portCloseSchema,
+  portListingSchema,
+  portListSchema,
+  portOpenedSchema,
+  portOpenSchema,
+} from './ports.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -78,6 +85,19 @@ export const RUNNER_CAPABILITIES = [
    * `device.input` (`product/research/device-streaming.md`).
    */
   'device.screen',
+  /**
+   * Answers `port.list` and `port.open`: the TCP ports a session's own
+   * processes listen on, each reachable as an attachment of raw bytes, for the
+   * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+   */
+  'port.forward',
+  /**
+   * Takes a `session.create` with `cloud`: the runner starts the task in
+   * Claude Code's cloud (`claude --cloud`) from a checkout of the repository
+   * and reports the cloud session's id, instead of opening a terminal
+   * (`product/research/cloud-agents.md` §5B).
+   */
+  'session.cloud',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -338,6 +358,25 @@ export const sessionCreateSchema = z
      * every checkout a peer.
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
+    /**
+     * A cloud session: the runner does not open a terminal. It fetches the one
+     * checkout's repository with this token (minted for that repository alone
+     * and sealed to the host, as `repository.prepare`'s is: a credential ask
+     * names a live checkout, and a cloud session leaves none on the host),
+     * checks out its base in a scratch directory, runs `claude --cloud` there
+     * with `prompt`, reports the cloud session's id on `session.started`
+     * (`agentSessionId`) and removes the scratch directory.
+     *
+     * Only with `claude-code`, one checkout and a prompt, and sent only to a
+     * runner whose `hello` named `session.cloud`.
+     */
+    cloud: z
+      .object({
+        /** The installation token, sealed to the host's Ed25519 identity. Base64. */
+        sealed: z.base64(),
+        expiresAt: z.iso.datetime(),
+      })
+      .optional(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
   .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
@@ -346,6 +385,15 @@ export const sessionCreateSchema = z
   .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
+  /** A cloud session starts Claude Code from one repository with a task. */
+  .refine(
+    (message) =>
+      message.cloud === undefined ||
+      (message.agent === 'claude-code' &&
+        message.checkouts.length === 1 &&
+        message.prompt !== undefined),
+    { path: ['cloud'] },
+  )
   .refine(
     (message) =>
       attachedFilesAreValid(
@@ -828,75 +876,6 @@ export const attachmentChatSchema = z.object({
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
 
-/* ------------------------------------------------------------------ a session's device */
-
-/**
- * Open a session's device screen for one browser: the runner answers with
- * `device.info`, then streams the screen under `attachmentId` as binary
- * frames, each one whole JPEG image, never larger than the link's frame cap.
- * A frame is sent only against credit (`attachment.credit`, in bytes, as for a
- * PTY), and a frame that has no credit is replaced by the next: a slow viewer
- * sees fewer frames, never older ones, and never backs up the link. A session
- * with no device on its host is refused with `command.failed`. Sent only to a
- * runner that named `device.screen`.
- */
-export const deviceAttachSchema = z.object({
-  type: z.literal('device.attach'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  attachmentId: attachmentIdSchema,
-});
-
-export type DeviceAttachMessage = z.infer<typeof deviceAttachSchema>;
-
-/** The runner's answer to `device.attach`: which device the session has. */
-export const deviceInfoSchema = z.object({
-  type: z.literal('device.info'),
-  attachmentId: attachmentIdSchema,
-  /** The host's id for it: an adb serial, a simulator UDID. */
-  serial: z.string().min(1).max(200),
-  /** What the pane's header calls it ("Android emulator"). */
-  name: z.string().min(1).max(200),
-  platform: z.enum(['android', 'ios']),
-});
-
-export type DeviceInfoMessage = z.infer<typeof deviceInfoSchema>;
-
-const devicePoint = () => z.number().min(0).max(1);
-
-/**
- * One gesture or keystroke for a device, from the console. Points are
- * fractions of the screen (0 to 1 from the top left), so the browser never
- * needs the device's resolution. Which fields a kind reads: `tap` x and y,
- * `swipe` x, y, toX and toY, `text` text, `key` key, `button` button. The
- * runner applies it to the session's own device; the message cannot name
- * another.
- */
-export const deviceInputSchema = z.object({
-  type: z.literal('device.input'),
-  attachmentId: attachmentIdSchema,
-  kind: z.enum(DEVICE_INPUT_KINDS),
-  x: devicePoint().optional(),
-  y: devicePoint().optional(),
-  toX: devicePoint().optional(),
-  toY: devicePoint().optional(),
-  text: z.string().min(1).max(1000).optional(),
-  key: z.enum(DEVICE_KEYS).optional(),
-  button: z.enum(DEVICE_BUTTONS).optional(),
-});
-
-export type DeviceInputMessage = z.infer<typeof deviceInputSchema>;
-
-/** The control plane frees a device attachment: the browser went away. */
-export const deviceDetachSchema = z.object({
-  type: z.literal('device.detach'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  attachmentId: attachmentIdSchema,
-});
-
-export type DeviceDetachMessage = z.infer<typeof deviceDetachSchema>;
-
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -944,6 +923,11 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   deviceInfoSchema,
   deviceInputSchema,
   deviceDetachSchema,
+  portListSchema,
+  portListingSchema,
+  portOpenSchema,
+  portOpenedSchema,
+  portCloseSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

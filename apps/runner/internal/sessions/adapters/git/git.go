@@ -42,6 +42,10 @@ var _ app.Worktrees = (*Client)(nil)
 const (
 	fetchTimeout = 10 * time.Minute
 	quickTimeout = 60 * time.Second
+	// removeTimeout bounds `worktree remove`, which deletes every file in the
+	// checkout: tens of thousands with node_modules, well past a minute on a
+	// slow disk. Killed partway, it leaves the session's delete refused.
+	removeTimeout = 10 * time.Minute
 	// waitDelay bounds how long a killed git's output is waited on.
 	waitDelay = 5 * time.Second
 )
@@ -511,6 +515,23 @@ func (c *Client) Add(ctx context.Context, repo domain.Repository, path, branch, 
 	return nil
 }
 
+// AddDetached checks base out at path on a detached HEAD: a scratch
+// checkout no branch is made for and nothing is committed on. A cloud start
+// runs `claude --cloud` in one, which takes the session from the commit, and
+// removes it (Remove) when the CLI is done.
+func (c *Client) AddDetached(ctx context.Context, repo domain.Repository, path, base string) error {
+	if err := repo.Validate(); err != nil {
+		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+	}
+	store := c.storeOf(repo)
+	defer c.lock(store)()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
+	}
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store}, "worktree", "add", "--detach", path, startPoint(base))
+	return err
+}
+
 // Remove deletes a worktree and prunes git's record of it. A worktree someone
 // already deleted by hand is only pruned: `worktree remove` refuses a path
 // that is not there, and what is left to do is forget it.
@@ -536,7 +557,7 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 		args = append(args, "--force")
 	}
 	args = append(args, path)
-	if _, err := c.run(ctx, quick, args...); err != nil {
+	if _, err := c.run(ctx, command{timeout: removeTimeout, dir: store}, args...); err != nil {
 		if force && c.unregistered(ctx, store, path) {
 			return c.removeUnregistered(ctx, store, path)
 		}
@@ -624,7 +645,12 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 		// config named before it (osxkeychain in Apple's system gitconfig, a
 		// person's GCM): only the runner's helper is asked, so a token for
 		// one session never comes from a keychain the host account filled.
-		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
+		//
+		// useHttpPath hands the helper the repository's path as well as its
+		// host: a session over several repositories holds a token for each,
+		// and the path is how the helper says which one git is fetching.
+		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper,
+			"-c", "credential.useHttpPath=true")
 	}
 	full = append(full, args...)
 

@@ -29,6 +29,11 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   bot_providers!: boolean;
 
   @ApiProperty({
+    description: "A session's dev server can be opened in the console (a preview domain).",
+  })
+  session_previews!: boolean;
+
+  @ApiProperty({
     nullable: true,
     type: String,
     example: 'https://github.com/apps/oppenheimer/installations/new',

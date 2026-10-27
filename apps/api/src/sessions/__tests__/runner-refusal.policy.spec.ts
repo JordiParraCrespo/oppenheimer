@@ -30,6 +30,11 @@ describe('runnerTakesPlace', () => {
     expect(runnerTakesPlace('folder', ['session.image'])).toBe(false);
     expect(runnerTakesPlace('folder', ['session.folder'])).toBe(true);
   });
+
+  it('takes a cloud session only from a runner that named session.cloud', () => {
+    expect(runnerTakesPlace('cloud', ['session.folder'])).toBe(false);
+    expect(runnerTakesPlace('cloud', ['session.cloud'])).toBe(true);
+  });
 });
 
 describe('runnerRefusal', () => {
@@ -50,6 +55,12 @@ describe('runnerRefusal', () => {
     const launch = { agent: 'shell', place: 'folder' as const };
     expect(runnerRefusal(launch, online(['session.image']))?.code).toBe('SESSIONS_025');
     expect(runnerRefusal(launch, online(['session.folder']))).toBeNull();
+  });
+
+  it('refuses a cloud session on a live runner that did not name session.cloud', () => {
+    const launch = { agent: 'claude-code', place: 'cloud' as const };
+    expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_037');
+    expect(runnerRefusal(launch, online(['session.cloud']))).toBeNull();
   });
 
   it('does not ask an offline host about the place: the dispatch checks again at hello', () => {

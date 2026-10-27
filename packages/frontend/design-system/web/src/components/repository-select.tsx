@@ -3,6 +3,7 @@
 import { ChevronRightIcon, FolderIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import {
   ChipSelectActionRow,
@@ -44,10 +45,11 @@ const defaultBranchPaneTitle = (name: string): React.ReactNode => `Branch for ${
  * several repositories, so it multi-selects, and the chip reads the first plus
  * a count ("xrp-mobile +1").
  *
- * Each **selected** row grows a right-hand cell (134px, hairline left, mono)
- * with its branch and a chevron; clicking it swaps the same 318px popup to that
- * repo's branch pane (back row, search, mono branches), and picking one returns
- * to the repository list.
+ * Each **selected** row grows a right-hand cell (134px, hairline left) with
+ * its branch and a chevron; clicking it swaps the same 318px popup to that
+ * repo's branch pane (back row, search, branches in the rows' own type), and
+ * picking one returns to the repository list. The rows selected when the
+ * popup opened lead the list, and the current branch leads its pane.
  *
  * Adding a repository lands it on its default branch; removing it forgets its
  * branch, so re-adding never resurrects a stale choice. A sibling branch chip
@@ -117,6 +119,10 @@ function RepositorySelect({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [pane, setPane] = React.useState<string | null>(null);
+  // What was selected when the popup opened leads the list. Taken once per
+  // open rather than from `value`, so a row picked now stays where the
+  // pointer is instead of jumping to the top under it.
+  const [pinned, setPinned] = React.useState<string[]>([]);
   const term = query.trim().toLowerCase();
 
   const byId = new Map(repositories.map((repo) => [repo.id, repo]));
@@ -133,13 +139,22 @@ function RepositorySelect({
     </>
   ) : null;
 
-  const visibleRepos = repositories.filter((repo) =>
-    term
-      ? `${repo.name} ${repo.description ?? ''} ${repo.keywords ?? ''}`.toLowerCase().includes(term)
-      : true,
+  const visibleRepos = selectedFirst(
+    repositories.filter((repo) =>
+      term
+        ? `${repo.name} ${repo.description ?? ''} ${repo.keywords ?? ''}`.toLowerCase().includes(term)
+        : true,
+    ),
+    pinned,
+    (repo) => repo.id,
   );
-  const visibleBranches = (paneRepo?.branches ?? []).filter((branch) =>
-    term ? (branch.label ?? branch.value).toLowerCase().includes(term) : true,
+  const paneBranch = value.find((scope) => scope.id === pane)?.branch;
+  const visibleBranches = selectedFirst(
+    (paneRepo?.branches ?? []).filter((branch) =>
+      term ? (branch.label ?? branch.value).toLowerCase().includes(term) : true,
+    ),
+    paneBranch ? [paneBranch] : [],
+    (branch) => branch.value,
   );
 
   function toggle(repo: RepositoryOption) {
@@ -162,6 +177,7 @@ function RepositorySelect({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        if (next) setPinned(selectedIds);
         if (!next) {
           setQuery('');
           setPane(null);
@@ -211,8 +227,7 @@ function RepositorySelect({
               {visibleBranches.map((branch) => (
                 <ChipSelectItem
                   key={branch.value}
-                  mono
-                  selected={value.find((scope) => scope.id === pane)?.branch === branch.value}
+                  selected={paneBranch === branch.value}
                   onClick={() => chooseBranch(branch.value)}
                 >
                   {branch.label ?? branch.value}
@@ -265,7 +280,7 @@ function RepositorySelect({
                             setQuery('');
                           }}
                           className={cn(
-                            'figures flex w-[134px] shrink-0 items-center justify-between gap-1 border-l border-border-subtle px-2.5 text-[11px] tracking-[-0.004em] text-fg-subtle outline-none transition-colors duration-fast hover:bg-hover-surface hover:text-fg focus-visible:bg-hover-surface focus-visible:text-fg',
+                            'flex w-[134px] shrink-0 items-center justify-between gap-1 border-l border-border-subtle px-2.5 text-[11px] tracking-[-0.004em] text-fg-subtle outline-none transition-colors duration-fast hover:bg-hover-surface hover:text-fg focus-visible:bg-hover-surface focus-visible:text-fg',
                           )}
                         >
                           <span className="min-w-0 truncate">{scope.branch}</span>

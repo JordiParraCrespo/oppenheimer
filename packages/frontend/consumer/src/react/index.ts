@@ -115,6 +115,14 @@ export {
   useUpdateHostRunner,
 } from './hosts.queries';
 export {
+  inboxAnswered,
+  type PutInboxMarkVariables,
+  useDeleteInboxMark,
+  useInboxCount,
+  usePutInboxMark,
+  useSuspenseInbox,
+} from './inbox.queries';
+export {
   type ConnectInstallationVariables,
   useConnectInstallation,
   useInstallationRepositories,
@@ -197,10 +205,12 @@ export {
   type RenameSessionVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAnswerSessionDecision,
   useCloseSession,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
+  useOpenSessionPreviewTab,
   usePasteSessionFile,
   usePrepareSession,
   usePutSessionShare,
@@ -213,6 +223,8 @@ export {
   useSetSessionSharePeople,
   useStopSessionShare,
   useSuspenseSession,
+  useSuspenseSessionPorts,
+  useSuspenseSessionPreview,
   useSuspenseSessionShare,
   useSuspenseSessionsSidebar,
   useSuspenseSharedSession,

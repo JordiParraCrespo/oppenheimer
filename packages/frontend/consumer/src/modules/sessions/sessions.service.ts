@@ -1,3 +1,4 @@
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -7,6 +8,8 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
 } from './session.entity';
@@ -61,6 +64,10 @@ export class SessionsService {
     return this.repository.move(id, projectId);
   }
 
+  answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    return this.repository.answerDecision(id, answer);
+  }
+
   restart(id: string): Promise<SessionEntity> {
     return this.repository.restart(id);
   }
@@ -71,6 +78,19 @@ export class SessionsService {
 
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
+  }
+
+  /** The ports the session's processes listen on, for its Browser tab. */
+  findPorts(id: string): Promise<SessionPorts> {
+    return this.repository.findPorts(id);
+  }
+
+  /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
+  openPreview(
+    id: string,
+    preview: { port: number; path?: string; embed: boolean },
+  ): Promise<SessionPreview> {
+    return this.repository.openPreview(id, preview);
   }
 
   uploadAttachment(file: Blob): Promise<SessionAttachment> {

@@ -23,6 +23,9 @@ import {
   ungrantableScopes,
 } from '../index.js';
 
+/** A person's own Inbox, which every caller may grant, like their profile. */
+const INBOX = ['inbox:read', 'inbox:write'] as const;
+
 describe('scope catalog', () => {
   it('exposes one group per resource, each with both access levels', () => {
     expect(PERMISSION_GROUPS).toHaveLength(SCOPE_RESOURCES.length);
@@ -43,11 +46,12 @@ describe('scope catalog', () => {
     expect(DEFAULT_OAUTH_SCOPES).toEqual(['profile:read']);
   });
 
-  it('backs every level with at least one CASL rule, except the caller’s own profile', () => {
+  it('backs every level with at least one CASL rule, except the caller’s own profile and Inbox', () => {
+    const own: readonly string[] = ['profile', 'inbox'];
     for (const group of PERMISSION_GROUPS) {
       for (const level of SCOPE_ACCESS_LEVELS) {
         const { policies } = group.levels[level];
-        if (group.resource === 'profile') expect(policies).toEqual([]);
+        if (own.includes(group.resource)) expect(policies).toEqual([]);
         else expect(policies.length).toBeGreaterThan(0);
       }
     }
@@ -90,6 +94,7 @@ describe('the control plane’s scopes', () => {
         'profile:read',
         'profile:write',
         `${resource}:read`,
+        ...INBOX,
       ]);
     },
   );
@@ -102,10 +107,13 @@ describe('the control plane’s scopes', () => {
   it.each([
     ['a `Repository` reader', { action: 'read', subject: 'Repository' }],
     ['an `attach Session` holder', { action: 'attach', subject: 'Session' }],
-  ])('grants %s nothing past their profile: no scope is backed by that rule', (_, rule) => {
-    const ability = defineAbilitiesFromPermissions([rule as unknown as PermissionDefinition]);
-    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write']);
-  });
+  ])(
+    'grants %s nothing past their profile and Inbox: no scope is backed by that rule',
+    (_, rule) => {
+      const ability = defineAbilitiesFromPermissions([rule as unknown as PermissionDefinition]);
+      expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write', ...INBOX]);
+    },
+  );
 
   it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
     const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
@@ -209,14 +217,19 @@ describe('grantableScopes', () => {
     expect(grantableScopes(ability)).toEqual([...SCOPES]);
   });
 
-  it('limits a reader to the read levels they hold, plus their own profile', () => {
+  it('limits a reader to the read levels they hold, plus their own profile and Inbox', () => {
     const ability = defineAbilitiesFromPermissions([{ action: 'read', subject: 'User' }]);
-    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write', 'users:read']);
+    expect(grantableScopes(ability)).toEqual([
+      'profile:read',
+      'profile:write',
+      'users:read',
+      ...INBOX,
+    ]);
   });
 
-  it('always allows the profile group — it governs the caller’s own account', () => {
+  it('always allows the profile and Inbox groups — they govern the caller’s own account', () => {
     const ability = defineAbilitiesFromPermissions([]);
-    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write']);
+    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write', ...INBOX]);
   });
 
   it('grants a write level when the ability satisfies any one of its rules, and no further', () => {

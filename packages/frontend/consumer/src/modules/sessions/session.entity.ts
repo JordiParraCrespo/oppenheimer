@@ -1,5 +1,6 @@
 import type { CodingAgentId, SessionEffort, SessionPermission } from '@oppenheimer/shared/agents';
 import type { SessionPlace } from '@oppenheimer/shared/schemas/session';
+import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
 export type SessionAgent = CodingAgentId;
@@ -87,6 +88,28 @@ export class SessionCheckoutEntity {
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
  * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
  */
+/** One port a session's processes listen on, which its Browser tab can open. */
+export interface SessionPort {
+  port: number;
+  /** The command listening on it ("node"), when the host said. */
+  process: string | null;
+}
+
+/**
+ * What the session's host said about its ports: the ports, or why it said
+ * nothing (no link now, or a runner that cannot list them).
+ */
+export interface SessionPorts {
+  state: 'listed' | 'host_offline' | 'not_supported';
+  ports: SessionPort[];
+}
+
+/** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
+export interface SessionPreview {
+  url: string;
+  expiresAt: Date;
+}
+
 export interface AttachTicket {
   ticket: string;
   /** A path on the API's own origin, e.g. `/api/v1/relay/attach`. */
@@ -162,7 +185,43 @@ export class SessionEntity {
     public readonly closeRequest: SessionCloseRequest | null = null,
     /** Why the host refused the last delete, until it is asked again. */
     public readonly closeRefusal: SessionCloseRefusal | null = null,
+    /**
+     * When the agent entered the state it was last observed in; null until a
+     * second report of it. A blocked wait is named by it (the Inbox).
+     */
+    public readonly observedSince: Date | null = null,
+    /** When the session's log last moved. */
+    public readonly lastEventAt: Date | null = null,
+    /** Bumped on every change of `lifecycle`: one failure or launch told from the next. */
+    public readonly stateSeq: number = 0,
+    /**
+     * What the agent waits on you to decide, as the host read it: a question it
+     * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+     */
+    public readonly decision: SessionDecision | null = null,
+    /**
+     * A `cloud` session's Claude Code id (`session_…`), once its host has
+     * started it; null before, and for every other place.
+     */
+    public readonly cloudSessionId: string | null = null,
   ) {}
+
+  /** Whether it runs in Claude Code's cloud: no terminal here, its page is claude.ai/code. */
+  get isCloud(): boolean {
+    return this.place === 'cloud';
+  }
+
+  /** The cloud session's page on claude.ai, once it has one. */
+  get cloudUrl(): string | null {
+    return this.cloudSessionId
+      ? `https://claude.ai/code/${encodeURIComponent(this.cloudSessionId)}`
+      : null;
+  }
+
+  /** The command that brings the cloud session's branch and conversation into a terminal. */
+  get teleportCommand(): string | null {
+    return this.cloudSessionId ? `claude --teleport ${this.cloudSessionId}` : null;
+  }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
   get isClosing(): boolean {
@@ -240,6 +299,11 @@ export class SessionEntity {
       this.folderPath,
       this.closeRequest,
       this.closeRefusal,
+      this.observedSince,
+      this.lastEventAt,
+      this.stateSeq,
+      this.decision,
+      this.cloudSessionId,
     );
   }
 }
@@ -257,12 +321,21 @@ export interface CreateSessionCheckout {
 export type CreateSessionInput = CreateSessionCommon &
   (CreateWorktreeSession | CreateFolderSession);
 
-/** A new worktree: the runner clones and cuts a branch. */
+/**
+ * A new worktree: the runner clones and cuts a branch. With `cloud`, the host
+ * starts the task in Claude Code's cloud from that repository instead, and
+ * keeps nothing: Claude Code only, with a prompt.
+ */
 export interface CreateWorktreeSession {
-  /** Exactly one: a runner makes a session as one worktree of one repository. */
-  checkouts: [CreateSessionCheckout];
+  /**
+   * At least one, at most `MAX_SESSION_CHECKOUTS`, each a different repository: the
+   * runner makes one worktree per checkout. The first is where the agent starts
+   * unless `cwdGithubRepoId` names another.
+   */
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
+  cloud?: boolean;
   folder?: never;
 }
 
@@ -272,6 +345,7 @@ export interface CreateFolderSession {
   folder: string;
   checkouts?: never;
   cwdGithubRepoId?: never;
+  cloud?: never;
 }
 
 interface CreateSessionCommon {
@@ -289,7 +363,7 @@ interface CreateSessionCommon {
 /** What a host is asked to get ready while New session is still being written. */
 export interface PrepareSessionInput {
   hostId: string;
-  checkouts: [CreateSessionCheckout];
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
 }
 
 /** An image uploaded for a first task, waiting for the create that names it. */

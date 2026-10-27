@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -20,6 +21,8 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
 } from '../modules/sessions/session.entity';
@@ -48,6 +51,9 @@ export const sessionsKeys = {
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
   share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
   shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
+  ports: (id: string) => [...sessionsKeys.all, 'ports', id] as const,
+  preview: (id: string, port: number, opened: number) =>
+    [...sessionsKeys.all, 'preview', id, port, opened] as const,
 };
 
 /**
@@ -458,6 +464,49 @@ export function useMoveSession(
   );
 }
 
+export interface AnswerSessionDecisionVariables {
+  sessionId: string;
+  /** `{ id, answers }` for a question, `{ id, option }` for a permission. */
+  answer: AnswerSessionDecisionDto;
+}
+
+/** The API's refusal of an answer to a decision that is no longer the pending one. */
+const DECISION_STALE = 'SESSIONS_032';
+
+/**
+ * Answer what a session's agent waits on, from outside its terminal (the
+ * Inbox): the API types the keys and clears the decision. The row the API
+ * answers replaces the session's in every list at once, so what drew the
+ * decision stops drawing it, and the lists are read again behind it. An
+ * answer refused as stale (answered elsewhere, or the agent asks something
+ * else now) reads the session again, so the new decision shows.
+ */
+export function useAnswerSessionDecision(
+  options?: UseMutationOptions<SessionEntity, Error, AnswerSessionDecisionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, answer }: AnswerSessionDecisionVariables) =>
+      app.sessions.answerDecision(sessionId, answer),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === session.id ? session : row)),
+      );
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onError: (error, variables, context, mutation) => {
+      if ((error as { code?: string }).code === DECISION_STALE) {
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(variables.sessionId) });
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      }
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
+}
+
 export interface CloseSessionVariables {
   id: string;
   acceptUnpushedWork?: boolean;
@@ -643,5 +692,63 @@ export function useSuspenseSharedSession(slug: string) {
   return useSuspenseQuery<SharedSession, Error>({
     queryKey: sessionsKeys.shared(slug),
     queryFn: () => app.sessions.findSharedSession(slug),
+  });
+}
+
+/**
+ * The ports a session listens on, for its Browser tab: polled while the tab
+ * is open, so a dev server the agent just started shows on its own. An
+ * offline host, or a runner that cannot list, is the answer's `state`, not a
+ * failure.
+ */
+export function useSuspenseSessionPorts(sessionId: string) {
+  const app = useConsumerApp();
+  const queryKey = sessionsKeys.ports(sessionId);
+  const poll = usePollWhile<SessionPorts>('sessionPorts', queryKey, true);
+  return useSuspenseQuery({
+    queryKey,
+    queryFn: () => app.sessions.findPorts(sessionId),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...poll,
+  });
+}
+
+/**
+ * Where the Browser tab frames one of the session's ports. A query, though
+ * minting writes, like `useCurrentPairing`: the frame needs exactly one URL
+ * per port it shows. The ticket in it is single use, so it is never
+ * refetched or kept past the frame: Reload asks again with a new `opened`.
+ */
+export function useSuspenseSessionPreview(sessionId: string, port: number, opened: number) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<SessionPreview>({
+    queryKey: sessionsKeys.preview(sessionId, port, opened),
+    queryFn: () => app.sessions.openPreview(sessionId, { port, embed: true }),
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+}
+
+/**
+ * Open in a new tab: a URL of its own for one of the session's ports, outside
+ * the console's frame. Nothing cached changes.
+ */
+export function useOpenSessionPreviewTab(
+  options?: UseMutationOptions<
+    SessionPreview,
+    Error,
+    { sessionId: string; port: number; path?: string }
+  >,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    ...options,
+    mutationFn: ({ sessionId, port, path }) =>
+      app.sessions.openPreview(sessionId, { port, path, embed: false }),
   });
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type {
@@ -6,6 +7,7 @@ import type {
   SessionCloseMessage,
   SessionCreateMessage,
   SessionImageMessage,
+  SessionInputMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
@@ -15,6 +17,7 @@ import type {
   SessionDispatchOutcome,
   SessionDispatchPort,
   SessionFileSpec,
+  SessionKeysSpec,
   SessionLaunchSpec,
   SessionPrepareSpec,
 } from '../../sessions/application/session-dispatch.port';
@@ -61,6 +64,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
       if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
+      // Something the launch must carry could not be made yet.
+      if (spec.withheld) return { delivered: false, hints: [spec.withheld] };
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
@@ -130,6 +135,29 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
         mediaType: file.mediaType,
       };
       return this.deliver(link, message);
+    });
+  }
+
+  async typeKeys(
+    session: WorkSessionEntity,
+    spec: SessionKeysSpec,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, async (link) => {
+      for (const [index, key] of spec.keys.entries()) {
+        if (index > 0) await sleep(spec.gapMs);
+        // The runner writes each frame in the session's lane, in order, as one
+        // `send-keys`: one frame is one key the picker reads on its own.
+        const message: SessionInputMessage = {
+          type: 'session.input',
+          commandId: randomUUID(),
+          sessionId: session.id,
+          window: spec.window,
+          data: Buffer.from(key, 'utf8').toString('base64'),
+        };
+        const outcome = this.deliver(link, message);
+        if (!outcome.delivered) return outcome;
+      }
+      return DELIVERED;
     });
   }
 
@@ -230,6 +258,9 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
     ...placeOf(session, spec),
+    ...(spec.cloud
+      ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
+      : {}),
   };
 }
 

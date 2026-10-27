@@ -108,6 +108,36 @@ func TestAQuestionUnderASpinnerWins(t *testing.T) {
 	}
 }
 
+// Claude Code asks before an edit or a new file with a question no phrase in
+// the manifest names; its numbered Yes under the cursor is what says it waits.
+// Before the option line was read on every line of the region, both of these
+// were `unknown`, and a session stopped on one never reached the Inbox.
+func TestAnEditOrCreateDialogIsBlocked(t *testing.T) {
+	c := classifier(t, "")
+	for _, title := range []string{
+		"Do you want to make this edit to src/app.ts?",
+		"Do you want to create empty-state.tsx?",
+	} {
+		body := strings.Join([]string{
+			strings.Repeat("─", 60),
+			" Edit file",
+			"",
+			"  src/app.ts",
+			"  +  export const wallet = createWallet();",
+			"",
+			" " + title,
+			" ❯ 1. Yes",
+			"   2. Yes, allow all edits during this session (shift+tab)",
+			"   3. No, and tell Claude what to do differently (esc)",
+			"",
+			" Esc to cancel",
+		}, "\n")
+		if state, _ := c.Classify(app.Screen{Body: body}, domain.AgentClaude); state != domain.StateBlocked {
+			t.Errorf("%q: state = %q, want blocked", title, state)
+		}
+	}
+}
+
 // Grok 1.0.41 on a host that has never signed in, as the pane showed it in a
 // live session: the braille logo, then the code and a wait on the person. The
 // logo is braille, which is why no spinner rule may read this as work.

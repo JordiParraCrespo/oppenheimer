@@ -8,6 +8,10 @@ import {
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import type {
+  AnswerSessionDecisionDto,
+  SessionDecision,
+} from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
@@ -18,6 +22,8 @@ import {
   type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
+  type SessionPorts,
+  type SessionPreview,
   type SessionShare,
   type SharedSession,
 } from './session.entity';
@@ -65,6 +71,33 @@ function toTicket(data: { ticket: string; url: string; expiresAt: string; window
   };
 }
 
+/** The decision as the console holds it; what the API leaves out is null. */
+function toDecision(data: SessionResponseDto['decision']): SessionDecision | null {
+  if (!data) return null;
+  if (data.kind === 'permission') {
+    return {
+      kind: 'permission',
+      id: data.id,
+      title: data.title,
+      detail: data.detail ?? null,
+      options: data.options.map((option) => ({ label: option.label })),
+    };
+  }
+  return {
+    kind: 'question',
+    id: data.id,
+    questions: data.questions.map((question) => ({
+      header: question.header ?? null,
+      question: question.question,
+      multiSelect: question.multiSelect,
+      options: question.options.map((option) => ({
+        label: option.label,
+        description: option.description ?? null,
+      })),
+    })),
+  };
+}
+
 function toEntity(data: SessionResponseDto): SessionEntity {
   return new SessionEntity(
     data.id,
@@ -97,6 +130,11 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.closeRefusal
       ? { code: data.closeRefusal.code, detail: data.closeRefusal.detail ?? null }
       : null,
+    data.observedSince ? new Date(data.observedSince) : null,
+    data.lastEventAt ? new Date(data.lastEventAt) : null,
+    data.stateSeq ?? 0,
+    toDecision(data.decision),
+    data.cloudSessionId ?? null,
   );
 }
 
@@ -124,6 +162,7 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
           ...(input.cwdGithubRepoId !== undefined
             ? { cwdGithubRepoId: input.cwdGithubRepoId }
             : {}),
+          ...(input.cloud ? { cloud: true } : {}),
         }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
@@ -262,6 +301,20 @@ export class SessionsRepository {
   }
 
   /**
+   * Answer what the session's agent waits on (`decision`), by its id: the API
+   * types the keys into its terminal. An id that is no longer the pending one
+   * is refused (`SESSIONS_032`), so an answer never lands on the next question.
+   */
+  @MapApiError(SessionsErrors.ANSWER_DECISION_FAILED)
+  async answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.answerSessionDecision({ path: { id }, body: answer }),
+      SessionsErrors.ANSWER_DECISION_FAILED,
+    );
+    return toEntity(data);
+  }
+
+  /**
    * Bring a stopped session's terminal back. The host recreates window 0 in the
    * worktrees the session already has and reopens the agent's own conversation,
    * so what comes back is the session as it was rather than a second one.
@@ -314,6 +367,35 @@ export class SessionsRepository {
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
     return toTicket(data);
+  }
+
+  /** The ports the session listens on, as its host lists them now. */
+  @MapApiError(SessionsErrors.PORTS_FAILED)
+  async findPorts(id: string): Promise<SessionPorts> {
+    const data = await unwrapBody(
+      heyApiSdk.findSessionPorts({ path: { id } }),
+      SessionsErrors.PORTS_FAILED,
+    );
+    return {
+      state: data.state,
+      ports: data.ports.map((port) => ({ port: port.port, process: port.process ?? null })),
+    };
+  }
+
+  /**
+   * Where one of the session's ports opens: framed by the Browser tab
+   * (`embed`) or in a tab of its own. Never cached: the ticket is single use.
+   */
+  @MapApiError(SessionsErrors.PREVIEW_FAILED)
+  async openPreview(
+    id: string,
+    preview: { port: number; path?: string; embed: boolean },
+  ): Promise<SessionPreview> {
+    const data = await unwrapBody(
+      heyApiSdk.issueSessionPreview({ path: { id }, body: preview }),
+      SessionsErrors.PREVIEW_FAILED,
+    );
+    return { url: data.url, expiresAt: new Date(data.expiresAt) };
   }
 
   /** How a session is shared, or `null` when it is not. */

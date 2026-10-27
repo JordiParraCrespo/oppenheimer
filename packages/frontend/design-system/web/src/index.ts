@@ -110,9 +110,10 @@ export {
   ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
-export type { ChatCodeBlockLabels } from './components/chat-elements';
+export type { ChatCodeBlockLabels, ChatJsonBlockLabels } from './components/chat-elements';
 export {
   ChatCodeBlock,
+  ChatJsonBlock,
   ChatMarker,
   ChatSource,
   ChatSources,
@@ -318,6 +319,24 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxCard,
+  InboxCardActions,
+  InboxCardBody,
+  InboxCardChoices,
+  InboxCardFacts,
+  InboxClear,
+  InboxGreeting,
+  InboxItem,
+  InboxItemSkeleton,
+  InboxList,
+  InboxLogLine,
+  InboxQuestion,
+  InboxQuestionOption,
+  InboxQuestionOptions,
+  InboxQuestions,
+  InboxSnoozedRow,
+} from './components/inbox';
+export {
   AddRow,
   InlineToken,
   TokenLiveDot,
@@ -328,6 +347,8 @@ export {
 } from './components/inline-token';
 export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
+export type { JsonTreeAnnotate } from './components/json-tree';
+export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';

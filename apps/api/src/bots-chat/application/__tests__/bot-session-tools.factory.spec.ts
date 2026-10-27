@@ -2,8 +2,13 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
+import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
+import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
+import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
+import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
+import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
@@ -11,7 +16,8 @@ import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
- * Starting and stopping sessions reach the owner's machines, so they ask:
+ * Starting, prompting, answering and stopping sessions reach the owner's
+ * machines, so they ask:
  * under Approve for me nothing is dispatched, a card is raised that names the
  * agent, the host, the repository and the task, and the model is told;
  * under Full access the sessions' own commands run in the owner's scope,
@@ -53,10 +59,44 @@ const project = {
   ],
 };
 
+/** A running session whose agent waits on a permission dialog. */
+function blockedSession(): WorkSessionEntity {
+  const session = WorkSessionEntity.request({
+    organizationId: 'org-1',
+    projectId: PROJECT,
+    createdByUserId: 'owner-1',
+    hostId: HOME,
+    slug: 'swift-wren-7gyezw',
+    agent: 'claude-code',
+  });
+  const at = new Date();
+  session.recordEvents([
+    { seq: 1, kind: SESSION_EVENT_KINDS.STARTED, payload: {}, occurredAt: at },
+    { seq: 2, kind: SESSION_EVENT_KINDS.NAMED, payload: { name: 'Fix login' }, occurredAt: at },
+    {
+      seq: 3,
+      kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+      payload: {
+        decision: {
+          kind: 'permission',
+          id: 'perm-1',
+          title: 'Do you want to proceed?',
+          detail: 'pnpm test',
+          options: [{ label: 'Yes' }, { label: 'No' }],
+        },
+      },
+      occurredAt: at,
+    },
+  ]);
+  return session;
+}
+
 function setup(permission: BotToolContext['permission']) {
+  const session = blockedSession();
   const queryBus = {
     execute: vi.fn(async (query: unknown) => {
       if (query instanceof FindHostQuery) return { host: { name: 'build-02' }, online: true };
+      if (query instanceof FindSessionQuery) return session;
       return project;
     }),
   };
@@ -73,6 +113,7 @@ function setup(permission: BotToolContext['permission']) {
     watchStarted: vi.fn<BotSessionWatchResolver['watchStarted']>(
       async () => 'You are subscribed to it.',
     ),
+    watchSent: vi.fn<BotSessionWatchResolver['watchSent']>(async () => 'You follow its task.'),
   };
   const factory = new BotSessionToolsFactory(
     queryBus as unknown as QueryBus,
@@ -86,7 +127,7 @@ function setup(permission: BotToolContext['permission']) {
       .bind(context(permission, approvals))
       .run(input, { signal: new AbortController().signal });
   };
-  return { queryBus, commandBus, approvals, watches, call };
+  return { queryBus, commandBus, approvals, watches, call, session };
 }
 
 describe('BotSessionToolsFactory', () => {
@@ -223,5 +264,64 @@ describe('BotSessionToolsFactory', () => {
     await call('stop_session', { session_id: HOME });
     expect(commandBus.execute).toHaveBeenCalledWith(expect.any(StopSessionCommand));
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: HOME });
+  });
+
+  it('asks before prompting a session, the card naming the session and the words', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    await call('send_to_session', { session_id: session.id, text: 'Now run the tests' });
+    expect(approvals.request.mock.calls[0][0]).toMatchObject({
+      tool: 'send_to_session',
+      summary: 'Tell the session "Fix login": Now run the tests',
+    });
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('sends a prompt as the bot whose turn made the call, and follows the task it starts', async () => {
+    const { commandBus, watches, call, session } = setup('full');
+    const result = await call('send_to_session', { session_id: session.id, text: 'Run the tests' });
+    const command = commandBus.execute.mock.calls[0][0] as SendSessionPromptCommand;
+    expect(command).toBeInstanceOf(SendSessionPromptCommand);
+    expect(command).toMatchObject({
+      scope: owner,
+      sessionId: session.id,
+      text: 'Run the tests',
+      sender: { kind: 'bot', botId: 'bot-1', turnId: 'turn-1' },
+    });
+    // The session had no task yet, so the prompt opens task 1, and that is the one watched.
+    expect(watches.watchSent).toHaveBeenCalledWith(expect.anything(), session.id, 1);
+    expect(result.content).toContain('You follow its task.');
+  });
+
+  it('names the option it picks on the card, read against what the session waits on', async () => {
+    const { approvals, call, session } = setup('auto');
+    await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 1 });
+    expect(approvals.request.mock.calls[0][0].summary).toBe(
+      'Answer "Fix login"\'s dialog "Do you want to proceed?": No',
+    );
+  });
+
+  it('refuses an answer to a decision the session no longer waits on, before any card', async () => {
+    const { approvals, commandBus, call, session } = setup('auto');
+    const result = await call('answer_session', {
+      session_id: session.id,
+      decision_id: 'perm-0',
+      option: 0,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('now waits on decision perm-1');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('answers through the sessions’ own command, in the owner’s scope', async () => {
+    const { commandBus, call, session } = setup('full');
+    await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });
+    const command = commandBus.execute.mock.calls[0][0] as AnswerSessionDecisionCommand;
+    expect(command).toBeInstanceOf(AnswerSessionDecisionCommand);
+    expect(command).toMatchObject({
+      scope: owner,
+      sessionId: session.id,
+      answer: { id: 'perm-1', option: 0 },
+    });
   });
 });

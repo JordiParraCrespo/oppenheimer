@@ -109,7 +109,7 @@
     "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
     "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
     "SESSIONS_009": "Choose a project for this session.",
-    "SESSIONS_010": "A session works on one repository. Start a new session for another.",
+    "SESSIONS_010": "A running session keeps the repositories it started with. Pick up to five when you start a session.",
     "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
     "HOSTS_001": "That host could not be found.",
     "HOSTS_002": "That pairing token could not be found.",
@@ -148,6 +148,10 @@
     "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
     "HOSTS_007": "No file is waiting for that command.",
     "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
+    "INBOX_001": "The Inbox needs a workspace. Open one and try again.",
+    "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
+    "INBOX_003": "A snooze has to end in the future. Pick a later time.",
+    "INBOX_004": "That item has no mark any more. Reload the Inbox.",
     "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
     "AUTOMATIONS_002": "Choose a workspace before working with automations.",
     "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
@@ -229,6 +233,13 @@
     "SESSIONS_029": "That path is a file, not a folder.",
     "SESSIONS_030": "That folder can’t be read on the host.",
     "SESSIONS_031": "The host didn’t answer in time. Try again.",
+    "SESSIONS_032": "That question was already answered or changed. Open the session to see what it asks now.",
+    "SESSIONS_033": "That answer doesn’t fit the question. Pick from its options and try again.",
+    "SESSIONS_034": "The host is offline, so the answer was not sent.",
+    "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
+    "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
+    "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
+    "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -246,5 +257,11 @@
     "title": "This screen could not be drawn",
     "retry": "Try again"
   },
-  "code": "Code: {{code}}"
+  "code": "Code: {{code}}",
+  "startFailure": {
+    "codes": {
+      "SESS_002": "This host makes sessions with one repository."
+    },
+    "details": "Details from the host: {{detail}}"
+  }
 }

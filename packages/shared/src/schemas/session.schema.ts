@@ -92,17 +92,25 @@ export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>
 
 /**
  * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
- * `worktree` the runner makes for each checkout, or a `folder` already on the
- * host, where nothing is cloned or written and closing only ends the terminal.
+ * `worktree` the runner makes for each checkout, a `folder` already on the
+ * host, where nothing is cloned or written and closing only ends the terminal,
+ * or Claude Code's `cloud`, started from a host and then living on
+ * claude.ai/code (`product/research/cloud-agents.md` §5B).
  */
-export const SESSION_PLACES = ['worktree', 'folder'] as const;
+export const SESSION_PLACES = ['worktree', 'folder', 'cloud'] as const;
 export type SessionPlace = (typeof SESSION_PLACES)[number];
 export const sessionPlaceSchema = z.enum(SESSION_PLACES);
 
 export { hostPathSchema };
 
-/** How many repositories a session may check out: one, until runners make several. */
-export const MAX_SESSION_CHECKOUTS = 1;
+/**
+ * How many repositories a session may check out. The runner makes one worktree per
+ * checkout, each beside a clone of its repository on the host, so every one costs
+ * disk and a fetch before the agent starts; and the composer's repository picker
+ * has to stay readable. Five covers a service and its neighbours without either.
+ * It was one from 2026-09-23 (#56) until runners made several (2026-10-26).
+ */
+export const MAX_SESSION_CHECKOUTS = 5;
 
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
@@ -114,9 +122,10 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * A worktree session's repositories: one in the MVP, because a runner makes
-   * one worktree per session, so a second is refused here before a row is
-   * written (#56, 00, 10). None with `folder`.
+   * A worktree session's repositories, each a worktree of its own in the session's
+   * folder, at most {@link MAX_SESSION_CHECKOUTS}; more is refused here before a
+   * row is written (00, 10). The first is where the agent starts unless
+   * `cwdGithubRepoId` names another. None with `folder`.
    */
   checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS).default([]),
   /**
@@ -125,6 +134,13 @@ const createSessionFields = z.object({
    * `folder` and `checkouts` is given.
    */
   folder: hostPathSchema.optional(),
+  /**
+   * A cloud session: the host starts the task in Claude Code's cloud
+   * (`claude --cloud`) from the one checkout's repository and keeps nothing
+   * running; the session lives on claude.ai/code. Claude Code only, with a
+   * `prompt` (`product/research/cloud-agents.md` §5B).
+   */
+  cloud: z.boolean().optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -182,9 +198,69 @@ export const createSessionSchema = createSessionFields
   /** The wire's own rule for `session.create`'s images: they ride a task, each once. */
   .refine((value) => attachedFilesAreValid(value.prompt, value.attachmentIds), {
     path: ['attachmentIds'],
-  });
+  })
+  /**
+   * A cloud session is Claude Code, started from one repository with a task
+   * and nothing else: the files of a first task stay on the host, which the
+   * cloud never sees.
+   */
+  .refine(
+    (value) =>
+      !value.cloud ||
+      (value.agent === 'claude-code' &&
+        value.checkouts.length === 1 &&
+        value.prompt !== undefined &&
+        !value.attachmentIds?.length),
+    { path: ['cloud'] },
+  );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
+
+/**
+ * Where a create asks the session to run: a `folder` names a folder session,
+ * `cloud` a cloud session, and anything else is a worktree per checkout. The
+ * one reading of a create's place; everything after it holds the place itself.
+ */
+export function placeOfCreate(input: Pick<CreateSessionDto, 'folder' | 'cloud'>): SessionPlace {
+  if (input.folder !== undefined) return 'folder';
+  return input.cloud ? 'cloud' : 'worktree';
+}
+
+/** A Claude Code cloud session's id, as claude.ai/code and `claude --teleport` name it. */
+export const cloudSessionIdSchema = z.string().regex(/^session_[A-Za-z0-9]{8,64}$/);
+
+/**
+ * What the browser extension saw a cloud session doing on claude.ai, in its own
+ * words: `needs-input` waits on a permission or an answer, `failed` is a failed
+ * turn or environment, `done` and `stopped` wait for a prompt.
+ */
+export const CLOUD_SESSION_STATES = [
+  'running',
+  'needs-input',
+  'failed',
+  'done',
+  'stopped',
+] as const;
+export type CloudSessionState = (typeof CLOUD_SESSION_STATES)[number];
+
+/**
+ * `POST /sessions/cloud-status`: the extension's view of the person's cloud
+ * sessions. It sends every one it tracks; the ones this workspace launched are
+ * recorded and the rest are ignored, so the API never learns of a cloud session
+ * it did not start.
+ */
+export const reportCloudStatusSchema = z.object({
+  sessions: z
+    .array(
+      z.object({
+        cloudSessionId: cloudSessionIdSchema,
+        state: z.enum(CLOUD_SESSION_STATES),
+      }),
+    )
+    .max(200),
+});
+
+export type ReportCloudStatusDto = z.infer<typeof reportCloudStatusSchema>;
 
 /**
  * `POST /sessions/{id}/checkouts`. Adding a repository to a *running* session is
@@ -282,6 +358,21 @@ export const issueAttachTicketSchema = z.object({
 });
 
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
+
+/**
+ * `POST /sessions/{id}/previews` — open one of the session's ports in the
+ * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+ */
+export const issueSessionPreviewSchema = z.object({
+  /** A port the session's own processes listen on; never a system one. */
+  port: z.number().int().min(1024).max(65535),
+  /** The path in the app to open on; the app's root when absent. */
+  path: z.string().max(2048).optional(),
+  /** Whether the console frames the preview (the Browser tab) or opens it in a tab of its own. */
+  embed: z.boolean().optional(),
+});
+
+export type IssueSessionPreviewDto = z.infer<typeof issueSessionPreviewSchema>;
 
 /**
  * `POST /sessions/{id}/images` — a file for a running session's prompt (the

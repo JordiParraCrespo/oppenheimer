@@ -1,5 +1,5 @@
 import { SortableSessionItem } from '@oppenheimer/design-system-web';
-import { Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { Cloud, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
@@ -8,15 +8,23 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
-import { sessionGlyph } from '../lib/session-glyph';
+import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
 import { projectsForMove } from '../lib/session-groups';
-import { dotFor } from '../lib/session-run-state';
+import { dotFor, isWorking } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
+
+/** The row's lead glyph; the branch is the row's own default. */
+const GLYPHS: Record<SessionGlyph, ReactNode> = {
+  terminal: <SquareTerminal />,
+  folder: <Folder />,
+  cloud: <Cloud />,
+  branch: undefined,
+};
 
 /**
  * The age is derived on render: `compactAge` returns unit and count, the words
@@ -129,8 +137,9 @@ export function SessionRow({
       status={status}
       title={statusHint}
       state={dotFor(session)}
+      working={isWorking(session)}
       // The branch is the row's own default glyph.
-      icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
+      icon={GLYPHS[glyph]}
       active={active}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
       // Runs before the link's own click, which stands down on a prevented one.

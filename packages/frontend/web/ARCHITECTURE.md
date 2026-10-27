@@ -17,7 +17,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | --- | --- | --- |
 | `platform` | `LocalStorageService`, `sanitizeRedirect` — the browser, wrapped | leaf |
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle` | leaf |
-| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters | leaf |
+| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters, `useStartFailure` (why a session did not start, for its page and the Inbox) | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
 | `markdown` | `Markdown`: markdown someone else wrote (a pull request's description, a bot's reply) as elements, never raw HTML; fenced code coloured with a copy button, links to a new tab. The caller sets it in `Prose` or `ChatReply`; `MarkdownLine` is the start of such a text on one line (a bot's sidebar preview), its marks read and its blocks flattened | leaf |

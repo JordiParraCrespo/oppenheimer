@@ -36,11 +36,7 @@
         "shell": "Start shell"
       }
     },
-    "progressFailed": "Could not load how the start is going.",
-    "codes": {
-      "SESS_002": "This host makes sessions with one repository."
-    },
-    "details": "Details from the host: {{detail}}"
+    "progressFailed": "Could not load how the start is going."
   },
   "closed": {
     "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
@@ -73,6 +69,10 @@
       "folder": {
         "label": "Folder on host",
         "description": "Open an existing directory as it is · nothing is cloned"
+      },
+      "cloud": {
+        "label": "Claude Code cloud",
+        "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
       },
       "hosts": "Hosts",
       "startIn": "Start in"
@@ -506,6 +506,12 @@
       "interrupted": "You stopped this turn",
       "compacted": "Context compacted"
     },
+    "task": {
+      "completed": "Background task finished",
+      "failed": "Background task failed",
+      "killed": "Background task stopped",
+      "unknown": "Background task ended"
+    },
     "verb": {
       "command": "Ran",
       "read": "Read",
@@ -589,6 +595,32 @@
     "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
     "offline": "The host is offline",
     "offlineDetail": "The device comes back when the host reconnects.",
-    "ended": "The session has ended"
+    "ended": "The session has ended",
+    "browser": "Browser",
+    "address": "localhost:{{port}}",
+    "port": "Port",
+    "portSearch": "Find a port",
+    "portEmpty": "No port",
+    "reload": "Reload",
+    "openTab": "Open in a new tab",
+    "browserFrame": "localhost:{{port}} on this session's host",
+    "lookingForPorts": "Looking for a dev server…",
+    "waiting": "Waiting for a dev server",
+    "waitingDetail": "Start one in the terminal, or ask the agent to. Any port this session listens on, from 1024 up, opens here.",
+    "hostOffline": "The host is offline",
+    "hostOfflineDetail": "The preview comes back when the host reconnects.",
+    "notSupported": "This host can't share its ports",
+    "notSupportedDetail": "Update its runner to open the session's dev server here.",
+    "portsFailed": "Couldn't list the session's ports",
+    "previewFailed": "Couldn't open the preview",
+    "opening": "Opening localhost:{{port}}…"
+  },
+  "cloud": {
+    "eyebrow": "Claude Code cloud",
+    "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+    "open": "Open in claude.ai",
+    "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+    "copy": "Copy command",
+    "copied": "Copied"
   }
 }

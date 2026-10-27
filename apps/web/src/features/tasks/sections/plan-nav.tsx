@@ -25,7 +25,7 @@ export function PlanNav() {
         name={t('tasks.nav.tasks')}
         icon={<CircleCheck />}
         meta={open === undefined ? undefined : String(open)}
-        active={!onCalendar && !onMilestones}
+        active={Boolean(matchRoute({ to: '/plan' }))}
         nativeButton={false}
         render={<Link to="/plan" />}
       />
