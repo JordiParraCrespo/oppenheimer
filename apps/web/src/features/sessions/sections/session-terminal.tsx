@@ -43,7 +43,9 @@ const AGENT_WINDOW = 0;
  * the link is live or blipping (without the link while it is live when the
  * session's bar above already says its state, `showLive` off), and while the host is away a banner in its
  * place that says so, counts the time, and opens the fix from How to fix.
- * It comes back on its own; the fix is for when it does not. What else the
+ * It comes back on its own; the fix is for when it does not. With nothing
+ * to say (live, `showLive` off, no items) the band is left out, so the grid
+ * runs to the pane's foot; a blip brings it back. What else the
  * line carries is the pane's (`statusItems`): nothing when the session has a bar
  * of its own, the view switch and Share when it does not.
  *
@@ -101,10 +103,15 @@ export function SessionTerminal({
     slow: terminal.slowDial,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
+  // Under a session bar that already says the link is live, a live link with
+  // nothing beside it would draw an empty band under the grid: leave it out.
+  const quietBar = phase === 'live' && !showLive && !statusItems && !upload.sending;
 
   return (
     <DropZone onFiles={takeFiles} className="flex min-h-0 flex-1 flex-col">
       <Terminal
+        // Where the link stands, on the frame: the status band is not always drawn.
+        data-phase={phase ?? 'closed'}
         className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
       >
@@ -182,7 +189,7 @@ export function SessionTerminal({
           </div>
         ) : null}
 
-        {phase ? (
+        {quietBar ? null : phase ? (
           <HostLinkChrome
             elapsed={
               phase === 'offline' && awaySince !== null ? (
