@@ -28,9 +28,11 @@ export class FollowUpCloudAgentCommandHandler
     if (found.isNone()) throw new AppError(CloudAgentErrors.NOT_FOUND);
     const agent = found.unwrap();
     const { provider, grant } = await this.resolver.callFor(scope, agent.provider);
+    const runIdAtLoad = agent.latestRunId;
     const runId = await provider.followUp(grant, agent.externalId, prompt);
     agent.followedUp(runId, new Date());
-    await this.agents.save(agent);
+    // Lost only to a second follow-up, whose newer run the vendor already refused this one for.
+    await this.agents.saveIfRun(agent, runIdAtLoad);
     return agent.id;
   }
 }

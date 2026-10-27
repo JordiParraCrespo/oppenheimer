@@ -29,7 +29,8 @@ export class CancelCloudAgentCommandHandler
     const { provider, grant } = await this.resolver.callFor(scope, agent.provider);
     await provider.cancel(grant, agent.externalId, agent.latestRunId);
     agent.cancelled(new Date());
-    await this.agents.save(agent);
+    // A follow-up that started a newer run meanwhile is left working: the stop was of the run before it.
+    await this.agents.saveIfRun(agent, agent.latestRunId);
     return agent.id;
   }
 }

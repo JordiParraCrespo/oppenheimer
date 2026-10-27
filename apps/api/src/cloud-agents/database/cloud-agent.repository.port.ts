@@ -15,10 +15,10 @@ export interface CloudAgentRepositoryPort {
   findOwnById(scope: AccessScope, id: string): Promise<Option<CloudAgentEntity>>;
   insert(agent: CloudAgentEntity): Promise<void>;
   /**
-   * Writes what the vendor last said, a follow-up or a stop. A blind write:
-   * every writer copies the vendor's own state, and `CloudAgentEntity.sync`
-   * ignores an answer about an older run, so the last writer is never further
-   * from the vendor than one sync.
+   * Writes what the vendor last said, a follow-up or a stop, only if the row
+   * is still on `runIdAtLoad`, the latest run it held when it was read.
+   * False means another writer moved it to a newer run first (a sync that
+   * left before a follow-up landed), and nothing was written.
    */
-  save(agent: CloudAgentEntity): Promise<void>;
+  saveIfRun(agent: CloudAgentEntity, runIdAtLoad: string): Promise<boolean>;
 }

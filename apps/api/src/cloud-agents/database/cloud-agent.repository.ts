@@ -47,9 +47,13 @@ export class CloudAgentRepository
     await this.repository.insert(this.mapper.toPersistence(agent));
   }
 
-  async save(agent: CloudAgentEntity): Promise<void> {
+  async saveIfRun(agent: CloudAgentEntity, runIdAtLoad: string): Promise<boolean> {
     const { id, organizationId, createdByUserId, ...changes } = this.mapper.toPersistence(agent);
-    await this.repository.update({ id, organizationId, createdByUserId }, changes);
+    const result = await this.repository.update(
+      { id, organizationId, createdByUserId, latestRunId: runIdAtLoad },
+      changes,
+    );
+    return result.affected === 1;
   }
 
   private ownQuery(scope: AccessScope) {

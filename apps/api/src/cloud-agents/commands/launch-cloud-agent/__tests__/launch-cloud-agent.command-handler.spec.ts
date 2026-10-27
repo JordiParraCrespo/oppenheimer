@@ -3,6 +3,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
 import type { CloudAgentResolver } from '../../../application/cloud-agent.resolver';
 import type { CloudAgentProvider } from '../../../application/cloud-agent-provider.port';
+import { CloudAgentMapper } from '../../../cloud-agent.mapper';
 import type { CloudAgentRepositoryPort } from '../../../database/cloud-agent.repository.port';
 import { CloudAgentErrors } from '../../../domain/cloud-agents.errors';
 import { LaunchCloudAgentCommand } from '../launch-cloud-agent.command';
@@ -27,7 +28,11 @@ function setup(launch: CloudAgentProvider['launch']) {
     callFor: vi.fn().mockResolvedValue({ provider, grant: 'grant' }),
   } as unknown as CloudAgentResolver;
   const agents: Pick<CloudAgentRepositoryPort, 'insert'> = { insert: vi.fn() };
-  const handler = new LaunchCloudAgentCommandHandler(resolver, agents as CloudAgentRepositoryPort);
+  const handler = new LaunchCloudAgentCommandHandler(
+    resolver,
+    agents as CloudAgentRepositoryPort,
+    new CloudAgentMapper(),
+  );
   return { handler, agents, provider };
 }
 

@@ -178,7 +178,7 @@ describe('cloud agents (integration)', () => {
       },
       now,
     );
-    await agents.save(loaded);
+    expect(await agents.saveIfRun(loaded, 'run-1')).toBe(true);
 
     const again = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
     expect(again).toMatchObject({
@@ -189,6 +189,24 @@ describe('cloud agents (integration)', () => {
       model: 'grok-4.7',
     });
     expect(again.syncedAt).toEqual(now);
+  });
+
+  it('drops a sync that read the run before a follow-up, keeping the newer run', async () => {
+    const launched = agent(userId);
+    await agents.insert(launched);
+    const syncing = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
+    const following = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
+
+    following.followedUp('run-2', new Date('2026-10-26T12:00:00Z'));
+    expect(await agents.saveIfRun(following, 'run-1')).toBe(true);
+    syncing.sync(
+      { runId: 'run-1', status: 'finished', branch: null, pullRequestUrl: null, summary: 'Done.' },
+      new Date('2026-10-26T12:00:01Z'),
+    );
+    expect(await agents.saveIfRun(syncing, 'run-1')).toBe(false);
+
+    const again = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
+    expect(again).toMatchObject({ latestRunId: 'run-2', status: 'starting', summary: null });
   });
 
   it('refuses a status or a vendor the product does not know, and a second row for one vendor agent', async () => {

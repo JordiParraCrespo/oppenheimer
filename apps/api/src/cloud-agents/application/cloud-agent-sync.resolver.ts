@@ -25,8 +25,10 @@ export class CloudAgentSyncResolver {
     try {
       const { provider, grant } = await this.resolver.callFor(scope, agent.provider);
       const run = await provider.read(grant, agent.externalId, agent.latestRunId);
+      const runIdAtLoad = agent.latestRunId;
       agent.sync(run, now);
-      await this.agents.save(agent);
+      // A follow-up that landed meanwhile moved the row on; this answer is about the run before it.
+      await this.agents.saveIfRun(agent, runIdAtLoad);
     } catch (error) {
       if (!(error instanceof AppError)) throw error;
       this.logger.warn({

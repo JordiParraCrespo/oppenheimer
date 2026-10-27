@@ -1,13 +1,59 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { LaunchCloudAgentDto } from '@oppenheimer/shared';
+import type { CloudAgentLaunch, LaunchedCloudAgent } from './application/cloud-agent-provider.port';
 import { CloudAgentOrmEntity } from './database/cloud-agent.orm-entity';
-import { CloudAgentEntity } from './domain/cloud-agent.entity';
+import { CloudAgentEntity, type LaunchedCloudAgentProps } from './domain/cloud-agent.entity';
 import { CloudAgentResponseDto } from './dtos/cloud-agent.response.dto';
+
+/** The longest name a row keeps (`cloud_agent.name`); a vendor's may run longer. */
+const NAME_MAX = 200;
+
+/** Who launches, in which workspace, under which id. */
+export interface CloudAgentLauncher {
+  id: string;
+  organizationId: string;
+  createdByUserId: string;
+}
 
 @Injectable()
 export class CloudAgentMapper
   implements Mapper<CloudAgentEntity, CloudAgentOrmEntity, CloudAgentResponseDto>
 {
+  /** What the vendor is asked for: an option left out is null, the vendor's default. */
+  toLaunch(id: string, input: LaunchCloudAgentDto): CloudAgentLaunch {
+    return {
+      id,
+      prompt: input.prompt,
+      repositoryUrl: input.repositoryUrl,
+      startingRef: input.startingRef ?? null,
+      model: input.model ?? null,
+      autoCreatePr: input.autoCreatePr,
+    };
+  }
+
+  /** The launch as asked and the vendor's answer, as `CloudAgentEntity.launched` takes them. */
+  toLaunchedProps(
+    launcher: CloudAgentLauncher,
+    launch: CloudAgentLaunch,
+    provider: CloudAgentEntity['provider'],
+    launched: LaunchedCloudAgent,
+  ): LaunchedCloudAgentProps {
+    return {
+      ...launcher,
+      provider,
+      prompt: launch.prompt,
+      repositoryUrl: launch.repositoryUrl,
+      startingRef: launch.startingRef,
+      model: launch.model,
+      autoCreatePr: launch.autoCreatePr,
+      externalId: launched.externalId,
+      url: launched.url,
+      name: launched.name.slice(0, NAME_MAX),
+      run: launched.run,
+    };
+  }
+
   toPersistence(entity: CloudAgentEntity): CloudAgentOrmEntity {
     const record = new CloudAgentOrmEntity();
     record.id = entity.id;
