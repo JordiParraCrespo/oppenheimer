@@ -23,5 +23,6 @@
   "logOutFailed": "Could not log you out. Try again.",
   "plan": "Plan",
   "pullRequests": "Pull requests",
-  "employees": "Employees"
+  "employees": "Employees",
+  "cloudAgents": "Cloud agents"
 }

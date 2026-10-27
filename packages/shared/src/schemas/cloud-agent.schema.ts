@@ -73,6 +73,8 @@ export const launchCloudAgentSchema = z.object({
   autoCreatePr: z.boolean().default(false),
 });
 export type LaunchCloudAgentDto = z.infer<typeof launchCloudAgentSchema>;
+/** What a launch form holds before the schema fills its defaults. */
+export type LaunchCloudAgentInput = z.input<typeof launchCloudAgentSchema>;
 
 /** `POST /cloud-agents/:id/follow-ups`: the next instruction, as a new run on the same agent. */
 export const followUpCloudAgentSchema = z.object({

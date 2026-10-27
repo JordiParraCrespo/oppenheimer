@@ -1094,6 +1094,80 @@
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
       }
+    },
+    "cloudAgents": {
+      "sidebar": {
+        "new": "Nuevo agente en la nube",
+        "agents": "Agentes",
+        "listFailed": "No se pudieron cargar tus agentes en la nube."
+      },
+      "status": {
+        "starting": "Iniciando",
+        "running": "Trabajando",
+        "finished": "Terminado",
+        "failed": "Falló",
+        "cancelled": "Detenido",
+        "expired": "Caducado"
+      },
+      "landing": {
+        "title": "Nuevo agente en la nube",
+        "description": "Se ejecuta en la nube de {{provider}} con tu clave, en un repositorio al que tenga acceso, y sube una rama.",
+        "connectTitle": "Conecta un proveedor de agentes en la nube",
+        "connectDescription": "Los agentes en la nube se ejecutan en la nube de un proveedor, no en tus hosts. Conecta Cursor con tu clave de API para lanzar uno.",
+        "connectAction": "Conectar Cursor",
+        "statusFailed": "No se pudo saber si hay un proveedor conectado."
+      },
+      "launch": {
+        "prompt": "¿Qué debe hacer?",
+        "promptPlaceholder": "Describe el cambio, como se lo contarías a un compañero",
+        "repository": "Repositorio",
+        "repositoryPlaceholder": "Elige un repositorio",
+        "repositoriesFailed": "No se pudieron cargar los repositorios a los que llega {{provider}}.",
+        "searchRepositories": "Buscar repositorios",
+        "noRepositories": "Ningún repositorio coincide.",
+        "model": "Modelo",
+        "modelDefault": "Auto (elige {{provider}})",
+        "searchModels": "Buscar modelos",
+        "noModels": "Ningún modelo coincide.",
+        "modelsFailed": "No se pudieron cargar los modelos de {{provider}}.",
+        "startingRef": "Rama de partida",
+        "startingRefHint": "Déjalo vacío para usar la rama por defecto del repositorio.",
+        "autoCreatePr": "Abrir una pull request al terminar",
+        "submit": "Lanzar agente",
+        "submitting": "Lanzando…",
+        "failed": "No se pudo lanzar el agente.",
+        "loading": "Cargando…"
+      },
+      "detail": {
+        "loadFailed": "No se pudo cargar este agente en la nube.",
+        "repository": "Repositorio",
+        "model": "Modelo",
+        "modelDefault": "Auto",
+        "branch": "Rama",
+        "branchPending": "Aún sin subir",
+        "pullRequest": "Pull request",
+        "openPullRequest": "Abrir pull request",
+        "openAt": "Abrir en {{provider}}",
+        "prompt": "Petición",
+        "reply": "Última respuesta",
+        "working": "Trabajando en la nube de {{provider}}. Esta página lo sigue.",
+        "lastHeard": "Última noticia de {{provider}} {{age}}",
+        "stop": "Detener",
+        "followUp": "Siguiente instrucción",
+        "followUpPlaceholder": "Dile qué hacer a continuación",
+        "followUpWhileWorking": "Podrás enviar la siguiente instrucción cuando termine esta ejecución.",
+        "send": "Enviar",
+        "sending": "Enviando…",
+        "followUpFailed": "No se pudo enviar la instrucción.",
+        "justNow": "hace un momento"
+      },
+      "stop": {
+        "title": "¿Detener «{{name}}»?",
+        "description": "La ejecución termina donde está. Lo que haya subido se queda, y una siguiente instrucción lo vuelve a poner en marcha.",
+        "confirm": "Detener agente",
+        "pending": "Deteniendo…",
+        "failed": "No se pudo detener el agente."
+      }
     }
   },
   "bots": {
@@ -2423,7 +2497,8 @@
       "profile": "Perfil",
       "hosts": "Hosts",
       "repositories": "Repositorios observados",
-      "modelProviders": "Proveedores de modelos"
+      "modelProviders": "Proveedores de modelos",
+      "cloudAgents": "Agentes en la nube"
     },
     "profile": {
       "title": "Perfil",
@@ -2568,6 +2643,31 @@
         "done": "Hecho",
         "failed": "No se pudo iniciar sesión en ChatGPT."
       }
+    },
+    "cloudAgents": {
+      "title": "Agentes en la nube",
+      "description": "Agentes de código que se ejecutan en la nube de un proveedor, con tu propia clave. Se facturan en tu plan con el proveedor.",
+      "unavailable": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
+      "loadFailed": "No se pudieron cargar tus proveedores de agentes en la nube.",
+      "providers": {
+        "cursor": "Cloud Agents de Cursor, con cualquier modelo que ofrezca Cursor, Grok incluido."
+      },
+      "connectedAs": "{{name}} · {{email}} · termina en {{hint}}",
+      "connectedKey": "{{name}} · termina en {{hint}}",
+      "notConnected": "Sin conectar",
+      "connect": "Conectar",
+      "replace": "Cambiar clave",
+      "disconnect": "Desconectar",
+      "disconnectLabel": "Desconectar {{provider}}",
+      "disconnectFailed": "No se pudo desconectar.",
+      "dialog": {
+        "title": "Conectar {{provider}}",
+        "description": "Pega una clave de API de usuario del panel de {{provider}}. {{provider}} la comprueba primero y no se vuelve a mostrar.",
+        "label": "Clave de API",
+        "save": "Conectar",
+        "saving": "Comprobando…",
+        "failed": "No se pudo conectar."
+      }
     }
   },
   "nav": {
@@ -2595,7 +2695,8 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "cloudAgents": "Agentes en la nube"
   },
   "language": {
     "label": "Idioma",

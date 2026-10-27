@@ -1,5 +1,5 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
-import { Cpu, Eye, KeyRound, User } from '@oppenheimer/design-system-web/icons';
+import { Cloud, Cpu, Eye, KeyRound, User } from '@oppenheimer/design-system-web/icons';
 import { SettingsSidebar } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { HostCount } from '@/features/hosts/sections/host-count';
@@ -29,6 +29,7 @@ function SettingsLayout() {
             items: [
               { to: '/settings/profile', icon: User, labelKey: 'profile' },
               { to: '/settings/repositories', icon: Eye, labelKey: 'repositories' },
+              { to: '/settings/cloud-agents', icon: Cloud, labelKey: 'cloudAgents' },
             ],
           },
           {

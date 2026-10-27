@@ -19,6 +19,7 @@ import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
+import { Route as AuthenticatedCloudRouteImport } from './routes/_authenticated/cloud'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -38,6 +39,8 @@ import { Route as AuthenticatedAutomationsAutomationIdRouteImport } from './rout
 import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_authenticated/automations/runs'
 import { Route as AuthenticatedBotsIndexRouteImport } from './routes/_authenticated/bots/index'
 import { Route as AuthenticatedBotsBotIdRouteImport } from './routes/_authenticated/bots/$botId'
+import { Route as AuthenticatedCloudIndexRouteImport } from './routes/_authenticated/cloud/index'
+import { Route as AuthenticatedCloudAgentIdRouteImport } from './routes/_authenticated/cloud/$agentId'
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
@@ -47,6 +50,7 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsCloudAgentsRouteImport } from './routes/_authenticated/settings/cloud-agents'
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
@@ -112,6 +116,11 @@ const AuthenticatedAutomationsRoute =
     path: '/automations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCloudRoute = AuthenticatedCloudRouteImport.update({
+  id: '/cloud',
+  path: '/cloud',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -211,6 +220,17 @@ const AuthenticatedBotsBotIdRoute = AuthenticatedBotsBotIdRouteImport.update({
   path: '/bots/$botId',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCloudIndexRoute = AuthenticatedCloudIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCloudRoute,
+} as any)
+const AuthenticatedCloudAgentIdRoute =
+  AuthenticatedCloudAgentIdRouteImport.update({
+    id: '/$agentId',
+    path: '/$agentId',
+    getParentRoute: () => AuthenticatedCloudRoute,
+  } as any)
 const AuthenticatedPlanIndexRoute = AuthenticatedPlanIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -261,6 +281,12 @@ const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsCloudAgentsRoute =
+  AuthenticatedSettingsCloudAgentsRouteImport.update({
+    id: '/cloud-agents',
+    path: '/cloud-agents',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsModelProvidersRoute =
@@ -368,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/cloud': typeof AuthenticatedCloudRouteWithChildren
   '/plan': typeof AuthenticatedPlanRouteWithChildren
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -384,17 +411,20 @@ export interface FileRoutesByFullPath {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
+  '/cloud/$agentId': typeof AuthenticatedCloudAgentIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/bots/': typeof AuthenticatedBotsIndexRoute
+  '/cloud/': typeof AuthenticatedCloudIndexRoute
   '/plan/': typeof AuthenticatedPlanIndexRoute
   '/pulls/': typeof AuthenticatedPullsIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -432,17 +462,20 @@ export interface FileRoutesByTo {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
+  '/cloud/$agentId': typeof AuthenticatedCloudAgentIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/bots': typeof AuthenticatedBotsIndexRoute
+  '/cloud': typeof AuthenticatedCloudIndexRoute
   '/plan': typeof AuthenticatedPlanIndexRoute
   '/pulls': typeof AuthenticatedPullsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -472,6 +505,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/_authenticated/cloud': typeof AuthenticatedCloudRouteWithChildren
   '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -488,17 +522,20 @@ export interface FileRoutesById {
   '/_authenticated/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/bots/$botId': typeof AuthenticatedBotsBotIdRoute
+  '/_authenticated/cloud/$agentId': typeof AuthenticatedCloudAgentIdRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/bots/': typeof AuthenticatedBotsIndexRoute
+  '/_authenticated/cloud/': typeof AuthenticatedCloudIndexRoute
   '/_authenticated/plan/': typeof AuthenticatedPlanIndexRoute
   '/_authenticated/pulls/': typeof AuthenticatedPullsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -527,6 +564,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$'
     | '/automations'
+    | '/cloud'
     | '/plan'
     | '/pulls'
     | '/settings'
@@ -543,17 +581,20 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/bots/$botId'
+    | '/cloud/$agentId'
     | '/plan/calendar'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/cloud-agents'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
     | '/onboarding/'
     | '/automations/'
     | '/bots/'
+    | '/cloud/'
     | '/plan/'
     | '/pulls/'
     | '/sessions/'
@@ -591,17 +632,20 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/bots/$botId'
+    | '/cloud/$agentId'
     | '/plan/calendar'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/cloud-agents'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
     | '/onboarding'
     | '/automations'
     | '/bots'
+    | '/cloud'
     | '/plan'
     | '/pulls'
     | '/sessions'
@@ -630,6 +674,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_authenticated/$'
     | '/_authenticated/automations'
+    | '/_authenticated/cloud'
     | '/_authenticated/plan'
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
@@ -646,17 +691,20 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/$automationId'
     | '/_authenticated/automations/runs'
     | '/_authenticated/bots/$botId'
+    | '/_authenticated/cloud/$agentId'
     | '/_authenticated/plan/calendar'
     | '/_authenticated/plan/milestones'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/cloud-agents'
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
     | '/_authenticated/bots/'
+    | '/_authenticated/cloud/'
     | '/_authenticated/plan/'
     | '/_authenticated/pulls/'
     | '/_authenticated/sessions/'
@@ -757,6 +805,13 @@ declare module '@tanstack/react-router' {
       path: '/automations'
       fullPath: '/automations'
       preLoaderRoute: typeof AuthenticatedAutomationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/cloud': {
+      id: '/_authenticated/cloud'
+      path: '/cloud'
+      fullPath: '/cloud'
+      preLoaderRoute: typeof AuthenticatedCloudRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/plan': {
@@ -892,6 +947,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cloud/': {
+      id: '/_authenticated/cloud/'
+      path: '/'
+      fullPath: '/cloud/'
+      preLoaderRoute: typeof AuthenticatedCloudIndexRouteImport
+      parentRoute: typeof AuthenticatedCloudRoute
+    }
+    '/_authenticated/cloud/$agentId': {
+      id: '/_authenticated/cloud/$agentId'
+      path: '/$agentId'
+      fullPath: '/cloud/$agentId'
+      preLoaderRoute: typeof AuthenticatedCloudAgentIdRouteImport
+      parentRoute: typeof AuthenticatedCloudRoute
+    }
     '/_authenticated/plan/': {
       id: '/_authenticated/plan/'
       path: '/'
@@ -953,6 +1022,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/cloud-agents': {
+      id: '/_authenticated/settings/cloud-agents'
+      path: '/cloud-agents'
+      fullPath: '/settings/cloud-agents'
+      preLoaderRoute: typeof AuthenticatedSettingsCloudAgentsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/model-providers': {
@@ -1139,6 +1215,19 @@ const AuthenticatedAutomationsRouteWithChildren =
     AuthenticatedAutomationsRouteChildren,
   )
 
+interface AuthenticatedCloudRouteChildren {
+  AuthenticatedCloudAgentIdRoute: typeof AuthenticatedCloudAgentIdRoute
+  AuthenticatedCloudIndexRoute: typeof AuthenticatedCloudIndexRoute
+}
+
+const AuthenticatedCloudRouteChildren: AuthenticatedCloudRouteChildren = {
+  AuthenticatedCloudAgentIdRoute: AuthenticatedCloudAgentIdRoute,
+  AuthenticatedCloudIndexRoute: AuthenticatedCloudIndexRoute,
+}
+
+const AuthenticatedCloudRouteWithChildren =
+  AuthenticatedCloudRoute._addFileChildren(AuthenticatedCloudRouteChildren)
+
 interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
@@ -1170,6 +1259,7 @@ const AuthenticatedPullsRouteWithChildren =
   AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsCloudAgentsRoute: typeof AuthenticatedSettingsCloudAgentsRoute
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
@@ -1179,6 +1269,7 @@ interface AuthenticatedSettingsRouteChildren {
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsCloudAgentsRoute: AuthenticatedSettingsCloudAgentsRoute,
   AuthenticatedSettingsModelProvidersRoute:
     AuthenticatedSettingsModelProvidersRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
@@ -1230,6 +1321,7 @@ const AuthenticatedBotsBotIdSettingsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
+  AuthenticatedCloudRoute: typeof AuthenticatedCloudRouteWithChildren
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
   AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -1246,6 +1338,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
+  AuthenticatedCloudRoute: AuthenticatedCloudRouteWithChildren,
   AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
   AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,

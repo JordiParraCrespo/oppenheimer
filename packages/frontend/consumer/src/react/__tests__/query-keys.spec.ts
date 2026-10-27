@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { botsKeys } from '../bots.queries';
 import { calendarKeys } from '../calendar.queries';
+import { cloudAgentsKeys } from '../cloud-agents.queries';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
 import { pullRequestsKeys } from '../pull-requests.queries';
@@ -184,5 +185,31 @@ describe('botsKeys', () => {
     expect(invalidated(client, botsKeys.list())).toBe(true);
     expect(invalidated(client, botsKeys.groupList())).toBe(false);
     expect(invalidated(client, botsKeys.detail('bot-1'))).toBe(false);
+  });
+});
+
+describe('cloudAgentsKeys', () => {
+  it('reads the list again after a launch without dropping the open agent', async () => {
+    const list = cloudAgentsKeys.list();
+    const detail = cloudAgentsKeys.detail('agent-1');
+    const client = cacheWith(list, detail, cloudAgentsKeys.status());
+
+    await client.invalidateQueries({ queryKey: cloudAgentsKeys.lists() });
+
+    expect(invalidated(client, list)).toBe(true);
+    expect(invalidated(client, detail)).toBe(false);
+    expect(invalidated(client, cloudAgentsKeys.status())).toBe(false);
+  });
+
+  it('reads a vendor’s models and repositories again on a new key, and nothing else', async () => {
+    const models = cloudAgentsKeys.models('cursor');
+    const repositories = cloudAgentsKeys.repositories('cursor');
+    const client = cacheWith(models, repositories, cloudAgentsKeys.list());
+
+    await client.invalidateQueries({ queryKey: cloudAgentsKeys.providers() });
+
+    expect(invalidated(client, models)).toBe(true);
+    expect(invalidated(client, repositories)).toBe(true);
+    expect(invalidated(client, cloudAgentsKeys.list())).toBe(false);
   });
 });

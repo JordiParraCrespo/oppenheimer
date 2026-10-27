@@ -17,6 +17,11 @@ const BotsSidebar = lazy(() =>
     default: module.BotsSidebar,
   })),
 );
+const CloudAgentsSidebar = lazy(() =>
+  import('@/features/cloud-agents/sections/cloud-agents-sidebar').then((module) => ({
+    default: module.CloudAgentsSidebar,
+  })),
+);
 const PullRequestsSidebar = lazy(() =>
   import('@/features/pull-requests/sections/pull-requests-sidebar').then((module) => ({
     default: module.PullRequestsSidebar,
@@ -45,6 +50,8 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
     <Suspense fallback={null}>
       {list === 'bots' ? (
         <BotsSidebar />
+      ) : list === 'cloud' ? (
+        <CloudAgentsSidebar />
       ) : list === 'automations' ? (
         <AutomationsSidebar />
       ) : list === 'pulls' ? (

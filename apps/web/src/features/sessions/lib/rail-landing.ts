@@ -7,6 +7,7 @@
 export const RAIL_ROUTES = [
   { id: 'bots', to: '/bots' },
   { id: 'sessions', to: '/sessions/new' },
+  { id: 'cloud', to: '/cloud' },
   { id: 'pulls', to: '/pulls' },
   { id: 'automations', to: '/automations' },
   { id: 'plan', to: '/plan' },

@@ -101,6 +101,18 @@ export {
 // The pairing flow, not its parts: a surface that read the token or the host
 // poll directly would be back to asking "is there a host?" instead of "was
 // this token spent?".
+export {
+  useCancelCloudAgent,
+  useCloudAgentModels,
+  useCloudAgentRepositories,
+  useConnectCloudAgentProvider,
+  useDisconnectCloudAgentProvider,
+  useFollowUpCloudAgent,
+  useLaunchCloudAgent,
+  useSuspenseCloudAgent,
+  useSuspenseCloudAgentStatus,
+  useSuspenseCloudAgents,
+} from './cloud-agents.queries';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostFolders,

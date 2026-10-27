@@ -13667,6 +13667,974 @@
         "tags": ["Calendar"]
       }
     },
+    "/api/v1/cloud-agents/status": {
+      "get": {
+        "description": "Every vendor in order, with whether the caller stored a key for it and whose the key is. Never the key, and never a call to the vendor.",
+        "operationId": "findCloudAgentStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether the caller can launch cloud agents, and on which vendors",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/providers/{provider}/credential": {
+      "put": {
+        "description": "The vendor is asked whose key it is first; a key it refuses is not stored. The key is sealed, replaces the caller’s key for that vendor, and is never returned. Answers the status.",
+        "operationId": "putCloudAgentCredential",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": ["cursor"],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutCloudAgentCredentialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_011 — No such provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 — The vendor refused the key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The vendor's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The vendor did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CLOUD_AGENTS_003 — Cloud agents are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a cloud agent vendor with the caller’s own key",
+        "tags": ["Cloud agents"]
+      },
+      "delete": {
+        "description": "Forgets the caller’s key for the vendor. Their agents stay listed as last heard of, and keep running at the vendor. No key stored does nothing.",
+        "operationId": "removeCloudAgentCredential",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": ["cursor"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_011 — No such provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a cloud agent vendor",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/providers/{provider}/models": {
+      "get": {
+        "description": "Asked of the vendor on the caller’s key and kept for an hour. The vendor’s own default is not listed: a launch with no model runs on it.",
+        "operationId": "findCloudAgentModels",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": ["cursor"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CloudAgentModelResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_011 — No such provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CLOUD_AGENTS_004 — The caller has no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The provider did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The models a vendor offers the caller’s cloud agents",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/providers/{provider}/repositories": {
+      "get": {
+        "description": "Asked of the vendor on the caller’s key and kept for ten minutes: Cursor allows one listing a minute. GitHub repositories only.",
+        "operationId": "findCloudAgentRepositories",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": ["cursor"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CloudAgentRepositoryResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_011 — No such provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CLOUD_AGENTS_004 — The caller has no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The provider did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The repositories a vendor can reach for the caller",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents": {
+      "get": {
+        "description": "The fifty newest the caller launched here, newest first. A few working ones are asked about again first; the rest are as last heard of (`syncedAt`). A vendor that does not answer never fails the list.",
+        "operationId": "findCloudAgents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CloudAgentResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s cloud agents",
+        "tags": ["Cloud agents"]
+      },
+      "post": {
+        "description": "On the caller’s own key for the vendor, in a repository the vendor can reach, from its default branch or a starting ref. It bills the caller’s own plan at the vendor. Nothing is stored when the vendor refuses.",
+        "operationId": "launchCloudAgent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaunchCloudAgentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CLOUD_AGENTS_004 — The caller has no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The provider did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Launch a coding agent in a vendor’s cloud",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/{id}": {
+      "get": {
+        "description": "While it works, the vendor is asked about its run at most once every ten seconds; a vendor that does not answer leaves it as last heard of.",
+        "operationId": "findCloudAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_001 — No such cloud agent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One of the caller’s cloud agents",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/{id}/follow-ups": {
+      "post": {
+        "description": "A new run on the same agent, at the vendor. Refused while its run is still going (CLOUD_AGENTS_008).",
+        "operationId": "followUpCloudAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpCloudAgentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_001 — No such cloud agent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CLOUD_AGENTS_008 — The agent is still working\n\nCLOUD_AGENTS_004 — The caller has no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The provider did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Give one of the caller’s cloud agents its next instruction",
+        "tags": ["Cloud agents"]
+      }
+    },
+    "/api/v1/cloud-agents/{id}/cancel": {
+      "post": {
+        "description": "The agent stays; a follow-up starts it again. A run that already ended is CLOUD_AGENTS_009.",
+        "operationId": "cancelCloudAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAgentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CLOUD_AGENTS_001 — No such cloud agent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CLOUD_AGENTS_009 — The run already ended\n\nCLOUD_AGENTS_004 — The caller has no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — The provider did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop the latest run of one of the caller’s cloud agents",
+        "tags": ["Cloud agents"]
+      }
+    },
     "/api/v1/pulls": {
       "get": {
         "description": "Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
@@ -18865,6 +19833,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -18912,6 +19882,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -18998,6 +19970,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -19108,6 +20082,8 @@
               "tasks:write",
               "calendar:read",
               "calendar:write",
+              "cloud-agents:read",
+              "cloud-agents:write",
               "pulls:read",
               "pulls:write",
               "repositories:read",
@@ -19169,6 +20145,7 @@
               "bots",
               "tasks",
               "calendar",
+              "cloud-agents",
               "pulls",
               "repositories",
               "flags"
@@ -19242,6 +20219,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -19300,6 +20279,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -19390,6 +20371,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "cloud-agents:read",
+                "cloud-agents:write",
                 "pulls:read",
                 "pulls:write",
                 "repositories:read",
@@ -25250,6 +26233,247 @@
           }
         },
         "required": ["events", "accounts"]
+      },
+      "CloudAgentProviderStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["cursor"]
+          },
+          "label": {
+            "type": "string",
+            "example": "Cursor"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether the caller stored a key for it."
+          },
+          "keyName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name the key has at the vendor."
+          },
+          "keyHint": {
+            "type": "string",
+            "nullable": true,
+            "description": "The key’s last four characters."
+          },
+          "accountEmail": {
+            "type": "string",
+            "nullable": true,
+            "description": "The vendor account it is."
+          },
+          "connectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "connected",
+          "keyName",
+          "keyHint",
+          "accountEmail",
+          "connectedAt"
+        ]
+      },
+      "CloudAgentStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "Whether this server can keep a vendor key at all (`CLOUD_AGENTS_KEY`). False: connecting answers CLOUD_AGENTS_003."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Whether the caller can launch on at least one vendor."
+          },
+          "providers": {
+            "description": "Every vendor, in order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CloudAgentProviderStatusDto"
+            }
+          }
+        },
+        "required": ["configured", "available", "providers"]
+      },
+      "PutCloudAgentCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": ["apiKey"]
+      },
+      "CloudAgentModelResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "grok-4.7"
+          },
+          "label": {
+            "type": "string",
+            "example": "Grok 4.7"
+          }
+        },
+        "required": ["id", "label"]
+      },
+      "CloudAgentRepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://github.com/acme/api"
+          }
+        },
+        "required": ["url"]
+      },
+      "CloudAgentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["cursor"]
+          },
+          "externalId": {
+            "type": "string",
+            "description": "The vendor’s id for the agent.",
+            "example": "bc-7f1c…"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s own page at the vendor."
+          },
+          "name": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The prompt it was launched with."
+          },
+          "repositoryUrl": {
+            "type": "string",
+            "example": "https://github.com/acme/api"
+          },
+          "startingRef": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null is the default branch."
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null is the vendor’s default."
+          },
+          "autoCreatePr": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["starting", "running", "finished", "failed", "cancelled", "expired"],
+            "description": "Where its latest run stands. `starting` and `running` still move."
+          },
+          "branch": {
+            "type": "string",
+            "nullable": true,
+            "description": "The branch it pushed."
+          },
+          "pullRequestUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s last reply, once its latest run ended."
+          },
+          "syncedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the vendor was last asked about the run."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "externalId",
+          "url",
+          "name",
+          "prompt",
+          "repositoryUrl",
+          "startingRef",
+          "model",
+          "autoCreatePr",
+          "status",
+          "branch",
+          "pullRequestUrl",
+          "summary",
+          "syncedAt",
+          "createdAt"
+        ]
+      },
+      "LaunchCloudAgentRequest": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["cursor"]
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "repositoryUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "pattern": "^https:\\/\\/"
+          },
+          "startingRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "autoCreatePr": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": ["provider", "prompt", "repositoryUrl"]
+      },
+      "FollowUpCloudAgentRequest": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          }
+        },
+        "required": ["prompt"]
       },
       "PullRequestLaneReasonDto": {
         "type": "object",

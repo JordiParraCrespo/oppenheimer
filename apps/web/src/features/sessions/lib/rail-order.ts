@@ -1,4 +1,11 @@
-import { Bot, GitPullRequest, Layers, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import {
+  Bot,
+  Cloud,
+  GitPullRequest,
+  Layers,
+  Terminal,
+  Zap,
+} from '@oppenheimer/design-system-web/icons';
 import type { ConsoleList } from '@/lib/console';
 import { RAIL_ROUTES, type RailItemId } from './rail-landing';
 
@@ -10,6 +17,7 @@ import { RAIL_ROUTES, type RailItemId } from './rail-landing';
 const LOOK = {
   bots: { lists: ['bots'], labelKey: 'nav.employees', Icon: Bot },
   sessions: { lists: ['sessions'], labelKey: 'nav.sessions', Icon: Terminal },
+  cloud: { lists: ['cloud'], labelKey: 'nav.cloudAgents', Icon: Cloud },
   pulls: { lists: ['pulls'], labelKey: 'nav.pullRequests', Icon: GitPullRequest },
   automations: { lists: ['automations'], labelKey: 'nav.automations', Icon: Zap },
   plan: { lists: ['tasks', 'calendar'], labelKey: 'nav.plan', Icon: Layers },

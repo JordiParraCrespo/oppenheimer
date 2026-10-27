@@ -1,6 +1,7 @@
 import { automationsKeys } from './automations.queries';
 import { botsKeys } from './bots.queries';
 import { calendarKeys } from './calendar.queries';
+import { cloudAgentsKeys } from './cloud-agents.queries';
 import { hostsKeys } from './hosts.queries';
 import { installationsKeys } from './installations.queries';
 import { profileKeys } from './profile.queries';
@@ -20,7 +21,9 @@ import { voiceKeys } from './voice.queries';
  * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
  * private repositories' code, diffs included. A bot's soul, instructions and
  * memory are what someone told it about their work. Whether a workspace can
-dictate says whether it has a ChatGPT sign-in. A consumer app passes this
+dictate says whether it has a ChatGPT sign-in. A cloud agent names a
+ * repository and what someone asked of it, and its status says which vendor
+ * keys they hold. A consumer app passes this
  * to `createQueryPersistOptions`.
  *
  * The review period's numbers are the one read of that feature which is kept:
@@ -39,6 +42,7 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   botsKeys.all[0],
   tasksKeys.all[0],
   calendarKeys.all[0],
+  cloudAgentsKeys.all[0],
   pullRequestsKeys.all[0],
   voiceKeys.all[0],
 ];
