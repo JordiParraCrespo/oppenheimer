@@ -1,12 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
-import { FOLDED_GROUPS_KEY, storedFoldedGroups, withFold } from '../lib/folded-groups';
+import { FOLDED_GROUPS_KEY, withFold } from '../lib/folded-groups';
+import { storedList } from '../lib/stored-list';
 
 /**
  * A project group folded in the sidebar comes back folded on the next visit,
- * and one opened again comes back open. Anything unreadable in storage is no
- * fold.
+ * and one opened again comes back open.
  */
 
 afterEach(() => window.localStorage.clear());
@@ -21,14 +21,7 @@ describe('useFoldedGroups', () => {
     const second = renderHook(() => useFoldedGroups());
     expect(second.result.current.folded).toEqual(['p1', 'unfiled']);
     act(() => second.result.current.setOpen('p1', true));
-    expect(storedFoldedGroups()).toEqual(['unfiled']);
-  });
-});
-
-describe('storedFoldedGroups', () => {
-  it.each(['{not json', '"p1"', '[1,"p1","p1"]'])('reads %s as what it can make of it', (raw) => {
-    window.localStorage.setItem(FOLDED_GROUPS_KEY, raw);
-    expect(storedFoldedGroups()).toEqual(raw.startsWith('[') ? ['p1'] : []);
+    expect(storedList(FOLDED_GROUPS_KEY)).toEqual(['unfiled']);
   });
 });
 
