@@ -2530,7 +2530,8 @@
       "readyShort": "Merge #{{number}} {{title}}",
       "readyTitle": "Merge #{{number}} · {{title}}?",
       "readyBody": "Nothing is holding it: it can merge now.",
-      "review": "Review",
+      "open": "Open",
+      "viewOnGithub": "View on GitHub",
       "merge": "Merge",
       "checks": {
         "passing": "Checks passing",
