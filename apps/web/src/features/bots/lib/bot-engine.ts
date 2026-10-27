@@ -1,4 +1,4 @@
-import type { AgentOption, EffortStop } from '@oppenheimer/design-system-web';
+import type { AgentId, AgentOption, EffortStop } from '@oppenheimer/design-system-web';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import {
   BOT_PROVIDER_CATALOG,
@@ -11,11 +11,11 @@ import {
 /**
  * The mark each provider is drawn with: the coding agent whose maker it is, so
  * Anthropic carries Claude Code's mark, OpenAI Codex's and xAI Grok Build's;
- * GLM has no agent of its own and falls back to the bot glyph, and so does
- * ChatGPT, which needs a mark of its own to stay a group apart from OpenAI's
- * in the model button.
+ * GLM has no agent of its own and is drawn with Z.ai's mark. ChatGPT wears
+ * OpenAI's mark too, under an id of its own so it stays a group apart from
+ * OpenAI's in the model button.
  */
-const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
+const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, AgentId>> = {
   anthropic: 'claude-code',
   glm: 'glm',
   openai: 'codex',
@@ -24,7 +24,7 @@ const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
 };
 
 /** The table read the other way: a mark back to its provider. */
-const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
+const PROVIDER_OF_MARK: ReadonlyMap<AgentId, BotProvider> = new Map(
   BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),
 );
 

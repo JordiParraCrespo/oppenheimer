@@ -133,6 +133,12 @@ import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/co
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
 
+/** A bot's providers that have no coding agent of their own, drawn with marks of theirs. */
+const PROVIDER_MARKS = [
+  { id: 'glm', label: 'GLM' },
+  { id: 'chatgpt', label: 'ChatGPT' },
+] as const;
+
 export default function Page() {
   return (
     <PageShell>
@@ -667,7 +673,7 @@ export default function Page() {
         id="agentmark"
         title="AgentMark"
         meta="agent-mark.tsx"
-        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square, Grok its slashed circle and Cursor (a cloud agent) its cube in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square, Grok its slashed circle and Cursor (a cloud agent) its cube in the current ink, and Blank terminal a terminal glyph. A bot's providers without a coding agent of their own take theirs: GLM Z.ai's mark, ChatGPT OpenAI's, having none of its own. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
         {CODING_AGENT_IDS.map((agent) => (
@@ -684,6 +690,14 @@ export default function Page() {
             Cursor
           </span>
         </Swatch>
+        {PROVIDER_MARKS.map(({ id, label }) => (
+          <Swatch key={id} label={id}>
+            <span className="flex items-center gap-2.5 text-sm text-fg">
+              <AgentMark agent={id} />
+              {label}
+            </span>
+          </Swatch>
+        ))}
       </Spec>
 
       <Spec

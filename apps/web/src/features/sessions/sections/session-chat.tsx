@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ChatTurn } from '../components/chat-turn';
+import { TerminalColumn } from '../components/terminal-column';
 import { useChatState } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
@@ -47,6 +48,9 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * conversation draws its latest turns (`TURNS_SHOWN`), the earlier ones a
  * click away above them, opened without moving what the reader is on; while
  * the reader is up in it, new turns add below and never take one off the top.
+ * It scrolls the whole pane, its scrollbar at the pane's edge, and its turns
+ * and composer stand in the terminal grid's `TerminalColumn`, so Terminal /
+ * Chat moves neither edge of the text.
  */
 export function SessionChat({
   chat,
@@ -80,8 +84,8 @@ export function SessionChat({
   return (
     <div className="relative flex size-full flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-4">
-          <div ref={content} className="flex min-h-full flex-col">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4">
+          <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {state.turns.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
@@ -95,7 +99,7 @@ export function SessionChat({
                 </EmptyState.Header>
               </EmptyState>
             ) : (
-              <ChatTranscript>
+              <ChatTranscript className="max-w-none">
                 {first > 0 ? (
                   <Button variant="ghost" size="sm" className="self-center" onClick={showEarlier}>
                     <ChevronUp />
@@ -107,7 +111,7 @@ export function SessionChat({
                 ))}
               </ChatTranscript>
             )}
-          </div>
+          </TerminalColumn>
         </div>
         {atLatest ? null : (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-linear-to-t from-chat-ground via-chat-ground/85 to-transparent pt-12 pb-3">
@@ -119,15 +123,13 @@ export function SessionChat({
         )}
       </div>
       {readOnly ? null : (
-        <div className="px-5 pb-3">
-          <div className="mx-auto w-full max-w-190">
-            {attach ? (
-              <SessionChatAttachingSend chat={chat} attach={attach} onSent={toLatest} />
-            ) : (
-              <SessionChatSend chat={chat} onSent={toLatest} />
-            )}
-          </div>
-        </div>
+        <TerminalColumn className="pb-3">
+          {attach ? (
+            <SessionChatAttachingSend chat={chat} attach={attach} onSent={toLatest} />
+          ) : (
+            <SessionChatSend chat={chat} onSent={toLatest} />
+          )}
+        </TerminalColumn>
       )}
     </div>
   );
