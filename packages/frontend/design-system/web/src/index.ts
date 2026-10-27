@@ -318,6 +318,24 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxCard,
+  InboxCardActions,
+  InboxCardBody,
+  InboxCardChoices,
+  InboxCardFacts,
+  InboxClear,
+  InboxGreeting,
+  InboxItem,
+  InboxItemSkeleton,
+  InboxList,
+  InboxLogLine,
+  InboxQuestion,
+  InboxQuestionOption,
+  InboxQuestionOptions,
+  InboxQuestions,
+  InboxSnoozedRow,
+} from './components/inbox';
+export {
   AddRow,
   InlineToken,
   TokenLiveDot,

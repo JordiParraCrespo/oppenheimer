@@ -207,6 +207,14 @@ export class WorkSessionOrmEntity {
   closeRefusalDetail!: string | null;
 
   /**
+   * What the agent waits on the person for (`SessionDecision`), folded from
+   * `agent.decision`. Read back through the schema by the mapper, never trusted
+   * as typed.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  pendingDecision!: unknown;
+
+  /**
    * Who asked for the session: `person`, `automation` (whose run points back
    * here), `review` (a pull request's review session, which the Sessions
    * list leaves out) or `bot` (a bot acting for its owner).

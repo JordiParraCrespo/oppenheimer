@@ -19,6 +19,7 @@ import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -113,6 +114,11 @@ const AuthenticatedAutomationsRoute =
     path: '/automations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/inbox': typeof AuthenticatedInboxRoute
   '/plan': typeof AuthenticatedPlanRouteWithChildren
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/$': typeof AuthenticatedSplatRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/s/$slug': typeof SSlugRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
@@ -481,6 +489,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -537,6 +546,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$'
     | '/automations'
+    | '/inbox'
     | '/plan'
     | '/pulls'
     | '/settings'
@@ -589,6 +599,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/$'
+    | '/inbox'
     | '/oauth/consent'
     | '/s/$slug'
     | '/forgot-password'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_authenticated/$'
     | '/_authenticated/automations'
+    | '/_authenticated/inbox'
     | '/_authenticated/plan'
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
@@ -770,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/automations'
       fullPath: '/automations'
       preLoaderRoute: typeof AuthenticatedAutomationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/plan': {
@@ -1250,6 +1269,7 @@ const AuthenticatedBotsBotIdSettingsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
   AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -1267,6 +1287,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
   AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,

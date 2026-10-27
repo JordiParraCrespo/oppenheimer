@@ -137,6 +137,15 @@ runner; install, the service units and the signed swap are proved on a real OS
 (`product/versions/mvp/09-runner-install-and-update.md`). What the fleet covers
 is recorded in `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
 
+`tests/fleet/inbox-stress.spec.ts` is the Inbox under load (thirty
+sessions in every scenario it reads, ten bots, two readers; about seven
+minutes) and runs only with `INBOX_STRESS=1`. What it covers and what it
+found is `product/versions/mvp/29-inbox.md`, "Stress test".
+
+```bash
+INBOX_STRESS=1 FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet tests/fleet/inbox-stress.spec.ts
+```
+
 ### Hosts on this machine
 
 Where Docker cannot build the fleet's image — a cloud sandbox whose egress

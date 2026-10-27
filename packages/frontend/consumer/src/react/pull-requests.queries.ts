@@ -88,8 +88,16 @@ export const pullRequestsKeys = {
  * until the next scope has answered.
  */
 export function useSuspensePullRequestQueue(scope: PullRequestScope) {
+  return useSuspenseQuery<PullRequestQueue, Error>(usePullRequestQueueQuery(scope));
+}
+
+/**
+ * One scope's queue read, polling while the answer is still filling: the key,
+ * the fetch and the poll, for every hook over it (the Inbox reads two scopes).
+ */
+export function usePullRequestQueueQuery(scope: PullRequestScope) {
   const app = useConsumerApp();
-  return useSuspenseQuery<PullRequestQueue, Error>({
+  return {
     queryKey: pullRequestsKeys.queue(scope),
     queryFn: () => app.pullRequests.queue(scope),
     ...usePollWhile<PullRequestQueue>(
@@ -97,7 +105,7 @@ export function useSuspensePullRequestQueue(scope: PullRequestScope) {
       pullRequestsKeys.queue(scope),
       (data) => data?.filling === true,
     ),
-  });
+  };
 }
 
 export function usePullRequestQueue<TData = PullRequestQueue>(

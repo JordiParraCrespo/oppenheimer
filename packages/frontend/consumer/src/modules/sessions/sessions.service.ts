@@ -1,3 +1,4 @@
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -59,6 +60,10 @@ export class SessionsService {
 
   move(id: string, projectId: string): Promise<SessionEntity> {
     return this.repository.move(id, projectId);
+  }
+
+  answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    return this.repository.answerDecision(id, answer);
   }
 
   restart(id: string): Promise<SessionEntity> {

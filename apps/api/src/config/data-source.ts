@@ -42,6 +42,7 @@ import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.
 import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
+import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -133,6 +134,7 @@ export default new DataSource({
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
+    InboxMarkOrmEntity,
     BotApprovalOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,

@@ -569,7 +569,11 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - Idle is terminal silence **and** a manifest state that is not working,
   so a long unattended run is never called idle.
 - State changes go to the control plane as events; the control plane
-  derives the sidebar dot from them.
+  derives the sidebar dot from them. An agent still blocked 15 s after it
+  was announced is announced once more: the control plane counts a
+  state's duration only from its second report, so a question asked once
+  would otherwise never make the session wait on anyone (found on
+  2026-10-26 by the Inbox's fleet spec).
 
 ### 10. Host facts and health
 
