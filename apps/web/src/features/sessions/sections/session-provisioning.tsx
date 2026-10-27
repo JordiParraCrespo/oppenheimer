@@ -7,7 +7,6 @@ import {
   StartFailureDetail,
   useStartFailure,
 } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
