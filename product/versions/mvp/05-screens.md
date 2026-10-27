@@ -320,8 +320,14 @@
   it. The device is the simulator or emulator the session's host gave it,
   the one its agent drives through Argent
   (`../research/device-streaming.md`); a host that offers none says so in
-  the pane. The Browser tab, the resize handle and Reload app are not
-  built.
+  the pane. The Browser tab followed on 2026-10-27 (`28-session-previews.md`):
+  Browser and Simulator are the header's pill tabs, the last one chosen
+  kept on the device; Browser opens on the session's likeliest dev server
+  among the ports its processes listen on, with an address bar (a port
+  picker as `localhost:<port>`, Reload, Open in a new tab) over the page
+  framed on its preview origin, and says when there is no dev server yet,
+  the host is away or its runner cannot share ports. The resize handle and
+  Expand are not built.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

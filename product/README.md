@@ -709,3 +709,11 @@ earlier note:
   watches and taps it in the pane, its screen relayed over the link as one
   more attachment kind (`versions/mvp/05-screens.md`,
   `research/device-streaming.md`). The Browser tab is still not built.
+- Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
+  the owner asked for the Browser tab, through "tunnel technology like
+  Cloudflare, Vercel or ngrok"; offered the runner's own link as that
+  tunnel, they chose it, asking that an app with an API work. A preview is
+  an origin per session and port on a preview domain of its own, served by
+  the relay through the link, the app seeing `localhost` and its API behind
+  the dev server's proxy; cloudflared and ngrok wait for public share links
+  (`versions/mvp/28-session-previews.md`).
