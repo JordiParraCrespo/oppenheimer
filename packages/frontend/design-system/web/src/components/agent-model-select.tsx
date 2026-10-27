@@ -379,7 +379,6 @@ function AgentModelSelect<V extends string = string>({
           total={total}
           empty={rows.length === 0}
           emptyText={term ? emptyText(query) : label.favouritesEmpty}
-          className="p-1"
         >
           {rows.map((row) => {
             const key = rowKey(row);
