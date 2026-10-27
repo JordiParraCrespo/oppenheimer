@@ -214,8 +214,10 @@ func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 	if session.Place == sessionsdomain.PlaceFolder {
 		return env
 	}
+	// The first checkout's repository, also for a session over several: the
+	// one the session is named by and its agent was asked to start in.
 	env["OPPENHEIMER_REPO"] = session.Repo
-	for key, value := range shellCredentialHelper(paths) {
+	for key, value := range shellCredentialHelper(paths, len(session.More) > 0) {
 		env[key] = value
 	}
 	return env
@@ -346,7 +348,12 @@ func utf8Locale(current string) string {
 //
 // The helper is the service's `current` link, not this binary: a session
 // outlives an update, and the version it was created under may be gone.
-func shellCredentialHelper(paths Paths) map[string]string {
+//
+// A session over several repositories also has git send the repository's
+// path (`credential.useHttpPath`), which is how the helper tells whose token
+// a fetch wants. A session of one does not: its helper needs no path, and the
+// setting would reach the person's own helpers for GitHub too.
+func shellCredentialHelper(paths Paths, byPath bool) map[string]string {
 	helper := credentialHelper()
 	if _, err := os.Stat(paths.Current()); err == nil {
 		helper = paths.Current() + " credential-helper"
@@ -354,11 +361,17 @@ func shellCredentialHelper(paths Paths) map[string]string {
 	if helper == "" {
 		return nil
 	}
-	return map[string]string{
+	env := map[string]string{
 		"GIT_CONFIG_COUNT":   "1",
 		"GIT_CONFIG_KEY_0":   "credential.https://github.com.helper",
 		"GIT_CONFIG_VALUE_0": helper,
 	}
+	if byPath {
+		env["GIT_CONFIG_COUNT"] = "2"
+		env["GIT_CONFIG_KEY_1"] = "credential.https://github.com.useHttpPath"
+		env["GIT_CONFIG_VALUE_1"] = "true"
+	}
+	return env
 }
 
 // credentialHelper is the command git calls for a password: this binary's own

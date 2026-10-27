@@ -147,3 +147,43 @@ func TestACreateOutlivesItsLinkAndWhatWaitedOnItRunsAfter(t *testing.T) {
 		t.Fatalf("the stop did not end the tmux session: %v", names)
 	}
 }
+
+// A create may carry several checkouts. The one the agent is to start in
+// becomes the session's first, the rest keep the frame's order, and each
+// keeps its own repository, base, directory and ids.
+func TestCreateInputTakesEveryCheckoutAndPutsTheAgentsFirst(t *testing.T) {
+	cwd := "c-api"
+	in, err := createInput(link.SessionCreate{
+		SessionID: sessionUnderTest, Agent: "claude-code", WorkspaceID: "ws-1", Branch: "feat/x",
+		Checkouts: []link.Checkout{
+			{CheckoutID: "c-web", GithubRepoID: 1, RepositoryFullName: "acme/web", DirectoryName: "web", BaseBranch: "main"},
+			{CheckoutID: "c-api", GithubRepoID: 2, RepositoryFullName: "acme/api", DirectoryName: "api", BaseBranch: "develop"},
+			{CheckoutID: "c-docs", GithubRepoID: 3, RepositoryFullName: "acme/docs", DirectoryName: "docs", BaseBranch: "main"},
+		},
+		CwdCheckoutID: &cwd,
+	}, "acct-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if in.CheckoutID != "c-api" || in.Repo != "acme/api" || in.BaseBranch != "develop" || in.Directory != "api" ||
+		in.Remote != "https://github.com/acme/api.git" || in.GithubRepoID != 2 {
+		t.Fatalf("first checkout = %+v, want the agent's", in)
+	}
+	if len(in.More) != 2 || in.More[0].CheckoutID != "c-web" || in.More[1].CheckoutID != "c-docs" ||
+		in.More[1].Remote != "https://github.com/acme/docs.git" || in.More[0].GithubRepoID != 1 {
+		t.Fatalf("more = %+v, want web then docs", in.More)
+	}
+
+	unknown := "c-elsewhere"
+	for name, frame := range map[string]link.SessionCreate{
+		"no checkout and no folder": {SessionID: sessionUnderTest, Agent: "claude-code"},
+		"an agent checkout the frame lacks": {
+			SessionID: sessionUnderTest, Agent: "claude-code", CwdCheckoutID: &unknown,
+			Checkouts: []link.Checkout{{CheckoutID: "c-web", RepositoryFullName: "acme/web"}},
+		},
+	} {
+		if _, err := createInput(frame, "acct-1"); err == nil {
+			t.Fatalf("%s: accepted", name)
+		}
+	}
+}

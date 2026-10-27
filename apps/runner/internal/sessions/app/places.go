@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -26,17 +27,13 @@ func (s *Service) sessionFor(id string, in CreateInput) (domain.Session, error) 
 }
 
 // worktreeSession is what a worktree session will be: its names checked and
-// its paths in the work folder derived. Nothing is made yet.
+// its paths in the work folder derived. Nothing is made yet. Each checkout
+// is a worktree in the session's folder on the session's one branch, so two
+// that would share a directory, or check out one repository twice, are
+// refused: the second would land on the first, or on its branch.
 func (s *Service) worktreeSession(id string, in CreateInput) (domain.Session, error) {
 	invalid := func(err error) (domain.Session, error) {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
-	}
-	if err := domain.ValidateRepo(in.Repo); err != nil {
-		return invalid(err)
-	}
-	base := in.base()
-	if err := domain.ValidateBranch(base); err != nil {
-		return invalid(err)
 	}
 	branch := in.Branch
 	if branch == "" {
@@ -59,26 +56,57 @@ func (s *Service) worktreeSession(id string, in CreateInput) (domain.Session, er
 	if err := domain.ValidateName(slug); err != nil {
 		return invalid(fmt.Errorf("session folder: %w", err))
 	}
-	directory := in.Directory
-	if directory == "" {
-		directory = domain.DirectoryOf(in.Repo)
-	}
-	if err := domain.ValidateName(directory); err != nil {
-		return invalid(fmt.Errorf("checkout: %w", err))
-	}
 	dir := s.layout.Session(tenant, slug)
-	return domain.Session{
+	checkouts := make([]domain.Checkout, 0, 1+len(in.More))
+	directories, repos := map[string]string{}, map[string]bool{}
+	for _, c := range in.checkouts() {
+		if err := domain.ValidateRepo(c.Repo); err != nil {
+			return invalid(err)
+		}
+		base := c.base()
+		if err := domain.ValidateBranch(base); err != nil {
+			return invalid(err)
+		}
+		directory := c.Directory
+		if directory == "" {
+			directory = domain.DirectoryOf(c.Repo)
+		}
+		if err := domain.ValidateName(directory); err != nil {
+			return invalid(fmt.Errorf("checkout: %w", err))
+		}
+		// Folded, because a Mac's disk does not tell `api` from `API`, and
+		// GitHub does not tell `Acme/api` from `acme/api`.
+		if other, taken := directories[strings.ToLower(directory)]; taken {
+			return domain.Session{}, domain.ErrInvalidInput.WithDetail(
+				"%s and %s would both be checked out at %q", other, c.Repo, directory)
+		}
+		if repos[strings.ToLower(c.Repo)] {
+			return domain.Session{}, domain.ErrInvalidInput.WithDetail(
+				"%s is checked out twice; a session holds each repository once", c.Repo)
+		}
+		directories[strings.ToLower(directory)], repos[strings.ToLower(c.Repo)] = c.Repo, true
+		checkouts = append(checkouts, domain.Checkout{
+			Repo: c.Repo, BaseBranch: base, Worktree: filepath.Join(dir, directory),
+			CheckoutID: c.CheckoutID, GithubRepoID: c.GithubRepoID,
+		})
+	}
+	first := checkouts[0]
+	session := domain.Session{
 		Name: nameOr(in.Name, branch), Place: domain.PlaceWorktree,
 		AccountID: tenant.Account, WorkspaceID: tenant.Workspace, Dir: dir,
-		Repo: in.Repo, BaseBranch: base, Branch: branch, Worktree: filepath.Join(dir, directory),
-		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
-	}, nil
+		Repo: first.Repo, BaseBranch: first.BaseBranch, Branch: branch, Worktree: first.Worktree,
+		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
+	}
+	if len(checkouts) > 1 {
+		session.More = checkouts[1:]
+	}
+	return session, nil
 }
 
 // folderSession is what a folder session will be: its folder an existing
 // directory, and nothing of a repository about it.
 func (s *Service) folderSession(in CreateInput) (domain.Session, error) {
-	if in.Repo != "" || in.Branch != "" || in.CheckoutID != "" {
+	if in.Repo != "" || in.Branch != "" || in.CheckoutID != "" || len(in.More) > 0 {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail(
 			"a session runs in a folder or in a checkout, never both")
 	}
@@ -109,21 +137,22 @@ func (s *Service) checkFolder(folder string) error {
 	return domain.ErrFolderMissing.WithDetail("%s cannot be used: %v", folder, err).WithCause(err)
 }
 
-// base is the branch a new session's branch is cut from.
-func (in CreateInput) base() string {
-	if in.BaseBranch == "" {
+// base is the branch a new session's branch is cut from in this checkout.
+func (c CheckoutInput) base() string {
+	if c.BaseBranch == "" {
 		return "main"
 	}
-	return in.BaseBranch
+	return c.BaseBranch
 }
 
-// fetchRef is the one branch a create fetches: the one its worktree is made
-// from, which is the existing branch it checks out or the base it cuts from.
-func (in CreateInput) fetchRef() string {
+// fetchRef is the one branch a create fetches for a checkout: the one its
+// worktree is made from, which is the existing branch it checks out or the
+// base it cuts from.
+func (in CreateInput) fetchRef(c CheckoutInput) string {
 	if in.Existing {
 		return in.Branch
 	}
-	return in.base()
+	return c.base()
 }
 
 // makeRoom makes what the session's terminal starts in and answers its path.
@@ -144,59 +173,107 @@ func (s *Service) makeRoom(in CreateInput, session domain.Session) (string, erro
 	return session.Dir, nil
 }
 
-// checkout runs the stages only a worktree session has: its store cloned or
-// fetched, then its worktree added. A folder session has neither.
+// checkout runs the stages only a worktree session has: its stores cloned
+// or fetched, then its worktrees added. A folder session has neither. A
+// session over several repositories still walks each stage once, every
+// repository in turn inside it, so the console's stepper reads the same
+// `clone, worktree` whatever the count.
 func (s *Service) checkout(ctx context.Context, in CreateInput, session domain.Session, run stageRunner) error {
 	if session.Place != domain.PlaceWorktree {
 		return nil
 	}
-	repo := session.Repository()
+	inputs, checkouts := in.checkouts(), session.Checkouts()
 	// A repository this host has never held is downloaded, which is the one
 	// stage that can take tens of seconds; the reader is told so.
-	download := !s.worktrees.Has(repo)
+	download := false
+	for _, checkout := range checkouts {
+		download = download || !s.worktrees.Has(session.RepositoryOf(checkout))
+	}
 	if err := run(domain.StageEvent{Stage: domain.StageClone, Download: download}, func() error {
-		return s.worktrees.Ensure(ctx, repo, in.Remote, in.fetchRef())
+		for i, checkout := range checkouts {
+			if err := s.worktrees.Ensure(ctx, session.RepositoryOf(checkout), inputs[i].Remote, in.fetchRef(inputs[i])); err != nil {
+				return err
+			}
+		}
+		return nil
 	}); err != nil {
 		return err
 	}
 	return run(domain.StageEvent{Stage: domain.StageWorktree}, func() error {
-		return s.worktrees.Add(ctx, repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
+		for _, checkout := range checkouts {
+			if err := s.worktrees.Add(ctx, session.RepositoryOf(checkout), checkout.Worktree,
+				session.Branch, checkout.BaseBranch, !in.Existing); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
 // closePlace is the rest of a Close once the terminal is gone. A folder
 // session is closed and nothing else: its folder is the person's. A worktree
-// session's branch is pushed if asked, and its worktree and folder removed
-// unless they hold work that would be lost.
+// session's branch is pushed from every checkout if asked, and its worktrees
+// and folder removed unless one of them holds work that would be lost — and
+// then all of them are kept, because the session is one piece of work and
+// half of it removed is not something a person can pick back up.
 func (s *Service) closePlace(ctx context.Context, session domain.Session, in CloseInput) (domain.Session, error) {
 	if session.Place == domain.PlaceFolder {
 		return s.decide(session, domain.StateClosed, ""), nil
 	}
-	dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
-	if dirtyErr == nil {
-		session.Dirty = dirty
+	checkouts := session.Checkouts()
+	var (
+		reasons []string
+		kept    []string
+		pushErr error
+	)
+	// What the worktrees say now replaces what was recorded, unless one of
+	// them could not be asked: then what was recorded stands.
+	dirty, asked := false, true
+	for _, checkout := range checkouts {
+		kept = append(kept, checkout.Worktree)
+		changed, err := s.worktrees.Dirty(ctx, checkout.Worktree)
+		asked = asked && err == nil
+		if err == nil && changed {
+			dirty = true
+			reasons = append(reasons, checkout.Worktree+" has uncommitted changes")
+		}
 	}
-	var pushErr error
-	if in.Push {
-		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
-			// Report and keep going: the session is over either way, and
-			// the branch is still in the worktree we are about to name.
-			session.Dirty = true
+	session.Dirty = dirty || (!asked && session.Dirty)
+	for _, checkout := range checkouts {
+		if in.Push {
+			if _, err := s.worktrees.Push(ctx, checkout.Worktree, session.Branch); err != nil {
+				// Report and keep going: the session is over either way, and
+				// the branch is still in the worktree we are about to name.
+				session.Dirty = true
+				pushErr = errors.Join(pushErr, err)
+				reasons = append(reasons, "the branch could not be pushed from "+checkout.Worktree)
+			}
 		}
 	}
 	if session.Dirty && !in.Force {
 		session = s.decide(session, domain.StateStopped, "")
-		detail := "the worktree has uncommitted changes and was kept at " + session.Worktree
-		if pushErr != nil {
-			detail = "the branch could not be pushed, so the worktree was kept at " + session.Worktree
-		}
-		return session, domain.ErrPushRejected.WithDetail("%s", detail).WithCause(pushErr)
+		return session, domain.ErrPushRejected.WithDetail("%s", keptDetail(len(checkouts), pushErr != nil, reasons, kept)).
+			WithCause(pushErr)
 	}
-	if err := s.worktrees.Remove(ctx, session.Repository(), session.Worktree, in.Force); err != nil {
-		return session, err
+	for _, checkout := range checkouts {
+		if err := s.worktrees.Remove(ctx, session.RepositoryOf(checkout), checkout.Worktree, in.Force); err != nil {
+			return session, err
+		}
 	}
 	s.removeDir(session)
 	return s.decide(session, domain.StateClosed, ""), nil
+}
+
+// keptDetail says why a close kept a session's worktrees and where they are.
+// A session of one checkout says it the way it always has.
+func keptDetail(count int, pushFailed bool, reasons, kept []string) string {
+	if count == 1 {
+		if pushFailed {
+			return "the branch could not be pushed, so the worktree was kept at " + kept[0]
+		}
+		return "the worktree has uncommitted changes and was kept at " + kept[0]
+	}
+	return strings.Join(reasons, "; ") + ", so every worktree was kept: " + strings.Join(kept, ", ")
 }
 
 // removeDir deletes a closed worktree session's folder, which Places does
@@ -224,9 +301,13 @@ func (s *Service) placeGone(ctx context.Context, session domain.Session) (_ doma
 		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 			return domain.Session{}, false, err
 		}
-		// Only git's record of the worktree is left, and a prune that fails
-		// leaves nothing a person needs: the session is over either way.
-		_ = s.worktrees.Remove(ctx, session.Repository(), session.Worktree, true)
+		// The first checkout is what says the session is still there; with
+		// it gone the rest are removed with the folder that holds them. For
+		// the one deleted by hand only git's record is left, and a prune that
+		// fails leaves nothing a person needs: the session is over either way.
+		for _, checkout := range session.Checkouts() {
+			_ = s.worktrees.Remove(ctx, session.RepositoryOf(checkout), checkout.Worktree, true)
+		}
 		s.removeDir(session)
 		return s.decide(session, domain.StateClosed, ""), true, nil
 	}

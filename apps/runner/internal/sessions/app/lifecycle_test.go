@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -807,5 +808,134 @@ func TestCreateAndRestartWaitOnTheAgentsUpdate(t *testing.T) {
 	}
 	if len(gate.held) != 2 || gate.held[0] != "claude" || gate.held[1] != "claude" || gate.released != 2 {
 		t.Fatalf("held %v, released %d; want claude held and released for the create and the restart", gate.held, gate.released)
+	}
+}
+
+// openTwo opens a session over two repositories: the web app first, where
+// the session is named, and its API beside it.
+func (h *fakeHarness) openTwo(t *testing.T) domain.Session {
+	t.Helper()
+	session, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/web", Remote: "https://github.test/jordi/web.git", BaseBranch: "main",
+		CheckoutID: "c-web", GithubRepoID: 1, Agent: domain.AgentClaude,
+		More: []app.CheckoutInput{{
+			Repo: "jordi/api", Remote: "https://github.test/jordi/api.git", BaseBranch: "develop",
+			CheckoutID: "c-api", GithubRepoID: 2,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	return session
+}
+
+// A session over several repositories gets a worktree of each, side by side
+// in its folder on its one branch, and its agent starts in that folder, so
+// it sees every repository it was given.
+func TestCreateOverTwoRepositoriesChecksOutEachAndStartsAboveThem(t *testing.T) {
+	h := newFakeHarness(t)
+
+	session := h.openTwo(t)
+
+	checkouts := session.Checkouts()
+	if len(checkouts) != 2 || checkouts[0].Repo != "jordi/web" || checkouts[1].Repo != "jordi/api" {
+		t.Fatalf("checkouts = %+v", checkouts)
+	}
+	for _, checkout := range checkouts {
+		if filepath.Dir(checkout.Worktree) != session.Dir {
+			t.Fatalf("%s is at %q, not in the session's folder %q", checkout.Repo, checkout.Worktree, session.Dir)
+		}
+		if branch := h.worktrees.Paths[checkout.Worktree]; branch != session.Branch {
+			t.Fatalf("%s is on %q, want %q", checkout.Repo, branch, session.Branch)
+		}
+	}
+	if got := h.worktrees.FetchedRefs(); !slices.Equal(got, []string{"main", "develop"}) {
+		t.Fatalf("fetched %v, want each checkout's own base", got)
+	}
+	if launched := h.terminals.Launches[session.Target(0)]; launched.Dir != session.Dir || session.Cwd() != session.Dir {
+		t.Fatalf("window 0 launched in %q, want the session's folder %q", launched.Dir, session.Dir)
+	}
+}
+
+// Two checkouts that would land in one directory, or one repository checked
+// out twice on one branch, are refused before anything is made.
+func TestCreateRefusesTwoCheckoutsThatWouldCollide(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		more app.CheckoutInput
+	}{
+		{"the same directory", app.CheckoutInput{Repo: "other/oppenheimer"}},
+		{"the same directory, by case", app.CheckoutInput{Repo: "jordi/api", Directory: "Oppenheimer"}},
+		{"the same repository", app.CheckoutInput{Repo: "Jordi/Oppenheimer", Directory: "again"}},
+		{"an unusable repository", app.CheckoutInput{Repo: "../escape"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newFakeHarness(t)
+			_, err := h.svc.Create(context.Background(), app.CreateInput{
+				Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+				Agent: domain.AgentClaude, More: []app.CheckoutInput{tc.more},
+			})
+			var prob *problem.Error
+			if !errors.As(err, &prob) || prob.Code != domain.ErrInvalidInput.Code {
+				t.Fatalf("err = %v, want %s", err, domain.ErrInvalidInput.Code)
+			}
+			if len(h.worktrees.FetchedRefs()) != 0 || len(h.worktrees.Paths) != 0 {
+				t.Fatal("a refused create touched git")
+			}
+		})
+	}
+}
+
+// Closing a session over several repositories pushes the branch from each
+// and removes every worktree; one with unsaved work keeps them all, and the
+// detail says where.
+func TestCloseOverTwoRepositoriesPushesEachAndKeepsAllWhenOneIsDirty(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.openTwo(t)
+	api := session.More[0].Worktree
+	h.worktrees.DirtyPaths[api] = true
+
+	kept, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "GIT_003" || !strings.Contains(prob.Detail, api) ||
+		!strings.Contains(prob.Detail, session.Worktree) {
+		t.Fatalf("err = %v, want GIT_003 naming both worktrees", err)
+	}
+	if !kept.Dirty || kept.State != domain.StateStopped {
+		t.Fatalf("session = %+v", kept)
+	}
+	for _, checkout := range session.Checkouts() {
+		if _, ok := h.worktrees.Paths[checkout.Worktree]; !ok {
+			t.Fatalf("%s was removed while another checkout held unsaved work", checkout.Worktree)
+		}
+	}
+
+	delete(h.worktrees.DirtyPaths, api)
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil || closed.State != domain.StateClosed {
+		t.Fatalf("close = %q, %v; want closed", closed.State, err)
+	}
+	if len(h.worktrees.Paths) != 0 {
+		t.Fatalf("worktrees left after close: %v", h.worktrees.Paths)
+	}
+	if n := len(h.worktrees.PushedFor); n != 4 { // both checkouts, on each close
+		t.Fatalf("pushed %d times, want each checkout on each close", n)
+	}
+}
+
+// The first checkout is what says a session is still on the host: with it
+// deleted by hand the session is over, and the rest go with it.
+func TestCloseOverTwoRepositoriesWhoseFirstWasDeletedRemovesTheRest(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.openTwo(t)
+	delete(h.worktrees.Paths, session.Worktree)
+
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil || closed.State != domain.StateClosed {
+		t.Fatalf("close = %q, %v; want closed", closed.State, err)
+	}
+	if _, ok := h.worktrees.Paths[session.More[0].Worktree]; ok {
+		t.Fatal("the second checkout outlived the session")
 	}
 }
