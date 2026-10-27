@@ -131,6 +131,36 @@ func TestAQuestionIsCutToItsBounds(t *testing.T) {
 	}
 }
 
+// A "don't ask again" label naming a long command wraps over several lines
+// and runs past the schema's bound: it is joined, cut within the bound, and
+// says it was cut, so the button never reads as a shorter, different rule.
+func TestALongWrappedLabelIsJoinedAndCutVisibly(t *testing.T) {
+	body := strings.Join([]string{
+		" Bash command",
+		"",
+		"   pnpm --filter @oppenheimer/api test:integration",
+		"",
+		" Do you want to proceed?",
+		" ❯ 1. Yes",
+		"   2. Yes, and don't ask again for pnpm --filter @oppenheimer/api test:integration",
+		"      commands in /home/runner/oppenheimer-ai/sessions/xrp-mobile and every",
+		"      directory below it",
+		"   3. No, and tell Claude what to do differently (esc)",
+	}, "\n")
+	decision, ok := domain.PermissionDecision(body)
+	if !ok || len(decision.Options) != 3 {
+		t.Fatalf("decision = %+v", decision)
+	}
+	label := decision.Options[1].Label
+	if len(label) > domain.DecisionLabelMax || !strings.HasSuffix(label, "…") ||
+		!strings.HasPrefix(label, "Yes, and don't ask again for pnpm --filter @oppenheimer/api test:integration commands in") {
+		t.Fatalf("label = %q (%d bytes)", label, len(label))
+	}
+	if decision.Options[2].Label != "No, and tell Claude what to do differently (esc)" {
+		t.Fatalf("the next option = %q", decision.Options[2].Label)
+	}
+}
+
 func TestShrinkDropsDescriptionsFirst(t *testing.T) {
 	description := "why"
 	decision := domain.Decision{Kind: domain.DecisionQuestionKind, ID: "t", Questions: []domain.DecisionQuestion{{

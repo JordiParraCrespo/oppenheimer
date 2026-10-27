@@ -243,14 +243,22 @@ func optional(s string) *string {
 	return &s
 }
 
-// clip cuts s to at most max bytes without splitting a rune.
+// ellipsis ends a text clip cut, so a cut label never reads as whole: "…
+// for commands in /home/runne" said something the dialog did not.
+const ellipsis = "…"
+
+// clip cuts s to at most max bytes without splitting a rune, the last of them
+// an ellipsis when anything was cut.
 func clip(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}
-	end := max
+	end := max - len(ellipsis)
+	if end < 0 {
+		end = 0
+	}
 	for end > 0 && !utf8.RuneStart(s[end]) {
 		end--
 	}
-	return s[:end]
+	return s[:end] + ellipsis
 }
