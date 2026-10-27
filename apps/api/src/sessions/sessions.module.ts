@@ -56,6 +56,7 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
@@ -74,6 +75,7 @@ import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { FindHostFoldersHttpController } from './queries/find-host-folders/find-host-folders.http.controller';
 import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-host-folders.query-handler';
+import { FindLatestSessionEventsQueryHandler } from './queries/find-latest-session-events/find-latest-session-events.query-handler';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
@@ -153,6 +155,7 @@ const commandHandlers: Provider[] = [
   IssueSharedAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
   AnswerSessionDecisionCommandHandler,
+  SendSessionPromptCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
@@ -161,6 +164,7 @@ const queryHandlers: Provider[] = [
   FindSessionsQueryHandler,
   FindSessionQueryHandler,
   FindSessionEventsQueryHandler,
+  FindLatestSessionEventsQueryHandler,
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,

@@ -340,6 +340,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    */
   get inputRefusal(): ErrorDefinition | null {
     if (this.isResolved) return SessionErrors.ALREADY_RESOLVED;
+    // A cloud session has no terminal on its host to type into: it is
+    // answered and prompted on claude.ai.
+    if (this.place === 'cloud') return SessionErrors.CLOUD_TAKES_NO_INPUT;
     if (this.stoppedAt) return SessionErrors.NOT_RUNNING;
     return null;
   }

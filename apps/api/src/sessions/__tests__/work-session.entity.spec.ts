@@ -315,3 +315,17 @@ describe('a cloud session', () => {
     expect(session.cloudSessionId).toBe('session_014a8EH8DJs95X1iK8ZH9Y82');
   });
 });
+
+describe('input to a cloud session', () => {
+  it('is refused: it has no terminal on its host, and is answered on claude.ai', () => {
+    const cloud = session({ place: 'cloud' });
+    cloud.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: 'session_014a8EH8DJs95X1iK8ZH9Y82', checkouts: [] },
+      occurredAt: new Date(),
+    });
+    expect(cloud.inputRefusal?.code).toBe('SESSIONS_038');
+    expect(session().inputRefusal).toBeNull();
+  });
+});

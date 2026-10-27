@@ -10,6 +10,7 @@ import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTIONS_PER_BOT,
   type BotSubscriptionUntil,
+  type BotWatchFrom,
 } from '../domain/bot-subscription.policy';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
@@ -61,10 +62,34 @@ export class BotSessionWatchResolver {
     }
   }
 
+  /**
+   * Follows the task a bot's follow-up prompt opened, by its number, and
+   * says so in words for `send_to_session`'s answer. Like
+   * {@link watchStarted}, the task may already have ended or blocked by the
+   * time the watch is stored, so the wake is asked for once now; and a watch
+   * that cannot be stored is said, never thrown: the prompt was sent.
+   */
+  async watchSent(context: BotToolCallContext, sessionId: string, turn: number): Promise<string> {
+    try {
+      const { subscription } = await this.watch(context, sessionId, {
+        until: 'task',
+        purpose: null,
+        from: { turn },
+      });
+      await this.commands.execute(
+        new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
+      );
+      return 'You are subscribed to it and will be woken when the task needs input or ends: end your turn now, and report when you are.';
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return `It could not be watched (${reason}); read it later with get_session.`;
+    }
+  }
+
   async watch(
     context: BotToolCallContext,
     sessionId: string,
-    options: { until: BotSubscriptionUntil; purpose: string | null; from: 'first_task' | 'now' },
+    options: { until: BotSubscriptionUntil; purpose: string | null; from: BotWatchFrom },
   ): Promise<SessionWatch> {
     const session = await this.queries.execute<FindSessionQuery, WorkSessionEntity>(
       new FindSessionQuery({ scope: context.owner, sessionId }),

@@ -92,6 +92,19 @@ export const SESSION_EVENT_KINDS = {
    * reads off the agent's transcript (Claude Code's, for now). Payload `{ text, images? }`.
    */
   PROMPT_FIRST: 'prompt.first',
+  /**
+   * A follow-up prompt the API typed into window 0 for somebody other than a
+   * person at the terminal: a bot, for now. Payload `{ text, sender }`, the
+   * sender as the API read it (`SessionPromptSender`), never as the words
+   * claim. It opens the next turn when none is live.
+   */
+  PROMPT_SENT: 'prompt.sent',
+  /**
+   * The keys of that prompt never reached the host (its link dropped between
+   * the claim and the keys). Payload `{ id }`, the command that sent it; the
+   * turn it opened is cancelled.
+   */
+  PROMPT_UNDELIVERED: 'prompt.undelivered',
   /** What the screen manifest last observed the agent doing. Payload `{ state }`. */
   AGENT_OBSERVED: 'agent.observed',
   /**

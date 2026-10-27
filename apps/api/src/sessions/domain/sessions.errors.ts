@@ -273,12 +273,31 @@ export const SessionErrors = {
     httpStatus: 501,
   },
   /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
+  },
+  /**
    * A cloud session for a host whose live runner did not name `session.cloud`:
    * it would open a terminal instead of starting the task in the cloud.
    */
   CLOUD_UNSUPPORTED_BY_RUNNER: {
-    code: 'SESSIONS_036',
+    code: 'SESSIONS_037',
     message: "This host's runner cannot start a session in the cloud",
+    httpStatus: 409,
+  },
+  /**
+   * A prompt, an answer or a file for a cloud session: it has no terminal on
+   * its host to type into, and takes them on claude.ai.
+   */
+  CLOUD_TAKES_NO_INPUT: {
+    code: 'SESSIONS_038',
+    message: 'A cloud session takes input on claude.ai, not here',
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

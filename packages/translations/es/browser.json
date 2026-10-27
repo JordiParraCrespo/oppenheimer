@@ -334,7 +334,9 @@
       "SESSIONS_033": "Esa respuesta no encaja con la pregunta. Elige entre sus opciones e inténtalo de nuevo.",
       "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
-      "SESSIONS_036": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
+      "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -352,7 +354,13 @@
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
     },
-    "code": "Código: {{code}}"
+    "code": "Código: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "Este host crea sesiones con un solo repositorio."
+      },
+      "details": "Detalles del host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Correo electrónico",
@@ -551,11 +559,7 @@
           "shell": "Iniciar shell"
         }
       },
-      "progressFailed": "No se pudo cargar el progreso del inicio.",
-      "codes": {
-        "SESS_002": "Este host crea sesiones con un solo repositorio."
-      },
-      "details": "Detalles del host: {{detail}}"
+      "progressFailed": "No se pudo cargar el progreso del inicio."
     },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
@@ -2529,7 +2533,7 @@
       "blockedBody": "Su agente se detuvo para pedir algo. Abre la sesión para responderle allí.",
       "failedShort": "{{name}} falló",
       "failedTitle": "{{name}} falló",
-      "failedBody": "La sesión se detuvo por un fallo. Ábrela para ver qué pasó e iniciarla de nuevo.",
+      "failedBody": "Su host no pudo arrancarla. Ábrela para ver qué paso falló.",
       "startingShort": "{{name}} no ha arrancado",
       "startingTitle": "{{name}} no ha arrancado",
       "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
@@ -2559,6 +2563,7 @@
       "readyShort": "Fusionar #{{number}} {{title}}",
       "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
       "readyBody": "Nada lo bloquea: se puede fusionar ya.",
+      "by": "de {{author}}",
       "open": "Abrir",
       "viewOnGithub": "Ver en GitHub",
       "merge": "Fusionar",
@@ -2574,6 +2579,9 @@
       "short": "{{name}} falló",
       "title": "{{name}} falló",
       "body": "La ejecución terminó en fallo. Ábrela para ver por qué, o vuelve a ejecutarla.",
+      "plainBody": "La ejecución terminó en fallo.",
+      "exit": "Salida {{code}}",
+      "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
       "again": "Ejecutar de nuevo",
       "open": "Abrir ejecución"
     },
