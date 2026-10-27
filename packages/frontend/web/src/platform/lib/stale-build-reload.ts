@@ -1,11 +1,15 @@
-/** Where the time of the last reload is kept: this tab only, and gone with it. */
-const RELOADED_AT_KEY = 'oppenheimer:stale-build-reload';
+/**
+ * When a chunk last failed to load, reload or not: this tab only, and gone
+ * with it.
+ */
+const FAILED_AT_KEY = 'oppenheimer:stale-build-reload';
 
-/** A second failure this soon after a reload is not a stale build: leave it to the screen. */
+/** A failure this soon after the last one is not a stale build: leave it to the screen. */
 const RELOAD_GUARD_MS = 10_000;
 
 /** The parts of `window` this reads, so a spec can hand it a fake one. */
-export type StaleBuildWindow = Pick<Window, 'addEventListener' | 'sessionStorage'> & {
+export type StaleBuildWindow = Pick<Window, 'addEventListener'> & {
+  sessionStorage: Pick<Storage, 'getItem' | 'setItem'>;
   location: Pick<Location, 'reload'>;
 };
 
@@ -19,18 +23,19 @@ export type StaleBuildWindow = Pick<Window, 'addEventListener' | 'sessionStorage
  * `index.html` and its chunk names.
  *
  * Vite fires `vite:preloadError` for every failed dynamic import in a build.
- * One reload per ten seconds: a chunk that still fails right after one is
- * really unreachable, and reloading again would loop, so that failure goes
- * on to the screen's own error state. So does every failure in a tab whose
- * storage refuses the guard.
+ * Every failure is stamped, and only one with ten quiet seconds before it
+ * reloads: a chunk that still fails right after a reload is really
+ * unreachable, and a burst of failures is one stale build, so neither
+ * reloads again; those failures go on to the screen's own error state. So
+ * does every failure in a tab whose storage refuses the stamp.
  */
 export function reloadOnStaleBuild(target: StaleBuildWindow = window): void {
   target.addEventListener('vite:preloadError', (event) => {
     const now = Date.now();
     let last: number;
     try {
-      last = Number(target.sessionStorage.getItem(RELOADED_AT_KEY)) || 0;
-      target.sessionStorage.setItem(RELOADED_AT_KEY, String(now));
+      last = Number(target.sessionStorage.getItem(FAILED_AT_KEY)) || 0;
+      target.sessionStorage.setItem(FAILED_AT_KEY, String(now));
     } catch {
       // Storage refused: a reload nothing records could not tell the next
       // failure from this one, and a chunk every load asks for (a locale

@@ -16,12 +16,12 @@ function fakeWindow({ storageRefused = false } = {}) {
   };
   const win: StaleBuildWindow = {
     addEventListener: target.addEventListener.bind(target),
-    sessionStorage: (storageRefused
+    sessionStorage: storageRefused
       ? { getItem: refuse, setItem: refuse }
       : {
-          getItem: (key: string) => stored.get(key) ?? null,
-          setItem: (key: string, value: string) => void stored.set(key, value),
-        }) as unknown as Storage,
+          getItem: (key) => stored.get(key) ?? null,
+          setItem: (key, value) => void stored.set(key, value),
+        },
     location: { reload },
   };
   const fail = () => {
@@ -60,6 +60,17 @@ describe('reloadOnStaleBuild', () => {
     const event = fail();
     expect(reload).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('restarts the quiet window on every failure, so a burst reloads once', () => {
+    const { win, reload, fail } = fakeWindow();
+    reloadOnStaleBuild(win);
+    fail();
+    vi.advanceTimersByTime(8_000);
+    fail();
+    vi.advanceTimersByTime(8_000);
+    fail();
+    expect(reload).toHaveBeenCalledOnce();
   });
 
   it('reloads again once the guard has passed', () => {
