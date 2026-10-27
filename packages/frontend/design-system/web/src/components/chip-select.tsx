@@ -59,9 +59,6 @@ type ChipSelectDensity = 'chip' | 'menu' | 'engine';
  */
 const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5, engine: 35.5 };
 
-/** A capped list's own padding, top and bottom together, in px. */
-const LIST_PAD = 10;
-
 function matches(option: ChipSelectOption, term: string) {
   if (!term) return true;
   const hay = `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`.toLowerCase();
@@ -403,19 +400,19 @@ function ChipSelectList({
   /** Nothing to show: the filtered list came back empty. */
   empty?: boolean;
 }) {
-  // A capped list pads itself, and the cap counts that padding (4px over, 6px under),
-  // so the last row is never clipped against whatever sits below the list.
   const capped =
     rows === undefined
       ? undefined
-      : Math.min(rows, Math.max(1, total)) * LIST_ROW[density] + LIST_PAD;
+      : Math.min(rows, Math.max(1, total)) * LIST_ROW[density] + 2;
 
   return (
     <div
       data-slot="chip-select-list"
       className={cn(
         'min-h-0 overflow-y-auto',
-        rows === undefined ? '[scrollbar-width:thin]' : 'px-1 pt-1 pb-1.5 [scrollbar-width:none]',
+        // A capped list measures its content only, so a caller's padding adds to the cap
+        // instead of clipping the last row.
+        rows === undefined ? '[scrollbar-width:thin]' : 'box-content [scrollbar-width:none]',
         className,
       )}
       style={capped === undefined ? style : { maxHeight: capped, ...style }}

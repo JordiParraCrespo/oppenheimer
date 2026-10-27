@@ -379,6 +379,8 @@ function AgentModelSelect<V extends string = string>({
           total={total}
           empty={rows.length === 0}
           emptyText={term ? emptyText(query) : label.favouritesEmpty}
+          // 6px under the last row, so it never sits on the effort foot's hairline.
+          className="px-1 pt-1 pb-1.5"
         >
           {rows.map((row) => {
             const key = rowKey(row);
