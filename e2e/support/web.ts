@@ -36,7 +36,7 @@ export async function signInAs(
   user: { email: string; password: string },
 ): Promise<void> {
   await loginThroughUi(page, user.email, user.password);
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/bots/, { timeout: 30_000 });
 }
 
 export async function createOrganization(
@@ -117,4 +117,13 @@ export async function clickRowAction(
       await page.keyboard.press('Escape').catch(() => {});
     }
   }
+}
+
+/**
+ * A session terminal's link to its host, live. The session's bar already
+ * says its state, so the status line draws no "Live" of its own while the
+ * link holds; its phase is on the line instead.
+ */
+export function linkLive(page: Page): Locator {
+  return page.locator('[data-slot="terminal-status"][data-phase="live"]');
 }

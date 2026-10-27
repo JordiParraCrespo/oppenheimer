@@ -5,9 +5,12 @@ export {
   type BotEngineEvent,
   type BotEngineTool,
   type BotEngineToolResult,
+  type BotPlanLimits,
+  type BotPlanWindow,
   type BotProvider,
   BotRateLimitError,
   type BotToolData,
+  type BotTurnContext,
   type BotTurnImage,
   type BotTurnRequest,
 } from './bot-engine';

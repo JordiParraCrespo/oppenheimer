@@ -30,6 +30,8 @@ export {
   useBotActiveTurn,
   useBotImage,
   useBotLiveText,
+  useBotRoomLeft,
+  useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
@@ -77,6 +79,7 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -215,7 +218,11 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream, useSharedSessionStream } from './sessions.stream';
+export {
+  useSessionDeviceStream,
+  useSessionStream,
+  useSharedSessionStream,
+} from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,

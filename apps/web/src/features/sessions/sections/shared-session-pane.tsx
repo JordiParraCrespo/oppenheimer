@@ -1,4 +1,4 @@
-import { Badge, Button, cn, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
+import { Badge, Button, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
 import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseSharedSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -29,7 +29,7 @@ import { SharedSessionTerminal } from './shared-session-terminal';
  *
  * The chat and how the page reads it are held here, as `SessionPane` holds a
  * member's: the terminal feeds the chat and draws it over its grid, and this
- * page paints the ground behind both, the terminal's or the chat's. A `read`
+ * page paints the ground behind both, one colour for either view. A `read`
  * share's chat has no composer.
  */
 export function SharedSessionPane({ slug }: { slug: string }) {
@@ -73,12 +73,7 @@ export function SharedSessionPane({ slug }: { slug: string }) {
           </EmptyState>
         </div>
       ) : (
-        <div
-          className={cn(
-            'flex min-h-0 flex-1 flex-col',
-            view === 'chat' ? 'bg-chat-ground' : 'bg-term-bg',
-          )}
-        >
+        <div className="flex min-h-0 flex-1 flex-col bg-term-bg">
           <SharedSessionTerminal
             slug={slug}
             readOnly={!writing}

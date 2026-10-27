@@ -7,8 +7,10 @@ import {
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
+  type BotPlanWindowDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
+  type BotTurnPlanLimitsDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
   heyApiSdk,
@@ -24,6 +26,7 @@ import {
   type BotDocumentName,
   type BotMessageEvent,
   type BotProvider,
+  type BotSection,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -45,6 +48,8 @@ import {
   BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
+  type BotPlanLimits,
+  type BotPlanWindow,
   type BotToolStep,
   BotTurnEntity,
 } from './bot-conversation.entity';
@@ -70,6 +75,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.updatedAt),
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
+    dto.sections,
   );
 }
 
@@ -240,7 +246,15 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     new Date(dto.createdAt),
     dto.startedAt ? new Date(dto.startedAt) : null,
     dto.endedAt ? new Date(dto.endedAt) : null,
+    dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
+    dto.planLimits ? toPlanLimits(dto.planLimits) : null,
   );
+}
+
+function toPlanLimits(dto: BotTurnPlanLimitsDto): BotPlanLimits {
+  const window = (w: BotPlanWindowDto | null): BotPlanWindow | null =>
+    w ? { usedPercent: w.usedPercent, resetsAt: w.resetsAt ? new Date(w.resetsAt) : null } : null;
+  return { fiveHour: window(dto.fiveHour), sevenDay: window(dto.sevenDay) };
 }
 
 function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
@@ -421,11 +435,14 @@ export class BotsRepository {
 
   /**
    * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
-   * the workspace's default provider.
+   * the workspace's default provider, shown in `sections` beside Employees.
    */
   @MapApiError(BotsErrors.SAVE_FAILED)
-  async create(): Promise<BotEntity> {
-    const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
+  async create(sections?: BotSection[]): Promise<BotEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBot({ body: { sections } }),
+      BotsErrors.SAVE_FAILED,
+    );
     return toBot(data);
   }
 

@@ -32,18 +32,17 @@ test('a folder session from the picker, and a blank terminal from Settings', asy
   await signInAs(page, user);
   await page.goto('/sessions/new');
 
-  // Where: a folder on the host. The scope row turns into host, folder, project.
-  await page.getByRole('button', { name: 'Where the session runs' }).click();
+  // Where: a folder on the host, picked on the host's Start in pane. The
+  // scope row turns into the place chip, the folder and the project.
+  await page.getByRole('button', { name: 'Host', exact: true }).click();
+  await page.getByRole('option', { name: new RegExp(box.host.name) }).click();
   await page.getByRole('option', { name: /Folder on host/ }).click();
-  await expect(page.getByRole('button', { name: 'Where the session runs' })).toContainText(
-    'Folder on host',
+  await expect(page.getByRole('button', { name: 'Host', exact: true })).toContainText(
+    `${box.host.name} · Folder on host`,
   );
   await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
     'Unassigned',
   );
-
-  await page.getByRole('button', { name: 'Host', exact: true }).click();
-  await page.getByRole('option', { name: new RegExp(box.host.name) }).click();
 
   // The picker lists the host's folders through its runner: drill into code,
   // then atlas, which is a repository on its own branch.

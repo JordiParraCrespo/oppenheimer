@@ -1,8 +1,5 @@
-import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { type Browser, expect, type Page, test } from '@playwright/test';
-import { createServer, type ViteDevServer } from 'vite';
+import { serveTerminalPage, type TerminalPage } from './page/serve';
 
 /**
  * What a reader sees while typing ahead of a slow host: the console's
@@ -21,10 +18,6 @@ import { createServer, type ViteDevServer } from 'vite';
  * 1x only, and `typeahead-webgl-baseline.spec.ts` in `apps/web` holds the
  * rule the overlay follows there at every pixel ratio.
  */
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const PAGE = join(ROOT, 'e2e/tests/terminal/page');
-const fromWeb = createRequire(join(ROOT, 'apps/web/package.json'));
 
 /** Installed faces, served under a name the terminal's font stack asks for. */
 const FACES = ['', 'Liberation Mono', 'FreeMono', 'DejaVu Sans Mono'];
@@ -50,27 +43,14 @@ const CHANNEL = 64;
 /** Longer than the typeahead waits before dropping an unconfirmed guess (`terminal-echo.ts`). */
 const EXPIRY_MS = 2000;
 
-let server: ViteDevServer;
-let origin: string;
+let served: TerminalPage;
 
 test.beforeAll(async () => {
-  server = await createServer({
-    root: PAGE,
-    configFile: false,
-    logLevel: 'error',
-    server: { port: 0, host: '127.0.0.1', fs: { allow: [ROOT] } },
-    resolve: {
-      // The page imports the console's code, whose dependencies live in apps/web.
-      alias: { '@xterm/xterm/css/xterm.css': fromWeb.resolve('@xterm/xterm/css/xterm.css') },
-    },
-  });
-  await server.listen();
-  const address = server.httpServer?.address();
-  origin = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`;
+  served = await serveTerminalPage();
 });
 
 test.afterAll(async () => {
-  await server?.close();
+  await served?.close();
 });
 
 for (const c of CASES) {
@@ -156,7 +136,7 @@ async function open(browser: Browser, c: Case, busy = false) {
   }
   const page = await context.newPage();
   const query = new URLSearchParams({ mode: c.mode, face: c.face, spin: busy ? '1' : '' });
-  await page.goto(`${origin}/?${query}`);
+  await page.goto(`${served.origin}/?${query}`);
   await page.waitForFunction(() => 'harness' in window);
   await expect.poll(() => page.evaluate(() => window.harness.renderer())).toBe(c.renderer);
   await page.locator('#terminal').click();
@@ -204,18 +184,6 @@ async function typeAhead(browser: Browser, c: Case, keys: (page: Page) => Promis
     SPECKLE,
   );
   await context.close();
-}
-
-declare global {
-  interface Window {
-    harness: {
-      host: { hold(): void; release(): void; echoes: number };
-      renderer(): 'dom' | 'webgl';
-      watchCursors(): void;
-      stopWatching(): number[];
-      screen(): { x: number; y: number; width: number; height: number };
-    };
-  }
 }
 
 async function screen(page: Page): Promise<string> {

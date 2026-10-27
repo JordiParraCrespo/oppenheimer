@@ -3,13 +3,13 @@ import { newSessionSearchSchema } from '@/features/sessions/lib/new-session-sear
 import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
- * New session: the composer, centred in the pane at the `composer` measure
- * (the export's `.op-newsession`). The pane is its drop zone (`usePaneDrop`).
+ * New session: the composer at the pane's foot, at the `prompt` measure
+ * (`NewSessionComposer.dc.html`). The pane is its drop zone (`usePaneDrop`).
  *
  * `?project=` and `?host=`: see `newSessionSearchSchema`.
  */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
   component: NewSessionScreen,
-  staticData: { pane: 'composer' },
+  staticData: { pane: 'prompt' },
   validateSearch: newSessionSearchSchema,
 });

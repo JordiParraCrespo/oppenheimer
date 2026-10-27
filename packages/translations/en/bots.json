@@ -45,6 +45,8 @@
     "addKey": "Add a key",
     "sendFailed": "Could not send the message.",
     "stopFailed": "Could not stop the turn.",
+    "queuedImages_one": "{{count}} image",
+    "queuedImages_other": "{{count}} images",
     "failed": "{{provider}} could not finish this turn",
     "failedUnknown": "The turn ended without saying why.",
     "errorDetails": "Show details",
@@ -274,7 +276,10 @@
       "save": "Save changes",
       "saving": "Saving…",
       "saved": "Saved",
-      "failed": "Could not save the bot."
+      "failed": "Could not save the bot.",
+      "showsIn": "Shows in",
+      "showsInHint": "Sidebars that list it, beside Employees",
+      "showsInFailed": "Could not save where the bot shows."
     },
     "instructions": {
       "title": "Instructions",
@@ -387,5 +392,9 @@
     "confirm": "Delete bot",
     "pending": "Deleting…",
     "failed": "Could not delete the bot."
+  },
+  "section": {
+    "heading": "Bots",
+    "empty": "No bots here yet."
   }
 }

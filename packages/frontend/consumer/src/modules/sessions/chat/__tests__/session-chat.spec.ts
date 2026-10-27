@@ -123,6 +123,75 @@ describe('toTurns', () => {
     expect(calls[3]?.plan).toBe('1. Do it');
   });
 
+  it('reads the questions a call asks and, once answered, the answers out of its result', () => {
+    const ask = (id: string) => ({
+      type: 'tool_use',
+      id,
+      name: 'AskUserQuestion',
+      input: {
+        questions: [
+          {
+            header: 'Scope',
+            question: 'What should the design system cover?',
+            multiSelect: false,
+            options: [
+              { label: 'Tokens only', description: 'Colours, type, radii' },
+              { label: 'Everything' },
+            ],
+          },
+          { question: 'Which platforms?', multiSelect: true, options: [{ label: 'Web' }] },
+          { header: 'Empty', options: [] },
+        ],
+      },
+    });
+    // Claude Code's own words for the two outcomes, as its transcript keeps them.
+    const turns = toTurns([
+      user('u1', 'Set it up'),
+      assistant('a1', [ask('q1'), ask('q2')]),
+      user('r1', [
+        {
+          type: 'tool_result',
+          tool_use_id: 'q1',
+          content:
+            'Your questions have been answered: "What should the design system cover?"="Everything", "Which platforms?"="Web, Linux". You can now continue with these answers in mind.',
+        },
+        {
+          type: 'tool_result',
+          tool_use_id: 'q2',
+          is_error: true,
+          content: "The user doesn't want to proceed with this tool use.",
+        },
+      ]),
+    ]);
+    const [answered, declined] = (turns[0]?.steps ?? []).flatMap((step) =>
+      step.kind === 'tool' ? [step.call] : [],
+    );
+    expect(answered?.kind).toBe('question');
+    expect(answered?.questions).toEqual([
+      {
+        header: 'Scope',
+        question: 'What should the design system cover?',
+        multiSelect: false,
+        options: [
+          { label: 'Tokens only', description: 'Colours, type, radii' },
+          { label: 'Everything', description: null },
+        ],
+      },
+      {
+        header: null,
+        question: 'Which platforms?',
+        multiSelect: true,
+        options: [{ label: 'Web', description: null }],
+      },
+    ]);
+    expect(answered?.answers).toEqual({
+      'What should the design system cover?': 'Everything',
+      'Which platforms?': 'Web, Linux',
+    });
+    expect(declined?.status).toBe('failed');
+    expect(declined?.answers).toBeNull();
+  });
+
   it("leaves out the CLI's own lines and subagents, and reads a slash command as typed", () => {
     const turns = toTurns([
       user(
@@ -168,9 +237,41 @@ describe('SessionChat', () => {
 
     const before = chat.snapshot();
     chat.apply({ reset: true, entries: [] });
-    expect(chat.snapshot()).toEqual({ available: true, turns: [] });
+    expect(chat.snapshot()).toEqual({ available: true, turns: [], queued: [], status: null });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it('reads a long conversation line by line as the whole transcript reads, keeping closed turns', () => {
+    const entries = [
+      user('u1', 'One'),
+      assistant('a1', [
+        { type: 'tool_use', id: 'bg', name: 'Bash', input: { command: 'pnpm dev' } },
+      ]),
+      assistant('a2', [{ type: 'text', text: 'Started it.' }]),
+      user('u2', 'Two'),
+      assistant('a3', [{ type: 'tool_use', id: 't2', name: 'Read', input: { file_path: 'a.ts' } }]),
+      user('r2', [{ type: 'tool_result', tool_use_id: 't2', content: 'code' }]),
+      assistant('a4', [{ type: 'text', text: 'Read it.' }]),
+      user('u3', 'Three'),
+      // The first turn's command ends while the third turn runs.
+      user('r1', [{ type: 'tool_result', tool_use_id: 'bg', content: 'stopped', is_error: true }]),
+      assistant('a5', [{ type: 'text', text: 'Done.' }]),
+    ];
+    const chat = new SessionChat();
+    const seen: ReturnType<SessionChat['snapshot']>[] = [];
+    for (const entry of entries) {
+      chat.apply({ entries: [JSON.stringify(entry)] });
+      seen.push(chat.snapshot());
+    }
+
+    expect(chat.snapshot().turns).toEqual(toTurns(entries));
+    // A closed turn is the same object while later lines go to the open one.
+    expect(seen[6]?.turns[0]).toBe(seen[4]?.turns[0]);
+    expect(seen[9]?.turns[1]).toBe(seen[8]?.turns[1]);
+    // A result for a closed turn's call still lands on it.
+    const first = chat.snapshot().turns[0]?.steps[0];
+    expect(first?.kind === 'tool' && first.call.status).toBe('failed');
   });
 });
 
@@ -237,5 +338,232 @@ describe('typing into the session', () => {
     chat.interrupt();
     expect(typed).toEqual(['Now ship it', '\r', '\u001b[200~One\nTwo\u001b[201~', '\r', '\u001b']);
     vi.useRealTimers();
+  });
+
+  it('answers a question with the picker’s keys, one at a time, and with nothing before it connects', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    const question = {
+      header: null,
+      question: 'Which?',
+      multiSelect: false,
+      options: [{ label: 'A', description: null }],
+    };
+    expect(chat.answer([question], [{ picks: [0], other: null }])).toBe(false);
+    chat.connect((data) => typed.push(data));
+    expect(chat.answer([question], [{ picks: [], other: 'Mine' }])).toBe(true);
+    vi.advanceTimersByTime(0);
+    expect(typed).toEqual(['2']);
+    vi.advanceTimersByTime(120);
+    expect(typed).toEqual(['2', 'Mine']);
+    vi.runAllTimers();
+    expect(typed).toEqual(['2', 'Mine', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('sends files already in the prompt with Enter alone, or with words', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.send('', { withFiles: true });
+    vi.runAllTimers();
+    chat.send('What is in these?', { withFiles: true });
+    vi.runAllTimers();
+    expect(typed).toEqual(['\r', 'What is in these?', '\r']);
+    vi.useRealTimers();
+  });
+});
+
+describe('what the context holds', () => {
+  it('reads what the last answer in each turn was sent, and none from a host that sends no counts', () => {
+    const answer = (uuid: string, usage?: Record<string, number>) => ({
+      ...assistant(uuid, [{ type: 'text', text: 'Ok.' }]),
+      message: {
+        role: 'assistant',
+        model: 'claude-opus-5-5',
+        content: [{ type: 'text', text: 'Ok.' }],
+        ...(usage ? { usage } : {}),
+      },
+    });
+    const turns = toTurns([
+      user('u1', 'One'),
+      answer('a1', { input_tokens: 10, cache_read_input_tokens: 30_000, output_tokens: 90 }),
+      answer('a2', {
+        input_tokens: 4,
+        cache_creation_input_tokens: 1_000,
+        cache_read_input_tokens: 31_000,
+        output_tokens: 200,
+      }),
+      user('u2', 'Two'),
+      answer('a3'),
+    ]);
+    expect(turns.map((turn) => turn.contextTokens)).toEqual([32_004, null]);
+  });
+});
+
+describe('the queue', () => {
+  const working = [JSON.stringify(user('u1', 'Fix it'))];
+  const settled = (uuid: string) =>
+    JSON.stringify(assistant(uuid, [{ type: 'text', text: 'Fixed.' }]));
+
+  it('sends at once while the agent is free, and holds what is written while it works', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.post('Hello');
+    vi.runAllTimers();
+    expect(typed).toEqual(['Hello', '\r']);
+
+    typed.length = 0;
+    chat.apply({ reset: true, entries: working });
+    chat.post('Then run the tests');
+    chat.post('And open a PR');
+    vi.runAllTimers();
+    expect(typed).toEqual([]);
+    expect(chat.snapshot().queued.map((queued) => queued.text)).toEqual([
+      'Then run the tests',
+      'And open a PR',
+    ]);
+
+    // The turn ends: the first goes; the second waits for the first's turn.
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then run the tests', '\r']);
+    expect(chat.snapshot().queued.map((queued) => queued.text)).toEqual(['And open a PR']);
+    chat.apply({ entries: [JSON.stringify(user('u2', 'Then run the tests'))] });
+    chat.apply({ entries: [settled('a2')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then run the tests', '\r', 'And open a PR', '\r']);
+    expect(chat.snapshot().queued).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('lets a queued message be sent now, or taken back to edit or drop', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
+    chat.post('One');
+    chat.post('Two');
+    const [one, two] = chat.snapshot().queued;
+
+    expect(chat.unqueue(two?.id ?? '')).toBe('Two');
+    expect(chat.unqueue(two?.id ?? '')).toBeNull();
+    chat.sendQueued(one?.id ?? '');
+    vi.runAllTimers();
+    expect(typed).toEqual(['One', '\r']);
+    expect(chat.snapshot().queued).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('does not let a message that opens no turn hold the rest', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
+    chat.post('/clear');
+    chat.post('Go on');
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['/clear', '\r']);
+    vi.advanceTimersByTime(5_000);
+    expect(typed).toEqual(['/clear', '\r', 'Go on', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('reads a command the CLI answered itself as a turn that ended, so the queue goes on', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: working });
+    chat.post('/cost');
+    chat.post('Go on');
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['/cost', '\r']);
+    chat.apply({
+      entries: [
+        JSON.stringify(
+          user('c1', '<command-name>/cost</command-name>\n<command-args></command-args>'),
+        ),
+        JSON.stringify(
+          user('c2', '<local-command-stdout>Total cost: $0.42</local-command-stdout>'),
+        ),
+      ],
+    });
+    expect(chat.snapshot().turns.at(-1)).toMatchObject({
+      prompt: { text: '/cost' },
+      working: false,
+    });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['/cost', '\r', 'Go on', '\r']);
+    vi.useRealTimers();
+  });
+
+  it('waits for a reconnect to replay the turn it was written during before sending', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    const earlier = [JSON.stringify(user('u0', 'Look first')), settled('a0')];
+    chat.apply({ reset: true, entries: [...earlier, ...working] });
+    chat.post('Then ship it');
+    // The history comes back in parts: the first ends on an older, settled turn.
+    chat.apply({ reset: true, entries: earlier });
+    vi.advanceTimersByTime(6_000);
+    chat.apply({ entries: working });
+    vi.advanceTimersByTime(6_000);
+    expect(typed).toEqual([]);
+    chat.apply({ entries: [settled('a1')] });
+    vi.advanceTimersByTime(100);
+    expect(typed).toEqual(['Then ship it', '\r']);
+    vi.useRealTimers();
+  });
+});
+
+describe('the status line’s figures', () => {
+  const status = (fiveHour: number) =>
+    JSON.stringify({
+      type: 'oppenheimer.status',
+      context_window: { used_percentage: 32, context_window_size: 200_000 },
+      rate_limits: {
+        five_hour: { used_percentage: fiveHour, resets_at: 1_793_040_000 },
+        seven_day: { used_percentage: 41.2 },
+      },
+    });
+
+  it('keeps the latest status apart from the conversation, through a reset', () => {
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Go')), status(10)] });
+    chat.apply({ entries: [status(23.5)] });
+    const state = chat.snapshot();
+    expect(state.turns).toHaveLength(1);
+    expect(state.status).toEqual({
+      context: { usedPercent: 32, window: 200_000 },
+      fiveHour: { usedPercent: 23.5, resetsAt: new Date(1_793_040_000_000) },
+      sevenDay: { usedPercent: 41.2, resetsAt: null },
+    });
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Go'))] });
+    expect(chat.snapshot().status?.fiveHour?.usedPercent).toBe(23.5);
+  });
+
+  it('reads an account with no plan windows as having none', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify({
+          type: 'oppenheimer.status',
+          context_window: { context_window_size: 200_000 },
+        }),
+      ],
+    });
+    expect(chat.snapshot().status).toEqual({ context: null, fiveHour: null, sevenDay: null });
   });
 });

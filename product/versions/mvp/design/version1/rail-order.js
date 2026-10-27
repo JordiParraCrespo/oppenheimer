@@ -11,6 +11,7 @@
   function apply(rail) {
     if (drag) return;
     var saved = load(), list = items(rail);
+    if (saved.length && saved.indexOf('Inbox') < 0) { saved.unshift('Inbox'); save(saved); }
     list.slice().sort(function (a, b) {
       var ia = saved.indexOf(keyOf(a)), ib = saved.indexOf(keyOf(b));
       return (ia < 0 ? 999 + list.indexOf(a) : ia) - (ib < 0 ? 999 + list.indexOf(b) : ib);
@@ -98,4 +99,6 @@
     .observe(document.documentElement, { childList: true, subtree: true });
   if (document.readyState !== 'loading') scan(); else document.addEventListener('DOMContentLoaded', scan);
   setInterval(scan, 1500);
+  if (!document.querySelector('script[data-op-gs]')) { var gs = document.createElement('script'); gs.src = './global-search.js'; gs.setAttribute('data-op-gs', ''); document.head.appendChild(gs); }
+  if (!document.querySelector('script[data-op-sbt]')) { var st = document.createElement('script'); st.src = './sidebar-toggle.js'; st.setAttribute('data-op-sbt', ''); document.head.appendChild(st); }
 })();

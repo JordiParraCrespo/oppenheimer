@@ -20,7 +20,7 @@ import type { PaneReading } from '../lib/chat-blocks';
  * member's, with each ticket minted through the share. A `read` share's grid
  * takes no input. No host banner and no files: the host is not the guest's,
  * and nothing they drop would be theirs to send. The status line says the
- * link's state and who shared it, and nothing else. `onEnd` is told when
+ * link's state, once it is not live, and who shared it, and nothing else. `onEnd` is told when
  * the relay closes the terminal, so the page can ask what the share is now.
  *
  * **Chat** (0.7): as `SessionTerminal`, the pane hands in its `reading`;
@@ -83,9 +83,12 @@ export function SharedSessionTerminal({
         </div>
       ) : null}
 
-      <TerminalStatusBar>
+      <TerminalStatusBar data-phase={status}>
         {chatOffered ? <ChatViewToggle view={view} onViewChange={onViewChange} /> : null}
-        <TerminalStatusItem>{t(`sessions.shared.status.${status}`)}</TerminalStatusItem>
+        {/* The header above says Running: Live would say it twice. */}
+        {status === 'live' ? null : (
+          <TerminalStatusItem>{t(`sessions.shared.status.${status}`)}</TerminalStatusItem>
+        )}
         {sharedBy ? (
           <TerminalStatusItem>
             {readOnly

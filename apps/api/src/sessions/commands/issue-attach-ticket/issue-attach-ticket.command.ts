@@ -7,6 +7,8 @@ export class IssueAttachTicketCommand extends CommandBase {
   readonly userId: string;
   /** Tabs are tmux windows, so one ticket authorises one window. */
   readonly window: number;
+  /** The session's device rather than a window's terminal. */
+  readonly device: boolean;
 
   constructor(props: CommandProps<IssueAttachTicketCommand>) {
     super(props);
@@ -14,5 +16,6 @@ export class IssueAttachTicketCommand extends CommandBase {
     this.sessionId = props.sessionId;
     this.userId = props.userId;
     this.window = props.window;
+    this.device = props.device;
   }
 }

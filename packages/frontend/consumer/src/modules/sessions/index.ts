@@ -1,7 +1,12 @@
+export type { ChatAnswer } from './chat/question-keys';
 export {
   type ChatBatch,
+  type ChatLimit,
   type ChatPrompt,
+  type ChatQuestion,
+  type ChatQueued,
   type ChatState,
+  type ChatStatus,
   type ChatStep,
   type ChatTodo,
   type ChatTodoStatus,
@@ -35,6 +40,12 @@ export type {
 } from './session-steps';
 export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export type {
+  DeviceInfo,
+  DeviceInput,
+  DeviceStatus,
+  DeviceStream,
+} from './stream/device-stream';
 export type { LocalTerminals } from './stream/local-first-stream';
 export {
   createResizeCoalescer,

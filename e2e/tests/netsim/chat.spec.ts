@@ -24,7 +24,7 @@ import {
   transcriptEntry,
 } from '../../support/session-chat';
 import { connectInstallation, createSession, mintPairingToken } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * The chat view of a session on a far host, on a slow link: the host behind
@@ -95,7 +95,7 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
       }
       await signInAs(page, user);
       await page.goto(`/sessions/${sessionId}`);
-      await expect(page.getByText('Live', { exact: true })).toBeVisible({ timeout: 120_000 });
+      await expect(linkLive(page)).toBeVisible({ timeout: 120_000 });
       await expect(page.getByText(`· ${path}`)).toBeVisible({ timeout: 60_000 });
       await place('browser', READER);
 

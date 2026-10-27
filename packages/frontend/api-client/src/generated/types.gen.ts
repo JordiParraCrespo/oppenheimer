@@ -1635,6 +1635,7 @@ export type SessionEventPageResponseDto = {
 
 export type IssueAttachTicketRequest = {
     window?: number;
+    target?: 'terminal' | 'device';
 };
 
 export type SetSessionSharePeopleRequest = {
@@ -3033,6 +3034,10 @@ export type BotResponseDto = {
      * Whether what it decides to remember is saved without asking.
      */
     learnAutomatically: boolean;
+    /**
+     * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
+     */
+    sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
     createdAt: string;
     updatedAt: string;
     /**
@@ -3052,6 +3057,7 @@ export type CreateBotRequest = {
     groupId?: string | null;
     homeHostId?: string | null;
     provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+    sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
 export type UpdateBotRequest = {
@@ -3066,6 +3072,7 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
+    sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
 export type BotDocumentResponseDto = {
@@ -3374,6 +3381,25 @@ export type BotMessageResponseDto = {
     createdAt: string;
 };
 
+export type BotPlanWindowDto = {
+    /**
+     * The share of the window used, 0–100.
+     */
+    usedPercent: number;
+    resetsAt: string | null;
+};
+
+export type BotTurnPlanLimitsDto = {
+    /**
+     * The 5-hour window.
+     */
+    fiveHour: BotPlanWindowDto | null;
+    /**
+     * The weekly window.
+     */
+    sevenDay: BotPlanWindowDto | null;
+};
+
 export type BotTurnResponseDto = {
     id: string;
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
@@ -3388,6 +3414,18 @@ export type BotTurnResponseDto = {
     error: string | null;
     inputTokens: number;
     outputTokens: number;
+    /**
+     * What the model's context held at the turn's last answer, in tokens; null before one.
+     */
+    contextTokens: number | null;
+    /**
+     * The model's context window, when the engine reported it.
+     */
+    contextWindow: number | null;
+    /**
+     * A subscription sign-in's usage windows (ChatGPT's) as the last answer said them; null on an API key.
+     */
+    planLimits: BotTurnPlanLimitsDto | null;
     /**
      * Stop was pressed and the worker has not ended it yet.
      */

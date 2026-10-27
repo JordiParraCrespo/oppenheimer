@@ -35,6 +35,10 @@ import {
 @Check('CHK_bot_position', `"position" >= 0`)
 @Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)
 @Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
+@Check(
+  'CHK_bot_sections',
+  `"sections" <@ ARRAY['sessions', 'automations', 'plan', 'pulls']::character varying(16)[]`,
+)
 export class BotOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -85,6 +89,10 @@ export class BotOrmEntity {
 
   @Column({ type: 'boolean', default: true })
   learnAutomatically!: boolean;
+
+  /** The console sections whose sidebar lists it (`1791003500000-AddBotSections`). */
+  @Column({ type: 'varchar', length: 16, array: true, default: () => "'{}'" })
+  sections!: string[];
 
   /** When its chat last had a message; null until the first. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })

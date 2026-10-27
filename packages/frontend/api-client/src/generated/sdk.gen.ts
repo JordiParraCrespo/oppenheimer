@@ -1370,7 +1370,7 @@ export const findSessionEvents = <ThrowOnError extends boolean = false>(options:
 /**
  * Mint a ticket for a terminal on this session
  *
- * Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.
+ * Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint. With `target: 'device'` the socket opens the session's device (a simulator or emulator its host gives it) instead of a terminal.
  */
 export const issueAttachTicket = <ThrowOnError extends boolean = false>(options: Options<IssueAttachTicketData, ThrowOnError>): RequestResult<IssueAttachTicketResponses, IssueAttachTicketErrors, ThrowOnError> => (options.client ?? client).post<IssueAttachTicketResponses, IssueAttachTicketErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

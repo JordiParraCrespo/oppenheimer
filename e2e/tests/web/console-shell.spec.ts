@@ -91,7 +91,7 @@ test('switching the rail away from Plan leaves the console drawn', async ({ page
 
   await page.goto('/plan/calendar');
   await page.getByRole('link', { name: 'Sessions', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What should we work on?' })).toBeVisible();
   await expect(broken).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();
@@ -115,8 +115,8 @@ test('switching the rail away from Plan leaves the console drawn', async ({ page
 
 /**
  * The rail's order is the reader's: dragging an item moves it, the order
- * comes back after a reload, and a plain click on an item still opens its
- * list rather than picking it up.
+ * comes back after a reload, a plain click on an item still opens its
+ * list rather than picking it up, and the console opens on the first item.
  */
 test('the rail is dragged into the reader’s own order, which a reload keeps', async ({ page }) => {
   const owner = await provisionedUser('consolerail');
@@ -130,29 +130,34 @@ test('the rail is dragged into the reader’s own order, which a reload keeps', 
       .evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')));
   await expect
     .poll(order)
-    .toEqual(['Sessions', 'Employees', 'Pull requests', 'Automations', 'Plan']);
+    .toEqual(['Employees', 'Sessions', 'Pull requests', 'Automations', 'Plan']);
 
-  // Plan dragged onto Sessions, in steps, so the drag layer sees a move past its 5px start.
+  // Plan dragged onto Employees, in steps, so the drag layer sees a move past its 5px start.
   const plan = await rail.getByRole('link', { name: 'Plan' }).boundingBox();
-  const sessions = await rail.getByRole('link', { name: 'Sessions' }).boundingBox();
-  if (!plan || !sessions) throw new Error('the rail drew no items');
+  const employees = await rail.getByRole('link', { name: 'Employees' }).boundingBox();
+  if (!plan || !employees) throw new Error('the rail drew no items');
   await page.mouse.move(plan.x + plan.width / 2, plan.y + plan.height / 2);
   await page.mouse.down();
-  await page.mouse.move(plan.x + plan.width / 2, sessions.y + sessions.height / 2, { steps: 12 });
+  await page.mouse.move(plan.x + plan.width / 2, employees.y + employees.height / 2, { steps: 12 });
   await page.mouse.up();
 
   await expect
     .poll(order)
-    .toEqual(['Plan', 'Sessions', 'Employees', 'Pull requests', 'Automations']);
+    .toEqual(['Plan', 'Employees', 'Sessions', 'Pull requests', 'Automations']);
   // The drop did not open Plan: a drag is not a click.
   await expect(page).toHaveURL(/\/sessions/);
 
   await page.reload();
   await expect
     .poll(order)
-    .toEqual(['Plan', 'Sessions', 'Employees', 'Pull requests', 'Automations']);
+    .toEqual(['Plan', 'Employees', 'Sessions', 'Pull requests', 'Automations']);
 
   await rail.getByRole('link', { name: 'Plan' }).click();
+  await expect(page).toHaveURL(/\/plan/);
+
+  // The console opens on whatever leads the rail: Plan, now.
+  await page.goto('/sessions/new');
+  await page.goto('/');
   await expect(page).toHaveURL(/\/plan/);
 
   await owner.api.dispose();

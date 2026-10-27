@@ -3,6 +3,7 @@ import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard'
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
 import { createSnapshotHandover } from './snapshot-handover';
@@ -62,6 +63,8 @@ export interface SessionTerminalOptions {
   snapshot?: string;
   /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
   keepSnapshot?: (snapshot: string) => void;
+  /** The key the echo readout is published under, for the session's bar. */
+  latencyKey?: string;
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -114,6 +117,9 @@ export function mountSessionTerminal(
   // terminal as OSC 52; without this the highlight copies nothing. A
   // watcher's pane leaves it out: the owner's copies are not theirs.
   if (!options.readOnly) term.loadAddon(new ClipboardAddon(undefined, OSC52_CLIPBOARD));
+  // A URL on the grid opens in a new tab on click. xterm's link detection
+  // runs whatever mouse mode tmux asked for, so `mouse on` does not hide it.
+  term.loadAddon(new WebLinksAddon());
 
   term.open(container);
 
@@ -127,6 +133,7 @@ export function mountSessionTerminal(
     typeahead: options.typeahead ?? (() => false),
     renderer: () => renderer,
     onPath: stream.onPath?.bind(stream),
+    latencyKey: options.latencyKey,
   });
   const send = echo.send;
 

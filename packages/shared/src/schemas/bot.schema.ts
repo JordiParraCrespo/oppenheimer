@@ -42,6 +42,15 @@ export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 export const BOT_PERMISSIONS = ['auto', 'full'] as const satisfies readonly SessionPermission[];
 export type BotPermission = (typeof BOT_PERMISSIONS)[number];
 
+/**
+ * The console sections a bot shows in, beside Employees
+ * (`product/versions/mvp/28-bots-in-sections.md`): each section's sidebar lists
+ * the bots that name it under a Bots heading. A bot names none until its
+ * owner, or the section's plus that made it, puts it there.
+ */
+export const BOT_SECTIONS = ['sessions', 'automations', 'plan', 'pulls'] as const;
+export type BotSection = (typeof BOT_SECTIONS)[number];
+
 /** Who wrote a document revision or a memory fact: a person, or the bot through its tools. */
 export const BOT_AUTHORS = ['user', 'bot'] as const;
 export type BotAuthor = (typeof BOT_AUTHORS)[number];
@@ -232,6 +241,12 @@ export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
+export const botSectionSchema = z.enum(BOT_SECTIONS);
+/** A set of sections: each at most once, in any order. */
+const botSectionsSchema = z
+  .array(botSectionSchema)
+  .max(BOT_SECTIONS.length)
+  .refine((sections) => new Set(sections).size === sections.length, 'A section is named once');
 
 const botNameSchema = z.string().trim().min(1).max(BOT_NAME_MAX);
 const botDescriptionSchema = z.string().trim().max(BOT_DESCRIPTION_MAX);
@@ -256,6 +271,8 @@ export const createBotSchema = z.object({
    * the provider's default.
    */
   provider: botProviderSchema.optional(),
+  /** The sections it shows in; none unless named (a section's plus names its own). */
+  sections: botSectionsSchema.optional(),
 });
 export type CreateBotDto = z.infer<typeof createBotSchema>;
 
@@ -280,6 +297,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** The whole set of sections it shows in; `[]` shows it in Employees only. */
+  sections: botSectionsSchema.optional(),
 });
 export type UpdateBotDto = z.infer<typeof updateBotSchema>;
 

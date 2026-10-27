@@ -20,6 +20,10 @@ import { ReviewSessionStart } from './review-session-start';
  * It reads the pull request and the review sessions under Suspense, side by
  * side. The bar's bin deletes the session; its dialog sits outside both
  * branches, since the delete swaps the terminal for the start panel at once.
+ *
+ * The bar stands on the terminal's ground, in the terminal's ink, in either
+ * view: the chat's ground is the terminal's, so bar, grid and chat are one
+ * surface and switching views changes no colour.
  */
 export function PullRequestChat({
   address,

@@ -688,3 +688,26 @@ earlier note:
   the owner asked for the shared page to have the chat view too: the
   relay judges the flag as the sharer, and the guest gets Terminal / Chat,
   read-only on a read share (0.7, "Wire").
+- The console used to open on New session (`/sessions/new`) with Sessions
+  first in the rail. On 2026-10-25 Employees moved to the top of the
+  rail's default order, and the console opens on the rail's first item,
+  so a reader who drags another item to the top opens there instead
+  (`versions/mvp/05-screens.md`, `25-bots.md`).
+- New session's chips used to sit in a grey band fused to the top of a
+  tall composer, under a line saying what sending would do. On
+  2026-10-26 it became one box at the pane's foot with a row of choices
+  under it and the project over it, and a session's name, state, Terminal
+  / Chat and Share moved from the terminal's status line to a bar over it
+  (`versions/mvp/05-screens.md`).
+- New session's Where and Host were two chips. On 2026-10-26 the owner
+  asked for the export's one chip, the host and where on it ("mac-studio ·
+  New worktree", the hosts and a Start in pane per host); the box took a
+  session chat's height, and the models dropped "Claude" from their names
+  ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- The preview pane the session frame opens beside a terminal was not
+  built. On 2026-10-26 the owner asked for the Simulator in it: a
+  session's host offers simulators and emulators (`RUNNER_DEVICES`), each
+  session holds one, its agent drives it through Argent and the reader
+  watches and taps it in the pane, its screen relayed over the link as one
+  more attachment kind (`versions/mvp/05-screens.md`,
+  `research/device-streaming.md`). The Browser tab is still not built.

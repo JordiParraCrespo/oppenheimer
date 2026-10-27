@@ -91,7 +91,25 @@ worker runs it and streams what happens back to the chat.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
-  turn. **Stop** cancels the running turn.
+  turn. **Stop** cancels the running turn. Once something is written the
+  button is Send again, and what it sends waits (2026-10-26): each waiting
+  message sits over the composer, not in the transcript, until its turn
+  starts, with Remove (its queued turn is cancelled), Edit (cancelled, its
+  words back in the field; not offered for one with images, which the
+  field cannot hold again) and, on the next one, Send now, which stops the
+  running turn so it runs at once.
+- **The composer says how much room the bot has left** (2026-10-26), the
+  same meter as a session's chat: the context its last answer held and,
+  on a ChatGPT sign-in, the plan's 5-hour and weekly windows with when
+  each resets. Each turn keeps what its engine reported
+  (`bot_turn."contextTokens"`, `"contextWindow"`, `"planLimits"`) and the
+  meter reads the newest. The Claude engine reports the model's window;
+  the OpenAI engine reports none, so an OpenAI, GLM or ChatGPT bot shows
+  its context in tokens alone, never against a guessed window. The plan
+  windows are what the ChatGPT backend answers each call with (the
+  `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
+  reads); a bot on an API key has none to show. There is no Compact: the
+  engines compact on their own.
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -596,12 +614,15 @@ Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
 Routines, Notifications, plain-language permission rules ("always ask
 before touching the payments repo"), daily caps, slash commands, voice,
-attachments other than images (§3.1), the context meter, project and
+attachments other than images (§3.1), project and
 user memory, a bot's engine running on a host of its own with the full
 Claude Code toolset.
 
 Routines, a bot waking on a schedule, an event or finished work, are
 designed in [26](26-bot-routines.md).
+
+Bots shown beside a section's own list (Sessions, Automations, Plan, Pull
+requests) are [28](28-bots-in-sections.md).
 
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
@@ -630,7 +651,8 @@ eight colours (`AV_COLORS`).
   conversation's summary); the same image can run it alone when turns need their own
   container. The daily `bot-attachment-retention` job sweeps images no
   message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
-- **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
+- **Console:** the rail's Employees entry opens `/bots`, and leads the
+  rail by default, so the console opens there (05); a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
 

@@ -1,4 +1,4 @@
-import type { BotEngineEvent } from '../bot-engine';
+import type { BotEngineEvent, BotPlanLimits } from '../bot-engine';
 import { describeError, failed, resetFromHeaders, type ToolCallData } from '../turn';
 
 /**
@@ -63,12 +63,15 @@ function outputText(output: unknown): string {
  * Turns the OpenAI Agents SDK's stream events into the engine's events, and
  * the run's end into `usage` and `done`. Whether a tool call failed is not
  * in the SDK's event, nor what the call made; the adapter records both as
- * it runs the tool, and passes them in.
+ * it runs the tool, and passes them in. The context is what the last
+ * response was sent (each call sends the whole conversation, so the last is
+ * the most); the SDK does not say the model's window, so it goes without.
  */
 export class OpenAiEventTranslator {
   private inputTokens = 0;
   private outputTokens = 0;
   private sawUsage = false;
+  private lastInput = 0;
 
   constructor(
     private readonly toolFailed: (callId: string) => boolean,
@@ -82,7 +85,8 @@ export class OpenAiEventTranslator {
         return [{ type: 'text.delta', text: data.delta }];
       if (data.type === 'response_done' && data.response?.usage) {
         this.sawUsage = true;
-        this.inputTokens += data.response.usage.inputTokens ?? 0;
+        this.lastInput = data.response.usage.inputTokens ?? 0;
+        this.inputTokens += this.lastInput;
         this.outputTokens += data.response.usage.outputTokens ?? 0;
       }
       return [];
@@ -124,14 +128,20 @@ export class OpenAiEventTranslator {
     }
   }
 
-  /** `usage` when a response reported it, then the one `done` for how the run ended. */
-  finish(error: unknown): BotEngineEvent[] {
+  /**
+   * `usage` when a response reported it, then the one `done` for how the run
+   * ended. `limits` are the subscription's windows as its last answer said
+   * them, for an endpoint that reports them (ChatGPT's).
+   */
+  finish(error: unknown, limits: BotPlanLimits | null = null): BotEngineEvent[] {
     const events: BotEngineEvent[] = [];
     if (this.sawUsage) {
       events.push({
         type: 'usage',
         inputTokens: this.inputTokens,
         outputTokens: this.outputTokens,
+        ...(this.lastInput > 0 ? { context: { tokens: this.lastInput, window: null } } : {}),
+        ...(limits ? { limits } : {}),
       });
     }
     if (error === undefined || error === null) {
