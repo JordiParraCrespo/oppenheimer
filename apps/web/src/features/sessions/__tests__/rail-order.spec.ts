@@ -28,12 +28,27 @@ describe('storedRailOrder', () => {
 
   it('restores the order a drop remembered', () => {
     rememberRailOrder(['plan', 'sessions', 'automations', 'bots', 'pulls']);
-    expect(storedRailOrder()).toEqual(['plan', 'sessions', 'automations', 'bots', 'pulls']);
+    // An item a later build added (Cloud agents) joins at the end of a stored order.
+    expect(storedRailOrder()).toEqual([
+      'plan',
+      'sessions',
+      'automations',
+      'bots',
+      'pulls',
+      'cloud',
+    ]);
   });
 
   it('drops unknown and repeated ids and appends items the stored order lacks', () => {
     store(JSON.stringify(['automations', 'gone', 'automations', 'plan']));
-    expect(storedRailOrder()).toEqual(['automations', 'plan', 'bots', 'sessions', 'pulls']);
+    expect(storedRailOrder()).toEqual([
+      'automations',
+      'plan',
+      'bots',
+      'sessions',
+      'cloud',
+      'pulls',
+    ]);
   });
 
   it.each(['{not json', '{}', '"plan"'])('falls back to the default order on %s', (raw) => {
@@ -61,8 +76,9 @@ describe('useRailOrder', () => {
     act(() => result.current.handlers.onDragStart(item('plan')));
     act(() => result.current.handlers.onDragEnd({ active: item('plan'), over: item('sessions') }));
 
-    expect(result.current.order).toEqual(['bots', 'plan', 'sessions', 'pulls', 'automations']);
-    expect(storedRailOrder()).toEqual(['bots', 'plan', 'sessions', 'pulls', 'automations']);
+    const dropped = ['bots', 'plan', 'sessions', 'cloud', 'pulls', 'automations'];
+    expect(result.current.order).toEqual(dropped);
+    expect(storedRailOrder()).toEqual(dropped);
   });
 
   it('keeps the order when a drag is cancelled', () => {
