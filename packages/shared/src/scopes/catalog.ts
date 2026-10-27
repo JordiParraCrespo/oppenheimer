@@ -30,6 +30,7 @@ export const SCOPE_RESOURCES = [
   'pulls',
   'repositories',
   'flags',
+  'inbox',
 ] as const;
 export type ScopeResource = (typeof SCOPE_RESOURCES)[number];
 
@@ -549,6 +550,29 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         label: 'Edit',
         description: 'Change targeting, pull kill switches and edit segments — for every user.',
         policies: [{ action: 'update', subject: 'FeatureFlag' }],
+      },
+    },
+  },
+  {
+    resource: 'inbox',
+    label: 'Inbox',
+    description:
+      "The credential owner's own Inbox marks: what they did to an item (done, low, snoozed, deleted).",
+    // A person always has their own Inbox, like their own profile: no role
+    // grants it, so no CASL rule backs it. The items it lists are read
+    // through their own sources, under those sources' scopes.
+    levels: {
+      read: {
+        scope: 'inbox:read',
+        label: 'Read',
+        description: "Read the owner's Inbox marks in the workspace.",
+        policies: [],
+      },
+      write: {
+        scope: 'inbox:write',
+        label: 'Edit',
+        description: "Mark, snooze and bring back the owner's Inbox items.",
+        policies: [],
       },
     },
   },

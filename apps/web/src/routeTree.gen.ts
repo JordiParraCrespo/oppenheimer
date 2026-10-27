@@ -20,6 +20,7 @@ import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
 import { Route as AuthenticatedCloudRouteImport } from './routes/_authenticated/cloud'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -120,6 +121,11 @@ const AuthenticatedAutomationsRoute =
 const AuthenticatedCloudRoute = AuthenticatedCloudRouteImport.update({
   id: '/cloud',
   path: '/cloud',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
@@ -402,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
   '/cloud': typeof AuthenticatedCloudRouteWithChildren
+  '/inbox': typeof AuthenticatedInboxRoute
   '/plan': typeof AuthenticatedPlanRouteWithChildren
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -457,6 +464,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/$': typeof AuthenticatedSplatRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/s/$slug': typeof SSlugRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
   '/_authenticated/cloud': typeof AuthenticatedCloudRouteWithChildren
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -575,6 +584,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/automations'
     | '/cloud'
+    | '/inbox'
     | '/plan'
     | '/pulls'
     | '/settings'
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/$'
+    | '/inbox'
     | '/oauth/consent'
     | '/s/$slug'
     | '/forgot-password'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/$'
     | '/_authenticated/automations'
     | '/_authenticated/cloud'
+    | '/_authenticated/inbox'
     | '/_authenticated/plan'
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
@@ -825,6 +837,13 @@ declare module '@tanstack/react-router' {
       path: '/cloud'
       fullPath: '/cloud'
       preLoaderRoute: typeof AuthenticatedCloudRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/plan': {
@@ -1342,6 +1361,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
   AuthenticatedCloudRoute: typeof AuthenticatedCloudRouteWithChildren
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
   AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -1360,6 +1380,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
   AuthenticatedCloudRoute: AuthenticatedCloudRouteWithChildren,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
   AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,

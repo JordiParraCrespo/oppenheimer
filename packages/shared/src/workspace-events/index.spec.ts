@@ -9,11 +9,15 @@ describe('isWorkspaceEvent', () => {
     expect(isWorkspaceEvent({ type: 'automationRun.changed', id: 'r', automationId: 'a' })).toBe(
       true,
     );
+    expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap', botId: 'b' })).toBe(true);
+    expect(isWorkspaceEvent({ type: 'inboxMark.changed', itemKey: 'approval:ap' })).toBe(true);
   });
 
   it('refuses a variant without the field it names, or a type it does not know', () => {
     expect(isWorkspaceEvent({ type: 'pairing.spent', id: 't' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'automationRun.changed', id: 'r' })).toBe(false);
+    expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap' })).toBe(false);
+    expect(isWorkspaceEvent({ type: 'inboxMark.changed', id: 'x' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'invoice.paid', id: 'x' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'session.changed' })).toBe(false);
     expect(isWorkspaceEvent(null)).toBe(false);

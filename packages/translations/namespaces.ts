@@ -23,6 +23,7 @@ export const namespaces = namespaceList as unknown as readonly [
   'tasks',
   'calendar',
   'hosts',
+  'inbox',
   'settings',
   'nav',
   'language',

@@ -25,6 +25,8 @@ import { SessionReconciliationResolver } from './application/session-reconciliat
 import { SessionShareAccessResolver } from './application/session-share-access.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
+import { AnswerSessionDecisionCommandHandler } from './commands/answer-session-decision/answer-session-decision.command-handler';
+import { AnswerSessionDecisionHttpController } from './commands/answer-session-decision/answer-session-decision.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
@@ -107,6 +109,7 @@ const httpControllers = [
   PutSessionShareHttpController,
   StopSessionShareHttpController,
   PasteSessionImageHttpController,
+  AnswerSessionDecisionHttpController,
   StopSessionHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
@@ -136,6 +139,7 @@ const commandHandlers: Provider[] = [
   StopSessionShareCommandHandler,
   IssueSharedAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
+  AnswerSessionDecisionCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];

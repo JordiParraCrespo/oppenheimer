@@ -70,6 +70,7 @@ import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
+import { InboxModule } from './inbox/inbox.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -269,6 +270,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     BotsModule,
     BotsChatModule,
     VoiceModule,
+    InboxModule,
     RelayModule,
     HealthModule,
     QueueModule,

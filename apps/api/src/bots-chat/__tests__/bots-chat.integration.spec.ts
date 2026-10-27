@@ -74,7 +74,8 @@ import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
  * conversation and history, Stop's conditional writes, the cascade from the
  * bot, and a turn's context read in its own workspace only; Needs input
  * cards: one waiting per bot, decided once however many decide at once, the
- * event that opens a decision's turn, and the cascade; a conversation's
+ * event that opens a decision's turn, the workspace's cards across bots and
+ * the event each move stages, and the cascade; a conversation's
  * summary: one write of two racing ones wins, the cutoff never moves back,
  * and a turn's history and the summarizer's read start after it to the
  * microsecond; a bot's subscriptions to sessions: one per bot and session,
@@ -645,6 +646,60 @@ describe('bots chat (integration)', () => {
     expect(
       await approvals.findForBot(scopeOf(await insertOrganization()), bot.id, undefined, 50),
     ).toEqual([]);
+  });
+
+  it("reads the workspace's cards in one status across its bots, newest first, and stages each move's event", async () => {
+    const ops = await create('Ops');
+    const docs = await create('Docs');
+    const first = await asked(ops, 'First');
+    expect(await approvals.insertPending(first)).toBe('inserted');
+    const second = await asked(docs, 'Second');
+    expect(await approvals.insertPending(second)).toBe('inserted');
+    const elsewhere = await insertOrganization();
+    const foreign = await asked(await create('Theirs', { organization: elsewhere }));
+    expect(await approvals.insertPending(foreign)).toBe('inserted');
+
+    const pendingIds = async (limit = 100) =>
+      (await approvals.findInWorkspace(scope(), 'pending', limit)).map((card) => card.id);
+    expect(await pendingIds()).toEqual([second.id, first.id]);
+    expect(await pendingIds(1)).toEqual([second.id]);
+
+    const stale = (await approvals.findOne(scope(), ops.id, first.id)).unwrap();
+    const decided = (await approvals.findOne(scope(), ops.id, first.id)).unwrap();
+    decided.deny(userId, new Date(), 'no');
+    expect(await approvals.saveTransition(decided)).toBe(true);
+    // The loser of the race stages nothing: its move never happened.
+    stale.expire(new Date());
+    expect(await approvals.saveTransition(stale)).toBe(false);
+
+    expect(await pendingIds()).toEqual([second.id]);
+    expect(
+      (await approvals.findInWorkspace(scope(), 'denied', 100)).map((card) => card.id),
+    ).toEqual([first.id]);
+    const staged: { aggregateId: string; status: string; botId: string }[] = await dataSource.query(
+      `SELECT "aggregateId", payload->>'status' AS status, payload->>'botId' AS "botId"
+       FROM outbox_message
+       WHERE "eventName" = 'BotApprovalChangedDomainEvent' AND "aggregateId" = ANY($1)
+       ORDER BY "createdAt", id`,
+      [[first.id, second.id]],
+    );
+    expect(staged).toEqual([
+      { aggregateId: first.id, status: 'pending', botId: ops.id },
+      { aggregateId: second.id, status: 'pending', botId: docs.id },
+      { aggregateId: first.id, status: 'denied', botId: ops.id },
+    ]);
+  });
+
+  it('stages no event for a card refused as a second one waiting', async () => {
+    const bot = await create('Twice');
+    await approvals.insertPending(await asked(bot));
+    const refused = await asked(bot);
+    expect(await approvals.insertPending(refused)).toBe('pending_exists');
+    const [{ count }]: { count: string }[] = await dataSource.query(
+      `SELECT count(*) FROM outbox_message WHERE "aggregateId" = $1`,
+      [refused.id],
+    );
+    expect(count).toBe('0');
   });
 
   it('lets one decision win however many land at once: the rest lose and change nothing', async () => {

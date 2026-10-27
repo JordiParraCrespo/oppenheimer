@@ -257,6 +257,13 @@ runner does with it and point back.
   `cacheWriteTokens`, read from Claude Code's result. The fields are
   additive and the control plane reads each by name, so an older peer on
   either side leaves them unmeasured (null), never zero.
+  When a blocked agent waits on the person, the runner logs
+  `agent.decision` with `{ decision }`, null once it cleared (since
+  2026-10-27, 28 slice 4): a question (`AskUserQuestion`, by its
+  `tool_use_id`) or a permission dialog (by a hash of its text). The payload
+  is `packages/shared/src/schemas/session-decision.schema.ts`, Go twin
+  generated, bounded to fit the 8 KB event cap. The answer goes back as
+  plain `session.input` frames, one key each; nothing new is on the wire.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

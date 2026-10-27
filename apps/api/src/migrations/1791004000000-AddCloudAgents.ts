@@ -34,8 +34,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * `owner` gains `manage CloudAgent` in its workspace, as it holds `Session`.
  */
-export class AddCloudAgents1791003700000 implements MigrationInterface {
-  name = 'AddCloudAgents1791003700000';
+export class AddCloudAgents1791004000000 implements MigrationInterface {
+  name = 'AddCloudAgents1791004000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

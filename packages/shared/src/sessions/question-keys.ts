@@ -1,4 +1,13 @@
-import type { ChatQuestion } from './session-chat';
+/**
+ * The keys that answer the decisions a Claude Code session waits on, the way a
+ * person would at the terminal. The console types them into a terminal it has
+ * open, and the control plane sends them as `session.input` when an answer
+ * comes from the Inbox, so both answer one picker one way.
+ *
+ * Each key is its own write, and the picker needs a moment between two to
+ * redraw ({@link QUESTION_KEY_GAP_MS}): it reads the next key against what it
+ * drew, and two keys in one read are not two presses.
+ */
 
 /** What the person chose for one question: the options picked, by index, and an answer of their own. */
 export interface ChatAnswer {
@@ -6,6 +15,18 @@ export interface ChatAnswer {
   /** Their own words, in place of an option (single) or beside the picks (several). */
   other: string | null;
 }
+
+/** The part of a question its keys depend on. */
+export interface KeyedQuestion {
+  multiSelect: boolean;
+  options: readonly unknown[];
+}
+
+/**
+ * The gap between the keys that answer a question: the picker redraws after
+ * each one and reads the next against what it drew.
+ */
+export const QUESTION_KEY_GAP_MS = 120;
 
 const DOWN = '\u001b[B';
 const ENTER = '\r';
@@ -29,7 +50,7 @@ const ENTER = '\r';
  * A newline in the person's words would be Enter, so it becomes a space.
  */
 export function questionKeys(
-  questions: readonly ChatQuestion[],
+  questions: readonly KeyedQuestion[],
   answers: readonly ChatAnswer[],
 ): string[] {
   const keys: string[] = [];
@@ -50,4 +71,12 @@ export function questionKeys(
   const reviewed = questions.length > 1 || questions[0]?.multiSelect === true;
   if (reviewed) keys.push('1');
   return keys;
+}
+
+/**
+ * The key that answers Claude Code's permission dialog: an option's number,
+ * which picks it and sends it. `option` counts from 0, in screen order.
+ */
+export function permissionKeys(option: number): string[] {
+  return [String(option + 1)];
 }

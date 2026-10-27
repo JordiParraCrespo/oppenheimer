@@ -5,6 +5,7 @@
  * the console opens, and that route is on the first load.
  */
 export const RAIL_ROUTES = [
+  { id: 'inbox', to: '/inbox' },
   { id: 'bots', to: '/bots' },
   { id: 'sessions', to: '/sessions/new' },
   { id: 'cloud', to: '/cloud' },
@@ -24,10 +25,18 @@ function isRailItemId(value: unknown): value is RailItemId {
 }
 
 /**
+ * Items that arrive at the front of an order stored before they existed,
+ * rather than after it: the Inbox goes first for everyone once, so it is
+ * where the console lands (`product/versions/mvp/29-inbox.md`, Decided 1).
+ * Once the reader drags it anywhere, the stored order keeps it there.
+ */
+const ARRIVE_FIRST: readonly RailItemId[] = ['inbox'];
+
+/**
  * The reader's own order, kept on this device: every item once, the stored
- * ones first in their stored place, then any this build added since in their
- * default place. Unknown ids and repeats are dropped; anything unreadable is
- * the default order.
+ * ones in their stored place, then any this build added since in their
+ * default place — except those that arrive first, which lead. Unknown ids
+ * and repeats are dropped; anything unreadable is the default order.
  */
 export function storedRailOrder(): RailItemId[] {
   let stored: unknown = [];
@@ -37,7 +46,12 @@ export function storedRailOrder(): RailItemId[] {
     // Storage switched off, or something from an older shape: the default order.
   }
   const kept = new Set<RailItemId>(Array.isArray(stored) ? stored.filter(isRailItemId) : []);
-  return [...kept, ...RAIL_ROUTES.map((item) => item.id).filter((id) => !kept.has(id))];
+  const added = RAIL_ROUTES.map((item) => item.id).filter((id) => !kept.has(id));
+  return [
+    ...added.filter((id) => ARRIVE_FIRST.includes(id)),
+    ...kept,
+    ...added.filter((id) => !ARRIVE_FIRST.includes(id)),
+  ];
 }
 
 export function rememberRailOrder(order: readonly RailItemId[]) {
@@ -51,7 +65,7 @@ export function rememberRailOrder(order: readonly RailItemId[]) {
 /**
  * Where the console opens: the first item of the reader's order, so a
  * reader who dragged Plan to the top lands on Plan, and one who never
- * dragged lands on Employees.
+ * dragged lands on the Inbox.
  */
 export function railLanding(): (typeof RAIL_ROUTES)[number]['to'] {
   const [first] = storedRailOrder();

@@ -9,6 +9,8 @@ import type { CloudAgentsRepository } from '../modules/cloud-agents';
 import { CloudAgentsModule } from '../modules/cloud-agents';
 import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
+import type { InboxRepository } from '../modules/inbox';
+import { InboxModule } from '../modules/inbox';
 import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
 import type { OrganizationsService } from '../modules/organizations';
@@ -43,6 +45,7 @@ export const consumerModules = [
   CalendarModule,
   CloudAgentsModule,
   HostsModule,
+  InboxModule,
   InstallationsModule,
   PermissionsModule,
   OrganizationsModule,
@@ -87,6 +90,10 @@ export class ConsumerApp {
   }
 
   /** The bodies of work sessions belong to, and what New session is prefilled with. */
+  get inbox(): InboxRepository {
+    return this.kernel.container.get(TOKENS.InboxRepository);
+  }
+
   get projects(): ProjectsRepository {
     return this.kernel.container.get(TOKENS.ProjectsRepository);
   }

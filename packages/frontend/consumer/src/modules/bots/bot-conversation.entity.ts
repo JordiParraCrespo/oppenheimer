@@ -191,3 +191,40 @@ export class BotApprovalEntity {
     return this.status === 'pending';
   }
 }
+
+/**
+ * A Needs input card as the workspace's list across its bots reads it (the
+ * Inbox, `product/versions/mvp/29-inbox.md` §1): the card, the bot that
+ * asked, and the call's input, where a session it concerns may be named.
+ */
+export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
+  constructor(
+    approval: BotApprovalEntity,
+    public readonly botId: string,
+    public readonly botName: string,
+    /** The session the call started on a yes; null before. */
+    public readonly sessionId: string | null,
+    /** The call exactly as it will run on a yes. */
+    public readonly input: Readonly<Record<string, unknown>>,
+  ) {
+    super(
+      approval.id,
+      approval.turnId,
+      approval.tool,
+      approval.summary,
+      approval.status,
+      approval.result,
+      approval.createdAt,
+    );
+  }
+
+  /**
+   * The session this card concerns: the one it started, or the one its call
+   * names (`session_id`), else none.
+   */
+  get concernsSessionId(): string | null {
+    if (this.sessionId) return this.sessionId;
+    const named = this.input.session_id ?? this.input.sessionId;
+    return typeof named === 'string' && named ? named : null;
+  }
+}

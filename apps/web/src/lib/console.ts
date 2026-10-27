@@ -37,6 +37,7 @@ export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 
 /** The console's lists: what the rail switches and the sidebar shows. */
 export type ConsoleList =
+  | 'inbox'
   | 'sessions'
   | 'bots'
   | 'cloud'
@@ -46,7 +47,8 @@ export type ConsoleList =
   | 'calendar';
 
 /**
- * Which of the console's lists the matched routes are under: `bots` for the
+ * Which of the console's lists the matched routes are under: `inbox` for
+ * `/inbox`; `bots` for the
  * Employees section under `/bots`, a bot's settings included; `cloud` for
  * launching and following cloud agents under `/cloud`; `automations`
  * for everything under `/automations`, the editor included; `pulls` for the
@@ -62,6 +64,7 @@ export function useConsoleList(): ConsoleList {
   return useMatches({
     select: (matches): ConsoleList => {
       const ids = matches.map((match) => match.routeId);
+      if (ids.includes('/_authenticated/inbox')) return 'inbox';
       // A chat under the `bots` routes, and a bot's settings un-nested from them (`bots_`).
       if (ids.some((id) => id.startsWith('/_authenticated/bots'))) return 'bots';
       if (ids.some((id) => id.startsWith('/_authenticated/cloud'))) return 'cloud';
