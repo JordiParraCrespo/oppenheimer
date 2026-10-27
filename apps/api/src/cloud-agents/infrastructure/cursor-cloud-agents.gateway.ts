@@ -241,7 +241,8 @@ function refusalOf(status: number, errorBody: string): AppError {
   if (status === 401 || code === 'key_not_supported') {
     return new AppError(CloudAgentErrors.KEY_REFUSED, { detail, extensions });
   }
-  if (status === 400 || status === 403 || status === 409 || status === 422) {
+  // 402 and `usage_limit_exceeded`: the person's Cursor plan is out of usage.
+  if ([400, 402, 403, 409, 422].includes(status)) {
     return new AppError(CloudAgentErrors.REQUEST_REFUSED, { detail, extensions });
   }
   return new AppError(CloudAgentErrors.PROVIDER_UNAVAILABLE, { detail, extensions });
