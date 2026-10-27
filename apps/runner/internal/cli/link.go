@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -562,6 +563,36 @@ func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, r
 	}
 	h.reporter.AppendSettled(session.ID, "prompt.first", map[string]any{"text": text}, reported)
 	return true
+}
+
+// DecisionChanged is the session service's publisher for what an agent waits
+// on the person for (28-inbox, slice 4): `agent.decision` with the decision,
+// or null once it cleared. A question too large for an event's payload is cut
+// down (descriptions first) until it fits; one that never does is reported as
+// none rather than as an event the control plane would refuse.
+func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *sessionsdomain.Decision) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(session.ID, sessionsdomain.AgentDecisionKind, sessionsdomain.AgentDecisionPayload{Decision: fitDecision(decision)})
+}
+
+// fitDecision is decision cut until its payload fits an event, or nil.
+func fitDecision(decision *sessionsdomain.Decision) *sessionsdomain.Decision {
+	if decision == nil {
+		return nil
+	}
+	fitted := *decision
+	for {
+		body, err := json.Marshal(sessionsdomain.AgentDecisionPayload{Decision: &fitted})
+		if err == nil && len(body) <= link.MaxEventPayloadBytes {
+			return &fitted
+		}
+		var cut bool
+		if fitted, cut = fitted.Shrink(); !cut {
+			return nil
+		}
+	}
 }
 
 func (h *linkHandler) fail(commandID string, err error) {

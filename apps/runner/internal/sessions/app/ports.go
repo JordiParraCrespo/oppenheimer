@@ -182,6 +182,10 @@ type Publisher interface {
 	// message offered before the link exists, or lost with the process
 	// before it landed, is offered again.
 	FirstPrompt(session domain.Session, text string, reported func()) bool
+	// DecisionChanged carries what the session's agent now waits on the
+	// person for, nil once nothing, to the control plane as `agent.decision`.
+	// It is called when the pending decision appears, changes or clears.
+	DecisionChanged(session domain.Session, decision *domain.Decision)
 }
 
 // Transcripts reads what an agent's own transcript says, on this host. The
@@ -202,6 +206,10 @@ type Transcripts interface {
 	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
 	// runner cannot read the agent's transcript.
 	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
+	// OpenQuestion is the agent's latest AskUserQuestion call that has no
+	// result in the transcript yet, as the decision it asks (28-inbox,
+	// slice 4); false when there is none, or no transcript to read.
+	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the
@@ -222,6 +230,9 @@ func (NopPublisher) SessionChanged(domain.Session) {}
 
 // FirstPrompt implements Publisher: nobody takes it.
 func (NopPublisher) FirstPrompt(domain.Session, string, func()) bool { return false }
+
+// DecisionChanged implements Publisher.
+func (NopPublisher) DecisionChanged(domain.Session, *domain.Decision) {}
 
 // LaunchGate holds an agent's launch while something is replacing that
 // agent's executable, so a session never starts a CLI halfway through its

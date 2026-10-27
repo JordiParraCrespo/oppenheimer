@@ -74,7 +74,10 @@ type Service struct {
 	busy map[string]int
 	// confirmed, under mu, holds the sessions whose blocked agent has been
 	// announced a second time (see observe).
-	confirmed   map[string]bool
+	confirmed map[string]bool
+	// decisions, under mu, is the id of the decision last reported for each
+	// session whose agent waits on one (reportDecision).
+	decisions   map[string]string
 	terminals   Terminals
 	worktrees   Worktrees
 	classifier  Classifier
@@ -107,7 +110,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
@@ -345,14 +348,18 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if !alive {
 		// The tmux session is gone — a host reboot, or someone killed it.
 		// The worktree is intact, so this is `stopped`, not `closed`.
-		return s.observe(session, rev, domain.StateStopped, ""), nil
+		next := s.observe(session, rev, domain.StateStopped, "")
+		s.reportDecision(next, "")
+		return next, nil
 	}
 	screen, err := s.terminals.Capture(ctx, session.Target(0))
 	if err != nil {
 		return session, err
 	}
 	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	return s.observe(session, rev, state, loginURL), nil
+	next := s.observe(session, rev, state, loginURL)
+	s.reportDecision(next, screen.Body)
+	return next, nil
 }
 
 // RefreshAll refreshes every live session and returns the whole list, newest
@@ -397,7 +404,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		session := item.session
 		name := session.TmuxName()
 		if !present[name] {
-			s.observe(session, item.rev, domain.StateStopped, "")
+			s.reportDecision(s.observe(session, item.rev, domain.StateStopped, ""), "")
 			continue
 		}
 		body, err := s.terminals.CaptureBody(ctx, session.Target(0))
@@ -406,7 +413,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 			continue
 		}
 		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
-		s.observe(session, item.rev, state, loginURL)
+		s.reportDecision(s.observe(session, item.rev, state, loginURL), body)
 	}
 	return s.List(), errors.Join(errs...)
 }
@@ -821,6 +828,56 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 	}
 	publisher.SessionChanged(next)
 	return next
+}
+
+// reportDecision tells the control plane what a session's agent waits on the
+// person for, after a refresh observed it, whenever that changed: a decision
+// that appears, one that is replaced by another, and one that clears. Only a
+// blocked agent waits on one. The question comes from the agent's transcript
+// (an AskUserQuestion call with no result yet) and, when there is none, a
+// permission dialog from the screen body; nothing is reported for a session
+// that never had one in this process.
+func (s *Service) reportDecision(session domain.Session, body string) {
+	var decision *domain.Decision
+	if session.State == domain.StateBlocked {
+		decision = s.pendingDecision(session, body)
+	}
+	id := ""
+	if decision != nil {
+		id = decision.ID
+	}
+	s.mu.Lock()
+	last, had := s.decisions[session.ID]
+	if last == id && (had || id == "") {
+		s.mu.Unlock()
+		return
+	}
+	if id == "" {
+		delete(s.decisions, session.ID)
+	} else {
+		s.decisions[session.ID] = id
+	}
+	publisher := s.publisher
+	s.mu.Unlock()
+	publisher.DecisionChanged(session, decision)
+}
+
+// pendingDecision is the decision a blocked agent waits on, or nil when it
+// cannot be read: the transcript's open question first, since its picker is
+// also a numbered list, then Claude Code's permission dialog.
+func (s *Service) pendingDecision(session domain.Session, body string) *domain.Decision {
+	if s.transcripts != nil && session.Launch.Conversation != "" {
+		if decision, ok := s.transcripts.OpenQuestion(session.Agent, session.Launch.Conversation); ok {
+			return &decision
+		}
+	}
+	if session.Agent != domain.AgentClaude {
+		return nil
+	}
+	if decision, ok := domain.PermissionDecision(body); ok {
+		return &decision
+	}
+	return nil
 }
 
 // discardFiles drops a session's pasted files. They were for the agent in
