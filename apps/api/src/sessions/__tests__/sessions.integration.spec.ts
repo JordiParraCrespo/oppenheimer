@@ -669,6 +669,50 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.agentSessionId).toBe('agent-9');
     });
 
+    it('stores the decision a blocked agent waits on, reads it back, and clears it on an answer', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const decision = {
+        kind: 'permission',
+        id: 'perm-1',
+        title: 'Do you want to proceed?',
+        detail: 'pnpm test',
+        options: [{ label: 'Yes' }, { label: 'No' }],
+      };
+
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'run-1:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'run-1:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'blocked' },
+        },
+        {
+          idempotencyKey: 'run-1:3',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+          payload: { decision },
+        },
+      ]);
+      const stored = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(stored.pendingDecision).toEqual(decision);
+
+      await repository.appendEvents(stored, [
+        {
+          idempotencyKey: `api:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+          payload: { id: 'perm-1' },
+        },
+      ]);
+      const [row] = await dataSource.query(
+        `SELECT "pendingDecision" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.pendingDecision).toBeNull();
+    });
+
     it('keeps seq dense when two coalesced appends race a third', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());

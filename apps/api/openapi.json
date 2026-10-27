@@ -9601,6 +9601,121 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/sessions/{id}/decision": {
+      "post": {
+        "description": "Answers the session’s pending `decision` — a question the agent asked, or a permission dialog — by typing into its terminal the keys a person would. The body names the decision by its `id`: a question takes one answer per question (`picks` by option index, and `other` for words of your own), a permission one `option` by index. Answers the session, its decision cleared.",
+        "operationId": "answerSessionDecision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerSessionDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_032 — Already answered or changed\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SESSIONS_033 — The answer does not fit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_034 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer what a session’s agent waits on",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/sessions/{id}/stop": {
       "post": {
         "description": "Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.",
@@ -22427,6 +22542,106 @@
         },
         "required": ["ticket", "url", "expiresAt", "window"]
       },
+      "SessionDecisionQuestionOptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Tokens and components"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["label", "description"]
+      },
+      "SessionDecisionQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "type": "string",
+            "nullable": true,
+            "description": "The chip over it in the terminal.",
+            "example": "Scope"
+          },
+          "question": {
+            "type": "string",
+            "example": "What should the design system cover?"
+          },
+          "multiSelect": {
+            "type": "boolean",
+            "description": "Several options may be picked."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionDecisionQuestionOptionResponseDto"
+            }
+          }
+        },
+        "required": ["header", "question", "multiSelect", "options"]
+      },
+      "SessionQuestionDecisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["question"]
+          },
+          "id": {
+            "type": "string",
+            "description": "The call’s `tool_use_id`."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionDecisionQuestionResponseDto"
+            }
+          }
+        },
+        "required": ["kind", "id", "questions"]
+      },
+      "SessionPermissionOptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Yes"
+          }
+        },
+        "required": ["label"]
+      },
+      "SessionPermissionDecisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["permission"]
+          },
+          "id": {
+            "type": "string",
+            "description": "A hash of what the dialog says: stable while it is on screen."
+          },
+          "title": {
+            "type": "string",
+            "example": "Do you want to proceed?"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true,
+            "description": "What it asks about, above the question: a command, a file."
+          },
+          "options": {
+            "description": "In screen order; the answer names one by its index.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionPermissionOptionResponseDto"
+            }
+          }
+        },
+        "required": ["kind", "id", "title", "detail", "options"]
+      },
       "SessionLaunchResponseDto": {
         "type": "object",
         "properties": {
@@ -22674,6 +22889,19 @@
               }
             ]
           },
+          "decision": {
+            "type": "object",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SessionQuestionDecisionResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/SessionPermissionDecisionResponseDto"
+              }
+            ],
+            "nullable": true,
+            "description": "What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`."
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -22698,6 +22926,7 @@
           "stateSeq",
           "checkouts",
           "hints",
+          "decision",
           "createdAt",
           "updatedAt"
         ]
@@ -23080,6 +23309,51 @@
           }
         },
         "required": ["audience", "access", "lifetime"]
+      },
+      "AnswerSessionDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "answers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "properties": {
+                "picks": {
+                  "type": "array",
+                  "maxItems": 6,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": false,
+                    "maximum": 5,
+                    "exclusiveMaximum": false
+                  }
+                },
+                "other": {
+                  "type": "string",
+                  "maxLength": 1000,
+                  "nullable": true
+                }
+              },
+              "required": ["picks", "other"]
+            }
+          },
+          "option": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 8,
+            "exclusiveMaximum": false
+          }
+        },
+        "required": ["id"]
       },
       "PrepareSessionRequest": {
         "type": "object",

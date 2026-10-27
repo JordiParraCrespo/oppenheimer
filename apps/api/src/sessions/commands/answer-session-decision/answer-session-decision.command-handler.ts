@@ -1,0 +1,87 @@
+import { Inject } from '@nestjs/common';
+import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { AppError } from '@oppenheimer/backend-core';
+import { QUESTION_KEY_GAP_MS } from '@oppenheimer/shared/sessions';
+import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
+import { decisionAnswerKeys } from '../../domain/session-decision.policy';
+import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
+import { SessionErrors } from '../../domain/sessions.errors';
+import { WorkSessionEntity } from '../../domain/work-session.entity';
+import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
+import { AnswerSessionDecisionCommand } from './answer-session-decision.command';
+
+/** The agent's window: where its question and its permission dialog are drawn. */
+const AGENT_WINDOW = 0;
+
+/**
+ * Answers what a session's agent waits on — a question it asked, a permission
+ * dialog — from somewhere other than its terminal: the Inbox
+ * (`product/versions/mvp/28-inbox.md` slice 4).
+ *
+ * The answer is the keys a person would type, sent to window 0 as
+ * `session.input`, one frame per key and paced like the console's chat view
+ * paces them. It names the decision it answers, so an answer to a question
+ * that was already answered, or replaced, is refused rather than typed into
+ * whatever the agent asks next.
+ *
+ * Order: the keys go first and the entry after, so a host that cannot take them
+ * leaves the decision pending. `decision.answered` clears it from the session
+ * at once; the runner's next report (the agent at work, or its next question)
+ * confirms it.
+ */
+@CommandHandler(AnswerSessionDecisionCommand)
+export class AnswerSessionDecisionCommandHandler
+  implements ICommandHandler<AnswerSessionDecisionCommand, SessionCommandResult>
+{
+  constructor(
+    private readonly loader: SessionLoaderResolver,
+    @Inject(WORK_SESSION_REPOSITORY)
+    private readonly sessions: WorkSessionRepositoryPort,
+    @Inject(SESSION_DISPATCH)
+    private readonly dispatch: SessionDispatchPort,
+  ) {}
+
+  async execute(command: AnswerSessionDecisionCommand): Promise<SessionCommandResult> {
+    const session = await this.loader.find(command.scope, command.sessionId);
+    const refusal = session.inputRefusal;
+    if (refusal) {
+      throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });
+    }
+
+    const outcome = decisionAnswerKeys(session.pendingDecision, command.answer);
+    if (outcome.kind !== 'keys') {
+      const refusal =
+        outcome.kind === 'stale'
+          ? SessionErrors.DECISION_STALE
+          : SessionErrors.DECISION_ANSWER_INVALID;
+      throw new AppError(refusal, { detail: outcome.detail });
+    }
+
+    const { delivered } = await this.dispatch.typeKeys(session, {
+      window: AGENT_WINDOW,
+      keys: outcome.keys,
+      gapMs: QUESTION_KEY_GAP_MS,
+    });
+    if (!delivered) {
+      throw new AppError(SessionErrors.DECISION_HOST_OFFLINE, {
+        detail: 'Nothing is kept for a host that comes back: answer again once it is online.',
+      });
+    }
+
+    await this.sessions.appendEvents(session, [
+      {
+        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+          command.id,
+          SESSION_EVENT_KINDS.DECISION_ANSWERED,
+        ),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+        payload: { id: command.answer.id },
+      },
+    ]);
+    return { sessionId: session.id, hints: [] };
+  }
+}

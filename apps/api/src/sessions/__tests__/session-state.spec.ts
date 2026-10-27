@@ -367,3 +367,108 @@ describe('launchPermissionFor', () => {
     expect(launchPermissionFor(null, 'full')).toBe('full');
   });
 });
+
+/**
+ * What the agent waits on the person for (`28-inbox.md` slice 4). The Inbox shows
+ * it and answers it, so a decision the agent no longer waits on must never stay:
+ * an answer typed into it would land on whatever the agent asks next.
+ */
+describe('the decision the fold keeps pending', () => {
+  const question = {
+    kind: 'question',
+    id: 'toolu_01',
+    questions: [
+      {
+        question: 'Which scope?',
+        multiSelect: false,
+        options: [{ label: 'Tokens' }, { label: 'Everything', description: 'All of it' }],
+      },
+    ],
+  };
+  const permission = {
+    kind: 'permission',
+    id: 'perm-abc',
+    title: 'Do you want to proceed?',
+    detail: 'Bash command\npnpm test',
+    options: [{ label: 'Yes' }, { label: 'No' }],
+  };
+  const blockedOn = (decision: unknown) =>
+    foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.STARTED),
+      entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'blocked' }),
+      entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision }),
+    ]);
+
+  it('keeps the question the runner reported, absent texts read as null', () => {
+    expect(blockedOn(question).pendingDecision).toEqual({
+      kind: 'question',
+      id: 'toolu_01',
+      questions: [
+        {
+          header: null,
+          question: 'Which scope?',
+          multiSelect: false,
+          options: [
+            { label: 'Tokens', description: null },
+            { label: 'Everything', description: 'All of it' },
+          ],
+        },
+      ],
+    });
+    expect(blockedOn(permission).pendingDecision).toMatchObject({ id: 'perm-abc' });
+  });
+
+  it('clears it on the runner’s own clear, and keeps nothing it cannot read', () => {
+    const fold = blockedOn(question);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision: null }))
+        .pendingDecision,
+    ).toBeNull();
+    expect(blockedOn({ kind: 'question', id: 'x', questions: [] }).pendingDecision).toBeNull();
+  });
+
+  it('clears the decision an answer names, and only that one', () => {
+    const fold = blockedOn(question);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.DECISION_ANSWERED, { id: 'toolu_01' }))
+        .pendingDecision,
+    ).toBeNull();
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.DECISION_ANSWERED, { id: 'toolu_00' }))
+        .pendingDecision,
+    ).not.toBeNull();
+  });
+
+  it('clears it once the agent is anything but blocked, and keeps it while it stays blocked', () => {
+    const fold = blockedOn(permission);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'blocked' }))
+        .pendingDecision,
+    ).not.toBeNull();
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'working' }))
+        .pendingDecision,
+    ).toBeNull();
+  });
+
+  it('clears it when the session stops, fails, closes or restarts', () => {
+    const fold = blockedOn(permission);
+    for (const kind of [
+      SESSION_EVENT_KINDS.STOPPED,
+      SESSION_EVENT_KINDS.FAILED,
+      SESSION_EVENT_KINDS.CLOSED,
+      SESSION_EVENT_KINDS.RESTARTED,
+    ]) {
+      expect(foldSessionEvent(fold, entry(kind)).pendingDecision).toBeNull();
+    }
+  });
+
+  it('takes no decision on a stopped session', () => {
+    const stopped = foldSessionEvent(blockedOn(null), entry(SESSION_EVENT_KINDS.STOPPED));
+    expect(
+      foldSessionEvent(stopped, entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision: question }))
+        .pendingDecision,
+    ).toBeNull();
+  });
+});

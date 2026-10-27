@@ -88,6 +88,16 @@ export interface SessionFileSpec {
 }
 
 /**
+ * Keys for a window nobody need be watching, typed one write each, `gapMs` apart:
+ * a picker redraws after each key and reads the next against what it drew.
+ */
+export interface SessionKeysSpec {
+  window: number;
+  keys: readonly string[];
+  gapMs: number;
+}
+
+/**
  * What the module that owns the runner link implements so a session's work reaches a
  * host.
  *
@@ -119,6 +129,11 @@ export interface SessionDispatchPort {
   ): Promise<SessionDispatchOutcome>;
   /** Give a window's program an image: saved on the host, its path pasted in. */
   pasteFile(session: WorkSessionEntity, image: SessionFileSpec): Promise<SessionDispatchOutcome>;
+  /**
+   * Type keys into a window as `session.input`, one frame per key, in order.
+   * `delivered` only when every key reached the link.
+   */
+  typeKeys(session: WorkSessionEntity, spec: SessionKeysSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,

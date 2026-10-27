@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { nullableEnum, PaginatedResponseDto } from '@oppenheimer/backend-core';
 import type { SessionEffortDto, SessionPermissionDto, SessionPlace } from '@oppenheimer/shared';
 import {
@@ -9,6 +9,11 @@ import {
   SESSION_STATES,
 } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  type SessionDecisionResponseDto,
+  SessionPermissionDecisionResponseDto,
+  SessionQuestionDecisionResponseDto,
+} from './session-decision.response.dto';
 
 /**
  * One repository checked out for this session.
@@ -129,6 +134,7 @@ export class SessionCloseRefusalResponseDto {
   detail!: string | null;
 }
 
+@ApiExtraModels(SessionQuestionDecisionResponseDto, SessionPermissionDecisionResponseDto)
 export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -258,6 +264,17 @@ export class SessionResponseDto {
       'Why the host refused the last close. Null when it did not, or it was asked again.',
   })
   closeRefusal!: SessionCloseRefusalResponseDto | null;
+
+  @ApiProperty({
+    oneOf: [
+      { $ref: getSchemaPath(SessionQuestionDecisionResponseDto) },
+      { $ref: getSchemaPath(SessionPermissionDecisionResponseDto) },
+    ],
+    nullable: true,
+    description:
+      'What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.',
+  })
+  decision!: SessionDecisionResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;

@@ -4,6 +4,7 @@ import {
   repositoryPrepareSchema,
   sessionCreateSchema,
   sessionImageSchema,
+  sessionInputSchema,
 } from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -206,6 +207,34 @@ describe('RelayDispatchAdapter', () => {
     });
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
     expect(link.send).not.toHaveBeenCalled();
+  });
+
+  it('types each key as its own session.input, in order, and stops at a link that drops', async () => {
+    const { adapter, link } = harness(true);
+    const entity = session();
+    const outcome = await adapter.typeKeys(entity, {
+      window: 0,
+      keys: ['2', 'Icons', '\r'],
+      gapMs: 0,
+    });
+
+    expect(outcome).toEqual({ delivered: true, hints: [] });
+    const sent = vi
+      .mocked(link.send)
+      .mock.calls.map(([message]) => sessionInputSchema.parse(message));
+    expect(sent.map((message) => Buffer.from(message.data, 'base64').toString('utf8'))).toEqual([
+      '2',
+      'Icons',
+      '\r',
+    ]);
+    expect(sent.every((message) => message.sessionId === entity.id && message.window === 0)).toBe(
+      true,
+    );
+
+    vi.mocked(link.send).mockClear().mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const dropped = await adapter.typeKeys(entity, { window: 0, keys: ['1', '2', '3'], gapMs: 0 });
+    expect(dropped).toEqual({ delivered: false, hints: ['host_offline'] });
+    expect(link.send).toHaveBeenCalledTimes(2);
   });
 
   it('parks the bytes and sends only the command, which the protocol accepts', async () => {

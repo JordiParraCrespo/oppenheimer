@@ -1393,6 +1393,54 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
+export type SessionDecisionQuestionOptionResponseDto = {
+    label: string;
+    description: string | null;
+};
+
+export type SessionDecisionQuestionResponseDto = {
+    /**
+     * The chip over it in the terminal.
+     */
+    header: string | null;
+    question: string;
+    /**
+     * Several options may be picked.
+     */
+    multiSelect: boolean;
+    options: Array<SessionDecisionQuestionOptionResponseDto>;
+};
+
+export type SessionQuestionDecisionResponseDto = {
+    kind: 'question';
+    /**
+     * The call’s `tool_use_id`.
+     */
+    id: string;
+    questions: Array<SessionDecisionQuestionResponseDto>;
+};
+
+export type SessionPermissionOptionResponseDto = {
+    label: string;
+};
+
+export type SessionPermissionDecisionResponseDto = {
+    kind: 'permission';
+    /**
+     * A hash of what the dialog says: stable while it is on screen.
+     */
+    id: string;
+    title: string;
+    /**
+     * What it asks about, above the question: a command, a file.
+     */
+    detail: string | null;
+    /**
+     * In screen order; the answer names one by its index.
+     */
+    options: Array<SessionPermissionOptionResponseDto>;
+};
+
 export type SessionLaunchResponseDto = {
     /**
      * The model the agent was launched with; null runs that agent’s own default.
@@ -1534,6 +1582,10 @@ export type SessionResponseDto = {
      * Why the host refused the last close. Null when it did not, or it was asked again.
      */
     closeRefusal?: SessionCloseRefusalResponseDto | null;
+    /**
+     * What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.
+     */
+    decision: SessionQuestionDecisionResponseDto | SessionPermissionDecisionResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -1694,6 +1746,15 @@ export type PutSessionShareRequest = {
     access: 'read' | 'write';
     people?: Array<string>;
     lifetime: '1h' | '8h' | '24h' | '7d' | null;
+};
+
+export type AnswerSessionDecisionRequest = {
+    id: string;
+    answers?: Array<{
+        picks: Array<number>;
+        other: string | null;
+    }>;
+    option?: number;
 };
 
 export type PrepareSessionRequest = {
@@ -8379,6 +8440,58 @@ export type PasteSessionImageResponses = {
      */
     202: unknown;
 };
+
+export type AnswerSessionDecisionData = {
+    body: AnswerSessionDecisionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/decision';
+};
+
+export type AnswerSessionDecisionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_032 — Already answered or changed
+     *
+     * SESSIONS_014 — That session is stopped
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_033 — The answer does not fit
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_034 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type AnswerSessionDecisionError = AnswerSessionDecisionErrors[keyof AnswerSessionDecisionErrors];
+
+export type AnswerSessionDecisionResponses = {
+    200: SessionResponseDto;
+};
+
+export type AnswerSessionDecisionResponse = AnswerSessionDecisionResponses[keyof AnswerSessionDecisionResponses];
 
 export type StopSessionData = {
     body?: never;

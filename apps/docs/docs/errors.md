@@ -514,6 +514,9 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | That question was already answered or changed   | 409  |
+| `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
+| `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -538,6 +541,14 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
+
+`SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
+what the session's agent waits on — a question it asked or a permission dialog
+(`product/versions/mvp/28-inbox.md`, slice 4). `032` is an answer whose `id` is not
+the decision pending now: it was answered already, at the terminal or from another
+tab, or the agent moved on to another. `033` is an answer that does not fit the
+pending decision (an option it lacks, several picks for one choice). `034` is a host
+with no link: nothing was typed, and nothing is kept for when it comes back.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its

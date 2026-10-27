@@ -6,7 +6,9 @@ import {
   type CreateSessionDto,
   SESSION_SORTS,
   type SessionAttachmentDto,
+  type SessionDecision,
   type SessionSortDto,
+  sessionDecisionSchema,
 } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
@@ -49,6 +51,7 @@ import {
   SessionPageMetaDto,
   SessionResponseDto,
 } from './dtos/session.response.dto';
+import type { SessionDecisionResponseDto } from './dtos/session-decision.response.dto';
 import { SessionEventResponseDto } from './dtos/session-event.response.dto';
 
 /**
@@ -118,6 +121,7 @@ export class WorkSessionMapper
     record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
     record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
+    record.pendingDecision = fold.pendingDecision;
     return record;
   }
 
@@ -152,6 +156,16 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /**
+   * The stored decision, read back through its schema: a `jsonb` value is only as
+   * typed as whatever wrote it, and one this build cannot read is no decision.
+   */
+  decisionOf(value: unknown): SessionDecision | null {
+    if (value === null || value === undefined) return null;
+    const parsed = sessionDecisionSchema.safeParse(value);
+    return parsed.success ? parsed.data : null;
   }
 
   /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
@@ -299,6 +313,7 @@ export class WorkSessionMapper
       closeRefusal: record.closeRefusalCode
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
+      pendingDecision: this.decisionOf(record.pendingDecision),
     };
   }
 
@@ -630,10 +645,38 @@ export class WorkSessionMapper
     dto.closeRefusal = closeRefusal
       ? { code: closeRefusal.code, detail: closeRefusal.detail }
       : null;
+    dto.decision = this.decisionToResponse(entity.pendingDecision);
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));
     return dto;
+  }
+
+  /** The pending decision as the response states it, every nullable spelled out. */
+  decisionToResponse(decision: SessionDecision | null): SessionDecisionResponseDto | null {
+    if (!decision) return null;
+    if (decision.kind === 'question') {
+      return {
+        kind: 'question',
+        id: decision.id,
+        questions: decision.questions.map((question) => ({
+          header: question.header,
+          question: question.question,
+          multiSelect: question.multiSelect,
+          options: question.options.map((option) => ({
+            label: option.label,
+            description: option.description,
+          })),
+        })),
+      };
+    }
+    return {
+      kind: 'permission',
+      id: decision.id,
+      title: decision.title,
+      detail: decision.detail,
+      options: decision.options.map((option) => ({ label: option.label })),
+    };
   }
 
   checkoutToResponse(entity: SessionCheckoutEntity): SessionCheckoutResponseDto {
