@@ -64,13 +64,8 @@ export class StartCloudSessionHttpController {
   })
   @ApiProblemResponse({
     status: 409,
-    description: 'That project is archived',
-    code: 'SESSIONS_006',
-  })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'The caller has no key stored for that provider',
-    code: 'CLOUD_AGENTS_004',
+    description: 'That project is archived, or the caller has no key stored for that provider',
+    code: ['SESSIONS_006', 'CLOUD_AGENTS_004'],
   })
   @ApiProblemResponse({
     status: 422,

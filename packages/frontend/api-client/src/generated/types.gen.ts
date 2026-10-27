@@ -8269,9 +8269,7 @@ export type StartCloudSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     *
-     * SESSIONS_006 — That project is archived
+     * SESSIONS_006 / CLOUD_AGENTS_004 — That project is archived, or the caller has no key stored for that provider
      */
     409: ProblemDetailsDto;
     /**

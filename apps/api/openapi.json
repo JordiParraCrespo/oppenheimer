@@ -8966,7 +8966,7 @@
             }
           },
           "409": {
-            "description": "CLOUD_AGENTS_004 — The caller has no key stored for that provider\n\nSESSIONS_006 — That project is archived",
+            "description": "SESSIONS_006 / CLOUD_AGENTS_004 — That project is archived, or the caller has no key stored for that provider",
             "content": {
               "application/problem+json": {
                 "schema": {
