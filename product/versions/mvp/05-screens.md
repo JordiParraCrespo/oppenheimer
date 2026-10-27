@@ -183,7 +183,7 @@
   |---|---|---|---|
   | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
   | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
-  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-6.1-sol`, `openai/gpt-5.6-sol` | yes | the model's levels |
+  | OpenCode | Opus 5.5, Fable 5.1, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/` | yes | the model's levels, OpenCode's variants per provider |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | the model's levels |
   | Blank terminal | none, picked outright | no | no |
 
@@ -202,7 +202,10 @@
   records none. The option set is read off the catalog entry once
   (`launchControlsFor`), not one predicate per control. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
-  picking another replaces it. The selected row carries its branch,
+  picking another replaces it. **Changed 2026-10-26:** it holds up to five
+  (00), and a sixth pick replaces the oldest. Every chip lists its current
+  pick first, as it stood when the popup opened, and branches read in the
+  rows' own type rather than mono. The selected row carries its branch,
   which opens a branch pane for that repository. The repository chip's
   foot row is **Manage repository access** with the GitHub mark: it
   opens, in a new tab, the App's installation page, because which
@@ -320,8 +323,14 @@
   it. The device is the simulator or emulator the session's host gave it,
   the one its agent drives through Argent
   (`../research/device-streaming.md`); a host that offers none says so in
-  the pane. The Browser tab, the resize handle and Reload app are not
-  built.
+  the pane. The Browser tab followed on 2026-10-27 (`30-session-previews.md`):
+  Browser and Simulator are the header's pill tabs, the last one chosen
+  kept on the device; Browser opens on the session's likeliest dev server
+  among the ports its processes listen on, with an address bar (a port
+  picker as `localhost:<port>`, Reload, Open in a new tab) over the page
+  framed on its preview origin, and says when there is no dev server yet,
+  the host is away or its runner cannot share ports. The resize handle and
+  Expand are not built.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

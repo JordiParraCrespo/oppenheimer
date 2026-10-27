@@ -77,14 +77,16 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A second repository on a session that has one. A runner makes one worktree
-   * per session in the MVP, so a session is one repository (00); the create
-   * body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host (#56).
+   * A repository added to a session that already checks out one. The runner
+   * makes a worktree (and keeps a clone) per checkout, at create only: a create
+   * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
+   * no frame that adds one to a running session, so a later add is refused
+   * before a row is written rather than recorded and never made. The code dates
+   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
    */
-  ONE_REPOSITORY: {
+  TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'A session checks out one repository',
+    message: 'A running session keeps the repositories it was created with',
     httpStatus: 409,
   },
   /**
@@ -263,5 +265,21 @@ export const SessionErrors = {
     code: 'SESSIONS_034',
     message: 'The host is offline, so the answer was not sent',
     httpStatus: 503,
+  },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
+  /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

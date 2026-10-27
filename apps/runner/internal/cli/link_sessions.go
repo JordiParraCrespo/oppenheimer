@@ -8,6 +8,7 @@ package cli
 import (
 	"context"
 	"encoding/base64"
+	"slices"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -17,7 +18,7 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	in, checkout, err := createInput(m, h.account())
+	in, err := createInput(m, h.account())
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
@@ -25,13 +26,13 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 	steps := newStartSteps(
 		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
 		// The terminal exists, so the session can be attached to: the
-		// checkout's path is known from the start, so the checkout this
-		// reports is true before it is on disk. A folder session has none.
+		// checkouts' paths are known from the start, so the checkouts this
+		// reports are true before they are on disk. A folder session has none.
 		func(session sessionsdomain.Session) {
 			checkouts := []map[string]any{}
-			if checkout != nil {
+			for _, checkout := range session.Checkouts() {
 				checkouts = append(checkouts, map[string]any{
-					"checkoutId": checkout.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+					"checkoutId": checkout.CheckoutID, "branch": session.Branch, "path": checkout.Worktree, "mode": "worktree",
 				})
 			}
 			h.reporter.Append(session.ID, "session.started", map[string]any{"checkouts": checkouts})
@@ -57,14 +58,18 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 }
 
 // createInput reads a `session.create` into what the sessions service takes:
-// a folder session when it names a folder, else a worktree session on its one
-// checkout, under the account's and workspace's levels of the work folder
-// (24 §2, §3). account is the pairing's (linkHandler.account). checkout is the
-// frame's checkout, nil for a folder session.
-func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput, *link.Checkout, error) {
+// a folder session when it names a folder, else a worktree session on its
+// checkouts, one worktree each, under the account's and workspace's levels of
+// the work folder (24 §2, §3). account is the pairing's (linkHandler.account).
+//
+// The checkout the agent is to start in (cwdCheckoutId) is put first, since
+// the first is the one a session of one runs in and the one an older state
+// file knew; with several, the agent starts in the session's folder above
+// them all, and the first is only the one the session is named by.
+func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput, error) {
 	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
 	if !ok {
-		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent)
+		return sessionsapp.CreateInput{}, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent)
 	}
 	in := sessionsapp.CreateInput{
 		ID:    m.SessionID,
@@ -79,33 +84,49 @@ func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput,
 	}
 	if m.Folder != "" {
 		if len(m.Checkouts) > 0 || m.Branch != "" {
-			return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
+			return sessionsapp.CreateInput{}, sessionsdomain.ErrInvalidInput.WithDetail(
 				"a session runs in a folder or in checkouts, never both")
 		}
 		in.Folder = m.Folder
-		return in, nil, nil
+		return in, nil
 	}
-	// One checkout per session is what this runner makes; the wire allows
-	// more, for a later runner.
-	if len(m.Checkouts) != 1 {
-		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
-			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts))
+	if len(m.Checkouts) == 0 {
+		return sessionsapp.CreateInput{}, sessionsdomain.ErrInvalidInput.WithDetail(
+			"a session runs in a folder or in at least one checkout; the frame carried neither")
 	}
-	first := m.Checkouts[0]
-	if m.CwdCheckoutID != nil && *m.CwdCheckoutID != first.CheckoutID {
-		return sessionsapp.CreateInput{}, nil, sessionsdomain.ErrInvalidInput.WithDetail(
-			"the agent is to start in checkout %q, which the frame does not carry", *m.CwdCheckoutID)
+	checkouts := m.Checkouts
+	if m.CwdCheckoutID != nil {
+		at := slices.IndexFunc(checkouts, func(c link.Checkout) bool { return c.CheckoutID == *m.CwdCheckoutID })
+		if at < 0 {
+			return sessionsapp.CreateInput{}, sessionsdomain.ErrInvalidInput.WithDetail(
+				"the agent is to start in checkout %q, which the frame does not carry", *m.CwdCheckoutID)
+		}
+		// The rest keep the frame's order.
+		checkouts = slices.Concat(checkouts[at:at+1], checkouts[:at], checkouts[at+1:])
 	}
+	first := checkouts[0]
 	in.Tenant = sessionsdomain.Tenant{Account: account, Workspace: m.WorkspaceID}
 	in.WorkspaceSlug = m.OrganizationSlug
 	in.Slug = m.SessionSlug
 	in.Directory = first.DirectoryName
 	in.Repo = first.RepositoryFullName
-	in.Remote = "https://github.com/" + first.RepositoryFullName + ".git"
+	in.Remote = githubRemote(first.RepositoryFullName)
 	in.BaseBranch = first.BaseBranch
 	in.Branch = m.Branch
 	in.CheckoutID, in.GithubRepoID = first.CheckoutID, first.GithubRepoID
-	return in, &first, nil
+	for _, c := range checkouts[1:] {
+		in.More = append(in.More, sessionsapp.CheckoutInput{
+			Directory: c.DirectoryName, Repo: c.RepositoryFullName, Remote: githubRemote(c.RepositoryFullName),
+			BaseBranch: c.BaseBranch, CheckoutID: c.CheckoutID, GithubRepoID: c.GithubRepoID,
+		})
+	}
+	return in, nil
+}
+
+// githubRemote is where a repository's store is fetched from: GitHub over
+// HTTPS, which the credential helper answers for.
+func githubRemote(repo string) string {
+	return "https://github.com/" + repo + ".git"
 }
 
 // account is the work folder's top level for everything the link sends: the
@@ -246,7 +267,7 @@ func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPr
 	defer h.credentials.Forget(id)
 
 	ctx = sessionsdomain.WithSession(ctx, id)
-	remote := "https://github.com/" + m.RepositoryFullName + ".git"
+	remote := githubRemote(m.RepositoryFullName)
 	if err := h.app.Worktrees.PrepareRepository(ctx, repo, remote, m.BaseBranch); err != nil {
 		h.fail(m.CommandID, err)
 	}

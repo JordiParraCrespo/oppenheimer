@@ -60,6 +60,15 @@ function sessionCopy(item: Extract<InboxItem, { kind: 'session' }>, t: TFunction
   };
 }
 
+/**
+ * Whether a failed run can be answered from its card (Open, Run again): not
+ * when its automation was deleted, nor for a run with no agent, which no
+ * session automation makes.
+ */
+export function isAnswerableRun(run: Extract<InboxItem, { kind: 'run' }>['run']): boolean {
+  return !run.automationDeleted && run.agent !== null;
+}
+
 /** The row's and the card's words for one item. Data (names, titles) is the source's own. */
 export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
   switch (item.kind) {
@@ -93,7 +102,9 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         short: t('inbox.run.short', values),
         source: t('inbox.from.run'),
         title: t('inbox.run.title', values),
-        body: run.turn?.failureDetail?.trim() || t('inbox.run.body'),
+        body:
+          run.turn?.failureDetail?.trim() ||
+          t(isAnswerableRun(run) ? 'inbox.run.body' : 'inbox.run.plainBody'),
       };
     }
   }

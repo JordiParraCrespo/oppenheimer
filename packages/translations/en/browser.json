@@ -212,7 +212,7 @@
       "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
       "SESSIONS_009": "Choose a project for this session.",
-      "SESSIONS_010": "A session works on one repository. Start a new session for another.",
+      "SESSIONS_010": "A running session keeps the repositories it started with. Pick up to five when you start a session.",
       "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
       "HOSTS_001": "That host could not be found.",
       "HOSTS_002": "That pairing token could not be found.",
@@ -339,6 +339,8 @@
       "SESSIONS_032": "That question was already answered or changed. Open the session to see what it asks now.",
       "SESSIONS_033": "That answer doesn’t fit the question. Pick from its options and try again.",
       "SESSIONS_034": "The host is offline, so the answer was not sent.",
+      "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
+      "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -356,7 +358,13 @@
       "title": "This screen could not be drawn",
       "retry": "Try again"
     },
-    "code": "Code: {{code}}"
+    "code": "Code: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "This host makes sessions with one repository."
+      },
+      "details": "Details from the host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Email",
@@ -553,11 +561,7 @@
           "shell": "Start shell"
         }
       },
-      "progressFailed": "Could not load how the start is going.",
-      "codes": {
-        "SESS_002": "This host makes sessions with one repository."
-      },
-      "details": "Details from the host: {{detail}}"
+      "progressFailed": "Could not load how the start is going."
     },
     "closed": {
       "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
@@ -1106,7 +1110,25 @@
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
       "offlineDetail": "The device comes back when the host reconnects.",
-      "ended": "The session has ended"
+      "ended": "The session has ended",
+      "browser": "Browser",
+      "address": "localhost:{{port}}",
+      "port": "Port",
+      "portSearch": "Find a port",
+      "portEmpty": "No port",
+      "reload": "Reload",
+      "openTab": "Open in a new tab",
+      "browserFrame": "localhost:{{port}} on this session's host",
+      "lookingForPorts": "Looking for a dev server…",
+      "waiting": "Waiting for a dev server",
+      "waitingDetail": "Start one in the terminal, or ask the agent to. Any port this session listens on, from 1024 up, opens here.",
+      "hostOffline": "The host is offline",
+      "hostOfflineDetail": "The preview comes back when the host reconnects.",
+      "notSupported": "This host can't share its ports",
+      "notSupportedDetail": "Update its runner to open the session's dev server here.",
+      "portsFailed": "Couldn't list the session's ports",
+      "previewFailed": "Couldn't open the preview",
+      "opening": "Opening localhost:{{port}}…"
     }
   },
   "bots": {
@@ -2487,7 +2509,7 @@
       "blockedBody": "Its agent stopped to ask for something. Open the session to answer it there.",
       "failedShort": "{{name}} failed",
       "failedTitle": "{{name}} failed",
-      "failedBody": "The session stopped on a failure. Open it to see what happened and start it again.",
+      "failedBody": "Its host could not start it. Open it to see which step failed.",
       "startingShort": "{{name}} has not started",
       "startingTitle": "{{name}} has not started",
       "startingBody": "Its host has not finished starting it for over a minute. Open it to see where it stands.",
@@ -2517,7 +2539,9 @@
       "readyShort": "Merge #{{number}} {{title}}",
       "readyTitle": "Merge #{{number}} · {{title}}?",
       "readyBody": "Nothing is holding it: it can merge now.",
-      "review": "Review",
+      "by": "by {{author}}",
+      "open": "Open",
+      "viewOnGithub": "View on GitHub",
       "merge": "Merge",
       "checks": {
         "passing": "Checks passing",
@@ -2531,6 +2555,9 @@
       "short": "{{name}} failed",
       "title": "{{name}} failed",
       "body": "The run ended on a failure. Open it to see why, or run it again.",
+      "plainBody": "The run ended on a failure.",
+      "exit": "Exit {{code}}",
+      "deletedHint": "Its automation was deleted, so it cannot run again.",
       "again": "Run again",
       "open": "Open run"
     },

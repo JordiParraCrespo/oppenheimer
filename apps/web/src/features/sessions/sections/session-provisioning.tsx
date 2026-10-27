@@ -1,11 +1,16 @@
 import { Callout, Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  PageFrame,
+  StartFailureDetail,
+  useStartFailure,
+} from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
-import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
+import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
  * A session that is not a terminal yet.
@@ -18,7 +23,7 @@ import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisio
  * pending, so nothing on this pane advances on its own.
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const failed = session.lifecycle === 'failed';
   // Mounted while the start is in hand, which outlasts the row's `starting`:
   // the row opens with the pane, and this pane stays until the agent runs.
@@ -32,10 +37,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
-  const failure = failureReason(progress.data?.failure, t, (code) => {
-    const key = `errors.byCode.${code}`;
-    return i18n.exists(key) ? (i18n.t(key as never) as string) : undefined;
-  });
+  const failure = useStartFailure(progress.data?.failure, t('sessions.provisioning.failed'));
   const steps = provisioningSteps(
     progress.data?.steps ?? PENDING_START,
     {
@@ -89,9 +91,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         {/* The host's own words, English and for whoever reads its logs: a
             secondary line under the translated reason, never the reason. */}
         {failed && failure?.detail ? (
-          <p className="mt-4 text-xs break-words text-fg-subtle">
-            {t('sessions.provisioning.details', { detail: failure.detail })}
-          </p>
+          <StartFailureDetail detail={failure.detail} className="mt-4" />
         ) : null}
       </div>
     </PageFrame>

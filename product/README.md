@@ -697,11 +697,28 @@ earlier note:
   under it and the project over it, and a session's name, state, Terminal
   / Chat and Share moved from the terminal's status line to a bar over it
   (`versions/mvp/05-screens.md`).
+- `versions/mvp/28-bots-in-sections.md` decided on 2026-10-26 that only
+  Pull requests opens a bot's chat inside the section, and that Sessions,
+  Automations and Plan send the reader to Employees, as the export's frames
+  link them. Later that day the owner, clicking a bot in Sessions, asked to
+  stay on the page: every section now opens the chat in place, under its
+  own address and sidebar (28, "Decided").
 - New session's Where and Host were two chips. On 2026-10-26 the owner
   asked for the export's one chip, the host and where on it ("mac-studio ·
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
   ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- `versions/mvp/00-scope.md` said, from 2026-09-23 (#56), that a session
+  checks out one repository, because the runner made one worktree per
+  session and refused a create with two. On 2026-10-26 the owner lifted the
+  cap: the runner makes one worktree per checkout, each in its own directory
+  of the session folder, and a session checks out up to five repositories
+  (`MAX_SESSION_CHECKOUTS`), the first being where the agent starts unless
+  another is named. The bound exists because each checkout is a clone and a
+  worktree on the host, and the picker has to stay readable. `SESSIONS_010`
+  keeps its code and refuses a repository added to a running session,
+  since the wire cannot add a worktree to a live one. Recorded in 00 and the MVP
+  decision log.
 - The preview pane the session frame opens beside a terminal was not
   built. On 2026-10-26 the owner asked for the Simulator in it: a
   session's host offers simulators and emulators (`RUNNER_DEVICES`), each
@@ -724,3 +741,17 @@ earlier note:
   opens whatever repositories GitHub says it does, and each repository is
   read with one key chosen at read time (the App, else a pinned token, else
   the narrowest). The notifications wake-up is left for later (§6.2).
+- Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
+  the owner asked for the Browser tab, through "tunnel technology like
+  Cloudflare, Vercel or ngrok"; offered the runner's own link as that
+  tunnel, they chose it, asking that an app with an API work. A preview is
+  an origin per session and port on a preview domain of its own, served by
+  the relay through the link, the app seeing `localhost` and its API behind
+  the dev server's proxy; cloudflared and ngrok wait for public share links
+  (`versions/mvp/30-session-previews.md`).
+- `versions/mvp/25-bots.md` §4.2 planned `read_session` as "a session's
+  recent output". Built on 2026-10-27 (issue #493), it reads the session's
+  event log in words, never the terminal or the agent's conversation, which
+  stay on the host; `send_to_session` came with it, gated on the agent
+  waiting at its prompt and logged with the bot as sender, and so did
+  `answer_session`, which the table did not have.

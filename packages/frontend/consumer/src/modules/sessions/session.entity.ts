@@ -88,6 +88,28 @@ export class SessionCheckoutEntity {
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
  * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
  */
+/** One port a session's processes listen on, which its Browser tab can open. */
+export interface SessionPort {
+  port: number;
+  /** The command listening on it ("node"), when the host said. */
+  process: string | null;
+}
+
+/**
+ * What the session's host said about its ports: the ports, or why it said
+ * nothing (no link now, or a runner that cannot list them).
+ */
+export interface SessionPorts {
+  state: 'listed' | 'host_offline' | 'not_supported';
+  ports: SessionPort[];
+}
+
+/** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
+export interface SessionPreview {
+  url: string;
+  expiresAt: Date;
+}
+
 export interface AttachTicket {
   ticket: string;
   /** A path on the API's own origin, e.g. `/api/v1/relay/attach`. */
@@ -278,8 +300,12 @@ export type CreateSessionInput = CreateSessionCommon &
 
 /** A new worktree: the runner clones and cuts a branch. */
 export interface CreateWorktreeSession {
-  /** Exactly one: a runner makes a session as one worktree of one repository. */
-  checkouts: [CreateSessionCheckout];
+  /**
+   * At least one, at most `MAX_SESSION_CHECKOUTS`, each a different repository: the
+   * runner makes one worktree per checkout. The first is where the agent starts
+   * unless `cwdGithubRepoId` names another.
+   */
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   folder?: never;
@@ -308,7 +334,7 @@ interface CreateSessionCommon {
 /** What a host is asked to get ready while New session is still being written. */
 export interface PrepareSessionInput {
   hostId: string;
-  checkouts: [CreateSessionCheckout];
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
 }
 
 /** An image uploaded for a first task, waiting for the create that names it. */

@@ -8,6 +8,7 @@ import {
   StatusDot,
   type StatusState,
 } from '@oppenheimer/design-system-web';
+import { SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { useMergePullRequest } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -28,9 +29,11 @@ const CHECKS_GATE: Record<string, StatusState> = {
 };
 
 /**
- * A pull request in the pane: its checks and size, Review (it opens in Pull
- * requests) and, while nothing holds it, Merge through the existing merge
- * endpoint. A merge GitHub refuses stays on the card, in its words.
+ * A pull request in the pane: its checks and size (and, ready to merge, who
+ * wrote it, as a requested review's body already names), Open (it opens in Pull
+ * requests), View on GitHub (a new tab) and, while nothing holds it, Merge
+ * through the existing merge endpoint. A merge GitHub refuses stays on the
+ * card, in its words.
  */
 export function InboxPullCard({
   item,
@@ -56,6 +59,9 @@ export function InboxPullCard({
         </StatusDot>
         <DiffStat additions={pull.additions} deletions={pull.deletions} />
         <span>{pull.reference}</span>
+        {item.reason === 'ready' ? (
+          <span>{t('inbox.pull.by', { author: pull.author })}</span>
+        ) : null}
       </InboxCardFacts>
       {merge.error ? (
         <ErrorAlert
@@ -81,7 +87,14 @@ export function InboxPullCard({
                 />
               }
             >
-              {t('inbox.pull.review')}
+              {t('inbox.pull.open')}
+            </Button>
+            <Button
+              variant="ghost"
+              render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
+            >
+              <SquareArrowOutUpRight />
+              {t('inbox.pull.viewOnGithub')}
             </Button>
           </>
         }
