@@ -63,7 +63,7 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	ctx, cancel := context.WithTimeout(ctx, s.timeout())
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, s.command(), "--cloud", prompt)
+	cmd := exec.CommandContext(ctx, s.command(), "--cloud", prompt) //nolint:gosec // the CLI by name, and the task one argument: no shell reads it
 	cmd.Dir = dir
 	cmd.Env = os.Environ()
 	cmd.WaitDelay = 5 * time.Second
@@ -71,7 +71,7 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	if err != nil {
 		return Started{}, domain.ErrCloudStart.WithDetail("run %s: %v", s.command(), err).WithCause(err)
 	}
-	defer term.Close()
+	defer func() { _ = term.Close() }()
 	// End of input, as `claude --cloud … </dev/null` under a terminal gets: it
 	// creates the session and leaves instead of opening the conversation.
 	_, _ = term.Write([]byte{4})

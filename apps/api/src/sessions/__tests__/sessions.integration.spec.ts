@@ -839,8 +839,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         ]),
       ).rejects.toThrow(/CHK_work_session_folder_path/);
       await expect(
-        dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+        dataSource.query(`UPDATE "work_session" SET "place" = 'vm' WHERE "id" = $1`, [work.id]),
       ).rejects.toThrow(/CHK_work_session_place/);
+      // A cloud session has no folder, as a worktree session has none.
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+      ).resolves.toBeDefined();
     });
 
     it('lists the caller’s recent folders on a host: distinct, newest first, bounded', async () => {
