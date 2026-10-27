@@ -65,6 +65,11 @@ export function SessionChatSend({
   const [failure, setFailure] = useState<Error | null>(null);
   const last = state.turns.at(-1);
   const question = pendingQuestion(last);
+  // Read as numbers: `latestContext` builds a new object on every batch, and
+  // the composer is skipped on a batch only when its props hold still.
+  const context = latestContext(state.turns, state.status);
+  const contextTokens = context?.tokens;
+  const contextWindow = context?.window;
 
   function deliver(text: string, withFiles: boolean): ChatSendResult {
     // Words alone wait their turn while the agent works; with files, they
@@ -130,7 +135,11 @@ export function SessionChatSend({
           voice={voice}
           files={upload ? files : undefined}
           queued={state.queued}
-          context={latestContext(state.turns, state.status)}
+          context={
+            contextTokens === undefined || contextWindow === undefined
+              ? null
+              : { tokens: contextTokens, window: contextWindow }
+          }
           limits={{
             fiveHour: state.status?.fiveHour ?? null,
             sevenDay: state.status?.sevenDay ?? null,
