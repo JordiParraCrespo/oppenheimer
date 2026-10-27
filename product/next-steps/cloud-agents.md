@@ -15,7 +15,9 @@ then Codex.
 ## What landed (2026-10-26)
 
 The owner asked for Cursor's cloud first, end to end and thin, ahead of a
-version: a rail item, **Cloud agents**, beside Sessions.
+version: a rail item, **Cloud agents**, beside Sessions. The next day it
+moved into Sessions (below); the rail item, its own table and its pages are
+gone, and "What it is" and "What it shows" here are kept as history.
 
 - **Who calls the vendor.** The control plane, on the person's own Cursor
   API key (Settings → Cloud agents). The key is checked with Cursor
@@ -53,6 +55,47 @@ was refused for the account's prepaid balance (`usage_limit_exceeded`,
 shown as `CLOUD_AGENTS_010` with Cursor's sentence), so a run on Cursor's
 side is proven against the stub only (`e2e/support/cursor-stub.ts`).
 
+## Cloud sessions are sessions (2026-10-27)
+
+The owner asked for cloud sessions where the other sessions are, chosen in
+New session's picker (`design/` exports: the place chip's **Cloud**
+section, the engine button's vendor tab). Asked to choose the storage, they
+left it to us and asked for the long-term decision; the row was to link out
+to Cursor.
+
+- **The model.** A cloud session is a `work_session` with place `cloud` and
+  no host (`CHK_work_session_cloud_host`). Its vendor half is one row of
+  `session_cloud_run` (provider, the vendor's agent and run ids, its
+  status, URL, branch and pull request), and what the vendor reports is
+  folded into the session's own log with idempotency keys
+  `cloud:<runId>:<fact>`: running is started and working, finished is
+  done, failed and expired are failed, cancelled is stopped. So the
+  sidebar's groups, the Inbox and every reader of a session read a cloud
+  session with no branch of their own. One more vendor is a provider and
+  its id, never a table.
+- **Why not its own table.** A second list beside sessions is a second
+  sidebar, a second set of groups and a second answer to "what needs
+  me"; folding the vendor into the session costs a nullable host and a
+  refusal. Every command only a host session has (a terminal, a checkout,
+  a restart, a share, an answer) refuses a cloud session with
+  `SESSIONS_036` before anything is sent; closing one closes it here only.
+- **Launch.** `POST /v1/sessions/cloud`: the vendor is asked first on the
+  launcher's sealed key, then the session is created with its run and the
+  first events in one transaction, then named as any session is. Cursor
+  is not asked to open a pull request (`autoCreatePR: false`).
+- **The read.** Finding a session or a page of them syncs the cloud ones
+  that need it on the launcher's key, within the budget above (one in ten
+  seconds open, three in thirty in a list). The console polls a working
+  cloud session every five seconds (`cloudSession`); the event stream does
+  not cover it.
+- **The console.** The place chip's **Cloud** section lists Cursor, or
+  Connect when the person has no key. Picking it puts Cursor's models in
+  the engine button (Auto is Cursor's own pick) and hides the permission
+  chip; files cannot be attached. Send opens Cursor in a tab and goes to
+  the session. The session's row carries Cursor's mark and opens Cursor;
+  its page says the run's state and links there.
+- **Settings → Cloud agents** stays where the key is stored.
+
 ## Questions to answer first
 
 1. ~~Does the control plane holding a person's Cursor API key need F23
@@ -64,9 +107,11 @@ side is proven against the stub only (`e2e/support/cursor-stub.ts`).
 3. ~~Do cloud sessions started elsewhere show up in our list?~~ Answered
    2026-10-26: only the ones we launched.
 4. ~~Does Cloud as a third place hold?~~ Answered 2026-10-26 for now: a
-   session with no terminal has a model of its own (`cloud_agent`). Claude
-   `--cloud` and teleport, which a host dispatches, may still want the
-   place; that is decided when they are built.
+   session with no terminal has a model of its own (`cloud_agent`).
+   **Reversed 2026-10-27**: it holds, as `research/cloud-agents.md` §5
+   proposed. A cloud session is a `work_session` in place `cloud` (see
+   "Cloud sessions are sessions"), so Claude `--cloud` and Codex cloud
+   are each a provider of the same place, not a module each.
 5. A chat for a cloud agent: Cursor streams a run (`…/runs/{runId}/stream`,
    SSE) in shapes close to the 0.7 chat's entries. Does the console stream
    it through the API, and does the run's transcript get kept?

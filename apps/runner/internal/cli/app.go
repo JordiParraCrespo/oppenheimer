@@ -22,6 +22,8 @@ import (
 	pairtoken "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/token"
 	pairapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports"
+	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/launchd"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/systemd"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
@@ -77,6 +79,9 @@ type App struct {
 	// Devices is the simulators and emulators this host offers its sessions,
 	// one each; nil is a host that offers none.
 	Devices *devapp.Service
+	// Ports is the TCP ports sessions' processes listen on, for the
+	// console's preview; nil where the runner cannot read them.
+	Ports *portsapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -156,6 +161,7 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	app.Devices = devices
+	app.Ports = ports.New()
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -166,9 +172,11 @@ func New(version string) (*App, error) {
 		Layout:     layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			for key, value := range pinDevice(devices, session) {
+			pinned, device := pinDevice(devices, session)
+			for key, value := range pinned {
 				env[key] = value
 			}
+			writeSessionNote(session, app.Ports != nil, device)
 			return env
 		},
 		// A session never starts an agent CLI its updater is replacing.
@@ -229,8 +237,10 @@ func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 	if session.Place == sessionsdomain.PlaceFolder {
 		return env
 	}
+	// The first checkout's repository, also for a session over several: the
+	// one the session is named by and its agent was asked to start in.
 	env["OPPENHEIMER_REPO"] = session.Repo
-	for key, value := range shellCredentialHelper(paths) {
+	for key, value := range shellCredentialHelper(paths, len(session.More) > 0) {
 		env[key] = value
 	}
 	return env
@@ -367,7 +377,12 @@ func utf8Locale(current string) string {
 //
 // The helper is the service's `current` link, not this binary: a session
 // outlives an update, and the version it was created under may be gone.
-func shellCredentialHelper(paths Paths) map[string]string {
+//
+// A session over several repositories also has git send the repository's
+// path (`credential.useHttpPath`), which is how the helper tells whose token
+// a fetch wants. A session of one does not: its helper needs no path, and the
+// setting would reach the person's own helpers for GitHub too.
+func shellCredentialHelper(paths Paths, byPath bool) map[string]string {
 	helper := credentialHelper()
 	if _, err := os.Stat(paths.Current()); err == nil {
 		helper = paths.Current() + " credential-helper"
@@ -375,11 +390,17 @@ func shellCredentialHelper(paths Paths) map[string]string {
 	if helper == "" {
 		return nil
 	}
-	return map[string]string{
+	env := map[string]string{
 		"GIT_CONFIG_COUNT":   "1",
 		"GIT_CONFIG_KEY_0":   "credential.https://github.com.helper",
 		"GIT_CONFIG_VALUE_0": helper,
 	}
+	if byPath {
+		env["GIT_CONFIG_COUNT"] = "2"
+		env["GIT_CONFIG_KEY_1"] = "credential.https://github.com.useHttpPath"
+		env["GIT_CONFIG_VALUE_1"] = "true"
+	}
+	return env
 }
 
 // credentialHelper is the command git calls for a password: this binary's own

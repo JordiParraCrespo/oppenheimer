@@ -21,6 +21,7 @@ describe('resolveCapabilities', () => {
       bot_providers: false,
       cloud_agents: false,
       voice_transcription: false,
+      session_previews: false,
     });
   });
 

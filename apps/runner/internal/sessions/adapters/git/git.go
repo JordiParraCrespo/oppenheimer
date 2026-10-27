@@ -42,6 +42,10 @@ var _ app.Worktrees = (*Client)(nil)
 const (
 	fetchTimeout = 10 * time.Minute
 	quickTimeout = 60 * time.Second
+	// removeTimeout bounds `worktree remove`, which deletes every file in the
+	// checkout: tens of thousands with node_modules, well past a minute on a
+	// slow disk. Killed partway, it leaves the session's delete refused.
+	removeTimeout = 10 * time.Minute
 	// waitDelay bounds how long a killed git's output is waited on.
 	waitDelay = 5 * time.Second
 )
@@ -536,7 +540,7 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 		args = append(args, "--force")
 	}
 	args = append(args, path)
-	if _, err := c.run(ctx, quick, args...); err != nil {
+	if _, err := c.run(ctx, command{timeout: removeTimeout, dir: store}, args...); err != nil {
 		if force && c.unregistered(ctx, store, path) {
 			return c.removeUnregistered(ctx, store, path)
 		}
@@ -624,7 +628,12 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 		// config named before it (osxkeychain in Apple's system gitconfig, a
 		// person's GCM): only the runner's helper is asked, so a token for
 		// one session never comes from a keychain the host account filled.
-		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
+		//
+		// useHttpPath hands the helper the repository's path as well as its
+		// host: a session over several repositories holds a token for each,
+		// and the path is how the helper says which one git is fetching.
+		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper,
+			"-c", "credential.useHttpPath=true")
 	}
 	full = append(full, args...)
 

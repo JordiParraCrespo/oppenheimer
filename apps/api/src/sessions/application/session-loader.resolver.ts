@@ -11,7 +11,7 @@ export type HostSession = WorkSessionEntity & { readonly hostId: string };
 
 /**
  * The session as a host session, or the refusal of a cloud one
- * (`SESSIONS_035`): what a terminal, a checkout, a restart or a share asks first.
+ * (`SESSIONS_036`): what a terminal, a checkout, a restart or a share asks first.
  */
 export function requireOnHost(session: WorkSessionEntity): HostSession {
   const refusal = session.hostRefusal;

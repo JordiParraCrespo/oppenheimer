@@ -104,6 +104,45 @@ describe('the scope chips', () => {
     expect(within(popup).queryByText('sessions.new.branch.empty')).toBeNull();
   });
 
+  it('leads with the repositories picked before it opened, and keeps a new pick in place', () => {
+    const repositories = ['alpha', 'beta', 'gamma'].map((name) => ({
+      id: name,
+      name,
+      branches: [{ value: 'main' }],
+    }));
+    const onValueChange = vi.fn();
+    render(
+      <RepositoryBranchSelect
+        repositories={repositories}
+        value={[{ id: 'gamma', branch: 'main' }]}
+        onValueChange={onValueChange}
+      />,
+    );
+
+    const options = within(openChip('sessions.new.repository.label')).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['gamma', 'alpha', 'beta']);
+
+    // A second pick adds to the first rather than replacing it.
+    fireEvent.click(screen.getByRole('option', { name: 'alpha' }));
+    expect(onValueChange).toHaveBeenCalledWith([
+      { id: 'gamma', branch: 'main' },
+      { id: 'alpha', branch: 'main' },
+    ]);
+  });
+
+  it('leads the branch list with the current branch', () => {
+    render(
+      <BranchSelect
+        branches={['develop', 'main', 'release'].map((value) => ({ value, label: value }))}
+        value="release"
+        onValueChange={vi.fn()}
+      />,
+    );
+
+    const options = within(openChip('sessions.new.branch.label')).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['release', 'develop', 'main']);
+  });
+
   it('is greyed out only when the screen says so', () => {
     render(
       <PlaceSelect

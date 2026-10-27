@@ -8,6 +8,8 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
   StartCloudSessionInput,
@@ -81,6 +83,19 @@ export class SessionsService {
 
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
+  }
+
+  /** The ports the session's processes listen on, for its Browser tab. */
+  findPorts(id: string): Promise<SessionPorts> {
+    return this.repository.findPorts(id);
+  }
+
+  /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
+  openPreview(
+    id: string,
+    preview: { port: number; path?: string; embed: boolean },
+  ): Promise<SessionPreview> {
+    return this.repository.openPreview(id, preview);
   }
 
   uploadAttachment(file: Blob): Promise<SessionAttachment> {

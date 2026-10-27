@@ -10,12 +10,10 @@ import { useTranslation } from 'react-i18next';
 import { capRepositories } from '../lib/session-options';
 
 /**
- * The repository chip, and the branch pane off the selected row. A session
- * checks out one repository in the MVP (`capRepositories`,
- * `product/versions/mvp/00-scope.md`): the runner makes one worktree per
- * session, and a second repository accepted here was refused by the host,
- * leaving a session that spun forever (#56). So a second pick replaces the
- * first; the picker keeps its multi-select for when runners make several.
+ * The repository chip, and the branch pane off each selected row. A session
+ * checks out several repositories, one worktree each, all cut on the
+ * session's branch; past `MAX_SESSION_CHECKOUTS` a new pick replaces the
+ * oldest (`capRepositories`), so the API never sees a create it refuses.
  *
  * A branch belongs to a repository, so the two are one control and a picked
  * repository lands on its default branch. `branchesLoading` is its own flag
@@ -54,7 +52,7 @@ export function RepositoryBranchSelect({
     <RepositorySelect
       repositories={repositories}
       value={value}
-      onValueChange={(next) => onValueChange(capRepositories(value, next))}
+      onValueChange={(next) => onValueChange(capRepositories(next))}
       icon={<Folder />}
       loading={loading}
       loadingText={t('sessions.new.repository.loading')}

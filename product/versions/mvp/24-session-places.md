@@ -136,3 +136,7 @@ after that, as the other chips do (05, changed 2026-10-14).
 - 2026-10-14: the account folder is named by the account id the runner
   receives at pairing (`POST /hosts/register`), not by a field on every
   command: the frames carry the workspace only.
+- 2026-10-27: a third place, `cloud`, for a session that runs as a
+  vendor's agent rather than on a host: no host, no folder, no terminal,
+  its vendor run beside it (`next-steps/cloud-agents.md`, "Cloud sessions
+  are sessions"). Nothing in §1–§5 changes for the two host places.

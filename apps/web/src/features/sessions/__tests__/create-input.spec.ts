@@ -4,7 +4,8 @@ import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-optio
 
 /**
  * What New session posts for each place (`product/versions/mvp/24-session-places.md`):
- * a folder and no checkouts, or one checkout and no folder — never both, and
+ * a folder and no checkouts, or a checkout per repository and no folder —
+ * never both, and
  * nothing while the draft names no place.
  */
 const draft: NewSessionDraft = {
@@ -33,6 +34,24 @@ describe('toCreateInput', () => {
       prompt: 'Fix it',
     });
     expect(input).not.toHaveProperty('folder');
+  });
+
+  it('sends a checkout for every picked repository, each on its own base', () => {
+    const input = toCreateInput(
+      {
+        ...draft,
+        scope: [
+          { id: 'installation-1:42', branch: 'main' },
+          { id: 'installation-1:7', branch: 'develop' },
+        ],
+      },
+      extras,
+    );
+
+    expect(input?.checkouts).toEqual([
+      { installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' },
+      { installationId: 'installation-1', githubRepoId: 7, baseBranch: 'develop' },
+    ]);
   });
 
   it('sends a folder session with its folder and project, and no checkouts', () => {

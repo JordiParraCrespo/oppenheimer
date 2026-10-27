@@ -60,6 +60,7 @@ const PULL = {
 
 it('keeps the refusal GitHub gave for a pull request it would not read, beside the ones it did', async () => {
   const { resolver, repository } = build({
+    ...BY_REST(),
     listPullRequests: vi.fn().mockResolvedValue([PULL, { ...PULL, number: 13 }]),
     readPullRequest: vi.fn(async (_t: string, _r: string, number: number) => {
       if (number === 13) throw refused(403);
@@ -83,6 +84,9 @@ const refused = (status: number) =>
     detail: 'refused',
     extensions: { upstreamStatus: status },
   });
+
+/** The GraphQL read failing, so the queue falls back to the REST read a spec is about. */
+const BY_REST = () => ({ listOpenPullRequests: vi.fn().mockRejectedValue(refused(502)) });
 
 function build(
   pulls: Partial<Record<keyof GithubPullsPort, unknown>>,
@@ -116,10 +120,13 @@ function build(
     ]),
   } as unknown as GithubAppPort;
   const grants = userGrants as GithubUserGrantResolver;
+  // The GraphQL read is the queue's: it answers nothing unless a spec gives it
+  // something, and a spec about the REST read says so with `BY_REST`.
+  const withGraph = { listOpenPullRequests: vi.fn().mockResolvedValue([]), ...pulls };
   const resolver = new PullRequestAccessResolver(
     installations,
     app,
-    pulls as unknown as GithubPullsPort,
+    withGraph as unknown as GithubPullsPort,
     grants,
     cache as unknown as CacheService,
     new GithubAccessResolver(installations, app, grants, cache as unknown as CacheService),
@@ -138,6 +145,7 @@ function build(
 describe('a pull request GitHub answers only in part', () => {
   it('keeps the pull request, its files and reviews when its checks are refused, and says why', async () => {
     const { resolver, repository, store } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue([PULL]),
       readPullRequest: vi.fn().mockResolvedValue(PULL),
       listFiles: vi.fn().mockResolvedValue([{ path: 'src/auth/keychain.ts' }]),
@@ -158,6 +166,7 @@ describe('a pull request GitHub answers only in part', () => {
 
   it('names a repository whose listing GitHub refuses instead of failing the read', async () => {
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockRejectedValue(refused(404)),
     });
 
@@ -169,6 +178,7 @@ describe('a pull request GitHub answers only in part', () => {
 
   it('reads a rate limit as "wait", not as GitHub failing', async () => {
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi
         .fn()
         .mockRejectedValue(
@@ -179,6 +189,134 @@ describe('a pull request GitHub answers only in part', () => {
     await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
       gaps: [{ what: 'repository', refusal: 'rate_limited' }],
     });
+  });
+});
+
+/**
+ * The queue was slow because every open pull request cost four requests on
+ * top of the listing, five filled per view and the rest on later polls. One
+ * GraphQL read now answers them all with their parts; only a pull request
+ * longer than that read's page is read the long way.
+ */
+describe('the open pull requests read in one request', () => {
+  const PASSING = { state: 'passing' as const, total: 1, passed: 1, failed: 0, pending: 0 };
+  const whole = (number: number) => ({
+    pull: { ...PULL, number, nodeId: `PR_${number}` },
+    files: { value: ['src/auth/keychain.ts'], refusal: null },
+    checks: { value: PASSING, refusal: null },
+    reviews: { value: [], refusal: null },
+  });
+
+  it('answers every pull request whole on the first read, asking nothing per pull request', async () => {
+    const readPullRequest = vi.fn();
+    const listFiles = vi.fn();
+    const { resolver, repository } = build({
+      listOpenPullRequests: vi
+        .fn()
+        .mockResolvedValue(Array.from({ length: 30 }, (_, i) => whole(i + 1))),
+      readPullRequest,
+      listFiles,
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    expect(read.snapshots).toHaveLength(30);
+    expect(read.deferred).toBe(0);
+    expect(read.gaps).toEqual([]);
+    expect(readPullRequest).not.toHaveBeenCalled();
+    expect(listFiles).not.toHaveBeenCalled();
+  });
+
+  it('reads a pull request whose files ran past the page the long way, without re-reading its detail', async () => {
+    const readPullRequest = vi.fn();
+    const listFiles = vi.fn().mockResolvedValue([{ path: 'a.ts' }, { path: 'b.ts' }]);
+    const { resolver, repository } = build({
+      listOpenPullRequests: vi
+        .fn()
+        .mockResolvedValue([
+          whole(1),
+          { ...whole(2), files: { value: null, refusal: 'past_page' } },
+        ]),
+      readPullRequest,
+      listFiles,
+      readChecks: vi.fn().mockResolvedValue(PASSING),
+      listReviews: vi.fn().mockResolvedValue([]),
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    const long = read.snapshots.find((snapshot) => snapshot.pull.number === 2);
+    expect(long?.files).toEqual({ value: ['a.ts', 'b.ts'], refusal: null });
+    expect(listFiles).toHaveBeenCalledTimes(1);
+    expect(readPullRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps a part GitHub refused as that part’s gap, and the snapshot only briefly', async () => {
+    const { resolver, repository, store } = build({
+      listOpenPullRequests: vi
+        .fn()
+        .mockResolvedValue([{ ...whole(12), checks: { value: null, refusal: 'forbidden' } }]),
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    expect(read.snapshots).toHaveLength(1);
+    expect(read.gaps).toEqual([{ what: 'checks', refusal: 'forbidden' }]);
+    expect([...store.values()][0]?.ttl).toBe(15);
+  });
+
+  // A rate limit is GitHub saying "not now": asking REST instead would spend
+  // the same installation's budget on the refusal.
+  it('answers a rate limit as the repository’s gap and does not fall back to REST', async () => {
+    const listPullRequests = vi.fn();
+    const { resolver, repository } = build({
+      listOpenPullRequests: vi
+        .fn()
+        .mockRejectedValue(
+          new AppError(GithubErrors.RATE_LIMITED, { extensions: { upstreamStatus: 429 } }),
+        ),
+      listPullRequests,
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    expect(read.gaps).toEqual([{ what: 'repository', refusal: 'rate_limited' }]);
+    expect(listPullRequests).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the REST read when the GraphQL read fails', async () => {
+    const { resolver, repository } = build({
+      ...BY_REST(),
+      listPullRequests: vi.fn().mockResolvedValue([PULL]),
+      readPullRequest: vi.fn().mockResolvedValue(PULL),
+      listFiles: vi.fn().mockResolvedValue([]),
+      readChecks: vi.fn().mockResolvedValue(PASSING),
+      listReviews: vi.fn().mockResolvedValue([]),
+    });
+
+    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    expect(read.snapshots.map((snapshot) => snapshot.pull.number)).toEqual([12]);
+  });
+
+  // Opening a pull request from the queue used to read all its parts again.
+  it('leaves each snapshot where the pull request’s own screen finds it', async () => {
+    const listFiles = vi.fn();
+    const { resolver, repository } = build({
+      listOpenPullRequests: vi.fn().mockResolvedValue([whole(12)]),
+      readPullRequest: vi.fn().mockResolvedValue({ ...PULL, nodeId: 'PR_12' }),
+      listFiles,
+    });
+    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+
+    const snapshot = await resolver.pullRequest(SCOPE, {
+      installationId: repository.installationId,
+      githubRepoId: repository.githubRepoId,
+      number: 12,
+    });
+
+    expect(snapshot.files.value).toEqual(['src/auth/keychain.ts']);
+    expect(listFiles).not.toHaveBeenCalled();
   });
 });
 
@@ -297,6 +435,7 @@ describe('what one read spends', () => {
     );
     const pulls = Array.from({ length: count }, (_, i) => pullNumbered(i + 1));
     const { resolver, repository } = build({
+      ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue(pulls),
       readPullRequest,
       listFiles,

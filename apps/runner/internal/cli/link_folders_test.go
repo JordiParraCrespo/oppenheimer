@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -143,6 +144,49 @@ func TestALinkedWorktreeSessionLandsInItsWorkspace(t *testing.T) {
 	}
 	if p.worktrees.Stores["acct/ws/acme-labs/xrp-mobile"] != 1 {
 		t.Fatalf("stores = %v", p.worktrees.Stores)
+	}
+}
+
+// A session over two repositories lands both checkouts in its folder, makes
+// a store of each, and reports both as it starts, each at its own path on
+// the session's one branch, the agent's own first.
+func TestALinkedSessionOverTwoRepositoriesReportsBothCheckouts(t *testing.T) {
+	p := newPlacesHarness(t, t.TempDir(), "acct")
+
+	p.h.Message(context.Background(), message(t, "session.create", map[string]any{
+		"commandId": "11111111-1111-4111-8111-111111111111", "sessionId": sessionUnderTest, "agent": "shell",
+		"workspaceId": "ws", "organizationSlug": "acme", "sessionSlug": "bright-lark",
+		"branch": "oppenheimer/bright-lark", "cwdCheckoutId": "c-2",
+		"checkouts": []map[string]any{
+			{"checkoutId": "c-1", "githubRepoId": 42, "repositoryFullName": "acme-labs/xrp-mobile",
+				"directoryName": "mobile", "baseBranch": "develop"},
+			{"checkoutId": "c-2", "githubRepoId": 43, "repositoryFullName": "acme-labs/xrp-api",
+				"directoryName": "api", "baseBranch": "main"},
+		},
+	}))
+	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
+
+	dir := "/home/jordi/oppenheimer/acct/ws/sessions/bright-lark"
+	if session.Cwd() != dir || session.Worktree != filepath.Join(dir, "api") {
+		t.Fatalf("cwd %q, first worktree %q", session.Cwd(), session.Worktree)
+	}
+	if p.worktrees.Stores["acct/ws/acme-labs/xrp-mobile"] != 1 || p.worktrees.Stores["acct/ws/acme-labs/xrp-api"] != 1 {
+		t.Fatalf("stores = %v", p.worktrees.Stores)
+	}
+	var started struct {
+		Checkouts []map[string]string `json:"checkouts"`
+	}
+	for _, event := range p.events(sessionUnderTest) {
+		if event.Kind == "session.started" {
+			_ = json.Unmarshal([]byte(event.Payload), &started)
+		}
+	}
+	want := []map[string]string{
+		{"checkoutId": "c-2", "branch": "oppenheimer/bright-lark", "path": filepath.Join(dir, "api"), "mode": "worktree"},
+		{"checkoutId": "c-1", "branch": "oppenheimer/bright-lark", "path": filepath.Join(dir, "mobile"), "mode": "worktree"},
+	}
+	if !reflect.DeepEqual(started.Checkouts, want) {
+		t.Fatalf("session.started checkouts = %v, want %v", started.Checkouts, want)
 	}
 }
 

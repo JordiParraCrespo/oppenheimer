@@ -36,6 +36,9 @@ import { useStreamCovers } from './workspace-stream-status';
  *   background. Five seconds is the pace ChatGPT's device flow usually asks
  *   for; when it asks for a slower one, the API answers the faster polls
  *   "pending" without asking ChatGPT, so this interval never sets the pace.
+ * - `sessionPorts`: the ports a session listens on, while its Browser tab is
+ *   open: a dev server the agent just started shows within a few seconds.
+ *   Not in the background, and the workspace stream carries no such fact.
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.
@@ -59,6 +62,7 @@ export const LIVE_POLL = {
   chatgptLogin: { interval: 5000, inBackground: true, streamCanCover: false },
   hostPresence: { interval: 15_000, inBackground: false },
   cloudSession: { interval: 5000, inBackground: true, streamCanCover: false },
+  sessionPorts: { interval: 3000, inBackground: false, streamCanCover: false },
   /**
    * A pull request answer that is still filling its parts. The rows are drawn
    * from the first read; each poll fills a budget more, out of a cache that

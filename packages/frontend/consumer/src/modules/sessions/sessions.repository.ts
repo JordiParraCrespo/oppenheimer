@@ -22,6 +22,8 @@ import {
   type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
+  type SessionPorts,
+  type SessionPreview,
   type SessionShare,
   type SharedSession,
   type StartCloudSessionInput,
@@ -394,6 +396,35 @@ export class SessionsRepository {
       SessionsErrors.ATTACH_TICKET_FAILED,
     );
     return toTicket(data);
+  }
+
+  /** The ports the session listens on, as its host lists them now. */
+  @MapApiError(SessionsErrors.PORTS_FAILED)
+  async findPorts(id: string): Promise<SessionPorts> {
+    const data = await unwrapBody(
+      heyApiSdk.findSessionPorts({ path: { id } }),
+      SessionsErrors.PORTS_FAILED,
+    );
+    return {
+      state: data.state,
+      ports: data.ports.map((port) => ({ port: port.port, process: port.process ?? null })),
+    };
+  }
+
+  /**
+   * Where one of the session's ports opens: framed by the Browser tab
+   * (`embed`) or in a tab of its own. Never cached: the ticket is single use.
+   */
+  @MapApiError(SessionsErrors.PREVIEW_FAILED)
+  async openPreview(
+    id: string,
+    preview: { port: number; path?: string; embed: boolean },
+  ): Promise<SessionPreview> {
+    const data = await unwrapBody(
+      heyApiSdk.issueSessionPreview({ path: { id }, body: preview }),
+      SessionsErrors.PREVIEW_FAILED,
+    );
+    return { url: data.url, expiresAt: new Date(data.expiresAt) };
   }
 
   /** How a session is shared, or `null` when it is not. */

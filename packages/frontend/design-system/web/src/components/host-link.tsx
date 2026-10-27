@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { useControlled } from '../hooks/use-controlled';
 import { type HostLinkState, LinkDot, useHostLink } from '../internal/host-link';
@@ -22,8 +22,9 @@ import { TerminalStatusBar, TerminalStatusLink } from './terminal';
  *   pane whose header already says the session's state passes
  *   `showLive={false}`: while the link is live the bar then leaves the link
  *   out, so the pane carries one status, and it speaks up only when the
- *   link does not hold. The bar keeps its height either way, so the grid
- *   above it is never resized by a blip.
+ *   link does not hold. With no items either, there is nothing for the bar
+ *   to say while live, and it is left out: the grid runs to the pane's
+ *   foot, and a blip brings the bar back at the cost of one resize.
  * - **Offline, catching up, reconnected** in the `banner` form (the
  *   console's): the bar's place goes to a banner on a faint amber wash —
  *   the dot, the title, a dim line, the time offline — and while offline its
@@ -97,6 +98,8 @@ function HostLinkChrome({
       </>
     );
   }
+
+  if (phase === 'live' && !showLive && React.Children.toArray(children).length === 0) return null;
 
   return (
     <>

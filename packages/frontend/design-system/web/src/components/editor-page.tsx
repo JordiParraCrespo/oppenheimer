@@ -73,8 +73,9 @@ const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   status: 'my-auto max-w-105 py-8',
   // `.op-newsession`, centred in the pane, at the reading measure.
   composer: 'my-auto max-w-190 py-12',
-  // `NewSessionComposer.dc.html`: the same column, at the pane's foot.
-  prompt: 'mt-auto max-w-206 pt-12 pb-10',
+  // `NewSessionComposer.dc.html`: the same column, at the pane's foot, with
+  // only a hairline of room under its row of choices.
+  prompt: 'mt-auto max-w-206 pt-12 pb-3',
   // Every page that opens at the top opens 24px under the page bar.
   narrow: 'max-w-190 pt-6 pb-18',
   wide: 'max-w-260 pt-6 pb-18',

@@ -1,21 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { BotChatScreen } from '@/features/bots/screens/bot-chat';
+import { BotChatRoute } from '@/features/bots/screens/bot-chat-route';
 
 /**
- * `/pulls/bots/$botId`: a bot's chat inside Pull requests, beside the
- * section's own sidebar (`product/versions/mvp/28-bots-in-sections.md`), as
- * `PullRequests.dc.html` draws it. The same chat as `/bots/$botId`, the same
- * conversation; only the list beside the rail differs, which the address
- * decides (`useConsoleList`). Un-nested (`pulls_`) like a pull request, since
- * the chat takes the whole pane.
+ * A bot's chat inside Pull requests, un-nested (`pulls_`) from the queue,
+ * beside the section's own sidebar (`28-bots-in-sections.md`).
  */
 export const Route = createFileRoute('/_authenticated/pulls_/bots/$botId')({
   staticData: { pane: 'full', bar: 'own' },
-  component: PullRequestsBotChatRoute,
+  component: BotChatRoute,
 });
-
-function PullRequestsBotChatRoute() {
-  const { botId } = Route.useParams();
-  // Keyed, so moving between two bots starts the chat afresh (its draft included).
-  return <BotChatScreen key={botId} botId={botId} />;
-}

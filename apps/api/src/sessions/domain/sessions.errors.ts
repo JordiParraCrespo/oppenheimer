@@ -77,14 +77,16 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A second repository on a session that has one. A runner makes one worktree
-   * per session in the MVP, so a session is one repository (00); the create
-   * body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host (#56).
+   * A repository added to a session that already checks out one. The runner
+   * makes a worktree (and keeps a clone) per checkout, at create only: a create
+   * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
+   * no frame that adds one to a running session, so a later add is refused
+   * before a row is written rather than recorded and never made. The code dates
+   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
    */
-  ONE_REPOSITORY: {
+  TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'A session checks out one repository',
+    message: 'A running session keeps the repositories it was created with',
     httpStatus: 409,
   },
   /**
@@ -264,13 +266,19 @@ export const SessionErrors = {
     message: 'The host is offline, so the answer was not sent',
     httpStatus: 503,
   },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
   /**
    * Something only a host session has — a terminal, a checkout, a restart, a
    * share — asked of a cloud session, which runs at its vendor and is opened
    * there (`product/next-steps/cloud-agents.md`).
    */
   CLOUD_SESSION: {
-    code: 'SESSIONS_035',
+    code: 'SESSIONS_036',
     message: 'That session runs in the cloud, not on a host',
     httpStatus: 409,
   },

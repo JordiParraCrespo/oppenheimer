@@ -115,8 +115,14 @@ export type SessionAgentId = (typeof SESSION_AGENT_IDS)[number];
 
 export { hostPathSchema };
 
-/** How many repositories a session may check out: one, until runners make several. */
-export const MAX_SESSION_CHECKOUTS = 1;
+/**
+ * How many repositories a session may check out. The runner makes one worktree per
+ * checkout, each beside a clone of its repository on the host, so every one costs
+ * disk and a fetch before the agent starts; and the composer's repository picker
+ * has to stay readable. Five covers a service and its neighbours without either.
+ * It was one from 2026-09-23 (#56) until runners made several (2026-10-26).
+ */
+export const MAX_SESSION_CHECKOUTS = 5;
 
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
@@ -128,9 +134,10 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * A worktree session's repositories: one in the MVP, because a runner makes
-   * one worktree per session, so a second is refused here before a row is
-   * written (#56, 00, 10). None with `folder`.
+   * A worktree session's repositories, each a worktree of its own in the session's
+   * folder, at most {@link MAX_SESSION_CHECKOUTS}; more is refused here before a
+   * row is written (00, 10). The first is where the agent starts unless
+   * `cwdGithubRepoId` names another. None with `folder`.
    */
   checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS).default([]),
   /**
@@ -316,6 +323,21 @@ export const issueAttachTicketSchema = z.object({
 });
 
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
+
+/**
+ * `POST /sessions/{id}/previews` — open one of the session's ports in the
+ * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+ */
+export const issueSessionPreviewSchema = z.object({
+  /** A port the session's own processes listen on; never a system one. */
+  port: z.number().int().min(1024).max(65535),
+  /** The path in the app to open on; the app's root when absent. */
+  path: z.string().max(2048).optional(),
+  /** Whether the console frames the preview (the Browser tab) or opens it in a tab of its own. */
+  embed: z.boolean().optional(),
+});
+
+export type IssueSessionPreviewDto = z.infer<typeof issueSessionPreviewSchema>;
 
 /**
  * `POST /sessions/{id}/images` — a file for a running session's prompt (the

@@ -29,6 +29,9 @@
  * `cloud_agents` says whether a person can store a cloud agent vendor's key:
  * the key it is sealed under (`CLOUD_AGENTS_KEY`). Whether a person can
  * launch one is `GET /cloud-agents/status`, which asks every provider.
+ *
+ * `session_previews` says whether sessions' dev servers can be opened from
+ * the console: a preview domain (`PREVIEW_BASE_URL`) the relay serves them on.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -43,6 +46,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'bot_providers',
   'voice_transcription',
   'cloud_agents',
+  'session_previews',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -81,6 +85,9 @@ export const CLIENT_CAPABILITIES = [
   // to answer. Without it the console says so instead of offering a form
   // whose save would fail.
   'bot_providers',
+  // Whether the session pane offers its Browser tab: without a preview domain
+  // there is nowhere to open a session's dev server.
+  'session_previews',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

@@ -27,12 +27,11 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 449.8KB measured (2026-10-27); the last raise was for Cloud agents
-    // (a rail item, its routes and Settings page) and Grok as a bot
-    // provider: the strings ride the default locale's catalog, which the
-    // entry loads whole, and the cloud-agents module is in the consumer
-    // package the entry boots (+4.2KB). The one before it was the session's
-    // device preview (+1.1KB). Earlier raises and
+    // 449.1KB measured (2026-10-27); the last raise was for cloud sessions:
+    // Cloud in New session's place picker and Cursor in its agent picker,
+    // Cursor's mark in the design-system chunk the entry loads, and their
+    // strings in the bundled locale (+2.3KB). The one before it was the
+    // session pane's Browser tab (+1.2KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code

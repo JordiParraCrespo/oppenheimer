@@ -1,10 +1,6 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { REFUSE_MARKER, STUB_KEY_PREFIX } from '../../support/cursor-stub';
-import {
-  connectInstallation,
-  createProject,
-  STUB_REPOSITORIES,
-} from '../../support/sessions';
+import { connectInstallation, createProject, STUB_REPOSITORIES } from '../../support/sessions';
 import { provisionedUser } from '../../support/web';
 
 /**
@@ -138,7 +134,7 @@ test.describe('Cloud sessions', () => {
       data: {},
     });
     expect(attach.status()).toBe(409);
-    expect(await attach.json()).toMatchObject({ code: 'SESSIONS_035' });
+    expect(await attach.json()).toMatchObject({ code: 'SESSIONS_036' });
 
     const closed = await owner.api.delete(`/api/v1/sessions/${session.id}`);
     expect(closed.status(), await closed.text()).toBeLessThan(300);

@@ -6,6 +6,7 @@ import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
+import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { speechKeyIsConfigured } from '../config/voice.config';
 
@@ -81,6 +82,9 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // The deployment's own speech-to-text server. A workspace signed in to
     // ChatGPT dictates without it; this is every other workspace's way in.
     voice_transcription: speechKeyIsConfigured(configService),
+    // A domain to serve sessions' previews on. The same predicate the preview
+    // routes refuse on, so the Browser tab is never offered to fail.
+    session_previews: previewsAreConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||
