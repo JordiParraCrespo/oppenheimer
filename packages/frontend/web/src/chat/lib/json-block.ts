@@ -13,6 +13,15 @@ function parse(text: string): { value: unknown } | null {
 }
 
 /**
+ * A run of `"key": value` pairs lifted out of a larger object (what an agent
+ * writes to say "change these two fields"), read as that object.
+ */
+function parseFieldRun(text: string): { value: unknown } | null {
+  if (!text.startsWith('"')) return null;
+  return parse(`{${text.replace(/,\s*$/, '')}}`);
+}
+
+/**
  * What a fenced block holds as JSON, or null when it is not JSON: a block
  * fenced `json` (or `jsonc`, `json5`) that parses, or a block with no
  * language that parses to an object or an array. A `json` block that is a
@@ -30,9 +39,8 @@ export function readJsonBlock(
   if (name && !JSON_LANGUAGES.has(name)) return null;
   const whole = parse(text);
   if (whole && typeof whole.value === 'object' && whole.value !== null) return whole;
-  if (!name || whole) return null;
-  if (!text.startsWith('"')) return null;
-  return parse(`{${text.replace(/,\s*$/, '')}}`);
+  // Only a fence that says JSON and did not parse is tried as a run of fields.
+  return name && !whole ? parseFieldRun(text) : null;
 }
 
 /** The instant a JSON string names, when it is an ISO date and time with its zone. */

@@ -43,6 +43,26 @@ function entriesOf(value: Record<string, unknown> | unknown[]): [string, unknown
   return Array.isArray(value) ? value.map((item, index) => [String(index), item]) : Object.entries(value);
 }
 
+/** How a container reads at a depth: its members up to the cap, how many more, whether it starts open. */
+interface ContainerPlan {
+  size: number;
+  shown: [string, unknown][];
+  rest: number;
+  open: boolean;
+  inArray: boolean;
+}
+
+function planOf(value: Record<string, unknown> | unknown[], depth: number): ContainerPlan {
+  const entries = entriesOf(value);
+  return {
+    size: entries.length,
+    shown: entries.slice(0, SHOW_AT_MOST),
+    rest: Math.max(0, entries.length - SHOW_AT_MOST),
+    open: depth < OPEN_DEPTH && entries.length <= FOLD_OVER,
+    inArray: Array.isArray(value),
+  };
+}
+
 function childPath(path: string, key: string, inArray: boolean): string {
   if (inArray) return `${path}[${key}]`;
   const plain = /^[A-Za-z_$][\w$]*$/.test(key);
@@ -66,33 +86,30 @@ function Key({ name, index }: { name: string; index: boolean }) {
 }
 
 function Members({
-  value,
+  plan,
   path,
   depth,
   annotate,
 }: {
-  value: Record<string, unknown> | unknown[];
+  plan: ContainerPlan;
   path: string;
   depth: number;
   annotate: JsonTreeAnnotate | undefined;
 }) {
-  const entries = entriesOf(value);
-  const inArray = Array.isArray(value);
-  const rest = entries.length - SHOW_AT_MOST;
   return (
     <>
-      {entries.slice(0, SHOW_AT_MOST).map(([key, child]) => (
+      {plan.shown.map(([key, child]) => (
         <JsonNode
           key={key}
           name={key}
-          index={inArray}
+          index={plan.inArray}
           value={child}
-          path={childPath(path, key, inArray)}
+          path={childPath(path, key, plan.inArray)}
           depth={depth}
           annotate={annotate}
         />
       ))}
-      {rest > 0 ? <span className="block pl-5 text-fg-subtle">… +{rest}</span> : null}
+      {plan.rest > 0 ? <span className="block pl-5 text-fg-subtle">… +{plan.rest}</span> : null}
     </>
   );
 }
@@ -112,13 +129,12 @@ function JsonNode({
   depth: number;
   annotate: JsonTreeAnnotate | undefined;
 }) {
-  const container = isContainer(value);
-  const size = container ? (Array.isArray(value) ? value.length : Object.keys(value).length) : 0;
-  const [open, setOpen] = React.useState(depth < OPEN_DEPTH && size <= FOLD_OVER);
+  const plan = isContainer(value) ? planOf(value, depth) : null;
+  const [open, setOpen] = React.useState(plan?.open ?? false);
   const row = 'flex min-w-0 items-baseline gap-1.5 rounded-xs pr-1 hover:bg-hover-surface';
-  if (!container || size === 0) {
-    const empty = container ? (Array.isArray(value) ? '[]' : '{}') : null;
-    const note = !container ? annotate?.(value, path) : null;
+  if (!plan || plan.size === 0) {
+    const empty = plan ? (plan.inArray ? '[]' : '{}') : null;
+    const note = plan ? null : annotate?.(value, path);
     return (
       <span data-slot="json-tree-row" title={path} className={cn(row, 'pl-5')}>
         <Key name={name} index={index} />
@@ -127,7 +143,7 @@ function JsonNode({
       </span>
     );
   }
-  const brackets = Array.isArray(value) ? ['[', ']'] : ['{', '}'];
+  const brackets = plan.inArray ? ['[', ']'] : ['{', '}'];
   return (
     <span data-slot="json-tree-node" className="block">
       <button
@@ -147,13 +163,13 @@ function JsonNode({
         <Key name={name} index={index} />
         <span className="figures text-fg-subtle">
           {brackets[0]}
-          {size}
+          {plan.size}
           {brackets[1]}
         </span>
       </button>
       {open ? (
         <span className="ml-1.75 block border-l border-border-subtle pl-2">
-          <Members value={value} path={path} depth={depth + 1} annotate={annotate} />
+          <Members plan={plan} path={path} depth={depth + 1} annotate={annotate} />
         </span>
       ) : null}
     </span>
@@ -176,7 +192,7 @@ function JsonTree({
   return (
     <span data-slot="json-tree" className={cn('block font-mono text-[13px] leading-[1.7] text-fg', className)}>
       {isContainer(value) ? (
-        <Members value={value} path="" depth={0} annotate={annotate} />
+        <Members plan={planOf(value, 0)} path="" depth={0} annotate={annotate} />
       ) : (
         <span className="block pl-5">
           <Leaf value={value} />

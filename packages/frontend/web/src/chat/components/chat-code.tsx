@@ -1,8 +1,7 @@
 import { ChatCodeBlock, ChatJsonBlock } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { HighlightedCode, type MarkdownCodeBlock } from '../../markdown';
-import { useJsonTimeNote } from '../hooks/use-json-time-note';
-import { readJsonBlock } from '../lib/json-block';
+import { useJsonView } from '../hooks/use-json-view';
 
 /**
  * A fenced block in an agent's reply, for `Markdown`'s `code` slot: its
@@ -12,9 +11,8 @@ import { readJsonBlock } from '../lib/json-block';
  */
 export function ChatCode({ code, language }: MarkdownCodeBlock) {
   const { t } = useTranslation();
-  const timeNote = useJsonTimeNote();
   const labels = { copy: t('common.copyCode'), copied: t('common.copied') };
-  const json = readJsonBlock(code, language);
+  const json = useJsonView(code, language);
   if (!json) {
     return (
       <ChatCodeBlock code={code} language={language} labels={labels}>
@@ -25,10 +23,9 @@ export function ChatCode({ code, language }: MarkdownCodeBlock) {
   return (
     <ChatJsonBlock
       code={code}
-      value={json.value}
+      {...json}
       language={language}
       labels={{ ...labels, tree: t('common.chat.json.tree'), raw: t('common.chat.json.raw') }}
-      annotate={timeNote}
     >
       <HighlightedCode code={code} language={language ?? 'json'} />
     </ChatJsonBlock>
