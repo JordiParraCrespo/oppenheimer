@@ -321,6 +321,7 @@ export {
   InboxCard,
   InboxCardActions,
   InboxCardBody,
+  InboxCardChoices,
   InboxCardFacts,
   InboxClear,
   InboxGreeting,
@@ -328,6 +329,10 @@ export {
   InboxItemSkeleton,
   InboxList,
   InboxLogLine,
+  InboxQuestion,
+  InboxQuestionOption,
+  InboxQuestionOptions,
+  InboxQuestions,
   InboxSnoozedRow,
 } from './components/inbox';
 export {

@@ -33,6 +33,25 @@ function sessionCopy(item: Extract<InboxItem, { kind: 'session' }>, t: TFunction
       body: t('inbox.session.startingBody'),
     };
   }
+  const { decision } = session;
+  // A decision is answered on the card, which names the session it answers.
+  const named = session.scopeLabel ? `${name} · ${session.scopeLabel}` : name;
+  if (decision?.kind === 'permission') {
+    return {
+      short: t('inbox.session.blockedShort', { name }),
+      source: named,
+      title: decision.title,
+      body: t('inbox.session.permissionBody'),
+    };
+  }
+  if (decision?.kind === 'question') {
+    return {
+      short: t('inbox.session.blockedShort', { name }),
+      source: named,
+      title: t('inbox.session.questionTitle', { name, count: decision.questions.length }),
+      body: t('inbox.session.questionBody'),
+    };
+  }
   return {
     short: t('inbox.session.blockedShort', { name }),
     source,

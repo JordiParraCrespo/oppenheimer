@@ -1,3 +1,4 @@
+import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 import { describe, expect, it } from 'vitest';
 import { AutomationRunEntity } from '../../automations/automation.entity';
 import { BotApprovalEntity, WorkspaceBotApprovalEntity } from '../../bots/bot-conversation.entity';
@@ -25,7 +26,9 @@ function session(
     observedSince = at(10),
     stateSeq = 1,
     projectId = 'p-app',
+    decision = null,
   }: {
+    decision?: SessionDecision | null;
     state?: SessionGroup;
     lifecycle?: SessionState;
     observedSince?: Date | null;
@@ -56,8 +59,33 @@ function session(
     observedSince,
     at(5),
     stateSeq,
+    decision,
   );
 }
+
+const permission = (id: string): SessionDecision => ({
+  kind: 'permission',
+  id,
+  title: 'Do you want to proceed?',
+  detail: 'pnpm generate:api-client',
+  options: [{ label: 'Yes' }, { label: 'No' }],
+});
+
+const question = (id: string): SessionDecision => ({
+  kind: 'question',
+  id,
+  questions: [
+    {
+      header: 'Scope',
+      question: 'Which screens?',
+      multiSelect: false,
+      options: [
+        { label: 'Wallet', description: null },
+        { label: 'All', description: null },
+      ],
+    },
+  ],
+});
 
 function approval(id: string, minutesAgo: number, sessionId: string | null = null) {
   return new WorkspaceBotApprovalEntity(
@@ -280,6 +308,34 @@ describe('composeInbox: marks apply to one occurrence', () => {
       'session:s-2:s5',
       `session:s-1:${at(1).toISOString()}`,
     ]);
+  });
+
+  it('names a session waiting on a decision by the decision, so a follow-up question is a new item', () => {
+    const asked = session('s-1', { decision: question('toolu_2') });
+    const view = composeInbox(
+      sources({ sessions: [asked] }),
+      [mark('session:s-1:toolu_1', 'done')],
+      NOW,
+    );
+    expect(view.open.map((item) => item.key)).toEqual(['session:s-1:toolu_2']);
+    expect(view.done).toEqual([]);
+  });
+
+  it('keeps a marked decision marked while the agent still waits on it', () => {
+    const asked = session('s-1', { decision: permission('perm-a') });
+    const view = composeInbox(
+      sources({ sessions: [asked] }),
+      [mark('session:s-1:perm-a', 'done')],
+      NOW,
+    );
+    expect(view.open).toEqual([]);
+    expect(view.done.map((item) => item.key)).toEqual(['session:s-1:perm-a']);
+  });
+
+  it('names a blocked session with no decision by when it blocked, as before', () => {
+    expect(sessionItemKey(session('s-1', { observedSince: at(3) }))).toBe(
+      `session:s-1:${at(3).toISOString()}`,
+    );
   });
 
   it('sorts a deprioritized item after everything else, read as Low', () => {

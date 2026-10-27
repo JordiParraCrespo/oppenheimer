@@ -152,7 +152,7 @@ session event: that is slice 4.
 4. **Questions in the Inbox**: the runner reports a pending Claude Code
    question (header, question, options) as a session event, the API keeps
    the latest open one on the session, and the Inbox answers it.
-   The server half is built (below); the console's card and answer are not.
+   Built, server and console (below).
 5. **Later, not planned here**: the message box to a general bot, items
    that agents and sessions post themselves, email and customer chats
    (`../../next-steps/channels.md`), batched delivery during a focus
@@ -247,3 +247,36 @@ Where it departs from the note above:
   the question, `❯ 1. Yes` …, a footer) and the fleet spec's printed
   question; a release that draws it differently reports no permission
   decision, and the Inbox then only opens the session, as before.
+
+## As built: the console for slice 4 (2026-10-27)
+
+- **The key.** A session waiting on a decision is
+  `session:<id>:<decisionId>`, so a follow-up question is a new item and a
+  mark on the last one never hides it; a session with none keeps the keys
+  above.
+- **The cards** (the frame's `qs` and `input` items). A permission: the
+  dialog's question as the title, the session's name and checkout on the
+  from line, what it asks about in mono, and one button per option in the
+  dialog's order (the first the primary, the last a hairline), then Later
+  and Open session. A question: every question numbered under its tag, its
+  options as pills (one, or several), each description under its label,
+  and an *Other…* field per question (words replace a single choice's
+  pick, and a pick the words); *Send answers* waits until each has an
+  answer. The parts are the design system's `InboxCardChoices`,
+  `InboxQuestions`, `InboxQuestion`, `InboxQuestionOptions` and
+  `InboxQuestionOption`; the command is the chat's `ApprovalCommand`.
+- **Answering** (`useAnswerSessionDecision`) replaces the session's row in
+  the lists with the one the API answers and logs "Answered <name>:
+  <answer>". The agent stays blocked until its host sees the keys, so the
+  plain wait the session falls back to is answered for the visit too, and
+  no Open-session card flashes in between.
+- **A refusal stays on the card**: stale (`SESSIONS_032`) reads the
+  session again, and the pane keeps the card for the session (keyed by its
+  id, not the occurrence), so the error stays over whatever it waits on
+  now; host offline and an answer that does not fit say so in place.
+- **Proven** by `e2e/tests/fleet/inbox-decisions.spec.ts` on a real
+  runner: a Claude Code 2.x permission dialog printed in the shim's shell
+  is answered with Yes, and the shell reads `1`; an `AskUserQuestion` of
+  two questions (one choice, several with words of its own) is answered,
+  and the shell reads exactly the 22 bytes `questionKeys` gives; once the
+  call has a result the session leaves the Inbox.

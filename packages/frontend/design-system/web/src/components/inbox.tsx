@@ -1,6 +1,8 @@
 'use client';
 
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
+import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
+import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
 import { CircleCheckIcon, ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
@@ -298,6 +300,140 @@ function InboxCardActions({
   );
 }
 
+/**
+ * InboxCardChoices — the answers a session waits on, in the card's body, in
+ * the order the agent offers them (the frame's "A session is waiting on a
+ * decision"): one `Button` each, the first the primary. The row wraps; a
+ * label too long for the card is cut, with the whole of it on the button's
+ * own `title`.
+ */
+function InboxCardChoices({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      role="group"
+      data-slot="inbox-card-choices"
+      className={cn('flex min-w-0 flex-wrap gap-1.5 [&>*]:max-w-full', className)}
+      {...props}
+    />
+  );
+}
+
+/** InboxQuestions — a session's questions on the card, numbered, one under the other. */
+function InboxQuestions({ className, ...props }: React.ComponentProps<'ol'>) {
+  return (
+    <ol data-slot="inbox-questions" className={cn('flex flex-col gap-3.5', className)} {...props} />
+  );
+}
+
+/**
+ * InboxQuestion — one numbered question (the frame's "Three questions before
+ * …"): its number in mono, the agent's short tag for it (`header`, "Scope")
+ * and the question; under it what the caller composes, the
+ * `InboxQuestionOptions` and a field for an answer of the person's own.
+ */
+function InboxQuestion({
+  n,
+  header,
+  question,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'li'>, 'title'> & {
+  n: number;
+  header?: React.ReactNode;
+  question: React.ReactNode;
+}) {
+  return (
+    <li data-slot="inbox-question" className={cn('flex flex-col gap-2', className)} {...props}>
+      <span className="text-[14px] leading-[1.45] text-pretty">
+        <span className="figures mr-2 font-mono text-[12px] text-fg-subtle">{n}</span>
+        {header ? (
+          <span className="mr-2 inline-flex h-4.5 items-center rounded-xs bg-hover-surface px-1.5 align-text-bottom font-mono text-[11px] text-fg-muted">
+            {header}
+          </span>
+        ) : null}
+        {question}
+      </span>
+      {children}
+    </li>
+  );
+}
+
+type InboxQuestionOptionsProps = Omit<
+  ToggleGroupPrimitive.Props,
+  'value' | 'defaultValue' | 'onValueChange' | 'multiple'
+> & {
+  /** Several may be picked; without it, one at a time. */
+  multiple?: boolean;
+  /** The picks, by option index. */
+  value: readonly number[];
+  onValueChange: (value: number[]) => void;
+};
+
+/**
+ * InboxQuestionOptions — a question's options as pills: one pick, or several
+ * when `multiple`. Pressing the picked one of a single choice keeps it.
+ */
+function InboxQuestionOptions({
+  multiple = false,
+  value,
+  onValueChange,
+  className,
+  ...props
+}: InboxQuestionOptionsProps) {
+  return (
+    <ToggleGroupPrimitive
+      data-slot="inbox-question-options"
+      multiple={multiple}
+      value={value.map(String)}
+      onValueChange={(next) => {
+        const picked = next.filter((v): v is string => typeof v === 'string').map(Number);
+        if (multiple) return onValueChange([...picked].sort((a, b) => a - b));
+        const one = picked.find((v) => !value.includes(v));
+        if (one !== undefined) onValueChange([one]);
+      }}
+      className={cn('flex flex-wrap gap-1.5', className)}
+      {...props}
+    />
+  );
+}
+
+/**
+ * InboxQuestionOption — one option, a 32px pill on a hairline (the frame's
+ * `qs` pills); picked, it takes the selected wash and a primary ring. Its
+ * `description` sits under the label in subtle ink, and the pill rounds to a
+ * card around the two.
+ */
+function InboxQuestionOption({
+  index,
+  label,
+  description,
+  className,
+  ...props
+}: Omit<TogglePrimitive.Props, 'value' | 'children'> & {
+  index: number;
+  label: React.ReactNode;
+  description?: React.ReactNode;
+}) {
+  return (
+    <TogglePrimitive
+      data-slot="inbox-question-option"
+      value={String(index)}
+      className={cn(
+        'flex min-h-8 max-w-full flex-col items-start justify-center gap-0.5 border border-border px-3.5 py-1.5 text-left text-[13px] text-fg outline-none transition-[background-color,border-color,transform] duration-instant ease-standard select-none hover:bg-hover-surface active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:border-primary data-pressed:bg-selected-surface',
+        description ? 'rounded-md' : 'rounded-pill',
+        className,
+      )}
+      {...props}
+    >
+      <span className="leading-[1.35]">{label}</span>
+      {description ? (
+        <span className="text-[12px] leading-[1.35] text-fg-subtle">{description}</span>
+      ) : null}
+    </TogglePrimitive>
+  );
+}
+
 /** InboxClear — nothing needs you: "You're clear", and what is still going on. */
 function InboxClear({
   title,
@@ -323,6 +459,7 @@ export {
   InboxCard,
   InboxCardActions,
   InboxCardBody,
+  InboxCardChoices,
   InboxCardFacts,
   InboxClear,
   InboxGreeting,
@@ -330,5 +467,9 @@ export {
   InboxItemSkeleton,
   InboxList,
   InboxLogLine,
+  InboxQuestion,
+  InboxQuestionOption,
+  InboxQuestionOptions,
+  InboxQuestions,
   InboxSnoozedRow,
 };

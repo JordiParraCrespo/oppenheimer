@@ -7,4 +7,5 @@ export type {
   InboxSnoozed,
   InboxView,
 } from './inbox-item';
+export { sessionItemKey } from './inbox-item';
 export type { InboxMark, InboxMarkEntity } from './inbox-mark.entity';

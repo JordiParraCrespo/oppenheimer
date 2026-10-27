@@ -204,6 +204,7 @@ export {
   type RenameSessionVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAnswerSessionDecision,
   useCloseSession,
   useCreateSession,
   useInvalidateSession,

@@ -63,12 +63,17 @@ export interface InboxView {
 }
 
 /**
- * A session's wait: a blocked agent by the moment it became blocked
+ * A session's wait: a decision its agent waits on by the decision's id, so a
+ * follow-up question is a new item and a mark on the last one never hides it;
+ * otherwise a blocked agent by the moment it became blocked
  * (`observedSince`); a failed or stuck launch by its lifecycle's change count,
  * since the API reports no moment a failure began and the next failure is a
  * new change.
  */
-export function sessionItemKey(session: SessionEntity): string {
+export function sessionItemKey(
+  session: Pick<SessionEntity, 'id' | 'lifecycle' | 'observedSince' | 'stateSeq' | 'decision'>,
+): string {
+  if (session.decision) return `session:${session.id}:${session.decision.id}`;
   if (session.lifecycle === 'open' && session.observedSince) {
     return `session:${session.id}:${session.observedSince.toISOString()}`;
   }

@@ -2501,7 +2501,17 @@
       "startingShort": "{{name}} no ha arrancado",
       "startingTitle": "{{name}} no ha arrancado",
       "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
-      "open": "Abrir sesión"
+      "open": "Abrir sesión",
+      "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
+      "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
+      "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+      "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
+      "send": "Enviar respuestas",
+      "sending": "Enviando…",
+      "other": "Otra…",
+      "otherLabel": "Tu propia respuesta a la pregunta {{n}}",
+      "optionsLabel": "Respuestas a la pregunta {{n}}",
+      "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
     },
     "approval": {
       "short": "Aprobar {{bot}} · {{tool}}",
@@ -2543,7 +2553,8 @@
       "approved": "Aprobado {{bot}} · {{tool}}",
       "denied": "Denegado {{bot}} · {{tool}}",
       "merged": "Fusionado #{{number}} en {{repository}}",
-      "ranAgain": "{{name}} ejecutado de nuevo"
+      "ranAgain": "{{name}} ejecutado de nuevo",
+      "answered": "Respondido a {{name}}: {{answer}}"
     },
     "pane": {
       "greeting": {

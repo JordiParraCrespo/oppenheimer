@@ -70,8 +70,15 @@ export function InboxCurrent() {
             case 'run':
               return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
             case 'session':
+              // By the session, so a refused answer stays over the decision it now waits on.
               return (
-                <InboxSessionCard key={item.key} item={item} copy={copy} from={from} age={age} />
+                <InboxSessionCard
+                  key={`session:${item.session.id}`}
+                  item={item}
+                  copy={copy}
+                  from={from}
+                  age={age}
+                />
               );
           }
         })()

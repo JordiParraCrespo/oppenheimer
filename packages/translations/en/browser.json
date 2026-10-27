@@ -2485,7 +2485,17 @@
       "startingShort": "{{name}} has not started",
       "startingTitle": "{{name}} has not started",
       "startingBody": "Its host has not finished starting it for over a minute. Open it to see where it stands.",
-      "open": "Open session"
+      "open": "Open session",
+      "permissionBody": "Its agent stopped to ask before it goes on. Your answer is typed into its terminal.",
+      "questionTitle_one": "A question before {{name}} continues",
+      "questionTitle_other": "{{count}} questions before {{name}} continues",
+      "questionBody": "Pick an answer for each, or write your own, and it picks up where it stopped.",
+      "send": "Send answers",
+      "sending": "Sending…",
+      "other": "Other…",
+      "otherLabel": "Your own answer to question {{n}}",
+      "optionsLabel": "Answers to question {{n}}",
+      "answerFailed": "Could not send the answer. Try again."
     },
     "approval": {
       "short": "Approve {{bot}} · {{tool}}",
@@ -2527,7 +2537,8 @@
       "approved": "Approved {{bot}} · {{tool}}",
       "denied": "Denied {{bot}} · {{tool}}",
       "merged": "Merged #{{number}} into {{repository}}",
-      "ranAgain": "Ran {{name}} again"
+      "ranAgain": "Ran {{name}} again",
+      "answered": "Answered {{name}}: {{answer}}"
     },
     "pane": {
       "greeting": {

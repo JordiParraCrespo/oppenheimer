@@ -8,6 +8,10 @@ import {
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import type {
+  AnswerSessionDecisionDto,
+  SessionDecision,
+} from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
@@ -65,6 +69,33 @@ function toTicket(data: { ticket: string; url: string; expiresAt: string; window
   };
 }
 
+/** The decision as the console holds it; what the API leaves out is null. */
+function toDecision(data: SessionResponseDto['decision']): SessionDecision | null {
+  if (!data) return null;
+  if (data.kind === 'permission') {
+    return {
+      kind: 'permission',
+      id: data.id,
+      title: data.title,
+      detail: data.detail ?? null,
+      options: data.options.map((option) => ({ label: option.label })),
+    };
+  }
+  return {
+    kind: 'question',
+    id: data.id,
+    questions: data.questions.map((question) => ({
+      header: question.header ?? null,
+      question: question.question,
+      multiSelect: question.multiSelect,
+      options: question.options.map((option) => ({
+        label: option.label,
+        description: option.description ?? null,
+      })),
+    })),
+  };
+}
+
 function toEntity(data: SessionResponseDto): SessionEntity {
   return new SessionEntity(
     data.id,
@@ -100,6 +131,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.observedSince ? new Date(data.observedSince) : null,
     data.lastEventAt ? new Date(data.lastEventAt) : null,
     data.stateSeq ?? 0,
+    toDecision(data.decision),
   );
 }
 
@@ -260,6 +292,20 @@ export class SessionsRepository {
     const data = await unwrapBody(
       heyApiSdk.moveSession({ path: { id }, body: { projectId } }),
       SessionsErrors.MOVE_FAILED,
+    );
+    return toEntity(data);
+  }
+
+  /**
+   * Answer what the session's agent waits on (`decision`), by its id: the API
+   * types the keys into its terminal. An id that is no longer the pending one
+   * is refused (`SESSIONS_032`), so an answer never lands on the next question.
+   */
+  @MapApiError(SessionsErrors.ANSWER_DECISION_FAILED)
+  async answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.answerSessionDecision({ path: { id }, body: answer }),
+      SessionsErrors.ANSWER_DECISION_FAILED,
     );
     return toEntity(data);
   }
