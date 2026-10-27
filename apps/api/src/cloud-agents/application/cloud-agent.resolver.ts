@@ -23,12 +23,22 @@ export class CloudAgentResolver {
   constructor(private readonly registry: CloudAgentProviderRegistry) {}
 
   async callFor(scope: AccessScope, id: CloudAgentProviderId): Promise<ProviderCall> {
-    const organizationId = requireOrganization(scope);
+    return this.callForOwner(
+      { organizationId: requireOrganization(scope), userId: scope.userId },
+      id,
+    );
+  }
+
+  /** {@link callFor} on a named person's key in a workspace: whose a session's agent is. */
+  async callForOwner(
+    owner: { organizationId: string; userId: string },
+    id: CloudAgentProviderId,
+  ): Promise<ProviderCall> {
     const provider = this.registry.get(id);
-    if (!provider || !(await provider.availableFor(organizationId, scope.userId))) {
+    if (!provider || !(await provider.availableFor(owner.organizationId, owner.userId))) {
       throw new AppError(CloudAgentErrors.NOT_CONNECTED, { detail: `No ${id} key is stored` });
     }
-    return { provider, grant: await provider.grantFor(organizationId, scope.userId) };
+    return { provider, grant: await provider.grantFor(owner.organizationId, owner.userId) };
   }
 
   /** The provider a route's `:provider` names, to identify a key before it is stored. */

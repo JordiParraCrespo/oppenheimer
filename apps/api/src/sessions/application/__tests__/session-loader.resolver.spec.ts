@@ -1,85 +1,65 @@
-import { None, Some } from 'oxide.ts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import { Some } from 'oxide.ts';
+import { describe, expect, it, vi } from 'vitest';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
-import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
+import { SessionCloudRunEntity } from '../../domain/session-cloud-run.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SessionLoaderResolver } from '../session-loader.resolver';
 
 /**
- * Every person's command on an existing session loads it through here, so these
- * are the problem documents a missing or closed session answers with, byte for byte.
+ * What a host-only command (a terminal, a checkout, a restart, a share) asks
+ * first: a cloud session runs at its vendor, so it is refused with
+ * `SESSIONS_035` before anything is sent anywhere; a host session passes.
  */
 
-const SCOPE = {
-  userId: 'user-1',
+const SCOPE = { userId: 'user-1', organizationId: 'org-acme' } as unknown as AccessScope;
+
+const cloud = WorkSessionEntity.requestCloud({
+  id: 'cloud-1',
+  cloudRun: SessionCloudRunEntity.launched(
+    {
+      organizationId: 'org-acme',
+      sessionId: 'cloud-1',
+      provider: 'cursor',
+      externalId: 'bc-cloud-1',
+      url: null,
+      repositoryUrl: 'https://github.com/acme/api',
+      run: { runId: 'run-1', status: 'running', branch: null, pullRequestUrl: null, summary: null },
+    },
+    new Date(),
+  ),
   organizationId: 'org-acme',
-  teamIds: [],
-  grants: new Map(),
-  bypass: false,
-};
+  projectId: 'project-1',
+  createdByUserId: 'user-1',
+  slug: 'bold-otter-3f9a7k',
+  agent: 'cursor',
+});
 
-function session() {
-  return WorkSessionEntity.request({
-    organizationId: 'org-acme',
-    projectId: 'project-1',
-    createdByUserId: 'user-1',
-    hostId: 'host-1',
-    slug: 'bold-otter-3f9a7k',
-    agent: 'claude-code',
-  });
+const host = WorkSessionEntity.request({
+  organizationId: 'org-acme',
+  projectId: 'project-1',
+  createdByUserId: 'user-1',
+  hostId: 'host-1',
+  slug: 'calm-heron-2b8c1d',
+  agent: 'claude-code',
+});
+
+function loaderOf(session: WorkSessionEntity) {
+  const sessions: Pick<WorkSessionRepositoryPort, 'findOneById'> = {
+    findOneById: vi.fn().mockResolvedValue(Some(session)),
+  };
+  return new SessionLoaderResolver(sessions as WorkSessionRepositoryPort);
 }
 
-function close(work: WorkSessionEntity) {
-  work.recordEvent({
-    seq: 1,
-    kind: SESSION_EVENT_KINDS.CLOSED,
-    payload: {},
-    occurredAt: new Date(),
-  });
-}
-
-describe('SessionLoaderResolver', () => {
-  let sessions: { findOneById: ReturnType<typeof vi.fn> };
-  let loader: SessionLoaderResolver;
-  let work: WorkSessionEntity;
-
-  beforeEach(() => {
-    work = session();
-    sessions = { findOneById: vi.fn().mockResolvedValue(Some(work)) };
-    loader = new SessionLoaderResolver(sessions as unknown as WorkSessionRepositoryPort);
-  });
-
-  describe('find', () => {
-    it('answers the session, looked up in the caller’s scope', async () => {
-      await expect(loader.find(SCOPE, work.id)).resolves.toBe(work);
-      expect(sessions.findOneById).toHaveBeenCalledWith(SCOPE, work.id);
-    });
-
-    it('answers a resolved session too', async () => {
-      close(work);
-      await expect(loader.find(SCOPE, work.id)).resolves.toBe(work);
-    });
-
-    it('is not found when the lookup finds nothing', async () => {
-      sessions.findOneById.mockResolvedValue(None);
-      await expect(loader.find(SCOPE, 'missing')).rejects.toMatchObject({
-        code: 'SESSIONS_001',
-        detail: 'No session with id missing',
-      });
+describe('SessionLoaderResolver.requireLiveOnHost', () => {
+  it('refuses a cloud session with SESSIONS_035', async () => {
+    await expect(loaderOf(cloud).requireLiveOnHost(SCOPE, cloud.id)).rejects.toMatchObject({
+      code: 'SESSIONS_035',
     });
   });
 
-  describe('requireLive', () => {
-    it('answers a live session', async () => {
-      await expect(loader.requireLive(SCOPE, work.id)).resolves.toBe(work);
-    });
-
-    it('refuses a resolved session, by its slug', async () => {
-      close(work);
-      await expect(loader.requireLive(SCOPE, work.id)).rejects.toMatchObject({
-        code: 'SESSIONS_005',
-        detail: 'Session bold-otter-3f9a7k is closed',
-      });
-    });
+  it('answers a host session with its host', async () => {
+    const session = await loaderOf(host).requireLiveOnHost(SCOPE, host.id);
+    expect(session.hostId).toBe('host-1');
   });
 });

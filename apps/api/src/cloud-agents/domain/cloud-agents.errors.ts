@@ -1,12 +1,11 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
+/**
+ * `CLOUD_AGENTS_001`, `008` and `009` are retired: an agent that is not found,
+ * busy or already stopped were the codes of the agent's own page, which is a
+ * cloud session's at its vendor now (`product/next-steps/cloud-agents.md`).
+ */
 export const CloudAgentErrors = {
-  /** Also someone else's cloud agent. */
-  NOT_FOUND: {
-    code: 'CLOUD_AGENTS_001',
-    message: 'Cloud agent not found',
-    httpStatus: 404,
-  },
   NO_ACTIVE_ORGANIZATION: {
     code: 'CLOUD_AGENTS_002',
     message: 'Cloud agents belong to an organization',
@@ -42,20 +41,8 @@ export const CloudAgentErrors = {
     message: 'The cloud agent provider’s rate limit was reached',
     httpStatus: 429,
   },
-  /** A follow-up while the agent's run is still going. */
-  BUSY: {
-    code: 'CLOUD_AGENTS_008',
-    message: 'The cloud agent is still working',
-    httpStatus: 409,
-  },
-  /** A stop for a run that already ended. */
-  NOT_CANCELLABLE: {
-    code: 'CLOUD_AGENTS_009',
-    message: 'The cloud agent’s run has already ended',
-    httpStatus: 409,
-  },
   /**
-   * The vendor refused the launch or the follow-up as asked: a repository it
+   * The vendor refused the launch as asked: a repository it
    * cannot reach, a model it does not offer, a feature the account lacks. The
    * detail carries the vendor's own words.
    */

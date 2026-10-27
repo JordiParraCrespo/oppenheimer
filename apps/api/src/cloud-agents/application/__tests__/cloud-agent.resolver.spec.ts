@@ -21,8 +21,6 @@ function provider(available: boolean): CloudAgentProvider<string> {
     identify: vi.fn(),
     grantFor: vi.fn().mockResolvedValue('grant'),
     launch: vi.fn(),
-    followUp: vi.fn(),
-    cancel: vi.fn(),
     read: vi.fn(),
     models: vi.fn(),
     repositories: vi.fn(),

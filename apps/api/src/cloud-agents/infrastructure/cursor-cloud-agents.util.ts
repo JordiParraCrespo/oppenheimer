@@ -1,5 +1,5 @@
 import type { CloudAgentStatus } from '@oppenheimer/shared';
-import type { CloudAgentRunState } from '../domain/cloud-agent.entity';
+import type { CloudAgentRunState } from '../application/cloud-agent-provider.port';
 
 /** Cursor's run statuses, in ours. One Cursor adds later reads as `running` until it ends. */
 const RUN_STATUSES: Readonly<Record<string, CloudAgentStatus>> = {

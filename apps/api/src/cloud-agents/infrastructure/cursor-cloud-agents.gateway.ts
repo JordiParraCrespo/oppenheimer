@@ -3,7 +3,7 @@ import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, type RefusalReader, UpstreamLimiter } from '@oppenheimer/backend-core';
-import type { CloudAgentRunState } from '../domain/cloud-agent.entity';
+import type { CloudAgentRunState } from '../application/cloud-agent-provider.port';
 import { CloudAgentErrors } from '../domain/cloud-agents.errors';
 import type {
   CursorAccess,
@@ -17,8 +17,8 @@ import { cursorRunState, errorOf, recordOf, stringOf } from './cursor-cloud-agen
 
 const TIMEOUT_MS = 30_000;
 /**
- * One open agent's poll and a list's three syncs a person, and a launch now
- * and then: eight in flight per process is plenty, and a burst past forty
+ * A session's read and a list's three syncs a person, and a launch now and
+ * then: eight in flight per process is plenty, and a burst past forty
  * waiting answers `CLOUD_AGENTS_007` rather than hanging the console.
  */
 const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 5_000 };
@@ -42,11 +42,12 @@ const REPOSITORIES_TTL_SECONDS = 10 * 60;
  * - **How it says stop.** `429` with `{ "error": { "code":
  *   "rate_limit_exceeded" } }`, a `Retry-After` when it sends one; the
  *   limiter pauses the bucket and answers `CLOUD_AGENTS_007`.
- * - **What a screen costs.** An open agent is read once in ten seconds, a
- *   list syncs three working agents at most once in thirty
- *   (`cloud-agent-sync.policy.ts`): about eighteen calls a minute at worst.
- *   Models are cached an hour and repositories ten minutes per bucket, so the
- *   launch dialog costs nothing after its first opening.
+ * - **What a screen costs.** The sessions list asks about three working
+ *   cloud sessions at most once in thirty seconds, and a session read on its
+ *   own once in ten (`sessions/domain/cloud-session-sync.policy.ts`): about
+ *   eighteen calls a minute at worst. Models are cached an hour and
+ *   repositories ten minutes per bucket, so the composer's pickers cost
+ *   nothing after their first opening.
  */
 @Injectable()
 export class CursorCloudAgentsGateway implements CursorCloudAgentsPort {
@@ -80,7 +81,8 @@ export class CursorCloudAgentsGateway implements CursorCloudAgentsPort {
           ...(launch.startingRef ? { startingRef: launch.startingRef } : {}),
         },
       ],
-      autoCreatePR: launch.autoCreatePr,
+      // The session's branch is the product's; a pull request is opened from it there.
+      autoCreatePR: false,
     });
     const agent = recordOf(body.agent);
     const run = recordOf(body.run);
@@ -97,27 +99,6 @@ export class CursorCloudAgentsGateway implements CursorCloudAgentsPort {
       url: stringOf(agent.url),
       ...cursorRunState(run, runId),
     };
-  }
-
-  async followUp(access: CursorAccess, agentId: string, prompt: string): Promise<string> {
-    const body = await this.call(access, 'POST', `/v1/agents/${encodeURIComponent(agentId)}/runs`, {
-      prompt: { text: prompt },
-    });
-    const runId = stringOf(recordOf(body.run).id) ?? stringOf(body.id);
-    if (!runId) {
-      throw new AppError(CloudAgentErrors.PROVIDER_UNAVAILABLE, {
-        detail: 'Cursor answered a follow-up with no run id',
-      });
-    }
-    return runId;
-  }
-
-  async cancel(access: CursorAccess, agentId: string, runId: string): Promise<void> {
-    await this.call(
-      access,
-      'POST',
-      `/v1/agents/${encodeURIComponent(agentId)}/runs/${encodeURIComponent(runId)}/cancel`,
-    );
   }
 
   async read(access: CursorAccess, agentId: string, runId: string): Promise<CloudAgentRunState> {
@@ -240,10 +221,6 @@ function refusalOf(status: number, errorBody: string): AppError {
   const { code, message } = errorOf(errorBody);
   const detail = message ? `Cursor: ${message}` : `Cursor answered ${status}`;
   const extensions = code ? { upstreamCode: code } : undefined;
-  if (code === 'agent_busy') return new AppError(CloudAgentErrors.BUSY, { detail, extensions });
-  if (code === 'run_not_cancellable') {
-    return new AppError(CloudAgentErrors.NOT_CANCELLABLE, { detail, extensions });
-  }
   if (status === 401 || code === 'key_not_supported') {
     return new AppError(CloudAgentErrors.KEY_REFUSED, { detail, extensions });
   }

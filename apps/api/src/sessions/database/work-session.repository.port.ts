@@ -2,6 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { SessionFold } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -165,6 +166,13 @@ export interface WorkSessionRepositoryPort {
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionCreateOutcome>;
+
+  /**
+   * Write what a cloud session's vendor last said, only if the run still has
+   * `runIdAtLoad` as its latest: a read that asked about an older run than the
+   * row now holds writes nothing. False is that, or a run that is not there.
+   */
+  saveCloudRunIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean>;
 
   /**
    * Append to the log and fold onto the row, in one transaction.

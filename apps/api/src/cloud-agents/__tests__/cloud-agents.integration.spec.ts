@@ -3,25 +3,20 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
-import { CloudAgentMapper } from '../cloud-agent.mapper';
 import { CloudAgentCredentialMapper } from '../cloud-agent-credential.mapper';
-import { CloudAgentOrmEntity } from '../database/cloud-agent.orm-entity';
-import { CloudAgentRepository } from '../database/cloud-agent.repository';
 import { CloudAgentCredentialOrmEntity } from '../database/cloud-agent-credential.orm-entity';
 import { CloudAgentCredentialRepository } from '../database/cloud-agent-credential.repository';
-import { CloudAgentEntity } from '../domain/cloud-agent.entity';
 import { CloudAgentCredentialEntity } from '../domain/cloud-agent-credential.entity';
 
 /**
- * Cloud agents against a real Postgres: a person's vendor key is one row per
- * vendor that a second key replaces, an agent and a key are read only by
- * their owner, the list is the owner's newest first, and a sync is written
- * back whole. The migration's checks hold what the code cannot be trusted to.
+ * A person's vendor keys against a real Postgres: one row per vendor that a
+ * second key replaces, read and removed only by its owner, and gone with the
+ * person. A cloud session itself is the sessions module's
+ * (`sessions.integration.spec.ts`, "a cloud session").
  */
 describe('cloud agents (integration)', () => {
   let pg: StartedTestContainer;
   let dataSource: DataSource;
-  let agents: CloudAgentRepository;
   let credentials: CloudAgentCredentialRepository;
   let organizationId: string;
   let userId: string;
@@ -50,14 +45,10 @@ describe('cloud agents (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      entities: [CloudAgentOrmEntity, CloudAgentCredentialOrmEntity],
+      entities: [CloudAgentCredentialOrmEntity],
       synchronize: false,
     });
     await dataSource.initialize();
-    agents = new CloudAgentRepository(
-      dataSource.getRepository(CloudAgentOrmEntity),
-      new CloudAgentMapper(),
-    );
     credentials = new CloudAgentCredentialRepository(
       dataSource.getRepository(CloudAgentCredentialOrmEntity),
       new CloudAgentCredentialMapper(),
@@ -99,35 +90,6 @@ describe('cloud agents (integration)', () => {
       accountId: '184',
     });
 
-  const agent = (user: string, createdAt?: Date) => {
-    const id = CloudAgentEntity.newId();
-    const entity = CloudAgentEntity.launched(
-      {
-        id,
-        organizationId,
-        createdByUserId: user,
-        provider: 'cursor',
-        prompt: 'Fix the login page',
-        repositoryUrl: 'https://github.com/acme/api',
-        startingRef: null,
-        model: 'grok-4.7',
-        autoCreatePr: false,
-        externalId: `bc-${id}`,
-        url: `https://cursor.com/agents/bc-${id}`,
-        name: 'Fix the login page',
-        run: {
-          runId: 'run-1',
-          status: 'starting',
-          branch: null,
-          pullRequestUrl: null,
-          summary: null,
-        },
-      },
-      createdAt ?? new Date(),
-    );
-    return entity;
-  };
-
   it('keeps one key per person and vendor, a second replacing the first', async () => {
     await credentials.put(key(userId, 'aaaa'));
     await credentials.put(key(userId, 'bbbb'));
@@ -149,90 +111,20 @@ describe('cloud agents (integration)', () => {
     expect((await credentials.findFor(organizationId, userId, 'cursor')).isNone()).toBe(true);
   });
 
-  it('lists a person’s own agents newest first, and someone else’s is not found', async () => {
-    const colleague = await insertUser();
-    const older = agent(userId);
-    const newer = agent(userId);
-    await agents.insert(older);
-    await new Promise((resolve) => setTimeout(resolve, 5));
-    await agents.insert(newer);
-    await agents.insert(agent(colleague));
-
-    const listed = await agents.findOwn(scopeOf(userId));
-    expect(listed.map((row) => row.id)).toEqual([newer.id, older.id]);
-    expect((await agents.findOwnById(scopeOf(colleague), older.id)).isNone()).toBe(true);
-  });
-
-  it('writes a sync back whole and keeps it on a second read', async () => {
-    const launched = agent(userId);
-    await agents.insert(launched);
-    const loaded = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
-    const now = new Date('2026-10-26T12:00:00Z');
-    loaded.sync(
-      {
-        runId: 'run-1',
-        status: 'finished',
-        branch: 'cursor/fix-login',
-        pullRequestUrl: 'https://github.com/acme/api/pull/7',
-        summary: 'Done.',
-      },
-      now,
-    );
-    expect(await agents.saveIfRun(loaded, 'run-1')).toBe(true);
-
-    const again = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
-    expect(again).toMatchObject({
-      status: 'finished',
-      branch: 'cursor/fix-login',
-      pullRequestUrl: 'https://github.com/acme/api/pull/7',
-      summary: 'Done.',
-      model: 'grok-4.7',
-    });
-    expect(again.syncedAt).toEqual(now);
-  });
-
-  it('drops a sync that read the run before a follow-up, keeping the newer run', async () => {
-    const launched = agent(userId);
-    await agents.insert(launched);
-    const syncing = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
-    const following = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
-
-    following.followedUp('run-2', new Date('2026-10-26T12:00:00Z'));
-    expect(await agents.saveIfRun(following, 'run-1')).toBe(true);
-    syncing.sync(
-      { runId: 'run-1', status: 'finished', branch: null, pullRequestUrl: null, summary: 'Done.' },
-      new Date('2026-10-26T12:00:01Z'),
-    );
-    expect(await agents.saveIfRun(syncing, 'run-1')).toBe(false);
-
-    const again = (await agents.findOwnById(scopeOf(userId), launched.id)).unwrap();
-    expect(again).toMatchObject({ latestRunId: 'run-2', status: 'starting', summary: null });
-  });
-
-  it('refuses a status or a vendor the product does not know, and a second row for one vendor agent', async () => {
-    const launched = agent(userId);
-    await agents.insert(launched);
-    await expect(
-      dataSource.query(`UPDATE cloud_agent SET status = 'paused' WHERE id = $1`, [launched.id]),
-    ).rejects.toThrow(/CHK_cloud_agent_status/);
-    await expect(
-      dataSource.query(`UPDATE cloud_agent SET provider = 'devin' WHERE id = $1`, [launched.id]),
-    ).rejects.toThrow(/CHK_cloud_agent_provider/);
-    const twin = agent(userId);
-    (twin as unknown as { props: { externalId: string } }).props.externalId = launched.externalId;
-    await expect(agents.insert(twin)).rejects.toThrow(/UQ_cloud_agent_external/);
-  });
-
-  it('goes with the person who launched it', async () => {
+  it('goes with the person whose key it is', async () => {
     const gone = await insertUser();
-    await agents.insert(agent(gone));
     await credentials.put(key(gone, 'cccc'));
     await dataSource.query(`DELETE FROM "user" WHERE id = $1`, [gone]);
-    const [{ count }] = await dataSource.query(
-      `SELECT (SELECT count(*) FROM cloud_agent WHERE "createdByUserId" = $1)
-            + (SELECT count(*) FROM cloud_agent_credential WHERE "userId" = $1) AS count`,
-      [gone],
-    );
-    expect(Number(count)).toBe(0);
+    expect((await credentials.findFor(organizationId, gone, 'cursor')).isNone()).toBe(true);
+  });
+
+  it('refuses a vendor the product does not know', async () => {
+    await expect(
+      dataSource.query(
+        `INSERT INTO cloud_agent_credential ("organizationId", "userId", provider, "sealedKey", "keyHint", "keyName")
+         VALUES ($1, $2, 'devin', '\\x00', 'zzzz', 'Key')`,
+        [organizationId, userId],
+      ),
+    ).rejects.toThrow(/CHK_cloud_agent_credential_provider/);
   });
 });

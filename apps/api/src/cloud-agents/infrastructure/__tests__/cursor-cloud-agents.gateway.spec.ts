@@ -54,7 +54,6 @@ describe('CursorCloudAgentsGateway', () => {
       repositoryUrl: 'https://github.com/acme/api',
       startingRef: 'main',
       model: 'grok-4.7',
-      autoCreatePr: true,
     });
 
     expect(launched).toEqual({
@@ -78,7 +77,8 @@ describe('CursorCloudAgentsGateway', () => {
       prompt: { text: 'Fix the login page' },
       model: { id: 'grok-4.7' },
       repos: [{ url: 'https://github.com/acme/api', startingRef: 'main' }],
-      autoCreatePR: true,
+      // The session's branch is the product's: no pull request from Cursor.
+      autoCreatePR: false,
     });
   });
 
@@ -92,7 +92,6 @@ describe('CursorCloudAgentsGateway', () => {
       repositoryUrl: 'https://github.com/acme/api',
       startingRef: null,
       model: null,
-      autoCreatePr: false,
     });
     const body = JSON.parse(fetch.mock.calls[0][1].body);
     expect(body).not.toHaveProperty('model');
@@ -132,17 +131,19 @@ describe('CursorCloudAgentsGateway', () => {
   it('maps Cursor’s refusals onto the module’s codes, keeping its words and its code', async () => {
     const cases: [Response, string][] = [
       [json(401, { code: 'error', message: 'Invalid User API Key' }), 'CLOUD_AGENTS_005'],
-      [json(409, { error: { code: 'agent_busy', message: 'busy' } }), 'CLOUD_AGENTS_008'],
-      [json(409, { error: { code: 'run_not_cancellable', message: 'ended' } }), 'CLOUD_AGENTS_009'],
+      [
+        json(402, { error: { code: 'usage_limit_exceeded', message: 'Out of usage' } }),
+        'CLOUD_AGENTS_010',
+      ],
       [json(400, { error: { code: 'validation_error', message: 'Required' } }), 'CLOUD_AGENTS_010'],
       [json(500, { error: { code: 'internal', message: 'oops' } }), 'CLOUD_AGENTS_006'],
     ];
     for (const [answer, code] of cases) {
       stubFetch(answer);
-      await expect(gateway().followUp(ACCESS, 'bc-1', 'next')).rejects.toMatchObject({ code });
+      await expect(gateway().read(ACCESS, 'bc-1', 'run-1')).rejects.toMatchObject({ code });
     }
     stubFetch(json(400, { error: { code: 'validation_error', message: 'Required' } }));
-    await expect(gateway().followUp(ACCESS, 'bc-1', 'next')).rejects.toMatchObject({
+    await expect(gateway().read(ACCESS, 'bc-1', 'run-1')).rejects.toMatchObject({
       detail: 'Cursor: Required',
       extensions: { upstreamCode: 'validation_error' },
     });

@@ -40,12 +40,14 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
 /**
  * Whether a runner whose hello named `capabilities` takes a session in `place`:
  * a worktree session always, a folder session only when it named
- * `session.folder` (it would refuse a create with no checkouts otherwise).
+ * `session.folder` (it would refuse a create with no checkouts otherwise), and
+ * a cloud session never: it runs at its vendor.
  */
 export function runnerTakesPlace(
   place: SessionPlace,
   capabilities: readonly RunnerCapability[],
 ): boolean {
+  if (place === 'cloud') return false;
   return place === 'worktree' || capabilities.includes('session.folder');
 }
 

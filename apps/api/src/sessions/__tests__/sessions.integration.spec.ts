@@ -10,10 +10,13 @@ import { ProjectRepository } from '../../projects/database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../../projects/database/project-repository.orm-entity';
 import { ProjectMapper } from '../../projects/project.mapper';
 import { SessionCheckoutOrmEntity } from '../database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from '../database/session-cloud-run.orm-entity';
 import { WorkSessionOrmEntity } from '../database/work-session.orm-entity';
 import { WorkSessionRepository } from '../database/work-session.repository';
 import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-entity';
+import { cloudRunLogEntries } from '../domain/cloud-session-sync.policy';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import { type CloudRunReport, SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import { mintSessionSlug } from '../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
@@ -136,6 +139,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         WorkSessionOrmEntity,
         SessionCheckoutOrmEntity,
         WorkSessionEventOrmEntity,
+        SessionCloudRunOrmEntity,
         ProjectOrmEntity,
         ProjectRepositoryOrmEntity,
       ],
@@ -930,8 +934,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           work.id,
         ]),
       ).rejects.toThrow(/CHK_work_session_folder_path/);
+      // A host session cannot become a cloud one: a cloud session has no host.
       await expect(
         dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
+      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'moon' WHERE "id" = $1`, [work.id]),
       ).rejects.toThrow(/CHK_work_session_place/);
     });
 
@@ -1211,6 +1219,133 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect((await events(work.id)).map((event) => event.kind)).not.toContain(
         SESSION_EVENT_KINDS.MOVED,
       );
+    });
+  });
+
+  describe('a cloud session', () => {
+    const run = (status: CloudRunReport['status'] = 'starting'): CloudRunReport => ({
+      runId: 'run-1',
+      status,
+      branch: null,
+      pullRequestUrl: null,
+      summary: null,
+    });
+
+    function cloudSession(report = run()) {
+      const id = randomUUID();
+      return WorkSessionEntity.requestCloud({
+        id,
+        cloudRun: SessionCloudRunEntity.launched(
+          {
+            organizationId,
+            sessionId: id,
+            provider: 'cursor',
+            externalId: `bc-${id}`,
+            url: `https://cursor.com/agents?id=bc-${id}`,
+            repositoryUrl: 'https://github.com/acme/api',
+            run: report,
+          },
+          new Date(),
+        ),
+        organizationId,
+        projectId,
+        createdByUserId: userId,
+        slug: mintSessionSlug(),
+        agent: 'cursor',
+      });
+    }
+
+    const reported = (report: CloudRunReport) =>
+      cloudRunLogEntries(report.runId, report.status).map((entry) => ({
+        ...entry,
+        source: 'api' as const,
+      }));
+
+    it('is a session with no host, read back with its vendor half, in its project', async () => {
+      const work = cloudSession(run('running'));
+      const created = await repository.createIfUnclaimed(work, [
+        ...requested(),
+        ...reported(run('running')),
+      ]);
+      expect(created.created).toBe(true);
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read).toMatchObject({ place: 'cloud', hostId: null, agent: 'cursor', projectId });
+      expect(read.cloudRun).toMatchObject({
+        provider: 'cursor',
+        externalId: `bc-${work.id}`,
+        latestRunId: 'run-1',
+        status: 'running',
+      });
+      // The vendor's report folded like a runner's: open, and working.
+      expect(read.state).toBe('open');
+      expect(read.group()).toBe('working');
+
+      const listed = await repository.findAllPaginated(scope(), { page: 1, limit: 20 });
+      expect(listed.data.find((row) => row.id === work.id)?.cloudRun?.status).toBe('running');
+    });
+
+    it('holds a host to a host session and none to a cloud one', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "hostId" = $2 WHERE "id" = $1`, [
+          work.id,
+          hostId,
+        ]),
+      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+      const host = session();
+      await repository.createIfUnclaimed(host, requested());
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "hostId" = NULL WHERE "id" = $1`, [host.id]),
+      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+    });
+
+    it('writes what the vendor said only while the run is the one it asked about', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      const first = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      const stale = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      if (!first || !stale) throw new Error('no cloud run read back');
+
+      first.synced({ ...run('finished'), branch: 'cursor/fix-login' }, new Date());
+      expect(await repository.saveCloudRunIf(first, 'run-1')).toBe(true);
+      // A writer whose run is no longer the row's writes nothing.
+      stale.synced(run('failed'), new Date());
+      expect(await repository.saveCloudRunIf(stale, 'run-0')).toBe(false);
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      expect(read).toMatchObject({ status: 'finished', branch: 'cursor/fix-login' });
+    });
+
+    it('lands a report two reads made at once a single time', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      const a = (await repository.findOneById(scope(), work.id)).unwrap();
+      const b = (await repository.findOneById(scope(), work.id)).unwrap();
+
+      await Promise.all([
+        repository.appendEvents(a, reported(run('finished'))),
+        repository.appendEvents(b, reported(run('finished'))),
+      ]);
+
+      const kinds = (await events(work.id)).map((event) => event.kind);
+      expect(kinds.filter((kind) => kind === SESSION_EVENT_KINDS.STARTED)).toHaveLength(1);
+      expect(kinds.filter((kind) => kind === SESSION_EVENT_KINDS.AGENT_OBSERVED)).toHaveLength(1);
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read.group()).toBe('idle');
+    });
+
+    it('goes with its session’s workspace', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.eraseWorkspace(organizationId);
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*) FROM session_cloud_run WHERE "sessionId" = $1`,
+        [work.id],
+      );
+      expect(Number(count)).toBe(0);
     });
   });
 

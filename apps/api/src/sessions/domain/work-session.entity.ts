@@ -17,6 +17,7 @@ import { SessionStateChangedDomainEvent } from './events/session-state-changed.d
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
+import type { SessionCloudRunEntity } from './session-cloud-run.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
 import {
@@ -49,22 +50,29 @@ export interface WorkSessionProps extends SessionFold {
    */
   projectId: string;
   createdByUserId: string;
-  /** Guarded by a handler, not a key: see `WorkSessionOrmEntity`. */
-  hostId: string;
+  /**
+   * Guarded by a handler, not a key: see `WorkSessionOrmEntity`. Null exactly
+   * for a cloud session, which runs at its vendor; with `folderPath`, the facts
+   * the place is read from (`place`).
+   */
+  hostId: string | null;
   slug: string;
   agent: SessionAgent;
   /**
    * The folder already on the host the session runs in, absolute; null for a
-   * session that runs in a worktree per checkout
-   * (`product/versions/mvp/24-session-places.md`). The one stored fact the
-   * place is read from (`place`), so the two cannot disagree. Immutable, like
-   * the agent.
+   * session that runs in a worktree per checkout, or in the cloud
+   * (`product/versions/mvp/24-session-places.md`). Immutable, like the agent.
    */
   folderPath: string | null;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
   checkouts: SessionCheckoutEntity[];
+  /**
+   * A cloud session's vendor half, read with the session; null for a host
+   * session. Written by the repository beside the session, never by the fold.
+   */
+  cloudRun: SessionCloudRunEntity | null;
   /** Who asked for the session: a person, or an automation's run. Immutable. */
   origin: SessionOrigin;
   /**
@@ -93,8 +101,26 @@ export interface CreateWorkSessionProps {
   origin?: SessionOrigin;
 }
 
+/** A session in a vendor's cloud: no host, folder or checkout; its agent is the vendor's. */
+export interface CreateCloudSessionProps {
+  /** Chosen before the vendor is asked, so the vendor's agent can carry it. */
+  id: string;
+  /** What the vendor started under that id. */
+  cloudRun: SessionCloudRunEntity;
+  organizationId: string;
+  projectId: string;
+  createdByUserId: string;
+  slug: string;
+  agent: SessionAgent;
+  name?: string;
+  idempotencyKey?: string | null;
+  origin?: SessionOrigin;
+}
+
 /**
- * Work-session aggregate root: a terminal, an agent, and a set of checkouts.
+ * Work-session aggregate root: a terminal, an agent, and a set of checkouts —
+ * or, in the place `cloud`, a vendor's agent, whose log the API writes from
+ * what the vendor says about its run (`product/next-steps/cloud-agents.md`).
  *
  * **`recordEvent` is the only mutator.** No `setState`, `setName` or
  * `setCwdCheckout`: every `work_session` column, launch checkout and sidebar inputs
@@ -147,6 +173,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         folderPath: props.folder || null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
+        cloudRun: null,
         origin: props.origin ?? 'person',
         latestTurn: null,
         name: props.name ?? props.slug,
@@ -166,6 +193,36 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       }),
     );
     return session;
+  }
+
+  /**
+   * A requested cloud session: the row, its slug and its first entry, with
+   * the id the vendor's agent was started under. No host is owed a job, so it
+   * raises nothing: what the vendor says next is written to its log by
+   * whoever reads it (`CloudSessionSyncResolver`).
+   */
+  static requestCloud(props: CreateCloudSessionProps): WorkSessionEntity {
+    return new WorkSessionEntity({
+      id: props.id,
+      props: {
+        ...INITIAL_SESSION_FOLD,
+        launch: { ...INITIAL_SESSION_FOLD.launch, permission: null },
+        organizationId: props.organizationId,
+        projectId: props.projectId,
+        createdByUserId: props.createdByUserId,
+        hostId: null,
+        slug: props.slug,
+        agent: props.agent,
+        folderPath: null,
+        idempotencyKey: props.idempotencyKey ?? null,
+        checkouts: [],
+        cloudRun: props.cloudRun,
+        origin: props.origin ?? 'person',
+        latestTurn: null,
+        name: props.name ?? props.slug,
+        nameSource: props.name ? 'user' : null,
+      },
+    });
   }
 
   get organizationId(): string {
@@ -213,8 +270,22 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.createdByUserId;
   }
 
-  get hostId(): string {
+  /** A cloud session's vendor half; null for a host session. */
+  get cloudRun(): SessionCloudRunEntity | null {
+    return this.props.cloudRun;
+  }
+
+  /** Null for a cloud session; a host-only command asks {@link hostRefusal} first. */
+  get hostId(): string | null {
     return this.props.hostId;
+  }
+
+  /**
+   * Why something only a host session has (a terminal, a checkout, a restart)
+   * cannot be asked of this one, or `null` when it can.
+   */
+  get hostRefusal(): ErrorDefinition | null {
+    return this.props.hostId === null ? SessionErrors.CLOUD_SESSION : null;
   }
 
   get slug(): string {
@@ -234,8 +305,12 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
-  /** Where it runs, read off `folderPath`: a folder on the host, or a worktree per checkout. */
+  /**
+   * Where it runs, read off the host and `folderPath`: in the cloud with no
+   * host, else a folder on the host, or a worktree per checkout.
+   */
   get place(): SessionPlace {
+    if (this.props.hostId === null) return 'cloud';
     return this.props.folderPath === null ? 'worktree' : 'folder';
   }
 
@@ -491,8 +566,13 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     if (!this.props.projectId?.trim()) {
       throw new ArgumentNotProvidedException('A session must belong to a project');
     }
-    if (!this.props.hostId?.trim()) {
-      throw new ArgumentNotProvidedException('A session must name a host');
+    // A host session names its host; a cloud session names none, and so has
+    // no folder on one either.
+    if (this.props.hostId !== null && !this.props.hostId.trim()) {
+      throw new ArgumentNotProvidedException('A session on a host must name it');
+    }
+    if (this.props.hostId === null && this.props.folderPath !== null) {
+      throw new ArgumentInvalidException('A folder session runs on a host');
     }
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(

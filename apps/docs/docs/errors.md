@@ -517,6 +517,7 @@ are never reissued.
 | `SESSIONS_032` <a id="sessions_032" /> | That question was already answered or changed   | 409  |
 | `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
 | `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
+| `SESSIONS_035` <a id="sessions_035" /> | That session runs in the cloud, not on a host   | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -541,6 +542,11 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
+
+`SESSIONS_035` is something only a session on a host has — its terminal, a checkout, a
+restart or stop, a share, an answer typed into it — asked of a cloud session, which runs
+as a vendor's agent (`product/next-steps/cloud-agents.md`). Open it at the vendor, from
+its `cloud.url`, and do it there.
 
 `SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
 what the session's agent waits on — a question it asked or a permission dialog
@@ -860,26 +866,25 @@ Remove one, or reconnect one already listed, which does not count again.
 
 ## Cloud agents
 
-Coding agents run in a vendor's cloud (Cursor's Cloud Agents), launched from the
-console on each person's own key for the vendor. See
+A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
+person's own key for the vendor: the key, what the vendor offers, and its
+refusals of a launch (`POST /sessions/cloud`). See
 `product/next-steps/cloud-agents.md`.
 
 | Code                                       | Title                                               | HTTP |
 | ------------------------------------------ | --------------------------------------------------- | ---- |
-| `CLOUD_AGENTS_001` <a id="cloud_agents_001" /> | Cloud agent not found                           | 404  |
 | `CLOUD_AGENTS_002` <a id="cloud_agents_002" /> | Cloud agents belong to an organization          | 400  |
 | `CLOUD_AGENTS_003` <a id="cloud_agents_003" /> | Cloud agents are not configured on this server  | 503  |
 | `CLOUD_AGENTS_004` <a id="cloud_agents_004" /> | That cloud agent provider is not connected      | 409  |
 | `CLOUD_AGENTS_005` <a id="cloud_agents_005" /> | The provider refused the API key                | 422  |
 | `CLOUD_AGENTS_006` <a id="cloud_agents_006" /> | The cloud agent provider did not answer         | 502  |
 | `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
-| `CLOUD_AGENTS_008` <a id="cloud_agents_008" /> | The cloud agent is still working                | 409  |
-| `CLOUD_AGENTS_009` <a id="cloud_agents_009" /> | The cloud agent’s run has already ended         | 409  |
 | `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
 | `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
 
-`CLOUD_AGENTS_001` is also another person's agent: every agent is its
-launcher's own.
+`CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
+working, or already stopped belonged to the agent's own page, which a cloud
+session leaves to its vendor. They are never reissued.
 
 `CLOUD_AGENTS_003` is a server with no `CLOUD_AGENTS_KEY`: no one can store a
 vendor key, so no one can launch.
@@ -893,11 +898,8 @@ refusing what was asked: a repository it cannot reach, a model it does not
 offer, a feature the account lacks; its `detail` carries the vendor's words and
 `upstreamCode` the vendor's code.
 
-`CLOUD_AGENTS_008` is a follow-up while the run is still going: wait for it to
-end, or stop it. `CLOUD_AGENTS_009` is a stop for a run that already ended.
-
-`CLOUD_AGENTS_007` carries `Retry-After`. Reads (the list, one agent) never
-answer it: they show the agent as last heard of.
+`CLOUD_AGENTS_007` carries `Retry-After`. Reads of sessions never answer it:
+a cloud session shows as last heard of.
 
 ## Inbound events
 

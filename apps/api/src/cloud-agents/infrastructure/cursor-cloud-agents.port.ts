@@ -1,4 +1,4 @@
-import type { CloudAgentRunState } from '../domain/cloud-agent.entity';
+import type { CloudAgentRunState } from '../application/cloud-agent-provider.port';
 
 /** A Cursor key, and what its calls count against (`CursorCloudAgentsGateway`). */
 export interface CursorAccess {
@@ -22,7 +22,6 @@ export interface CursorLaunch {
   repositoryUrl: string;
   startingRef: string | null;
   model: string | null;
-  autoCreatePr: boolean;
 }
 
 /** An agent and its latest run, in our words. */
@@ -41,15 +40,11 @@ export interface CursorModel {
 /**
  * Cursor's Cloud Agents API (v1). Every call may throw `CLOUD_AGENTS_007` for
  * a rate limit, `CLOUD_AGENTS_005` for a key Cursor refuses, `CLOUD_AGENTS_010`
- * for a request it refuses as asked, `CLOUD_AGENTS_008`/`009` for an agent
- * busy or a run already ended, and `CLOUD_AGENTS_006` for anything else.
+ * for a request it refuses as asked, and `CLOUD_AGENTS_006` for anything else.
  */
 export interface CursorCloudAgentsPort {
   me(apiKey: string): Promise<CursorKeyOwner>;
   launch(access: CursorAccess, launch: CursorLaunch): Promise<CursorAgentRun>;
-  /** Starts a new run on the agent with `prompt`; answers its id. */
-  followUp(access: CursorAccess, agentId: string, prompt: string): Promise<string>;
-  cancel(access: CursorAccess, agentId: string, runId: string): Promise<void>;
   read(access: CursorAccess, agentId: string, runId: string): Promise<CloudAgentRunState>;
   /** Cached per account for an hour: the list changes with Cursor's releases. */
   models(access: CursorAccess): Promise<CursorModel[]>;

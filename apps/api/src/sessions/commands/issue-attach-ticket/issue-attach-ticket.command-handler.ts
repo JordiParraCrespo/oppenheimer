@@ -30,7 +30,7 @@ export class IssueAttachTicketCommandHandler
   ) {}
 
   async execute(command: IssueAttachTicketCommand): Promise<IssuedAttachTicket> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     // The session being yours is not the machine being yours to use: a grant
     // revoked, or a host unpaired, since the session was created ends the PTY.
     await this.hosts.assertUsable(command.scope, session.hostId);

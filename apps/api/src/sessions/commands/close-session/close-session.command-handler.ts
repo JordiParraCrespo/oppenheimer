@@ -28,6 +28,11 @@ import { CloseSessionCommand } from './close-session.command';
  *
  * Asking twice is asking once for a session already resolved: a retry after a lost
  * response is not a conflict.
+ *
+ * A cloud session has no host and nothing on disk to push or remove, so its close
+ * is the outcome at once: `session.closed`, written here. The vendor's agent stays
+ * at the vendor, where its page and branch are the person's to keep or delete
+ * (`product/next-steps/cloud-agents.md`).
  */
 @CommandHandler(CloseSessionCommand)
 export class CloseSessionCommandHandler
@@ -44,6 +49,20 @@ export class CloseSessionCommandHandler
   async execute(command: CloseSessionCommand): Promise<SessionCommandResult> {
     const session = await this.loader.find(command.scope, command.sessionId);
     if (session.isResolved) return { sessionId: session.id, hints: [] };
+
+    if (session.place === 'cloud') {
+      await this.sessions.appendEvents(session, [
+        {
+          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+            command.id,
+            SESSION_EVENT_KINDS.CLOSED,
+          ),
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.CLOSED,
+        },
+      ]);
+      return { sessionId: session.id, hints: [] };
+    }
 
     await this.sessions.appendEvents(session, [
       {

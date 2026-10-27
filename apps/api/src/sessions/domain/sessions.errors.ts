@@ -264,4 +264,14 @@ export const SessionErrors = {
     message: 'The host is offline, so the answer was not sent',
     httpStatus: 503,
   },
+  /**
+   * Something only a host session has — a terminal, a checkout, a restart, a
+   * share — asked of a cloud session, which runs at its vendor and is opened
+   * there (`product/next-steps/cloud-agents.md`).
+   */
+  CLOUD_SESSION: {
+    code: 'SESSIONS_035',
+    message: 'That session runs in the cloud, not on a host',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

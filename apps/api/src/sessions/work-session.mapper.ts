@@ -8,12 +8,15 @@ import {
   type SessionAttachmentDto,
   type SessionDecision,
   type SessionSortDto,
+  type StartCloudSessionDto,
   sessionDecisionSchema,
 } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
+import type { CloudAgentLaunch } from '../cloud-agents/application/cloud-runs.port';
 import type { HostFolderListing } from './application/host-folders.port';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import type { SessionUsageWeek } from './database/session-usage.repository.port';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
@@ -24,7 +27,9 @@ import type {
   SessionListPage,
 } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { cloudRunLogEntries } from './domain/cloud-session-sync.policy';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
+import { type CloudRunReport, SessionCloudRunEntity } from './domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from './domain/session-launch-file.types';
 import {
   launchPermissionFor,
@@ -48,6 +53,7 @@ import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
 import {
   SessionCheckoutResponseDto,
+  SessionCloudRunResponseDto,
   SessionPageMetaDto,
   SessionResponseDto,
 } from './dtos/session.response.dto';
@@ -128,6 +134,7 @@ export class WorkSessionMapper
   toDomain(
     record: WorkSessionOrmEntity,
     checkouts: SessionCheckoutOrmEntity[] = [],
+    cloudRun: SessionCloudRunOrmEntity | null = null,
   ): WorkSessionEntity {
     const session = WorkSessionEntity.create({
       id: record.id,
@@ -144,6 +151,7 @@ export class WorkSessionMapper
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
+        cloudRun: cloudRun ? this.cloudRunToDomain(cloudRun) : null,
         origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
           ? record.origin
           : 'person',
@@ -411,10 +419,7 @@ export class WorkSessionMapper
    * approvals records no level at all (`launchPermissionFor`), and an effort
    * the model does not offer is not recorded (`effortLevelFor`).
    */
-  toLaunch(
-    agent: CreateSessionDto['agent'],
-    launch: CreateSessionDto['launch'],
-  ): SessionLaunchFold {
+  toLaunch(agent: SessionAgent, launch: CreateSessionDto['launch']): SessionLaunchFold {
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
@@ -649,6 +654,7 @@ export class WorkSessionMapper
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));
+    dto.cloud = entity.cloudRun ? this.cloudRunToResponse(entity.cloudRun) : null;
     return dto;
   }
 
@@ -677,6 +683,136 @@ export class WorkSessionMapper
       detail: decision.detail,
       options: decision.options.map((option) => ({ label: option.label })),
     };
+  }
+
+  cloudRunToDomain(record: SessionCloudRunOrmEntity): SessionCloudRunEntity {
+    return SessionCloudRunEntity.create({
+      id: record.sessionId,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      props: {
+        organizationId: record.organizationId,
+        provider: record.provider,
+        externalId: record.externalId,
+        url: record.url,
+        repositoryUrl: record.repositoryUrl,
+        latestRunId: record.latestRunId,
+        status: record.status,
+        branch: record.branch,
+        pullRequestUrl: record.pullRequestUrl,
+        summary: record.summary,
+        syncedAt: record.syncedAt,
+      },
+    });
+  }
+
+  cloudRunToPersistence(entity: SessionCloudRunEntity): SessionCloudRunOrmEntity {
+    const record = new SessionCloudRunOrmEntity();
+    record.sessionId = entity.sessionId;
+    record.organizationId = entity.organizationId;
+    record.provider = entity.provider;
+    record.externalId = entity.externalId;
+    record.url = entity.url;
+    record.repositoryUrl = entity.repositoryUrl;
+    record.latestRunId = entity.latestRunId;
+    record.status = entity.status;
+    record.branch = entity.branch;
+    record.pullRequestUrl = entity.pullRequestUrl;
+    record.summary = entity.summary;
+    record.syncedAt = entity.syncedAt;
+    return record;
+  }
+
+  cloudRunToResponse(entity: SessionCloudRunEntity): SessionCloudRunResponseDto {
+    const dto = new SessionCloudRunResponseDto();
+    dto.provider = entity.provider;
+    dto.url = entity.url;
+    dto.repositoryUrl = entity.repositoryUrl;
+    dto.status = entity.status;
+    dto.branch = entity.branch;
+    dto.pullRequestUrl = entity.pullRequestUrl;
+    dto.syncedAt = entity.syncedAt;
+    return dto;
+  }
+
+  /** What a cloud session asks its vendor to start, under the session's own id. */
+  toCloudLaunch(
+    sessionId: string,
+    input: StartCloudSessionDto,
+    source: { repositoryUrl: string; startingRef: string },
+  ): CloudAgentLaunch {
+    return {
+      id: sessionId,
+      prompt: input.prompt,
+      repositoryUrl: source.repositoryUrl,
+      startingRef: source.startingRef,
+      model: input.model ?? null,
+    };
+  }
+
+  /** The run the vendor started, as the session's vendor half keeps it. */
+  toLaunchedCloudRun(
+    session: { id: string; organizationId: string },
+    input: StartCloudSessionDto,
+    launched: { externalId: string; url: string | null; run: CloudRunReport },
+    repositoryUrl: string,
+    now: Date,
+  ): SessionCloudRunEntity {
+    return SessionCloudRunEntity.launched(
+      {
+        organizationId: session.organizationId,
+        sessionId: session.id,
+        provider: input.provider,
+        externalId: launched.externalId,
+        url: launched.url,
+        repositoryUrl,
+        run: launched.run,
+      },
+      now,
+    );
+  }
+
+  /** The entries a vendor's report owes the log (`cloudRunLogEntries`), as the API writes them. */
+  toCloudRunEvents(report: CloudRunReport, now: Date): NewSessionEvent[] {
+    return cloudRunLogEntries(report.runId, report.status).map((entry) => ({
+      ...entry,
+      source: 'api',
+      occurredAt: now,
+    }));
+  }
+
+  /**
+   * A cloud session's first entries: the request, as a host session's says it
+   * (no host, the place `cloud`), and the first task. The vendor's first answer
+   * follows as entries of its own (`cloudRunLogEntries`).
+   */
+  toCloudRequestEvents(props: {
+    commandId: string;
+    userId: string;
+    agent: SessionAgent;
+    input: StartCloudSessionDto;
+  }): NewSessionEvent[] {
+    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
+    return [
+      {
+        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.REQUESTED,
+        payload: {
+          agent: props.agent,
+          provider: props.input.provider,
+          place: 'cloud',
+          requestedByUserId: props.userId,
+          launch: this.toLaunch(props.agent, { model: props.input.model }),
+        },
+      },
+      {
+        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
+        payload: { text: props.input.prompt },
+      },
+    ];
   }
 
   checkoutToResponse(entity: SessionCheckoutEntity): SessionCheckoutResponseDto {

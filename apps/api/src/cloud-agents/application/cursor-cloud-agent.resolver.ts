@@ -6,7 +6,6 @@ import {
   KEY_SEALER,
 } from '../cloud-agents.di-tokens';
 import type { CloudAgentCredentialRepositoryPort } from '../database/cloud-agent-credential.repository.port';
-import type { CloudAgentRunState } from '../domain/cloud-agent.entity';
 import { CloudAgentErrors } from '../domain/cloud-agents.errors';
 import type {
   CursorAccess,
@@ -18,6 +17,7 @@ import type {
   CloudAgentLaunch,
   CloudAgentModel,
   CloudAgentProvider,
+  CloudAgentRunState,
   LaunchedCloudAgent,
 } from './cloud-agent-provider.port';
 
@@ -75,17 +75,8 @@ export class CursorCloudAgentResolver implements CloudAgentProvider<CursorAccess
       repositoryUrl: launch.repositoryUrl,
       startingRef: launch.startingRef,
       model: launch.model,
-      autoCreatePr: launch.autoCreatePr,
     });
     return { externalId: agentId, name, url, run };
-  }
-
-  followUp(access: CursorAccess, externalId: string, prompt: string): Promise<string> {
-    return this.cursor.followUp(access, externalId, prompt);
-  }
-
-  cancel(access: CursorAccess, externalId: string, runId: string): Promise<void> {
-    return this.cursor.cancel(access, externalId, runId);
   }
 
   read(access: CursorAccess, externalId: string, runId: string): Promise<CloudAgentRunState> {
