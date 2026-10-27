@@ -15,7 +15,7 @@ import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { sessionGlyph } from '../lib/session-glyph';
 import { projectsForMove } from '../lib/session-groups';
-import { dotFor } from '../lib/session-run-state';
+import { dotFor, isWorking } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
 /**
@@ -129,6 +129,7 @@ export function SessionRow({
       status={status}
       title={statusHint}
       state={dotFor(session)}
+      working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
       active={active}
