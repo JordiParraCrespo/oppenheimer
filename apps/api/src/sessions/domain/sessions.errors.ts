@@ -77,14 +77,15 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A second repository on a session that has one. A runner makes one worktree
-   * per session in the MVP, so a session is one repository (00); the create
-   * body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host (#56).
+   * A repository past `MAX_SESSION_CHECKOUTS` on a session that already holds that
+   * many. The runner makes a worktree (and keeps a clone) per checkout, so the
+   * create body is capped by its schema, and this is the same rule for adding one
+   * later, refused before a row is written rather than by the host. The code
+   * dates from the one-repository MVP (#56); the bound was raised on 2026-10-26.
    */
-  ONE_REPOSITORY: {
+  TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'A session checks out one repository',
+    message: 'That session checks out as many repositories as it may',
     httpStatus: 409,
   },
   /**

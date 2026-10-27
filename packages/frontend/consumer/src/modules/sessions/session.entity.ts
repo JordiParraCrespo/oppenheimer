@@ -259,8 +259,12 @@ export type CreateSessionInput = CreateSessionCommon &
 
 /** A new worktree: the runner clones and cuts a branch. */
 export interface CreateWorktreeSession {
-  /** Exactly one: a runner makes a session as one worktree of one repository. */
-  checkouts: [CreateSessionCheckout];
+  /**
+   * At least one, at most `MAX_SESSION_CHECKOUTS`, each a different repository: the
+   * runner makes one worktree per checkout. The first is where the agent starts
+   * unless `cwdGithubRepoId` names another.
+   */
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   folder?: never;
@@ -289,7 +293,7 @@ interface CreateSessionCommon {
 /** What a host is asked to get ready while New session is still being written. */
 export interface PrepareSessionInput {
   hostId: string;
-  checkouts: [CreateSessionCheckout];
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
 }
 
 /** An image uploaded for a first task, waiting for the create that names it. */

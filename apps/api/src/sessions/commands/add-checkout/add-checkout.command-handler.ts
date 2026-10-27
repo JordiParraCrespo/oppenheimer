@@ -59,8 +59,8 @@ export class AddCheckoutCommandHandler
     }
 
     if (session.liveCheckouts.length >= MAX_SESSION_CHECKOUTS) {
-      throw new AppError(SessionErrors.ONE_REPOSITORY, {
-        detail: `Session ${session.slug} already checks out a repository`,
+      throw new AppError(SessionErrors.TOO_MANY_REPOSITORIES, {
+        detail: `Session ${session.slug} already checks out ${MAX_SESSION_CHECKOUTS} repositories, the most a session may`,
       });
     }
 

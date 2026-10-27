@@ -492,7 +492,7 @@ are never reissued.
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
-| `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
+| `SESSIONS_010` <a id="sessions_010" /> | That session checks out as many repositories as it may | 409 |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 | `SESSIONS_012` <a id="sessions_012" /> | That file is too large to give the session      | 413  |
 | `SESSIONS_013` <a id="sessions_013" /> | That is not a file the session can take         | 415  |
@@ -547,10 +547,12 @@ already keys conversation state by.
 `SESSIONS_009` is no longer raised. A session that names no project is listed in the
 workspace's Unassigned project. The code stays reserved so it is never reused.
 
-`SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
-per session, so a second repository is refused here — on create by the body's own
-limit, and on adding one to a session that has one — rather than by the host after
-the session was written.
+`SESSIONS_010` is the bound on a session's repositories, five
+(`MAX_SESSION_CHECKOUTS`): a runner makes one worktree per checkout, beside a clone
+of each repository, so a sixth is refused here — on create by the body's own limit,
+and on adding one to a session that has five — rather than by the host after the
+session was written. The detail names the bound. Until 2026-10-26 the bound was one
+repository per session (#56), which is why the code is older than its title.
 
 `SESSIONS_011` is a runner older than the agent that was picked. A runner probes
 the command of every agent it can launch, installed or not, so a host whose last

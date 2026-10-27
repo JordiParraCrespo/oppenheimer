@@ -1690,13 +1690,11 @@ export type PutSessionShareRequest = {
 
 export type PrepareSessionRequest = {
     hostId: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
 };
 
 export type PrepareSessionResponseDto = {
@@ -8446,7 +8444,7 @@ export type AddCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_010 — A session checks out one repository
+     * SESSIONS_010 — That session already checks out five repositories, the most a session may
      *
      * SESSIONS_005 — That session is closed
      *
