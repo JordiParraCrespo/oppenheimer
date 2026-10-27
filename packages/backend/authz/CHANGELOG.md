@@ -1,5 +1,24 @@
 # @oppenheimer/backend-authz
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [39dbe36]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [581c202]
+- Updated dependencies [6af341b]
+- Updated dependencies [a80436f]
+- Updated dependencies [d4606c6]
+- Updated dependencies [6917f62]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/backend-core@0.4.0
+
 ## 0.2.0
 
 ### Minor Changes
