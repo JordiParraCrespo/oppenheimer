@@ -3,7 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
 import {
+  type CloudSessionState,
   type CreateSessionDto,
+  placeOfCreate,
   SESSION_SORTS,
   type SessionAttachmentDto,
   type SessionDecision,
@@ -27,6 +29,7 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import type { SessionLaunchFile } from './domain/session-launch-file.types';
 import {
+  type AgentObservedState,
   launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
@@ -84,6 +87,14 @@ export interface AppendedEventRow {
  * the row alone, every input being a column the fold projects, so a listing needs no
  * log walk and a mapper cannot be handed an observation the log never recorded.
  */
+const CLOUD_OBSERVED: Record<CloudSessionState, AgentObservedState> = {
+  running: 'working',
+  'needs-input': 'blocked',
+  failed: 'blocked',
+  done: 'done',
+  stopped: 'done',
+};
+
 @Injectable()
 export class WorkSessionMapper
   implements Mapper<WorkSessionEntity, WorkSessionOrmEntity, SessionResponseDto>
@@ -139,10 +150,9 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
-        // The place is read off the folder and `cloud`; the row's `place`
-        // column and its CHECKs are the store's own guard that they agree.
+        // The row's CHECKs hold the place and the folder to each other.
+        place: record.place,
         folderPath: record.folderPath,
-        cloud: record.place === 'cloud',
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
@@ -330,6 +340,33 @@ export class WorkSessionMapper
    * `prompt.first` carries the composer's task, and is absent rather than empty
    * when there was none.
    */
+  /**
+   * What the extension saw a cloud session doing on claude.ai, in the observed
+   * vocabulary a runner's screen reading uses, so its dot is drawn by the same
+   * rules as any other (`session-group.policy.ts`). A failed turn waits on the
+   * person as a question does; a finished one is ready for a prompt.
+   */
+  cloudObservedState(cloudState: CloudSessionState): AgentObservedState {
+    return CLOUD_OBSERVED[cloudState];
+  }
+
+  /** The extension's report as the log's `agent.observed`, keyed to its command and session. */
+  toCloudObservedEvent(
+    commandId: string,
+    session: WorkSessionEntity,
+    cloudState: CloudSessionState,
+  ): NewSessionEvent {
+    return {
+      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+        `${commandId}:${session.id}`,
+        SESSION_EVENT_KINDS.AGENT_OBSERVED,
+      ),
+      source: 'api',
+      kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+      payload: { state: this.cloudObservedState(cloudState), cloudState },
+    };
+  }
+
   toRequestEvents(props: {
     commandId: string;
     userId: string;
@@ -350,9 +387,8 @@ export class WorkSessionMapper
           agent: input.agent,
           hostId: input.hostId,
           checkouts: props.checkouts,
-          ...(input.folder
-            ? { place: 'folder', folder: input.folder }
-            : { place: input.cloud ? 'cloud' : 'worktree' }),
+          place: placeOfCreate(input),
+          ...(input.folder ? { folder: input.folder } : {}),
           requestedByUserId: props.userId,
           launch: this.toLaunch(input.agent, input.launch),
         },

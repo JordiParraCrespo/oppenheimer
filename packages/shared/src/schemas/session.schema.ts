@@ -216,6 +216,16 @@ export const createSessionSchema = createSessionFields
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
 
+/**
+ * Where a create asks the session to run: a `folder` names a folder session,
+ * `cloud` a cloud session, and anything else is a worktree per checkout. The
+ * one reading of a create's place; everything after it holds the place itself.
+ */
+export function placeOfCreate(input: Pick<CreateSessionDto, 'folder' | 'cloud'>): SessionPlace {
+  if (input.folder !== undefined) return 'folder';
+  return input.cloud ? 'cloud' : 'worktree';
+}
+
 /** A Claude Code cloud session's id, as claude.ai/code and `claude --teleport` name it. */
 export const cloudSessionIdSchema = z.string().regex(/^session_[A-Za-z0-9]{8,64}$/);
 

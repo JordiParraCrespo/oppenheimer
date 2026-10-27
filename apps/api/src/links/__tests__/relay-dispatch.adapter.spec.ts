@@ -120,6 +120,7 @@ describe('RelayDispatchAdapter', () => {
         hostId: HOST,
         slug: 'bold-otter-3f9a7k',
         agent: 'claude-code',
+        place: 'folder',
         folder: '/home/jordi/notes',
       });
 

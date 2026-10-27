@@ -63,11 +63,12 @@ export interface WorkSessionProps extends SessionFold {
    */
   folderPath: string | null;
   /**
-   * A session started in Claude Code's cloud from its host: it runs on
-   * claude.ai/code, and the host keeps nothing (`cloud-agents.md` §5B).
-   * Immutable, like the folder.
+   * Where it runs (`product/versions/mvp/24-session-places.md`): a worktree
+   * per checkout, a folder on the host (`folderPath`), or Claude Code's cloud,
+   * started from the host and then living on claude.ai/code (§7). The one
+   * stored fact the place is; immutable, like the agent.
    */
-  cloud: boolean;
+  place: SessionPlace;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -94,8 +95,11 @@ export interface CreateWorkSessionProps {
    * checkouts are attached after the request.
    */
   folder?: string | null;
-  /** Started in Claude Code's cloud from the host, which keeps nothing running. */
-  cloud?: boolean;
+  /**
+   * Where it runs. Absent is a worktree session; `folder` needs `folder`, the
+   * path it runs in, and no other place takes one.
+   */
+  place?: SessionPlace;
   name?: string;
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
@@ -137,6 +141,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * prompt, so a deployment that names nothing loses nothing.
    */
   static request(props: CreateWorkSessionProps): WorkSessionEntity {
+    const place = props.place ?? 'worktree';
+    if ((place === 'folder') !== Boolean(props.folder)) {
+      throw new ArgumentInvalidException('A folder session names its folder, and only it does');
+    }
     const session = new WorkSessionEntity({
       id: randomUUID(),
       props: {
@@ -153,8 +161,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
-        folderPath: props.folder || null,
-        cloud: props.cloud ?? false,
+        place,
+        folderPath: place === 'folder' ? (props.folder ?? null) : null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         origin: props.origin ?? 'person',
@@ -244,10 +252,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
-  /** Where it runs: Claude Code's cloud, a folder on the host, or a worktree per checkout. */
+  /** Where it runs: a worktree per checkout, a folder on the host, or Claude Code's cloud. */
   get place(): SessionPlace {
-    if (this.props.cloud) return 'cloud';
-    return this.props.folderPath === null ? 'worktree' : 'folder';
+    return this.props.place;
   }
 
   /**

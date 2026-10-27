@@ -7,6 +7,7 @@ import type {
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { SessionDispatchPort } from '../session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../session-launch.factory';
+import type { SessionLaunchCredentials } from '../session-launch-credentials.resolver';
 import { SessionReconciliationResolver } from '../session-reconciliation.resolver';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
@@ -19,7 +20,7 @@ function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
-    folder,
+    ...(folder ? { place: 'folder' as const, folder } : {}),
   });
   if (state === 'open') {
     entity.recordEvent({ seq: 2, kind: 'session.started', payload: {}, occurredAt: new Date() });
@@ -48,11 +49,14 @@ function harness(rows: HostSessionRow[]) {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
     close: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
-  const launches = new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+  const launches = new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+  );
   return {
     sessions,
     dispatch,

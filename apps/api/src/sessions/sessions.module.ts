@@ -12,10 +12,12 @@ import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLaunchCredentials } from './application/session-launch-credentials.resolver';
 import { SessionLoaderResolver } from './application/session-loader.resolver';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
@@ -212,6 +214,8 @@ const adapters: Provider[] = [
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,
+    SessionLaunchCredentials,
+    RepositoryTokenFactory,
     SessionNamingResolver,
     SessionLoaderResolver,
     SessionAttachmentsResolver,

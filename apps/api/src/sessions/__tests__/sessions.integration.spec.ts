@@ -74,7 +74,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       slug: overrides.slug ?? mintSessionSlug(),
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
-      folder: overrides.folder,
+      ...(overrides.folder ? { place: 'folder' as const, folder: overrides.folder } : {}),
     });
   }
 
@@ -969,6 +969,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           hostId,
           slug: mintSessionSlug(),
           agent: 'shell',
+          place: 'folder',
           folder: '/home/ana',
         }),
         requested(),

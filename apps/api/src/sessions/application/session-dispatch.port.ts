@@ -2,6 +2,7 @@ import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
+import type { SealedRepositoryToken } from './repository-token.factory';
 
 export interface SessionDispatchOutcome {
   /** Whether the job reached a live link to the host. */
@@ -54,11 +55,16 @@ export interface SessionLaunchSpec {
   images?: SessionLaunchFile[];
   /**
    * A cloud session's repository token, minted for its one checkout and sealed
-   * to the host: the host fetches with it, and nothing on the host names a
-   * live checkout for a credential ask to find. Absent for every other place;
-   * a cloud session without it is not sent.
+   * to the host (`SessionLaunchCredentials`): the host fetches with it, since
+   * nothing on the host names a live checkout for a credential ask to find.
    */
-  cloud?: { sealed: string; expiresAt: Date };
+  cloud?: SealedRepositoryToken;
+  /**
+   * Why this launch cannot be sent yet, when something it must carry could not
+   * be made: the dispatch answers it as its hint and sends nothing, and the
+   * hello reconciliation builds the launch again.
+   */
+  withheld?: 'host_offline';
 }
 
 export interface SessionCloseSpec {

@@ -64,9 +64,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
       if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
-      // A cloud create without its token would reach the runner as a worktree
-      // session and open a terminal; the token comes with the host's key.
-      if (session.place === 'cloud' && !spec.cloud) return OFFLINE;
+      // Something the launch must carry could not be made yet.
+      if (spec.withheld) return { delivered: false, hints: [spec.withheld] };
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
@@ -259,7 +258,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
     ...placeOf(session, spec),
-    ...(session.place === 'cloud' && spec.cloud
+    ...(spec.cloud
       ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
       : {}),
   };

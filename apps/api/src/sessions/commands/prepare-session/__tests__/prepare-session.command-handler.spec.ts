@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RepositoryAccessPort } from '../../../../github/application/repository-access.port';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import type { HostKeyPort } from '../../../../hosts/application/host-key.port';
+import { RepositoryTokenFactory } from '../../../application/repository-token.factory';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { PrepareSessionCommand } from '../prepare-session.command';
 import { PrepareSessionCommandHandler } from '../prepare-session.command-handler';
@@ -44,6 +45,7 @@ function harness() {
     keys,
     repositories as RepositoryAccessPort,
     dispatch as SessionDispatchPort,
+    new RepositoryTokenFactory(repositories as RepositoryAccessPort, keys as HostKeyPort),
   );
   return { dispatch, handler };
 }

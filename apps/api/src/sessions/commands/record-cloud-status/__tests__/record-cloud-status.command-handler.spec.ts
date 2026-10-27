@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
+import { WorkSessionMapper } from '../../../work-session.mapper';
 import { RecordCloudStatusCommand } from '../record-cloud-status.command';
 import { RecordCloudStatusCommandHandler } from '../record-cloud-status.command-handler';
 
@@ -27,7 +28,7 @@ function startedCloudSession(): WorkSessionEntity {
     hostId: 'host-1',
     slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
-    cloud: true,
+    place: 'cloud',
   });
   session.recordEvent({
     seq: 1,
@@ -65,7 +66,10 @@ describe('RecordCloudStatusCommandHandler', () => {
           },
         ),
     };
-    handler = new RecordCloudStatusCommandHandler(sessions as unknown as WorkSessionRepositoryPort);
+    handler = new RecordCloudStatusCommandHandler(
+      sessions as unknown as WorkSessionRepositoryPort,
+      new WorkSessionMapper(),
+    );
   });
 
   const report = (state: 'running' | 'needs-input' | 'failed' | 'done' | 'stopped') =>
