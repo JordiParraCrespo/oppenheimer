@@ -78,7 +78,8 @@
       },
       "json": {
         "tree": "Árbol",
-        "raw": "Texto"
+        "raw": "Texto",
+        "more": "Mostrar {{count}} más"
       }
     }
   },

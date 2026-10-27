@@ -183,6 +183,7 @@ function ChatJsonBlock({
   language,
   labels,
   annotate,
+  moreLabel,
   className,
   children,
 }: {
@@ -194,6 +195,8 @@ function ChatJsonBlock({
   labels?: Partial<ChatJsonBlockLabels>;
   /** A note after a leaf of the tree (`JsonTree`'s). */
   annotate?: JsonTreeAnnotate;
+  /** The tree's button for the members past a level's first 200 (`JsonTree`'s). */
+  moreLabel?: (count: number) => string;
   className?: string;
   /** The code drawn for Raw (highlighted spans); the text itself when left out. */
   children?: React.ReactNode;
@@ -215,7 +218,7 @@ function ChatJsonBlock({
       />
       {view === 'tree' ? (
         <div className="overflow-x-auto pt-2 pr-5.5 pb-4 pl-3">
-          <JsonTree value={value} annotate={annotate} />
+          <JsonTree value={value} annotate={annotate} moreLabel={moreLabel} />
         </div>
       ) : (
         <NumberedCode code={code}>{children}</NumberedCode>

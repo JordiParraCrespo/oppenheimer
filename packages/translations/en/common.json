@@ -77,7 +77,8 @@
     },
     "json": {
       "tree": "Tree",
-      "raw": "Raw"
+      "raw": "Raw",
+      "more": "Show {{count}} more"
     }
   }
 }

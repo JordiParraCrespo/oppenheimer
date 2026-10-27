@@ -1,4 +1,5 @@
 import type { JsonTreeAnnotate } from '@oppenheimer/design-system-web';
+import { useTranslation } from 'react-i18next';
 import { dateFormatter, useLocale } from '../../i18n';
 import { isoTimeOf, readJsonBlock } from '../lib/json-block';
 
@@ -9,10 +10,11 @@ const TIME_NOTE: Intl.DateTimeFormatOptions = {
   timeZone: 'UTC',
 };
 
-/** What a `JsonTree` draws for text that holds JSON: the value, and a note per ISO time. */
+/** What a `JsonTree` draws for text that holds JSON: the value, a note per ISO time, its words. */
 export interface JsonView {
   value: unknown;
   annotate: JsonTreeAnnotate;
+  moreLabel: (count: number) => string;
 }
 
 /**
@@ -22,6 +24,7 @@ export interface JsonView {
  * `null` leaves the text to be drawn as it is.
  */
 export function useJsonView(text: string, language?: string): JsonView | null {
+  const { t } = useTranslation();
   const locale = useLocale();
   const json = readJsonBlock(text, language);
   if (!json) return null;
@@ -31,5 +34,6 @@ export function useJsonView(text: string, language?: string): JsonView | null {
       const time = isoTimeOf(value);
       return time ? `${dateFormatter(locale, TIME_NOTE).format(time)} UTC` : null;
     },
+    moreLabel: (count) => t('common.chat.json.more', { count }),
   };
 }
