@@ -43,6 +43,7 @@ import {
   REAUTHORIZE_INTERVAL_MS,
 } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
+import type { PreviewProxyGateway } from '../infrastructure/preview-proxy.gateway';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import {
@@ -50,6 +51,12 @@ import {
   LINK_PING_INTERVAL_MS,
   RunnerLinkGateway,
 } from '../infrastructure/runner-link.gateway';
+
+/** A deployment with no preview domain: the preview proxy claims nothing. */
+const NO_PREVIEWS = {
+  intercept: () => {},
+  addressOf: () => null,
+} as unknown as PreviewProxyGateway;
 
 /**
  * The two sockets, end to end, minus Postgres and Redis: a runner that dials
@@ -228,7 +235,8 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     flags,
   );
   const server = createServer((_request, response) => response.writeHead(404).end());
-  const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
+  // Previews off: no preview domain, so the proxy claims nothing.
+  const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers, NO_PREVIEWS);
   upgrade.mount(server);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;

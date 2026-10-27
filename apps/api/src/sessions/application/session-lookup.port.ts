@@ -20,8 +20,14 @@ export interface AttachTicket {
   userId: string;
   /** Present when the attach came through a share. */
   share?: AttachTicketShare;
-  /** `device`: the session's device screen, not a window's terminal. */
-  target?: 'device';
+  /**
+   * `device`: the session's device screen, not a window's terminal.
+   * `preview`: one of the session's ports, redeemed by its preview origin
+   * rather than the attach socket (`product/versions/mvp/28-session-previews.md`).
+   */
+  target?: 'device' | 'preview';
+  /** The port a `preview` ticket opens. */
+  port?: number;
 }
 
 export interface AttachTicketShare {

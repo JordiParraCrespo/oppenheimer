@@ -31,6 +31,8 @@ import { CreateSessionCommandHandler } from './commands/create-session/create-se
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
+import { IssueSessionPreviewHttpController } from './commands/issue-session-preview/issue-session-preview.http.controller';
 import { IssueSharedAttachTicketCommandHandler } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.command-handler';
 import { IssueSharedAttachTicketHttpController } from './commands/issue-shared-attach-ticket/issue-shared-attach-ticket.http.controller';
 import { MoveSessionCommandHandler } from './commands/move-session/move-session.command-handler';
@@ -70,6 +72,8 @@ import { FindSessionHttpController } from './queries/find-session/find-session.h
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
 import { FindSessionEventsQueryHandler } from './queries/find-session-events/find-session-events.query-handler';
+import { FindSessionPortsHttpController } from './queries/find-session-ports/find-session-ports.http.controller';
+import { FindSessionPortsQueryHandler } from './queries/find-session-ports/find-session-ports.query-handler';
 import { FindSessionShareHttpController } from './queries/find-session-share/find-session-share.http.controller';
 import { FindSessionShareQueryHandler } from './queries/find-session-share/find-session-share.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
@@ -102,6 +106,7 @@ const httpControllers = [
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
+  IssueSessionPreviewHttpController,
   SetSessionSharePeopleHttpController,
   FindSessionShareHttpController,
   PutSessionShareHttpController,
@@ -118,6 +123,7 @@ const httpControllers = [
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
+  FindSessionPortsHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -131,6 +137,7 @@ const commandHandlers: Provider[] = [
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
   IssueAttachTicketCommandHandler,
+  IssueSessionPreviewCommandHandler,
   PutSessionShareCommandHandler,
   SetSessionSharePeopleCommandHandler,
   StopSessionShareCommandHandler,
@@ -147,6 +154,7 @@ const queryHandlers: Provider[] = [
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
+  FindSessionPortsQueryHandler,
 ];
 
 const adapters: Provider[] = [

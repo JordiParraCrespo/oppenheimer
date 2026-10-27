@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 import { parseEnv } from './env';
@@ -30,10 +31,31 @@ const schema = z.object({
     })
     .refine((value) => entries(value).length <= 8, { message: 'at most 8 ICE servers' })
     .transform(entries),
+  /**
+   * Where sessions' previews live (`product/versions/mvp/28-session-previews.md`):
+   * a scheme, a domain and an optional port, each preview a host under the
+   * domain (`p5173-<session>.<domain>`). **Optional**: without it the console
+   * offers no Browser tab. Never the console's own origin, and in production
+   * a registrable domain of its own: a preview runs what the session's agent
+   * wrote, and must not set a cookie the console reads.
+   */
+  previewBaseUrl: z
+    .string()
+    .url()
+    .optional()
+    .refine((value) => !value || new URL(value).pathname === '/', {
+      message: 'a preview base URL is an origin, with no path',
+    }),
 });
 
 export const relayConfig = registerAs('relay', () =>
   parseEnv('relay', schema, {
     iceServers: 'RELAY_ICE_SERVERS',
+    previewBaseUrl: 'PREVIEW_BASE_URL',
   }),
 );
+
+/** Whether this deployment serves sessions' previews. */
+export function previewsAreConfigured(config: ConfigService): boolean {
+  return Boolean(config.get<string>('relay.previewBaseUrl'));
+}

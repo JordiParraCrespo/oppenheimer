@@ -143,7 +143,10 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'port.listing': {
     type: 'port.listing',
     commandId,
-    ports: [{ port: 3001, process: 'node' }, { port: 5173, process: 'node' }],
+    ports: [
+      { port: 3001, process: 'node' },
+      { port: 5173, process: 'node' },
+    ],
   },
   'port.open': { type: 'port.open', commandId, sessionId, attachmentId: 11, port: 5173 },
   'port.opened': { type: 'port.opened', attachmentId: 11 },

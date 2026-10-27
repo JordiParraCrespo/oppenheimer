@@ -326,3 +326,39 @@ export class AttachTicketResponseDto {
   })
   window!: number;
 }
+
+export class SessionPreviewResponseDto {
+  @ApiProperty({
+    description:
+      "Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.",
+    example:
+      'http://p5173-3f0d9e2c6a4b4e9a9c3d7b1e5a2f8c40.preview.localhost:3001/__oppenheimer/enter?ticket=…&path=%2F&embed=1',
+  })
+  url!: string;
+
+  @ApiProperty({ description: 'The ticket in `url` is refused after this.' })
+  expiresAt!: Date;
+}
+
+export class SessionPortDto {
+  @ApiProperty({ example: 5173 })
+  port!: number;
+
+  @ApiProperty({ required: false, description: 'The command listening on it.', example: 'node' })
+  process?: string;
+}
+
+export class SessionPortsResponseDto {
+  @ApiProperty({
+    enum: ['listed', 'host_offline', 'not_supported'],
+    description:
+      '`listed`: `ports` is what the session listens on now. `host_offline`: the host has no link. `not_supported`: its runner cannot list ports.',
+  })
+  state!: 'listed' | 'host_offline' | 'not_supported';
+
+  @ApiProperty({
+    type: [SessionPortDto],
+    description: 'The TCP ports the session’s own processes listen on, from 1024 up, in order.',
+  })
+  ports!: SessionPortDto[];
+}

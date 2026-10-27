@@ -238,4 +238,10 @@ export const SessionErrors = {
     message: 'The host did not answer in time',
     httpStatus: 504,
   },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_032',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

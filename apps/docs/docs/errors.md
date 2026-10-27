@@ -514,6 +514,7 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | Previews are not configured on this server      | 501  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.

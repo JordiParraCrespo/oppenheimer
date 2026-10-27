@@ -38,9 +38,16 @@ import type { SessionReconciliationPort } from '../../sessions/application/sessi
 import { HostUnpairedDomainEventHandler } from '../application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
+import type { PreviewProxyGateway } from '../infrastructure/preview-proxy.gateway';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
+
+/** A deployment with no preview domain: the preview proxy claims nothing. */
+const NO_PREVIEWS = {
+  intercept: () => {},
+  addressOf: () => null,
+} as unknown as PreviewProxyGateway;
 
 /**
  * The real runner binary against the real relay, minus Postgres and Redis. Real: the
@@ -224,7 +231,7 @@ async function boot(): Promise<World> {
     // The direct path (22) stays off here: this suite proves the relay's.
     { isEnabled: () => false } as unknown as FlagEvaluatorPort,
   );
-  new RelayUpgradeGateway({} as never, runners, browsers).mount(server);
+  new RelayUpgradeGateway({} as never, runners, browsers, NO_PREVIEWS).mount(server);
 
   const log: string[] = [];
   const runner = spawn(join(bin, 'runner'), ['run'], {
