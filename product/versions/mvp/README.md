@@ -727,6 +727,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   its own directory of the session folder (two repositories sharing a name
   take `<repo>` and `<owner>--<repo>`). The create body takes one to
   `MAX_SESSION_CHECKOUTS` (5) distinct repositories, the agent starts in
-  the first unless `cwdGithubRepoId` names another, and adding one past
-  the bound is `SESSIONS_010`, which keeps its code. A session with none
+  the first unless `cwdGithubRepoId` names another. Adding one to a
+  running session stays refused (`SESSIONS_010`, which keeps its code):
+  the wire has no frame that adds a worktree to a live session, so the
+  repositories are picked at create. A session with none
   is still refused (2026-09-27).

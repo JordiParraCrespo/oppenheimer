@@ -109,7 +109,7 @@
     "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
     "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
     "SESSIONS_009": "Choose a project for this session.",
-    "SESSIONS_010": "A session works on at most five repositories. Start a new session for another.",
+    "SESSIONS_010": "A running session keeps the repositories it started with. Pick up to five when you start a session.",
     "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
     "HOSTS_001": "That host could not be found.",
     "HOSTS_002": "That pairing token could not be found.",

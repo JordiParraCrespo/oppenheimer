@@ -13,9 +13,10 @@ import { AddCheckoutCommand } from '../add-checkout.command';
 import { AddCheckoutCommandHandler } from '../add-checkout.command-handler';
 
 /**
- * A session checks out up to `MAX_SESSION_CHECKOUTS` repositories, one worktree
- * each: another is added below the bound, and refused at it here, before a row is
- * written, rather than by the host after it was.
+ * A session picks its repositories at create, up to `MAX_SESSION_CHECKOUTS`. A
+ * running session has no way to take another (the wire has no frame for it), so
+ * one added later is refused here, before a row is written, rather than recorded
+ * and never made on the host.
  */
 
 const SCOPE = {
@@ -87,23 +88,15 @@ function harness(work: WorkSessionEntity) {
 }
 
 describe('AddCheckoutCommandHandler', () => {
-  it('adds a second repository to a session that has one, and tells the host', async () => {
-    const work = sessionWithRepositories(1);
-    const { sessions, dispatch, add, added } = harness(work);
+  it.each([1, MAX_SESSION_CHECKOUTS])(
+    'refuses a repository on a running session that has %i with SESSIONS_010, writing nothing',
+    async (count) => {
+      const { sessions, plan, dispatch, add } = harness(sessionWithRepositories(count));
 
-    await expect(add()).resolves.toMatchObject({ sessionId: work.id });
-    expect(sessions.insertCheckout).toHaveBeenCalledWith(work, added, expect.any(Array));
-    expect(dispatch.addCheckout).toHaveBeenCalledWith(work, added, expect.anything());
-  });
-
-  it('refuses one past MAX_SESSION_CHECKOUTS with SESSIONS_010 and writes nothing', async () => {
-    const { sessions, plan, dispatch, add } = harness(
-      sessionWithRepositories(MAX_SESSION_CHECKOUTS),
-    );
-
-    await expect(add()).rejects.toMatchObject({ code: 'SESSIONS_010' });
-    expect(plan.attachCheckout).not.toHaveBeenCalled();
-    expect(sessions.insertCheckout).not.toHaveBeenCalled();
-    expect(dispatch.addCheckout).not.toHaveBeenCalled();
-  });
+      await expect(add()).rejects.toMatchObject({ code: 'SESSIONS_010' });
+      expect(plan.attachCheckout).not.toHaveBeenCalled();
+      expect(sessions.insertCheckout).not.toHaveBeenCalled();
+      expect(dispatch.addCheckout).not.toHaveBeenCalled();
+    },
+  );
 });

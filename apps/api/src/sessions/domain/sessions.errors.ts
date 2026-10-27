@@ -77,15 +77,16 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A repository past `MAX_SESSION_CHECKOUTS` on a session that already holds that
-   * many. The runner makes a worktree (and keeps a clone) per checkout, so the
-   * create body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host. The code
-   * dates from the one-repository MVP (#56); the bound was raised on 2026-10-26.
+   * A repository added to a session that already checks out one. The runner
+   * makes a worktree (and keeps a clone) per checkout, at create only: a create
+   * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
+   * no frame that adds one to a running session, so a later add is refused
+   * before a row is written rather than recorded and never made. The code dates
+   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
    */
   TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'That session checks out as many repositories as it may',
+    message: 'A running session keeps the repositories it was created with',
     httpStatus: 409,
   },
   /**

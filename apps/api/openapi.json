@@ -9903,7 +9903,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_010 — That session already checks out five repositories, the most a session may\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "description": "SESSIONS_010 — A running session keeps the repositories it was created with\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
             "content": {
               "application/problem+json": {
                 "schema": {

@@ -8444,7 +8444,7 @@ export type AddCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_010 — That session already checks out five repositories, the most a session may
+     * SESSIONS_010 — A running session keeps the repositories it was created with
      *
      * SESSIONS_005 — That session is closed
      *

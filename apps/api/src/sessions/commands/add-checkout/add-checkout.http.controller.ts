@@ -68,7 +68,7 @@ export class AddCheckoutHttpController {
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({
     status: 409,
-    description: 'That session already checks out five repositories, the most a session may',
+    description: 'A running session keeps the repositories it was created with',
     code: 'SESSIONS_010',
   })
   async add(
