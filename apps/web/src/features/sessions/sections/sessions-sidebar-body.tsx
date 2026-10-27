@@ -199,7 +199,7 @@ export function SessionsSidebarBody() {
           {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
             pane. */}
-          {projects.length === 0 ? (
+          {groups.length === 0 && hiddenCount === 0 ? (
             <div className="px-3 pt-2">
               <EmptyState compact>
                 <EmptyState.Header>
