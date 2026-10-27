@@ -1,10 +1,13 @@
+import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
+
 /**
  * What happened in the Inbox on this visit (`29-inbox.md` §5): the log above
- * the card, the items sent to the end with Later, what was marked done (for
- * Show done) and what was answered and is waiting for its source to say so.
- * The marks behind it are stored; this is the page's memory only, kept
- * outside React so the list and the pane, which share no parent below the
- * shell, read one visit. It is cleared when the reader leaves the Inbox.
+ * the card, the items sent to the end with Later and what was marked done
+ * (for Show done). The marks behind it are stored; this is the page's memory
+ * only, kept outside React so the list and the pane, which share no parent
+ * below the shell, read one visit. It is cleared when the reader leaves the
+ * Inbox. What was answered and waits for its source to say so is the
+ * product package's (`inboxAnswered`), so every count leaves it out too.
  */
 export interface InboxLogEntry {
   id: number;
@@ -18,11 +21,9 @@ export interface InboxVisit {
   later: readonly string[];
   /** Keys marked done this visit: Show done lists these. */
   done: readonly string[];
-  /** Keys answered this visit, hidden before their source catches up. */
-  answered: readonly string[];
 }
 
-const EMPTY: InboxVisit = { log: [], later: [], done: [], answered: [] };
+const EMPTY: InboxVisit = { log: [], later: [], done: [] };
 
 let visit: InboxVisit = EMPTY;
 let nextId = 1;
@@ -51,25 +52,25 @@ export const inboxVisit = {
   forget(key: string) {
     write({ ...visit, done: visit.done.filter((k) => k !== key) });
   },
-  answered(key: string) {
-    write({ ...visit, answered: [...visit.answered, key] });
+  /** Hidden from the list and every count until its source catches up. */
+  answered(...keys: string[]) {
+    inboxAnswered.add(...keys);
   },
   clear() {
+    inboxAnswered.clear();
     if (visit !== EMPTY) write(EMPTY);
   },
 };
 
 /**
- * The open items in the order this visit reads them: answered ones gone,
- * those sent to the end with Later after the rest, in the order sent.
+ * The open items in the order this visit reads them: those sent to the end
+ * with Later after the rest, in the order sent.
  */
 export function visitOrder<T extends { key: string }>(items: readonly T[], state: InboxVisit): T[] {
-  const answered = new Set(state.answered);
   const later = new Map(state.later.map((key, index) => [key, index]));
-  const kept = items.filter((item) => !answered.has(item.key));
   return [
-    ...kept.filter((item) => !later.has(item.key)),
-    ...kept
+    ...items.filter((item) => !later.has(item.key)),
+    ...items
       .filter((item) => later.has(item.key))
       .sort((a, b) => (later.get(a.key) ?? 0) - (later.get(b.key) ?? 0)),
   ];

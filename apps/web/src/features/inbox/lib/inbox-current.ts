@@ -1,5 +1,4 @@
 import { inboxSubject } from '@oppenheimer/frontend-consumer';
-import type { InboxVisit } from './inbox-visit';
 
 /**
  * The item in the pane: the one the address names while it is still in the
@@ -15,12 +14,12 @@ import type { InboxVisit } from './inbox-visit';
 export function currentItem<T extends { key: string }>(
   items: readonly T[],
   key: string | null,
-  visit: Pick<InboxVisit, 'answered' | 'done'>,
+  settled: { answered: ReadonlySet<string>; done: readonly string[] },
 ): T | null {
   if (!key) return items[0] ?? null;
   const named = items.find((item) => item.key === key);
   if (named) return named;
-  if (!visit.answered.includes(key) && !visit.done.includes(key)) {
+  if (!settled.answered.has(key) && !settled.done.includes(key)) {
     const subject = inboxSubject(key);
     const same = items.find((item) => inboxSubject(item.key) === subject);
     if (same) return same;

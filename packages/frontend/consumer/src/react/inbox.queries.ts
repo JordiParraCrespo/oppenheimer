@@ -6,7 +6,7 @@ import {
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import type { RunsFilter } from '../modules/automations/automation.entity';
 import { composeInbox, type InboxSources, type InboxView } from '../modules/inbox/inbox-item';
 import { type InboxMark, InboxMarkEntity } from '../modules/inbox/inbox-mark.entity';
@@ -24,6 +24,42 @@ import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
  * API pages at once. One object, so its key is one key.
  */
 const FAILED_RUNS: RunsFilter = { statuses: ['failed'], window: '24h', limit: 100 };
+
+/**
+ * The occurrences answered from this tab whose source has not caught up yet:
+ * an approval decided, a pull request merged, a run started again, a
+ * session's decision answered while its agent still reads as blocked until
+ * its host reports. They leave the Inbox on the click; the list, its count,
+ * the bar's and the rail's all read them here, so no count holds an item the
+ * list no longer shows. The Inbox clears them when the reader leaves it.
+ */
+let answeredKeys: ReadonlySet<string> = new Set();
+const answeredListeners = new Set<() => void>();
+
+function setAnswered(next: ReadonlySet<string>): void {
+  answeredKeys = next;
+  for (const listener of answeredListeners) listener();
+}
+
+export const inboxAnswered = {
+  add(...keys: string[]): void {
+    setAnswered(new Set([...answeredKeys, ...keys]));
+  },
+  clear(): void {
+    if (answeredKeys.size > 0) setAnswered(new Set());
+  },
+};
+
+function useAnsweredKeys(): ReadonlySet<string> {
+  return useSyncExternalStore(
+    (listener) => {
+      answeredListeners.add(listener);
+      return () => answeredListeners.delete(listener);
+    },
+    () => answeredKeys,
+    () => answeredKeys,
+  );
+}
 
 function useInboxMarksQuery() {
   const app = useConsumerApp();
@@ -90,10 +126,11 @@ function sourcesOf(
  */
 export function useSuspenseInbox(
   now: number,
-): InboxView & { projects: ProjectEntity[]; error: Error | null } {
+): InboxView & { projects: ProjectEntity[]; answered: ReadonlySet<string>; error: Error | null } {
   const [sessions, approvals, requested, mine, runs, projects, marks] = useSuspenseQueries({
     queries: useInboxQueries(),
   });
+  const answered = useAnsweredKeys();
   const view = useMemo(
     () =>
       composeInbox(
@@ -107,6 +144,7 @@ export function useSuspenseInbox(
         ),
         marks.data,
         now,
+        answered,
       ),
     [
       sessions.data,
@@ -117,6 +155,7 @@ export function useSuspenseInbox(
       projects.data,
       marks.data,
       now,
+      answered,
     ],
   );
   const error =
@@ -127,7 +166,7 @@ export function useSuspenseInbox(
     runs.error ??
     projects.error ??
     marks.error;
-  return { ...view, projects: projects.data, error };
+  return { ...view, projects: projects.data, answered, error };
 }
 
 /**
@@ -136,6 +175,7 @@ export function useSuspenseInbox(
  */
 export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
+  const answered = useAnsweredKeys();
   const [sessions, approvals, requested, mine, runs, projects, marks] = results;
   if (
     !sessions?.data ||
@@ -159,6 +199,7 @@ export function useInboxCount(now: number): number | undefined {
     ),
     marks.data as InboxMarkEntity[],
     now,
+    answered,
   ).open.length;
 }
 

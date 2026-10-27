@@ -41,7 +41,7 @@ export function InboxCurrent() {
   });
 
   const { open } = listedItems(inbox, visit, search.filter, search.showDone);
-  const item = currentItem(open, search.item, visit);
+  const item = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
   const copy = item ? inboxCopy(item, t) : null;
   useInboxKeys(
     item && copy

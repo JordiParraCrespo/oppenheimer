@@ -287,6 +287,25 @@ describe('composeInbox: marks apply to one occurrence', () => {
     expect(view.done.map((item) => item.key)).toEqual(['approval:a-1']);
   });
 
+  // Answered from this tab, its source not caught up yet: out of every list,
+  // so the counts the header, the bar and the rail draw match the rows.
+  it('leaves out an occurrence answered here, and only that one', () => {
+    const view = composeInbox(
+      sources({ approvals: [approval('a-1', 5), approval('a-2', 4)] }),
+      [mark('approval:a-1', 'done')],
+      NOW,
+      new Set(['approval:a-1', 'approval:a-2']),
+    );
+    expect(view).toEqual({ open: [], done: [], snoozed: [] });
+    const later = composeInbox(
+      sources({ approvals: [approval('a-1', 5), approval('a-3', 4)] }),
+      [],
+      NOW,
+      new Set(['approval:a-1']),
+    );
+    expect(later.open.map((item) => item.key)).toEqual(['approval:a-3']);
+  });
+
   it('brings a pull request back when a new push changes its head commit', () => {
     const view = composeInbox(
       sources({ requested: [pull(1, { headSha: 'bbb222' })] }),

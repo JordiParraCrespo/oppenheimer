@@ -36,7 +36,7 @@ export function InboxSidebarList() {
   const marks = useInboxMarks();
 
   const { open, done } = listedItems(inbox, visit, search.filter, search.showDone);
-  const current = currentItem(open, search.item, visit);
+  const current = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
   const projectName = (id: string) => inbox.projects.find((project) => project.id === id)?.name;
   const counts = facetCounts(inbox.open, search.filter);
   const projectOptions = [

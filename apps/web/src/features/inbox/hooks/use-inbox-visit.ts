@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { type InboxVisit, inboxVisit } from '../lib/inbox-visit';
 
-/** This visit's log, Later order, done and answered keys; the list and the pane read the same one. */
+/** This visit's log, Later order and done keys; the list and the pane read the same one. */
 export function useInboxVisit(): InboxVisit {
   return useSyncExternalStore(inboxVisit.subscribe, inboxVisit.get, inboxVisit.get);
 }

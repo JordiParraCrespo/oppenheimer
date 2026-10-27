@@ -221,18 +221,21 @@ function inboxItems(sources: InboxSources): InboxItem[] {
  * The Inbox after the caller's marks (§3): done and deleted hide, done
  * staying under Show done; a snooze hides until it ends and lists in
  * Snoozed; low sorts last. A mark whose occurrence no source names is
- * never read.
+ * never read. `answered` are occurrences answered here whose source has not
+ * caught up yet: gone from every list, so each count agrees with them.
  */
 export function composeInbox(
   sources: InboxSources,
   marks: readonly InboxMarkEntity[],
   now: number,
+  answered: ReadonlySet<string> = new Set(),
 ): InboxView {
   const byKey = new Map(
     marks.filter((mark) => mark.inForce(now)).map((mark) => [mark.itemKey, mark]),
   );
   const view: InboxView = { open: [], done: [], snoozed: [] };
   for (const item of inboxItems(sources)) {
+    if (answered.has(item.key)) continue;
     const mark = byKey.get(item.key);
     switch (mark?.mark) {
       case 'deleted':
