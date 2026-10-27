@@ -52,6 +52,13 @@ export interface SessionLaunchSpec {
    * resends them with it.
    */
   images?: SessionLaunchFile[];
+  /**
+   * A cloud session's repository token, minted for its one checkout and sealed
+   * to the host: the host fetches with it, and nothing on the host names a
+   * live checkout for a credential ask to find. Absent for every other place;
+   * a cloud session without it is not sent.
+   */
+  cloud?: { sealed: string; expiresAt: Date };
 }
 
 export interface SessionCloseSpec {

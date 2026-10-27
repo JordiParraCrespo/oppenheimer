@@ -15,6 +15,7 @@ import type { SessionCheckoutEntity } from './session-checkout.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
 import {
+  type AgentObservedState,
   foldSessionEvent,
   INITIAL_SESSION_FOLD,
   launchPermissionFor,
@@ -56,6 +57,12 @@ export interface WorkSessionProps extends SessionFold {
    * the agent.
    */
   folderPath: string | null;
+  /**
+   * A session started in Claude Code's cloud from its host: it runs on
+   * claude.ai/code, and the host keeps nothing (`cloud-agents.md` §5B).
+   * Immutable, like the folder.
+   */
+  cloud: boolean;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -82,6 +89,8 @@ export interface CreateWorkSessionProps {
    * checkouts are attached after the request.
    */
   folder?: string | null;
+  /** Started in Claude Code's cloud from the host, which keeps nothing running. */
+  cloud?: boolean;
   name?: string;
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
@@ -140,6 +149,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         slug: props.slug,
         agent: props.agent,
         folderPath: props.folder || null,
+        cloud: props.cloud ?? false,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         origin: props.origin ?? 'person',
@@ -229,9 +239,18 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
-  /** Where it runs, read off `folderPath`: a folder on the host, or a worktree per checkout. */
+  /** Where it runs: Claude Code's cloud, a folder on the host, or a worktree per checkout. */
   get place(): SessionPlace {
+    if (this.props.cloud) return 'cloud';
     return this.props.folderPath === null ? 'worktree' : 'folder';
+  }
+
+  /**
+   * The Claude Code cloud session's id (`session_…`), once the host has started
+   * it: what claude.ai/code and `claude --teleport` name it by. Null otherwise.
+   */
+  get cloudSessionId(): string | null {
+    return this.place === 'cloud' ? this.props.agentSessionId : null;
   }
 
   /** The folder a folder session runs in; null for a worktree session. */
@@ -253,6 +272,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get idempotencyKey(): string | null {
     return this.props.idempotencyKey;
+  }
+
+  /** What the agent was last observed doing, and since when that was confirmed; null until reported. */
+  get lastObservedState(): AgentObservedState | null {
+    return this.props.lastObservedState;
+  }
+
+  get observedSince(): Date | null {
+    return this.props.observedSince;
   }
 
   get state(): SessionState {

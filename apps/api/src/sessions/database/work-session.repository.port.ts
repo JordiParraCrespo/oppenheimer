@@ -233,6 +233,16 @@ export interface WorkSessionRepositoryPort {
   /** `None` both for a missing session and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>>;
 
+  /**
+   * The caller's unresolved cloud sessions among these Claude Code ids: what the
+   * browser extension's status report can touch. An id this workspace did not
+   * launch matches nothing.
+   */
+  findCloudByCloudIds(
+    scope: AccessScope,
+    cloudIds: readonly string[],
+  ): Promise<WorkSessionEntity[]>;
+
   /** The session a client's `Idempotency-Key` already created, if any. */
   findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<WorkSessionEntity>>;
 

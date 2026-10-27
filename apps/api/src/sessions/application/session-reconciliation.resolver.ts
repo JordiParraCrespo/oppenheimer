@@ -25,6 +25,7 @@ import type {
  * `session.closed` even for a session it no longer knows. An owed close replaces an
  * owed launch: a session is never built only to be closed. A `failed` session is read
  * for that alone: a person may delete one, and nothing else here concerns it.
+ * A started cloud session is never held by its host, so it is never recorded stopped.
  * What the host holds that the rows do not know is logged and left alone: ending
  * someone's work is not a side effect of a hello.
  *
@@ -61,6 +62,9 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
           }
         } else if (
           session.state === 'open' &&
+          // A cloud session lives on claude.ai/code: the host never holds it,
+          // and its absence from a hello is not a lost pane.
+          session.place !== 'cloud' &&
           session.stoppedAt === null &&
           (await this.recordStopped(session, runId))
         ) {

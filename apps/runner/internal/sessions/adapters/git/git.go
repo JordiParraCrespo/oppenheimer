@@ -511,6 +511,23 @@ func (c *Client) Add(ctx context.Context, repo domain.Repository, path, branch, 
 	return nil
 }
 
+// AddDetached checks base out at path on a detached HEAD: a scratch
+// checkout no branch is made for and nothing is committed on. A cloud start
+// runs `claude --cloud` in one, which takes the session from the commit, and
+// removes it (Remove) when the CLI is done.
+func (c *Client) AddDetached(ctx context.Context, repo domain.Repository, path, base string) error {
+	if err := repo.Validate(); err != nil {
+		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+	}
+	store := c.storeOf(repo)
+	defer c.lock(store)()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
+	}
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store}, "worktree", "add", "--detach", path, startPoint(base))
+	return err
+}
+
 // Remove deletes a worktree and prunes git's record of it. A worktree someone
 // already deleted by hand is only pruned: `worktree remove` refuses a path
 // that is not there, and what is left to do is forget it.

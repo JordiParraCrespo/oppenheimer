@@ -135,9 +135,10 @@ export class WorkSessionMapper
         hostId: record.hostId,
         slug: record.slug,
         agent: record.agent as SessionAgent,
-        // The place is read off the folder; the row's `place` column and its
-        // CHECK are the store's own guard that the two agree.
+        // The place is read off the folder and `cloud`; the row's `place`
+        // column and its CHECKs are the store's own guard that they agree.
         folderPath: record.folderPath,
+        cloud: record.place === 'cloud',
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
@@ -334,7 +335,9 @@ export class WorkSessionMapper
           agent: input.agent,
           hostId: input.hostId,
           checkouts: props.checkouts,
-          ...(input.folder ? { place: 'folder', folder: input.folder } : { place: 'worktree' }),
+          ...(input.folder
+            ? { place: 'folder', folder: input.folder }
+            : { place: input.cloud ? 'cloud' : 'worktree' }),
           requestedByUserId: props.userId,
           launch: this.toLaunch(input.agent, input.launch),
         },
@@ -604,6 +607,7 @@ export class WorkSessionMapper
     dto.agent = entity.agent;
     dto.place = entity.place;
     dto.folderPath = entity.folderPath;
+    dto.cloudSessionId = entity.cloudSessionId;
     dto.launch = {
       model: entity.launch.model,
       permission: entity.launch.permission,

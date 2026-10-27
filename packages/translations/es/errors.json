@@ -229,6 +229,7 @@
     "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
     "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
     "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+    "SESSIONS_032": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
     "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",

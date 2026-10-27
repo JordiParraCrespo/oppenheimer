@@ -162,6 +162,22 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
+  it('takes a cloud session as Claude Code with one checkout and a task, and nothing else', () => {
+    const cloud = {
+      hostId: uuid,
+      agent: 'claude-code',
+      checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      prompt: 'Fix the wallet list',
+      cloud: true,
+    };
+    expect(createSessionSchema.safeParse(cloud).success).toBe(true);
+    expect(createSessionSchema.safeParse({ ...cloud, prompt: undefined }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ ...cloud, agent: 'codex' }).success).toBe(false);
+    expect(
+      createSessionSchema.safeParse({ ...cloud, checkouts: [], folder: '/home/jordi' }).success,
+    ).toBe(false);
+  });
+
   it('takes a session that names no project: the API lists it in Unassigned', () => {
     expect(
       createSessionSchema.safeParse({

@@ -20,18 +20,20 @@ export async function requireLaunchableHost(
   hosts: HostAccessPort,
   links: LinkRegistryPort,
   scope: AccessScope,
-  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder'>,
+  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder' | 'cloud'>,
 ): Promise<void> {
   const { hostId, agent } = input;
   const host = await hosts.assertUsable(scope, hostId);
   const refusal = runnerRefusal(
-    { agent, place: input.folder ? 'folder' : 'worktree' },
+    { agent, place: input.folder ? 'folder' : input.cloud ? 'cloud' : 'worktree' },
     { probedTools: host.probedTools, capabilities: links.find(hostId)?.capabilities ?? null },
   );
   if (!refusal) return;
   const detail =
     refusal === SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER
       ? `The runner on host ${hostId} predates folder sessions; update it to start one in a folder`
-      : `The runner on host ${hostId} does not know the agent ${agent}; update it to start one`;
+      : refusal === SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER
+        ? `The runner on host ${hostId} predates cloud sessions; update it to start one in the cloud`
+        : `The runner on host ${hostId} does not know the agent ${agent}; update it to start one`;
   throw new AppError(refusal, { detail });
 }

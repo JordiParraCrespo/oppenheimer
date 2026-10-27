@@ -283,3 +283,27 @@ describe('a moved session', () => {
     expect(work.projectId).toBe('project-1');
   });
 });
+
+describe('a cloud session', () => {
+  it('is in the cloud place, and names its Claude Code session once the host started it', () => {
+    const session = WorkSessionEntity.request({
+      organizationId: 'org-acme',
+      projectId: 'project-1',
+      createdByUserId: 'user-1',
+      hostId: 'host-1',
+      slug: 'bold-otter-3f9a7k',
+      agent: 'claude-code',
+      cloud: true,
+    });
+    expect(session.place).toBe('cloud');
+    expect(session.cloudSessionId).toBeNull();
+
+    session.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: 'session_014a8EH8DJs95X1iK8ZH9Y82', checkouts: [] },
+      occurredAt: new Date(),
+    });
+    expect(session.cloudSessionId).toBe('session_014a8EH8DJs95X1iK8ZH9Y82');
+  });
+});

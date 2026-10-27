@@ -74,6 +74,10 @@
         "label": "Folder on host",
         "description": "Open an existing directory as it is · nothing is cloned"
       },
+      "cloud": {
+        "label": "Claude Code cloud",
+        "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
+      },
       "hosts": "Hosts",
       "startIn": "Start in"
     },
@@ -574,5 +578,13 @@
       "nextQuestion": "Next question",
       "of": "{{n}} of {{total}}"
     }
+  },
+  "cloud": {
+    "eyebrow": "Claude Code cloud",
+    "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+    "open": "Open in claude.ai",
+    "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+    "copy": "Copy command",
+    "copied": "Copied"
   }
 }

@@ -50,11 +50,12 @@ export function SessionBar({
           >
             {t(`sessions.session.state.${stateWordFor(session)}`)}
           </StatusDot>
-          <LatencyReadout sessionId={session.id} />
+          {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
+          {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
         </>
       }
       tabs={tabs}
-      actions={<SessionShareButton sessionId={session.id} />}
+      actions={session.isCloud ? null : <SessionShareButton sessionId={session.id} />}
       // On the terminal's ground with a hairline under it, whichever view is
       // on screen: the chat stands on the same ground, so bar, grid and chat
       // read as one surface and switching views changes no colour.

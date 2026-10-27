@@ -9676,6 +9676,62 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/sessions/cloud-status": {
+      "post": {
+        "description": "The browser extension's view of the person's Claude Code cloud sessions on claude.ai. The ones this workspace launched (`place: cloud`) record it as the agent's observed state, which draws their dot; the rest are ignored.",
+        "operationId": "recordCloudStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportCloudStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCloudStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Report what Claude Code cloud sessions are doing",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/sessions/prepare": {
       "post": {
         "description": "Clones or fetches each repository on the host and makes a spare worktree there, so the session created next starts without waiting on git. Nothing is recorded and the host does not reply; a host that is offline or whose runner predates this is named in `hints`, and the create then does the work itself.",
@@ -22303,8 +22359,8 @@
           },
           "place": {
             "type": "string",
-            "enum": ["worktree", "folder"],
-            "description": "Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).",
+            "enum": ["worktree", "folder", "cloud"],
+            "description": "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.",
             "example": "worktree"
           },
           "folderPath": {
@@ -22312,6 +22368,12 @@
             "description": "The absolute path on the host a folder session runs in. Null for a worktree session.",
             "nullable": true,
             "example": "/home/jordi/notes"
+          },
+          "cloudSessionId": {
+            "type": "string",
+            "description": "A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.",
+            "nullable": true,
+            "example": "session_014a8EH8DJs95X1iK8ZH9Y82"
           },
           "launch": {
             "$ref": "#/components/schemas/SessionLaunchResponseDto"
@@ -22511,6 +22573,9 @@
             "minLength": 1,
             "maxLength": 4096,
             "pattern": "^\\/[^\\0]*$"
+          },
+          "cloud": {
+            "type": "boolean"
           },
           "cwdGithubRepoId": {
             "type": "integer",
@@ -22793,6 +22858,41 @@
           }
         },
         "required": ["audience", "access", "lifetime"]
+      },
+      "ReportCloudStatusRequest": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "properties": {
+                "cloudSessionId": {
+                  "type": "string",
+                  "pattern": "^session_[A-Za-z0-9]{8,64}$"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": ["running", "needs-input", "failed", "done", "stopped"]
+                }
+              },
+              "required": ["cloudSessionId", "state"]
+            }
+          }
+        },
+        "required": ["sessions"]
+      },
+      "ReportCloudStatusResponse": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "number",
+            "description": "How many of the reported cloud sessions this workspace launched.",
+            "example": 1
+          }
+        },
+        "required": ["matched"]
       },
       "PrepareSessionRequest": {
         "type": "object",
@@ -24616,6 +24716,9 @@
                 "minLength": 1,
                 "maxLength": 4096,
                 "pattern": "^\\/[^\\0]*$"
+              },
+              "cloud": {
+                "type": "boolean"
               },
               "cwdGithubRepoId": {
                 "type": "integer",

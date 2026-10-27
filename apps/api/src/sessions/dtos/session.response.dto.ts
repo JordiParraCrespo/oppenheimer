@@ -165,7 +165,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_PLACES,
     description:
-      'Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).',
+      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.",
     example: 'worktree',
   })
   place!: SessionPlace;
@@ -178,6 +178,15 @@ export class SessionResponseDto {
     example: '/home/jordi/notes',
   })
   folderPath!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      "A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.",
+    nullable: true,
+    type: String,
+    example: 'session_014a8EH8DJs95X1iK8ZH9Y82',
+  })
+  cloudSessionId!: string | null;
 
   @ApiProperty({ type: SessionLaunchResponseDto })
   launch!: SessionLaunchResponseDto;

@@ -17,6 +17,10 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
+	if m.Cloud != nil {
+		h.createCloud(ctx, m)
+		return
+	}
 	in, checkout, err := createInput(m, h.account())
 	if err != nil {
 		h.fail(m.CommandID, err)

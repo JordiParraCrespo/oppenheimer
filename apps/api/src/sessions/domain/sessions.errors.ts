@@ -238,4 +238,13 @@ export const SessionErrors = {
     message: 'The host did not answer in time',
     httpStatus: 504,
   },
+  /**
+   * A cloud session for a host whose live runner did not name `session.cloud`:
+   * it would open a terminal instead of starting the task in the cloud.
+   */
+  CLOUD_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_032',
+    message: "This host's runner cannot start a session in the cloud",
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

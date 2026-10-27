@@ -74,6 +74,7 @@ export class CreateSessionCommandHandler
       slug: mintSessionSlug(),
       agent: input.agent,
       folder: input.folder,
+      cloud: input.cloud,
       name: input.name,
       idempotencyKey: command.idempotencyKey,
       origin: command.origin,

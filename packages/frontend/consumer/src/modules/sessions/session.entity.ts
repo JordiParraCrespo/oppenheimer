@@ -162,7 +162,29 @@ export class SessionEntity {
     public readonly closeRequest: SessionCloseRequest | null = null,
     /** Why the host refused the last delete, until it is asked again. */
     public readonly closeRefusal: SessionCloseRefusal | null = null,
+    /**
+     * A `cloud` session's Claude Code id (`session_…`), once its host has
+     * started it; null before, and for every other place.
+     */
+    public readonly cloudSessionId: string | null = null,
   ) {}
+
+  /** Whether it runs in Claude Code's cloud: no terminal here, its page is claude.ai/code. */
+  get isCloud(): boolean {
+    return this.place === 'cloud';
+  }
+
+  /** The cloud session's page on claude.ai, once it has one. */
+  get cloudUrl(): string | null {
+    return this.cloudSessionId
+      ? `https://claude.ai/code/${encodeURIComponent(this.cloudSessionId)}`
+      : null;
+  }
+
+  /** The command that brings the cloud session's branch and conversation into a terminal. */
+  get teleportCommand(): string | null {
+    return this.cloudSessionId ? `claude --teleport ${this.cloudSessionId}` : null;
+  }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
   get isClosing(): boolean {
@@ -240,6 +262,7 @@ export class SessionEntity {
       this.folderPath,
       this.closeRequest,
       this.closeRefusal,
+      this.cloudSessionId,
     );
   }
 }
@@ -257,12 +280,17 @@ export interface CreateSessionCheckout {
 export type CreateSessionInput = CreateSessionCommon &
   (CreateWorktreeSession | CreateFolderSession);
 
-/** A new worktree: the runner clones and cuts a branch. */
+/**
+ * A new worktree: the runner clones and cuts a branch. With `cloud`, the host
+ * starts the task in Claude Code's cloud from that repository instead, and
+ * keeps nothing: Claude Code only, with a prompt.
+ */
 export interface CreateWorktreeSession {
   /** Exactly one: a runner makes a session as one worktree of one repository. */
   checkouts: [CreateSessionCheckout];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
+  cloud?: boolean;
   folder?: never;
 }
 
@@ -272,6 +300,7 @@ export interface CreateFolderSession {
   folder: string;
   checkouts?: never;
   cwdGithubRepoId?: never;
+  cloud?: never;
 }
 
 interface CreateSessionCommon {

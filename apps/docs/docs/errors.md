@@ -514,6 +514,7 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | This host's runner cannot start a session in the cloud | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -538,6 +539,11 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
+
+`SESSIONS_032` is a cloud session (`place: cloud`, `product/research/cloud-agents.md` §5B)
+for a host whose live runner did not announce `session.cloud`: it would open a terminal
+instead of starting the task in Claude Code's cloud. As with `025`, a host with no link
+right now is not refused.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -910,6 +916,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
+| `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

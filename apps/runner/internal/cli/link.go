@@ -84,6 +84,10 @@ type linkHandler struct {
 	// lanes orders each session's commands off the read loop.
 	lanes *lanes
 
+	// cloudStarts holds the sessions whose `claude --cloud` is running or
+	// done (link_cloud.go), so a create sent again does not start a second.
+	cloudStarts sync.Map
+
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	// earlyResize holds a viewport that arrived before its attachment was
@@ -269,7 +273,7 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat,
+		link.CapabilityAttachmentChat, link.CapabilitySessionCloud,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)

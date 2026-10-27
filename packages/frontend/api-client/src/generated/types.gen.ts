@@ -1487,13 +1487,17 @@ export type SessionResponseDto = {
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     /**
-     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.
      */
-    place: 'worktree' | 'folder';
+    place: 'worktree' | 'folder' | 'cloud';
     /**
      * The absolute path on the host a folder session runs in. Null for a worktree session.
      */
     folderPath?: string | null;
+    /**
+     * A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.
+     */
+    cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
     /**
      * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
@@ -1569,6 +1573,7 @@ export type CreateSessionRequest = {
         baseBranch?: string;
     }>;
     folder?: string;
+    cloud?: boolean;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -1686,6 +1691,20 @@ export type PutSessionShareRequest = {
     access: 'read' | 'write';
     people?: Array<string>;
     lifetime: '1h' | '8h' | '24h' | '7d' | null;
+};
+
+export type ReportCloudStatusRequest = {
+    sessions: Array<{
+        cloudSessionId: string;
+        state: 'running' | 'needs-input' | 'failed' | 'done' | 'stopped';
+    }>;
+};
+
+export type ReportCloudStatusResponse = {
+    /**
+     * How many of the reported cloud sessions this workspace launched.
+     */
+    matched: number;
 };
 
 export type PrepareSessionRequest = {
@@ -2296,6 +2315,7 @@ export type StartTaskSessionRequest = {
             baseBranch?: string;
         }>;
         folder?: string;
+        cloud?: boolean;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -8342,6 +8362,32 @@ export type StopSessionResponses = {
 };
 
 export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
+
+export type RecordCloudStatusData = {
+    body: ReportCloudStatusRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-status';
+};
+
+export type RecordCloudStatusErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RecordCloudStatusError = RecordCloudStatusErrors[keyof RecordCloudStatusErrors];
+
+export type RecordCloudStatusResponses = {
+    200: ReportCloudStatusResponse;
+};
+
+export type RecordCloudStatusResponse = RecordCloudStatusResponses[keyof RecordCloudStatusResponses];
 
 export type PrepareSessionData = {
     body: PrepareSessionRequest;

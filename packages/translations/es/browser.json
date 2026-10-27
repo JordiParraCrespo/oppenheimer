@@ -326,6 +326,7 @@
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
       "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
+      "SESSIONS_032": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -579,6 +580,10 @@
         "folder": {
           "label": "Carpeta del host",
           "description": "Abre un directorio existente tal como está · no se clona nada"
+        },
+        "cloud": {
+          "label": "Nube de Claude Code",
+          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
         "hosts": "Hosts",
         "startIn": "Empezar en"
@@ -1083,6 +1088,14 @@
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
       }
+    },
+    "cloud": {
+      "eyebrow": "Nube de Claude Code",
+      "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
+      "open": "Abrir en claude.ai",
+      "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+      "copy": "Copiar comando",
+      "copied": "Copiado"
     }
   },
   "bots": {

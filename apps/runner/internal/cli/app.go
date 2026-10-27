@@ -26,6 +26,7 @@ import (
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	svcdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/agenttrust"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/cloud"
 	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
@@ -66,6 +67,9 @@ type App struct {
 	// Worktrees is the sessions' git, kept for waiting on the spare worktree
 	// it makes after a create (CreateSession).
 	Worktrees *gitadapter.Client
+	// Cloud starts a task in Claude Code's cloud with the host's own
+	// `claude` (link_cloud.go); nil is the real CLI.
+	Cloud CloudStarter
 	// WorkFolder is the work folder's own bookkeeping: its layout file and
 	// the markers of the folders the runner makes there.
 	WorkFolder *workfolder.Folder
@@ -176,6 +180,7 @@ func New(version string) (*App, error) {
 	}
 	app.Sessions = sessions
 	app.Worktrees = worktrees
+	app.Cloud = cloud.Starter{}
 	app.WorkFolder = places
 	app.Terminals = terminals
 

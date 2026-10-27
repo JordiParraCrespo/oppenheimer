@@ -229,6 +229,7 @@
     "SESSIONS_029": "That path is a file, not a folder.",
     "SESSIONS_030": "That folder can’t be read on the host.",
     "SESSIONS_031": "The host didn’t answer in time. Try again.",
+    "SESSIONS_032": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",

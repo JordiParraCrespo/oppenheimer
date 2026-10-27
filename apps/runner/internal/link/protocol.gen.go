@@ -75,6 +75,7 @@ const (
 	CapabilitySessionFolder       = "session.folder"
 	CapabilityFsList              = "fs.list"
 	CapabilityAttachmentChat      = "attachment.chat"
+	CapabilitySessionCloud        = "session.cloud"
 )
 
 // The `type` of every message on the link.
@@ -344,6 +345,7 @@ type SessionCreate struct {
 	Folder           string                `json:"folder,omitempty"`
 	Checkouts        []Checkout            `json:"checkouts"`
 	CwdCheckoutID    *string               `json:"cwdCheckoutId"`
+	Cloud            *SessionCreateCloud   `json:"cloud,omitempty"`
 }
 
 // LaunchOptions is SessionCreate.Launch.
@@ -368,6 +370,12 @@ type Checkout struct {
 	RepositoryFullName string `json:"repositoryFullName"`
 	DirectoryName      string `json:"directoryName"`
 	BaseBranch         string `json:"baseBranch"`
+}
+
+// SessionCreateCloud is SessionCreate.Cloud.
+type SessionCreateCloud struct {
+	Sealed    string    `json:"sealed"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 // SessionAttach is the `session.attach` message.

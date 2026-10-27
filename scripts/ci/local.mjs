@@ -268,6 +268,13 @@ if (any) {
       : []),
     // oppenheimer:end runner
     ['turbo test', 'pnpm', ['turbo', 'run', 'test', ...filters]],
+    // oppenheimer:begin extension
+    // The built extension in Chromium against a fake claude.ai: the page
+    // tap, the poll, the badge, the notifications and the popup.
+    ...(touches(packages, '@oppenheimer/extension')
+      ? [['Extension in Chromium', 'pnpm', ['--filter', '@oppenheimer/extension', 'e2e']]]
+      : []),
+    // oppenheimer:end extension
     // oppenheimer:begin web
     ...(touches(packages, '@oppenheimer/web')
       ? [
