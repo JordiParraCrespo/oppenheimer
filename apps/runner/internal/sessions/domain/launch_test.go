@@ -64,7 +64,7 @@ func TestOpenCodeEffortIsTheVariantInConfiguration(t *testing.T) {
 	if got := launch.Args(AgentOpenCode); !reflect.DeepEqual(got, []string{"--model", "anthropic/claude-opus-5-5", "--prompt", "go"}) {
 		t.Fatalf("argv = %q, want no effort in it", got)
 	}
-	off := Launch{Model: "anthropic/claude-haiku-4-5", Permission: "full", Effort: "none", EffortIsLevel: true}
+	off := Launch{Model: "anthropic/claude-haiku-5-5", Permission: "full", Effort: "none", EffortIsLevel: true}
 	if env := off.Env(AgentOpenCode); len(env) != 0 {
 		t.Fatalf("haiku with thinking off sets nothing, got %v", env)
 	}

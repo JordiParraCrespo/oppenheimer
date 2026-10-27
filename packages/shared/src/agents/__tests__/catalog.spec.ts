@@ -66,8 +66,19 @@ describe('coding agent catalog', () => {
     expect(effortFor('codex', 'gpt-6-sol')?.default).toBe('medium');
     expect(effortFor('codex', 'gpt-6.1-terra')?.default).toBe('medium');
     expect(levelsOf('codex', 'gpt-6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
-    expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
-    expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');
+    // Haiku 5.5's thinking is a toggle, off unasked, so off is a level of its own.
+    expect(levelsOf('opencode', 'anthropic/claude-haiku-5-5')).toEqual([
+      'none',
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ]);
+    expect(effortFor('opencode', 'anthropic/claude-haiku-5-5')?.default).toBe('none');
+    // Each provider's variants, not one list for every model OpenCode reaches.
+    expect(levelsOf('opencode', 'xai/grok-4.7')).toEqual(['low', 'medium', 'high', 'xhigh']);
+    expect(levelsOf('opencode', 'google/gemini-4-argon')).toEqual(['low', 'medium', 'high']);
     expect(effortFor('shell', null)).toBeUndefined();
     // A model the catalog does not list has levels nobody here knows.
     expect(effortFor('codex', 'gpt-4o')).toBeUndefined();
