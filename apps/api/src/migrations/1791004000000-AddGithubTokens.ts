@@ -31,8 +31,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Bounded: a person has a handful of tokens and a pin per repository at most.
  */
-export class AddGithubTokens1791003900000 implements MigrationInterface {
-  name = 'AddGithubTokens1791003900000';
+export class AddGithubTokens1791004000000 implements MigrationInterface {
+  name = 'AddGithubTokens1791004000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

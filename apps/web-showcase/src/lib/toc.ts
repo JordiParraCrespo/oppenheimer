@@ -229,7 +229,7 @@ export const TOC: TocGroup[] = [
     items: [
       { id: 'chattranscript', label: 'Transcript', icon: MessageSquareIcon, components: ['chat-transcript'] },
       { id: 'chatwork', label: 'Work and tools', icon: SlidersHorizontalIcon, components: ['chat-work', 'chat-trace'] },
-      { id: 'chatelements', label: 'AI elements', icon: CodeIcon, components: ['chat-elements', 'chat-composer', 'chat-image'] },
+      { id: 'chatelements', label: 'AI elements', icon: CodeIcon, components: ['chat-elements', 'chat-composer', 'chat-image', 'json-tree'] },
       { id: 'chatcards', label: 'Cards', icon: RectangleHorizontalIcon, components: ['chat-cards'] },
       { id: 'chatstatus', label: 'Dividers and status', icon: TriangleAlertIcon, components: ['chat-status'] },
       { id: 'chatstack', label: 'Above the composer', icon: LayersIcon, components: ['chat-composer-stack'] },

@@ -20,6 +20,7 @@ import type { SessionCheckoutEntity } from './session-checkout.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
 import {
+  type AgentObservedState,
   foldSessionEvent,
   INITIAL_SESSION_FOLD,
   launchPermissionFor,
@@ -61,6 +62,13 @@ export interface WorkSessionProps extends SessionFold {
    * the agent.
    */
   folderPath: string | null;
+  /**
+   * Where it runs (`product/versions/mvp/24-session-places.md`): a worktree
+   * per checkout, a folder on the host (`folderPath`), or Claude Code's cloud,
+   * started from the host and then living on claude.ai/code (§7). The one
+   * stored fact the place is; immutable, like the agent.
+   */
+  place: SessionPlace;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -87,6 +95,11 @@ export interface CreateWorkSessionProps {
    * checkouts are attached after the request.
    */
   folder?: string | null;
+  /**
+   * Where it runs. Absent is a worktree session; `folder` needs `folder`, the
+   * path it runs in, and no other place takes one.
+   */
+  place?: SessionPlace;
   name?: string;
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
@@ -128,6 +141,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * prompt, so a deployment that names nothing loses nothing.
    */
   static request(props: CreateWorkSessionProps): WorkSessionEntity {
+    const place = props.place ?? 'worktree';
+    if ((place === 'folder') !== Boolean(props.folder)) {
+      throw new ArgumentInvalidException('A folder session names its folder, and only it does');
+    }
     const session = new WorkSessionEntity({
       id: randomUUID(),
       props: {
@@ -144,7 +161,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
-        folderPath: props.folder || null,
+        place,
+        folderPath: place === 'folder' ? (props.folder ?? null) : null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         origin: props.origin ?? 'person',
@@ -234,9 +252,17 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
-  /** Where it runs, read off `folderPath`: a folder on the host, or a worktree per checkout. */
+  /** Where it runs: a worktree per checkout, a folder on the host, or Claude Code's cloud. */
   get place(): SessionPlace {
-    return this.props.folderPath === null ? 'worktree' : 'folder';
+    return this.props.place;
+  }
+
+  /**
+   * The Claude Code cloud session's id (`session_…`), once the host has started
+   * it: what claude.ai/code and `claude --teleport` name it by. Null otherwise.
+   */
+  get cloudSessionId(): string | null {
+    return this.place === 'cloud' ? this.props.agentSessionId : null;
   }
 
   /** The folder a folder session runs in; null for a worktree session. */
@@ -258,6 +284,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get idempotencyKey(): string | null {
     return this.props.idempotencyKey;
+  }
+
+  /** What the agent was last observed doing, and since when that was confirmed; null until reported. */
+  get lastObservedState(): AgentObservedState | null {
+    return this.props.lastObservedState;
+  }
+
+  get observedSince(): Date | null {
+    return this.props.observedSince;
   }
 
   get state(): SessionState {
@@ -305,6 +340,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    */
   get inputRefusal(): ErrorDefinition | null {
     if (this.isResolved) return SessionErrors.ALREADY_RESOLVED;
+    // A cloud session has no terminal on its host to type into: it is
+    // answered and prompted on claude.ai.
+    if (this.place === 'cloud') return SessionErrors.CLOUD_TAKES_NO_INPUT;
     if (this.stoppedAt) return SessionErrors.NOT_RUNNING;
     return null;
   }

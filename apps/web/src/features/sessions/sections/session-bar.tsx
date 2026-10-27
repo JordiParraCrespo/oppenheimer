@@ -53,15 +53,19 @@ export function SessionBar({
           >
             {t(`sessions.session.state.${stateWordFor(session)}`)}
           </StatusDot>
-          <LatencyReadout sessionId={session.id} />
+          {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
+          {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
         </>
       }
       tabs={tabs}
+      // A cloud session has no terminal here: no device beside it, nothing to share.
       actions={
-        <>
-          {preview}
-          <SessionShareButton sessionId={session.id} />
-        </>
+        session.isCloud ? null : (
+          <>
+            {preview}
+            <SessionShareButton sessionId={session.id} />
+          </>
+        )
       }
       // On the terminal's ground with a hairline under it, whichever view is
       // on screen: the chat stands on the same ground, so bar, grid and chat

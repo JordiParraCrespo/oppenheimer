@@ -188,6 +188,7 @@ export type {
   RenameGithubTokenRequest,
   RenameHostRequest,
   RenameSessionRequest,
+  ReportCloudStatusRequest,
   RepositoryBranchResponseDto,
   RepositoryResponseDto,
   ResourceActionDto,

@@ -227,8 +227,9 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
 
 /**
  * Whether the draft names somewhere to run, as the create would carry it: a
- * repository `toCheckouts` keeps for a new worktree, a folder for a folder
- * session (`product/versions/mvp/24-session-places.md`).
+ * repository `toCheckouts` keeps for a new worktree or Claude Code's cloud
+ * (the cloud takes the first), a folder for a folder session
+ * (`product/versions/mvp/24-session-places.md`).
  */
 export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
   return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
@@ -268,7 +269,15 @@ export function toCreateInput(
   };
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
   const [first, ...rest] = toCheckouts(draft.scope);
-  return first ? { ...common, checkouts: [first, ...rest] } : null;
+  if (!first) return null;
+  // Claude Code's cloud takes a task and one repository, nothing else: its
+  // files would stay on the host, which the cloud never sees.
+  if (draft.where === 'cloud') {
+    if (!extras.prompt) return null;
+    const { attachmentIds: _files, ...task } = common;
+    return { ...task, agent: 'claude-code', checkouts: [first], cloud: true };
+  }
+  return { ...common, checkouts: [first, ...rest] };
 }
 
 /**

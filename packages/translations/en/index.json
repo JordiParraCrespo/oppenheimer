@@ -75,6 +75,11 @@
         "sendNow": "Send now",
         "edit": "Edit",
         "remove": "Remove from the queue"
+      },
+      "json": {
+        "tree": "Tree",
+        "raw": "Raw",
+        "more": "Show {{count}} more"
       }
     }
   },
@@ -341,6 +346,8 @@
       "SESSIONS_034": "The host is offline, so the answer was not sent.",
       "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
       "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
+      "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
+      "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -594,6 +601,10 @@
         "folder": {
           "label": "Folder on host",
           "description": "Open an existing directory as it is · nothing is cloned"
+        },
+        "cloud": {
+          "label": "Claude Code cloud",
+          "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
         "hosts": "Hosts",
         "startIn": "Start in"
@@ -1027,6 +1038,12 @@
         "interrupted": "You stopped this turn",
         "compacted": "Context compacted"
       },
+      "task": {
+        "completed": "Background task finished",
+        "failed": "Background task failed",
+        "killed": "Background task stopped",
+        "unknown": "Background task ended"
+      },
       "verb": {
         "command": "Ran",
         "read": "Read",
@@ -1129,6 +1146,14 @@
       "portsFailed": "Couldn't list the session's ports",
       "previewFailed": "Couldn't open the preview",
       "opening": "Opening localhost:{{port}}…"
+    },
+    "cloud": {
+      "eyebrow": "Claude Code cloud",
+      "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+      "open": "Open in claude.ai",
+      "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+      "copy": "Copy command",
+      "copied": "Copied"
     }
   },
   "bots": {
@@ -3136,6 +3161,78 @@
       "unknownPlace": "an unknown network",
       "attribution": "IP geolocation by DB-IP.",
       "footerNote": "This is a security email, so you always receive it."
+    }
+  },
+  "extension": {
+    "chrome": {
+      "extName": "Oppenheimer — Claude Code sessions",
+      "extShortName": "Claude sessions",
+      "extDescription": "Tells you when a Claude Code cloud session needs you.",
+      "actionTitle": "Claude Code sessions"
+    },
+    "title": "Claude Code sessions",
+    "checkNow": "Check now",
+    "badge": {
+      "none": "Claude Code sessions",
+      "needsYou_one": "{{count}} Claude Code session needs you",
+      "needsYou_other": "{{count}} Claude Code sessions need you"
+    },
+    "groups": {
+      "needsYou": "Needs you",
+      "running": "Running",
+      "done": "Done",
+      "showDone": "Show done"
+    },
+    "clear": {
+      "title": "You're clear",
+      "nothingRunning": "Nothing is running.",
+      "stillRunning_one": "{{count}} session is still running.",
+      "stillRunning_other": "{{count}} sessions are still running.",
+      "notify": "You'll get a notification when one needs you."
+    },
+    "openClaude": "Open claude.ai/code",
+    "sync": {
+      "checking": "Checking your sessions…",
+      "signedOut": "Sign in to claude.ai in this Chrome, then check again.",
+      "notFound": "Couldn't find your sessions yet. Open claude.ai/code once and the extension will learn where they are.",
+      "unreachable": "Couldn't reach claude.ai. It will try again in a minute."
+    },
+    "row": {
+      "copyCommand": "Copy command",
+      "copied": "Copied"
+    },
+    "state": {
+      "needs-input": "Needs you",
+      "failed": "Failed",
+      "done": "Finished",
+      "running": "Running",
+      "stopped": "Paused"
+    },
+    "reason": {
+      "tool": "Wants to use {{tool}}",
+      "plan": "Has a plan for you to approve",
+      "question": "Waiting for your answer",
+      "provision": "The cloud environment could not be provisioned",
+      "start": "The cloud environment failed to start",
+      "turn": "The last turn failed",
+      "paused": "Paused · reply to resume",
+      "reconnecting": "Reconnecting"
+    },
+    "notification": {
+      "open": "Open the session"
+    },
+    "oppenheimer": {
+      "label": "Oppenheimer",
+      "apiUrl": "Oppenheimer API URL",
+      "token": "API token",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "reportingTo": "Reporting to {{host}}",
+      "launched": "Reporting to {{host}} · {{count}} launched there",
+      "notReporting": "Not reporting: {{detail}}",
+      "notAUrl": "That is not a URL.",
+      "permission": "Chrome needs your permission to reach {{origin}}.",
+      "refused": "Oppenheimer refused: {{detail}}"
     }
   }
 }

@@ -334,6 +334,19 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
+  async findCloudByCloudIds(
+    scope: AccessScope,
+    cloudIds: readonly string[],
+  ): Promise<WorkSessionEntity[]> {
+    if (cloudIds.length === 0) return [];
+    const records = await this.scopedQuery(scope)
+      .andWhere(`session.place = 'cloud'`)
+      .andWhere('session.agentSessionId IN (:...cloudIds)', { cloudIds })
+      .andWhere(`session.state <> 'resolved'`)
+      .getMany();
+    return this.withCheckoutsAll(records);
+  }
+
   async findOneByIdempotencyKey(
     scope: AccessScope,
     key: string,

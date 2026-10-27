@@ -290,7 +290,7 @@ name the jobs and split *those*.
   gutter. There are four widths and one gutter (32px, 16px on a phone):
   `status` (420px) and `composer` (760px), centred in the pane; `prompt`,
   760px inside its gutter at the pane's foot (New session); `narrow`
-  (760px, the default), `wide` (1040px, tables and the session terminal),
+  (760px, the default, and the session terminal and chat), `wide` (1040px, tables),
   `board` (1240px); and `fluid`, no measure. A page that opens at the top
   opens 24px under the page bar. A bot's chat and Settings take the 760px
   and the gutter too; a screen never invents a width or a padding of its

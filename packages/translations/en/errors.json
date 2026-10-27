@@ -244,6 +244,8 @@
     "SESSIONS_034": "The host is offline, so the answer was not sent.",
     "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
     "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
+    "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
+    "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
