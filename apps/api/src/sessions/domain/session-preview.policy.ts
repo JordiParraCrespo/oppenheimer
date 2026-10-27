@@ -1,5 +1,5 @@
 /**
- * Where a session's preview lives (`product/versions/mvp/28-session-previews.md`):
+ * Where a session's preview lives (`product/versions/mvp/30-session-previews.md`):
  * one origin per session and port under the deployment's preview domain,
  * `p<port>-<session id as 32 hex>.<domain>`, so an app sees a root path and
  * cookies and storage of its own, as on `localhost:<port>`, and two sessions'

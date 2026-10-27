@@ -188,7 +188,7 @@ test.describe('Session screen', () => {
   test("the preview pane's Browser tab says when the session's host is away", async ({ page }) => {
     // Pairing here is a row with no runner, so the host never links: the
     // ports read answers that it is offline, and the tab says so rather than
-    // waiting for a dev server (28-session-previews.md).
+    // waiting for a dev server (30-session-previews.md).
     const owner = await provisionedUser('sessionbrowser');
     const hostId = await pairHost(owner.api, 'Quiet box');
     const installationId = await connectInstallation(owner.api);

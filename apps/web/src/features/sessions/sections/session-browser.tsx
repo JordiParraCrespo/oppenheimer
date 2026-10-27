@@ -4,7 +4,7 @@ import { BrowserMessage } from '../components/browser-message';
 import { SessionBrowserPorts } from './session-browser-ports';
 
 /**
- * The preview pane's Browser (`product/versions/mvp/28-session-previews.md`):
+ * The preview pane's Browser (`product/versions/mvp/30-session-previews.md`):
  * the ports the session listens on, read under Suspense and polled while the
  * tab is open. This composes the read's other states: while it first answers,
  * the line the empty tab says (the quieter of the two shapes it can take);

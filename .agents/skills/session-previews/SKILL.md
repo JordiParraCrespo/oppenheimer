@@ -6,7 +6,7 @@ description: Set up, check and troubleshoot sessions' previews, the session pane
 # Session previews
 
 A session's dev server, in the console's Browser tab and from anywhere the
-console opens. The design is `product/versions/mvp/28-session-previews.md`;
+console opens. The design is `product/versions/mvp/30-session-previews.md`;
 read it before changing anything here. In one breath:
 
 ```
@@ -165,7 +165,7 @@ listening" with its port at boot); the runner's are
 ## 5. A public link (not built)
 
 Showing a build to someone without an account is the open question in note
-28: a share link through the relay, or cloudflared/ngrok as providers behind
+30: a share link through the relay, or cloudflared/ngrok as providers behind
 one interface (`.agents/rules/provider-integrations.md`). Until then, a
 person who wants one runs it themselves on the host
 (`cloudflared tunnel --url http://localhost:5173`) and owns what that exposes:

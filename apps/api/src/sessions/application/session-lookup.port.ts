@@ -23,7 +23,7 @@ export interface AttachTicket {
   /**
    * `device`: the session's device screen, not a window's terminal.
    * `preview`: one of the session's ports, redeemed by its preview origin
-   * rather than the attach socket (`product/versions/mvp/28-session-previews.md`).
+   * rather than the attach socket (`product/versions/mvp/30-session-previews.md`).
    */
   target?: 'device' | 'preview';
   /** The port a `preview` ticket opens. */

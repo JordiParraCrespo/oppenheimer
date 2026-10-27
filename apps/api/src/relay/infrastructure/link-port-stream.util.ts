@@ -34,7 +34,7 @@ export class PortClosedError extends Error {
 
 /**
  * One TCP connection to a port a session listens on, through its host's
- * runner (`product/versions/mvp/28-session-previews.md`): `port.open` on a
+ * runner (`product/versions/mvp/30-session-previews.md`): `port.open` on a
  * new attachment, then the connection's bytes as binary frames both ways.
  * Each direction is under the link's credit window (the contract is in
  * `@oppenheimer/shared/protocol`'s `ports.ts`): this side sends while the

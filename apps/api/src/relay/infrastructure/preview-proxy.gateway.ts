@@ -60,7 +60,7 @@ const MAX_SOCKETS_PER_PORT = 16;
 type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string }> };
 
 /**
- * Sessions' previews (`product/versions/mvp/28-session-previews.md`): an HTTP
+ * Sessions' previews (`product/versions/mvp/30-session-previews.md`): an HTTP
  * listener of their own on `PREVIEW_PORT`, apart from the API's, so a
  * preview's requests (its `/api/auth/...` included) never pass through Nest,
  * Better Auth or the API's middleware, and the API's request path knows

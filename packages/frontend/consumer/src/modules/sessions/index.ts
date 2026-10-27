@@ -1,4 +1,4 @@
-export type { ChatAnswer } from './chat/question-keys';
+export type { ChatAnswer } from '@oppenheimer/shared/sessions';
 export {
   type ChatBatch,
   type ChatLimit,

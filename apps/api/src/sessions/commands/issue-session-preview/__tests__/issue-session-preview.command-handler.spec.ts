@@ -84,10 +84,10 @@ describe('IssueSessionPreviewCommandHandler', () => {
     });
   });
 
-  it('refuses with SESSIONS_032, and mints nothing, with no preview domain', async () => {
+  it('refuses with SESSIONS_035, and mints nothing, with no preview domain', async () => {
     settings['relay.previewBaseUrl'] = undefined;
 
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_032' });
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_035' });
     expect(cache.setIfAbsent).not.toHaveBeenCalled();
   });
 

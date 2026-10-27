@@ -5,7 +5,7 @@ import { PREVIEW_COOKIE } from '../../sessions/domain/session-preview.policy';
 /**
  * The pieces of a preview origin's HTTP that are pure: its cookie, and what
  * it rewrites so the session's app sees `localhost:<port>` as it would on
- * the host (`product/versions/mvp/28-session-previews.md`).
+ * the host (`product/versions/mvp/30-session-previews.md`).
  */
 
 /** How long a reader stays in a preview without opening it again from the console. */

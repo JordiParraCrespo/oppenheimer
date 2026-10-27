@@ -1,4 +1,4 @@
-# 28 — Session previews: the Browser tab
+# 30 — Session previews: the Browser tab
 
 A session's dev server, open in the console beside its terminal and from
 anywhere the console opens. Asked for on 2026-10-26 ("build the browser. I

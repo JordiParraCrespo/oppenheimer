@@ -88,7 +88,7 @@ export const RUNNER_CAPABILITIES = [
   /**
    * Answers `port.list` and `port.open`: the TCP ports a session's own
    * processes listen on, each reachable as an attachment of raw bytes, for the
-   * console's Browser tab (`product/versions/mvp/28-session-previews.md`).
+   * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
    */
   'port.forward',
 ] as const;

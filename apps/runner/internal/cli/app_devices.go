@@ -73,7 +73,7 @@ func writeSessionNote(session sessionsdomain.Session, previews bool, device *dev
 }
 
 // previewNote is how a dev server reaches the console's Browser tab
-// (product/versions/mvp/28-session-previews.md).
+// (product/versions/mvp/30-session-previews.md).
 const previewNote = `
 ## Previewing what you build
 

@@ -2,7 +2,7 @@
  * Sessions' previews through the relay, end to end inside one process: the
  * preview proxy's own HTTP server, a runner link
  * faked as a bridge that opens each port attachment as a real TCP connection,
- * and a real app behind that (`product/versions/mvp/28-session-previews.md`).
+ * and a real app behind that (`product/versions/mvp/30-session-previews.md`).
  *
  * What it holds: only a redeemed ticket gets a reader in; the app sees
  * `localhost:<port>` and never the preview's own cookie; a redirect to

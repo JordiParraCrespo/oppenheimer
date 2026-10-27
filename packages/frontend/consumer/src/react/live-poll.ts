@@ -84,7 +84,7 @@ export interface Poll<TData> {
 }
 
 /** What {@link pollWhile} reads off the query TanStack hands its interval callback. */
-interface PollQuery<TData> {
+export interface PollQuery<TData> {
   queryHash: string;
   state: { data?: TData };
 }

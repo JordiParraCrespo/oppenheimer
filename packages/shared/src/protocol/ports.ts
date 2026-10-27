@@ -2,7 +2,7 @@ import { z } from 'zod/v4';
 import { attachmentIdSchema, commandIdSchema, sessionIdSchema } from './primitives.js';
 
 /**
- * A session's ports on the link (`product/versions/mvp/28-session-previews.md`):
+ * A session's ports on the link (`product/versions/mvp/30-session-previews.md`):
  * the messages behind the `port.forward` capability. Part of
  * `protocolMessageSchema`, which is where every kind is listed; kept here so
  * the union stays the index of kinds rather than the home of every shape.

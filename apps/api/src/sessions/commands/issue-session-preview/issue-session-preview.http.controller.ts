@@ -55,7 +55,7 @@ export class IssueSessionPreviewHttpController {
   @ApiProblemResponse({
     status: 501,
     description: 'Previews are not configured',
-    code: 'SESSIONS_032',
+    code: 'SESSIONS_035',
   })
   @ApiProblemResponse({
     status: 503,

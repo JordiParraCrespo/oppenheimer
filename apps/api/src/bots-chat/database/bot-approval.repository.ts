@@ -46,10 +46,16 @@ export class BotApprovalRepository
 
   async insertPending(approval: BotApprovalEntity): Promise<'inserted' | 'pending_exists'> {
     try {
-      // The jsonb input is a plain object; TypeORM's partial type cannot see that.
-      await this.repository.insert(
-        this.mapper.toPersistence(approval) as QueryDeepPartialEntity<BotApprovalOrmEntity>,
-      );
+      await this.outbox.transaction(async (manager) => {
+        // The jsonb input is a plain object; TypeORM's partial type cannot see that.
+        await manager
+          .getRepository(BotApprovalOrmEntity)
+          .insert(
+            this.mapper.toPersistence(approval) as QueryDeepPartialEntity<BotApprovalOrmEntity>,
+          );
+        await this.outbox.stageEvents(manager, approval.domainEvents);
+      });
+      approval.clearEvents();
       approval.markPersisted();
       return 'inserted';
     } catch (error) {
@@ -99,6 +105,21 @@ export class BotApprovalRepository
     return records.map((record) => this.mapper.toDomain(record));
   }
 
+  async findInWorkspace(
+    scope: AccessScope,
+    status: BotApprovalStatus,
+    limit: number,
+  ): Promise<BotApprovalEntity[]> {
+    // IDX_bot_approval_org_status, read backwards.
+    const records = await this.scopedQuery(scope)
+      .andWhere('approval.status = :status', { status })
+      .orderBy('approval.createdAt', 'DESC')
+      .addOrderBy('approval.id', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   saveTransition(
     approval: BotApprovalEntity,
     effects: BotApprovalEffects = {},
@@ -126,6 +147,8 @@ export class BotApprovalRepository
       if (approval.statusAtLoad === 'approved') update.andWhere('"result" IS NULL');
       const result = await update.execute();
       if (result.affected !== 1) return false;
+      await this.outbox.stageEvents(manager, approval.domainEvents);
+      approval.clearEvents();
       approval.markPersisted();
       if (effects.continuation) {
         const { turn, opening } = effects.continuation;

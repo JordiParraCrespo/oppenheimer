@@ -15,7 +15,7 @@ export interface SessionPortsRead {
 }
 
 /**
- * The Browser tab's read (`product/versions/mvp/28-session-previews.md`): the
+ * The Browser tab's read (`product/versions/mvp/30-session-previews.md`): the
  * ports the session listens on, asked of its runner live, so a dev server
  * that just started appears on the tab's next poll. A host with no link, or a
  * runner that cannot list, is an answer the tab draws rather than a failure;

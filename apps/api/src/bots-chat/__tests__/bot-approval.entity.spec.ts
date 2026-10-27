@@ -1,5 +1,6 @@
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { approvalEvent, approvalEventOf } from '../domain/bot-approval.policy';
+import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
 
 /**
  * A Needs input card is decided once (`25-bots.md` §5): pending moves to
@@ -20,7 +21,43 @@ function pending(summary = 'Start Claude Code on build-02') {
   });
 }
 
+/** What the workspace stream is told: without it the Inbox learns of a card only on a poll. */
+function announced(approval: BotApprovalEntity) {
+  return approval.domainEvents
+    .filter((event) => event instanceof BotApprovalChangedDomainEvent)
+    .map((event) => (event as BotApprovalChangedDomainEvent).status);
+}
+
 describe('BotApprovalEntity', () => {
+  it('announces each move to its workspace: raised, decided, expired, run', () => {
+    const approval = pending();
+    expect(approval.domainEvents[0]).toMatchObject({
+      aggregateId: approval.id,
+      organizationId: 'org-1',
+      botId: 'bot-1',
+    });
+    approval.approve('user-1', NOW);
+    approval.recordResult('Started session s-1', false);
+    expect(announced(approval)).toEqual(['pending', 'approved', 'approved']);
+
+    const denied = pending();
+    denied.deny('user-1', NOW);
+    const expired = pending();
+    expired.expire(NOW);
+    expect([announced(denied), announced(expired)]).toEqual([
+      ['pending', 'denied'],
+      ['pending', 'expired'],
+    ]);
+  });
+
+  it('announces nothing for a move it refuses', () => {
+    const approval = pending();
+    approval.approve('user-1', NOW);
+    approval.clearEvents();
+    expect(() => approval.deny('user-1', NOW)).toThrow();
+    expect(approval.domainEvents).toEqual([]);
+  });
+
   it('starts pending, undecided, with a summary cut to fit the card', () => {
     const approval = pending('x'.repeat(600));
     expect(approval).toMatchObject({ status: 'pending', decidedAt: null, decidedByUserId: null });

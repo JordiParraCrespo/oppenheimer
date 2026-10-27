@@ -26,7 +26,7 @@ const tunnelInput = 64
 
 // tunnel is one TCP connection to a port a session listens on, as an
 // attachment: what the port sends goes up as frames under the id, each
-// direction under the link's credit window (product/versions/mvp/28-session-previews.md).
+// direction under the link's credit window (product/versions/mvp/30-session-previews.md).
 // Up, the window is the same flowWindow a terminal's PTY pump reads under;
 // down, the relay keeps it, and this side credits each frame the socket took.
 type tunnel struct {

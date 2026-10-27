@@ -17,7 +17,7 @@ export interface IssuedSessionPreview {
 
 /**
  * Opens one of a session's ports for its Browser tab
- * (`product/versions/mvp/28-session-previews.md`): an attach ticket with the
+ * (`product/versions/mvp/30-session-previews.md`): an attach ticket with the
  * `preview` target and the port, carried to the port's own preview origin,
  * which redeems it and keeps the reader in a cookie of its own.
  *

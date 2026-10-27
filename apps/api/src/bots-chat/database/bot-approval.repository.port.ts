@@ -39,6 +39,16 @@ export interface BotApprovalRepositoryPort {
   ): Promise<BotApprovalEntity[]>;
 
   /**
+   * The caller's workspace's approvals in one status, across its bots, newest
+   * first, at most `limit` (the Inbox's pending approvals).
+   */
+  findInWorkspace(
+    scope: AccessScope,
+    status: BotApprovalStatus,
+    limit: number,
+  ): Promise<BotApprovalEntity[]>;
+
+  /**
    * Stores a move, conditioned on the status the approval was loaded in (and,
    * for a result, on there being none yet), with what it owes in the same
    * transaction: the turn that reports back, or the job that runs the call.

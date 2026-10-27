@@ -1,6 +1,6 @@
 // Package ports wires a session's forwarded ports: the listeners its own
 // processes hold, reached from the host's loopback for the console's preview
-// (product/versions/mvp/28-session-previews.md).
+// (product/versions/mvp/30-session-previews.md).
 package ports
 
 import (

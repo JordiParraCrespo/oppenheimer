@@ -102,6 +102,8 @@ import { FindBotAttachmentQueryHandler } from './queries/find-bot-attachment/fin
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
 import { FindBotConversationQueryHandler } from './queries/find-bot-conversation/find-bot-conversation.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
+import { FindWorkspaceBotApprovalsHttpController } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.http.controller';
+import { FindWorkspaceBotApprovalsQueryHandler } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.query-handler';
 import { ReadBotAttachmentHttpController } from './queries/read-bot-attachment/read-bot-attachment.http.controller';
 import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/read-bot-attachment.query-handler';
 import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.controller';
@@ -117,6 +119,7 @@ const httpControllers = [
   CancelBotTurnHttpController,
   StreamBotHttpController,
   FindBotApprovalsHttpController,
+  FindWorkspaceBotApprovalsHttpController,
   DecideBotApprovalHttpController,
 ];
 
@@ -141,6 +144,7 @@ const queryHandlers: Provider[] = [
   StreamBotQueryHandler,
   FindBotApprovalQueryHandler,
   FindBotApprovalsQueryHandler,
+  FindWorkspaceBotApprovalsQueryHandler,
   FindBotAttachmentQueryHandler,
   ReadBotAttachmentQueryHandler,
 ];

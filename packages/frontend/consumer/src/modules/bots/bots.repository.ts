@@ -15,6 +15,7 @@ import {
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
+  type WorkspaceBotApprovalResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
@@ -52,6 +53,7 @@ import {
   type BotPlanWindow,
   type BotToolStep,
   BotTurnEntity,
+  WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
 import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
@@ -269,6 +271,16 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
   );
 }
 
+function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBotApprovalEntity {
+  return new WorkspaceBotApprovalEntity(
+    toApproval(dto),
+    dto.botId,
+    dto.botName,
+    dto.sessionId,
+    dto.input,
+  );
+}
+
 /** The export's lines as messages; a line that cannot be read fails the export. */
 async function* readMessages(body: ReadableStream<Uint8Array>): AsyncIterable<BotMessageEntity> {
   try {
@@ -383,6 +395,16 @@ export class BotsRepository {
       BotsErrors.STOP_FAILED,
     );
     return toTurn(data);
+  }
+
+  /** The workspace's pending cards across the bots the caller may read, newest first. */
+  @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
+  async findWorkspacePendingApprovals(): Promise<WorkspaceBotApprovalEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findWorkspaceBotApprovals({ query: { status: 'pending' } }),
+      BotsErrors.FETCH_APPROVALS_FAILED,
+    );
+    return data.map(toWorkspaceApproval);
   }
 
   /** The card the bot waits on, if any: at most one is pending. */

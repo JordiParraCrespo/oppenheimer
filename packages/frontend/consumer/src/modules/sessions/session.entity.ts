@@ -1,5 +1,6 @@
 import type { CodingAgentId, SessionEffort, SessionPermission } from '@oppenheimer/shared/agents';
 import type { SessionPlace } from '@oppenheimer/shared/schemas/session';
+import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
 export type SessionAgent = CodingAgentId;
@@ -184,6 +185,20 @@ export class SessionEntity {
     public readonly closeRequest: SessionCloseRequest | null = null,
     /** Why the host refused the last delete, until it is asked again. */
     public readonly closeRefusal: SessionCloseRefusal | null = null,
+    /**
+     * When the agent entered the state it was last observed in; null until a
+     * second report of it. A blocked wait is named by it (the Inbox).
+     */
+    public readonly observedSince: Date | null = null,
+    /** When the session's log last moved. */
+    public readonly lastEventAt: Date | null = null,
+    /** Bumped on every change of `lifecycle`: one failure or launch told from the next. */
+    public readonly stateSeq: number = 0,
+    /**
+     * What the agent waits on you to decide, as the host read it: a question it
+     * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+     */
+    public readonly decision: SessionDecision | null = null,
   ) {}
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
@@ -262,6 +277,10 @@ export class SessionEntity {
       this.folderPath,
       this.closeRequest,
       this.closeRefusal,
+      this.observedSince,
+      this.lastEventAt,
+      this.stateSeq,
+      this.decision,
     );
   }
 }

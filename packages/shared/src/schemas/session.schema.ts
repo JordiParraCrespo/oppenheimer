@@ -285,7 +285,7 @@ export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
  * `POST /sessions/{id}/previews` — open one of the session's ports in the
- * console's Browser tab (`product/versions/mvp/28-session-previews.md`).
+ * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
  */
 export const issueSessionPreviewSchema = z.object({
   /** A port the session's own processes listen on; never a system one. */

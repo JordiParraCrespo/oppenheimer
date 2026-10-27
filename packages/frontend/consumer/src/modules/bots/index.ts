@@ -22,6 +22,7 @@ export {
   type BotTurnContext,
   BotTurnEntity,
   type BotWaitingMessage,
+  type WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
 export { BotsModule } from './bots.module';
 export { BotsRepository } from './bots.repository';
