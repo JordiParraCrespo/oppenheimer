@@ -13,6 +13,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
+import { TerminalColumn } from '../components/terminal-column';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useChatReading } from '../hooks/use-session-chat';
@@ -112,16 +113,15 @@ export function SessionTerminal({
           host element and counts that host's padding as usable space, so a
           padded host overflows its own box and paints over the rows below it.
           xterm owns everything inside the inner element, scrollbar included.
-          The grid keeps a 1040px column so mono output has a readable measure
-          on a wide display; the covers below take the whole width, so the
-          chat's scrollbar sits at the pane's edge. */}
+          The grid stands in the session's column; the covers below take the
+          whole width, so the chat's scrollbar sits at the pane's edge. */}
         <div className="relative min-h-0 flex-1 overflow-hidden">
-          <div className="mx-auto size-full max-w-260 px-5 py-4">
+          <TerminalColumn className="h-full py-4">
             {/* `isolate` keeps xterm's own layers (its helpers, the typeahead,
               each with a z-index) inside the grid, so the covers below paint
               over all of them rather than under some. */}
             <div ref={containerRef} className="isolate size-full" />
-          </div>
+          </TerminalColumn>
           {/* A live link with an empty grid behind it: a new session whose agent
             has not drawn yet (the provisioning pane has handed over), or an
             older one replaying its scrollback that this tab has no kept
