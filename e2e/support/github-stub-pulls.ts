@@ -567,6 +567,47 @@ export function createPullsStub(
         checksRefused.add(`${refuse[1]}/${refuse[2]}`);
         return { status: 200, body: { refused: [...checksRefused] } };
       }
+      // The queue's one read of a repository's open pull requests, over GraphQL.
+      if (path === '/graphql' && method === 'POST' && isOpenPullsQuery(body)) {
+        const variables = (body as { variables: { owner: string; name: string } }).variables;
+        const fullName = `${variables.owner}/${variables.name}`;
+        const pulls = byRepository.get(fullName);
+        if (!pulls) {
+          return {
+            status: 200,
+            body: {
+              data: { repository: null },
+              errors: [{ type: 'NOT_FOUND', message: 'Could not resolve to a Repository' }],
+            },
+          };
+        }
+        const open = pulls
+          .filter((pull) => pull.state === 'open')
+          .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+        const refused = checksRefused.has(fullName);
+        return {
+          status: 200,
+          body: {
+            data: {
+              repository: {
+                pullRequests: {
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                  nodes: open.map((pull) => graphPullOf(fullName, pull, refused)),
+                },
+              },
+            },
+            ...(refused
+              ? {
+                  errors: open.map((_, index) => ({
+                    type: 'FORBIDDEN',
+                    message: 'Resource not accessible by integration',
+                    path: ['repository', 'pullRequests', 'nodes', index, 'commits'],
+                  })),
+                }
+              : {}),
+          },
+        };
+      }
       // Approve and merge, when the merge itself was refused: GitHub's auto-merge, over GraphQL.
       if (path === '/graphql' && method === 'POST') {
         const variables = ((body ?? {}) as { variables?: { id?: string } }).variables ?? {};
@@ -720,5 +761,74 @@ export function createPullsStub(
           return null;
       }
     },
+  };
+}
+
+function isOpenPullsQuery(body: unknown): boolean {
+  const query = (body as { query?: unknown } | null)?.query;
+  return typeof query === 'string' && query.includes('pullRequests(');
+}
+
+/** A pull request as the queue's GraphQL read asks for it. */
+function graphPullOf(fullName: string, pull: StubPull, checksRefused: boolean) {
+  const page = <T>(nodes: T[]) => ({ pageInfo: { hasNextPage: false }, nodes });
+  return {
+    id: nodeIdOf(fullName, pull),
+    number: pull.number,
+    title: pull.title,
+    url: `https://github.com/${fullName}/pull/${pull.number}`,
+    body: pull.body,
+    isDraft: pull.draft,
+    state: pull.merged ? 'MERGED' : pull.state === 'open' ? 'OPEN' : 'CLOSED',
+    merged: pull.merged,
+    mergedAt: pull.merged_at,
+    closedAt: pull.closed_at,
+    createdAt: pull.created_at,
+    updatedAt: pull.updated_at,
+    // GraphQL names a bot without the `[bot]` REST gives it.
+    author: { __typename: pull.user.type, login: pull.user.login.replace(/\[bot\]$/, '') },
+    headRefName: pull.head.ref,
+    headRefOid: pull.head.sha,
+    baseRefName: pull.base.ref,
+    headRepository: { id: `R_${pull.head.repo.id}` },
+    baseRepository: { id: `R_${pull.base.repo.id}` },
+    additions: pull.files.reduce((sum, f) => sum + f.additions, 0),
+    deletions: pull.files.reduce((sum, f) => sum + f.deletions, 0),
+    changedFiles: pull.files.length,
+    mergeable: pull.mergeable === null ? 'UNKNOWN' : pull.mergeable ? 'MERGEABLE' : 'CONFLICTING',
+    mergeStateStatus: pull.mergeable_state.toUpperCase(),
+    reviewRequests: {
+      nodes: pull.requested_reviewers.map((user) => ({
+        requestedReviewer: { __typename: user.type, login: user.login },
+      })),
+    },
+    files: page(pull.files.map((f) => ({ path: f.filename }))),
+    reviews: page(
+      pull.reviews.map((review) => ({
+        databaseId: review.id,
+        state: review.state,
+        submittedAt: review.submitted_at,
+        author: { login: review.user.login },
+      })),
+    ),
+    commits: checksRefused
+      ? null
+      : {
+          nodes: [
+            {
+              commit: {
+                statusCheckRollup: {
+                  contexts: page(
+                    pull.checks.map((outcome) => ({
+                      __typename: 'CheckRun',
+                      status: outcome === 'in_progress' ? 'IN_PROGRESS' : 'COMPLETED',
+                      conclusion: outcome === 'in_progress' ? null : outcome.toUpperCase(),
+                    })),
+                  ),
+                },
+              },
+            },
+          ],
+        },
   };
 }

@@ -42,6 +42,10 @@ var _ app.Worktrees = (*Client)(nil)
 const (
 	fetchTimeout = 10 * time.Minute
 	quickTimeout = 60 * time.Second
+	// removeTimeout bounds `worktree remove`, which deletes every file in the
+	// checkout: tens of thousands with node_modules, well past a minute on a
+	// slow disk. Killed partway, it leaves the session's delete refused.
+	removeTimeout = 10 * time.Minute
 	// waitDelay bounds how long a killed git's output is waited on.
 	waitDelay = 5 * time.Second
 )
@@ -536,7 +540,7 @@ func (c *Client) Remove(ctx context.Context, repo domain.Repository, path string
 		args = append(args, "--force")
 	}
 	args = append(args, path)
-	if _, err := c.run(ctx, quick, args...); err != nil {
+	if _, err := c.run(ctx, command{timeout: removeTimeout, dir: store}, args...); err != nil {
 		if force && c.unregistered(ctx, store, path) {
 			return c.removeUnregistered(ctx, store, path)
 		}

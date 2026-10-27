@@ -41,6 +41,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 27 | [Bot subscriptions](27-bot-subscriptions.md) | How a bot hears back from work it delegated: a subscription to a session (at start or later) wakes it with a queued turn when the task needs input, completes, fails or is stopped; thin events re-read as the owner, one wake per task and state, a wake limit; what Grok Bot and OpenAI's webhooks taught; three slices |
 | 28 | [Bots in the sections](28-bots-in-sections.md) | A Bots heading in Sessions, Automations, Plan and Pull requests, as the 2026-10-25 export draws it: a bot shows in the sections placed on it (by its owner, the section's plus, or itself), and opens its chat inside Pull requests; three slices |
 | 29 | [Inbox](29-inbox.md) | The 2026-10-25 export's new first rail item, first version: what needs you composed in the console from four reads that exist (sessions waiting on you, bot approvals, pull requests for you, failed runs), one at a time with its answer, filtered by project; done, deprioritize, snooze and delete stored as marks per occurrence; one new read, one new event; questions from Claude Code later |
+| 30 | [Session previews](30-session-previews.md) | The session pane's Browser tab: a session's dev server on an origin per session and port under a preview domain, served by the relay through the runner's link (the tunnel already open), judged as an attach by ticket then cookie, the app seeing `localhost`; an app with an API through its dev server's proxy; the ports a session's own processes listen on; why not Cloudflare Tunnel or ngrok |
 
 ## Decision log
 
@@ -736,3 +737,4 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   the wire has no frame that adds a worktree to a live session, so the
   repositories are picked at create. A session with none
   is still refused (2026-09-27).
+- 2026-10-26: **every section opens a bot's chat in place** (28): Sessions, Automations and Plan too, under their own address and sidebar, not Employees as their frames link it.

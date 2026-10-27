@@ -266,4 +266,10 @@ export const SessionErrors = {
     message: 'The host is offline, so the answer was not sent',
     httpStatus: 503,
   },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

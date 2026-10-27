@@ -9182,6 +9182,121 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/sessions/{id}/previews": {
+      "post": {
+        "description": "A URL on the port's own preview origin carrying a single-use ticket (60 seconds). The origin redeems it, keeps the reader in a cookie of its own, and serves the session's dev server through its host's runner, as if from `localhost:<port>`. Judged again at redemption and every minute after, as a terminal is.",
+        "operationId": "issueSessionPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueSessionPreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPreviewResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"session_browser_preview\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "SESSIONS_035 — Previews are not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_008 — A ticket could not be issued",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Open one of a session's ports in a preview",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/sessions/{id}/share/people": {
       "patch": {
         "description": "The people a share for specific people names, nothing else changed. To remove the last one, stop sharing.",
@@ -10537,6 +10652,91 @@
         ],
         "summary": "List a folder on a host",
         "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/sessions/{id}/ports": {
+      "get": {
+        "description": "The TCP ports the session's own processes listen on, from 1024 up, asked of its host's runner now: what its Browser tab can open. Nothing is cached.",
+        "operationId": "findSessionPorts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPortsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"session_browser_preview\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the ports a session listens on",
+        "tags": ["Sessions"]
       }
     },
     "/api/v1/automations": {
@@ -23183,6 +23383,42 @@
           }
         }
       },
+      "IssueSessionPreviewRequest": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "integer",
+            "minimum": 1024,
+            "exclusiveMinimum": false,
+            "maximum": 65535,
+            "exclusiveMaximum": false
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "embed": {
+            "type": "boolean"
+          }
+        },
+        "required": ["port"]
+      },
+      "SessionPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.",
+            "example": "http://p5173-3f0d9e2c6a4b4e9a9c3d7b1e5a2f8c40.preview.localhost:3011/__oppenheimer/enter?ticket=…&path=%2F&embed=1"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "The ticket in `url` is refused after this."
+          }
+        },
+        "required": ["url", "expiresAt"]
+      },
       "SetSessionSharePeopleRequest": {
         "type": "object",
         "properties": {
@@ -23530,6 +23766,39 @@
           }
         },
         "required": ["path", "home", "entries", "truncated", "recent"]
+      },
+      "SessionPortDto": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "number",
+            "example": 5173
+          },
+          "process": {
+            "type": "string",
+            "description": "The command listening on it.",
+            "example": "node"
+          }
+        },
+        "required": ["port"]
+      },
+      "SessionPortsResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": ["listed", "host_offline", "not_supported"],
+            "description": "`listed`: `ports` is what the session listens on now. `host_offline`: the host has no link. `not_supported`: its runner cannot list ports."
+          },
+          "ports": {
+            "description": "The TCP ports the session’s own processes listen on, from 1024 up, in order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionPortDto"
+            }
+          }
+        },
+        "required": ["state", "ports"]
       },
       "AutomationRepositoryResponseDto": {
         "type": "object",
@@ -28131,6 +28400,10 @@
             "type": "boolean",
             "description": "A workspace can store model provider keys, which bots run on."
           },
+          "session_previews": {
+            "type": "boolean",
+            "description": "A session's dev server can be opened in the console (a preview domain)."
+          },
           "github_app_install_url": {
             "type": "string",
             "nullable": true,
@@ -28145,6 +28418,7 @@
           "google_calendar",
           "hosts",
           "bot_providers",
+          "session_previews",
           "github_app_install_url"
         ]
       },

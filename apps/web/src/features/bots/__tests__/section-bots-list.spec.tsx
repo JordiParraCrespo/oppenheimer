@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SectionBotsList } from '../sections/section-bots-list';
 
 /**
- * A section's Bots heading (`28-bots-in-sections.md`): which chat a row opens,
- * the section's own in Pull requests and Employees' everywhere else, and the
- * line it shows before the first bot. Which bots a section lists is the
+ * A section's Bots heading (`28-bots-in-sections.md`): a row opens the bot's
+ * chat inside that section, so the reader never leaves it, and the heading
+ * says how one gets here before the first bot. Which bots a section lists is the
  * product package's `useSuspenseSectionBots`, mocked here.
  */
 
@@ -64,10 +64,13 @@ describe('SectionBotsList', () => {
     expect(screen.getByRole('listitem').getAttribute('href')).toBe('/pulls/bots/b1');
   });
 
-  it('opens a bot’s chat in Employees from every other section', () => {
-    listed.bots = [bot('b2', 'Session Bot', ['sessions'])];
-    render(<SectionBotsList section="sessions" />);
-    expect(screen.getByRole('listitem').getAttribute('href')).toBe('/bots/b2');
+  it('opens a bot’s chat inside Sessions, Automations and Plan too, never in Employees', () => {
+    listed.bots = [bot('b2', 'Session Bot', ['sessions', 'automations', 'plan'])];
+    for (const section of ['sessions', 'automations', 'plan'] as const) {
+      render(<SectionBotsList section={section} />);
+      expect(screen.getByRole('listitem').getAttribute('href')).toBe(`/${section}/bots/b2`);
+      cleanup();
+    }
   });
 
   it('says how a bot gets here when the section has none', () => {

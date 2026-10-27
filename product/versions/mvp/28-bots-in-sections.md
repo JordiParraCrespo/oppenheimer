@@ -25,11 +25,14 @@ bots placed in it**.
   up (25 §1). Settings → Profile's **Shows in** is a pill per section that
   saves when it flips. The bot itself, through `update_profile`, which now
   takes `sections`, so its first chat can put it where its job is.
-- **Where a row opens.** In Pull requests the chat opens inside the section
-  (`/pulls/bots/$botId`), beside the section's own list, as
-  `PullRequests.dc.html` draws it. In Sessions, Automations and Plan the row
-  opens the bot in Employees (`/bots/$botId`), as those frames link it. It is
-  the same chat either way.
+- **Where a row opens.** Inside the section it was clicked in, beside the
+  section's own list: `/sessions/bots/$botId`, `/automations/bots/$botId`,
+  `/plan/bots/$botId`, `/pulls/bots/$botId` (`botChatDestination`). The
+  reader never leaves the section for a bot; it is the same chat as in
+  Employees. Deleting the bot from there lands on the section's own page.
+  At first only Pull requests opened in place, as
+  `PullRequests.dc.html` draws it, and the other three opened Employees, as
+  their frames link it (see "Decided").
 
 Deriving the placement from the bot's permissions (a bot with the pull
 request tools shows in Pull requests) was considered first and not taken:
@@ -80,3 +83,8 @@ says what the bot is *for*, which permissions do not.
 - 2026-10-26: **Pull requests opens a bot's chat inside the section**;
   Sessions, Automations and Plan open it in Employees, as the export links
   them.
+- 2026-10-26: **every section opens a bot's chat in place.** The owner,
+  trying it: clicking a bot in Sessions should not navigate away. It
+  replaces the line above: Sessions, Automations and Plan open the chat
+  under their own address and sidebar, as Pull requests does, where their
+  frames link Employees.

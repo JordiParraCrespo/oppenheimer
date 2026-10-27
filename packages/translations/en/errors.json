@@ -236,6 +236,7 @@
     "SESSIONS_032": "That question was already answered or changed. Open the session to see what it asks now.",
     "SESSIONS_033": "That answer doesn’t fit the question. Pick from its options and try again.",
     "SESSIONS_034": "The host is offline, so the answer was not sent.",
+    "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
