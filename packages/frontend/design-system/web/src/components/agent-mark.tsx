@@ -72,6 +72,28 @@ function ZaiMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+const SHARED = 'size-[15px] shrink-0';
+const INKED = cn(SHARED, 'text-fg');
+
+/** The mark per known id; anything else draws the bot glyph. */
+const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
+  'claude-code': () => <ClaudeMark className={SHARED} />,
+  codex: () => <OpenAIMark className={INKED} />,
+  opencode: () => <OpenCodeMark className={INKED} />,
+  grok: () => <GrokMark className={INKED} />,
+  glm: () => <ZaiMark className={INKED} />,
+  chatgpt: () => <ChatGPTMark className={INKED} />,
+  shell: () => <SquareTerminalIcon className={SHARED} strokeWidth={2} aria-hidden />,
+};
+
+function markOf(agent: AgentId): React.ReactNode {
+  return Object.hasOwn(MARKS, agent) ? (
+    MARKS[agent]()
+  ) : (
+    <BotIcon className={SHARED} strokeWidth={2} aria-hidden />
+  );
+}
+
 /**
  * AgentMark — the coding agent's mark, 15px, in the agent and model picker
  * and wherever a session names its harness; a bot's model picker draws its
@@ -98,7 +120,6 @@ function AgentMark({
   className,
   ...props
 }: Omit<React.ComponentProps<'span'>, 'children'> & { agent: AgentId }) {
-  const shared = 'size-[15px] shrink-0';
   return (
     <span
       data-slot="agent-mark"
@@ -106,23 +127,7 @@ function AgentMark({
       className={cn('inline-flex shrink-0 items-center justify-center text-fg-subtle', className)}
       {...props}
     >
-      {agent === 'claude-code' ? (
-        <ClaudeMark className={shared} />
-      ) : agent === 'codex' ? (
-        <OpenAIMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'opencode' ? (
-        <OpenCodeMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'grok' ? (
-        <GrokMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'glm' ? (
-        <ZaiMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'chatgpt' ? (
-        <ChatGPTMark className={cn(shared, 'text-fg')} />
-      ) : agent === 'shell' ? (
-        <SquareTerminalIcon className={shared} strokeWidth={2} aria-hidden />
-      ) : (
-        <BotIcon className={shared} strokeWidth={2} aria-hidden />
-      )}
+      {markOf(agent)}
     </span>
   );
 }

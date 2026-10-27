@@ -1,4 +1,4 @@
-import type { AgentOption, EffortStop } from '@oppenheimer/design-system-web';
+import type { AgentId, AgentOption, EffortStop } from '@oppenheimer/design-system-web';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import {
   BOT_PROVIDER_CATALOG,
@@ -14,7 +14,7 @@ import {
  * its own and is drawn with Z.ai's mark, and ChatGPT with its app icon, a mark
  * of its own so it stays a group apart from OpenAI's in the model button.
  */
-const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
+const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, AgentId>> = {
   anthropic: 'claude-code',
   glm: 'glm',
   openai: 'codex',
@@ -22,7 +22,7 @@ const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, string>> = {
 };
 
 /** The table read the other way: a mark back to its provider. */
-const PROVIDER_OF_MARK: ReadonlyMap<string, BotProvider> = new Map(
+const PROVIDER_OF_MARK: ReadonlyMap<AgentId, BotProvider> = new Map(
   BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),
 );
 

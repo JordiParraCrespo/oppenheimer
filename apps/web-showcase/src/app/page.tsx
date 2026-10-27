@@ -133,6 +133,12 @@ import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/co
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
 
+/** A bot's providers that have no coding agent of their own, drawn with marks of theirs. */
+const PROVIDER_MARKS = [
+  { id: 'glm', label: 'GLM' },
+  { id: 'chatgpt', label: 'ChatGPT' },
+] as const;
+
 export default function Page() {
   return (
     <PageShell>
@@ -678,11 +684,11 @@ export default function Page() {
             </span>
           </Swatch>
         ))}
-        {(['glm', 'chatgpt'] as const).map((provider) => (
-          <Swatch key={provider} label={provider}>
+        {PROVIDER_MARKS.map(({ id, label }) => (
+          <Swatch key={id} label={id}>
             <span className="flex items-center gap-2.5 text-sm text-fg">
-              <AgentMark agent={provider} />
-              {provider === 'glm' ? 'GLM' : 'ChatGPT'}
+              <AgentMark agent={id} />
+              {label}
             </span>
           </Swatch>
         ))}
