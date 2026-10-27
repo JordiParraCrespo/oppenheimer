@@ -74,6 +74,10 @@
       "sendNow": "Send now",
       "edit": "Edit",
       "remove": "Remove from the queue"
+    },
+    "json": {
+      "tree": "Tree",
+      "raw": "Raw"
     }
   }
 }

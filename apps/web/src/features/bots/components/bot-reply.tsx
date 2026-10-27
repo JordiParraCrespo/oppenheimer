@@ -1,6 +1,5 @@
 import { ChatReply, StreamingCaret } from '@oppenheimer/design-system-web';
-import { Markdown } from '@oppenheimer/frontend-web';
-import { BotCodeBlock } from '@/features/bots/components/bot-code-block';
+import { ChatCode, Markdown } from '@oppenheimer/frontend-web';
 
 /**
  * What the bot said, as the markdown it wrote: headings, lists, tables,
@@ -13,7 +12,7 @@ export function BotReply({ content, streaming = false }: { content: string; stre
       <Markdown
         source={content}
         caret={streaming ? <StreamingCaret /> : undefined}
-        code={(block) => <BotCodeBlock code={block.code} language={block.language} />}
+        code={(block) => <ChatCode code={block.code} language={block.language} />}
       />
     </ChatReply>
   );

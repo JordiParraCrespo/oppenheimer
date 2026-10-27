@@ -1,11 +1,13 @@
 'use client';
 
 import { CheckIcon, CopyIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { useCopy } from '../hooks/use-copy';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
+import { type JsonTreeAnnotate, JsonTree } from './json-tree';
+import { SegmentedControl, SegmentedControlItem } from './segmented-control';
 
 /**
  * The agent chat's smaller parts (AI Elements), for a bot's chat.
@@ -22,6 +24,8 @@ import { IconButton } from './icon-button';
  *   radius: the language over the code with the copy button at its end,
  *   then the code at 13.5px mono on 1.7, its lines numbered in the gutter,
  *   scrolling sideways rather than wrapping.
+ * - `ChatJsonBlock`: a fenced block that parses as JSON, the same card
+ *   opening as a `JsonTree`, Tree / Raw on its band.
  */
 function ChatMarker({
   icon,
@@ -102,6 +106,46 @@ function ChatSource({
 
 type ChatCodeBlockLabels = { copy: string; copied: string };
 
+/** The band over a block: its language, the views it offers, Copy at the end. */
+function CodeBlockBand({
+  code,
+  language,
+  labels,
+  views,
+}: {
+  code: string;
+  language: string | undefined;
+  labels: Partial<ChatCodeBlockLabels> | undefined;
+  views?: React.ReactNode;
+}) {
+  const label = { copy: 'Copy code', copied: 'Copied', ...labels };
+  const { copied, copy } = useCopy(code);
+  return (
+    <div className="flex items-center gap-2 pt-3 pr-2.5 pl-5.5">
+      <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{language || 'text'}</span>
+      {views}
+      <IconButton size="sm" aria-label={copied ? label.copied : label.copy} title={copied ? label.copied : label.copy} onClick={copy}>
+        {copied ? <CheckIcon /> : <CopyIcon />}
+      </IconButton>
+    </div>
+  );
+}
+
+/** The code with its lines numbered in the gutter, scrolling sideways. */
+function NumberedCode({ code, children }: { code: string; children?: React.ReactNode }) {
+  const lines = code.replace(/\n$/, '').split('\n').length;
+  return (
+    <div className="flex overflow-x-auto pt-2 pb-4.5 font-mono text-[13.5px] leading-[1.7]">
+      <pre aria-hidden className="figures m-0 w-11 shrink-0 pr-3.5 text-right font-mono text-fg-subtle select-none">
+        {Array.from({ length: lines }, (_, index) => index + 1).join('\n')}
+      </pre>
+      <pre className="m-0 min-w-0 flex-1 pr-5.5 font-mono text-fg">
+        <code>{children ?? code}</code>
+      </pre>
+    </div>
+  );
+}
+
 function ChatCodeBlock({
   code,
   language,
@@ -118,28 +162,67 @@ function ChatCodeBlock({
   /** The code drawn (highlighted spans); the text itself when left out. */
   children?: React.ReactNode;
 }) {
-  const label = { copy: 'Copy code', copied: 'Copied', ...labels };
-  const { copied, copy } = useCopy(code);
-  const lines = code.replace(/\n$/, '').split('\n').length;
   return (
     <div data-slot="chat-code-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
-      <div className="flex items-center gap-2 pt-3 pr-2.5 pl-5.5">
-        <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{language || 'text'}</span>
-        <IconButton size="sm" aria-label={copied ? label.copied : label.copy} title={copied ? label.copied : label.copy} onClick={copy}>
-          {copied ? <CheckIcon /> : <CopyIcon />}
-        </IconButton>
-      </div>
-      <div className="flex overflow-x-auto pt-2 pb-4.5 font-mono text-[13.5px] leading-[1.7]">
-        <pre aria-hidden className="figures m-0 w-11 shrink-0 pr-3.5 text-right font-mono text-fg-subtle select-none">
-          {Array.from({ length: lines }, (_, index) => index + 1).join('\n')}
-        </pre>
-        <pre className="m-0 min-w-0 flex-1 pr-5.5 font-mono text-fg">
-          <code>{children ?? code}</code>
-        </pre>
-      </div>
+      <CodeBlockBand code={code} language={language} labels={labels} />
+      <NumberedCode code={code}>{children}</NumberedCode>
     </div>
   );
 }
 
-export { ChatCodeBlock, ChatMarker, ChatSource, ChatSources, ChatSuggestion, ChatSuggestions };
-export type { ChatCodeBlockLabels };
+type ChatJsonBlockLabels = ChatCodeBlockLabels & { tree: string; raw: string };
+
+/**
+ * A fenced block that holds JSON, on the same card as `ChatCodeBlock`: it
+ * opens as a `JsonTree` of `value` and switches to the code as written
+ * (Tree / Raw on its band). Copy always copies the code as written.
+ */
+function ChatJsonBlock({
+  code,
+  value,
+  language,
+  labels,
+  annotate,
+  className,
+  children,
+}: {
+  /** The code as written: what Copy copies and what Raw shows. */
+  code: string;
+  /** The code parsed. */
+  value: unknown;
+  language?: string;
+  labels?: Partial<ChatJsonBlockLabels>;
+  /** A note after a leaf of the tree (`JsonTree`'s). */
+  annotate?: JsonTreeAnnotate;
+  className?: string;
+  /** The code drawn for Raw (highlighted spans); the text itself when left out. */
+  children?: React.ReactNode;
+}) {
+  const label = { tree: 'Tree', raw: 'Raw', ...labels };
+  const [view, setView] = React.useState<'tree' | 'raw'>('tree');
+  return (
+    <div data-slot="chat-json-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
+      <CodeBlockBand
+        code={code}
+        language={language || 'json'}
+        labels={labels}
+        views={
+          <SegmentedControl value={view} onValueChange={(next) => setView(next as 'tree' | 'raw')}>
+            <SegmentedControlItem value="tree">{label.tree}</SegmentedControlItem>
+            <SegmentedControlItem value="raw">{label.raw}</SegmentedControlItem>
+          </SegmentedControl>
+        }
+      />
+      {view === 'tree' ? (
+        <div className="overflow-x-auto pt-2 pr-5.5 pb-4 pl-3">
+          <JsonTree value={value} annotate={annotate} />
+        </div>
+      ) : (
+        <NumberedCode code={code}>{children}</NumberedCode>
+      )}
+    </div>
+  );
+}
+
+export { ChatCodeBlock, ChatJsonBlock, ChatMarker, ChatSource, ChatSources, ChatSuggestion, ChatSuggestions };
+export type { ChatCodeBlockLabels, ChatJsonBlockLabels };
