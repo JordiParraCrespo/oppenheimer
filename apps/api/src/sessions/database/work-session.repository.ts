@@ -6,7 +6,7 @@ import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
-import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
+import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
   payloadBytes,
@@ -170,6 +170,22 @@ export class WorkSessionRepository
     const outcome = await this.outbox.transaction((manager) =>
       this.appendWithin(manager, session, events),
     );
+    session.clearEvents();
+    return outcome;
+  }
+
+  async appendEventsIf(
+    session: WorkSessionEntity,
+    events: NewSessionEvent[],
+    holds: (fold: SessionFold) => boolean,
+  ): Promise<SessionAppendOutcome | null> {
+    const outcome = await this.outbox.transaction(async (manager) => {
+      const locked = await this.lock(manager, session.id);
+      if (!locked) return null;
+      session.reseatFold(this.mapper.foldOf(locked));
+      if (!holds(session.fold)) return null;
+      return this.appendLocked(manager, session, events);
+    });
     session.clearEvents();
     return outcome;
   }

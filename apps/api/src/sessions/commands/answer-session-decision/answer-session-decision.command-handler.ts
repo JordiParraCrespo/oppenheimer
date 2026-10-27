@@ -27,10 +27,14 @@ const AGENT_WINDOW = 0;
  * that was already answered, or replaced, is refused rather than typed into
  * whatever the agent asks next.
  *
- * Order: the keys go first and the entry after, so a host that cannot take them
- * leaves the decision pending. `decision.answered` clears it from the session
- * at once; the runner's next report (the agent at work, or its next question)
- * confirms it.
+ * Order: the answer is claimed first, as `decision.answered` appended only while
+ * the row still waits on that decision, so of two answers sent at once (two
+ * tabs, a double click) one types its keys and the other is refused as stale
+ * — checking and typing first let both through, and the agent read both
+ * answers as its next ones. The keys go after the claim; a host that cannot
+ * take them gets the decision back (an `agent.decision` restating it, unless
+ * the runner has reported something since), so it stays answerable. The
+ * runner's next report (the agent at work, or its next question) confirms.
  */
 @CommandHandler(AnswerSessionDecisionCommand)
 export class AnswerSessionDecisionCommandHandler
@@ -60,28 +64,42 @@ export class AnswerSessionDecisionCommandHandler
       throw new AppError(refusal, { detail: outcome.detail });
     }
 
+    const decision = session.pendingDecision;
+    const claimed = await this.sessions.appendEventsIf(
+      session,
+      [this.entry(command, SESSION_EVENT_KINDS.DECISION_ANSWERED, { id: command.answer.id })],
+      (fold) => fold.pendingDecision?.id === command.answer.id,
+    );
+    if (!claimed) {
+      throw new AppError(SessionErrors.DECISION_STALE, {
+        detail: 'Another answer to this decision was taken first.',
+      });
+    }
+
     const { delivered } = await this.dispatch.typeKeys(session, {
       window: AGENT_WINDOW,
       keys: outcome.keys,
       gapMs: QUESTION_KEY_GAP_MS,
     });
     if (!delivered) {
+      await this.sessions.appendEventsIf(
+        session,
+        [this.entry(command, SESSION_EVENT_KINDS.AGENT_DECISION, { decision })],
+        (fold) => fold.pendingDecision === null,
+      );
       throw new AppError(SessionErrors.DECISION_HOST_OFFLINE, {
         detail: 'Nothing is kept for a host that comes back: answer again once it is online.',
       });
     }
-
-    await this.sessions.appendEvents(session, [
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          command.id,
-          SESSION_EVENT_KINDS.DECISION_ANSWERED,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
-        payload: { id: command.answer.id },
-      },
-    ]);
     return { sessionId: session.id, hints: [] };
+  }
+
+  private entry(command: AnswerSessionDecisionCommand, kind: string, payload: unknown) {
+    return {
+      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(command.id, kind),
+      source: 'api' as const,
+      kind,
+      payload,
+    };
   }
 }

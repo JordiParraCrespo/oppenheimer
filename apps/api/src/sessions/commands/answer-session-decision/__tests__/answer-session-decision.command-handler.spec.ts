@@ -11,8 +11,9 @@ import { AnswerSessionDecisionCommandHandler } from '../answer-session-decision.
 /**
  * An answer from the Inbox reaches the agent as the keys a person would type,
  * and only for the decision the session waits on now: a stale or ill-fitting
- * answer is refused before a key is sent, and nothing is recorded for keys
- * that did not reach the host.
+ * answer is refused before a key is sent, of two answers at once only the one
+ * that claims the decision types, and a decision whose keys did not reach the
+ * host is put back.
  */
 
 const SCOPE = {
@@ -84,10 +85,18 @@ function waitingOn(decision: unknown) {
   return session;
 }
 
-function harness(session: WorkSessionEntity, delivered = true) {
+const APPENDED = { accepted: [], rejected: [], appended: [] };
+
+/** `claims` is whether the conditional append wins the row (another answer may have first). */
+function harness(session: WorkSessionEntity, delivered = true, claims = true) {
   const sessions = {
     findOneById: vi.fn().mockResolvedValue(Some(session)),
-    appendEvents: vi.fn().mockResolvedValue({ accepted: [], rejected: [], appended: [] }),
+    appendEvents: vi.fn().mockResolvedValue(APPENDED),
+    appendEventsIf: vi
+      .fn()
+      .mockImplementation(async (_session, _events, holds: (fold: unknown) => boolean) =>
+        claims && holds(session.fold) ? APPENDED : null,
+      ),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
     typeKeys: vi
@@ -124,9 +133,36 @@ describe('AnswerSessionDecisionCommandHandler', () => {
       keys: ['3'],
       gapMs: 120,
     });
-    expect(sessions.appendEvents).toHaveBeenCalledWith(session, [
-      expect.objectContaining({ kind: 'decision.answered', payload: { id: 'toolu_01' } }),
-    ]);
+    expect(sessions.appendEventsIf).toHaveBeenCalledWith(
+      session,
+      [expect.objectContaining({ kind: 'decision.answered', payload: { id: 'toolu_01' } })],
+      expect.any(Function),
+    );
+    // Claimed before a key is typed, so a second answer finds it taken.
+    expect(vi.mocked(sessions.appendEventsIf).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(dispatch.typeKeys).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('refuses with SESSIONS_032 the answer that loses the claim to another, typing nothing', async () => {
+    const session = waitingOn(PERMISSION);
+    const { handler, dispatch } = harness(session, true, false);
+    await expect(
+      handler.execute(answer(session, { id: 'perm-1', option: 0 })),
+    ).rejects.toMatchObject({ code: 'SESSIONS_032' });
+    expect(dispatch.typeKeys).not.toHaveBeenCalled();
+  });
+
+  it('claims only while the row under the lock still waits on that decision', async () => {
+    const session = waitingOn(PERMISSION);
+    const { handler, sessions } = harness(session);
+    await handler.execute(answer(session, { id: 'perm-1', option: 0 }));
+    const holds = vi.mocked(sessions.appendEventsIf).mock.calls[0][2];
+    expect(holds({ ...session.fold, pendingDecision: PERMISSION })).toBe(true);
+    expect(holds({ ...session.fold, pendingDecision: null })).toBe(false);
+    expect(holds({ ...session.fold, pendingDecision: { ...PERMISSION, id: 'perm-2' } })).toBe(
+      false,
+    );
   });
 
   it('types words of the person’s own on the row after the options', async () => {
@@ -167,7 +203,7 @@ describe('AnswerSessionDecisionCommandHandler', () => {
       harness(idle).handler.execute(answer(idle, { id: 'perm-1', option: 0 })),
     ).rejects.toMatchObject({ code: 'SESSIONS_032' });
     expect(dispatch.typeKeys).not.toHaveBeenCalled();
-    expect(sessions.appendEvents).not.toHaveBeenCalled();
+    expect(sessions.appendEventsIf).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -205,7 +241,7 @@ describe('AnswerSessionDecisionCommandHandler', () => {
     expect(dispatch.typeKeys).not.toHaveBeenCalled();
   });
 
-  it('answers SESSIONS_034 for a host with no link, and leaves the decision pending', async () => {
+  it('answers SESSIONS_034 for a host with no link, and puts the decision back', async () => {
     const session = waitingOn(PERMISSION);
     const { handler, sessions } = harness(session, false);
     await expect(
@@ -213,6 +249,12 @@ describe('AnswerSessionDecisionCommandHandler', () => {
     ).rejects.toMatchObject({
       code: 'SESSIONS_034',
     });
-    expect(sessions.appendEvents).not.toHaveBeenCalled();
+    const [, restated, holds] = vi.mocked(sessions.appendEventsIf).mock.calls[1];
+    expect(restated).toEqual([
+      expect.objectContaining({ kind: 'agent.decision', payload: { decision: PERMISSION } }),
+    ]);
+    // Not over a decision the runner reported meanwhile.
+    expect(holds({ ...session.fold, pendingDecision: null })).toBe(true);
+    expect(holds({ ...session.fold, pendingDecision: QUESTION })).toBe(false);
   });
 });
