@@ -831,6 +831,47 @@ since removed), or one Google has since revoked (or one sealed under a
 `CALENDAR_011` is a sixth Google account: a person connects five at most.
 Remove one, or reconnect one already listed, which does not count again.
 
+## Cloud agents
+
+Coding agents run in a vendor's cloud (Cursor's Cloud Agents), launched from the
+console on each person's own key for the vendor. See
+`product/next-steps/cloud-agents.md`.
+
+| Code                                       | Title                                               | HTTP |
+| ------------------------------------------ | --------------------------------------------------- | ---- |
+| `CLOUD_AGENTS_001` <a id="cloud_agents_001" /> | Cloud agent not found                           | 404  |
+| `CLOUD_AGENTS_002` <a id="cloud_agents_002" /> | Cloud agents belong to an organization          | 400  |
+| `CLOUD_AGENTS_003` <a id="cloud_agents_003" /> | Cloud agents are not configured on this server  | 503  |
+| `CLOUD_AGENTS_004` <a id="cloud_agents_004" /> | That cloud agent provider is not connected      | 409  |
+| `CLOUD_AGENTS_005` <a id="cloud_agents_005" /> | The provider refused the API key                | 422  |
+| `CLOUD_AGENTS_006` <a id="cloud_agents_006" /> | The cloud agent provider did not answer         | 502  |
+| `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
+| `CLOUD_AGENTS_008` <a id="cloud_agents_008" /> | The cloud agent is still working                | 409  |
+| `CLOUD_AGENTS_009` <a id="cloud_agents_009" /> | The cloud agent’s run has already ended         | 409  |
+| `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
+| `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+
+`CLOUD_AGENTS_001` is also another person's agent: every agent is its
+launcher's own.
+
+`CLOUD_AGENTS_003` is a server with no `CLOUD_AGENTS_KEY`: no one can store a
+vendor key, so no one can launch.
+
+`CLOUD_AGENTS_004` is no key stored for the vendor (or one sealed under a
+`CLOUD_AGENTS_KEY` since replaced): connect it again under Cloud agents.
+
+`CLOUD_AGENTS_005` is the vendor refusing the key when it is stored, or later
+when it is used (revoked at the vendor). `CLOUD_AGENTS_010` is the vendor
+refusing what was asked: a repository it cannot reach, a model it does not
+offer, a feature the account lacks; its `detail` carries the vendor's words and
+`upstreamCode` the vendor's code.
+
+`CLOUD_AGENTS_008` is a follow-up while the run is still going: wait for it to
+end, or stop it. `CLOUD_AGENTS_009` is a stop for a run that already ended.
+
+`CLOUD_AGENTS_007` carries `Retry-After`. Reads (the list, one agent) never
+answer it: they show the agent as last heard of.
+
 ## Inbound events
 
 What external systems tell us — GitHub's webhook today — stored once and normalized

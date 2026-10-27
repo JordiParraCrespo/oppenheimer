@@ -19,6 +19,7 @@ describe('resolveCapabilities', () => {
       ip_geolocation: false,
       google_calendar: false,
       bot_providers: false,
+      cloud_agents: false,
       voice_transcription: false,
     });
   });

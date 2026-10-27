@@ -25,6 +25,10 @@
  * `voice_transcription` says whether the deployment has a speech-to-text key
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
+ *
+ * `cloud_agents` says whether a person can store a cloud agent vendor's key:
+ * the key it is sealed under (`CLOUD_AGENTS_KEY`). Whether a person can
+ * launch one is `GET /cloud-agents/status`, which asks every provider.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -38,6 +42,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'google_calendar',
   'bot_providers',
   'voice_transcription',
+  'cloud_agents',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];

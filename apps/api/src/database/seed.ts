@@ -32,6 +32,8 @@ import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
+import { CloudAgentOrmEntity } from '../cloud-agents/database/cloud-agent.orm-entity';
+import { CloudAgentCredentialOrmEntity } from '../cloud-agents/database/cloud-agent-credential.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
@@ -129,6 +131,8 @@ const dataSource = new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    CloudAgentOrmEntity,
+    CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,
     WatchedRepositoryOrmEntity,
     BotOrmEntity,
