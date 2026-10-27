@@ -7,6 +7,7 @@ import consent from './es/consent.json';
 import emails from './es/emails.json';
 import errors from './es/errors.json';
 import hosts from './es/hosts.json';
+import inbox from './es/inbox.json';
 import language from './es/language.json';
 import nav from './es/nav.json';
 import onboarding from './es/onboarding.json';
@@ -38,6 +39,7 @@ const es = {
   tasks,
   calendar,
   hosts,
+  inbox,
   settings,
   theme,
   toasts,

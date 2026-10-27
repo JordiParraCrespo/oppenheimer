@@ -4,6 +4,7 @@ import { type BotApprovalStatus, SCOPES, type Scope } from '@oppenheimer/shared'
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalEntity } from './domain/bot-approval.entity';
 import { BotApprovalResponseDto } from './dtos/bot-approval.response.dto';
+import { WorkspaceBotApprovalResponseDto } from './dtos/workspace-bot-approval.response.dto';
 
 @Injectable()
 export class BotApprovalMapper
@@ -64,6 +65,15 @@ export class BotApprovalMapper
     dto.decidedByUserId = entity.decidedByUserId;
     dto.decidedAt = entity.decidedAt?.toISOString() ?? null;
     dto.createdAt = entity.createdAt.toISOString();
+    return dto;
+  }
+
+  /** The card read across the workspace's bots, with the name of the bot that asked. */
+  toWorkspaceResponse(entity: BotApprovalEntity, botName: string): WorkspaceBotApprovalResponseDto {
+    const dto = Object.assign(new WorkspaceBotApprovalResponseDto(), this.toResponse(entity));
+    dto.botId = entity.botId;
+    dto.botName = botName;
+    dto.sessionId = entity.sessionId;
     return dto;
   }
 }

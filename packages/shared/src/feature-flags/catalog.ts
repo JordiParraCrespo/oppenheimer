@@ -167,6 +167,20 @@ export const FEATURE_FLAGS = {
     client: true,
     bucketBy: 'user',
   },
+  /**
+   * The Inbox (`product/versions/mvp/29-inbox.md`): one place for what needs
+   * you, and the marks a person leaves on its items. Gates the rail item and
+   * the `/v1/inbox/marks` routes while it settles.
+   */
+  inbox: {
+    description: 'Show the Inbox: what needs you, one item at a time, with done, low and snooze.',
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    expiresAt: '2026-12-31',
+  },
 } as const satisfies Record<string, FlagDefinition>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

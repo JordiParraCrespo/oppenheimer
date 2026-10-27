@@ -9601,6 +9601,121 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/sessions/{id}/decision": {
+      "post": {
+        "description": "Answers the session’s pending `decision` — a question the agent asked, or a permission dialog — by typing into its terminal the keys a person would. The body names the decision by its `id`: a question takes one answer per question (`picks` by option index, and `other` for words of your own), a permission one `option` by index. Answers the session, its decision cleared.",
+        "operationId": "answerSessionDecision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerSessionDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_032 — Already answered or changed\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SESSIONS_033 — The answer does not fit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_034 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer what a session’s agent waits on",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/sessions/{id}/stop": {
       "post": {
         "description": "Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.",
@@ -17787,6 +17902,65 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/bot-approvals": {
+      "get": {
+        "description": "Every bot's Needs input cards in one status, newest first, at most 100, with the bot's name: `pending` (the default) is what waits for you, at most one per bot.",
+        "operationId": "findWorkspaceBotApprovals",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["pending", "approved", "denied", "expired", "failed"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceBotApprovalResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace's bot approvals",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
         "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
@@ -18055,6 +18229,208 @@
         ],
         "summary": "Whether the workspace can dictate",
         "tags": ["Voice"]
+      }
+    },
+    "/api/v1/inbox/marks": {
+      "get": {
+        "description": "What you did to Inbox items in this workspace, the newest changed first, at most 1000. A snooze whose end has passed is left out: its item is back.",
+        "operationId": "findInboxMarks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InboxMarkResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INBOX_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your Inbox marks",
+        "tags": ["Inbox"]
+      }
+    },
+    "/api/v1/inbox/marks/{itemKey}": {
+      "put": {
+        "description": "Done, low, snoozed until a time in the future, or deleted: replaces whatever the caller had on this occurrence. The key is URL-encoded in the path.",
+        "operationId": "putInboxMark",
+        "parameters": [
+          {
+            "name": "itemKey",
+            "required": true,
+            "in": "path",
+            "description": "The occurrence, e.g. `approval:<id>`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutInboxMarkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxMarkResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INBOX_003 — Snooze not in the future",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark an Inbox item",
+        "tags": ["Inbox"]
+      },
+      "delete": {
+        "description": "Bring back a snoozed item, or restore its priority: the occurrence is as it was. Removing a mark that is not there succeeds. The key is URL-encoded in the path.",
+        "operationId": "deleteInboxMark",
+        "parameters": [
+          {
+            "name": "itemKey",
+            "required": true,
+            "in": "path",
+            "description": "The occurrence, e.g. `approval:<id>`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The occurrence has no mark."
+          },
+          "400": {
+            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove an Inbox mark",
+        "tags": ["Inbox"]
       }
     },
     "/api/v1/health": {
@@ -18870,7 +19246,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           },
@@ -18917,7 +19295,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           },
@@ -19003,7 +19383,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           },
@@ -19113,7 +19495,9 @@
               "repositories:read",
               "repositories:write",
               "flags:read",
-              "flags:write"
+              "flags:write",
+              "inbox:read",
+              "inbox:write"
             ],
             "example": "users:read"
           },
@@ -19171,7 +19555,8 @@
               "calendar",
               "pulls",
               "repositories",
-              "flags"
+              "flags",
+              "inbox"
             ],
             "example": "users"
           },
@@ -19247,7 +19632,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           }
@@ -19305,7 +19692,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           },
@@ -19395,7 +19784,9 @@
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
-                "flags:write"
+                "flags:write",
+                "inbox:read",
+                "inbox:write"
               ]
             }
           },
@@ -22151,6 +22542,106 @@
         },
         "required": ["ticket", "url", "expiresAt", "window"]
       },
+      "SessionDecisionQuestionOptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Tokens and components"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["label", "description"]
+      },
+      "SessionDecisionQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "type": "string",
+            "nullable": true,
+            "description": "The chip over it in the terminal.",
+            "example": "Scope"
+          },
+          "question": {
+            "type": "string",
+            "example": "What should the design system cover?"
+          },
+          "multiSelect": {
+            "type": "boolean",
+            "description": "Several options may be picked."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionDecisionQuestionOptionResponseDto"
+            }
+          }
+        },
+        "required": ["header", "question", "multiSelect", "options"]
+      },
+      "SessionQuestionDecisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["question"]
+          },
+          "id": {
+            "type": "string",
+            "description": "The call’s `tool_use_id`."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionDecisionQuestionResponseDto"
+            }
+          }
+        },
+        "required": ["kind", "id", "questions"]
+      },
+      "SessionPermissionOptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Yes"
+          }
+        },
+        "required": ["label"]
+      },
+      "SessionPermissionDecisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["permission"]
+          },
+          "id": {
+            "type": "string",
+            "description": "A hash of what the dialog says: stable while it is on screen."
+          },
+          "title": {
+            "type": "string",
+            "example": "Do you want to proceed?"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true,
+            "description": "What it asks about, above the question: a command, a file."
+          },
+          "options": {
+            "description": "In screen order; the answer names one by its index.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionPermissionOptionResponseDto"
+            }
+          }
+        },
+        "required": ["kind", "id", "title", "detail", "options"]
+      },
       "SessionLaunchResponseDto": {
         "type": "object",
         "properties": {
@@ -22348,6 +22839,16 @@
             "type": "string",
             "nullable": true
           },
+          "observedSince": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).",
+            "nullable": true
+          },
+          "stateSeq": {
+            "type": "number",
+            "description": "Bumped on every change of `lifecycle`, so one failure or one launch is told apart from the next (the Inbox keys a failed or stuck session by it)."
+          },
           "stoppedAt": {
             "format": "date-time",
             "type": "string",
@@ -22388,6 +22889,19 @@
               }
             ]
           },
+          "decision": {
+            "type": "object",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SessionQuestionDecisionResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/SessionPermissionDecisionResponseDto"
+              }
+            ],
+            "nullable": true,
+            "description": "What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`."
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -22409,8 +22923,10 @@
           "launch",
           "state",
           "lifecycle",
+          "stateSeq",
           "checkouts",
           "hints",
+          "decision",
           "createdAt",
           "updatedAt"
         ]
@@ -22797,6 +23313,51 @@
           }
         },
         "required": ["audience", "access", "lifetime"]
+      },
+      "AnswerSessionDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "answers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "properties": {
+                "picks": {
+                  "type": "array",
+                  "maxItems": 6,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": false,
+                    "maximum": 5,
+                    "exclusiveMaximum": false
+                  }
+                },
+                "other": {
+                  "type": "string",
+                  "maxLength": 1000,
+                  "nullable": true
+                }
+              },
+              "required": ["picks", "other"]
+            }
+          },
+          "option": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 8,
+            "exclusiveMaximum": false
+          }
+        },
+        "required": ["id"]
       },
       "PrepareSessionRequest": {
         "type": "object",
@@ -25318,6 +25879,10 @@
             "type": "string",
             "example": "oppenheimer/keychain-tokens"
           },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox."
+          },
           "scope": {
             "type": "string",
             "enum": ["mine", "requested", "watching"]
@@ -25394,6 +25959,7 @@
           "author",
           "authorKind",
           "headRef",
+          "headSha",
           "scope",
           "lane",
           "laneReason",
@@ -25889,6 +26455,10 @@
             "type": "string",
             "example": "oppenheimer/keychain-tokens"
           },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox."
+          },
           "scope": {
             "type": "string",
             "enum": ["mine", "requested", "watching"]
@@ -25962,10 +26532,6 @@
           "baseRef": {
             "type": "string"
           },
-          "headSha": {
-            "type": "string",
-            "description": "The head commit this read saw. A merge that names it is refused once newer commits land."
-          },
           "fromFork": {
             "type": "boolean",
             "description": "Whether the head branch is in another repository (a fork), which a session cannot check out yet."
@@ -26013,6 +26579,7 @@
           "author",
           "authorKind",
           "headRef",
+          "headSha",
           "scope",
           "lane",
           "laneReason",
@@ -26027,7 +26594,6 @@
           "htmlUrl",
           "body",
           "baseRef",
-          "headSha",
           "fromFork",
           "state",
           "changedFiles",
@@ -27347,6 +27913,92 @@
           "createdAt"
         ]
       },
+      "WorkspaceBotApprovalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The turn whose tool call asked."
+          },
+          "tool": {
+            "type": "string",
+            "description": "The tool, as the bot knows it (`start_session`)."
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The call exactly as it will run on a yes."
+          },
+          "summary": {
+            "type": "string",
+            "description": "What will happen, in words."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "denied", "expired", "failed"]
+          },
+          "result": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the call answered when it ran on a yes; null before, and for a no."
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the person added to a no."
+          },
+          "decidedByUserId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "decidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that asked."
+          },
+          "botName": {
+            "type": "string",
+            "description": "The bot's name, as the console shows it."
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The session the call started when it ran on a yes; null before, and when it started none."
+          }
+        },
+        "required": [
+          "id",
+          "turnId",
+          "tool",
+          "input",
+          "summary",
+          "status",
+          "result",
+          "note",
+          "decidedByUserId",
+          "decidedAt",
+          "createdAt",
+          "botId",
+          "botName",
+          "sessionId"
+        ]
+      },
       "DecideBotApprovalRequest": {
         "type": "object",
         "properties": {
@@ -27401,6 +28053,45 @@
           }
         },
         "required": ["available", "providers"]
+      },
+      "InboxMarkResponseDto": {
+        "type": "object",
+        "properties": {
+          "itemKey": {
+            "type": "string",
+            "description": "The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`."
+          },
+          "mark": {
+            "type": "string",
+            "enum": ["done", "low", "snoozed", "deleted"]
+          },
+          "until": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When a snooze ends; null for every other mark."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the mark was last set."
+          }
+        },
+        "required": ["itemKey", "mark", "until", "updatedAt"]
+      },
+      "PutInboxMarkRequest": {
+        "type": "object",
+        "properties": {
+          "mark": {
+            "type": "string",
+            "enum": ["done", "low", "snoozed", "deleted"]
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["mark"]
       },
       "LivenessResponseDto": {
         "type": "object",

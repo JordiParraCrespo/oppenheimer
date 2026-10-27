@@ -59,6 +59,7 @@ import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos'
 import { DiffDemo } from '../components/diff-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
+import { InboxSpec } from '../components/inbox-demos';
 import {
   AreaChartDemo,
   CalendarAccountsDemo,
@@ -1113,6 +1114,8 @@ export default function Page() {
       >
         <RoutineItemsDemo />
       </Spec>
+
+      <InboxSpec />
 
       <Spec
         id="pilltabs"

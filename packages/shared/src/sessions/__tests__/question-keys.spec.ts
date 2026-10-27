@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { questionKeys } from '../question-keys';
-import type { ChatQuestion } from '../session-chat';
+import type { SessionDecisionQuestion } from '../../schemas/session-decision.schema.js';
+import { permissionKeys, questionKeys } from '../question-keys.js';
 
 /**
  * The keys that answer Claude Code's question picker. Each case is one that
@@ -10,7 +10,7 @@ import type { ChatQuestion } from '../session-chat';
  */
 const DOWN = '\u001b[B';
 
-const scope: ChatQuestion = {
+const scope: SessionDecisionQuestion = {
   header: 'Scope',
   question: 'What should the design system cover?',
   multiSelect: false,
@@ -20,7 +20,7 @@ const scope: ChatQuestion = {
     { label: 'Everything', description: null },
   ],
 };
-const platforms: ChatQuestion = {
+const platforms: SessionDecisionQuestion = {
   header: 'Platforms',
   question: 'Which platforms should it target?',
   multiSelect: true,
@@ -80,5 +80,12 @@ describe('questionKeys', () => {
         ],
       ),
     ).toEqual(['2', '1', DOWN, DOWN, DOWN, DOWN, '\r', '1']);
+  });
+});
+
+describe('permissionKeys', () => {
+  it('answers a permission dialog with the option’s number, counted from one', () => {
+    expect(permissionKeys(0)).toEqual(['1']);
+    expect(permissionKeys(2)).toEqual(['3']);
   });
 });

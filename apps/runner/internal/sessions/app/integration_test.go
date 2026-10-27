@@ -26,11 +26,18 @@ import (
 // shell. Everything else about the lifecycle is covered on the in-memory
 // adapters next door.
 
-type recorder struct{ states []domain.State }
+type recorder struct {
+	states    []domain.State
+	decisions []*domain.Decision
+}
 
 func (r *recorder) SessionChanged(s domain.Session) { r.states = append(r.states, s.State) }
 
 func (r *recorder) FirstPrompt(domain.Session, string, func()) bool { return true }
+
+func (r *recorder) DecisionChanged(_ domain.Session, decision *domain.Decision) {
+	r.decisions = append(r.decisions, decision)
+}
 
 // realHarness wires the service to this machine's tmux and git.
 type realHarness struct {
