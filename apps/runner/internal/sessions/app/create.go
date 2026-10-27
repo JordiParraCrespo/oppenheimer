@@ -53,6 +53,11 @@ type CreateInput struct {
 	// repository, kept for the credential helper.
 	CheckoutID   string
 	GithubRepoID int64
+	// More are the checkouts past the first, for a session over several
+	// repositories (one worktree each, side by side in the session's folder,
+	// all on Branch). The first is the fields above, so a create of one
+	// repository reads as it always did.
+	More []CheckoutInput
 	// Files are the files attached to the first task, already pulled.
 	// Each is saved outside the worktree just before the agent starts, and
 	// its path appended to the prompt the agent is launched with.
@@ -61,6 +66,28 @@ type CreateInput struct {
 	// session as it stands at each. StageTerminal landing is what says the
 	// session has a pane to attach to. It must not block.
 	Progress func(domain.StageEvent)
+}
+
+// CheckoutInput is one repository a session checks out past its first: the
+// same fields CreateInput carries for the first.
+type CheckoutInput struct {
+	// Directory names the checkout inside the session's folder; empty is the
+	// repository's own name.
+	Directory    string
+	Repo         string
+	Remote       string
+	BaseBranch   string
+	CheckoutID   string
+	GithubRepoID int64
+}
+
+// checkouts is every checkout the create asks for, the first first.
+func (in CreateInput) checkouts() []CheckoutInput {
+	first := CheckoutInput{
+		Directory: in.Directory, Repo: in.Repo, Remote: in.Remote, BaseBranch: in.BaseBranch,
+		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
+	}
+	return append([]CheckoutInput{first}, in.More...)
 }
 
 // CreateFile is one file attached to a session's first task.

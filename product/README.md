@@ -708,6 +708,17 @@ earlier note:
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
   ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- `versions/mvp/00-scope.md` said, from 2026-09-23 (#56), that a session
+  checks out one repository, because the runner made one worktree per
+  session and refused a create with two. On 2026-10-26 the owner lifted the
+  cap: the runner makes one worktree per checkout, each in its own directory
+  of the session folder, and a session checks out up to five repositories
+  (`MAX_SESSION_CHECKOUTS`), the first being where the agent starts unless
+  another is named. The bound exists because each checkout is a clone and a
+  worktree on the host, and the picker has to stay readable. `SESSIONS_010`
+  keeps its code and refuses a repository added to a running session,
+  since the wire cannot add a worktree to a live one. Recorded in 00 and the MVP
+  decision log.
 - The preview pane the session frame opens beside a terminal was not
   built. On 2026-10-26 the owner asked for the Simulator in it: a
   session's host offers simulators and emulators (`RUNNER_DEVICES`), each

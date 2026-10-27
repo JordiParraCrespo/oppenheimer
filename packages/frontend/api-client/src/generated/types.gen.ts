@@ -1777,13 +1777,11 @@ export type AnswerSessionDecisionRequest = {
 
 export type PrepareSessionRequest = {
     hostId: string;
-    checkouts: [
-        {
-            installationId: string;
-            githubRepoId: number;
-            baseBranch?: string;
-        }
-    ];
+    checkouts: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
 };
 
 export type PrepareSessionResponseDto = {
@@ -8729,7 +8727,7 @@ export type AddCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_010 — A session checks out one repository
+     * SESSIONS_010 — A running session keeps the repositories it was created with
      *
      * SESSIONS_005 — That session is closed
      *

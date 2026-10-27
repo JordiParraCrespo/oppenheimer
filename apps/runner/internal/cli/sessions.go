@@ -42,7 +42,9 @@ func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessi
 	p := newPrinter(out)
 	p.printf("session %s (%s)\n", session.ID, session.Name)
 	p.printf("branch   %s from %s\n", session.Branch, session.BaseBranch)
-	p.printf("worktree %s\n", session.Worktree)
+	for _, checkout := range session.Checkouts() {
+		p.printf("worktree %s\n", checkout.Worktree)
+	}
 	p.printf("folder   %s\n", session.Dir)
 	p.printf("attach   %s sessions attach %s\n", binaryName(), session.ID)
 	// The next create's worktree is being checked out now; a process that
@@ -143,8 +145,10 @@ func (a *App) CloseSession(ctx context.Context, out io.Writer, id string, opts C
 	if err != nil {
 		// A kept worktree is worth printing even though the close failed:
 		// it is where the person's work still is.
-		if session.Worktree != "" && session.State != sessionsdomain.StateClosed {
-			p.printf("worktree kept at %s\n", session.Worktree)
+		if session.State != sessionsdomain.StateClosed {
+			for _, checkout := range session.Checkouts() {
+				p.printf("worktree kept at %s\n", checkout.Worktree)
+			}
 		}
 		return err
 	}

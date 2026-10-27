@@ -356,7 +356,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="rule">
   <span class="k">stricter</span><span>Claude Code on the web reaches any repo the user's OAuth grant can see and uses the App only for webhooks. We choose least privilege enforced by GitHub, and it is the same model the runner host already uses.</span>
   <span class="k">permissions</span><span>Contents read and write, Metadata read, Pull requests read and write, Workflows read and write. No Administration. A separate, narrower App from the runner host's, with its own key.</span>
-  <span class="k">per session</span><span>One installation token narrowed to that one repository, one-hour lifetime, minted by the control plane, delivered encrypted to the runner, seeded into the guest's credential helper, rotated over vsock before expiry. The host egress proxy later removes the token from the guest entirely.</span>
+  <span class="k">per session</span><span>One installation token per checkout, narrowed to that repository, one-hour lifetime, minted by the control plane, delivered encrypted to the runner, seeded into the guest's credential helper, rotated over vsock before expiry. The host egress proxy later removes the token from the guest entirely.</span>
 </div>
 
 <h3>What the session sees inside</h3>

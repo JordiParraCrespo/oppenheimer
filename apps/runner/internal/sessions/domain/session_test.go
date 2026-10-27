@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -135,5 +136,52 @@ func TestAWorkFolderNameNeverLeavesItsParent(t *testing.T) {
 	}
 	if (domain.Tenant{Account: "local", Workspace: "../etc"}).Validate() == nil {
 		t.Fatal("a workspace id that climbs out was accepted")
+	}
+}
+
+// A state file an older runner wrote knew one checkout, inline; it still
+// loads as a session of that one checkout.
+func TestASessionSavedWithOneCheckoutLoadsAsOne(t *testing.T) {
+	saved := `{"id":"a","place":"worktree","dir":"/w/s","repo":"jordi/web","baseBranch":"main",
+		"branch":"oppenheimer/a","worktree":"/w/s/web","checkoutId":"c-web","githubRepoId":1,"state":"stopped"}`
+	var session domain.Session
+	if err := json.Unmarshal([]byte(saved), &session); err != nil {
+		t.Fatal(err)
+	}
+	checkouts := session.Checkouts()
+	if len(checkouts) != 1 || checkouts[0].CheckoutID != "c-web" || session.Cwd() != "/w/s/web" {
+		t.Fatalf("checkouts = %+v, cwd = %q", checkouts, session.Cwd())
+	}
+}
+
+// The credential helper names the repository by the path git hands it. A
+// session of one checkout answers for it whatever the path; one of several
+// answers only for a path that names one of them.
+func TestCheckoutForPicksTheRepositoryByPath(t *testing.T) {
+	one := domain.Session{Place: domain.PlaceWorktree, Dir: "/w/s", Repo: "jordi/web", Worktree: "/w/s/web", CheckoutID: "c-web"}
+	two := one
+	two.More = []domain.Checkout{{Repo: "jordi/api", Worktree: "/w/s/api", CheckoutID: "c-api"}}
+
+	for name, tc := range map[string]struct {
+		session domain.Session
+		path    string
+		want    string
+	}{
+		"one checkout, no path":            {one, "", "c-web"},
+		"one checkout, an old name":        {one, "jordi/old-web.git", "c-web"},
+		"two checkouts, the second":        {two, "jordi/api.git", "c-api"},
+		"two checkouts, by case and slash": {two, "/Jordi/Web", "c-web"},
+		"two checkouts, no path":           {two, "", ""},
+		"two checkouts, another repo":      {two, "jordi/other.git", ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			checkout, ok := tc.session.CheckoutFor(tc.path)
+			if got := checkout.CheckoutID; ok != (tc.want != "") || got != tc.want {
+				t.Fatalf("CheckoutFor(%q) = %q, %v; want %q", tc.path, got, ok, tc.want)
+			}
+		})
+	}
+	if two.Cwd() != "/w/s" {
+		t.Fatalf("a session of two runs in %q, want its folder", two.Cwd())
 	}
 }

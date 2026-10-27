@@ -560,7 +560,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "credentials.revoke":
 		var m link.CredentialsRevoke
 		if msg.Decode(&m) == nil {
-			h.credentials.Revoke(m.SessionID)
+			h.credentials.Revoke(m.SessionID, m.CheckoutID)
 		}
 	case "host.preflight":
 		var m link.HostPreflight
