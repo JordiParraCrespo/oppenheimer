@@ -98,3 +98,6 @@ where these land is the first open question below.
 - 2026-10-22: cloud agents added, version not yet set: a Cloud place for
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
+- 2026-10-26: Cursor's cloud agents landed ahead of a version, as a rail
+  item of their own on the person's Cursor key ([Cloud agents](cloud-agents.md),
+  "What landed"); Claude and Codex cloud keep their place in its order.

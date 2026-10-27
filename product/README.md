@@ -702,3 +702,11 @@ earlier note:
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
   ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- `research/cloud-agents.md` §5 proposed a cloud session as a third
+  place of `work_session`. On 2026-10-26 Cursor's cloud agents landed as
+  their own module and table instead, since a vendor's agent has no host,
+  terminal or checkout to fold (`next-steps/cloud-agents.md`), and F23
+  gained a line saying a vendor API key the control plane uses itself is
+  not the subscription sign-in it forbids (`04-security-review.md`).
+- Bots ran on Anthropic, GLM, OpenAI and ChatGPT. On 2026-10-26 Grok (xAI)
+  joined them on the OpenAI engine (`versions/mvp/25-bots.md`).
