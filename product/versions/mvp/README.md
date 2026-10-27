@@ -721,3 +721,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-10-22: **a bot follows a session it delegated with a subscription** (27, issue #445): a `bot_subscription` row whose wakes are queued turns keyed once per task and state, re-reading the session as the owner. It changes 26's "no watch table" for a bot's own sessions; 26 §5's trigger stays for automations.
 - 2026-10-26: **a bot's chat queues what you write while it works and shows the room it has left** ([25](25-bots.md) §2): waiting messages over the composer with Remove, Edit and Send now, and the context meter with a ChatGPT sign-in's plan windows; the meter is no longer "not built yet".
 - 2026-10-26: **bots show in the console's sections** (28): a set of sections on the bot, chosen by its owner, the section's plus or the bot itself, lists it under a Bots heading in Sessions, Automations, Plan and Pull requests; Pull requests opens its chat in place. Not derived from permissions, which are not built yet.
+- 2026-10-26: **a session checks out several repositories again, up to
+  five** (00). 2026-09-23's one repository per session (#56) is lifted:
+  the runner makes one worktree per checkout on `session.create`, each in
+  its own directory of the session folder (two repositories sharing a name
+  take `<repo>` and `<owner>--<repo>`). The create body takes one to
+  `MAX_SESSION_CHECKOUTS` (5) distinct repositories, the agent starts in
+  the first unless `cwdGithubRepoId` names another, and adding one past
+  the bound is `SESSIONS_010`, which keeps its code. A session with none
+  is still refused (2026-09-27).

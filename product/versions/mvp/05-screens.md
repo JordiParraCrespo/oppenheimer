@@ -202,7 +202,10 @@
   records none. The option set is read off the catalog entry once
   (`launchControlsFor`), not one predicate per control. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
-  picking another replaces it. The selected row carries its branch,
+  picking another replaces it. **Changed 2026-10-26:** it holds up to five
+  (00), and a sixth pick replaces the oldest. Every chip lists its current
+  pick first, as it stood when the popup opened, and branches read in the
+  rows' own type rather than mono. The selected row carries its branch,
   which opens a branch pane for that repository. The repository chip's
   foot row is **Manage repository access** with the GitHub mark: it
   opens, in a new tab, the App's installation page, because which
