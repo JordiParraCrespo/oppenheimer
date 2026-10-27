@@ -75,6 +75,11 @@
         "sendNow": "Enviar ahora",
         "edit": "Editar",
         "remove": "Quitar de la cola"
+      },
+      "json": {
+        "tree": "Árbol",
+        "raw": "Texto",
+        "more": "Mostrar {{count}} más"
       }
     }
   },
