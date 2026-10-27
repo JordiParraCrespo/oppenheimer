@@ -3,15 +3,25 @@ import {
   Archive,
   CircleAlert,
   CircleCheck,
+  CircleDashed,
   CircleStop,
 } from '@oppenheimer/design-system-web/icons';
+import type { ChatTaskStatus } from '@oppenheimer/frontend-consumer';
 import { Markdown } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
 import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
 import { ChatToolGroup } from './chat-tool-group';
+
+const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
+  completed: <CircleCheck />,
+  failed: <CircleAlert />,
+  killed: <CircleStop />,
+  unknown: <CircleDashed />,
+};
 
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
@@ -73,17 +83,7 @@ export function ChatTurnBlock({
       );
     case 'task':
       return (
-        <ChatMarker
-          icon={
-            block.status === 'completed' ? (
-              <CircleCheck />
-            ) : block.status === 'failed' ? (
-              <CircleAlert />
-            ) : (
-              <CircleStop />
-            )
-          }
-        >
+        <ChatMarker icon={TASK_ICONS[block.status]}>
           {block.summary ?? t(`sessions.chat.task.${block.status}`)}
         </ChatMarker>
       );
