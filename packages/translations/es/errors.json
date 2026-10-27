@@ -237,6 +237,7 @@
     "SESSIONS_033": "Esa respuesta no encaja con la pregunta. Elige entre sus opciones e inténtalo de nuevo.",
     "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
     "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
+    "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
     "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",

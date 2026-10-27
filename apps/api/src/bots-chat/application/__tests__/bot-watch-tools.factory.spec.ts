@@ -207,6 +207,23 @@ describe('BotWatchToolsFactory', () => {
     expect(wake.subscriptionId).toBe(subscriptions.subscribe.mock.calls[0][0].id);
   });
 
+  // What breaks this: a prompt whose task finished before the watch was
+  // stored, counted as the next task's or as already known, so the bot that
+  // was told to wait is never woken.
+  it('follows the task a prompt opened by its number, unknown, and reconciles it at once', async () => {
+    const { resolver, context, subscriptions, commands } = setup({
+      read: liveSession('completed', 3),
+    });
+    expect(await resolver.watchSent(context, SESSION, 3)).toContain('You are subscribed to it');
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      watchedTurn: 3,
+      lastTurn: null,
+      lastState: null,
+    });
+    const [wake] = commands.execute.mock.calls[0] as unknown as [WakeSubscribedBotCommand];
+    expect(wake).toBeInstanceOf(WakeSubscribedBotCommand);
+  });
+
   it("says when start_session's watch could not be stored rather than throw", async () => {
     const { resolver, context, subscriptions, commands } = setup();
 

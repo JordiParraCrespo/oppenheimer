@@ -6,12 +6,22 @@ import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectQuery } from '../../projects/queries/find-project/find-project.query';
+import { AnswerSessionDecisionCommand } from '../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
+import { SendSessionPromptCommand } from '../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
-import { planSession, sessionHostId, sessionSummary } from '../bot-session-tool.mapper';
+import {
+  decisionAnswerOf,
+  decisionAnswerSummary,
+  planSession,
+  promptSummary,
+  sentTurnOf,
+  sessionHostId,
+  sessionSummary,
+} from '../bot-session-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -24,10 +34,11 @@ import {
 
 /**
  * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
- * with a task, or stop one. Both reach outside Oppenheimer (they run things
- * on the owner's machine), so under Approve for me they ask first, and each
- * says on the card what it will do, by name. A bot's session is the owner's,
- * started in their scope, marked `bot`.
+ * with a task, give a running one a follow-up prompt or answer what it asks,
+ * or stop one. Each reaches outside Oppenheimer (they run things on the
+ * owner's machine), so under Approve for me they ask first, and each says on
+ * the card what it will do, by name. A bot's session is the owner's, started
+ * in their scope, marked `bot`; a prompt it sends is logged as the bot's.
  */
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
@@ -38,7 +49,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.startSession(), this.stopSession()];
+    return [this.startSession(), this.sendToSession(), this.answerSession(), this.stopSession()];
   }
 
   private startSession(): BotToolDefinition {
@@ -128,6 +139,111 @@ export class BotSessionToolsFactory implements BotToolArea {
     });
   }
 
+  private sendToSession(): BotToolDefinition {
+    return defineBotTool({
+      name: 'send_to_session',
+      scope: 'sessions:write',
+      asks: true,
+      description:
+        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works, wait for it; when it asks a question or a permission, use answer_session. The session's log records the prompt as yours. You are subscribed to the task it starts unless watch is false.",
+      input: z.object({
+        session_id: z.uuid().describe('The session to prompt (from list_sessions).'),
+        text: z
+          .string()
+          .trim()
+          .min(FIELD_BOUNDS.prompt.min)
+          .max(FIELD_BOUNDS.prompt.maxBytes)
+          .refine(fitsPromptBound, {
+            message: `Too long: at most ${FIELD_BOUNDS.prompt.maxBytes} bytes (UTF-8). Write a shorter prompt.`,
+          })
+          .describe(`What to tell the agent. At most ${FIELD_BOUNDS.prompt.maxBytes} bytes.`),
+        watch: z
+          .boolean()
+          .optional()
+          .describe('Be woken when the task it starts needs input or ends (default true).'),
+      }),
+      summarize: async (input, context) =>
+        promptSummary(input, await this.session(context, input.session_id)),
+      run: async (input, context) => {
+        // Read first: the prompt opens the next task, or joins the live one.
+        const turn = sentTurnOf((await this.session(context, input.session_id)).latestTurn);
+        await this.commandBus.execute<SendSessionPromptCommand, SessionCommandResult>(
+          new SendSessionPromptCommand({
+            scope: context.owner,
+            sessionId: input.session_id,
+            text: input.text,
+            sender: { kind: 'bot', botId: context.botId, turnId: context.turnId },
+          }),
+        );
+        const watched =
+          input.watch === false
+            ? 'Read how it goes with get_session or read_session.'
+            : await this.watches.watchSent(context, input.session_id, turn);
+        return `Sent the prompt to session ${input.session_id}. ${watched}`;
+      },
+    });
+  }
+
+  private answerSession(): BotToolDefinition {
+    return defineBotTool({
+      name: 'answer_session',
+      scope: 'sessions:write',
+      asks: true,
+      description:
+        "Answers what a session's agent is waiting on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Answer only what the person's instructions settle; otherwise tell them.",
+      input: z.object({
+        session_id: z.uuid().describe('The session (from list_sessions).'),
+        decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),
+        answers: z
+          .array(
+            z.object({
+              picks: z
+                .array(z.number().int().min(0))
+                .max(6)
+                .default([])
+                .describe('Option indexes; one for a single-choice question.'),
+              other: z
+                .string()
+                .max(1_000)
+                .optional()
+                .describe('Words of your own, in place of or beside the picks.'),
+            }),
+          )
+          .min(1)
+          .max(4)
+          .optional()
+          .describe('For a question: one answer per question, in order.'),
+        option: z
+          .number()
+          .int()
+          .min(0)
+          .max(8)
+          .optional()
+          .describe("For a permission dialog: the option's index."),
+      }),
+      summarize: async (input, context) => {
+        const summary = decisionAnswerSummary(input, await this.session(context, input.session_id));
+        if ('refusal' in summary) throw new BotToolRefusal(summary.refusal);
+        return summary.line;
+      },
+      run: async (input, context) => {
+        if ((input.answers === undefined) === (input.option === undefined)) {
+          throw new BotToolRefusal(
+            'Give answers (for a question) or option (for a permission dialog), not both.',
+          );
+        }
+        await this.commandBus.execute<AnswerSessionDecisionCommand, SessionCommandResult>(
+          new AnswerSessionDecisionCommand({
+            scope: context.owner,
+            sessionId: input.session_id,
+            answer: decisionAnswerOf(input),
+          }),
+        );
+        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.`;
+      },
+    });
+  }
+
   private stopSession(): BotToolDefinition {
     return defineBotTool({
       name: 'stop_session',
@@ -151,6 +267,12 @@ export class BotSessionToolsFactory implements BotToolArea {
         return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
       },
     });
+  }
+
+  private session(context: BotToolCallContext, sessionId: string): Promise<WorkSessionEntity> {
+    return this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+      new FindSessionQuery({ scope: context.owner, sessionId }),
+    );
   }
 
   /** The host's name as the owner sees it; its id when they cannot read it. */

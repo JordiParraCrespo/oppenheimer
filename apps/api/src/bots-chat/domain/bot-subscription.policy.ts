@@ -18,6 +18,14 @@ import { BotTurnEntity } from './bot-turn.entity';
 export const BOT_SUBSCRIPTION_UNTIL = ['task', 'closed'] as const;
 export type BotSubscriptionUntil = (typeof BOT_SUBSCRIPTION_UNTIL)[number];
 
+/**
+ * Where a new watch starts: the session's first task (the bot started it),
+ * the live or next task (`watch_session`), or one task by its number (the one
+ * the bot's own prompt opened). The first and a numbered task know nothing of
+ * it yet, however far it got before the watch was stored.
+ */
+export type BotWatchFrom = 'first_task' | 'now' | { turn: number };
+
 /** The resources a bot can follow; a new kind widens the table's CHECK too (27 §7). */
 export const BOT_SUBSCRIPTION_KINDS = ['session'] as const;
 export type BotSubscriptionKind = (typeof BOT_SUBSCRIPTION_KINDS)[number];

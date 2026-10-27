@@ -518,6 +518,7 @@ are never reissued.
 | `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
 | `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
 | `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
+| `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.

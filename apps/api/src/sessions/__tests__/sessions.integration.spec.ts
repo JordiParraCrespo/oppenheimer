@@ -1013,6 +1013,26 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(last.nextSeq).toBeNull();
     });
 
+    it('reads the last entries of the log, oldest first, and only this session’s', async () => {
+      const work = session();
+      const other = session();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.createIfUnclaimed(other, requested());
+      await repository.appendEvents(
+        work,
+        Array.from({ length: 4 }, (_, index) => ({
+          idempotencyKey: `run-1:${index}`,
+          source: 'runner' as const,
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'working' },
+        })),
+      );
+
+      const latest = await repository.findLatestEvents(work, 3);
+      expect(latest.map((event) => event.seq)).toEqual([3, 4, 5]);
+      expect((await repository.findLatestEvents(other, 10)).map((event) => event.seq)).toEqual([1]);
+    });
+
     describe('the session list', () => {
       const mapper = new WorkSessionMapper();
 

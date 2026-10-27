@@ -272,4 +272,14 @@ export const SessionErrors = {
     message: 'Previews are not configured on this server',
     httpStatus: 501,
   },
+  /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;
