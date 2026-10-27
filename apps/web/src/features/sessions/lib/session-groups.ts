@@ -59,6 +59,34 @@ export function emptyMessage(t: TFunction, narrowed: boolean, query: string): st
 }
 
 /**
+ * What the sidebar says in place of its list, or null when it draws one: no
+ * project at all, nothing that matches the search or the filters, or every
+ * project hidden.
+ */
+export function emptyListMessage(
+  t: TFunction,
+  {
+    groups,
+    shown,
+    pinned,
+    hiddenCount,
+    narrowed,
+    query,
+  }: {
+    groups: readonly ProjectGroup[];
+    shown: readonly ProjectGroup[];
+    pinned: readonly SessionEntity[];
+    hiddenCount: number;
+    narrowed: boolean;
+    query: string;
+  },
+): string | null {
+  if (groups.length === 0 && hiddenCount === 0) return t('sessions.sidebar.empty');
+  if (shown.length > 0 || pinned.length > 0) return null;
+  return narrowed ? emptyMessage(t, true, query) : t('sessions.sidebar.allHidden');
+}
+
+/**
  * Where a session may move: every other project. A project is metadata — a
  * session's directory and branch never name it — so there is no rule about
  * which repositories it holds (`product/versions/mvp/10-api-modules-and-data-model.md`).

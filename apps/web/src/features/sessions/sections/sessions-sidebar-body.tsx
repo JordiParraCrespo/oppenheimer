@@ -23,6 +23,7 @@ import {
   useSessionSelectionStore,
 } from '../hooks/use-session-selection';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
+import { listedProjects } from '../lib/hidden-projects';
 import {
   ALL,
   activeFilters,
@@ -35,7 +36,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { emptyMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { emptyListMessage, matchesQuery, shownGroups } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -118,17 +119,24 @@ export function SessionsSidebarBody() {
   const pins = useSessionPins();
   const { pinned, rest } = splitPinned(visible, pins.pins);
   const picked = filters.project === ALL ? null : filters.project;
-  const listed = (projectId: string) => !hidden.includes(projectId) || projectId === picked;
-  const hiddenCount = projects.filter((project) => hidden.includes(project.id)).length;
+  const listing = listedProjects(projects, rest, hidden, picked);
   const { groups, handlers } = useSidebarOrder({
     projects,
-    listed,
-    sessions: rest.filter((session) => listed(session.projectId)),
+    listed: listing.listed,
+    sessions: listing.sessions,
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
   const shown = shownGroups(groups, narrowed, picked);
+  const empty = emptyListMessage(t, {
+    groups,
+    shown,
+    pinned,
+    hiddenCount: listing.hiddenCount,
+    narrowed,
+    query,
+  });
   // A folded group's rows are not drawn, so a Shift-click does not reach them.
   const drawn = [
     ...pinned,
@@ -144,14 +152,13 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          projectCount={projects.length - hiddenCount}
+          projectCount={projects.length - listing.hiddenCount}
           filters={filters}
           options={options}
           dirty={dirty}
           visibility={{
-            projects: options.project.filter((option) => option.value !== ALL),
             hidden,
-            hiddenCount,
+            hiddenCount: listing.hiddenCount,
             onShownChange: setShown,
             onShowAll: showAll,
           }}
@@ -200,21 +207,11 @@ export function SessionsSidebarBody() {
           {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
             pane. */}
-          {groups.length === 0 && hiddenCount === 0 ? (
+          {empty !== null ? (
             <div className="px-3 pt-2">
               <EmptyState compact>
                 <EmptyState.Header>
-                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
-            </div>
-          ) : shown.length === 0 && pinned.length === 0 ? (
-            <div className="px-3 pt-2">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>
-                    {narrowed ? emptyMessage(t, true, query) : t('sessions.sidebar.allHidden')}
-                  </EmptyState.Description>
+                  <EmptyState.Description>{empty}</EmptyState.Description>
                 </EmptyState.Header>
               </EmptyState>
             </div>

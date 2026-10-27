@@ -16,6 +16,7 @@ import {
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
+  ALL,
   FACETS,
   type FilterOption,
   type SessionFacet,
@@ -26,13 +27,13 @@ import {
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
- * Which projects the sidebar draws: every project with a check, the ones in
- * `hidden` without. Hiding is not filtering, so Clear filters leaves it.
+ * Which projects the sidebar draws: every project in the Project facet's
+ * options with a check, the ones in `hidden` without. Hiding is not
+ * filtering, so Clear filters leaves it.
  */
 export interface ProjectVisibility {
-  projects: FilterOption[];
   hidden: readonly string[];
-  /** How many of `projects` are hidden; `hidden` may hold ids of projects since deleted. */
+  /** How many projects are hidden; `hidden` may hold ids of projects since deleted. */
   hiddenCount: number;
   onShownChange: (id: string, shown: boolean) => void;
   onShowAll: () => void;
@@ -61,6 +62,7 @@ export function SessionsFilterMenu({
   onClear: () => void;
 }) {
   const { t } = useTranslation();
+  const projects = options.project.filter((option) => option.value !== ALL);
   const labelFor = (facet: SessionFacet) =>
     options[facet].find((option) => option.value === filters[facet])?.label ?? '';
 
@@ -106,19 +108,19 @@ export function SessionsFilterMenu({
         {/* A check per project; the menu stays open so several can be
             toggled in one go. */}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger disabled={visibility.projects.length === 0}>
+          <DropdownMenuSubTrigger disabled={projects.length === 0}>
             {t('sessions.filters.shown')}
             <DropdownMenuValue>
               {visibility.hiddenCount === 0
                 ? t('sessions.filters.shownAll')
                 : t('sessions.filters.shownSome', {
-                    shown: visibility.projects.length - visibility.hiddenCount,
-                    total: visibility.projects.length,
+                    shown: projects.length - visibility.hiddenCount,
+                    total: projects.length,
                   })}
             </DropdownMenuValue>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-            {visibility.projects.map((project) => (
+            {projects.map((project) => (
               <DropdownMenuCheckboxItem
                 key={project.value}
                 checked={!visibility.hidden.includes(project.value)}
