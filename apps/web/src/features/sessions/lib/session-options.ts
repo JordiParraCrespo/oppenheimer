@@ -267,8 +267,8 @@ export function toCreateInput(
     ...(extras.attachmentIds.length > 0 ? { attachmentIds: [...extras.attachmentIds] } : {}),
   };
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
-  const checkouts = toCheckouts(draft.scope);
-  return checkouts.length > 0 ? { ...common, checkouts } : null;
+  const [first, ...rest] = toCheckouts(draft.scope);
+  return first ? { ...common, checkouts: [first, ...rest] } : null;
 }
 
 /**
