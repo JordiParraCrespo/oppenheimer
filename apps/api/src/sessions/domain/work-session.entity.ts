@@ -338,6 +338,16 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * image — or `null` when it can. Closed is final and stopped has no window
    * to type into; both are facts about the session, whatever the input is.
    */
+  /**
+   * Whether closing it is the control plane's alone to record. A cloud session
+   * keeps nothing on its host — no worktree, no branch of ours, no terminal —
+   * so there is nothing for the host to push or remove, and nothing to wait for
+   * it to answer. The session stays on claude.ai/code, where it is archived.
+   */
+  get closesWithoutItsHost(): boolean {
+    return this.place === 'cloud';
+  }
+
   get inputRefusal(): ErrorDefinition | null {
     if (this.isResolved) return SessionErrors.ALREADY_RESOLVED;
     // A cloud session has no terminal on its host to type into: it is

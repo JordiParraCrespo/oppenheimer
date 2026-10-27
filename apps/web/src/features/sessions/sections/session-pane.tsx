@@ -172,7 +172,12 @@ export function SessionPane({
   // turns on is whether a terminal exists to attach to.
   // A cloud session the host has started is on claude.ai/code from then on:
   // no terminal to attach to, so it never reaches the panes below.
-  if (session.isCloud && session.cloudSessionId && session.lifecycle !== 'failed') {
+  if (
+    session.isCloud &&
+    session.cloudSessionId &&
+    session.lifecycle !== 'failed' &&
+    !session.isResolved
+  ) {
     return (
       <>
         {alert}

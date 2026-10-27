@@ -138,6 +138,11 @@ host and then lives on claude.ai/code:
   repository and a task (Claude Code only, no files). The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
   `claude --teleport <id>`.
+- **Deleting it.** Nothing of it is on the host, so the API records the
+  close whole — the request and `session.closed` — without the host, online
+  or not, and the session leaves the console at once. It stays on
+  claude.ai/code, where it is archived. Its input (a prompt, an answer, a
+  file) is refused with `SESSIONS_038`: it is answered on claude.ai.
 
 ## Decided
 
