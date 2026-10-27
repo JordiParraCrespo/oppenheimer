@@ -19,10 +19,10 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { ReportCloudStatusResponse } from '../../dtos/report-cloud-status.response.dto';
 import { RecordCloudStatusCommand } from './record-cloud-status.command';
 import type { RecordCloudStatusResult } from './record-cloud-status.command-handler';
 import { ReportCloudStatusRequest } from './record-cloud-status.request.dto';
-import { ReportCloudStatusResponse } from './record-cloud-status.response.dto';
 
 @ApiTags('Sessions')
 @ApiBearerAuth()
