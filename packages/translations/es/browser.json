@@ -2546,7 +2546,8 @@
       "readyShort": "Fusionar #{{number}} {{title}}",
       "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
       "readyBody": "Nada lo bloquea: se puede fusionar ya.",
-      "review": "Revisar",
+      "open": "Abrir",
+      "viewOnGithub": "Ver en GitHub",
       "merge": "Fusionar",
       "checks": {
         "passing": "Checks en verde",
