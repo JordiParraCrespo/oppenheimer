@@ -195,10 +195,12 @@ function JsonNode({
 /** A note after a leaf, from its value and its path; nothing for most. */
 type JsonTreeAnnotate = (value: unknown, path: string) => React.ReactNode;
 
+const showMore = (count: number) => `Show ${count} more`;
+
 function JsonTree({
   value,
   annotate,
-  moreLabel = (count) => `Show ${count} more`,
+  moreLabel = showMore,
   className,
 }: {
   /** A parsed JSON value. */
