@@ -715,3 +715,11 @@ earlier note:
   watches and taps it in the pane, its screen relayed over the link as one
   more attachment kind (`versions/mvp/05-screens.md`,
   `research/device-streaming.md`). The Browser tab is still not built.
+- `versions/mvp/29-inbox.md` §4 had the cross-bot approvals read list the
+  bots the caller may update. Built on 2026-10-26, it lists the bots the
+  caller may read, as the per-bot read it mirrors does; deciding a card
+  still asks `update`.
+- `versions/mvp/29-inbox.md` §3 keyed a session by `observedSince`, which
+  only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
+  keyed by its lifecycle's change count (`stateSeq`) instead, and the API
+  added both fields to a session and `headSha` to a pull request row.

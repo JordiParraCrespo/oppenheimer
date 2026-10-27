@@ -186,3 +186,29 @@ export async function routinePausedAt(routineId: string): Promise<Date | null> {
   );
   return rows[0]?.pausedAt ?? null;
 }
+
+/**
+ * A bot's pending approval written straight into the tables (`25-bots.md`
+ * §5): a bot raises one in a turn of a real model, so a spec about the Inbox
+ * seeds the turn it stopped and the card it asks. One statement.
+ */
+export async function insertPendingBotApproval(
+  botId: string,
+  tool: string,
+  summary: string,
+): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          turn AS (
+            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
+            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+              FROM bot
+            RETURNING id, "organizationId"
+          )
+     INSERT INTO bot_approval ("organizationId", "botId", "turnId", tool, summary)
+     SELECT turn."organizationId", $1, turn.id, $2, $3 FROM turn
+     RETURNING id`,
+    [botId, tool, summary],
+  );
+  return rows[0].id;
+}

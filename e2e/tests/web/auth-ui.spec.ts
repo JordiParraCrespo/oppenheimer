@@ -23,11 +23,11 @@ test.describe('web auth UI', () => {
 
     await loginThroughUi(page, user.email, user.password);
 
-    await expect(page).toHaveURL(/\/bots/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/inbox/, { timeout: 20_000 });
 
     // An authenticated visitor should not be asked to sign in again.
     await page.goto('/login');
-    await expect(page).toHaveURL(/\/bots/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/inbox/, { timeout: 20_000 });
   });
 
   test('a wrong password shows an error and stays on the login page', async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe('web auth UI', () => {
   test('after sign-out the sessions list is closed again', async ({ page }) => {
     const { user } = await provisionedUser('uilogout');
     await loginThroughUi(page, user.email, user.password);
-    await expect(page).toHaveURL(/\/bots/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/inbox/, { timeout: 20_000 });
 
     await page.context().clearCookies();
     await page.goto('/sessions');
@@ -140,7 +140,7 @@ test.describe('web auth UI', () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
 
     await loginThroughUi(page, user.email, NEW_PASSWORD);
-    await expect(page, 'the new password gets the user in').toHaveURL(/\/bots/, {
+    await expect(page, 'the new password gets the user in').toHaveURL(/\/inbox/, {
       timeout: 20_000,
     });
   });
@@ -219,7 +219,7 @@ test.describe('web auth UI', () => {
     );
 
     await page.goto('/onboarding');
-    await expect(page).toHaveURL(/\/bots/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/inbox/, { timeout: 20_000 });
   });
 
   test('social sign-in is absent or explained when no provider is configured', async ({ page }) => {

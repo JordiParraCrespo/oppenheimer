@@ -7,6 +7,7 @@ export const TOKENS = {
   AutomationsRepository: Symbol.for('AutomationsRepository'),
   BotsRepository: Symbol.for('BotsRepository'),
   HostsRepository: Symbol.for('HostsRepository'),
+  InboxRepository: Symbol.for('InboxRepository'),
   InstallationsRepository: Symbol.for('InstallationsRepository'),
   OrganizationsRepository: Symbol.for('OrganizationsRepository'),
   OrganizationsService: Symbol.for('OrganizationsService'),

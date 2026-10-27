@@ -14,6 +14,7 @@ package transcript
 import (
 	"log/slog"
 	"regexp"
+	"sync"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -42,6 +43,11 @@ type Reader struct {
 	// statusDir is where `runner statusline` keeps each Claude Code
 	// conversation's status (SaveStatus); empty follows none.
 	statusDir string
+
+	// mu guards questions: each conversation's AskUserQuestion watch
+	// (OpenQuestion), asked from the poll loop.
+	mu        sync.Mutex
+	questions map[string]*questionWatch
 }
 
 var _ app.Transcripts = (*Reader)(nil)

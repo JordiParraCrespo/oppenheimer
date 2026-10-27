@@ -22,6 +22,11 @@ const PullRequestsSidebar = lazy(() =>
     default: module.PullRequestsSidebar,
   })),
 );
+const InboxSidebar = lazy(() =>
+  import('@/features/inbox/sections/inbox-sidebar').then((module) => ({
+    default: module.InboxSidebar,
+  })),
+);
 const PlanSidebar = lazy(() =>
   import('@/features/tasks/sections/plan-sidebar').then((module) => ({
     default: module.PlanSidebar,
@@ -65,7 +70,9 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
   }
   return (
     <Suspense fallback={null}>
-      {list === 'bots' ? (
+      {list === 'inbox' ? (
+        <InboxSidebar />
+      ) : list === 'bots' ? (
         <BotsSidebar />
       ) : list === 'automations' ? (
         <AutomationsSidebar bots={<SectionBots section="automations" />} />

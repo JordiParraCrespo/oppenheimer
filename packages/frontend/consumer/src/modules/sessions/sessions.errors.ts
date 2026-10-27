@@ -69,6 +69,10 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_018',
     message: 'Failed to open the shared session',
   },
+  ANSWER_DECISION_FAILED: {
+    code: 'SESSIONS_CLIENT_019',
+    message: 'Failed to answer the session',
+  },
   /**
    * The API's own code for a file over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader

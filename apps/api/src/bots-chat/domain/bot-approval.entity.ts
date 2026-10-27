@@ -11,6 +11,7 @@ import {
   type BotApprovalStatus,
   type Scope,
 } from '@oppenheimer/shared';
+import { BotApprovalChangedDomainEvent } from './events/bot-approval-changed.domain-event';
 
 export interface BotApprovalProps {
   organizationId: string;
@@ -85,6 +86,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
       },
     });
     approval.validate();
+    approval.announce('raised');
     return approval;
   }
 
@@ -160,6 +162,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.requirePending();
     this.props.status = 'expired';
     this.props.decidedAt = now;
+    this.announce('expired: the owner wrote to the bot instead');
   }
 
   /**
@@ -173,6 +176,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.props.result = cut(result, BOT_APPROVAL_RESULT_MAX);
     this.props.sessionId = failed ? null : sessionId;
     if (failed) this.props.status = 'failed';
+    this.announce(failed ? 'its call failed' : 'its call ran');
   }
 
   /** The write that stored this instance landed: its next one is conditioned on what it holds now. */
@@ -192,6 +196,20 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.props.decidedByUserId = userId;
     this.props.decidedWithScopes = scopes ? [...scopes] : null;
     this.props.decidedAt = now;
+    this.announce(status);
+  }
+
+  /** The approval moved: the workspace's consoles re-read what lists it. */
+  private announce(what: string): void {
+    this.addEvent(
+      new BotApprovalChangedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        botId: this.props.botId,
+        status: this.props.status,
+        reason: `bot ${this.props.botId}: approval ${this.id} ${what}`,
+      }),
+    );
   }
 
   private requirePending(): void {
