@@ -87,63 +87,66 @@ export function LaunchCloudAgentForm({
         <div className="grid gap-5 md:grid-cols-2">
           <Field data-invalid={Boolean(errors.repositoryUrl)}>
             <FieldLabel>{t('sessions.cloudAgents.launch.repository')}</FieldLabel>
-            <Controller
-              control={control}
-              name="repositoryUrl"
-              render={({ field }) => (
-                <ChipSelect
-                  aria-label={t('sessions.cloudAgents.launch.repository')}
-                  className="self-start"
-                  options={repositories.map((url) => ({
-                    value: url,
-                    label: repositoryNameOf(url),
-                    mono: true,
-                  }))}
-                  value={field.value || null}
-                  onValueChange={field.onChange}
-                  placeholder={t('sessions.cloudAgents.launch.repositoryPlaceholder')}
-                  searchPlaceholder={t('sessions.cloudAgents.launch.searchRepositories')}
-                  emptyText={t('sessions.cloudAgents.launch.noRepositories')}
-                  loading={repositoriesLoading}
-                  loadingText={t('sessions.cloudAgents.launch.loading')}
-                  disabled={pending}
-                />
-              )}
-            />
+            {/* A div takes the field's full width, so the chip keeps its own. */}
+            <div>
+              <Controller
+                control={control}
+                name="repositoryUrl"
+                render={({ field }) => (
+                  <ChipSelect
+                    aria-label={t('sessions.cloudAgents.launch.repository')}
+                    options={repositories.map((url) => ({
+                      value: url,
+                      label: repositoryNameOf(url),
+                      mono: true,
+                    }))}
+                    value={field.value || null}
+                    onValueChange={field.onChange}
+                    placeholder={t('sessions.cloudAgents.launch.repositoryPlaceholder')}
+                    searchPlaceholder={t('sessions.cloudAgents.launch.searchRepositories')}
+                    emptyText={t('sessions.cloudAgents.launch.noRepositories')}
+                    loading={repositoriesLoading}
+                    loadingText={t('sessions.cloudAgents.launch.loading')}
+                    disabled={pending}
+                  />
+                )}
+              />
+            </div>
             <FieldError errors={[errors.repositoryUrl]} />
           </Field>
           <Field>
             <FieldLabel>{t('sessions.cloudAgents.launch.model')}</FieldLabel>
-            <Controller
-              control={control}
-              name="model"
-              render={({ field }) => (
-                <ChipSelect
-                  aria-label={t('sessions.cloudAgents.launch.model')}
-                  className="self-start"
-                  options={[
-                    {
-                      value: AUTO,
-                      label: t('sessions.cloudAgents.launch.modelDefault', {
-                        provider: providerLabel,
-                      }),
-                    },
-                    ...models.map((model) => ({
-                      value: model.id,
-                      label: model.label,
-                      keywords: model.id,
-                    })),
-                  ]}
-                  value={field.value ?? AUTO}
-                  onValueChange={(value) => field.onChange(value === AUTO ? undefined : value)}
-                  searchPlaceholder={t('sessions.cloudAgents.launch.searchModels')}
-                  emptyText={t('sessions.cloudAgents.launch.noModels')}
-                  loading={modelsLoading}
-                  loadingText={t('sessions.cloudAgents.launch.loading')}
-                  disabled={pending}
-                />
-              )}
-            />
+            <div>
+              <Controller
+                control={control}
+                name="model"
+                render={({ field }) => (
+                  <ChipSelect
+                    aria-label={t('sessions.cloudAgents.launch.model')}
+                    options={[
+                      {
+                        value: AUTO,
+                        label: t('sessions.cloudAgents.launch.modelDefault', {
+                          provider: providerLabel,
+                        }),
+                      },
+                      ...models.map((model) => ({
+                        value: model.id,
+                        label: model.label,
+                        keywords: model.id,
+                      })),
+                    ]}
+                    value={field.value ?? AUTO}
+                    onValueChange={(value) => field.onChange(value === AUTO ? undefined : value)}
+                    searchPlaceholder={t('sessions.cloudAgents.launch.searchModels')}
+                    emptyText={t('sessions.cloudAgents.launch.noModels')}
+                    loading={modelsLoading}
+                    loadingText={t('sessions.cloudAgents.launch.loading')}
+                    disabled={pending}
+                  />
+                )}
+              />
+            </div>
           </Field>
         </div>
         <Field data-invalid={Boolean(errors.startingRef)}>
