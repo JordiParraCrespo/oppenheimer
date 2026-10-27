@@ -49,7 +49,8 @@ test('a session waiting on an answer shows in the Inbox and opens from it', asyn
     "clear; printf 'Bash command\\n  pnpm generate:api-client\\n\\nDo you want to proceed?\\n  1. Yes\\n  2. No\\n'",
   );
   await page.keyboard.press('Enter');
-  await expect.poll(() => screen.includes('Do you want to proceed?')).toBe(true);
+  // tmux may draw a run of spaces as cursor moves, so read the drawn rows, not the stream.
+  await expect(page.locator('.xterm-rows')).toContainText('Do you want to proceed?');
 
   // Blocked for 30 s before it counts as waiting on you.
   await page.goto('/inbox');
