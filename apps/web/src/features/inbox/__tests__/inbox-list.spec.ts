@@ -69,8 +69,32 @@ describe('currentItem', () => {
   const rows = [item('a', 'run'), item('b', 'run')];
 
   it('is the item the address names while it is listed, else the first', () => {
-    expect(currentItem(rows, 'b')?.key).toBe('b');
-    expect(currentItem(rows, 'gone')?.key).toBe('a');
-    expect(currentItem([], null)).toBeNull();
+    expect(currentItem(rows, 'b', visit())?.key).toBe('b');
+    expect(currentItem(rows, 'gone', visit())?.key).toBe('a');
+    expect(currentItem([], null, visit())).toBeNull();
+  });
+
+  // Another tab answered first: this tab's answer is refused, the session's
+  // wait changes and so does its key. The pane keeps the session, so the
+  // refusal is read on its card instead of vanishing with a jump to the first
+  // item.
+  const waiting = [
+    item('approval:1', 'approval'),
+    item('session:s1:2026-10-27T01:00:00.000Z', 'session'),
+  ];
+
+  it('stays with the session the address named when its wait changed under it', () => {
+    expect(currentItem(waiting, 'session:s1:perm-abc', visit())?.key).toBe(
+      'session:s1:2026-10-27T01:00:00.000Z',
+    );
+  });
+
+  it('moves on to the first once this visit answered or marked the occurrence', () => {
+    for (const settled of [
+      visit({ answered: ['session:s1:perm-abc'] }),
+      visit({ done: ['session:s1:perm-abc'] }),
+    ]) {
+      expect(currentItem(waiting, 'session:s1:perm-abc', settled)?.key).toBe('approval:1');
+    }
   });
 });

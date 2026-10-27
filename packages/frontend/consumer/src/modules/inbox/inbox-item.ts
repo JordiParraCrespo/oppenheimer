@@ -80,6 +80,18 @@ export function sessionItemKey(
   return `session:${session.id}:s${session.stateSeq}`;
 }
 
+/**
+ * What an occurrence key is an occurrence of: a session (`session:<id>`), a
+ * pull request (`pull:<repo>#<number>`), or the approval or run itself,
+ * whose key names one wait already. A session's next wait, or a pull
+ * request's next push, is the same subject under a new key.
+ */
+export function inboxSubject(key: string): string {
+  if (key.startsWith('session:')) return key.split(':', 2).join(':');
+  if (key.startsWith('pull:')) return key.split('@', 1)[0];
+  return key;
+}
+
 function approvalItemKey(approval: { id: string }): string {
   return `approval:${approval.id}`;
 }

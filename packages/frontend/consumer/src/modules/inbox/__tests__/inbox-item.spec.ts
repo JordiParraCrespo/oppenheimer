@@ -5,7 +5,7 @@ import { BotApprovalEntity, WorkspaceBotApprovalEntity } from '../../bots/bot-co
 import { ProjectEntity } from '../../projects/project.entity';
 import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { SessionEntity, type SessionGroup, type SessionState } from '../../sessions/session.entity';
-import { composeInbox, type InboxSources, sessionItemKey } from '../inbox-item';
+import { composeInbox, type InboxSources, inboxSubject, sessionItemKey } from '../inbox-item';
 import { InboxMarkEntity } from '../inbox-mark.entity';
 
 /**
@@ -359,5 +359,16 @@ describe('composeInbox: marks apply to one occurrence', () => {
     const after = composeInbox(sources({ failedRuns: [run('r-1', 1)] }), marks, NOW + 61 * 60_000);
     expect(after.open.map((item) => item.key)).toEqual(['run:r-1']);
     expect(after.snoozed).toEqual([]);
+  });
+});
+
+describe('inboxSubject: what an occurrence is an occurrence of', () => {
+  it('is the session for every wait of a session, and the pull request for every push', () => {
+    expect(inboxSubject('session:s1:perm-abc')).toBe('session:s1');
+    expect(inboxSubject('session:s1:2026-10-27T01:00:00.000Z')).toBe('session:s1');
+    expect(inboxSubject('session:s1:s3')).toBe('session:s1');
+    expect(inboxSubject('pull:821374923#14@30f52fcb')).toBe('pull:821374923#14');
+    expect(inboxSubject('approval:a1')).toBe('approval:a1');
+    expect(inboxSubject('run:r1')).toBe('run:r1');
   });
 });
