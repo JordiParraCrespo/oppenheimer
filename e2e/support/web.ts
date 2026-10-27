@@ -121,9 +121,9 @@ export async function clickRowAction(
 
 /**
  * A session terminal's link to its host, live. The session's bar already
- * says its state, so the status line draws no "Live" of its own while the
- * link holds; its phase is on the line instead.
+ * says its state, so the pane draws no status band while the link holds;
+ * the terminal's frame carries the phase instead.
  */
 export function linkLive(page: Page): Locator {
-  return page.locator('[data-slot="terminal-status"][data-phase="live"]');
+  return page.locator('[data-slot="terminal"][data-host-link="live"]');
 }

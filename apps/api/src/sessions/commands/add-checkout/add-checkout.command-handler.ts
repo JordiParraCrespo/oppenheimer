@@ -58,9 +58,13 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    if (session.liveCheckouts.length >= MAX_SESSION_CHECKOUTS) {
-      throw new AppError(SessionErrors.ONE_REPOSITORY, {
-        detail: `Session ${session.slug} already checks out a repository`,
+    // A running session keeps the repositories it was created with: the wire has
+    // no frame that adds a worktree to a live session (`addCheckout` answers
+    // NOT_SUPPORTED), so a second one recorded here would never reach the host.
+    // Several repositories are chosen at create, up to `MAX_SESSION_CHECKOUTS`.
+    if (session.liveCheckouts.length > 0) {
+      throw new AppError(SessionErrors.TOO_MANY_REPOSITORIES, {
+        detail: `Session ${session.slug} is running; pick every repository when the session is created (at most ${MAX_SESSION_CHECKOUTS})`,
       });
     }
 

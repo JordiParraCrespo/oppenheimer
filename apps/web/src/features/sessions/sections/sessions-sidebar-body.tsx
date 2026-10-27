@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
+import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
@@ -66,7 +67,8 @@ const DeleteSessionsDialog = lazy(() =>
  * The projects and their sessions drag into the reader's own order
  * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
  * reader pinned (`useSessionPins`) are drawn above the projects instead of in
- * them, still filtered and searched like the rest.
+ * them, still filtered and searched like the rest. The groups the reader
+ * folded stay folded on the next visit (`useFoldedGroups`).
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -80,7 +82,7 @@ export function SessionsSidebarBody() {
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
-  const [closed, setClosed] = useState<string[]>([]);
+  const { folded: closed, setOpen } = useFoldedGroups();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -229,11 +231,7 @@ export function SessionsSidebarBody() {
                       project={project}
                       sessions={members}
                       open={!closed.includes(key)}
-                      onOpenChange={(next) =>
-                        setClosed((current) =>
-                          next ? current.filter((id) => id !== key) : [...current, key],
-                        )
-                      }
+                      onOpenChange={(next) => setOpen(key, next)}
                       narrowed={narrowed}
                       query={query}
                       onNewSessionHere={(target) =>

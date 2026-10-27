@@ -103,8 +103,14 @@ export const sessionPlaceSchema = z.enum(SESSION_PLACES);
 
 export { hostPathSchema };
 
-/** How many repositories a session may check out: one, until runners make several. */
-export const MAX_SESSION_CHECKOUTS = 1;
+/**
+ * How many repositories a session may check out. The runner makes one worktree per
+ * checkout, each beside a clone of its repository on the host, so every one costs
+ * disk and a fetch before the agent starts; and the composer's repository picker
+ * has to stay readable. Five covers a service and its neighbours without either.
+ * It was one from 2026-09-23 (#56) until runners made several (2026-10-26).
+ */
+export const MAX_SESSION_CHECKOUTS = 5;
 
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
@@ -116,9 +122,10 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * A worktree session's repositories: one in the MVP, because a runner makes
-   * one worktree per session, so a second is refused here before a row is
-   * written (#56, 00, 10). None with `folder`.
+   * A worktree session's repositories, each a worktree of its own in the session's
+   * folder, at most {@link MAX_SESSION_CHECKOUTS}; more is refused here before a
+   * row is written (00, 10). The first is where the agent starts unless
+   * `cwdGithubRepoId` names another. None with `folder`.
    */
   checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS).default([]),
   /**

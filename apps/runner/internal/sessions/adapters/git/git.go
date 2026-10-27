@@ -645,7 +645,12 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 		// config named before it (osxkeychain in Apple's system gitconfig, a
 		// person's GCM): only the runner's helper is asked, so a token for
 		// one session never comes from a keychain the host account filled.
-		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
+		//
+		// useHttpPath hands the helper the repository's path as well as its
+		// host: a session over several repositories holds a token for each,
+		// and the path is how the helper says which one git is fetching.
+		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper,
+			"-c", "credential.useHttpPath=true")
 	}
 	full = append(full, args...)
 

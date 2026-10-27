@@ -726,4 +726,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-10-26: **the Inbox is built in the console** (29, "As built"): a failed or stuck session is keyed by its lifecycle's change count rather than `observedSince`, which only a blocked agent has; the API reports both and a pull request row's head commit.
 - 2026-10-26: **a bot's chat queues what you write while it works and shows the room it has left** ([25](25-bots.md) §2): waiting messages over the composer with Remove, Edit and Send now, and the context meter with a ChatGPT sign-in's plan windows; the meter is no longer "not built yet".
 - 2026-10-26: **bots show in the console's sections** (28): a set of sections on the bot, chosen by its owner, the section's plus or the bot itself, lists it under a Bots heading in Sessions, Automations, Plan and Pull requests; Pull requests opens its chat in place. Not derived from permissions, which are not built yet.
+- 2026-10-26: **a session checks out several repositories again, up to
+  five** (00). 2026-09-23's one repository per session (#56) is lifted:
+  the runner makes one worktree per checkout on `session.create`, each in
+  its own directory of the session folder (two repositories sharing a name
+  take `<repo>` and `<owner>--<repo>`). The create body takes one to
+  `MAX_SESSION_CHECKOUTS` (5) distinct repositories, the agent starts in
+  the first unless `cwdGithubRepoId` names another. Adding one to a
+  running session stays refused (`SESSIONS_010`, which keeps its code):
+  the wire has no frame that adds a worktree to a live session, so the
+  repositories are picked at create. A session with none
+  is still refused (2026-09-27).
 - 2026-10-26: **every section opens a bot's chat in place** (28): Sessions, Automations and Plan too, under their own address and sidebar, not Employees as their frames link it.

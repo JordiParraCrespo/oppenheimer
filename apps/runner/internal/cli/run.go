@@ -237,7 +237,10 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		if a.Credentials == nil || request["host"] != "github.com" {
 			return problem.ErrNotFound.WithDetail("this runner has no credential for %s", request["host"])
 		}
-		token, err := a.Credentials.Get(r.Context(), request["session"])
+		// path is the repository, `owner/name.git`, which git sends only
+		// where it is told to (sessionEnv, the git adapter): what picks
+		// the checkout in a session over several repositories.
+		token, err := a.Credentials.Get(r.Context(), request["session"], request["path"])
 		if err != nil {
 			return problem.ErrNotFound.WithDetail("no credential for this session: %v", err)
 		}
