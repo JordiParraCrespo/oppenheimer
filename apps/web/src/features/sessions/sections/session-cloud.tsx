@@ -2,8 +2,13 @@ import { Button, CommandRow, StatusDot } from '@oppenheimer/design-system-web';
 import { ExternalLink } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { PageFrame } from '@oppenheimer/frontend-web';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
+
+const DeleteSessionDialog = lazy(() =>
+  import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
+);
 
 /**
  * A session in Claude Code's cloud, once its host has started it
@@ -11,11 +16,13 @@ import { dotFor, stateWordFor } from '../lib/session-run-state';
  * session lives on claude.ai/code, so the pane says what it is doing, opens
  * it there, and hands over the command that brings it into a terminal
  * (`claude --teleport`). Its state is what the Oppenheimer extension saw on
- * claude.ai, which is the only witness a cloud session has.
+ * claude.ai, which is the only witness a cloud session has. Delete takes it out
+ * of Oppenheimer at once; it stays on claude.ai/code.
  */
 export function SessionCloud({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
+  const [deleting, setDeleting] = useState(false);
 
   return (
     <PageFrame size="status">
@@ -29,15 +36,17 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
         </StatusDot>
         <p className="mt-1.5 text-sm text-fg-subtle">{t('sessions.cloud.statusSource')}</p>
 
-        {session.cloudUrl ? (
-          <Button
-            className="mt-6.5"
-            render={<a href={session.cloudUrl} target="_blank" rel="noreferrer" />}
-          >
-            {t('sessions.cloud.open')}
-            <ExternalLink />
+        <div className="mt-6.5 flex items-center gap-2">
+          {session.cloudUrl ? (
+            <Button render={<a href={session.cloudUrl} target="_blank" rel="noreferrer" />}>
+              {t('sessions.cloud.open')}
+              <ExternalLink />
+            </Button>
+          ) : null}
+          <Button variant="destructive-ghost" onClick={() => setDeleting(true)}>
+            {t('sessions.cloud.delete')}
           </Button>
-        ) : null}
+        </div>
 
         {session.teleportCommand ? (
           <CommandRow
@@ -49,6 +58,11 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
           />
         ) : null}
       </div>
+      <Suspense fallback={null}>
+        {deleting ? (
+          <DeleteSessionDialog session={session} onClose={() => setDeleting(false)} />
+        ) : null}
+      </Suspense>
     </PageFrame>
   );
 }
