@@ -1,5 +1,6 @@
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -25,21 +26,37 @@ import {
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
+ * Which projects the sidebar draws: every project with a check, the ones in
+ * `hidden` without. Hiding is not filtering, so Clear filters leaves it.
+ */
+export interface ProjectVisibility {
+  projects: FilterOption[];
+  hidden: readonly string[];
+  /** How many of `projects` are hidden; `hidden` may hold ids of projects since deleted. */
+  hiddenCount: number;
+  onShownChange: (id: string, shown: boolean) => void;
+  onShowAll: () => void;
+}
+
+/**
  * The filter button beside the session count and its menu (the artboard's
  * `.op-iconbtn-sm` and `.op-filtermenu`). The button is lit while the menu is
- * open *or* while anything is hidden. Props only: the sidebar owns the
- * filters, because it renders what they narrow.
+ * open *or* while anything is hidden, by a filter or a hidden project. Props
+ * only: the sidebar owns the filters and the hidden projects, because it
+ * renders what they narrow.
  */
 export function SessionsFilterMenu({
   filters,
   options,
   dirty,
+  visibility,
   onChange,
   onClear,
 }: {
   filters: SessionFilters;
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
+  visibility: ProjectVisibility;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
 }) {
@@ -55,7 +72,7 @@ export function SessionsFilterMenu({
             size="xs"
             variant="quiet"
             aria-label={t('sessions.filters.label')}
-            data-dirty={dirty || undefined}
+            data-dirty={dirty || visibility.hiddenCount > 0 || undefined}
           />
         }
       >
@@ -83,6 +100,44 @@ export function SessionsFilterMenu({
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         ))}
+
+        <DropdownMenuSeparator />
+
+        {/* A check per project; the menu stays open so several can be
+            toggled in one go. */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger disabled={visibility.projects.length === 0}>
+            {t('sessions.filters.shown')}
+            <DropdownMenuValue>
+              {visibility.hiddenCount === 0
+                ? t('sessions.filters.shownAll')
+                : t('sessions.filters.shownSome', {
+                    shown: visibility.projects.length - visibility.hiddenCount,
+                    total: visibility.projects.length,
+                  })}
+            </DropdownMenuValue>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
+            {visibility.projects.map((project) => (
+              <DropdownMenuCheckboxItem
+                key={project.value}
+                checked={!visibility.hidden.includes(project.value)}
+                onCheckedChange={(shown) => visibility.onShownChange(project.value, shown)}
+                closeOnClick={false}
+              >
+                {project.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={visibility.hiddenCount === 0}
+              onClick={visibility.onShowAll}
+              closeOnClick={false}
+            >
+              {t('sessions.filters.showAll')}
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         <DropdownMenuSeparator />
 

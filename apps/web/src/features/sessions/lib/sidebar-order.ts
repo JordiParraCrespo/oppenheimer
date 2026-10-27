@@ -84,11 +84,11 @@ export function orderSessions(
 }
 
 /**
- * A drop's order of the sessions it saw, with every stored session it did
- * not see (pinned above the projects, so drawn in none) kept just after the
- * one it followed, so it comes back in its place.
+ * A drop's order of the ids it saw, with every stored id it did not see (a
+ * session pinned above the projects, a project hidden from the sidebar) kept
+ * just after the one it followed, so it comes back in its place.
  */
-export function mergeSessionOrder(dropped: readonly string[], stored: readonly string[]): string[] {
+export function mergeOrder(dropped: readonly string[], stored: readonly string[]): string[] {
   const merged = [...dropped];
   const seen = new Set(dropped);
   let after: string | null = null;
