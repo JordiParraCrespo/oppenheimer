@@ -673,7 +673,7 @@ export default function Page() {
         id="agentmark"
         title="AgentMark"
         meta="agent-mark.tsx"
-        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. A bot's providers without a coding agent of their own take theirs: GLM Z.ai's mark, ChatGPT its app icon. An unknown id falls back to the bot."
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. A bot's providers without a coding agent of their own take theirs: GLM Z.ai's mark, ChatGPT OpenAI's, having none of its own. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
         {CODING_AGENT_IDS.map((agent) => (

@@ -11,8 +11,8 @@ import {
 /**
  * The mark each provider is drawn with: the coding agent whose maker it is, so
  * Anthropic carries Claude Code's mark and OpenAI Codex's; GLM has no agent of
- * its own and is drawn with Z.ai's mark, and ChatGPT with its app icon, a mark
- * of its own so it stays a group apart from OpenAI's in the model button.
+ * its own and is drawn with Z.ai's mark. ChatGPT wears OpenAI's mark too, under
+ * an id of its own so it stays a group apart from OpenAI's in the model button.
  */
 const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, AgentId>> = {
   anthropic: 'claude-code',
