@@ -20,6 +20,8 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
 } from '../modules/sessions/session.entity';
@@ -48,6 +50,9 @@ export const sessionsKeys = {
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
   share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
   shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
+  ports: (id: string) => [...sessionsKeys.all, 'ports', id] as const,
+  preview: (id: string, port: number, opened: number) =>
+    [...sessionsKeys.all, 'preview', id, port, opened] as const,
 };
 
 /**
@@ -643,5 +648,63 @@ export function useSuspenseSharedSession(slug: string) {
   return useSuspenseQuery<SharedSession, Error>({
     queryKey: sessionsKeys.shared(slug),
     queryFn: () => app.sessions.findSharedSession(slug),
+  });
+}
+
+/**
+ * The ports a session listens on, for its Browser tab: polled while the tab
+ * is open, so a dev server the agent just started shows on its own. An
+ * offline host, or a runner that cannot list, is the answer's `state`, not a
+ * failure.
+ */
+export function useSuspenseSessionPorts(sessionId: string) {
+  const app = useConsumerApp();
+  const queryKey = sessionsKeys.ports(sessionId);
+  const poll = usePollWhile<SessionPorts>('sessionPorts', queryKey, true);
+  return useSuspenseQuery({
+    queryKey,
+    queryFn: () => app.sessions.findPorts(sessionId),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...poll,
+  });
+}
+
+/**
+ * Where the Browser tab frames one of the session's ports. A query, though
+ * minting writes, like `useCurrentPairing`: the frame needs exactly one URL
+ * per port it shows. The ticket in it is single use, so it is never
+ * refetched or kept past the frame: Reload asks again with a new `opened`.
+ */
+export function useSuspenseSessionPreview(sessionId: string, port: number, opened: number) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<SessionPreview>({
+    queryKey: sessionsKeys.preview(sessionId, port, opened),
+    queryFn: () => app.sessions.openPreview(sessionId, { port, embed: true }),
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+}
+
+/**
+ * Open in a new tab: a URL of its own for one of the session's ports, outside
+ * the console's frame. Nothing cached changes.
+ */
+export function useOpenSessionPreviewTab(
+  options?: UseMutationOptions<
+    SessionPreview,
+    Error,
+    { sessionId: string; port: number; path?: string }
+  >,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    ...options,
+    mutationFn: ({ sessionId, port, path }) =>
+      app.sessions.openPreview(sessionId, { port, path, embed: false }),
   });
 }

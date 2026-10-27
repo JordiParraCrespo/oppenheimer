@@ -87,6 +87,28 @@ export class SessionCheckoutEntity {
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
  * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
  */
+/** One port a session's processes listen on, which its Browser tab can open. */
+export interface SessionPort {
+  port: number;
+  /** The command listening on it ("node"), when the host said. */
+  process: string | null;
+}
+
+/**
+ * What the session's host said about its ports: the ports, or why it said
+ * nothing (no link now, or a runner that cannot list them).
+ */
+export interface SessionPorts {
+  state: 'listed' | 'host_offline' | 'not_supported';
+  ports: SessionPort[];
+}
+
+/** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
+export interface SessionPreview {
+  url: string;
+  expiresAt: Date;
+}
+
 export interface AttachTicket {
   ticket: string;
   /** A path on the API's own origin, e.g. `/api/v1/relay/attach`. */

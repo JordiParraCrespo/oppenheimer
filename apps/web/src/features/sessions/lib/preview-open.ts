@@ -21,3 +21,29 @@ export function rememberPreviewOpen(open: boolean) {
     // Private browsing or a full quota: the choice holds until the page reloads.
   }
 }
+
+/** The preview pane's two views (`SessionsConsole.dc.html`). */
+export type PreviewTab = 'browser' | 'simulator';
+
+/** Which view the pane opens on, kept on this device like whether it is open. */
+const PREVIEW_TAB_KEY = 'oppenheimer.session.preview.tab';
+
+/** The view last chosen, when it is one this console offers; else the first it does. */
+export function storedPreviewTab(offered: readonly PreviewTab[]): PreviewTab | undefined {
+  try {
+    const stored = window.localStorage.getItem(PREVIEW_TAB_KEY);
+    const tab = offered.find((one) => one === stored);
+    if (tab) return tab;
+  } catch {
+    // Storage switched off: the first view offered.
+  }
+  return offered[0];
+}
+
+export function rememberPreviewTab(tab: PreviewTab) {
+  try {
+    window.localStorage.setItem(PREVIEW_TAB_KEY, tab);
+  } catch {
+    // Private browsing or a full quota: the choice holds until the page reloads.
+  }
+}

@@ -78,4 +78,12 @@ export const SessionsErrors = {
     code: 'SESSIONS_012',
     message: 'That file is too large to give the session',
   },
+  PORTS_FAILED: {
+    code: 'SESSIONS_CLIENT_019',
+    message: "Failed to list the session's ports",
+  },
+  PREVIEW_FAILED: {
+    code: 'SESSIONS_CLIENT_020',
+    message: "Failed to open the session's preview",
+  },
 } as const satisfies Record<string, ErrorDefinition>;
