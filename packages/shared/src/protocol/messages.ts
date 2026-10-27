@@ -1,12 +1,19 @@
 import { z } from 'zod/v4';
-import { hintSchema } from './hint.js';
 import {
-  CHAT_BATCH_MAX_ENTRIES,
-  CHAT_ENTRY_MAX_BYTES,
-  DEVICE_BUTTONS,
-  DEVICE_INPUT_KINDS,
-  DEVICE_KEYS,
-} from './link.js';
+  deviceAttachSchema,
+  deviceDetachSchema,
+  deviceInfoSchema,
+  deviceInputSchema,
+} from './devices.js';
+import { hintSchema } from './hint.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import {
+  portCloseSchema,
+  portListingSchema,
+  portListSchema,
+  portOpenedSchema,
+  portOpenSchema,
+} from './ports.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -833,149 +840,6 @@ export const attachmentChatSchema = z.object({
 });
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
-
-/* ------------------------------------------------------------------ a session's device */
-
-/**
- * Open a session's device screen for one browser: the runner answers with
- * `device.info`, then streams the screen under `attachmentId` as binary
- * frames, each one whole JPEG image, never larger than the link's frame cap.
- * A frame is sent only against credit (`attachment.credit`, in bytes, as for a
- * PTY), and a frame that has no credit is replaced by the next: a slow viewer
- * sees fewer frames, never older ones, and never backs up the link. A session
- * with no device on its host is refused with `command.failed`. Sent only to a
- * runner that named `device.screen`.
- */
-export const deviceAttachSchema = z.object({
-  type: z.literal('device.attach'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  attachmentId: attachmentIdSchema,
-});
-
-export type DeviceAttachMessage = z.infer<typeof deviceAttachSchema>;
-
-/** The runner's answer to `device.attach`: which device the session has. */
-export const deviceInfoSchema = z.object({
-  type: z.literal('device.info'),
-  attachmentId: attachmentIdSchema,
-  /** The host's id for it: an adb serial, a simulator UDID. */
-  serial: z.string().min(1).max(200),
-  /** What the pane's header calls it ("Android emulator"). */
-  name: z.string().min(1).max(200),
-  platform: z.enum(['android', 'ios']),
-});
-
-export type DeviceInfoMessage = z.infer<typeof deviceInfoSchema>;
-
-const devicePoint = () => z.number().min(0).max(1);
-
-/**
- * One gesture or keystroke for a device, from the console. Points are
- * fractions of the screen (0 to 1 from the top left), so the browser never
- * needs the device's resolution. Which fields a kind reads: `tap` x and y,
- * `swipe` x, y, toX and toY, `text` text, `key` key, `button` button. The
- * runner applies it to the session's own device; the message cannot name
- * another.
- */
-export const deviceInputSchema = z.object({
-  type: z.literal('device.input'),
-  attachmentId: attachmentIdSchema,
-  kind: z.enum(DEVICE_INPUT_KINDS),
-  x: devicePoint().optional(),
-  y: devicePoint().optional(),
-  toX: devicePoint().optional(),
-  toY: devicePoint().optional(),
-  text: z.string().min(1).max(1000).optional(),
-  key: z.enum(DEVICE_KEYS).optional(),
-  button: z.enum(DEVICE_BUTTONS).optional(),
-});
-
-export type DeviceInputMessage = z.infer<typeof deviceInputSchema>;
-
-/** The control plane frees a device attachment: the browser went away. */
-export const deviceDetachSchema = z.object({
-  type: z.literal('device.detach'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  attachmentId: attachmentIdSchema,
-});
-
-export type DeviceDetachMessage = z.infer<typeof deviceDetachSchema>;
-
-/* ------------------------------------------------------------------ a session's ports (28) */
-
-/** A TCP port a preview may reach: the session's own, never a system one. A fresh schema per use, like `sdp`. */
-const forwardedPort = () => z.number().int().min(1024).max(65535);
-
-/** How many ports one `port.listing` names at most. */
-export const PORT_LISTING_MAX_ENTRIES = 64;
-
-/**
- * The ports the session's own processes listen on. Sent only to a runner
- * whose hello named `port.forward`; answered by `port.listing` with the same
- * `commandId`, or by `command.failed` (`PORT_003` the host cannot tell).
- */
-export const portListSchema = z.object({
-  type: z.literal('port.list'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-});
-
-export type PortListMessage = z.infer<typeof portListSchema>;
-
-/** The session's listening ports, one per port, in order. */
-export const portListingSchema = z.object({
-  type: z.literal('port.listing'),
-  commandId: commandIdSchema,
-  ports: z
-    .array(
-      z.object({
-        port: forwardedPort(),
-        /** The command holding it ("node"), for the console's picker. */
-        process: z.string().max(100).optional(),
-      }),
-    )
-    .max(PORT_LISTING_MAX_ENTRIES),
-});
-
-export type PortListingMessage = z.infer<typeof portListingSchema>;
-
-/**
- * Open one TCP connection to a port the session listens on, as an
- * attachment: from `port.opened` on, binary frames under the id carry its
- * bytes both ways, each direction under its own `attachment.credit` window.
- * Refused with `command.failed`: `PORT_001` the session does not listen on
- * it, `PORT_002` nothing answered.
- */
-export const portOpenSchema = z.object({
-  type: z.literal('port.open'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  attachmentId: attachmentIdSchema,
-  port: forwardedPort(),
-});
-
-export type PortOpenMessage = z.infer<typeof portOpenSchema>;
-
-/** The runner connected; bytes may flow. */
-export const portOpenedSchema = z.object({
-  type: z.literal('port.opened'),
-  attachmentId: attachmentIdSchema,
-});
-
-export type PortOpenedMessage = z.infer<typeof portOpenedSchema>;
-
-/**
- * The control plane hangs up a port attachment: the runner closes the
- * connection. The runner's own hang-up is `attachment.closed`.
- */
-export const portCloseSchema = z.object({
-  type: z.literal('port.close'),
-  attachmentId: attachmentIdSchema,
-});
-
-export type PortCloseMessage = z.infer<typeof portCloseSchema>;
 
 /* ------------------------------------------------------------------ the union */
 
