@@ -7,16 +7,21 @@ import { reloadOnStaleBuild, type StaleBuildWindow } from './stale-build-reload'
  * emptied it under "Could not reach the server"; with a reload on every
  * failure, a chunk that is really gone would reload the page for ever.
  */
-function fakeWindow() {
+function fakeWindow({ storageRefused = false } = {}) {
   const target = new EventTarget();
   const stored = new Map<string, string>();
   const reload = vi.fn();
+  const refuse = () => {
+    throw new DOMException('denied', 'SecurityError');
+  };
   const win: StaleBuildWindow = {
     addEventListener: target.addEventListener.bind(target),
-    sessionStorage: {
-      getItem: (key: string) => stored.get(key) ?? null,
-      setItem: (key: string, value: string) => void stored.set(key, value),
-    } as Storage,
+    sessionStorage: (storageRefused
+      ? { getItem: refuse, setItem: refuse }
+      : {
+          getItem: (key: string) => stored.get(key) ?? null,
+          setItem: (key: string, value: string) => void stored.set(key, value),
+        }) as unknown as Storage,
     location: { reload },
   };
   const fail = () => {
@@ -47,6 +52,14 @@ describe('reloadOnStaleBuild', () => {
     const again = fail();
     expect(reload).toHaveBeenCalledOnce();
     expect(again.defaultPrevented).toBe(false);
+  });
+
+  it('never reloads when storage refuses the guard, which would loop on a chunk every load asks for', () => {
+    const { win, reload, fail } = fakeWindow({ storageRefused: true });
+    reloadOnStaleBuild(win);
+    const event = fail();
+    expect(reload).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('reloads again once the guard has passed', () => {

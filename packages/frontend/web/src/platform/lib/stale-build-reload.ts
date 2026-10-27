@@ -21,17 +21,21 @@ export type StaleBuildWindow = Pick<Window, 'addEventListener' | 'sessionStorage
  * Vite fires `vite:preloadError` for every failed dynamic import in a build.
  * One reload per ten seconds: a chunk that still fails right after one is
  * really unreachable, and reloading again would loop, so that failure goes
- * on to the screen's own error state.
+ * on to the screen's own error state. So does every failure in a tab whose
+ * storage refuses the guard.
  */
 export function reloadOnStaleBuild(target: StaleBuildWindow = window): void {
   target.addEventListener('vite:preloadError', (event) => {
     const now = Date.now();
-    let last = 0;
+    let last: number;
     try {
       last = Number(target.sessionStorage.getItem(RELOADED_AT_KEY)) || 0;
       target.sessionStorage.setItem(RELOADED_AT_KEY, String(now));
     } catch {
-      // Storage refused (a private window): reload once all the same.
+      // Storage refused: a reload nothing records could not tell the next
+      // failure from this one, and a chunk every load asks for (a locale
+      // catalog) would reload for ever. Leave it to the screen.
+      return;
     }
     if (now - last < RELOAD_GUARD_MS) return;
     event.preventDefault();
