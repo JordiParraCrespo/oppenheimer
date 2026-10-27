@@ -182,7 +182,7 @@
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
   | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
-  | Codex | **GPT-6.1 Sol**, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
+  | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
   | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-6.1-sol`, `openai/gpt-5.6-sol` | yes | the model's levels |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | the model's levels |
   | Blank terminal | none, picked outright | no | no |
@@ -315,7 +315,16 @@
   "Stopped"…), then Terminal / Chat and Share on the right. A pull
   request's review session keeps the pull request's toolbar instead, and
   those two close its terminal's status line. The preview the frame
-  opens beside a session (a browser, a phone simulator) is not built.
+  opens beside a session has its Simulator built (2026-10-26): a
+  panel-right toggle before Share opens a 440px pane on the terminal's
+  right, its header the frame's pill tab, the device's state and name,
+  and Close, its body the session's device in a phone's frame, live. A
+  click taps, a drag swipes, typing with the screen focused types into
+  it. The device is the simulator or emulator the session's host gave it,
+  the one its agent drives through Argent
+  (`../research/device-streaming.md`); a host that offers none says so in
+  the pane. The Browser tab, the resize handle and Reload app are not
+  built.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

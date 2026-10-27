@@ -710,5 +710,13 @@ earlier note:
   (`MAX_SESSION_CHECKOUTS`), the first being where the agent starts unless
   another is named. The bound exists because each checkout is a clone and a
   worktree on the host, and the picker has to stay readable. `SESSIONS_010`
-  keeps its code and now refuses a sixth. Recorded in 00 and the MVP
+  keeps its code and refuses a repository added to a running session,
+  since the wire cannot add a worktree to a live one. Recorded in 00 and the MVP
   decision log.
+- The preview pane the session frame opens beside a terminal was not
+  built. On 2026-10-26 the owner asked for the Simulator in it: a
+  session's host offers simulators and emulators (`RUNNER_DEVICES`), each
+  session holds one, its agent drives it through Argent and the reader
+  watches and taps it in the pane, its screen relayed over the link as one
+  more attachment kind (`versions/mvp/05-screens.md`,
+  `research/device-streaming.md`). The Browser tab is still not built.

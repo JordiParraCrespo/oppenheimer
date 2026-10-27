@@ -202,6 +202,10 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 		}
 	case "session.close":
 		_, err = h.app.Sessions.Close(ctx, m.SessionID, sessionsapp.CloseInput{Push: true, Force: m.AcceptUnpushedWork})
+		if err == nil && h.devices != nil {
+			// A closed session is resolved: its device goes back to the host.
+			h.devices.Release(m.SessionID)
+		}
 		h.credentials.Forget(m.SessionID)
 	case "session.window.open":
 		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)

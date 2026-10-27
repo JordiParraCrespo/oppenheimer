@@ -1635,6 +1635,7 @@ export type SessionEventPageResponseDto = {
 
 export type IssueAttachTicketRequest = {
     window?: number;
+    target?: 'terminal' | 'device';
 };
 
 export type SetSessionSharePeopleRequest = {

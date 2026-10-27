@@ -64,6 +64,7 @@ describe('coding agent catalog', () => {
     expect(levelsOf('codex', null)).toEqual(levelsOf('codex', 'gpt-6.1-sol'));
     expect(effortFor('codex', 'gpt-6.1-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-6-sol')?.default).toBe('medium');
+    expect(effortFor('codex', 'gpt-6.1-terra')?.default).toBe('medium');
     expect(levelsOf('codex', 'gpt-6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
     expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');

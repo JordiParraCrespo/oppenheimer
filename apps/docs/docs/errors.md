@@ -906,6 +906,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `UPD_006` <a id="upd_006" />           | The new version could not be activated       | 500  |
 | `UPD_007` <a id="upd_007" />           | The update was rolled back                   | 500  |
 | `UPD_008` <a id="upd_008" />           | This build has no release key and cannot self-update | 424 |
+| `DEV_001` <a id="dev_001" />           | This host has no device for the session      | 409  |
+| `DEV_002` <a id="dev_002" />           | The session's device could not be reached    | 502  |
+| `DEV_003` <a id="dev_003" />           | The device does not take that input          | 400  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |

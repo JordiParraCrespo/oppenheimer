@@ -1,6 +1,12 @@
 import { z } from 'zod/v4';
 import { attachTicketHintSchema } from './hint.js';
-import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import {
+  CHAT_BATCH_MAX_ENTRIES,
+  CHAT_ENTRY_MAX_BYTES,
+  DEVICE_BUTTONS,
+  DEVICE_INPUT_KINDS,
+  DEVICE_KEYS,
+} from './link.js';
 
 /**
  * The browser attach socket's control vocabulary — the second of the two
@@ -47,11 +53,33 @@ export const attachDirectPathSchema = z.object({
   offset: z.number().int().min(0),
 });
 
+const devicePoint = () => z.number().min(0).max(1);
+
+/**
+ * A gesture or key for the session's device, on a device attachment (a
+ * ticket minted with `target: 'device'`). Relayed as `device.input`; the
+ * runner applies it to the session's own device.
+ */
+export const attachDeviceInputSchema = z.object({
+  type: z.literal('device.input'),
+  kind: z.enum(DEVICE_INPUT_KINDS),
+  x: devicePoint().optional(),
+  y: devicePoint().optional(),
+  toX: devicePoint().optional(),
+  toY: devicePoint().optional(),
+  text: z.string().min(1).max(1000).optional(),
+  key: z.enum(DEVICE_KEYS).optional(),
+  button: z.enum(DEVICE_BUTTONS).optional(),
+});
+
+export type AttachDeviceInput = Omit<z.infer<typeof attachDeviceInputSchema>, 'type'>;
+
 export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachResizeSchema,
   attachCreditSchema,
   attachDirectOfferSchema,
   attachDirectPathSchema,
+  attachDeviceInputSchema,
 ]);
 
 export type AttachClientMessage = z.infer<typeof attachClientMessageSchema>;
@@ -118,6 +146,18 @@ export const attachChatSchema = z.object({
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 
+/**
+ * On a device attachment, which device the session has: the runner's
+ * `device.info`. JPEG frames of its screen follow as binary frames, each one
+ * whole image, and the browser credits each one's bytes once it is drawn.
+ */
+export const attachDeviceSchema = z.object({
+  type: z.literal('device'),
+  serial: z.string().min(1).max(200),
+  name: z.string().min(1).max(200),
+  platform: z.enum(['android', 'ios']),
+});
+
 export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachAttachedSchema,
   attachHintSchema,
@@ -127,6 +167,7 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachDirectUnavailableSchema,
   attachDirectPathSchema,
   attachChatSchema,
+  attachDeviceSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;

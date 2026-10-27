@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
@@ -73,6 +74,9 @@ type App struct {
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
 	Credentials *credentialBroker
+	// Devices is the simulators and emulators this host offers its sessions,
+	// one each; nil is a host that offers none.
+	Devices *devapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -147,6 +151,11 @@ func New(version string) (*App, error) {
 		// the next one behind (02-runner §5).
 		Spares: true,
 	})
+	devices, err := hostDevices()
+	if err != nil {
+		return nil, err
+	}
+	app.Devices = devices
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -155,7 +164,13 @@ func New(version string) (*App, error) {
 		Files:      filestore.New(paths.Files()),
 		Places:     places,
 		Layout:     layout,
-		Env:        func(session sessionsdomain.Session) map[string]string { return sessionEnv(paths, session) },
+		Env: func(session sessionsdomain.Session) map[string]string {
+			env := sessionEnv(paths, session)
+			for key, value := range pinDevice(devices, session) {
+				env[key] = value
+			}
+			return env
+		},
 		// A session never starts an agent CLI its updater is replacing.
 		Gate: agentGate{paths: paths},
 		// A session nobody is asked to approve starts in a folder already
@@ -267,6 +282,12 @@ func unit(paths Paths) svcdomain.Unit {
 	// service, which would not otherwise see the installer's environment.
 	if updates := os.Getenv(EnvAgentUpdates); updates != "" {
 		env[EnvAgentUpdates] = updates
+	}
+	// The devices and the Argent the installer was told about.
+	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {
+		if value := os.Getenv(key); value != "" {
+			env[key] = value
+		}
 	}
 	// The installer's PATH, carried onto the service: launchd hands a job
 	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, neither with

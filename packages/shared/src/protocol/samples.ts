@@ -129,6 +129,16 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],
   },
+  'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
+  'device.info': {
+    type: 'device.info',
+    attachmentId: 9,
+    serial: 'emulator-5554',
+    name: 'Android emulator',
+    platform: 'android',
+  },
+  'device.input': { type: 'device.input', attachmentId: 9, kind: 'tap', x: 0.5, y: 0.42 },
+  'device.detach': { type: 'device.detach', commandId, sessionId, attachmentId: 9 },
   'session.create': {
     type: 'session.create',
     commandId,

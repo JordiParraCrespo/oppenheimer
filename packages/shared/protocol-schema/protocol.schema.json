@@ -1192,6 +1192,159 @@
         "attachmentId",
         "entries"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.attach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.info"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "serial",
+        "name",
+        "platform"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.input"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "tap",
+            "swipe",
+            "text",
+            "key",
+            "button"
+          ]
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "toX": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "toY": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "key": {
+          "type": "string",
+          "enum": [
+            "enter",
+            "backspace",
+            "escape",
+            "tab"
+          ]
+        },
+        "button": {
+          "type": "string",
+          "enum": [
+            "home",
+            "back",
+            "appSwitch"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.detach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId"
+      ]
     }
   ],
   "$defs": {
@@ -1522,7 +1675,8 @@
       "attachment.direct",
       "session.folder",
       "fs.list",
-      "attachment.chat"
+      "attachment.chat",
+      "device.screen"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
