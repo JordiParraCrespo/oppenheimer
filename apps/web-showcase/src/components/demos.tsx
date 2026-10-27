@@ -868,8 +868,9 @@ export function ComposerPillDemo() {
 type DemoState = 'running' | 'needs-input' | 'failed' | 'idle' | 'pending';
 
 /** Every session once, by id; the projects and the rail are groups of ids. */
-const SESSIONS: Record<string, { name: string; age: string; state: DemoState; status?: string }> = {
-  peersyst: { name: 'PR #121 porting to peersyst', age: '2m', state: 'running' },
+const SESSIONS: Record<string, { name: string; age: string; state: DemoState; status?: string; working?: boolean }> = {
+  // Its agent is at work: the name shimmers.
+  peersyst: { name: 'PR #121 porting to peersyst', age: '2m', state: 'running', working: true },
   cleanup: { name: 'XRP Mobile API cleanup', age: '3h', state: 'needs-input' },
   router: { name: 'tool router', age: '1d', state: 'idle' },
   ingest: { name: 'nightly ingest', age: '14m', state: 'running' },
@@ -1116,6 +1117,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                                   age={session.age}
                                   status={session.status}
                                   state={session.state}
+                                  working={session.working}
                                   active={id === active}
                                   onClick={() => setActive(id)}
                                   menuOpen={menu === id}
