@@ -254,5 +254,11 @@
     "title": "No se ha podido dibujar esta pantalla",
     "retry": "Reintentar"
   },
-  "code": "Código: {{code}}"
+  "code": "Código: {{code}}",
+  "startFailure": {
+    "codes": {
+      "SESS_002": "Este host crea sesiones con un solo repositorio."
+    },
+    "details": "Detalles del host: {{detail}}"
+  }
 }

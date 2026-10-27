@@ -26,7 +26,7 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 |------|--------|----------------|---------------------|
 | **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more, the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
 | **A bot's approval** | `bot_approval` with `status = 'pending'`, at most one per bot | a bot stopped its turn on a tool the owner set to *ask* (`25-bots.md`) | **Approve / Deny** through the existing `POST /v1/bots/:id/approvals/:approvalId/decision` |
-| **A pull request for you** | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Review** opens it in Pull requests |
+| **A pull request for you** | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
 
 **Order**, most blocked first: bot approvals and sessions waiting, oldest
@@ -123,6 +123,28 @@ items. Three of the reads exist. Three things are missing:
   Answering adds a line to the pane's log above it ("Merged #121 into
   main", "Approved Ops · start_session") and brings the next item. With
   nothing left: "You're clear", with the count of sessions still running.
+- **What each card says**, beyond its title and buttons:
+  - *A bot approval*: the call it would run, its input under the tool in
+    the chat's `ApprovalCommand`, one `key: value` line per field (strings
+    as written, anything else as compact JSON), at most six fields and 200
+    characters a value, cut with "…". The fields come in the order Postgres
+    keeps `jsonb` keys (shortest first), not the order the bot wrote them.
+  - *A failed session*: why it did not start, in the words its own page
+    uses: the start log's code, translated, as the body, and the host's raw
+    detail in a small line under it. While the log loads, or for a code the
+    console does not know, the body is "Its host could not start it. Open
+    it to see which step failed." The code-to-sentence mapping and the
+    detail line are the platform kit's (`useStartFailure`,
+    `StartFailureDetail` in `packages/frontend/web/src/i18n/`), and the
+    copy for codes a person can act on is `errors.startFailure`.
+  - *A failed run*: its first turn's exit code ("Exit 1", mono) beside the
+    automation and its cause. A run of a deleted automation has nothing to
+    open or run again, and its card says so. One predicate,
+    `isAnswerableRun`, decides that for the card's words and its buttons.
+    A bot's routine runs never reach the Inbox: the run list it reads is
+    session automations' only, and a run names no bot.
+  - *A pull request ready to merge*: its author ("by pau-g"), as a
+    requested review's body already names.
 - **The log** lives in the page's memory for this visit; the marks behind
   it are stored, the log lines are not.
 - **Not in the first version:** the frame's message box to the
