@@ -43,7 +43,8 @@ names the concern and what to reach for first.
 - **pairing** — `PairingChrome`, the column that pairs a machine.
 - **theme** — `ThemeProvider`.
 - **i18n** — `useLocale` and the formatters; `RelativeTime` for a "2 hours
-  ago" that keeps moving.
+  ago" that keeps moving; `useStartFailure`, why a session did not start, in
+  the reader's language.
 - **analytics** — `PageViewTracker`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
 

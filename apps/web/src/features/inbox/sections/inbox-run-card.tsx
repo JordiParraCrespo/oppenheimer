@@ -16,10 +16,11 @@ import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
- * A failed run in the pane: its failure line, Run again (a new run of the
- * automation, `POST /automations/:id/run`) and Open run. The failed run stays
- * failed for the day it shows, so running again also marks it done. A bot's
- * routine or a deleted automation is read here, and answered where it lives.
+ * A failed run in the pane: its failure line, its exit code when the turn
+ * gave one, Run again (a new run of the automation, `POST
+ * /automations/:id/run`) and Open run. The failed run stays failed for the
+ * day it shows, so running again also marks it done. A bot's routine or a
+ * deleted automation is read here, and the card says where it is answered.
  */
 export function InboxRunCard({
   item,
@@ -38,6 +39,7 @@ export function InboxRunCard({
   const { run } = item;
   // A bot's routine (no agent) lives on its bot's page, which the run does not name.
   const isAutomation = !run.automationDeleted && run.agent !== null;
+  const exitCode = run.turn?.exitCode ?? null;
 
   return (
     <InboxCard icon={<InboxKindIcon kind="run" />} from={from} title={copy.title} age={age}>
@@ -45,7 +47,15 @@ export function InboxRunCard({
       <InboxCardFacts>
         <span>{run.title}</span>
         <span>{run.causeSummary.text}</span>
+        {exitCode !== null ? (
+          <span className="font-mono">{t('inbox.run.exit', { code: exitCode })}</span>
+        ) : null}
       </InboxCardFacts>
+      {isAutomation ? null : (
+        <p className="text-xs text-fg-subtle">
+          {t(run.automationDeleted ? 'inbox.run.deletedHint' : 'inbox.run.routineHint')}
+        </p>
+      )}
       {runAgain.error ? (
         <ErrorAlert
           error={runAgain.error}

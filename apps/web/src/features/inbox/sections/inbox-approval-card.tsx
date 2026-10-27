@@ -1,4 +1,5 @@
 import {
+  ApprovalCommand,
   Button,
   InboxCard,
   InboxCardActions,
@@ -11,12 +12,14 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
+import { formatApprovalInput } from '@/features/inbox/lib/approval-input';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
- * A bot's approval in the pane: what it wants to run, and Approve or Deny
+ * A bot's approval in the pane: what it wants to run (the tool, and its call's
+ * input in mono, as the session card shows a command), and Approve or Deny
  * through the bot's own decision endpoint (`25-bots.md` §5). Answering logs
  * it and brings the next item; the bot's chat is a link away.
  */
@@ -34,6 +37,7 @@ export function InboxApprovalCard({
   const { t } = useTranslation();
   const decide = useDecideBotApproval();
   const { approval } = item;
+  const call = formatApprovalInput(approval.input);
   const answer = (decision: 'approve' | 'deny') =>
     decide.mutate(
       { id: approval.botId, approvalId: approval.id, decision },
@@ -56,6 +60,7 @@ export function InboxApprovalCard({
       <InboxCardFacts>
         <span className="font-mono">{approval.tool}</span>
       </InboxCardFacts>
+      {call ? <ApprovalCommand>{call}</ApprovalCommand> : null}
       {decide.error ? (
         <ErrorAlert
           error={decide.error}

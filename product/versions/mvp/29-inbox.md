@@ -281,6 +281,38 @@ Where it departs from the note above:
   and the shell reads exactly the 22 bytes `questionKeys` gives; once the
   call has a result the session leaves the Inbox.
 
+## Card review (2026-10-27)
+
+After the pull request card gained Open and View on GitHub (#492) the owner
+asked for the other cards to be reviewed the same way. What changed:
+
+- **A bot approval** shows the call it would run: its input under the tool,
+  in the chat's `ApprovalCommand`, one `key: value` line per field (strings
+  as written, anything else as compact JSON), at most six fields and 200
+  characters a value, with "…" where it was cut. An empty input shows
+  nothing. The fields come in the order Postgres keeps `jsonb` keys
+  (shortest first), not the order the bot wrote them.
+- **A failed session** says why it did not start, in the same words as its
+  page: the start log's code, translated, as the body, and the host's raw
+  detail in a small line under it; while the log loads, or with no code the
+  console knows, the body is the old sentence, which no longer promises a
+  restart a failed launch cannot have. The reason is the platform kit's
+  `useStartFailure` (`packages/frontend/web/src/i18n/`), which the session
+  page now reads too; the code-to-sentence mapping lives only there.
+- **A failed run** shows its first turn's exit code ("Exit 1", mono) beside
+  the automation and its cause. A run with nothing to open or run again says
+  so: a deleted automation's card reads "Its automation was deleted, so it
+  cannot run again", and its body no longer says "Open it". A bot's routine
+  has the same branch, but its runs never reach the Inbox: the run list it
+  reads is session automations' only (`of: 'sessions'`), and the run names
+  no bot, so a routine stays answered in its bot's chat.
+- **A pull request ready to merge** names its author ("by pau-g") among its
+  facts, as a requested review's body already does.
+- **Copy**: a failed session's fallback body ("Its host could not start it.
+  Open it to see which step failed."), a run's body when it cannot be
+  answered here ("The run ended on a failure."); the rest read clearly
+  against `Brain.dc.html` and were left alone.
+
 ## Stress test (2026-10-27)
 
 The owner asked for "10 bots and 30 sessions with different kinds of

@@ -89,11 +89,15 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
     case 'run': {
       const { run } = item;
       const values = { name: run.automationName };
+      // A bot's routine or a deleted automation has nothing to open or run again here.
+      const answerable = !run.automationDeleted && run.agent !== null;
       return {
         short: t('inbox.run.short', values),
         source: t('inbox.from.run'),
         title: t('inbox.run.title', values),
-        body: run.turn?.failureDetail?.trim() || t('inbox.run.body'),
+        body:
+          run.turn?.failureDetail?.trim() ||
+          t(answerable ? 'inbox.run.body' : 'inbox.run.plainBody'),
       };
     }
   }
