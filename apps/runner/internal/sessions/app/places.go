@@ -301,14 +301,23 @@ func (s *Service) placeGone(ctx context.Context, session domain.Session) (_ doma
 		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 			return domain.Session{}, false, err
 		}
-		// The first checkout is what says the session is still there; with
-		// it gone the rest are removed with the folder that holds them. For
-		// the one deleted by hand only git's record is left, and a prune that
-		// fails leaves nothing a person needs: the session is over either way.
+		// The first checkout is what says the session is still there, so with
+		// it gone the session is over. Only what was deleted by hand is pruned:
+		// for those only git's record is left, and a prune that fails leaves
+		// nothing a person needs. A checkout still on disk may hold edits or
+		// commits nobody pushed, and nothing here asked to push or to throw
+		// them away, so it stays where it is, with the folder that holds it.
+		kept := false
 		for _, checkout := range session.Checkouts() {
+			if s.worktrees.Exists(checkout.Worktree) {
+				kept = true
+				continue
+			}
 			_ = s.worktrees.Remove(ctx, session.RepositoryOf(checkout), checkout.Worktree, true)
 		}
-		s.removeDir(session)
+		if !kept {
+			s.removeDir(session)
+		}
 		return s.decide(session, domain.StateClosed, ""), true, nil
 	}
 	return session, false, nil

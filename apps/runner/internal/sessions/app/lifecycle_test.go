@@ -925,17 +925,38 @@ func TestCloseOverTwoRepositoriesPushesEachAndKeepsAllWhenOneIsDirty(t *testing.
 }
 
 // The first checkout is what says a session is still on the host: with it
-// deleted by hand the session is over, and the rest go with it.
-func TestCloseOverTwoRepositoriesWhoseFirstWasDeletedRemovesTheRest(t *testing.T) {
+// deleted by hand the session is over. The other checkout is still on disk and
+// may hold work nobody pushed, so it is kept, not removed with the session.
+func TestCloseOverTwoRepositoriesWhoseFirstWasDeletedKeepsTheRest(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.openTwo(t)
 	delete(h.worktrees.Paths, session.Worktree)
+	h.worktrees.DirtyPaths[session.More[0].Worktree] = true
 
 	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
 	if err != nil || closed.State != domain.StateClosed {
 		t.Fatalf("close = %q, %v; want closed", closed.State, err)
 	}
-	if _, ok := h.worktrees.Paths[session.More[0].Worktree]; ok {
-		t.Fatal("the second checkout outlived the session")
+	if _, ok := h.worktrees.Paths[session.More[0].Worktree]; !ok {
+		t.Fatal("the second checkout was removed with work in it")
+	}
+}
+
+// Restart reaches the same path, and must not cost the surviving checkout
+// its edits either.
+func TestRestartOverTwoRepositoriesWhoseFirstWasDeletedKeepsTheRest(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.openTwo(t)
+	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
+		t.Fatal(err)
+	}
+	delete(h.worktrees.Paths, session.Worktree)
+	h.worktrees.DirtyPaths[session.More[0].Worktree] = true
+
+	if _, err := h.svc.Restart(context.Background(), session.ID); err == nil {
+		t.Fatal("restart of a session whose first checkout is gone must not succeed")
+	}
+	if _, ok := h.worktrees.Paths[session.More[0].Worktree]; !ok {
+		t.Fatal("restart removed the second checkout and the work in it")
 	}
 }
