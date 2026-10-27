@@ -25,9 +25,10 @@ const AGENT_WINDOW = 0;
  * window 0 as `session.input`.
  *
  * The prompt is claimed first, as `prompt.sent` appended only while the agent
- * still waits at its prompt, with the sender as the API read it: the log, not
- * the words, says who spoke, and of two prompts sent at once one types and
- * the other is refused. The keys go after the claim; a host that cannot take
+ * still waits at its prompt and no other prompt is waiting to be taken (the
+ * row and its latest turn read under the lock), with the sender as the API
+ * read it: the log, not the words, says who spoke, and of two prompts sent at
+ * once one types and the other is refused. The keys go after the claim; a host that cannot take
  * them gets `prompt.undelivered`, which cancels the turn the claim opened.
  *
  * No controller: a person types into the terminal itself. Only a bot's
@@ -51,7 +52,7 @@ export class SendSessionPromptCommandHandler
     if (refusal) {
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });
     }
-    const notReady = promptRefusal(session.fold);
+    const notReady = promptRefusal(session.fold, session.latestTurn);
     if (notReady) throw new AppError(SessionErrors.AGENT_NOT_AT_PROMPT, { detail: notReady });
 
     const claimed = await this.sessions.appendEventsIf(
@@ -62,7 +63,7 @@ export class SendSessionPromptCommandHandler
           sender: command.sender,
         }),
       ],
-      (fold) => promptRefusal(fold) === null,
+      (fold, latestTurn) => promptRefusal(fold, latestTurn) === null,
     );
     if (!claimed) {
       throw new AppError(SessionErrors.AGENT_NOT_AT_PROMPT, {

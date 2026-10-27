@@ -60,8 +60,9 @@ function harness(session: WorkSessionEntity, delivered = true, claims = true) {
     appendEvents: vi.fn().mockResolvedValue(APPENDED),
     appendEventsIf: vi
       .fn()
-      .mockImplementation(async (_session, _events, holds: (fold: unknown) => boolean) =>
-        claims && holds(session.fold) ? APPENDED : null,
+      .mockImplementation(
+        async (_session, _events, holds: (fold: unknown, turn: unknown) => boolean) =>
+          claims && holds(session.fold, session.latestTurn) ? APPENDED : null,
       ),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
@@ -140,6 +141,18 @@ describe('SendSessionPromptCommandHandler', () => {
       code: 'SESSIONS_036',
     });
     expect(dispatch.typeKeys).not.toHaveBeenCalled();
+  });
+
+  it('claims only while no other prompt waits to be taken, so two sent at once never both type', async () => {
+    const session = sessionAt('idle');
+    const { handler, sessions } = harness(session);
+    await handler.execute(prompt(session));
+    const holds = vi.mocked(sessions.appendEventsIf).mock.calls[0][2];
+    const justSent = { seq: 1, origin: 'follow_up', state: 'queued' } as const;
+    expect(holds({ ...session.fold, lastEventAt: new Date() }, null)).toBe(true);
+    expect(holds({ ...session.fold, lastEventAt: new Date() }, { ...justSent } as never)).toBe(
+      false,
+    );
   });
 
   it('refuses a stopped session with SESSIONS_014', async () => {

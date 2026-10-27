@@ -14,9 +14,11 @@ import type { SessionCommandResult } from '../../sessions/domain/session-command
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
+  decisionAnswerOf,
   decisionAnswerSummary,
   planSession,
   promptSummary,
+  sentTurnOf,
   sessionHostId,
   sessionSummary,
 } from '../bot-session-tool.mapper';
@@ -163,6 +165,8 @@ export class BotSessionToolsFactory implements BotToolArea {
       summarize: async (input, context) =>
         promptSummary(input, await this.session(context, input.session_id)),
       run: async (input, context) => {
+        // Read first: the prompt opens the next task, or joins the live one.
+        const turn = sentTurnOf((await this.session(context, input.session_id)).latestTurn);
         await this.commandBus.execute<SendSessionPromptCommand, SessionCommandResult>(
           new SendSessionPromptCommand({
             scope: context.owner,
@@ -174,7 +178,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         const watched =
           input.watch === false
             ? 'Read how it goes with get_session or read_session.'
-            : await this.watches.watchSent(context, input.session_id);
+            : await this.watches.watchSent(context, input.session_id, turn);
         return `Sent the prompt to session ${input.session_id}. ${watched}`;
       },
     });
@@ -232,14 +236,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           new AnswerSessionDecisionCommand({
             scope: context.owner,
             sessionId: input.session_id,
-            answer: {
-              id: input.decision_id,
-              answers: input.answers?.map((answer) => ({
-                picks: answer.picks,
-                other: answer.other?.trim() || null,
-              })),
-              option: input.option,
-            },
+            answer: decisionAnswerOf(input),
           }),
         );
         return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.`;

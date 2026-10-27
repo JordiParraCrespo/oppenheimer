@@ -8,6 +8,7 @@ import {
   BOT_SUBSCRIPTION_UNTIL,
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   type BotSubscriptionUntil,
+  type BotWatchFrom,
   knownStateOf,
   type SessionWake,
   type sessionWakeTurn,
@@ -71,10 +72,10 @@ export class BotSubscriptionMapper {
 
   /**
    * A new subscription from the turn that asked for it and the session as it
-   * stands. One the bot made by starting the session follows its first task
-   * and knows none of it yet, however far it got before the watch was
-   * stored; one made later follows the live task, or the next, and counts
-   * what the bot can already read as told.
+   * stands. One the bot made by starting the session, or by prompting it,
+   * follows that task and knows none of it yet, however far it got before
+   * the watch was stored; one made later follows the live task, or the next,
+   * and counts what the bot can already read as told.
    */
   toSubscribeProps(
     asker: {
@@ -85,10 +86,11 @@ export class BotSubscriptionMapper {
       timeZone: string;
     },
     session: WorkSessionEntity,
-    options: { until: BotSubscriptionUntil; purpose: string | null; from: 'first_task' | 'now' },
+    options: { until: BotSubscriptionUntil; purpose: string | null; from: BotWatchFrom },
   ): Parameters<typeof BotSubscriptionEntity.subscribe>[0] {
     const latest = session.latestTurn;
-    const first = options.from === 'first_task';
+    const from = options.from;
+    const known = from === 'now';
     return {
       organizationId: asker.organizationId,
       botId: asker.botId,
@@ -96,10 +98,10 @@ export class BotSubscriptionMapper {
       originTurnId: asker.turnId,
       purpose: options.purpose,
       until: options.until,
-      watchedTurn: first ? 1 : watchedTurnFor(latest),
+      watchedTurn: from === 'first_task' ? 1 : from === 'now' ? watchedTurnFor(latest) : from.turn,
       credentialScopes: asker.credentialScopes,
       timeZone: asker.timeZone,
-      known: first ? null : knownStateOf(latest),
+      known: known ? knownStateOf(latest) : null,
     };
   }
 

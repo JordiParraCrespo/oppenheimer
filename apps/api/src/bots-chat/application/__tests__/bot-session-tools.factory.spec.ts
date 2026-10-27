@@ -287,7 +287,8 @@ describe('BotSessionToolsFactory', () => {
       text: 'Run the tests',
       sender: { kind: 'bot', botId: 'bot-1', turnId: 'turn-1' },
     });
-    expect(watches.watchSent).toHaveBeenCalledWith(expect.anything(), session.id);
+    // The session had no task yet, so the prompt opens task 1, and that is the one watched.
+    expect(watches.watchSent).toHaveBeenCalledWith(expect.anything(), session.id, 1);
     expect(result.content).toContain('You follow its task.');
   });
 

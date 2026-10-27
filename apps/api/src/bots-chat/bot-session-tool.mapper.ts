@@ -1,4 +1,5 @@
 import {
+  type AnswerSessionDecisionDto,
   type CreateSessionDto,
   createSessionSchema,
   type SessionDecision,
@@ -6,6 +7,7 @@ import {
 } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
+import { isLiveTurn, type SessionTurnFold } from '../sessions/domain/session-turn.policy';
 import { cut, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -377,4 +379,25 @@ export function decisionAnswerSummary(
     return `${clip(question.question)} ${labels.join(', ') || '(nothing)'}`;
   });
   return { line: `Answer "${session.name}": ${clip(said.join('; '))}` };
+}
+
+/** An `answer_session` call as the sessions' answer: words of the bot's own trimmed, none as null. */
+export function decisionAnswerOf(input: DecisionAnswerInput): AnswerSessionDecisionDto {
+  return {
+    id: input.decision_id,
+    answers: input.answers?.map((answer) => ({
+      picks: answer.picks,
+      other: answer.other?.trim() || null,
+    })),
+    option: input.option,
+  };
+}
+
+/**
+ * The task a follow-up prompt lands in, from the latest as it stood before
+ * the prompt: the next one, or the live one it joins (`foldTurnEvent`).
+ */
+export function sentTurnOf(latest: Pick<SessionTurnFold, 'seq' | 'state'> | null): number {
+  if (latest && isLiveTurn(latest)) return latest.seq;
+  return (latest?.seq ?? 0) + 1;
 }
