@@ -1026,6 +1026,11 @@
         "interrupted": "Detuviste este turno",
         "compacted": "Contexto compactado"
       },
+      "task": {
+        "completed": "Tarea en segundo plano terminada",
+        "failed": "Tarea en segundo plano fallida",
+        "killed": "Tarea en segundo plano detenida"
+      },
       "verb": {
         "command": "Ejecutó",
         "read": "Leyó",

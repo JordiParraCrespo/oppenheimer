@@ -1021,6 +1021,11 @@
         "interrupted": "You stopped this turn",
         "compacted": "Context compacted"
       },
+      "task": {
+        "completed": "Background task finished",
+        "failed": "Background task failed",
+        "killed": "Background task stopped"
+      },
       "verb": {
         "command": "Ran",
         "read": "Read",

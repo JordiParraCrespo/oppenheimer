@@ -78,12 +78,17 @@ export interface ChatToolCall {
   finishedAt: Date | null;
 }
 
+/** How a background task the agent started ended, as Claude Code reports it. */
+export type ChatTaskStatus = 'completed' | 'failed' | 'killed';
+
 /** `at` is when the agent wrote the step, from its transcript line. */
 export type ChatStep =
   | { kind: 'reply'; id: string; at: Date | null; text: string; truncated: boolean }
   | { kind: 'thinking'; id: string; at: Date | null; text: string }
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
-  | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' };
+  | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
+  /** A background task finished: the line Claude Code hands the agent, not a prompt. */
+  | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null };
 
 export interface ChatPrompt {
   id: string;
@@ -478,14 +483,16 @@ export function classify(value: unknown, index: number): Reading {
   if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
     return { kind: 'answered', at };
   }
-  const typed = typedPrompt(
+  const said =
     typeof content === 'string'
       ? content
       : blocks
           .filter((block) => block?.type === 'text')
           .map((block) => String(block?.text ?? ''))
-          .join('\n'),
-  );
+          .join('\n');
+  const tasks = taskNotices(said, id, at);
+  if (tasks.length > 0) return { kind: 'steps', steps: tasks, model: null, at };
+  const typed = typedPrompt(said);
   if (typed === 'interrupted') {
     return {
       kind: 'steps',
@@ -511,6 +518,30 @@ function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | nu
   if (block?.type === 'tool_use')
     return { kind: 'tool', id, at, call: { ...toolCall(block), startedAt: at } };
   return null;
+}
+
+/**
+ * The `<task-notification>` blocks Claude Code writes as a user line when a
+ * background command or subagent ends, so the agent picks the result up.
+ * Nobody typed them: each becomes a step of the turn under way, read off its
+ * `<status>` and `<summary>`. None for a line that does not start with one.
+ */
+function taskNotices(raw: string, id: string, at: Date | null): ChatStep[] {
+  if (!raw.trimStart().startsWith('<task-notification>')) return [];
+  const tag = (body: string, name: string) =>
+    new RegExp(`<${name}>([\\s\\S]*?)</${name}>`).exec(body)?.[1]?.trim() || null;
+  return [...raw.matchAll(/<task-notification>([\s\S]*?)<\/task-notification>/g)].map(
+    ([, body = ''], position) => {
+      const status = tag(body, 'status');
+      return {
+        kind: 'task',
+        id: `${id}:${position}`,
+        at,
+        status: status === 'failed' || status === 'killed' ? status : 'completed',
+        summary: tag(body, 'summary'),
+      };
+    },
+  );
 }
 
 /** The entries in turns: a turn opens at each prompt the person typed. */

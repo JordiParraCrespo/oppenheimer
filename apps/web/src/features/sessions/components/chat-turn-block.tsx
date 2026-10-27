@@ -1,5 +1,10 @@
 import { ChatMarker, ProposedPlanCard, ReasoningRow } from '@oppenheimer/design-system-web';
-import { Archive, CircleStop } from '@oppenheimer/design-system-web/icons';
+import {
+  Archive,
+  CircleAlert,
+  CircleCheck,
+  CircleStop,
+} from '@oppenheimer/design-system-web/icons';
 import { Markdown } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
@@ -11,8 +16,8 @@ import { ChatToolGroup } from './chat-tool-group';
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
  * plan, what it asked and the files changed as cards, thinking as a fold that is open while
- * it is what the agent is doing, calls as a group, a stop or a compaction as
- * a note. `live` and `last` say whether this is the work in flight.
+ * it is what the agent is doing, calls as a group, a stop, a compaction or a
+ * background task that ended as a note. `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
   block,
@@ -64,6 +69,22 @@ export function ChatTurnBlock({
       return (
         <ChatMarker icon={block.notice === 'compacted' ? <Archive /> : <CircleStop />}>
           {t(`sessions.chat.notice.${block.notice}`)}
+        </ChatMarker>
+      );
+    case 'task':
+      return (
+        <ChatMarker
+          icon={
+            block.status === 'completed' ? (
+              <CircleCheck />
+            ) : block.status === 'failed' ? (
+              <CircleAlert />
+            ) : (
+              <CircleStop />
+            )
+          }
+        >
+          {block.summary ?? t(`sessions.chat.task.${block.status}`)}
         </ChatMarker>
       );
   }
