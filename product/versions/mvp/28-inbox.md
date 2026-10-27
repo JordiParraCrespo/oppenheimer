@@ -152,6 +152,7 @@ session event: that is slice 4.
 4. **Questions in the Inbox**: the runner reports a pending Claude Code
    question (header, question, options) as a session event, the API keeps
    the latest open one on the session, and the Inbox answers it.
+   The server half is built (below); the console's card and answer are not.
 5. **Later, not planned here**: the message box to a general bot, items
    that agents and sessions post themselves, email and customer chats
    (`../../next-steps/channels.md`), batched delivery during a focus
@@ -211,3 +212,38 @@ Where it departs from the note above:
   (`02-runner.md` §9), and `e2e/tests/fleet/inbox-session.spec.ts` proves
   it end to end: a session on a real runner prints Claude Code's
   question, shows in the Inbox about 45 s later, and opens from its card.
+
+## As built: the server for slice 4 (2026-10-27)
+
+- **Two kinds of decision**, `SessionDecision` in
+  `packages/shared/src/schemas/session-decision.schema.ts`: a `question`
+  (an `AskUserQuestion` call, `id` its `tool_use_id`, up to four questions
+  of up to six options, header and descriptions nullable) and a
+  `permission` (Claude Code's dialog, `id` a hash of its text, a `title`,
+  a nullable `detail` and two to nine options in screen order). Permission
+  prompts were not modelled before; they are now, read off the screen.
+- **The event.** The runner logs `agent.decision` `{ decision }` when what a
+  blocked agent waits on appears, changes or clears (`02-runner.md` §9).
+  The fold keeps it as `pendingDecision` (a `jsonb` column on
+  `work_session`) and clears it on a null report, on any observed state
+  but `blocked`, on stop, failure, close or restart, and on
+  `decision.answered`. Sessions answer it as `decision`, null when
+  nothing is pending.
+- **The route.** `POST /v1/sessions/:id/decision` (`answerSessionDecision`
+  in the client, `sessions:write`, `update Session`) with `{ id, answers:
+  [{ picks, other }] }` for a question or `{ id, option }` for a
+  permission. An `id` that is not the pending one is `SESSIONS_032`; an
+  answer that does not fit (an index out of range, two picks or a pick and
+  words for one choice) `SESSIONS_033`; a host with no link
+  `SESSIONS_034`, and the decision stays pending.
+- **The keys.** The answer is typed into window 0 as the keys a person
+  would press, one `session.input` per key, 120 ms apart: `questionKeys`
+  (moved to `@oppenheimer/shared/sessions`, so the chat view and the API
+  share one encoding) for a question, the option's number for a
+  permission. Then `decision.answered { id }` clears it at once; the
+  runner's next report confirms.
+- **Not certain:** the dialog parser was written against the dialog's
+  shape in Claude Code 2.x (a rule or a box, the tool's name and command,
+  the question, `❯ 1. Yes` …, a footer) and the fleet spec's printed
+  question; a release that draws it differently reports no permission
+  decision, and the Inbox then only opens the session, as before.
