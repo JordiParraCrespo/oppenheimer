@@ -172,6 +172,15 @@ export function upstreamHeaders(
   return out;
 }
 
+/** A cookie that a cross-site frame keeps: `SameSite=None; Secure; Partitioned`. */
+function partitioned(cookie: string): string {
+  const [pair, ...attributes] = cookie.split(';').map((part) => part.trim());
+  const kept = attributes.filter(
+    (attribute) => !/^(samesite|secure|partitioned)(=|$)/i.test(attribute),
+  );
+  return [pair, ...kept, 'SameSite=None', 'Secure', 'Partitioned'].join('; ');
+}
+
 function withoutCookie(header: string, name: string): string {
   return header
     .split(';')
@@ -186,10 +195,22 @@ function withoutCookie(header: string, name: string): string {
  * the `Domain` that would name localhost, `X-Frame-Options` gives way to
  * `frame-ancestors` naming the console alone, and hop-by-hop headers stay on
  * their hop.
+ *
+ * With `partitionCookies` (wherever the browser keeps a `Secure` cookie) every
+ * app cookie becomes `SameSite=None; Secure; Partitioned`: the preview is
+ * framed by a console on another site, where a `Lax`, `Strict` or default
+ * cookie is refused and the app's own sign-in would never stick. Partitioned,
+ * it is kept and sent only under the site that framed it (or the preview's
+ * own tab), so another site still cannot ride it.
  */
 export function downstreamHeaders(
   headers: IncomingHttpHeaders,
-  options: { previewOrigin: string; port: number; consoleOrigin: string },
+  options: {
+    previewOrigin: string;
+    port: number;
+    consoleOrigin: string;
+    partitionCookies: boolean;
+  },
 ): OutgoingHttpHeaders {
   const out: OutgoingHttpHeaders = {};
   for (const [name, value] of Object.entries(headers)) {
@@ -205,7 +226,10 @@ export function downstreamHeaders(
   }
   const cookies = out['set-cookie'];
   if (Array.isArray(cookies)) {
-    out['set-cookie'] = cookies.map((cookie) => cookie.replace(/;\s*domain=[^;]*/i, ''));
+    out['set-cookie'] = cookies.map((cookie) => {
+      const local = cookie.replace(/;\s*domain=[^;]*/i, '');
+      return options.partitionCookies ? partitioned(local) : local;
+    });
   }
   // A second policy is enforced beside the app's own: it can only narrow it.
   const own = out['content-security-policy'];

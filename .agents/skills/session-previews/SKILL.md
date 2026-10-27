@@ -109,7 +109,8 @@ Open in a new tab still works.
 
 The app sees `localhost:<port>`: the relay rewrites `Host`, and `Origin` and
 `Referer` that name the preview, and brings `localhost` redirects and cookie
-domains back. So host checks (Vite's `allowedHosts`), Next's server-action
+domains back. Its cookies are made `SameSite=None; Secure; Partitioned`, so
+an app's own sign-in sticks inside the console's frame on another site. So host checks (Vite's `allowedHosts`), Next's server-action
 origin check and CSRF checks pass with no setting. What a preview cannot do
 is let the page call **another port** directly: in the reader's browser,
 `http://localhost:3001` is the reader's own machine.

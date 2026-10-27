@@ -82,6 +82,8 @@ type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string
  */
 @Injectable()
 export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicationShutdown {
+  /** `REAUTHORIZE_INTERVAL_MS`; a field only so a test can shorten it. */
+  reauthorizeIntervalMs = REAUTHORIZE_INTERVAL_MS;
   private readonly logger = new Logger(PreviewProxyGateway.name);
   private readonly judged = new BoundedMap<string, Judged>(MAX_JUDGED);
   private readonly agents = new BoundedMap<string, Agent>(MAX_AGENTS, (agent) => agent.destroy());
@@ -173,9 +175,24 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
     }
     stream.write(`${lines.join('\r\n')}\r\n\r\n`);
     if (head.length > 0) stream.write(head);
+    // An upgraded socket outlives its handshake: judged again on the
+    // interval an attach is, so a revoked grant, a ban or the flag going off
+    // ends it as it ends a terminal. A lookup that fails keeps it.
+    const recheck = setInterval(() => {
+      this.reader(req, address).then(
+        (still) => {
+          if (!still) socket.destroy();
+        },
+        () => {},
+      );
+    }, this.reauthorizeIntervalMs);
+    recheck.unref();
     stream.on('error', () => socket.destroy());
     socket.on('error', () => stream.destroy());
-    socket.on('close', () => stream.destroy());
+    socket.on('close', () => {
+      clearInterval(recheck);
+      stream.destroy();
+    });
     stream.on('close', () => socket.destroy());
     stream.pipe(socket);
     socket.pipe(stream);
@@ -215,6 +232,7 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
           previewOrigin: origin,
           port: address.port,
           consoleOrigin: this.consoleOrigin,
+          partitionCookies: this.secureCookies,
         }),
       );
       answer.pipe(res);
@@ -304,7 +322,7 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
   private judge(key: string, claim: PreviewCookieClaim): Judged['verdict'] {
     const now = Date.now();
     const known = this.judged.get(key);
-    if (known && now - known.at < REAUTHORIZE_INTERVAL_MS) return known.verdict;
+    if (known && now - known.at < this.reauthorizeIntervalMs) return known.verdict;
     const ticket: AttachTicket = {
       sessionId: claim.sessionId,
       organizationId: claim.organizationId,

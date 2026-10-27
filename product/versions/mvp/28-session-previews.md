@@ -75,7 +75,12 @@ pass as they are. On the way in it rewrites `Host`, and `Origin` and
 check, Next's server-action origin check and a CSRF check all see what they
 see locally, so the app needs no setting for the preview. On the way out it
 rewrites a `Location` that names `localhost:<port>` or `127.0.0.1:<port>`,
-and drops `Domain` from `Set-Cookie`.
+and drops `Domain` from `Set-Cookie`. Where the browser keeps a `Secure`
+cookie it also makes every app cookie `SameSite=None; Secure; Partitioned`:
+the console frames the preview from another site, where the app's own `Lax`
+or default sign-in cookie would be refused; partitioned, it is sent only
+under the console's site or the preview's own tab. An upgraded socket (hot
+reload) is judged again every minute, like the HTTP requests beside it.
 
 **An app with an API.** The usual shape works untouched: the page calls
 `/api/...` on its own origin and the dev server proxies it to the API on the

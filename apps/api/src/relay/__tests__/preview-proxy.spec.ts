@@ -113,6 +113,9 @@ describe('preview proxy', () => {
   let seen: IncomingMessage[];
   let tickets: Map<string, AttachTicket>;
   let link: ReturnType<typeof bridgeLink>;
+  /** Whether the reader is still allowed, as the attach rule would answer now. */
+  let allowed: boolean;
+  let gateway: PreviewProxyGateway;
 
   beforeEach(async () => {
     seen = [];
@@ -146,13 +149,14 @@ describe('preview proxy', () => {
     previewHost = new URL(previewOrigin(BASE, { sessionId: SESSION, port: appPort })).host;
 
     tickets = new Map();
+    allowed = true;
     link = bridgeLink();
     const settings: Record<string, string> = {
       'relay.previewBaseUrl': BASE,
       'app.frontendUrl': CONSOLE,
       'app.betterAuthSecret': 'a-secret-for-the-preview-cookie',
     };
-    const gateway = new PreviewProxyGateway(
+    gateway = new PreviewProxyGateway(
       { get: (key: string) => settings[key] } as unknown as ConfigService,
       {
         take: async (key: string) => {
@@ -164,9 +168,14 @@ describe('preview proxy', () => {
       { find: () => link } as unknown as LinkRegistryPort,
       { isEnabled: () => true } as unknown as FlagEvaluatorPort,
       {
-        authorize: async () => ({ allowed: true, hostId: 'host-1' }),
+        authorize: async () =>
+          allowed
+            ? { allowed: true, hostId: 'host-1' }
+            : { allowed: false, reason: 'forbidden', code: 4403 },
       } as unknown as BrowserAttachGateway,
     );
+    // Judged again every 50 ms here, rather than every minute.
+    gateway.reauthorizeIntervalMs = 50;
     api = gateway.createServer();
     await new Promise<void>((resolve) => api.listen(0, '127.0.0.1', resolve));
     apiPort = (api.address() as { port: number }).port;
@@ -236,8 +245,11 @@ describe('preview proxy', () => {
       origin: `http://localhost:${appPort}`,
     });
     expect(seen[0]?.headers['x-forwarded-host']).toBeUndefined();
-    // Its cookie no longer names localhost, so the browser keeps it for the preview.
-    expect(answer.headers['set-cookie']).toEqual(['sid=1; Path=/']);
+    // Its cookie no longer names localhost, and is partitioned: kept inside
+    // the console's frame on another site, and sent nowhere else.
+    expect(answer.headers['set-cookie']).toEqual([
+      'sid=1; Path=/; SameSite=None; Secure; Partitioned',
+    ]);
     expect(answer.headers['content-security-policy']).toBe(`frame-ancestors ${CONSOLE}`);
   });
 
@@ -262,6 +274,24 @@ describe('preview proxy', () => {
     });
     expect(reply).toBe('hmr:update');
     ws.close();
+  });
+
+  it('ends an open WebSocket once its reader is no longer allowed', async () => {
+    const cookie = await enter();
+    const ws = new WebSocket(`ws://127.0.0.1:${apiPort}/`, {
+      headers: { host: previewHost, cookie },
+    });
+    await new Promise<void>((resolve, reject) => {
+      ws.on('open', () => resolve());
+      ws.on('error', reject);
+    });
+
+    allowed = false;
+    const closed = await new Promise<boolean>((resolve) => {
+      ws.on('close', () => resolve(true));
+      setTimeout(() => resolve(false), 2_000);
+    });
+    expect(closed).toBe(true);
   });
 
   it('answers no host that is not a preview, and opens nothing for one', async () => {
