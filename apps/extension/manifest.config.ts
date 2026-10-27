@@ -21,15 +21,18 @@ const icons = Object.fromEntries(ICON_SIZES.map((size) => [size, `icons/icon-${s
 export function defineManifest({ version }: { version: string }): chrome.runtime.ManifestV3 {
   return {
     manifest_version: 3,
-    name: 'Oppenheimer — Claude Code sessions',
-    short_name: 'Claude sessions',
-    description: 'Tells you when a Claude Code cloud session needs you.',
+    // Chrome's own strings are `_locales/`, which the build writes from
+    // `@oppenheimer/translations` (`extension.chrome`).
+    name: '__MSG_extName__',
+    short_name: '__MSG_extShortName__',
+    description: '__MSG_extDescription__',
+    default_locale: 'en',
     version,
     // The build's target. A `world: 'MAIN'` content script needs 111.
     minimum_chrome_version: '116',
     icons,
     action: {
-      default_title: 'Claude Code sessions',
+      default_title: '__MSG_actionTitle__',
       default_popup: 'popup.html',
       default_icon: icons,
     },

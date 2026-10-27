@@ -27,6 +27,14 @@ describe('manifest', () => {
     ]);
   });
 
+  it('names itself from the catalog, in the reader’s language', () => {
+    expect(manifest).toMatchObject({
+      name: '__MSG_extName__',
+      description: '__MSG_extDescription__',
+      default_locale: 'en',
+    });
+  });
+
   it('takes its version from package.json', () => {
     expect(manifest.version).toBe('1.2.3');
   });

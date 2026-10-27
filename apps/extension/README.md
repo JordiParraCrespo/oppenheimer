@@ -11,7 +11,9 @@ the ones scheduled tasks start — and tells you which need you.
 | **Popup** | Needs you, Running, and Done behind a switch. A row opens the session; its terminal button copies `claude --teleport <id>`. Its Oppenheimer section connects the console |
 
 The popup is the console's Inbox (`product/versions/mvp/design/version1/Brain.dc.html`)
-cut down to this one job, built from `@oppenheimer/design-system-web`.
+cut down to this one job, built from `@oppenheimer/design-system-web`. It
+speaks English or Spanish, as Chrome does; the copy is
+`@oppenheimer/translations` (`extension.json`).
 
 It has no sign-in of its own and holds no claude.ai credential: it reads
 with the claude.ai sign-in already in Chrome, and stores the session list —

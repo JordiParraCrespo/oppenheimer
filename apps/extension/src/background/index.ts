@@ -1,9 +1,11 @@
 import type { TapMessage } from '@/content/tap-message';
+import { createTranslator, reasonText } from '@/i18n/translator';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
 import {
   type CloudSessionRecord,
   isSessionRecord,
+  nextCursor,
   sessionList,
   type TrackedSession,
 } from '@/sessions/session';
@@ -33,6 +35,9 @@ import { ingest, needsYouCount } from '@/sessions/tracker';
  */
 
 const POLL_ALARM = 'poll';
+
+// The badge's and the notifications' words, in the language Chrome runs in.
+const i18n = createTranslator(navigator.language);
 const NOTIFICATION_PREFIX = 'session:';
 
 // Tried in order, before the page has taught us the endpoint. They are what
@@ -93,28 +98,29 @@ async function poll() {
     detail: 'No sessions endpoint answered',
   };
 
+  const headers = {
+    ...BASE_HEADERS,
+    ...(organization ? { 'x-organization-uuid': organization } : {}),
+    ...endpoint?.headers,
+  };
+
   for (const url of urls) {
     const path = new URL(url).pathname;
     try {
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          ...BASE_HEADERS,
-          ...(organization ? { 'x-organization-uuid': organization } : {}),
-          ...endpoint?.headers,
-        },
-      });
-      if (response.status === 401 || response.status === 403) {
-        failure = { problem: 'signed-out', detail: `${path} answered ${response.status}` };
+      const first = await fetch(url, { credentials: 'include', headers });
+      if (first.status === 401 || first.status === 403) {
+        failure = { problem: 'signed-out', detail: `${path} answered ${first.status}` };
         continue;
       }
-      const list = response.ok ? sessionList(await response.json()) : null;
+      const body: unknown = first.ok ? await first.json() : null;
+      const list = sessionList(body);
       if (!list) {
-        failure = { problem: 'not-found', detail: `${path} answered ${response.status}` };
+        failure = { problem: 'not-found', detail: `${path} answered ${first.status}` };
         continue;
       }
       if (!endpoint) await writeState({ endpoint: { url, headers: {}, from: 'probe' } });
-      await record(list, true);
+      const { records, complete } = await remainingPages(url, headers, list, nextCursor(body));
+      await record(records, complete);
       return;
     } catch (error) {
       failure = { problem: 'unreachable', detail: `${path}: ${String(error)}` };
@@ -127,6 +133,35 @@ async function poll() {
   await writeState({ status: { ok: false, at: now(), ...failure } });
 }
 
+/** How many pages a poll reads before it settles for part of the list. */
+const MAX_PAGES = 10;
+
+/**
+ * The rest of the list after its first page. Only a list read to its end is
+ * complete, so a session missing from it was archived; one cut short by the
+ * page cap or a failed page keeps every session it did not reach.
+ */
+async function remainingPages(
+  url: string,
+  headers: Record<string, string>,
+  records: CloudSessionRecord[],
+  cursor: string | null,
+): Promise<{ records: CloudSessionRecord[]; complete: boolean }> {
+  const all = [...records];
+  let next = cursor;
+  for (let page = 1; next && page < MAX_PAGES; page++) {
+    const paged = new URL(url);
+    paged.searchParams.set('cursor', next);
+    const response = await fetch(paged, { credentials: 'include', headers }).catch(() => null);
+    const body: unknown = response?.ok ? await response.json() : null;
+    const list = sessionList(body);
+    if (!list) return { records: all, complete: false };
+    all.push(...list);
+    next = nextCursor(body);
+  }
+  return { records: all, complete: next === null };
+}
+
 async function fromPage({ url, headers, body }: TapMessage) {
   const list = sessionList(body);
   if (list) {
@@ -135,8 +170,9 @@ async function fromPage({ url, headers, body }: TapMessage) {
     for (const key of ['cursor', 'after_id', 'before_id']) learned.searchParams.delete(key);
     const endpoint: LearnedEndpoint = { url: learned.href, headers, from: 'page' };
     await writeState({ endpoint });
-    // A page the app scrolled to is only part of the list.
-    await record(list, !paged);
+    // A page the app scrolled to, or a first page with more after it, is only
+    // part of the list.
+    await record(list, !paged && nextCursor(body) === null);
     return;
   }
   if (isSessionRecord(body)) await record([body], false);
@@ -193,27 +229,18 @@ async function drawBadge(count: number) {
   await chrome.action.setBadgeBackgroundColor({ color: '#d93025' });
   await chrome.action.setBadgeText({ text: count > 0 ? String(count) : '' });
   await chrome.action.setTitle({
-    title:
-      count === 0
-        ? 'Claude Code sessions'
-        : `${count} Claude Code ${count === 1 ? 'session needs' : 'sessions need'} you`,
+    title: count === 0 ? i18n.t('badge.none') : i18n.t('badge.needsYou', { count }),
   });
 }
-
-const HEADLINE: Record<TrackedSession['state'], string> = {
-  'needs-input': 'Needs you',
-  failed: 'Failed',
-  done: 'Finished',
-  running: 'Running',
-  stopped: 'Paused',
-};
 
 function notify(session: TrackedSession) {
   void chrome.notifications.create(`${NOTIFICATION_PREFIX}${session.id}`, {
     type: 'basic',
     iconUrl: chrome.runtime.getURL('icons/icon-128.png'),
-    title: `${HEADLINE[session.state]}: ${session.title}`,
-    message: [session.reason, session.repo].filter(Boolean).join(' · ') || 'Open the session',
+    title: `${i18n.t(`state.${session.state}`)}: ${session.title}`,
+    message:
+      [reasonText(i18n.t, session.reason), session.repo].filter(Boolean).join(' · ') ||
+      i18n.t('notification.open'),
     priority: session.state === 'done' ? 0 : 2,
   });
 }

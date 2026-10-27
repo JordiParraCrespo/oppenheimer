@@ -21,7 +21,12 @@ what it does and how it reads them; these are the rules for changing it.
 - **Only the worker writes storage.** The popup reads it and asks the worker
   to `refresh`; content scripts only post what the page fetched.
 - **The popup is built from `@oppenheimer/design-system-web`**, under
-  `.agents/rules/frontend-ui.md`. Effects live in `src/popup/hooks.ts`.
+  `.agents/rules/frontend-ui.md`. Effects live in `src/popup/hooks/`.
+- **Every word is in `@oppenheimer/translations`** (`{en,es}/extension.json`):
+  the popup through `t()`, the worker's badge and notifications through the
+  same translator (`src/i18n/translator.ts`), Chrome's listing through
+  `_locales/`, which the build writes from `extension.chrome`. A session's
+  reason is stored as a code and worded where it is shown.
 - `tap.ts` runs inside claude.ai's page: it must never throw into it, change
   a request or a response, or import anything heavy.
 

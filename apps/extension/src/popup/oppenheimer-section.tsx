@@ -1,5 +1,6 @@
 import { Button, Callout, Input, SidebarListHead } from '@oppenheimer/design-system-web';
 import { type FormEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { OppenheimerConnection, ReportStatus } from '@/sessions/store';
 import { useConnection } from './hooks/use-connection';
 
@@ -16,6 +17,7 @@ export function OppenheimerSection({
   connection: OppenheimerConnection | undefined;
   report: ReportStatus | undefined;
 }) {
+  const { t } = useTranslation();
   const { connect, disconnect, pending, problem } = useConnection();
   const [apiUrl, setApiUrl] = useState('http://localhost:3001');
   const [token, setToken] = useState('');
@@ -26,40 +28,43 @@ export function OppenheimerSection({
   }
 
   return (
-    <section aria-label="Oppenheimer" className="flex flex-col gap-2">
-      <SidebarListHead label="Oppenheimer" />
+    <section aria-label={t('oppenheimer.label')} className="flex flex-col gap-2">
+      <SidebarListHead label={t('oppenheimer.label')} />
       {connection ? (
         <div className="flex items-center justify-between gap-2 px-2.5 text-fg-muted text-sm">
           <span className="min-w-0 truncate">
             {report?.ok === false
-              ? `Not reporting: ${report.detail}`
-              : `Reporting to ${new URL(connection.apiUrl).host}${
-                  report?.ok ? ` · ${report.matched} launched there` : ''
-                }`}
+              ? t('oppenheimer.notReporting', { detail: report.detail })
+              : report?.ok
+                ? t('oppenheimer.launched', {
+                    host: new URL(connection.apiUrl).host,
+                    count: report.matched,
+                  })
+                : t('oppenheimer.reportingTo', { host: new URL(connection.apiUrl).host })}
           </span>
           <Button size="xs" variant="ghost" onClick={() => void disconnect()}>
-            Disconnect
+            {t('oppenheimer.disconnect')}
           </Button>
         </div>
       ) : (
         <form className="flex flex-col gap-2 px-2.5" onSubmit={onSubmit}>
           <Input
             size="sm"
-            aria-label="Oppenheimer API URL"
+            aria-label={t('oppenheimer.apiUrl')}
             value={apiUrl}
             onChange={(event) => setApiUrl(event.target.value)}
           />
           <Input
             size="sm"
             type="password"
-            aria-label="API token"
+            aria-label={t('oppenheimer.token')}
             placeholder="oppenheimer_pat_…"
             value={token}
             onChange={(event) => setToken(event.target.value)}
           />
           {problem ? <Callout tone="warning">{problem}</Callout> : null}
           <Button size="sm" type="submit" disabled={pending || token.trim() === ''}>
-            Connect
+            {t('oppenheimer.connect')}
           </Button>
         </form>
       )}

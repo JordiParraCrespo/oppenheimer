@@ -171,3 +171,47 @@ test('reports what it tracks to the Oppenheimer it is connected to', async ({
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
   await expect(popup.getByText('Reporting to localhost:3001 · 1 launched there')).toBeVisible();
 });
+
+test('reads every page of the list, and keeps what a failed page did not show', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  claude.sessions = [running('s1', 'Port the extension')];
+  claude.firstCursor = 'page-2';
+  claude.pages = { 'page-2': { data: [blocked('s2', 'An older session')], next_cursor: null } };
+
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect
+    .poll(async () => Object.keys((await stored(worker)).sessions ?? {}).sort())
+    .toEqual(['s1', 's2']);
+  expect((await stored(worker)).badge).toBe('1');
+
+  // The second page fails: the session only it shows is not taken for archived.
+  claude.pages = {};
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect(popup.getByRole('button', { name: 'Check now' })).toBeEnabled();
+  expect(Object.keys((await stored(worker)).sessions ?? {}).sort()).toEqual(['s1', 's2']);
+});
+
+test.describe('in Spanish', () => {
+  test.use({ locale: 'es-ES' });
+
+  test('speaks the reader’s language', async ({ context, claude, worker, extensionId }) => {
+    claude.sessions = [blocked('s1', 'Arreglar el login')];
+    const page = await context.newPage();
+    await page.goto('https://claude.ai/code');
+    await expect.poll(async () => (await stored(worker)).seeded).toBe(true);
+
+    const popup = await context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+    await expect(popup.getByRole('heading', { name: 'Sesiones de Claude Code' })).toBeVisible();
+    await expect(popup.getByRole('region', { name: 'Te necesitan' })).toContainText(
+      'Arreglar el login',
+    );
+    await expect(popup.getByRole('button', { name: 'Comprobar ahora' })).toBeVisible();
+  });
+});

@@ -9,6 +9,12 @@ const DIST = path.resolve(import.meta.dirname, '../dist');
 /** A fake claude.ai: its sessions list answers with whatever `sessions` holds. */
 export interface FakeClaude {
   sessions: CloudSessionRecord[];
+  /**
+   * Later pages of the list, by the cursor that names them; the first page
+   * points at `firstCursor`. A cursor with no page answers 500.
+   */
+  pages: Record<string, { data: CloudSessionRecord[]; next_cursor: string | null }>;
+  firstCursor: string | null;
   /** Every request to the list, with its headers. */
   requests: Array<{ url: string; headers: Record<string, string> }>;
 }
@@ -21,14 +27,15 @@ export const test = base.extend<{
 }>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from this pattern; this one has none
   claude: async ({}, use) => {
-    await use({ sessions: [], requests: [] });
+    await use({ sessions: [], requests: [], pages: {}, firstCursor: null });
   },
 
-  context: async ({ claude }, use) => {
+  context: async ({ claude, locale }, use) => {
     const context = await chromium.launchPersistentContext(
       mkdtempSync(path.join(tmpdir(), 'ext-')),
       {
         channel: 'chromium',
+        locale,
         args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
       },
     );
@@ -36,7 +43,12 @@ export const test = base.extend<{
       const url = new URL(route.request().url());
       if (url.pathname === '/v1/code/sessions') {
         claude.requests.push({ url: url.href, headers: route.request().headers() });
-        return route.fulfill({ json: { data: claude.sessions, next_cursor: null } });
+        const cursor = url.searchParams.get('cursor');
+        if (cursor) {
+          const page = claude.pages[cursor];
+          return page ? route.fulfill({ json: page }) : route.fulfill({ status: 500, json: {} });
+        }
+        return route.fulfill({ json: { data: claude.sessions, next_cursor: claude.firstCursor } });
       }
       if (url.pathname.startsWith('/v1/')) return route.fulfill({ status: 404, json: {} });
       // claude.ai/code: a page that loads the session list the way the app does.

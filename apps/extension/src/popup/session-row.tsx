@@ -8,6 +8,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useCopy } from '@oppenheimer/design-system-web/hooks/use-copy';
 import { Check, SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { useTranslation } from 'react-i18next';
+import { reasonText } from '@/i18n/translator';
 import { sessionUrl, teleportCommand } from '@/sessions/links';
 import type { TrackedSession } from '@/sessions/session';
 
@@ -26,9 +28,10 @@ const RUN_STATE: Record<TrackedSession['state'], StatusState> = {
  * into a local checkout.
  */
 export function SessionRow({ session, now }: { session: TrackedSession; now: number }) {
+  const { t } = useTranslation();
   const command = teleportCommand(session.id);
   const { copied, copy } = useCopy(command);
-  const detail = [session.reason, session.repo].filter(Boolean).join(' · ');
+  const detail = [reasonText(t, session.reason), session.repo].filter(Boolean).join(' · ');
 
   return (
     <SessionItem
@@ -47,14 +50,14 @@ export function SessionRow({ session, now }: { session: TrackedSession; now: num
               <IconButton
                 size="xs"
                 shape="square"
-                aria-label={copied ? 'Copied' : 'Copy command'}
+                aria-label={t(copied ? 'row.copied' : 'row.copyCommand')}
                 onClick={() => void copy()}
               />
             }
           >
             {copied ? <Check /> : <SquareTerminal />}
           </TooltipTrigger>
-          <TooltipContent>{copied ? 'Copied' : command}</TooltipContent>
+          <TooltipContent>{copied ? t('row.copied') : command}</TooltipContent>
         </Tooltip>
       }
     />

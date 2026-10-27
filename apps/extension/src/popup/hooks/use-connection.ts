@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { OppenheimerConnection } from '@/sessions/store';
 
 /**
@@ -8,6 +9,7 @@ import type { OppenheimerConnection } from '@/sessions/store';
  * The worker keeps the connection once the API took a report with it.
  */
 export function useConnection() {
+  const { t } = useTranslation();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -17,12 +19,12 @@ export function useConnection() {
     try {
       origin = new URL(connection.apiUrl).origin;
     } catch {
-      setProblem('That is not a URL.');
+      setProblem(t('oppenheimer.notAUrl'));
       return;
     }
     const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
     if (!granted) {
-      setProblem(`Chrome needs your permission to reach ${origin}.`);
+      setProblem(t('oppenheimer.permission', { origin }));
       return;
     }
     setPending(true);
@@ -31,7 +33,7 @@ export function useConnection() {
         type: 'connect',
         connection: { apiUrl: origin, token: connection.token.trim() },
       })) as { ok: boolean; detail?: string };
-      if (!answer.ok) setProblem(`Oppenheimer refused: ${answer.detail ?? 'unknown error'}`);
+      if (!answer.ok) setProblem(t('oppenheimer.refused', { detail: answer.detail ?? '' }));
     } finally {
       setPending(false);
     }

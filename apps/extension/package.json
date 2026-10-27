@@ -15,8 +15,11 @@
   },
   "dependencies": {
     "@oppenheimer/design-system-web": "workspace:*",
+    "@oppenheimer/translations": "workspace:*",
+    "i18next": "^26.4.2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-i18next": "^17.0.14"
   },
   "devDependencies": {
     "@oppenheimer/tsconfig": "workspace:^",

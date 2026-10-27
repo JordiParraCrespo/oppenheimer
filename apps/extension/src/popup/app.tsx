@@ -13,6 +13,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { CircleCheck, ExternalLink, RefreshCw } from '@oppenheimer/design-system-web/icons';
 import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CLAUDE_ORIGIN } from '@/sessions/links';
 import { NEEDS_YOU, type TrackedSession } from '@/sessions/session';
 import type { SyncStatus } from '@/sessions/store';
@@ -29,6 +30,7 @@ import { SessionRow } from './session-row';
  * running as a count and a list; what is done behind a switch.
  */
 export function App() {
+  const { t } = useTranslation();
   const state = useStoredState();
   const now = useNow();
   const [showDone, setShowDone] = useState(false);
@@ -48,13 +50,13 @@ export function App() {
       <div className="flex w-90 flex-col gap-3 p-3 text-fg">
         <header className="flex items-center gap-2">
           <BrandMark size={20} />
-          <h1 className="flex-1 font-medium text-operate">Claude Code sessions</h1>
+          <h1 className="flex-1 font-medium text-operate">{t('title')}</h1>
           <Tooltip>
             <TooltipTrigger
               render={
                 <IconButton
                   size="sm"
-                  aria-label="Check now"
+                  aria-label={t('checkNow')}
                   disabled={refreshing}
                   onClick={() => void refresh()}
                 />
@@ -62,43 +64,43 @@ export function App() {
             >
               <RefreshCw className={refreshing ? 'motion-safe:animate-spin' : undefined} />
             </TooltipTrigger>
-            <TooltipContent>Check now</TooltipContent>
+            <TooltipContent>{t('checkNow')}</TooltipContent>
           </Tooltip>
         </header>
 
         <SyncCallout status={state.status} />
 
         {needsYou.length > 0 ? (
-          <Section title="Needs you" sessions={needsYou} now={now} />
+          <Section title={t('groups.needsYou')} sessions={needsYou} now={now} />
         ) : state.status?.ok ? (
           <EmptyState>
             <EmptyState.Header>
               <EmptyState.Media variant="icon">
                 <CircleCheck />
               </EmptyState.Media>
-              <EmptyState.Title>You're clear</EmptyState.Title>
+              <EmptyState.Title>{t('clear.title')}</EmptyState.Title>
               <EmptyState.Description>
                 {running.length === 0
-                  ? 'Nothing is running.'
-                  : `${running.length} ${running.length === 1 ? 'session is' : 'sessions are'} still running.`}{' '}
-                You'll get a notification when one needs you.
+                  ? t('clear.nothingRunning')
+                  : t('clear.stillRunning', { count: running.length })}{' '}
+                {t('clear.notify')}
               </EmptyState.Description>
             </EmptyState.Header>
           </EmptyState>
         ) : null}
 
-        {running.length > 0 && <Section title="Running" sessions={running} now={now} />}
+        {running.length > 0 && <Section title={t('groups.running')} sessions={running} now={now} />}
 
         {done.length > 0 && (
           <Section
-            title="Done"
+            title={t('groups.done')}
             sessions={showDone ? done : []}
             count={done.length}
             now={now}
             action={
               <Switch
                 size="sm"
-                aria-label="Show done"
+                aria-label={t('groups.showDone')}
                 checked={showDone}
                 onCheckedChange={setShowDone}
               />
@@ -114,7 +116,7 @@ export function App() {
           rel="noreferrer"
           className="flex items-center gap-1.5 border-border border-t px-2.5 pt-3 text-fg-muted text-sm hover:text-fg"
         >
-          Open claude.ai/code
+          {t('openClaude')}
           <ExternalLink className="size-3.5" />
         </a>
       </div>
@@ -152,21 +154,22 @@ function Section({
   );
 }
 
-const PROBLEM: Record<Extract<SyncStatus, { ok: false }>['problem'], string> = {
-  'signed-out': 'Sign in to claude.ai in this Chrome, then check again.',
-  'not-found':
-    "Couldn't find your sessions yet. Open claude.ai/code once and the extension will learn where they are.",
-  unreachable: "Couldn't reach claude.ai. It will try again in a minute.",
-};
+/** The catalog key for each way a check can fail. */
+const PROBLEM = {
+  'signed-out': 'sync.signedOut',
+  'not-found': 'sync.notFound',
+  unreachable: 'sync.unreachable',
+} as const satisfies Record<Extract<SyncStatus, { ok: false }>['problem'], string>;
 
 function SyncCallout({ status }: { status: SyncStatus | undefined }) {
+  const { t } = useTranslation();
   if (!status) {
-    return <Callout>Checking your sessions…</Callout>;
+    return <Callout>{t('sync.checking')}</Callout>;
   }
   if (status.ok) return null;
   return (
     <Callout tone="warning" title={status.detail}>
-      {PROBLEM[status.problem]}
+      {t(PROBLEM[status.problem])}
     </Callout>
   );
 }

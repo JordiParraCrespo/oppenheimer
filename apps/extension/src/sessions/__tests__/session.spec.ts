@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type CloudSessionRecord, classify, sessionList, toTracked } from '../session';
+import { type CloudSessionRecord, classify, nextCursor, sessionList, toTracked } from '../session';
 
 const session = (fields: Partial<CloudSessionRecord>): CloudSessionRecord => ({
   id: 'session_1',
@@ -16,7 +16,7 @@ describe('classify', () => {
           external_metadata: { pending_action: { tool_name: 'Bash' } },
         }),
       ),
-    ).toEqual({ state: 'needs-input', reason: 'Wants to use Bash' });
+    ).toEqual({ state: 'needs-input', reason: { code: 'tool', tool: 'Bash' } });
   });
 
   it('reads an idle session in the blocked bucket as needing you', () => {
@@ -34,7 +34,7 @@ describe('classify', () => {
           external_metadata: { post_turn_summary: { status_detail: 'tests are red' } },
         }),
       ),
-    ).toEqual({ state: 'failed', reason: 'tests are red' });
+    ).toEqual({ state: 'failed', reason: { code: 'detail', text: 'tests are red' } });
   });
 
   it('reads a completed turn, and an idle session with no bucket, as done', () => {
@@ -51,7 +51,7 @@ describe('classify', () => {
   it('keeps a reconnecting session running', () => {
     expect(
       classify(session({ worker_status: 'running', connection_status: 'disconnected' })),
-    ).toEqual({ state: 'running', reason: 'Reconnecting' });
+    ).toEqual({ state: 'running', reason: { code: 'reconnecting' } });
   });
 
   it('reads an environment that never started as failed', () => {
@@ -62,7 +62,7 @@ describe('classify', () => {
           external_metadata: { last_init_error: { message: 'image pull failed' } },
         }),
       ),
-    ).toEqual({ state: 'failed', reason: 'image pull failed' });
+    ).toEqual({ state: 'failed', reason: { code: 'detail', text: 'image pull failed' } });
   });
 
   it('lets archived win over a pending action', () => {
@@ -110,5 +110,14 @@ describe('sessionList', () => {
   it('refuses a list of something that is not a session', () => {
     expect(sessionList({ data: [{ id: 'x', name: 'a terminal' }] })).toBeNull();
     expect(sessionList({ id: 'a', worker_status: 'idle' })).toBeNull();
+  });
+});
+
+describe('nextCursor', () => {
+  it('reads where the next page starts, and null on the last page', () => {
+    expect(nextCursor({ data: [], next_cursor: 'abc' })).toBe('abc');
+    expect(nextCursor({ data: [], has_more: true, last_id: 'session_01x' })).toBe('session_01x');
+    expect(nextCursor({ data: [], next_cursor: null })).toBeNull();
+    expect(nextCursor({ data: [], has_more: false, last_id: 'session_01x' })).toBeNull();
   });
 });

@@ -48,7 +48,7 @@ export interface TrackedSession {
   title: string;
   state: Exclude<SessionState, 'archived'>;
   /** Why it is in that state, when there is more to say: "Wants to use Bash". */
-  reason: string | null;
+  reason: SessionReason | null;
   /** `owner/name` of its GitHub repository, when it has one. */
   repo: string | null;
   /** When it last did anything, ISO 8601. */
@@ -61,17 +61,31 @@ export const NEEDS_YOU: ReadonlySet<SessionState> = new Set(['needs-input', 'fai
 /** The states worth a notification when a session moves into one. */
 export const NOTIFIES: ReadonlySet<SessionState> = new Set(['needs-input', 'failed', 'done']);
 
-export function classify(session: CloudSessionRecord): { state: SessionState; reason?: string } {
+/**
+ * Why a session is in its state, as a code the surfaces word in the reader's
+ * language (`extension.reason.*`), or the server's own words (`detail`) where
+ * claude.ai said something specific: a failed turn's summary, an environment's
+ * error.
+ */
+export type SessionReason =
+  | { code: 'tool'; tool: string }
+  | { code: 'plan' | 'question' | 'provision' | 'start' | 'turn' | 'paused' | 'reconnecting' }
+  | { code: 'detail'; text: string };
+
+export function classify(session: CloudSessionRecord): {
+  state: SessionState;
+  reason?: SessionReason;
+} {
   if (session.status === 'archived') return { state: 'archived' };
   if (session.status === 'failed') {
-    return { state: 'failed', reason: 'The cloud environment could not be provisioned' };
+    return { state: 'failed', reason: { code: 'provision' } };
   }
 
   const initError = session.external_metadata?.last_init_error;
   if (initError && session.environment_kind !== 'bridge' && !isLive(session)) {
     return {
       state: 'failed',
-      reason: text(initError.message) || 'The cloud environment failed to start',
+      reason: detailOr(initError.message, 'start'),
     };
   }
 
@@ -88,9 +102,7 @@ export function classify(session: CloudSessionRecord): { state: SessionState; re
       case 'failed':
         return {
           state: 'failed',
-          reason:
-            text(session.external_metadata?.post_turn_summary?.status_detail) ||
-            'The last turn failed',
+          reason: detailOr(session.external_metadata?.post_turn_summary?.status_detail, 'turn'),
         };
       case 'working':
         return { state: 'running' };
@@ -99,12 +111,12 @@ export function classify(session: CloudSessionRecord): { state: SessionState; re
       default:
         return session.worker_status === 'idle'
           ? { state: 'done' }
-          : { state: 'stopped', reason: 'Paused · reply to resume' };
+          : { state: 'stopped', reason: { code: 'paused' } };
     }
   }
 
   if (session.worker_status === 'running' && session.connection_status === 'disconnected') {
-    return { state: 'running', reason: 'Reconnecting' };
+    return { state: 'running', reason: { code: 'reconnecting' } };
   }
   return { state: 'running' };
 }
@@ -147,18 +159,36 @@ export function sessionList(body: unknown): CloudSessionRecord[] | null {
   return array.filter(isSessionRecord);
 }
 
+/**
+ * Where the next page of a session list starts, or null on the last page: the
+ * list's `next_cursor`, or its last id when it only says `has_more`.
+ */
+export function nextCursor(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null) return null;
+  const page = body as { next_cursor?: unknown; has_more?: unknown; last_id?: unknown };
+  if (typeof page.next_cursor === 'string' && page.next_cursor) return page.next_cursor;
+  if (page.has_more === true && typeof page.last_id === 'string') return page.last_id;
+  return null;
+}
+
 function isLive(session: CloudSessionRecord) {
   return ['running', 'idle', 'requires_action'].includes(session.worker_status ?? '');
 }
 
-function pendingReason(session: CloudSessionRecord) {
+function pendingReason(session: CloudSessionRecord): SessionReason {
   const pending = session.external_metadata?.pending_action;
   const tool = pending?.display_name ?? pending?.tool_name;
-  if (tool) return `Wants to use ${tool}`;
+  if (tool) return { code: 'tool', tool };
   if (pending?.type === 'plan_approval' || pending?.type === 'exit_plan_mode') {
-    return 'Has a plan for you to approve';
+    return { code: 'plan' };
   }
-  return 'Waiting for your answer';
+  return { code: 'question' };
+}
+
+/** The server's own words when it gave any, else the reason by its code. */
+function detailOr(value: unknown, code: 'start' | 'turn'): SessionReason {
+  const detail = text(value);
+  return detail ? { code: 'detail', text: detail } : { code };
 }
 
 function text(value: unknown) {

@@ -279,12 +279,21 @@ importers:
       '@oppenheimer/design-system-web':
         specifier: workspace:*
         version: link:../../packages/frontend/design-system/web
+      '@oppenheimer/translations':
+        specifier: workspace:*
+        version: link:../../packages/translations
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@7.0.2)
       react:
         specifier: 19.2.3
         version: 19.2.3
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      react-i18next:
+        specifier: ^17.0.14
+        version: 17.0.14(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@7.0.2)
     devDependencies:
       '@oppenheimer/tsconfig':
         specifier: workspace:^

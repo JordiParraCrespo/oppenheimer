@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { defineManifest } from './manifest.config.ts';
 import pkg from './package.json' with { type: 'json' };
+import { CATALOGS } from './src/i18n/catalogs.ts';
 
 /**
  * One config, four bundles, because Chrome runs this extension in four kinds
@@ -36,6 +37,17 @@ function manifest(): Plugin {
         fileName: 'manifest.json',
         source: `${JSON.stringify(defineManifest({ version: pkg.version }), null, 2)}\n`,
       });
+      // What Chrome itself shows — the listing, the toolbar title — per locale.
+      for (const [locale, catalog] of Object.entries(CATALOGS)) {
+        const messages = Object.fromEntries(
+          Object.entries(catalog.chrome).map(([key, message]) => [key, { message }]),
+        );
+        this.emitFile({
+          type: 'asset',
+          fileName: `_locales/${locale}/messages.json`,
+          source: `${JSON.stringify(messages, null, 2)}\n`,
+        });
+      }
     },
   };
 }
