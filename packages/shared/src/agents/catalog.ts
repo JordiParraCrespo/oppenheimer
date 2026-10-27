@@ -404,8 +404,8 @@ const CLAUDE_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
 const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-// OpenCode's variants for each provider's reasoning models, off models.dev.
-const OPENCODE_OPENAI_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+// OpenCode's variants for xAI's and Google's reasoning models, off models.dev;
+// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS.
 const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
 const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
 
@@ -696,42 +696,42 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       Object.freeze({
         id: 'openai/gpt-6.1-sol',
         label: 'GPT-6.1 Sol',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-6.1-terra',
         label: 'GPT-6.1 Terra',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-6-astra',
         label: 'GPT-6 Astra',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-6-sol',
         label: 'GPT-6 Sol',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-6-luna',
         label: 'GPT-6 Luna',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-5.6-sol',
         label: 'GPT-5.6 Sol',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-5.6-terra',
         label: 'GPT-5.6 Terra',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'openai/gpt-5.6-luna',
         label: 'GPT-5.6 Luna',
-        effort: levels(OPENCODE_OPENAI_LEVELS, 'medium'),
+        effort: levels(CODEX_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'xai/grok-4.7',
