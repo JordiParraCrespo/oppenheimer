@@ -121,7 +121,8 @@ export function SessionsSidebarBody() {
   const listed = (projectId: string) => !hidden.includes(projectId) || projectId === picked;
   const hiddenCount = projects.filter((project) => hidden.includes(project.id)).length;
   const { groups, handlers } = useSidebarOrder({
-    projects: projects.filter((project) => listed(project.id)),
+    projects,
+    listed,
     sessions: rest.filter((session) => listed(session.projectId)),
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
