@@ -3,6 +3,7 @@ package transcript
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -39,10 +40,14 @@ func (r *Reader) Follow(ctx context.Context, agent domain.Agent, conversation st
 		entry:    reader.chatEntry,
 		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true,
 	}
+	if r.statusDir != "" && agent == domain.AgentClaude {
+		f.status = statusPath(r.statusDir, conversation)
+	}
 	ticker := time.NewTicker(followEvery)
 	defer ticker.Stop()
 	for {
 		f.check()
+		f.checkStatus()
 		select {
 		case <-ctx.Done():
 			return nil
@@ -66,6 +71,42 @@ type follower struct {
 	pending []string
 	// reset is owed to the next batch: the history starts (again) with it.
 	reset bool
+
+	// status is the conversation's status file, and statusSeen the version of
+	// it last sent; an empty path follows none.
+	status     string
+	statusSeen statusVersion
+}
+
+// statusVersion tells one write of a status file from the next.
+type statusVersion struct {
+	mod  time.Time
+	size int64
+}
+
+// checkStatus sends the conversation's status once it has changed, as an
+// entry of its own after the history, so a reconnect's reset never drops
+// it and the console always holds the latest one. A batch the link refuses
+// is offered again on the next check.
+func (f *follower) checkStatus() {
+	if f.status == "" || f.reset || len(f.pending) > 0 {
+		return
+	}
+	info, err := os.Stat(f.status)
+	if err != nil || info.Size() > statusEntryMax {
+		return
+	}
+	seen := statusVersion{mod: info.ModTime(), size: info.Size()}
+	if seen == f.statusSeen {
+		return
+	}
+	entry, err := os.ReadFile(f.status)
+	if err != nil || !json.Valid(entry) {
+		return
+	}
+	if f.emit(app.ChatBatch{Entries: []string{string(entry)}}) == nil {
+		f.statusSeen = seen
+	}
 }
 
 func (f *follower) check() {

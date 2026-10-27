@@ -13,6 +13,7 @@ import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
 import { BotTranscript } from './bot-transcript';
+import { BotUsage } from './bot-usage';
 
 /**
  * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
@@ -20,7 +21,8 @@ import { BotTranscript } from './bot-transcript';
  * transcript, which follows the latest line while you are there and offers
  * the way back when you scroll up; and the
  * composer, whose chips are how the bot's turns start (its model, effort and
- * approval level), each saved on the bot as it is picked. The header, the
+ * approval level), each saved on the bot as it is picked, after the meter
+ * of the room the bot has left (`BotUsage`). The header, the
  * transcript and the chips all draw this one bot, so it is read here once.
  *
  * The chips are made here, not in the composer, so the draft the composer
@@ -89,13 +91,16 @@ export function BotChat({ botId }: { botId: string }) {
               />
             }
             engine={
-              <BotEngine
-                provider={bot.provider}
-                model={bot.model}
-                effort={bot.effort}
-                onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
-                onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
-              />
+              <>
+                <BotUsage botId={bot.id} />
+                <BotEngine
+                  provider={bot.provider}
+                  model={bot.model}
+                  effort={bot.effort}
+                  onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
+                  onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
+                />
+              </>
             }
           />
         </div>

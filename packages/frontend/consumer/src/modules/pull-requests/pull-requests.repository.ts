@@ -70,6 +70,9 @@ function toEntity(dto: PullRequestRowDto): PullRequestEntity {
     dto.htmlUrl,
     dto.checksRefusal,
     dto.unread,
+    dto.headSha,
+    // Whole seconds, as the API counts them, so two reads of one wait agree.
+    new Date(Math.floor(Date.now() / 1000) * 1000 - dto.waitingSeconds * 1000),
   );
 }
 

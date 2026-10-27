@@ -7,6 +7,7 @@ import {
   BOT_MEMORY_FACTS_MAX,
   BOT_NAME_MAX,
   BOT_REVISION_NOTE_MAX,
+  BOT_SECTIONS,
   type BotDocumentName,
   botModelOf,
 } from '@oppenheimer/shared';
@@ -171,7 +172,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       scope: 'bots:write',
       setupStep:
         'Set your description with `update_profile` to the job in a few words, specific enough to tell you apart from other bots (for example "Reviews pull requests on acme/web"). Keep your name unless they ask for another.',
-      description: `Changes your own name and/or description (what you are for, as the sidebar and other bots see it). Name 1 to ${BOT_NAME_MAX} characters, description at most ${BOT_DESCRIPTION_MAX}. Not a revision: the person sees it in the chat and changes it back in Settings → Profile. Persona and job go in edit_soul and edit_instructions.`,
+      description: `Changes your own name, description (what you are for, as the sidebar and other bots see it) and/or the console sections you show in beside Employees. Name 1 to ${BOT_NAME_MAX} characters, description at most ${BOT_DESCRIPTION_MAX}. Not a revision: the person sees it in the chat and changes it back in Settings → Profile. Persona and job go in edit_soul and edit_instructions.`,
       input: z
         .strictObject({
           name: z.string().trim().min(1).max(BOT_NAME_MAX).optional().describe('Your new name.'),
@@ -181,17 +182,28 @@ export class BotSelfToolsFactory implements BotToolArea {
             .max(BOT_DESCRIPTION_MAX)
             .optional()
             .describe('One or two sentences on what you are for.'),
+          sections: z
+            .array(z.enum(BOT_SECTIONS))
+            .max(BOT_SECTIONS.length)
+            .optional()
+            .describe(
+              'The whole set of console sections whose sidebar lists you: sessions, automations, plan (tasks), pulls (pull requests). Pick the ones your job is about; [] shows you in Employees only.',
+            ),
         })
-        .refine((input) => input.name !== undefined || input.description !== undefined, {
-          message: 'Give a name, a description, or both',
-        }),
+        .refine(
+          (input) =>
+            input.name !== undefined ||
+            input.description !== undefined ||
+            input.sections !== undefined,
+          { message: 'Give a name, a description, sections, or any of them' },
+        ),
       run: async (input, context) => {
         const before = await this.bot(context);
         await this.commandBus.execute(
           new UpdateBotCommand({
             scope: context.owner,
             botId: context.botId,
-            input: { name: input.name, description: input.description },
+            input: { name: input.name, description: input.description, sections: input.sections },
           }),
         );
         const after = await this.bot(context);
@@ -199,6 +211,9 @@ export class BotSelfToolsFactory implements BotToolArea {
           before.name !== after.name ? `name "${before.name}" → "${after.name}"` : null,
           before.description !== after.description
             ? `description "${before.description}" → "${after.description}"`
+            : null,
+          before.sections.join() !== after.sections.join()
+            ? `sections [${before.sections.join(', ')}] → [${after.sections.join(', ')}]`
             : null,
         ].filter((change): change is string => change !== null);
         if (changes.length === 0) {
@@ -341,6 +356,7 @@ function describeSelf(bot: BotEntity): string[] {
     `- approval level: ${bot.permission}`,
     `- learn automatically: ${bot.learnAutomatically ? 'on (remember saves directly)' : 'off (ask before remembering)'}`,
     `- home host: ${bot.homeHostId ?? 'none chosen'} (list_hosts names it)`,
+    `- shows in: ${bot.sections.length ? bot.sections.join(', ') : 'Employees only'}`,
   ];
 }
 

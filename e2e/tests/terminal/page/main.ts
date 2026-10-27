@@ -52,6 +52,11 @@ class FakeHost implements SessionStream {
     }, 25);
   }
 
+  /** Output from the program, written as the host would stream it. */
+  print(text: string): void {
+    this.write(text);
+  }
+
   hold(): void {
     this.holding = true;
   }

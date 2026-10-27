@@ -56,6 +56,17 @@ const (
 	// managed image, a package the person holds back). Anything else, or
 	// unset, is on.
 	EnvAgentUpdates = "RUNNER_AGENT_UPDATES"
+	// EnvDevices is the simulators and emulators this host offers its
+	// sessions, comma-separated serials (`emulator-5554`, or
+	// `emulator-5554=Pixel 4` to name one). Unset offers none.
+	EnvDevices = "RUNNER_DEVICES"
+	// EnvArgentSimulatorServer is Argent's simulator-server binary, which
+	// streams a device's screen.
+	EnvArgentSimulatorServer = "RUNNER_ARGENT_SIMULATOR_SERVER"
+	// EnvArgentToolsURL and EnvArgentToken reach Argent's tool-server, the
+	// one the host's agents use, which applies the reader's input.
+	EnvArgentToolsURL = "RUNNER_ARGENT_TOOLS_URL"
+	EnvArgentToken    = "RUNNER_ARGENT_TOKEN"
 )
 
 // AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.

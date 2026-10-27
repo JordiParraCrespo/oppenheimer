@@ -3,6 +3,7 @@ import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
+import type { SessionFold } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type {
   SessionEventSource,
@@ -178,6 +179,19 @@ export interface WorkSessionRepositoryPort {
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome>;
+
+  /**
+   * {@link appendEvents}, only while `holds` is true of the row as it stands under
+   * the lock: the test and the append are one step, so of two writers that both
+   * read the row in the state `holds` asks for, one appends and the other gets
+   * `null` and wrote nothing. What a transition two requests can race is built on
+   * (an answer to the decision a session waits on).
+   */
+  appendEventsIf(
+    session: WorkSessionEntity,
+    events: NewSessionEvent[],
+    holds: (fold: SessionFold) => boolean,
+  ): Promise<SessionAppendOutcome | null>;
 
   /**
    * The runner's append to a session its authenticated host holds. The row lock

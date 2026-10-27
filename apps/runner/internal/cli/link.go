@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
 	"time"
 
+	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -84,8 +86,14 @@ type linkHandler struct {
 	// lanes orders each session's commands off the read loop.
 	lanes *lanes
 
+	// devices is the session's device context (link_devices.go); nil is a
+	// host that offers none, and its hello does not name the capability.
+	devices *devapp.Service
+
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
+	// screens are the browsers watching a session's device, by attachment id.
+	screens map[uint32]*deviceAttachment
 	// earlyResize holds a viewport that arrived before its attachment was
 	// registered, by attachment id. The browser sends its size the moment the
 	// socket opens, which is while the host is still opening the PTY; applied
@@ -154,7 +162,8 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, earlyResize: map[uint32]link.SessionResize{},
 		decided:   map[string]bool{},
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
-		direct: direct.NewAnswerer(direct.Options{Logger: logger}),
+		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
+		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -274,6 +283,9 @@ func (h *linkHandler) capabilities() []string {
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)
 	}
+	if h.devices != nil {
+		named = append(named, link.CapabilityDeviceScreen)
+	}
 	return named
 }
 
@@ -325,11 +337,14 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.mu.Lock()
 	open := h.attachments
 	h.attachments = map[uint32]*attachment{}
+	screens := h.screens
+	h.screens = map[uint32]*deviceAttachment{}
 	h.linkUp = false
 	h.mu.Unlock()
 	for _, att := range open {
 		att.stop()
 	}
+	h.stopScreens(screens)
 }
 
 // Frame is a browser's keystrokes for an attachment. It runs on the read
@@ -460,7 +475,32 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			if att := h.attachmentByID(m.AttachmentID); att != nil {
 				att.flow.credit(m.Bytes)
+			} else if screen := h.screenByID(m.AttachmentID); screen != nil {
+				screen.credit(m.Bytes)
 			}
+		}
+	case link.TypeDeviceAttach:
+		var m link.DeviceAttach
+		if msg.Decode(&m) == nil {
+			// Starting a simulator-server takes seconds: off the read loop.
+			epoch := h.currentEpoch()
+			go func() {
+				if h.liveEpoch(epoch) {
+					h.deviceAttach(m, epoch)
+				}
+			}()
+		}
+	case link.TypeDeviceInput:
+		var m link.DeviceInput
+		if msg.Decode(&m) == nil {
+			// A gesture takes a round trip to Argent. One lane per device
+			// attachment, so a tap and the text after it land in order.
+			h.lanes.run(fmt.Sprintf("device:%d", m.AttachmentID), func() { h.deviceInput(m) })
+		}
+	case link.TypeDeviceDetach:
+		var m link.DeviceDetach
+		if msg.Decode(&m) == nil {
+			h.dropScreen(m.AttachmentID)
 		}
 	case "credentials.grant":
 		var m link.CredentialsGrant
@@ -562,6 +602,36 @@ func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, r
 	}
 	h.reporter.AppendSettled(session.ID, "prompt.first", map[string]any{"text": text}, reported)
 	return true
+}
+
+// DecisionChanged is the session service's publisher for what an agent waits
+// on the person for (29-inbox, slice 4): `agent.decision` with the decision,
+// or null once it cleared. A question too large for an event's payload is cut
+// down (descriptions first) until it fits; one that never does is reported as
+// none rather than as an event the control plane would refuse.
+func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *sessionsdomain.Decision) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(session.ID, sessionsdomain.AgentDecisionKind, sessionsdomain.AgentDecisionPayload{Decision: fitDecision(decision)})
+}
+
+// fitDecision is decision cut until its payload fits an event, or nil.
+func fitDecision(decision *sessionsdomain.Decision) *sessionsdomain.Decision {
+	if decision == nil {
+		return nil
+	}
+	fitted := *decision
+	for {
+		body, err := json.Marshal(sessionsdomain.AgentDecisionPayload{Decision: &fitted})
+		if err == nil && len(body) <= link.MaxEventPayloadBytes {
+			return &fitted
+		}
+		var cut bool
+		if fitted, cut = fitted.Shrink(); !cut {
+			return nil
+		}
+	}
 }
 
 func (h *linkHandler) fail(commandID string, err error) {

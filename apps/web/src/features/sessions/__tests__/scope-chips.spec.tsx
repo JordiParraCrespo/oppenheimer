@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BranchSelect } from '../components/branch-select';
-import { HostSelect } from '../components/host-select';
+import { PlaceSelect } from '../components/place-select';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
 
 /**
@@ -29,7 +29,15 @@ function openChip(name: string) {
 describe('the scope chips', () => {
   it('says the hosts are loading rather than that none match', () => {
     render(
-      <HostSelect hosts={[]} value={null} onValueChange={vi.fn()} onAddHost={vi.fn()} loading />,
+      <PlaceSelect
+        hosts={[]}
+        hostId={null}
+        place="worktree"
+        onHostChange={vi.fn()}
+        onPlaceChange={vi.fn()}
+        onAddHost={vi.fn()}
+        loading
+      />,
     );
 
     expect(chip('sessions.new.host.label').disabled).toBe(false);
@@ -94,7 +102,15 @@ describe('the scope chips', () => {
 
   it('is greyed out only when the screen says so', () => {
     render(
-      <HostSelect hosts={[]} value={null} onValueChange={vi.fn()} onAddHost={vi.fn()} disabled />,
+      <PlaceSelect
+        hosts={[]}
+        hostId={null}
+        place="worktree"
+        onHostChange={vi.fn()}
+        onPlaceChange={vi.fn()}
+        onAddHost={vi.fn()}
+        disabled
+      />,
     );
 
     expect(chip('sessions.new.host.label').disabled).toBe(true);

@@ -35,7 +35,11 @@ function sharedRead(chat: SessionChat): () => ChatState {
       // a record that changed is taken whole.
       const turns = shareEntities(shared?.turns, next.turns);
       shared =
-        shared && turns === shared.turns && next.available === shared.available
+        shared &&
+        turns === shared.turns &&
+        next.available === shared.available &&
+        next.queued === shared.queued &&
+        next.status === shared.status
           ? shared
           : { ...next, turns };
     }

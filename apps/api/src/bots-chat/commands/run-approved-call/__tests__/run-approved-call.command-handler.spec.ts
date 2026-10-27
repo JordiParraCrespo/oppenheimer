@@ -94,7 +94,7 @@ function setup(
     BotToolboxFactory as unknown as new (
       ...areas: BotToolArea[]
     ) => BotToolboxFactory
-  )(area, none, none, none, none, none, none, none, none, none, none, none);
+  )(area, none, none, none, none, none, none, none, none, none, none, none, none);
   const owners = {
     resolve: vi.fn(async () => emptyScope(OWNER, 'org-1')),
   } as unknown as BotOwnerScopeResolver;

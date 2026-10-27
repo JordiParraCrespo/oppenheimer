@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
-import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
+import type { BotDocumentName, BotSection } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -56,6 +56,10 @@ export const botsKeys = {
     [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
+  // The workspace's approvals across its bots (the Inbox): apart from any one
+  // bot's, and announced by `botApproval.changed`.
+  workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,
+  pendingApprovals: () => [...botsKeys.workspaceApprovals(), 'pending'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
   groupLists: () => [...botsKeys.groups(), 'list'] as const,
   groupList: () => [...botsKeys.groupLists()] as const,
@@ -113,6 +117,20 @@ export function useSuspenseBotsAndGroups() {
     queries: [useBotListQuery(), useBotGroupListQuery()],
   });
   return { bots: bots.data, groups: groups.data, error: bots.error ?? groups.error };
+}
+
+/**
+ * The bots one console section lists beside Employees
+ * (`28-bots-in-sections.md`), in the Employees order, under a Suspense
+ * `QueryState`. It narrows the one bots read, so a chat that moves a bot's
+ * last line moves it here too; `error` is a refetch that failed over data
+ * already drawn.
+ */
+export function useSuspenseSectionBots(section: BotSection) {
+  return useSuspenseQuery<BotEntity[], Error, BotEntity[]>({
+    ...useBotListQuery(),
+    select: (bots) => bots.filter((bot) => bot.sections.includes(section)),
+  });
 }
 
 /** One bot under a Suspense `QueryState`; `data` is always the bot. */
@@ -246,11 +264,14 @@ function settleFacts(
 }
 
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
-export function useCreateBot(options?: UseMutationOptions<BotEntity, Error, void>) {
+/** A blank bot; the variables are the sections it shows in, none when left out. */
+export function useCreateBot(
+  options?: UseMutationOptions<BotEntity, Error, BotSection[] | undefined>,
+) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => app.bots.create(),
+    mutationFn: (sections?: BotSection[]) => app.bots.create(sections),
     ...withCacheOnSuccess(options, (added) => settleBot(queryClient, added, true)),
   });
 }

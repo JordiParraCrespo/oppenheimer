@@ -55,5 +55,25 @@
     "denied": "The browser was not allowed to use the microphone. Allow it for this site, then dictate again.",
     "unavailable": "No microphone could be opened. Plug one in or pick another in your system settings, then dictate again.",
     "failed": "The recording could not be transcribed."
+  },
+  "chat": {
+    "usage": {
+      "open": "{{percent}}% of context used. Show the context and plan usage.",
+      "openPlan": "{{percent}}% of the plan's limit used. Show the context and plan usage.",
+      "context": "Context",
+      "tokens": "{{used}} of {{window}} tokens",
+      "compact": "Compact",
+      "plan": "Plan usage limits",
+      "fiveHour": "5-hour limit",
+      "sevenDay": "Weekly limit",
+      "resets": "Resets {{when}}",
+      "tokensOnly": "{{used}} tokens"
+    },
+    "queue": {
+      "queued": "Queued",
+      "sendNow": "Send now",
+      "edit": "Edit",
+      "remove": "Remove from the queue"
+    }
   }
 }

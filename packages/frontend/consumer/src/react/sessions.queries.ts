@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -343,6 +344,23 @@ export function useSessionOpening(session: SessionEntity | undefined): boolean {
   return live && data !== undefined && !data.settled;
 }
 
+/**
+ * This console watches the start it sent ({@link useSessionOpening}), so the
+ * session's pane stays on its steps until the agent runs. The row can read
+ * `open` before the start pane ever mounts, since the host makes the pane
+ * first, so the watch begins with the answer to the create and not with the
+ * pane. Stale from the outset, so the first reader fetches the log at once.
+ * Every start a console sends calls it: New session's and a pull request's
+ * review session.
+ */
+export function watchSessionStart(queryClient: QueryClient, sessionId: string): void {
+  queryClient.setQueryData(
+    sessionsKeys.start(sessionId, false),
+    deriveSessionStartProgress([], { failed: false }),
+    { updatedAt: 0 },
+  );
+}
+
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -372,15 +390,7 @@ export function useCreateSession(
       // other session mutation already seeds it ({@link useSessionPatch});
       // create was the one that did not.
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      // This console watches the start it sent ({@link useSessionOpening}).
-      // The row can read `open` before the start pane ever mounts, since the
-      // host makes the pane first, so the watch begins here and not there.
-      // Stale from the outset, so the first reader fetches the log at once.
-      queryClient.setQueryData(
-        sessionsKeys.start(session.id, false),
-        deriveSessionStartProgress([], { failed: false }),
-        { updatedAt: 0 },
-      );
+      watchSessionStart(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
@@ -447,6 +457,49 @@ export function useMoveSession(
     ({ sessions }, { id, projectId }) => sessions.move(id, projectId),
     options,
   );
+}
+
+export interface AnswerSessionDecisionVariables {
+  sessionId: string;
+  /** `{ id, answers }` for a question, `{ id, option }` for a permission. */
+  answer: AnswerSessionDecisionDto;
+}
+
+/** The API's refusal of an answer to a decision that is no longer the pending one. */
+const DECISION_STALE = 'SESSIONS_032';
+
+/**
+ * Answer what a session's agent waits on, from outside its terminal (the
+ * Inbox): the API types the keys and clears the decision. The row the API
+ * answers replaces the session's in every list at once, so what drew the
+ * decision stops drawing it, and the lists are read again behind it. An
+ * answer refused as stale (answered elsewhere, or the agent asks something
+ * else now) reads the session again, so the new decision shows.
+ */
+export function useAnswerSessionDecision(
+  options?: UseMutationOptions<SessionEntity, Error, AnswerSessionDecisionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, answer }: AnswerSessionDecisionVariables) =>
+      app.sessions.answerDecision(sessionId, answer),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === session.id ? session : row)),
+      );
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onError: (error, variables, context, mutation) => {
+      if ((error as { code?: string }).code === DECISION_STALE) {
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(variables.sessionId) });
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      }
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
 }
 
 export interface CloseSessionVariables {

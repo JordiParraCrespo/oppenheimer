@@ -48,6 +48,7 @@ func newCreateHarness(t *testing.T) (*linkHandler, *sessionsapp.Service, *heldCl
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: git, Classifier: manifest.New(manifest.Options{}),
 		Places: fake.NewPlaces(), Layout: sessionsdomain.Layout{Root: t.TempDir()},
+		Files: fake.NewFiles(),
 	})
 	if err != nil {
 		t.Fatal(err)

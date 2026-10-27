@@ -39,6 +39,12 @@ export class BotModelAccessResolver {
     return found.unwrap();
   }
 
+  /** The workspace's bot, or null when it is gone or another workspace's. */
+  async findBot(organizationId: string, botId: string): Promise<BotEntity | null> {
+    const found = await this.bots.findForTurn(organizationId, botId);
+    return found.isSome() ? found.unwrap() : null;
+  }
+
   /** The credential `provider` runs on in the workspace; `BOTS_013` when there is none. */
   credential(organizationId: string, provider: BotProvider, now: Date): Promise<TurnCredential> {
     return this.credentials.forTurn(organizationId, provider, now);

@@ -29,7 +29,18 @@ type claudeChatLine struct {
 		Role    string          `json:"role"`
 		Model   string          `json:"model"`
 		Content json.RawMessage `json:"content"`
+		Usage   *chatUsage      `json:"usage"`
 	} `json:"message"`
+}
+
+// chatUsage is the tokens an assistant message was sent and wrote, in
+// Claude Code's own names: what the context held when the agent answered,
+// which the console reads as how full it is. Only the counts are kept.
+type chatUsage struct {
+	InputTokens              int64 `json:"input_tokens"`
+	CacheCreationInputTokens int64 `json:"cache_creation_input_tokens,omitempty"`
+	CacheReadInputTokens     int64 `json:"cache_read_input_tokens,omitempty"`
+	OutputTokens             int64 `json:"output_tokens"`
 }
 
 // claudeBlock is one content block, read loosely: each type uses a few of
@@ -60,10 +71,11 @@ type chatEntry struct {
 }
 
 type chatMessage struct {
-	ID      string `json:"id,omitempty"`
-	Role    string `json:"role"`
-	Model   string `json:"model,omitempty"`
-	Content any    `json:"content"`
+	ID      string     `json:"id,omitempty"`
+	Role    string     `json:"role"`
+	Model   string     `json:"model,omitempty"`
+	Content any        `json:"content"`
+	Usage   *chatUsage `json:"usage,omitempty"`
 }
 
 type chatBlock struct {
@@ -96,6 +108,9 @@ func (claudeReader) chatEntry(line []byte) ([]byte, bool) {
 		Type: in.Type, UUID: in.UUID, Timestamp: in.Timestamp,
 		IsMeta: in.IsMeta, IsSidechain: in.IsSidechain, IsCompactSummary: in.IsCompactSummary,
 		Message: chatMessage{ID: in.Message.ID, Role: in.Message.Role, Model: in.Message.Model},
+	}
+	if in.Type == "assistant" {
+		out.Message.Usage = in.Message.Usage
 	}
 	var text string
 	if json.Unmarshal(in.Message.Content, &text) == nil {

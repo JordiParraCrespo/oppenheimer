@@ -138,6 +138,21 @@ describe('NewSessionComposer', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('Fix the wallet list');
   });
 
+  it('holds the task while dictation is open, so what is still being heard is not dropped', () => {
+    // A send mid-recording would start the session on the typed half and
+    // unmount the recorder, losing the spoken rest.
+    dictation.phase = 'recording';
+    const onSubmit = vi.fn();
+    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+
+    expect(screen.queryByRole('button', { name: 'sessions.new.composer.send' })).toBeNull();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   describe('attached files', () => {
     const png = (name = 'screen.png', size = 16) =>
       new File([new Uint8Array(size)], name, { type: 'image/png' });

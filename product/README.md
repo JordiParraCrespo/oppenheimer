@@ -673,8 +673,47 @@ earlier note:
   #444) it was built as subagents inside the turn: up to 4 read-only
   children in parallel, bounded and stopped with the turn, whose answers
   the bot reads as data and answers from in the same reply (25, "Decided").
+- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that "when a
+  session ends" reaches a bot only as a routine's trigger, with no watch
+  table. On 2026-10-22 (issue #445) the owner asked for a bot to subscribe
+  to the sessions it delegates, as Grok Bot's watchers do, and to be woken
+  when they finish, fail, are stopped or need input. A
+  `bot_subscription` now follows one session for the bot that started or
+  watched it, and every wake is still a queued turn
+  (`versions/mvp/27-bot-subscriptions.md`, 26 §5).
 - `next-steps/0.7-terminal-and-chat.md` had the relay never send the chat
   through a share link, so a guest saw only the terminal. On 2026-10-23
   the owner asked for the shared page to have the chat view too: the
   relay judges the flag as the sharer, and the guest gets Terminal / Chat,
   read-only on a read share (0.7, "Wire").
+- The console used to open on New session (`/sessions/new`) with Sessions
+  first in the rail. On 2026-10-25 Employees moved to the top of the
+  rail's default order, and the console opens on the rail's first item,
+  so a reader who drags another item to the top opens there instead
+  (`versions/mvp/05-screens.md`, `25-bots.md`).
+- New session's chips used to sit in a grey band fused to the top of a
+  tall composer, under a line saying what sending would do. On
+  2026-10-26 it became one box at the pane's foot with a row of choices
+  under it and the project over it, and a session's name, state, Terminal
+  / Chat and Share moved from the terminal's status line to a bar over it
+  (`versions/mvp/05-screens.md`).
+- New session's Where and Host were two chips. On 2026-10-26 the owner
+  asked for the export's one chip, the host and where on it ("mac-studio ·
+  New worktree", the hosts and a Start in pane per host); the box took a
+  session chat's height, and the models dropped "Claude" from their names
+  ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- The preview pane the session frame opens beside a terminal was not
+  built. On 2026-10-26 the owner asked for the Simulator in it: a
+  session's host offers simulators and emulators (`RUNNER_DEVICES`), each
+  session holds one, its agent drives it through Argent and the reader
+  watches and taps it in the pane, its screen relayed over the link as one
+  more attachment kind (`versions/mvp/05-screens.md`,
+  `research/device-streaming.md`). The Browser tab is still not built.
+- `versions/mvp/29-inbox.md` §4 had the cross-bot approvals read list the
+  bots the caller may update. Built on 2026-10-26, it lists the bots the
+  caller may read, as the per-bot read it mirrors does; deciding a card
+  still asks `update`.
+- `versions/mvp/29-inbox.md` §3 keyed a session by `observedSince`, which
+  only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
+  keyed by its lifecycle's change count (`stateSeq`) instead, and the API
+  added both fields to a session and `headSha` to a pull request row.

@@ -45,6 +45,8 @@
     "addKey": "Añadir una clave",
     "sendFailed": "No se pudo enviar el mensaje.",
     "stopFailed": "No se pudo detener el turno.",
+    "queuedImages_one": "{{count}} imagen",
+    "queuedImages_other": "{{count}} imágenes",
     "failed": "{{provider}} no pudo terminar este turno",
     "failedUnknown": "El turno terminó sin decir por qué.",
     "errorDetails": "Mostrar detalles",
@@ -205,7 +207,14 @@
       "peerAsk": "<bot>{{name}}</bot> preguntó",
       "peerAnswered": "<bot>{{name}}</bot> respondió",
       "peerFailed": "<bot>{{name}}</bot> no pudo responder",
-      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder"
+      "peerCancelled": "<bot>{{name}}</bot> se detuvo antes de responder",
+      "session": {
+        "needsInput": "La sesión «{{name}}» necesita una respuesta",
+        "completed": "La sesión «{{name}}» ha terminado",
+        "failed": "La sesión «{{name}}» ha fallado",
+        "cancelled": "La sesión «{{name}}» se detuvo",
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+      }
     },
     "routineReason": {
       "expired": "esperó demasiado para empezar",
@@ -274,7 +283,10 @@
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "saved": "Guardado",
-      "failed": "No se ha podido guardar el bot."
+      "failed": "No se ha podido guardar el bot.",
+      "showsIn": "Aparece en",
+      "showsInHint": "Barras laterales que lo muestran, además de Empleados",
+      "showsInFailed": "No se pudo guardar dónde aparece el bot."
     },
     "instructions": {
       "title": "Instrucciones",
@@ -387,5 +399,9 @@
     "confirm": "Eliminar bot",
     "pending": "Eliminando…",
     "failed": "No se ha podido eliminar el bot."
+  },
+  "section": {
+    "heading": "Bots",
+    "empty": "Aún no hay bots aquí."
   }
 }

@@ -40,7 +40,10 @@
   console's lists — Sessions and Automations, both links, the one under
   the address current, each named with its list's count beside the rail
   the moment it is hovered or focused, and the automations list is the
-  second sidebar (13). A session is shown in the session pane under either
+  second sidebar (13). Since 2026-10-25 the console opens (`/`, and every
+  "go to the console" after sign-in, onboarding or Settings) on the rail's
+  first item: Employees by default, or whichever item the reader dragged
+  to the top. A session is shown in the session pane under either
   list: opened from a run, it keeps the automations list beside it, at
   `/automations/$automationId/sessions/$sessionId` (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
@@ -124,22 +127,23 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: on the grey canvas, a line under the title that says what
-  sending will do once a project is picked ("In XRP Mobile · cloning 1 of
-  1 repository, each on its own opp/ branch."; "Set the scope, then
-  describe the work." until then); chips for project, host, repository,
-  branch, in the grey
-  band fused to the top of the composer (the tabbed composer of the
-  2026-09-26 export); a composer for the
-  first task whose foot row reads scope of action, then engine: attach
-  (the paperclip, a file pasted into the field or dropped on the pane
-  attaches it to the first task as a removable chip under the text —
-  an image, a PDF or a text file; a file it cannot take is refused under
-  the field with the reason, never dropped)
-  and the permission level on the left (ask for approval, approve for
-  me, full access, the last in a warning tone because it changes a
-  machine unattended); the agent and model, the effort and dictation on
-  the right. The project chip leads the row, because picking a project
+- New session (`NewSessionComposer.dc.html`, the 2026-10-26 export; it
+  replaced the tabbed composer of 2026-09-26 and its line under the
+  title on 2026-10-26): on the grey canvas, at the pane's foot where the
+  session's own input will be, "What should we work on?", the project
+  chip, and one box with Add files (+) at the start of a line that
+  grows, dictation and send at its end (a file pasted into the field or
+  dropped on the pane attaches to the first task as a removable chip over
+  the line — an image, a PDF or a text file; a file it cannot take is
+  refused under the box with the reason, never dropped). Under the box
+  one row of choices: the host and where on it as one chip ("mac-studio ·
+  New worktree", the hosts under a heading, each opening its Start in pane: New
+  worktree or Folder on host; changed 2026-10-26, they were two chips),
+  repository and branch (or folder), and the permission level on the left (ask for approval,
+  approve for me, full access, the last in a warning tone because it
+  changes a machine unattended); the agent and model and the effort on
+  the right. The frame's cloud environments are not built. The project
+  chip sits over the box, apart from the row, because picking a project
   offers the rest; it starts on the workspace's **Unassigned** project,
   which is where a session that names none is listed, so the chip and
   the session never disagree. Its foot action is **New project…**, a
@@ -178,7 +182,7 @@
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
   | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
-  | Codex | **GPT-6.1 Sol**, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
+  | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
   | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-6.1-sol`, `openai/gpt-5.6-sol` | yes | the model's levels |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | the model's levels |
   | Blank terminal | none, picked outright | no | no |
@@ -302,6 +306,22 @@
   is a shell in an empty directory. The hold covers a start this console
   sent or watched; a session opened from a link or a reload after it opened
   goes straight to its terminal, without reading the log.
+- Session: a bar over the terminal (2026-10-25 export): the sidebar
+  toggle, the task it came from and a slash when there is one, the
+  session's name, its state on a dot ("Running", "Needs input",
+  "Stopped"…), then Terminal / Chat and Share on the right. A pull
+  request's review session keeps the pull request's toolbar instead, and
+  those two close its terminal's status line. The preview the frame
+  opens beside a session has its Simulator built (2026-10-26): a
+  panel-right toggle before Share opens a 440px pane on the terminal's
+  right, its header the frame's pill tab, the device's state and name,
+  and Close, its body the session's device in a phone's frame, live. A
+  click taps, a drag swipes, typing with the screen focused types into
+  it. The device is the simulator or emulator the session's host gave it,
+  the one its agent drives through Argent
+  (`../research/device-streaming.md`); a host that offers none says so in
+  the pane. The Browser tab, the resize handle and Reload app are not
+  built.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

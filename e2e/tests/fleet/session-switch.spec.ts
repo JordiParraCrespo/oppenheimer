@@ -3,7 +3,7 @@ import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, createSession } from '../../support/sessions';
-import { signInAs } from '../../support/web';
+import { linkLive, signInAs } from '../../support/web';
 
 /**
  * Switching back to a session in the console paints the screen it showed
@@ -73,7 +73,7 @@ test('switching back to a session shows its screen, not the waiting state', asyn
   await expect(page.locator('.xterm').first()).toBeVisible();
   // Past the redial, so the hand-over from the kept screen has happened too.
   await expect.poll(() => screen.length > 0, { timeout: 60_000 }).toBe(true);
-  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await expect(linkLive(page)).toBeVisible();
 
   const seen = await page.evaluate(
     () => (window as unknown as { __switch: { waiting: boolean } }).__switch,

@@ -14,8 +14,8 @@ import {
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
-/** What a folded turn keeps: its words and its cards. */
-const SETTLED_KINDS = new Set<ChatBlock['kind']>(['reply', 'plan', 'changes']);
+/** What a folded turn keeps: its words and its cards, what was asked and answered among them. */
+const SETTLED_KINDS = new Set<ChatBlock['kind']>(['reply', 'plan', 'question', 'changes']);
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';
@@ -48,6 +48,9 @@ export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
     <div className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
+          // A session's chat stands on its terminal's ground, the card's own
+          // colour, so the turn takes the wash to stay a shape on it.
+          tone="wash"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
           attachments={

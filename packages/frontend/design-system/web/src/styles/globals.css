@@ -193,15 +193,20 @@
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;
     --term-accent: var(--op-blue-600);
-    /* A session read as a chat over its terminal (0.7): the console's
-       recessed ground, painted by the chat itself because the terminal's
-       frame is under it rather than the shell's pane. Its cards (the
-       composer, the code) need that ground to float on, as in a bot's chat. */
-    --chat-ground: var(--canvas-recessed);
+    /* A session read as a chat over its terminal (0.7): the terminal's own
+       ground, so switching Terminal / Chat changes what is drawn and never
+       the colour of the pane or the bar over it (the `SessionsConsole`
+       frame draws its chat on the same card as its terminal). The chat's
+       cards (the composer, the code) keep their hairlines to stand on it. */
+    --chat-ground: var(--term-bg);
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
     --term-caret: var(--op-blue-600);
+    /* A phone's bezel around a session's device screen (the preview pane in
+       `SessionsConsole.dc.html`): the frame's own near-black, `#0b0b0c`, in
+       both themes, because it is the hardware's colour and not the UI's. */
+    --device-bezel: #0b0b0c;
     --term-selection: rgba(0, 113, 227, 0.16);
     /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
        coloured with them — but a real PTY emits all sixteen slots, so the two
@@ -581,7 +586,7 @@
     --term-dim: var(--op-gray-500);
     --term-border: #262629;
     --term-accent: var(--op-blue-400);
-    --chat-ground: var(--canvas-recessed);
+    --chat-ground: var(--term-bg);
     --term-success: var(--op-green-400);
     --term-warning: var(--op-amber-400);
     --term-danger: var(--op-red-400);
@@ -819,6 +824,7 @@
   --color-term-dim: var(--term-dim);
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
+  --color-device-bezel: var(--device-bezel);
   --color-chat-ground: var(--chat-ground);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);

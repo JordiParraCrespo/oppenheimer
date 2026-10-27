@@ -7,7 +7,12 @@ import {
   type BotToolStep,
 } from '../domain/bot-message.entity';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
-import { BOT_TURN_TIME_LIMIT_MS, type BotTurnEntity } from '../domain/bot-turn.entity';
+import {
+  BOT_TURN_TIME_LIMIT_MS,
+  type BotTurnContext,
+  type BotTurnEntity,
+  type BotTurnPlanLimits,
+} from '../domain/bot-turn.entity';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
 /** What one engine event asks the runner to do. */
@@ -22,6 +27,10 @@ export interface TranscriptOutcome {
   error: string | null;
   inputTokens: number;
   outputTokens: number;
+  /** What the context held at the last answer that reported it. */
+  context: BotTurnContext | null;
+  /** A subscription's windows as its last answer said them. */
+  planLimits: BotTurnPlanLimits | null;
 }
 
 /**
@@ -40,6 +49,8 @@ export class TurnTranscript {
     error: 'The turn ended without saying how',
     inputTokens: 0,
     outputTokens: 0,
+    context: null,
+    planLimits: null,
   };
 
   constructor(private readonly turn: BotTurnEntity) {}
@@ -60,6 +71,8 @@ export class TurnTranscript {
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;
+        this.outcome.context = event.context ?? this.outcome.context;
+        this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
         return [];
       case 'done': {
         this.outcome.reason = event.reason;
@@ -82,8 +95,8 @@ export class TurnTranscript {
    * steps still completes it.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
-    const { reason, error, inputTokens, outputTokens } = this.outcome;
-    const usage = { inputTokens, outputTokens };
+    const { reason, error, inputTokens, outputTokens, context, planLimits } = this.outcome;
+    const usage = { inputTokens, outputTokens, context, planLimits };
     if (interruption === 'time_limit') {
       this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, ...usage });
     } else if (interruption === 'stop') {

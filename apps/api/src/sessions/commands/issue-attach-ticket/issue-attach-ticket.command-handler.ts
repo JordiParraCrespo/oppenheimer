@@ -40,6 +40,7 @@ export class IssueAttachTicketCommandHandler
       organizationId: session.organizationId,
       window: command.window,
       userId: command.userId,
+      ...(command.device ? { target: 'device' as const } : {}),
     });
   }
 }

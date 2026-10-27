@@ -42,6 +42,15 @@ export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 export const BOT_PERMISSIONS = ['auto', 'full'] as const satisfies readonly SessionPermission[];
 export type BotPermission = (typeof BOT_PERMISSIONS)[number];
 
+/**
+ * The console sections a bot shows in, beside Employees
+ * (`product/versions/mvp/28-bots-in-sections.md`): each section's sidebar lists
+ * the bots that name it under a Bots heading. A bot names none until its
+ * owner, or the section's plus that made it, puts it there.
+ */
+export const BOT_SECTIONS = ['sessions', 'automations', 'plan', 'pulls'] as const;
+export type BotSection = (typeof BOT_SECTIONS)[number];
+
 /** Who wrote a document revision or a memory fact: a person, or the bot through its tools. */
 export const BOT_AUTHORS = ['user', 'bot'] as const;
 export type BotAuthor = (typeof BOT_AUTHORS)[number];
@@ -232,6 +241,12 @@ export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
+export const botSectionSchema = z.enum(BOT_SECTIONS);
+/** A set of sections: each at most once, in any order. */
+const botSectionsSchema = z
+  .array(botSectionSchema)
+  .max(BOT_SECTIONS.length)
+  .refine((sections) => new Set(sections).size === sections.length, 'A section is named once');
 
 const botNameSchema = z.string().trim().min(1).max(BOT_NAME_MAX);
 const botDescriptionSchema = z.string().trim().max(BOT_DESCRIPTION_MAX);
@@ -256,6 +271,8 @@ export const createBotSchema = z.object({
    * the provider's default.
    */
   provider: botProviderSchema.optional(),
+  /** The sections it shows in; none unless named (a section's plus names its own). */
+  sections: botSectionsSchema.optional(),
 });
 export type CreateBotDto = z.infer<typeof createBotSchema>;
 
@@ -280,6 +297,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** The whole set of sections it shows in; `[]` shows it in Employees only. */
+  sections: botSectionsSchema.optional(),
 });
 export type UpdateBotDto = z.infer<typeof updateBotSchema>;
 
@@ -361,8 +380,9 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
  * What an `event` message says happened, for the chat to draw without
  * reading its words: an approval decided (`25-bots.md` §5), how it went,
  * and the card's line; a routine that changed, ran or failed
- * (`26-bot-routines.md` §4); or a message from another bot, or its answer
- * (`25-bots.md` §4.6). The words stay in the message for the bot.
+ * (`26-bot-routines.md` §4); a message from another bot, or its answer
+ * (`25-bots.md` §4.6); or a session the bot follows that needs it
+ * (`27-bot-subscriptions.md`). The words stay in the message for the bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
@@ -406,8 +426,37 @@ export interface BotRoutineEvent {
   reason: string | null;
 }
 
-/** Why a bot turn exists: a message (yours or another bot's), an approval's decision, or a routine's run. */
-export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine'] as const;
+/**
+ * A session a bot is subscribed to woke it (`27-bot-subscriptions.md` §4):
+ * the task it delegated needs input, ended, failed, was stopped or expired.
+ * The ids and names are Oppenheimer's record, never the session's words.
+ */
+export const BOT_SESSION_WAKE_STATES = [
+  'requires_action',
+  'completed',
+  'failed',
+  'cancelled',
+  'expired',
+] as const;
+export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
+
+export interface BotSessionEvent {
+  kind: 'session';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  sessionId: string;
+  /** The session's name at the wake. */
+  sessionName: string;
+  /** Which of the session's tasks (its turn's number). */
+  turn: number;
+  state: BotSessionWakeState;
+}
+
+/**
+ * Why a bot turn exists: a message (yours or another bot's), an approval's
+ * decision, a routine's run, or a session the bot is subscribed to.
+ */
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription'] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
@@ -469,10 +518,17 @@ export type BotMessageEvent =
   | BotApprovalEvent
   | BotRoutineEvent
   | BotPeerMessageEvent
-  | BotPeerReplyEvent;
+  | BotPeerReplyEvent
+  | BotSessionEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
-export const BOT_MESSAGE_EVENT_KINDS = ['approval', 'routine', 'bot_message', 'bot_reply'] as const;
+export const BOT_MESSAGE_EVENT_KINDS = [
+  'approval',
+  'routine',
+  'bot_message',
+  'bot_reply',
+  'session',
+] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
 /** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
@@ -583,6 +639,18 @@ export type FindBotApprovalsDto = z.infer<typeof findBotApprovalsSchema>;
 
 /** The most approvals one read returns, newest first. */
 export const BOT_APPROVALS_PAGE_MAX = 50;
+
+/**
+ * `GET /bot-approvals`: the workspace's approvals across its bots, in one
+ * status, `pending` unless another is named (the Inbox, `29-inbox.md` §4).
+ */
+export const findWorkspaceBotApprovalsSchema = z.object({
+  status: z.enum(BOT_APPROVAL_STATUSES).default('pending'),
+});
+export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprovalsSchema>;
+
+/** The most approvals the workspace read returns, newest first. */
+export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a

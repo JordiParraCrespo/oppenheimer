@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { BOT_AVATAR_COLORS } from '@oppenheimer/shared';
+import { BOT_AVATAR_COLORS, type BotSection } from '@oppenheimer/shared';
 import { CreateBotMemoryFactCommand } from '../../../bots/commands/create-bot-memory-fact/create-bot-memory-fact.command';
 import { DeleteBotMemoryFactCommand } from '../../../bots/commands/delete-bot-memory-fact/delete-bot-memory-fact.command';
 import { UpdateBotCommand } from '../../../bots/commands/update-bot/update-bot.command';
@@ -41,7 +41,9 @@ const context: BotToolContext = {
   approvals: { request: vi.fn() },
 };
 
-function bot(props: { name?: string; learnAutomatically?: boolean } = {}): BotEntity {
+function bot(
+  props: { name?: string; learnAutomatically?: boolean; sections?: BotSection[] } = {},
+): BotEntity {
   return BotEntity.create({
     id: BOT_ID,
     props: {
@@ -59,6 +61,7 @@ function bot(props: { name?: string; learnAutomatically?: boolean } = {}): BotEn
       permission: 'auto',
       budget: new BotTurnBudget(),
       learnAutomatically: props.learnAutomatically ?? true,
+      sections: props.sections ?? [],
     },
   });
 }
@@ -185,6 +188,28 @@ describe('BotSelfToolsFactory', () => {
     expect(command).toBeInstanceOf(UpdateBotCommand);
     expect(command).toMatchObject({ scope: owner, botId: BOT_ID, input: { name: 'Ada Lovelace' } });
     expect(result.content).toBe('Profile saved: name "Ada" → "Ada Lovelace".');
+  });
+
+  it('places itself in console sections and confirms the set from the saved bot', async () => {
+    let saved = false;
+    const { commandBus, call } = setup(
+      () => bot({ sections: saved ? ['sessions', 'pulls'] : [] }),
+      () => {
+        saved = true;
+        return BOT_ID;
+      },
+    );
+    const result = await call('update_profile', { sections: ['pulls', 'sessions'] });
+    const command = commandBus.execute.mock.calls[0][0] as UpdateBotCommand;
+    expect(command).toMatchObject({ input: { sections: ['pulls', 'sessions'] } });
+    expect(result.content).toBe('Profile saved: sections [] → [sessions, pulls].');
+  });
+
+  it('refuses a section the console does not have, and dispatches nothing', async () => {
+    const { commandBus, call } = setup(() => bot());
+    const result = await call('update_profile', { sections: ['inbox'] });
+    expect(result.isError).toBe(true);
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('remembers a fact when it learns automatically, and confirms what was saved', async () => {

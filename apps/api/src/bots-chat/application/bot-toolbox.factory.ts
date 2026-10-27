@@ -21,6 +21,7 @@ import type {
   BotToolDefinition,
   BotToolResult,
 } from './bot-tool.factory';
+import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 
 /**
@@ -36,6 +37,7 @@ export class BotToolboxFactory {
     self: BotSelfToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
+    watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
     github: BotGithubToolsFactory,
     pullRequests: BotPullRequestToolsFactory,
@@ -50,6 +52,7 @@ export class BotToolboxFactory {
       self,
       hosts,
       sessions,
+      watches,
       plan,
       github,
       pullRequests,

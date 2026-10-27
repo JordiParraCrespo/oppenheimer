@@ -34,10 +34,11 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * the recorder in the foot row's place while dictating, the notice under the
  * box.
  *
- * Images ride a message in the `stacked` layout: `onAttach` puts the
- * paperclip first in the foot row, before `tools`; `attachments` are the
- * message's `ChatImage` tiles, in a row over the text; `allowEmpty` lets a
- * message of images alone be sent.
+ * Files ride a message in either layout: `onAttach` puts the paperclip
+ * first, in the foot row before `tools` (`stacked`) or at the start of the
+ * row before the field (`inline`); `attachments` are what the message
+ * carries, in a row over the text: a bot's `ChatImage` tiles, a session's
+ * `ComposerFile` chips. `allowEmpty` lets a message of files alone be sent.
  */
 function ChatComposer({
   value,
@@ -76,9 +77,9 @@ function ChatComposer({
   engine?: React.ReactNode;
   /** A notice or an approval, fused to the field's top edge. */
   above?: React.ReactNode;
-  /** The images the message carries (`ChatImage`s), in a row over the text; `stacked` only. */
+  /** The files the message carries (`ChatImage`s, `ComposerFile`s), in a row over the text. */
   attachments?: React.ReactNode;
-  /** Present: shows the paperclip, first in the foot row; `stacked` only. */
+  /** Present: shows the paperclip, first in the foot row (`stacked`) or the row (`inline`). */
   onAttach?: () => void;
   /** Send with nothing written: what is attached is the message. */
   allowEmpty?: boolean;
@@ -121,7 +122,7 @@ function ChatComposer({
       // `field-sizing-content` overrides `rows`) to eight, then scrolls.
       className={cn(
         'field-sizing-content max-h-52 w-full resize-none bg-transparent text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-        inline ? 'min-h-11 flex-1 py-2.5 pl-4.5' : 'min-h-18 px-5 pt-4 pb-2',
+        inline ? cn('min-h-11 flex-1 py-2.5', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
       )}
     />
   );
@@ -148,6 +149,27 @@ function ChatComposer({
       </ComposerSendButton>
     </>
   );
+  const paperclip = onAttach ? (
+    <IconButton
+      aria-label={label.attach}
+      title={label.attach}
+      size="sm"
+      shape="square"
+      onClick={onAttach}
+      disabled={disabled}
+      className={inline ? 'size-8' : 'size-7.5'}
+    >
+      <PaperclipIcon className="size-3.75" />
+    </IconButton>
+  ) : null;
+  const attached = attachments ? (
+    <div
+      data-slot="chat-composer-attachments"
+      className={cn('flex flex-wrap gap-2.5', inline ? 'px-3 pt-3' : 'px-5 pt-4')}
+    >
+      {attachments}
+    </div>
+  ) : null;
   const recorder = dictation?.recorder ? (
     // The bar is 12px taller than the foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
@@ -165,7 +187,7 @@ function ChatComposer({
         data-above={above ? '' : undefined}
         className={cn(
           'flex rounded-xl border border-border-subtle bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
-          inline ? 'items-end' : 'flex-col',
+          'flex-col',
           // Inline, the recorder bar is the box while it listens: one edge, not two.
           inline && recorder && 'border-transparent bg-transparent',
           className,
@@ -175,36 +197,26 @@ function ChatComposer({
         {inline ? (
           (recorder ?? (
             <>
-              {field}
-              <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
+              {attached}
+              <div className="flex items-end">
+                {paperclip ? <span className="flex shrink-0 items-center p-1.5 pr-0">{paperclip}</span> : null}
+                {field}
+                <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
+              </div>
             </>
           ))
         ) : (
           <>
-            {attachments ? (
-              <div data-slot="chat-composer-attachments" className="flex flex-wrap gap-2.5 px-5 pt-4">
-                {attachments}
-              </div>
-            ) : null}
+            {attached}
             {field}
             {recorder ?? (
               <ComposerFoot
                 data-slot="chat-composer-foot"
                 className="gap-1 px-3 pb-3"
                 leading={
-                  onAttach ? (
+                  paperclip ? (
                     <>
-                      <IconButton
-                        aria-label={label.attach}
-                        title={label.attach}
-                        size="sm"
-                        shape="square"
-                        onClick={onAttach}
-                        disabled={disabled}
-                        className="size-7.5"
-                      >
-                        <PaperclipIcon className="size-3.75" />
-                      </IconButton>
+                      {paperclip}
                       {tools}
                     </>
                   ) : (

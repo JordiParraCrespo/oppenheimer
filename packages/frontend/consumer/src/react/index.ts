@@ -30,6 +30,8 @@ export {
   useBotActiveTurn,
   useBotImage,
   useBotLiveText,
+  useBotRoomLeft,
+  useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
@@ -77,6 +79,7 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -111,6 +114,14 @@ export {
   useSuspenseHosts,
   useUpdateHostRunner,
 } from './hosts.queries';
+export {
+  inboxAnswered,
+  type PutInboxMarkVariables,
+  useDeleteInboxMark,
+  useInboxCount,
+  usePutInboxMark,
+  useSuspenseInbox,
+} from './inbox.queries';
 export {
   type ConnectInstallationVariables,
   useConnectInstallation,
@@ -194,6 +205,7 @@ export {
   type RenameSessionVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAnswerSessionDecision,
   useCloseSession,
   useCreateSession,
   useInvalidateSession,
@@ -215,7 +227,11 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream, useSharedSessionStream } from './sessions.stream';
+export {
+  useSessionDeviceStream,
+  useSessionStream,
+  useSharedSessionStream,
+} from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,

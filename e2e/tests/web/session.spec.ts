@@ -1,7 +1,7 @@
 import { expect, type Page, test, type WebSocketRoute } from '@playwright/test';
 import { query } from '../../support/db';
 import { connectInstallation, createSession, pairHost } from '../../support/sessions';
-import { provisionedUser, signInAs } from '../../support/web';
+import { linkLive, provisionedUser, signInAs } from '../../support/web';
 
 /**
  * The session screen, `/sessions/{id}`, in each state the URL can land on —
@@ -142,7 +142,7 @@ test.describe('Session screen', () => {
     await signInAs(page, owner.user);
     await page.goto(`/sessions/${sessionId}`);
 
-    await expect(page.getByText('Live', { exact: true })).toBeVisible();
+    await expect(linkLive(page)).toBeVisible();
     await expect(grid(page)).toContainText('[tmux] attached to session e2e — window 0');
     await expect(grid(page)).toContainText('✓ packages/frontend — no boundary violations');
 
