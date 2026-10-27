@@ -76,6 +76,7 @@ const (
 	CapabilityFsList              = "fs.list"
 	CapabilityAttachmentChat      = "attachment.chat"
 	CapabilityDeviceScreen        = "device.screen"
+	CapabilityPortForward         = "port.forward"
 	CapabilitySessionCloud        = "session.cloud"
 )
 
@@ -118,6 +119,11 @@ const (
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
 	TypeDeviceDetach            = "device.detach"
+	TypePortList                = "port.list"
+	TypePortListing             = "port.listing"
+	TypePortOpen                = "port.open"
+	TypePortOpened              = "port.opened"
+	TypePortClose               = "port.close"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -159,6 +165,11 @@ var MessageTypes = []string{
 	TypeDeviceInfo,
 	TypeDeviceInput,
 	TypeDeviceDetach,
+	TypePortList,
+	TypePortListing,
+	TypePortOpen,
+	TypePortOpened,
+	TypePortClose,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -239,6 +250,16 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DeviceInput), true
 	case TypeDeviceDetach:
 		return new(DeviceDetach), true
+	case TypePortList:
+		return new(PortList), true
+	case TypePortListing:
+		return new(PortListing), true
+	case TypePortOpen:
+		return new(PortOpen), true
+	case TypePortOpened:
+		return new(PortOpened), true
+	case TypePortClose:
+		return new(PortClose), true
 	}
 	return nil, false
 }
@@ -631,6 +652,47 @@ type DeviceDetach struct {
 	Type         string `json:"type"`
 	CommandID    string `json:"commandId"`
 	SessionID    string `json:"sessionId"`
+	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// PortList is the `port.list` message.
+type PortList struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+}
+
+// PortListing is the `port.listing` message.
+type PortListing struct {
+	Type      string       `json:"type"`
+	CommandID string       `json:"commandId"`
+	Ports     []ListedPort `json:"ports"`
+}
+
+// ListedPort is PortListing.Ports.
+type ListedPort struct {
+	Port    int    `json:"port"`
+	Process string `json:"process,omitempty"`
+}
+
+// PortOpen is the `port.open` message.
+type PortOpen struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Port         int    `json:"port"`
+}
+
+// PortOpened is the `port.opened` message.
+type PortOpened struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// PortClose is the `port.close` message.
+type PortClose struct {
+	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
 }
 

@@ -1,28 +1,38 @@
-import {
-  EmptyState,
-  IconButton,
-  PillTab,
-  PillTabs,
-  StatusDot,
-} from '@oppenheimer/design-system-web';
-import { SmartphoneIcon, XIcon } from '@oppenheimer/design-system-web/icons';
+import { IconButton, PillTab, PillTabs } from '@oppenheimer/design-system-web';
+import { GlobeIcon, SmartphoneIcon, XIcon } from '@oppenheimer/design-system-web/icons';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DeviceFrame } from '../components/device-frame';
-import { useSessionDevice } from '../hooks/use-session-device';
+import { type PreviewTab, rememberPreviewTab, storedPreviewTab } from '../lib/preview-open';
+import { SessionBrowser } from './session-browser';
+import { SessionDevice } from './session-device';
 
 /**
- * The preview pane beside a session (`SessionsConsole.dc.html`): the
- * session's device, live, in a phone's frame. Its header is the design's
- * pill tabs (only Simulator is built; the Browser tab waits for preview URLs),
- * the device's state and name, and Close. The device is the one the session's
- * host gave it, the same one its agent drives through Argent, so the reader
- * watches the agent work and can take over with a tap.
+ * The preview pane beside a session (`SessionsConsole.dc.html`): the design's
+ * pill tabs, Browser and Simulator, over what the chosen one shows, and
+ * Close. Browser is the session's dev server through its host's runner
+ * (`product/versions/mvp/30-session-previews.md`); Simulator its device, the
+ * one its agent drives through Argent. Each tab opens its own connection only
+ * while it is the one shown. `offered` is what this console and deployment
+ * can show, never empty.
  */
-export function SessionPreview({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+export function SessionPreview({
+  sessionId,
+  offered,
+  onClose,
+}: {
+  sessionId: string;
+  offered: readonly PreviewTab[];
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
-  const { status, device, frame, send, type } = useSessionDevice(sessionId);
-  const live = status === 'live';
-  const name = device?.name ?? t('sessions.preview.simulator');
+  const [chosen, setChosen] = useState(() => storedPreviewTab(offered));
+  const shown = chosen && offered.includes(chosen) ? chosen : offered[0];
+  const choose = (tab: string) => {
+    const next = offered.find((one) => one === tab);
+    if (!next) return;
+    setChosen(next);
+    rememberPreviewTab(next);
+  };
 
   return (
     <aside
@@ -31,55 +41,31 @@ export function SessionPreview({ sessionId, onClose }: { sessionId: string; onCl
     >
       <header className="flex min-h-11.5 items-center gap-2 border-b border-border-subtle p-2">
         <PillTabs
-          value="simulator"
-          onValueChange={() => {}}
+          value={shown ?? ''}
+          onValueChange={choose}
           size="sm"
           aria-label={t('sessions.preview.label')}
         >
-          <PillTab value="simulator">
-            <SmartphoneIcon className="size-3.5" />
-            {t('sessions.preview.simulator')}
-          </PillTab>
+          {offered.includes('browser') ? (
+            <PillTab value="browser">
+              <GlobeIcon className="size-3.5" />
+              {t('sessions.preview.browser')}
+            </PillTab>
+          ) : null}
+          {offered.includes('simulator') ? (
+            <PillTab value="simulator">
+              <SmartphoneIcon className="size-3.5" />
+              {t('sessions.preview.simulator')}
+            </PillTab>
+          ) : null}
         </PillTabs>
-        <StatusDot
-          title={t('sessions.preview.title', { name })}
-          state={live ? 'running' : 'pending'}
-          pulse={status === 'connecting'}
-          density="compact"
-          className="min-w-0"
-        >
-          {name}
-        </StatusDot>
         <span className="flex-1" />
         <IconButton size="sm" aria-label={t('sessions.preview.close')} onClick={onClose}>
           <XIcon />
         </IconButton>
       </header>
-      <div className="flex min-h-0 flex-1">
-        {live ? (
-          <DeviceFrame
-            label={t('sessions.preview.frame', { name })}
-            frameUrl={frame?.url ?? null}
-            onDrawn={() => frame?.drawn()}
-            onInput={send}
-            onType={type}
-          />
-        ) : (
-          <EmptyState className="m-auto max-w-80">
-            <EmptyState.Header>
-              <EmptyState.Media variant="icon">
-                <SmartphoneIcon />
-              </EmptyState.Media>
-              <EmptyState.Title>{t(`sessions.preview.${status}`)}</EmptyState.Title>
-              {status !== 'ended' ? (
-                <EmptyState.Description>
-                  {t(`sessions.preview.${status}Detail`)}
-                </EmptyState.Description>
-              ) : null}
-            </EmptyState.Header>
-          </EmptyState>
-        )}
-      </div>
+      {shown === 'browser' ? <SessionBrowser sessionId={sessionId} /> : null}
+      {shown === 'simulator' ? <SessionDevice sessionId={sessionId} /> : null}
     </aside>
   );
 }

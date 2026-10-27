@@ -4,10 +4,10 @@ import {
   useSessionOpening,
   useSuspenseSession,
 } from '@oppenheimer/frontend-consumer/react';
-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
+import { useDeploymentCapabilities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatViewToggle } from '../components/chat-view-toggle';
 import { PreviewToggle } from '../components/preview-toggle';
@@ -15,14 +15,21 @@ import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
-import { rememberPreviewOpen, storedPreviewOpen } from '../lib/preview-open';
+import { type PreviewTab, rememberPreviewOpen, storedPreviewOpen } from '../lib/preview-open';
 import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionCloud } from './session-cloud';
-import { SessionPreview } from './session-preview';
 import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
+
+/**
+ * The preview pane loads when first opened: the session pane is the console's
+ * first load, and most readers never open the pane.
+ */
+const SessionPreview = lazy(() =>
+  import('./session-preview').then((module) => ({ default: module.SessionPreview })),
+);
 
 /**
  * One session once it has answered, in `SessionScreen`'s `QueryState.Data`:
@@ -85,7 +92,17 @@ export function SessionPane({
   const [view, setView] = useState<SessionView>(initialView);
   // The preview pane beside the terminal: its toggle is in the bar, the pane
   // in the row under it, so the one state both read lives here.
-  const previewOffered = useFeatureFlag('session_device_preview') && Boolean(bar);
+  // Which of the pane's views this console and deployment can show: the
+  // Browser needs a preview domain, the Simulator only its flag.
+  const { data: deployment } = useDeploymentCapabilities();
+  const browserOffered =
+    useFeatureFlag('session_browser_preview') && Boolean(deployment?.session_previews);
+  const simulatorOffered = useFeatureFlag('session_device_preview');
+  const previewTabs: PreviewTab[] = [
+    ...(browserOffered ? (['browser'] as const) : []),
+    ...(simulatorOffered ? (['simulator'] as const) : []),
+  ];
+  const previewOffered = previewTabs.length > 0 && Boolean(bar);
   const [previewOpen, setPreviewOpen] = useState(storedPreviewOpen);
   const togglePreview = (open: boolean) => {
     setPreviewOpen(open);
@@ -234,7 +251,13 @@ export function SessionPane({
           </div>
         </div>
         {previewOffered && previewOpen ? (
-          <SessionPreview sessionId={session.id} onClose={() => togglePreview(false)} />
+          <Suspense fallback={null}>
+            <SessionPreview
+              sessionId={session.id}
+              offered={previewTabs}
+              onClose={() => togglePreview(false)}
+            />
+          </Suspense>
         ) : null}
       </div>
     </>

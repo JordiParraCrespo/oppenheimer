@@ -20,7 +20,7 @@ type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reas
  * this reason and code. Asked at redemption and again on a timer while the
  * attachment is open.
  */
-type AttachVerdict =
+export type AttachVerdict =
   | { allowed: true; hostId: string }
   | { allowed: false; reason: AttachClosedReason; code: number };
 
@@ -332,9 +332,11 @@ export class BrowserAttachGateway {
   /**
    * Whether a claim still authorises an attachment. A lookup that throws is
    * thrown, never read as a refusal: at redemption that is a 1011 the console
-   * retries, and on the timer it keeps the socket.
+   * retries, and on the timer it keeps the socket. Public because a preview
+   * (`PreviewProxyGateway`) is judged by the same rule, at its redemption and
+   * on the same interval.
    */
-  private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
+  async authorize(claim: AttachTicket): Promise<AttachVerdict> {
     const target = await this.sessions.findAttachTarget(claim.sessionId);
     if (!target || target.organizationId !== claim.organizationId) {
       return refuse('missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);

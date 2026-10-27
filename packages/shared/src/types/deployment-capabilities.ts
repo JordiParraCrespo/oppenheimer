@@ -25,6 +25,9 @@
  * `voice_transcription` says whether the deployment has a speech-to-text key
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
+ *
+ * `session_previews` says whether sessions' dev servers can be opened from
+ * the console: a preview domain (`PREVIEW_BASE_URL`) the relay serves them on.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -38,6 +41,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'google_calendar',
   'bot_providers',
   'voice_transcription',
+  'session_previews',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -76,6 +80,9 @@ export const CLIENT_CAPABILITIES = [
   // to answer. Without it the console says so instead of offering a form
   // whose save would fail.
   'bot_providers',
+  // Whether the session pane offers its Browser tab: without a preview domain
+  // there is nowhere to open a session's dev server.
+  'session_previews',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

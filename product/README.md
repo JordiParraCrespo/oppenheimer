@@ -697,6 +697,12 @@ earlier note:
   under it and the project over it, and a session's name, state, Terminal
   / Chat and Share moved from the terminal's status line to a bar over it
   (`versions/mvp/05-screens.md`).
+- `versions/mvp/28-bots-in-sections.md` decided on 2026-10-26 that only
+  Pull requests opens a bot's chat inside the section, and that Sessions,
+  Automations and Plan send the reader to Employees, as the export's frames
+  link them. Later that day the owner, clicking a bot in Sessions, asked to
+  stay on the page: every section now opens the chat in place, under its
+  own address and sidebar (28, "Decided").
 - New session's Where and Host were two chips. On 2026-10-26 the owner
   asked for the export's one chip, the host and where on it ("mac-studio ·
   New worktree", the hosts and a Start in pane per host); the box took a
@@ -717,6 +723,14 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
+  the owner asked for the Browser tab, through "tunnel technology like
+  Cloudflare, Vercel or ngrok"; offered the runner's own link as that
+  tunnel, they chose it, asking that an app with an API work. A preview is
+  an origin per session and port on a preview domain of its own, served by
+  the relay through the link, the app seeing `localhost` and its API behind
+  the dev server's proxy; cloudflared and ngrok wait for public share links
+  (`versions/mvp/30-session-previews.md`).
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's

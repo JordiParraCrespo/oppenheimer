@@ -18,4 +18,4 @@ state comes from the Chrome extension, which, connected with a personal token
 pinned to the workspace, posts what it sees on claude.ai to
 `POST /sessions/cloud-status`; the API records it for the sessions the
 workspace launched (`place: cloud`, `cloudSessionId`, runner capability
-`session.cloud`, errors `SESSIONS_035` and `SESS_008`).
+`session.cloud`, errors `SESSIONS_036` and `SESS_008`).

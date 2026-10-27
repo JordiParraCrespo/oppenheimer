@@ -2,9 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
+import {
+  OPEN_PULLS_PAGES,
+  OPEN_PULLS_QUERY,
+  type OpenPullsBody,
+  openPullRequestsOf,
+} from './github-open-pulls.util';
+import {
+  checkRunOutcome,
+  checksOf,
+  commitStatusOutcome,
+  fromForkOf,
+} from './github-pull-rules.util';
 import type {
   GithubChecks,
   GithubCredential,
+  GithubOpenPullRequest,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
@@ -141,6 +154,27 @@ export class GithubPullsAdapter implements GithubPullsPort {
     return raw.map(toSummary);
   }
 
+  async listOpenPullRequests(
+    credential: GithubCredential,
+    fullName: string,
+  ): Promise<GithubOpenPullRequest[]> {
+    const [owner, name] = fullName.split('/');
+    const pulls: GithubOpenPullRequest[] = [];
+    let after: string | null = null;
+    for (let page = 0; page < OPEN_PULLS_PAGES; page += 1) {
+      const { body } = await this.request<OpenPullsBody>(`${this.http.api}/graphql`, {
+        credential,
+        method: 'POST',
+        body: { query: OPEN_PULLS_QUERY, variables: { owner, name, after } },
+      });
+      const read = openPullRequestsOf(body);
+      pulls.push(...read.pulls);
+      after = read.next;
+      if (!after) break;
+    }
+    return pulls;
+  }
+
   async readPullRequest(
     credential: GithubCredential,
     fullName: string,
@@ -159,8 +193,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       changedFiles: body.changed_files ?? 0,
       mergeable: body.mergeable ?? null,
       mergeableState: body.mergeable_state ?? 'unknown',
-      // A head whose repository is gone (a deleted fork) is a fork's too.
-      fromFork: body.head.repo?.id !== body.base.repo?.id,
+      fromFork: fromForkOf(body.head.repo?.id, body.base.repo?.id),
     };
   }
 
@@ -255,39 +288,10 @@ export class GithubPullsAdapter implements GithubPullsPort {
         credential,
       }),
     ]);
-    const outcomes: ('passed' | 'failed' | 'pending')[] = [
-      ...(runs.check_runs ?? []).map((run) =>
-        run.status !== 'completed'
-          ? ('pending' as const)
-          : ['success', 'neutral', 'skipped'].includes(run.conclusion ?? '')
-            ? ('passed' as const)
-            : ('failed' as const),
-      ),
-      ...(combined.statuses ?? []).map((status) =>
-        status.state === 'success'
-          ? ('passed' as const)
-          : status.state === 'pending'
-            ? ('pending' as const)
-            : ('failed' as const),
-      ),
-    ];
-    const count = (outcome: string) => outcomes.filter((o) => o === outcome).length;
-    const failed = count('failed');
-    const pending = count('pending');
-    return {
-      state:
-        outcomes.length === 0
-          ? 'none'
-          : failed > 0
-            ? 'failing'
-            : pending > 0
-              ? 'running'
-              : 'passing',
-      total: outcomes.length,
-      passed: count('passed'),
-      failed,
-      pending,
-    };
+    return checksOf([
+      ...(runs.check_runs ?? []).map((run) => checkRunOutcome(run.status, run.conclusion)),
+      ...(combined.statuses ?? []).map((status) => commitStatusOutcome(status.state)),
+    ]);
   }
 
   async createReview(

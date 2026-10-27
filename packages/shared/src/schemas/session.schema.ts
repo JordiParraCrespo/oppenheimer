@@ -343,6 +343,21 @@ export const issueAttachTicketSchema = z.object({
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
+ * `POST /sessions/{id}/previews` — open one of the session's ports in the
+ * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+ */
+export const issueSessionPreviewSchema = z.object({
+  /** A port the session's own processes listen on; never a system one. */
+  port: z.number().int().min(1024).max(65535),
+  /** The path in the app to open on; the app's root when absent. */
+  path: z.string().max(2048).optional(),
+  /** Whether the console frames the preview (the Browser tab) or opens it in a tab of its own. */
+  embed: z.boolean().optional(),
+});
+
+export type IssueSessionPreviewDto = z.infer<typeof issueSessionPreviewSchema>;
+
+/**
  * `POST /sessions/{id}/images` — a file for a running session's prompt (the
  * route keeps its first name); these are the form fields beside it. A multipart
  * field arrives as text, so the window is coerced; absent, it is the agent's.

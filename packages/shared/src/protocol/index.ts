@@ -8,9 +8,11 @@
  * message.
  */
 export * from './attach.js';
+export * from './devices.js';
 export * from './hint.js';
 export * from './link.js';
 export * from './messages.js';
+export * from './ports.js';
 export * from './primitives.js';
 export * from './runner-files.js';
 export * from './session-file.js';

@@ -59,7 +59,7 @@ describe('runnerRefusal', () => {
 
   it('refuses a cloud session on a live runner that did not name session.cloud', () => {
     const launch = { agent: 'claude-code', place: 'cloud' as const };
-    expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_035');
+    expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_036');
     expect(runnerRefusal(launch, online(['session.cloud']))).toBeNull();
   });
 

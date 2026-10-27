@@ -1365,6 +1365,126 @@
         "sessionId",
         "attachmentId"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.listing"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "ports": {
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "port": {
+                "type": "integer",
+                "minimum": 1024,
+                "maximum": 65535
+              },
+              "process": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "port"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "ports"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.open"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId",
+        "port"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.opened"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.close"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
     }
   ],
   "$defs": {
@@ -1697,6 +1817,7 @@
       "fs.list",
       "attachment.chat",
       "device.screen",
+      "port.forward",
       "session.cloud"
     ],
     "maxEventPayloadBytes": 8192,

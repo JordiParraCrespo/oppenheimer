@@ -369,6 +369,7 @@ export class RunnerLinkGateway {
         // Queued in `onControl`; never dispatched one by one.
         return;
       case 'fs.listing':
+      case 'port.listing':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {
@@ -402,6 +403,15 @@ export class RunnerLinkGateway {
       case 'device.info':
         // Which device a device attachment shows; its frames follow.
         link.attachment(message.attachmentId)?.device?.(message);
+        return;
+      case 'port.opened':
+        // A port attachment's connection is up; its bytes may flow (28).
+        link.attachment(message.attachmentId)?.opened?.();
+        return;
+      case 'attachment.credit':
+        // The runner's credit for a port attachment's bytes it wrote to the
+        // port: the one attachment kind whose bytes flow both ways in bulk.
+        link.attachment(message.attachmentId)?.credit?.(message.bytes);
         return;
       case 'attachment.closed':
         link.attachment(message.attachmentId)?.closed('runner_closed', message.reason);

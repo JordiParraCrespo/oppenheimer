@@ -264,12 +264,18 @@ export const SessionErrors = {
     message: 'The host is offline, so the answer was not sent',
     httpStatus: 503,
   },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
   /**
    * A cloud session for a host whose live runner did not name `session.cloud`:
    * it would open a terminal instead of starting the task in the cloud.
    */
   CLOUD_UNSUPPORTED_BY_RUNNER: {
-    code: 'SESSIONS_035',
+    code: 'SESSIONS_036',
     message: "This host's runner cannot start a session in the cloud",
     httpStatus: 409,
   },

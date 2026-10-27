@@ -1703,6 +1703,23 @@ export type IssueAttachTicketRequest = {
     target?: 'terminal' | 'device';
 };
 
+export type IssueSessionPreviewRequest = {
+    port: number;
+    path?: string;
+    embed?: boolean;
+};
+
+export type SessionPreviewResponseDto = {
+    /**
+     * Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.
+     */
+    url: string;
+    /**
+     * The ticket in `url` is refused after this.
+     */
+    expiresAt: string;
+};
+
 export type SetSessionSharePeopleRequest = {
     people: Array<string>;
 };
@@ -1861,6 +1878,25 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type SessionPortDto = {
+    port: number;
+    /**
+     * The command listening on it.
+     */
+    process?: string;
+};
+
+export type SessionPortsResponseDto = {
+    /**
+     * `listed`: `ports` is what the session listens on now. `host_offline`: the host has no link. `not_supported`: its runner cannot list ports.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    /**
+     * The TCP ports the session’s own processes listen on, from 1024 up, in order.
+     */
+    ports: Array<SessionPortDto>;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -3717,6 +3753,10 @@ export type CapabilitiesResponseDto = {
      * A workspace can store model provider keys, which bots run on.
      */
     bot_providers: boolean;
+    /**
+     * A session's dev server can be opened in the console (a preview domain).
+     */
+    session_previews: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -8265,6 +8305,56 @@ export type IssueAttachTicketResponses = {
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
 
+export type IssueSessionPreviewData = {
+    body: IssueSessionPreviewRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/previews';
+};
+
+export type IssueSessionPreviewErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "session_browser_preview" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_035 — Previews are not configured
+     */
+    501: ProblemDetailsDto;
+    /**
+     * SESSIONS_008 — A ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueSessionPreviewError = IssueSessionPreviewErrors[keyof IssueSessionPreviewErrors];
+
+export type IssueSessionPreviewResponses = {
+    201: SessionPreviewResponseDto;
+};
+
+export type IssueSessionPreviewResponse = IssueSessionPreviewResponses[keyof IssueSessionPreviewResponses];
+
 export type SetSessionSharePeopleData = {
     body: SetSessionSharePeopleRequest;
     path: {
@@ -8936,6 +9026,48 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type FindSessionPortsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/ports';
+};
+
+export type FindSessionPortsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "session_browser_preview" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionPortsError = FindSessionPortsErrors[keyof FindSessionPortsErrors];
+
+export type FindSessionPortsResponses = {
+    200: SessionPortsResponseDto;
+};
+
+export type FindSessionPortsResponse = FindSessionPortsResponses[keyof FindSessionPortsResponses];
 
 export type FindAutomationsData = {
     body?: never;
