@@ -255,6 +255,8 @@ export function SessionsSidebarBody() {
                       onSettings={(target) =>
                         dialogs.open({ kind: 'project', projectId: target.id })
                       }
+                      hidden={hidden.includes(key)}
+                      onHiddenChange={(target, next) => setShown(target.id, !next)}
                       onShare={(target) =>
                         dialogs.open({ kind: 'share-session', sessionId: target.id })
                       }

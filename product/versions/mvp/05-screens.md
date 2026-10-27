@@ -75,8 +75,9 @@
   that order (a session dropped under another sort keeps what the reader
   was looking at and switches to it). Sessions hold still while a filter
   or the search hides some of them, since a drop would lose the hidden
-  ones' places. The filter menu's Show projects checks each project
-  on or off (added 2026-10-27): a hidden project's group and sessions
+  ones' places. A project hides from the eye among its header's hover
+  actions, and the filter menu's Show projects lists every project with
+  an eye to hide or show it again (added 2026-10-27): a hidden project's group and sessions
   leave the sidebar on this device, its place in the order is kept, a
   pinned session of it stays pinned, and the project filter still
   reaches it. Hiding is not a filter, so Clear filters leaves it. The workspace's **Unassigned** project is the first group
