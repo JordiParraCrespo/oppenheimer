@@ -623,6 +623,9 @@ Claude Code toolset.
 Routines, a bot waking on a schedule, an event or finished work, are
 designed in [26](26-bot-routines.md).
 
+Bots shown beside a section's own list (Sessions, Automations, Plan, Pull
+requests) are [28](28-bots-in-sections.md).
+
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
 eight colours (`AV_COLORS`).

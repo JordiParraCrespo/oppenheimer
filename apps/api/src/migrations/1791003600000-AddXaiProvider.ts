@@ -15,8 +15,8 @@ const TABLES = [
  * `down()` restores the four-provider checks, and so first removes the rows
  * that name `xai`: its credentials, and the bots and turns on it.
  */
-export class AddXaiProvider1791003500000 implements MigrationInterface {
-  name = 'AddXaiProvider1791003500000';
+export class AddXaiProvider1791003600000 implements MigrationInterface {
+  name = 'AddXaiProvider1791003600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     for (const [table, check] of TABLES) {

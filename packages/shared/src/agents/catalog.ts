@@ -527,6 +527,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({
+        id: 'gpt-6.1-terra',
+        label: 'GPT-6.1 Terra',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
+      }),
+      Object.freeze({
         id: 'gpt-6-astra',
         label: 'GPT-6 Astra',
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),

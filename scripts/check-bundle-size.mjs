@@ -27,16 +27,17 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 448.2KB measured (2026-10-27); the last raise was for Cloud agents
+    // 449.8KB measured (2026-10-27); the last raise was for Cloud agents
     // (a rail item, its routes and Settings page) and Grok as a bot
     // provider: the strings ride the default locale's catalog, which the
     // entry loads whole, and the cloud-agents module is in the consumer
-    // package the entry boots (+3.7KB over main). Earlier raises and
+    // package the entry boots (+4.2KB). The one before it was the session's
+    // device preview (+1.1KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 449,
+    budgetKB: 450,
   },
   // oppenheimer:end web
 ];

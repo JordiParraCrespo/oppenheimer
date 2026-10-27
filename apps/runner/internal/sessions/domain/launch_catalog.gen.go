@@ -40,6 +40,7 @@ var launchCatalog = map[string]launchMap{
 		effort: launchLevel{argv: []string{"-c", "model_reasoning_effort=<effort>"}},
 		effortLevels: map[string][]string{
 			"gpt-6.1-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-6.1-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-astra":   {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-sol":     {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-luna":    {"low", "medium", "high", "xhigh", "max"},

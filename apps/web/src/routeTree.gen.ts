@@ -56,6 +56,7 @@ import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
 import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_authenticated/plan/calendar_.google'
+import { Route as AuthenticatedPullsBotsBotIdRouteImport } from './routes/_authenticated/pulls_.bots.$botId'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
@@ -319,6 +320,12 @@ const AuthenticatedPlanCalendarGoogleRoute =
     path: '/calendar/google',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPullsBotsBotIdRoute =
+  AuthenticatedPullsBotsBotIdRouteImport.update({
+    id: '/pulls_/bots/$botId',
+    path: '/pulls/bots/$botId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsHostsIndexRoute =
   AuthenticatedSettingsHostsIndexRouteImport.update({
     id: '/hosts/',
@@ -431,6 +438,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
@@ -481,6 +489,7 @@ export interface FileRoutesByTo {
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/bots_/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/_authenticated/plan/calendar_/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/_authenticated/pulls_/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/bots/$botId/settings'
     | '/plan/calendar/google'
+    | '/pulls/bots/$botId'
     | '/settings/hosts/new'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/sessions'
     | '/settings'
     | '/plan/calendar/google'
+    | '/pulls/bots/$botId'
     | '/settings/hosts/new'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
@@ -711,6 +723,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/bots_/$botId/settings'
     | '/_authenticated/plan/calendar_/google'
+    | '/_authenticated/pulls_/bots/$botId'
     | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
@@ -1066,6 +1079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarGoogleRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/pulls_/bots/$botId': {
+      id: '/_authenticated/pulls_/bots/$botId'
+      path: '/pulls/bots/$botId'
+      fullPath: '/pulls/bots/$botId'
+      preLoaderRoute: typeof AuthenticatedPullsBotsBotIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/hosts/': {
       id: '/_authenticated/settings/hosts/'
       path: '/hosts'
@@ -1331,6 +1351,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBotsIndexRoute: typeof AuthenticatedBotsIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedBotsBotIdSettingsRoute: typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
+  AuthenticatedPullsBotsBotIdRoute: typeof AuthenticatedPullsBotsBotIdRoute
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute: typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
@@ -1349,6 +1370,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
   AuthenticatedBotsBotIdSettingsRoute:
     AuthenticatedBotsBotIdSettingsRouteWithChildren,
+  AuthenticatedPullsBotsBotIdRoute: AuthenticatedPullsBotsBotIdRoute,
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute:
     AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute,
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute:

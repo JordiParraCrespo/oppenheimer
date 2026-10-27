@@ -2,18 +2,20 @@ import { RoutineItem, SidebarListHead } from '@oppenheimer/design-system-web';
 import { Activity, GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReviewSessionsList } from './review-sessions-list';
 
 /**
  * The console's sidebar body on Pull requests
  * (`product/versions/mvp/design/version1/PullRequests.dc.html`): the two
- * views, the queue and analytics, then For review, the reader's review
+ * views, the queue and analytics, the section's bots (`bots`, composed by
+ * the route), then For review, the reader's review
  * sessions. The queue's count is every open pull
  * request in it, whatever the scope. The repository is picked in the queue's
  * own toolbar, and which repositories are watched is set in Settings.
  */
-export function PullRequestsSidebar() {
+export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
   const { data: total } = usePullRequestQueue('mine', {
@@ -38,6 +40,7 @@ export function PullRequestsSidebar() {
           render={<Link to="/pulls/analytics" />}
         />
       </div>
+      {bots}
       <ReviewSessionsList />
     </div>
   );
