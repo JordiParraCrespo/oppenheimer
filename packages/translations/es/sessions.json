@@ -75,7 +75,13 @@
         "description": "Abre un directorio existente tal como está · no se clona nada"
       },
       "hosts": "Hosts",
-      "startIn": "Empezar en"
+      "startIn": "Empezar en",
+      "cloud": {
+        "label": "Nube",
+        "description": "El agente de un proveedor, en su nube"
+      },
+      "clouds": "Nube",
+      "connect": "Conecta tu clave"
     },
     "project": {
       "label": "Proyecto",
@@ -137,7 +143,8 @@
       "favourites": "Favoritos",
       "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
       "addFavourite": "Añadir {{model}} a favoritos",
-      "removeFavourite": "Quitar {{model}} de favoritos"
+      "removeFavourite": "Quitar {{model}} de favoritos",
+      "auto": "Auto"
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -179,7 +186,8 @@
       "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
       "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
     },
-    "failed": "No se pudo crear la sesión."
+    "failed": "No se pudo crear la sesión.",
+    "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo."
   },
   "session": {
     "status": {
@@ -274,7 +282,8 @@
     "notDeleted": "No eliminada",
     "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
     "select": "Seleccionar",
-    "selected": "Seleccionada"
+    "selected": "Seleccionada",
+    "openAtVendor": "Se abre en {{vendor}}"
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",
@@ -594,78 +603,15 @@
     "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
     "ended": "La sesión ha terminado"
   },
-  "cloudAgents": {
-    "sidebar": {
-      "new": "Nuevo agente en la nube",
-      "agents": "Agentes",
-      "listFailed": "No se pudieron cargar tus agentes en la nube."
-    },
+  "cloud": {
+    "open": "Abrir en {{vendor}}",
     "status": {
-      "starting": "Iniciando",
-      "running": "Trabajando",
-      "finished": "Terminado",
-      "failed": "Falló",
-      "cancelled": "Detenido",
-      "expired": "Caducado"
-    },
-    "landing": {
-      "title": "Nuevo agente en la nube",
-      "description": "Se ejecuta en la nube de {{provider}} con tu clave, en un repositorio al que tenga acceso, y sube una rama.",
-      "connectTitle": "Conecta un proveedor de agentes en la nube",
-      "connectDescription": "Los agentes en la nube se ejecutan en la nube de un proveedor, no en tus hosts. Conecta Cursor con tu clave de API para lanzar uno.",
-      "connectAction": "Conectar Cursor",
-      "statusFailed": "No se pudo saber si hay un proveedor conectado."
-    },
-    "launch": {
-      "prompt": "¿Qué debe hacer?",
-      "promptPlaceholder": "Describe el cambio, como se lo contarías a un compañero",
-      "repository": "Repositorio",
-      "repositoryPlaceholder": "Elige un repositorio",
-      "repositoriesFailed": "No se pudieron cargar los repositorios a los que llega {{provider}}.",
-      "searchRepositories": "Buscar repositorios",
-      "noRepositories": "Ningún repositorio coincide.",
-      "model": "Modelo",
-      "modelDefault": "Auto (elige {{provider}})",
-      "searchModels": "Buscar modelos",
-      "noModels": "Ningún modelo coincide.",
-      "modelsFailed": "No se pudieron cargar los modelos de {{provider}}.",
-      "startingRef": "Rama de partida",
-      "startingRefHint": "Déjalo vacío para usar la rama por defecto del repositorio.",
-      "autoCreatePr": "Abrir una pull request al terminar",
-      "submit": "Lanzar agente",
-      "submitting": "Lanzando…",
-      "failed": "No se pudo lanzar el agente.",
-      "loading": "Cargando…"
-    },
-    "detail": {
-      "loadFailed": "No se pudo cargar este agente en la nube.",
-      "repository": "Repositorio",
-      "model": "Modelo",
-      "modelDefault": "Auto",
-      "branch": "Rama",
-      "branchPending": "Aún sin subir",
-      "pullRequest": "Pull request",
-      "openPullRequest": "Abrir pull request",
-      "openAt": "Abrir en {{provider}}",
-      "prompt": "Petición",
-      "reply": "Última respuesta",
-      "working": "Trabajando en la nube de {{provider}}. Esta página lo sigue.",
-      "lastHeard": "Última noticia de {{provider}} {{age}}",
-      "stop": "Detener",
-      "followUp": "Siguiente instrucción",
-      "followUpPlaceholder": "Dile qué hacer a continuación",
-      "followUpWhileWorking": "Podrás enviar la siguiente instrucción cuando termine esta ejecución.",
-      "send": "Enviar",
-      "sending": "Enviando…",
-      "followUpFailed": "No se pudo enviar la instrucción.",
-      "justNow": "hace un momento"
-    },
-    "stop": {
-      "title": "¿Detener «{{name}}»?",
-      "description": "La ejecución termina donde está. Lo que haya subido se queda, y una siguiente instrucción lo vuelve a poner en marcha.",
-      "confirm": "Detener agente",
-      "pending": "Deteniendo…",
-      "failed": "No se pudo detener el agente."
+      "starting": "{{vendor}} está iniciando el agente",
+      "running": "Trabajando en la nube de {{vendor}}",
+      "finished": "Terminado en la nube de {{vendor}}",
+      "failed": "El agente falló en la nube de {{vendor}}",
+      "cancelled": "Detenido en {{vendor}}",
+      "expired": "La ejecución caducó en la nube de {{vendor}}"
     }
   }
 }

@@ -29,6 +29,11 @@ export const CLOUD_AGENT_PROVIDER_LABELS: Readonly<Record<CloudAgentProviderId, 
 export const CLOUD_AGENT_IDS = ['cursor'] as const;
 export type CloudAgentId = (typeof CLOUD_AGENT_IDS)[number];
 
+/** What each cloud-only agent is called on screen. */
+export const CLOUD_AGENT_LABELS: Readonly<Record<CloudAgentId, string>> = Object.freeze({
+  cursor: 'Cursor',
+});
+
 /** The agent each provider runs. A provider that ran a host agent too would name it here. */
 export const CLOUD_PROVIDER_AGENT: Readonly<Record<CloudAgentProviderId, CloudAgentId>> =
   Object.freeze({ cursor: 'cursor' });

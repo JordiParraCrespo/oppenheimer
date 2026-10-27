@@ -39,11 +39,12 @@ import { useStreamCovers } from './workspace-stream-status';
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.
- * - `cloudAgent`: a cloud agent's run at its vendor, which works for minutes.
- *   The API asks the vendor at most once in ten seconds whatever this asks,
- *   so five seconds costs the vendor nothing more. It keeps going on a hidden
+ * - `cloudSession`: the session list while a cloud session's run is working
+ *   at its vendor, for minutes. A list read is what asks the vendor (a few
+ *   sessions, none more than once in thirty seconds, whatever this asks), so
+ *   five seconds costs the vendor nothing more. It keeps going on a hidden
  *   tab, the one a reader leaves while an agent works. The workspace stream
- *   carries no cloud agent event, so it never stands the poll down.
+ *   carries no vendor's news, so it never stands this poll down.
  */
 export const LIVE_POLL = {
   sessionStarting: { interval: 2000, inBackground: true },
@@ -57,7 +58,7 @@ export const LIVE_POLL = {
   liveRun: { interval: 5000, inBackground: true },
   chatgptLogin: { interval: 5000, inBackground: true, streamCanCover: false },
   hostPresence: { interval: 15_000, inBackground: false },
-  cloudAgent: { interval: 5000, inBackground: true, streamCanCover: false },
+  cloudSession: { interval: 5000, inBackground: true, streamCanCover: false },
   /**
    * A pull request answer that is still filling its parts. The rows are drawn
    * from the first read; each poll fills a budget more, out of a cache that
@@ -150,6 +151,27 @@ export function pollWhile<TData>(
             : poll.interval
           : false,
     refetchIntervalInBackground: inBackground,
+  };
+}
+
+/**
+ * Two polls over one query as one: whichever asks sooner sets the pace, and
+ * it keeps going on a hidden tab when either would. For a query that waits
+ * on two kinds of thing at once (the session list: a row being built, and a
+ * vendor's run), each with its own kind and its own reason to stop.
+ */
+export function eitherPoll<TData>(a: Poll<TData>, b: Poll<TData>): Poll<TData> {
+  const at = (poll: Poll<TData>, query: PollQuery<TData>) =>
+    typeof poll.refetchInterval === 'function' ? poll.refetchInterval(query) : poll.refetchInterval;
+  return {
+    refetchInterval: (query) => {
+      const first = at(a, query);
+      const second = at(b, query);
+      if (first === false) return second;
+      if (second === false) return first;
+      return Math.min(first, second);
+    },
+    refetchIntervalInBackground: a.refetchIntervalInBackground || b.refetchIntervalInBackground,
   };
 }
 

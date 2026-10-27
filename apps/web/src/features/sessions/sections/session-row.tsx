@@ -1,6 +1,6 @@
-import { SortableSessionItem } from '@oppenheimer/design-system-web';
+import { AgentMark, SortableSessionItem } from '@oppenheimer/design-system-web';
 import { Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
   useProjectsSnapshot,
@@ -32,6 +32,10 @@ import { clickPick } from '../lib/session-selection';
  * the open session, not the route, so a navigation re-renders only the two rows
  * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
  * or down its project or into another; the sidebar keeps where it lands.
+ *
+ * A cloud session's row leads with its vendor's mark and opens the vendor's
+ * page for its agent in a tab of its own (`SessionsConsole.dc.html`), where it
+ * is followed up and stopped; there is no terminal of ours to open or share.
  *
  * Its pick is the sidebar's selection (`SessionSelectionContext`): a click with
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click
@@ -97,11 +101,23 @@ export function SessionRow({
     : session.isClosing
       ? t('sessions.sidebar.deleting')
       : undefined;
+  const cloudUrl = session.cloud?.url ?? null;
   const statusHint = session.closeRefusal
     ? t('sessions.sidebar.notDeletedHint')
     : session.isClosing
       ? t('sessions.sidebar.deletingHint')
-      : undefined;
+      : session.cloud
+        ? t('sessions.sidebar.openAtVendor', { vendor: cloudProviderLabel(session.cloud.provider) })
+        : undefined;
+
+  // What the row is a link to: the session's page, or a cloud session's agent at its vendor.
+  const opens = cloudUrl ? (
+    <a href={cloudUrl} target="_blank" rel="noreferrer">
+      {session.name}
+    </a>
+  ) : (
+    <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />
+  );
 
   function commitRename() {
     const name = draft?.trim();
@@ -130,9 +146,17 @@ export function SessionRow({
       title={statusHint}
       state={dotFor(session)}
       // The branch is the row's own default glyph.
-      icon={glyph === 'terminal' ? <SquareTerminal /> : glyph === 'folder' ? <Folder /> : undefined}
+      icon={
+        glyph === 'vendor' ? (
+          <AgentMark agent={session.agent} />
+        ) : glyph === 'terminal' ? (
+          <SquareTerminal />
+        ) : glyph === 'folder' ? (
+          <Folder />
+        ) : undefined
+      }
       active={active}
-      render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
+      render={opens}
       // Runs before the link's own click, which stands down on a prevented one.
       onClick={(event) => {
         const how = clickPick(event, selection.selecting);
@@ -154,7 +178,7 @@ export function SessionRow({
             onSelect={() => selection.pick('toggle')}
             onRename={() => setDraft(session.name)}
             onMove={(projectId) => move.mutate({ id: session.id, projectId })}
-            onShare={() => onShare(session)}
+            onShare={session.isCloud ? undefined : () => onShare(session)}
             onDelete={() => onDelete(session)}
             projects={(menuOpen ? moveTargets() : []).map((target) => ({
               id: target.id,

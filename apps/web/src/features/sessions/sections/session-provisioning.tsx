@@ -1,8 +1,7 @@
 import { Callout, Stepper } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
 import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
@@ -43,7 +42,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
       hostOffline: session.isHostOffline,
       repo: checkout?.repositoryName ?? session.slug,
       branch: checkout?.branch ?? session.slug,
-      agent: CODING_AGENTS[session.agent].label,
+      agent: sessionAgentLabel(session.agent),
       failure: failure?.reason ?? null,
       folder: session.isFolder ? session.folderPath : null,
       shell: session.agent === 'shell',

@@ -19,17 +19,21 @@ export {
   type AttachTicket,
   type CreateSessionCheckout,
   type CreateSessionInput,
+  cloudProviderLabel,
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,
   type SessionCloseRefusal,
   type SessionCloseRequest,
+  type SessionCloudRun,
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,
   type SessionShare,
   type SessionState,
   type SharedSession,
+  type StartCloudSessionInput,
+  sessionAgentLabel,
 } from './session.entity';
 export { isSessionNotFound } from './session-not-found';
 export type {

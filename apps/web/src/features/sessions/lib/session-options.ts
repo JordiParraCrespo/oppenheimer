@@ -7,6 +7,8 @@ import type {
 } from '@oppenheimer/design-system-web';
 import {
   type BranchEntity,
+  type CloudAgentModel,
+  type CloudAgentStatusEntity,
   type CreateSessionCheckout,
   type CreateSessionInput,
   type HostEntity,
@@ -14,6 +16,7 @@ import {
   parseRepositoryKey,
   type RepositoryEntity,
   repositoryKey,
+  type StartCloudSessionInput,
   shortName,
 } from '@oppenheimer/frontend-consumer';
 import {
@@ -24,6 +27,12 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
+import {
+  CLOUD_AGENT_LABELS,
+  CLOUD_PROVIDER_AGENT,
+  type CloudAgentId,
+  type CloudAgentProviderId,
+} from '@oppenheimer/shared/schemas/cloud-agent';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
 import type { NewSessionDraft } from './new-session-draft';
 
@@ -55,6 +64,63 @@ export function filterOptions<T extends ChipSelectOption>(
 
 /** A host row of the place chip: the option, and whether the machine is reachable now. */
 export type PlaceHost = ChipSelectOption & { online: boolean };
+
+/** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
+export type PlaceCloud = ChipSelectOption & {
+  value: CloudAgentProviderId;
+  agent: CloudAgentId;
+  connected: boolean;
+};
+
+/**
+ * The vendors a cloud session can run on, as the place chip's Cloud rows: the
+ * vendor's name and, under it, whose key it runs on, or the word for a vendor
+ * with no key yet. None when this server keeps no keys (`configured`).
+ */
+export function toCloudOptions(
+  status: CloudAgentStatusEntity | undefined,
+  labels: { connect: string },
+): PlaceCloud[] {
+  if (!status?.configured) return [];
+  return status.providers.map((provider) => ({
+    value: provider.id,
+    agent: CLOUD_PROVIDER_AGENT[provider.id],
+    connected: provider.connected,
+    label: provider.label,
+    description: provider.connected
+      ? (provider.accountEmail ?? provider.keyName ?? undefined)
+      : labels.connect,
+  }));
+}
+
+/**
+ * The vendor's own default model, as the engine button names it: Cursor's
+ * `default` ("Auto"), which a launch sends as no model at all.
+ */
+export const CLOUD_DEFAULT_MODEL = 'default';
+
+/**
+ * A cloud agent as the engine button's tab: its own default first, then the
+ * models the vendor lists for the reader. Null when the reader cannot run it
+ * (no key, or a server that keeps none), so its tab is not drawn.
+ */
+export function toCloudAgentOption(
+  provider: CloudAgentProviderId,
+  status: CloudAgentStatusEntity | undefined,
+  models: readonly CloudAgentModel[],
+  labels: { auto: string },
+): AgentOption | null {
+  if (!status?.configured) return null;
+  const agent = CLOUD_PROVIDER_AGENT[provider];
+  return {
+    id: agent,
+    label: CLOUD_AGENT_LABELS[agent],
+    models: [
+      { value: CLOUD_DEFAULT_MODEL, label: labels.auto },
+      ...models.map((model) => ({ value: model.id, label: model.label })),
+    ],
+  };
+}
 
 /**
  * A host that is offline is shown and selectable rather than hidden: the
@@ -236,6 +302,27 @@ export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folde
 }
 
 /**
+ * The draft as `POST /sessions/cloud` takes it, or null while it cannot be
+ * sent: not in the cloud, no repository, or no task — a vendor's agent runs
+ * on one. The project is the caller's to have checked, as for a host session.
+ */
+export function toStartCloudInput(
+  draft: Pick<NewSessionDraft, 'where' | 'cloudProvider' | 'cloudModel' | 'projectId' | 'scope'>,
+  prompt: string,
+): StartCloudSessionInput | null {
+  if (draft.where !== 'cloud' || !prompt.trim()) return null;
+  const [checkout] = toCheckouts(draft.scope);
+  if (!checkout) return null;
+  return {
+    provider: draft.cloudProvider,
+    checkout,
+    prompt,
+    ...(draft.projectId ? { projectId: draft.projectId } : {}),
+    ...(draft.cloudModel ? { model: draft.cloudModel } : {}),
+  };
+}
+
+/**
  * The draft as `POST /sessions` takes it, or null while it cannot be sent: no
  * host, or no place. A folder session carries its folder and no checkouts; a
  * worktree session its one checkout and no folder — never both. The project
@@ -257,7 +344,7 @@ export function toCreateInput(
   >,
   extras: { prompt: string; attachmentIds: readonly string[] },
 ): CreateSessionInput | null {
-  if (!draft.hostId) return null;
+  if (!draft.hostId || draft.where === 'cloud') return null;
   const common = {
     hostId: draft.hostId,
     agent: draft.agent,

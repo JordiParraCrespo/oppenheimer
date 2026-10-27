@@ -103,16 +103,11 @@ export {
 // poll directly would be back to asking "is there a host?" instead of "was
 // this token spent?".
 export {
-  useCancelCloudAgent,
   useCloudAgentModels,
-  useCloudAgentRepositories,
+  useCloudAgentStatus,
   useConnectCloudAgentProvider,
   useDisconnectCloudAgentProvider,
-  useFollowUpCloudAgent,
-  useLaunchCloudAgent,
-  useSuspenseCloudAgent,
   useSuspenseCloudAgentStatus,
-  useSuspenseCloudAgents,
 } from './cloud-agents.queries';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
@@ -232,6 +227,7 @@ export {
   useSessionStartProgress,
   useSessions,
   useSetSessionSharePeople,
+  useStartCloudSession,
   useStopSessionShare,
   useSuspenseSession,
   useSuspenseSessionShare,

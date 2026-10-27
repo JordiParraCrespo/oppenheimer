@@ -40,7 +40,6 @@ export type ConsoleList =
   | 'inbox'
   | 'sessions'
   | 'bots'
-  | 'cloud'
   | 'automations'
   | 'pulls'
   | 'tasks'
@@ -49,8 +48,7 @@ export type ConsoleList =
 /**
  * Which of the console's lists the matched routes are under: `inbox` for
  * `/inbox`; `bots` for the
- * Employees section under `/bots`, a bot's settings included; `cloud` for
- * launching and following cloud agents under `/cloud`; `automations`
+ * Employees section under `/bots`, a bot's settings included; `automations`
  * for everything under `/automations`, the editor included; `pulls` for the
  * queue, a pull request and analytics under `/pulls`; Plan's two,
  * `calendar` under `/plan/calendar` (Google's return included) and `tasks`
@@ -67,7 +65,6 @@ export function useConsoleList(): ConsoleList {
       if (ids.includes('/_authenticated/inbox')) return 'inbox';
       // A chat under the `bots` routes, and a bot's settings un-nested from them (`bots_`).
       if (ids.some((id) => id.startsWith('/_authenticated/bots'))) return 'bots';
-      if (ids.some((id) => id.startsWith('/_authenticated/cloud'))) return 'cloud';
       if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';
       // The queue and analytics under the `pulls` layout, and a pull request un-nested from it (`pulls_`).
       if (ids.some((id) => id.startsWith('/_authenticated/pulls'))) return 'pulls';

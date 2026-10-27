@@ -189,27 +189,13 @@ describe('botsKeys', () => {
 });
 
 describe('cloudAgentsKeys', () => {
-  it('reads the list again after a launch without dropping the open agent', async () => {
-    const list = cloudAgentsKeys.list();
-    const detail = cloudAgentsKeys.detail('agent-1');
-    const client = cacheWith(list, detail, cloudAgentsKeys.status());
-
-    await client.invalidateQueries({ queryKey: cloudAgentsKeys.lists() });
-
-    expect(invalidated(client, list)).toBe(true);
-    expect(invalidated(client, detail)).toBe(false);
-    expect(invalidated(client, cloudAgentsKeys.status())).toBe(false);
-  });
-
-  it('reads a vendor’s models and repositories again on a new key, and nothing else', async () => {
+  it('reads a vendor’s models again on a new key, and leaves the status the answer wrote', async () => {
     const models = cloudAgentsKeys.models('cursor');
-    const repositories = cloudAgentsKeys.repositories('cursor');
-    const client = cacheWith(models, repositories, cloudAgentsKeys.list());
+    const client = cacheWith(models, cloudAgentsKeys.status());
 
     await client.invalidateQueries({ queryKey: cloudAgentsKeys.providers() });
 
     expect(invalidated(client, models)).toBe(true);
-    expect(invalidated(client, repositories)).toBe(true);
-    expect(invalidated(client, cloudAgentsKeys.list())).toBe(false);
+    expect(invalidated(client, cloudAgentsKeys.status())).toBe(false);
   });
 });

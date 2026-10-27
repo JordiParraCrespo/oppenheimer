@@ -23,6 +23,8 @@ describe('initialDraft', () => {
   it('opens on the fallback with nothing remembered', () => {
     expect(initialDraft()).toEqual({
       where: 'worktree',
+      cloudProvider: 'cursor',
+      cloudModel: null,
       projectId: null,
       hostId: null,
       scope: [],
@@ -107,6 +109,8 @@ describe('rememberDraft', () => {
   it('writes every chip but the folder, and they read back', () => {
     rememberDraft({
       where: 'folder',
+      cloudProvider: 'cursor',
+      cloudModel: 'grok-4.7',
       projectId: 'p1',
       hostId: 'h1',
       scope: [{ id: 'x', branch: 'y' }],
@@ -121,6 +125,8 @@ describe('rememberDraft', () => {
 
     expect(Object.keys(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).sort()).toEqual([
       'agent',
+      'cloudModel',
+      'cloudProvider',
       'efforts',
       'hostId',
       'model',
@@ -131,6 +137,7 @@ describe('rememberDraft', () => {
     ]);
     expect(initialDraft()).toMatchObject({
       where: 'folder',
+      cloudModel: 'grok-4.7',
       projectId: 'p1',
       scope: [{ id: 'x', branch: 'y' }],
       agent: 'codex',
@@ -147,6 +154,8 @@ describe('rememberDraft', () => {
     expect(() =>
       rememberDraft({
         where: 'worktree',
+        cloudProvider: 'cursor',
+        cloudModel: null,
         projectId: null,
         hostId: null,
         scope: [],

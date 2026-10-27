@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NewSessionDraft } from '../lib/new-session-draft';
-import { hasPlace, toCreateInput } from '../lib/session-options';
+import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
 /**
  * What New session posts for each place (`product/versions/mvp/24-session-places.md`):
@@ -9,6 +9,8 @@ import { hasPlace, toCreateInput } from '../lib/session-options';
  */
 const draft: NewSessionDraft = {
   where: 'worktree',
+  cloudProvider: 'cursor',
+  cloudModel: null,
   projectId: null,
   hostId: 'host-1',
   scope: [{ id: 'installation-1:42', branch: 'main' }],
@@ -72,5 +74,35 @@ describe('hasPlace', () => {
     expect(hasPlace({ where: 'folder', scope: [], folder: '/srv' })).toBe(true);
     expect(hasPlace({ where: 'folder', scope: draft.scope, folder: null })).toBe(false);
     expect(hasPlace({ where: 'worktree', scope: [], folder: '/srv' })).toBe(false);
+  });
+});
+
+/**
+ * A cloud session is the vendor's agent on one repository with a task: no
+ * host, folder or launch level goes with it, and it is never sent as a host
+ * session.
+ */
+describe('toStartCloudInput', () => {
+  const cloud = { ...draft, where: 'cloud' as const, cloudModel: 'grok-4.7' };
+
+  it('sends the vendor, the repository, the task and the model, and no host', () => {
+    expect(toStartCloudInput({ ...cloud, projectId: 'project-1' }, 'Fix it')).toEqual({
+      provider: 'cursor',
+      projectId: 'project-1',
+      checkout: { installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' },
+      prompt: 'Fix it',
+      model: 'grok-4.7',
+    });
+    expect(toCreateInput(cloud, extras)).toBeNull();
+  });
+
+  it('leaves the model to the vendor when its own default is picked', () => {
+    expect(toStartCloudInput({ ...cloud, cloudModel: null }, 'Fix it')).not.toHaveProperty('model');
+  });
+
+  it('sends nothing without a task or a repository, or from a host', () => {
+    expect(toStartCloudInput(cloud, '  ')).toBeNull();
+    expect(toStartCloudInput({ ...cloud, scope: [] }, 'Fix it')).toBeNull();
+    expect(toStartCloudInput(draft, 'Fix it')).toBeNull();
   });
 });

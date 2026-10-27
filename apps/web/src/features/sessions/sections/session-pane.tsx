@@ -5,11 +5,12 @@ import {
   useSuspenseSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatViewToggle } from '../components/chat-view-toggle';
+import { CloudSessionAway } from '../components/cloud-session-away';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
@@ -147,6 +148,19 @@ export function SessionPane({
       <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
     </>
   );
+
+  // A cloud session has no terminal of ours to attach to or start: it runs at
+  // its vendor, which is where it is followed. Its bar is its name alone, with
+  // none of a host session's Share or latency.
+  if (session.isCloud) {
+    return (
+      <>
+        {bar ? <PageBar title={session.name} /> : null}
+        <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
+        <CloudSessionAway session={session} />
+      </>
+    );
+  }
 
   // The **lifecycle** decides which pane this is, never the derived group: the
   // group is organised by what needs you, so an `idle` session has a live PTY

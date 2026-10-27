@@ -667,7 +667,7 @@ export default function Page() {
         id="agentmark"
         title="AgentMark"
         meta="agent-mark.tsx"
-        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square, Grok its slashed circle and Cursor (a cloud agent) its cube in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
         {CODING_AGENT_IDS.map((agent) => (
@@ -678,6 +678,12 @@ export default function Page() {
             </span>
           </Swatch>
         ))}
+        <Swatch label="cursor">
+          <span className="flex items-center gap-2.5 text-sm text-fg">
+            <AgentMark agent="cursor" />
+            Cursor
+          </span>
+        </Swatch>
       </Spec>
 
       <Spec

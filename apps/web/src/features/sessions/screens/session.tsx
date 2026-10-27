@@ -87,7 +87,8 @@ export function SessionScreen({
           terminal={(session, reading, statusItems) => (
             <SessionTerminal
               sessionId={session.id}
-              hostId={session.hostId}
+              // A cloud session never reaches the terminal: the pane draws its own page.
+              hostId={session.hostId ?? ''}
               statusItems={statusItems}
               showLive={!bar}
               reading={reading}

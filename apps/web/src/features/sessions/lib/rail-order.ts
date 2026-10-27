@@ -1,7 +1,6 @@
 import {
   Bell,
   Bot,
-  Cloud,
   GitPullRequest,
   Layers,
   Terminal,
@@ -19,7 +18,6 @@ const LOOK = {
   inbox: { lists: ['inbox'], labelKey: 'nav.inbox', Icon: Bell },
   bots: { lists: ['bots'], labelKey: 'nav.employees', Icon: Bot },
   sessions: { lists: ['sessions'], labelKey: 'nav.sessions', Icon: Terminal },
-  cloud: { lists: ['cloud'], labelKey: 'nav.cloudAgents', Icon: Cloud },
   pulls: { lists: ['pulls'], labelKey: 'nav.pullRequests', Icon: GitPullRequest },
   automations: { lists: ['automations'], labelKey: 'nav.automations', Icon: Zap },
   plan: { lists: ['tasks', 'calendar'], labelKey: 'nav.plan', Icon: Layers },

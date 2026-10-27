@@ -1492,6 +1492,28 @@ export type SessionCheckoutResponseDto = {
     branch: string;
 };
 
+export type SessionCloudRunResponseDto = {
+    provider: 'cursor';
+    /**
+     * The agent’s own page at the vendor, where it is followed up, stopped or deleted.
+     */
+    url: string | null;
+    repositoryUrl: string;
+    /**
+     * Where the vendor said the latest run stands, when it was last asked.
+     */
+    status: 'starting' | 'running' | 'finished' | 'failed' | 'cancelled' | 'expired';
+    /**
+     * The branch the agent pushed.
+     */
+    branch: string | null;
+    pullRequestUrl: string | null;
+    /**
+     * When the vendor was last asked.
+     */
+    syncedAt: string;
+};
+
 export type SessionCloseRequestResponseDto = {
     /**
      * When the close was asked for.
@@ -1521,7 +1543,10 @@ export type SessionResponseDto = {
      * The project the session is listed under.
      */
     projectId: string;
-    hostId: string;
+    /**
+     * The host it runs on; null for a cloud session, which runs at its vendor.
+     */
+    hostId: string | null;
     /**
      * Display name. It starts equal to the slug, then the first prompt names it.
      */
@@ -1531,13 +1556,13 @@ export type SessionResponseDto = {
      */
     slug: string;
     /**
-     * The coding agent this session runs.
+     * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
     /**
-     * Where the session runs: `worktree`, a checkout the runner made for each repository, or `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`).
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor’s agent with no host (`cloud`).
      */
-    place: 'worktree' | 'folder';
+    place: 'worktree' | 'folder' | 'cloud';
     /**
      * The absolute path on the host a folder session runs in. Null for a worktree session.
      */
@@ -1570,6 +1595,10 @@ export type SessionResponseDto = {
      */
     stoppedAt?: string | null;
     checkouts: Array<SessionCheckoutResponseDto>;
+    /**
+     * A cloud session’s vendor half; null for a session on a host.
+     */
+    cloud: SessionCloudRunResponseDto | null;
     /**
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */
@@ -1637,6 +1666,19 @@ export type CreateSessionRequest = {
     };
     prompt?: string;
     attachmentIds?: Array<string>;
+};
+
+export type StartCloudSessionRequest = {
+    provider: 'cursor';
+    projectId?: string;
+    name?: string;
+    checkout: {
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    };
+    prompt: string;
+    model?: string;
 };
 
 export type SessionAttachmentResponseDto = {
@@ -1842,6 +1884,56 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type CloudAgentProviderStatusDto = {
+    id: 'cursor';
+    label: string;
+    /**
+     * Whether the caller stored a key for it.
+     */
+    connected: boolean;
+    /**
+     * The name the key has at the vendor.
+     */
+    keyName: string | null;
+    /**
+     * The key’s last four characters.
+     */
+    keyHint: string | null;
+    /**
+     * The vendor account it is.
+     */
+    accountEmail: string | null;
+    connectedAt: string | null;
+};
+
+export type CloudAgentStatusResponseDto = {
+    /**
+     * Whether this server can keep a vendor key at all (`CLOUD_AGENTS_KEY`). False: connecting answers CLOUD_AGENTS_003.
+     */
+    configured: boolean;
+    /**
+     * Whether the caller can launch on at least one vendor.
+     */
+    available: boolean;
+    /**
+     * Every vendor, in order.
+     */
+    providers: Array<CloudAgentProviderStatusDto>;
+};
+
+export type PutCloudAgentCredentialRequest = {
+    apiKey: string;
+};
+
+export type CloudAgentModelResponseDto = {
+    id: string;
+    label: string;
+};
+
+export type CloudAgentRepositoryResponseDto = {
+    url: string;
 };
 
 export type AutomationRepositoryResponseDto = {
@@ -2643,115 +2735,6 @@ export type GoogleCalendarEventsResponseDto = {
      * One per connection: one account failing marks only itself.
      */
     accounts: Array<GoogleCalendarAccountReadResponseDto>;
-};
-
-export type CloudAgentProviderStatusDto = {
-    id: 'cursor';
-    label: string;
-    /**
-     * Whether the caller stored a key for it.
-     */
-    connected: boolean;
-    /**
-     * The name the key has at the vendor.
-     */
-    keyName: string | null;
-    /**
-     * The key’s last four characters.
-     */
-    keyHint: string | null;
-    /**
-     * The vendor account it is.
-     */
-    accountEmail: string | null;
-    connectedAt: string | null;
-};
-
-export type CloudAgentStatusResponseDto = {
-    /**
-     * Whether this server can keep a vendor key at all (`CLOUD_AGENTS_KEY`). False: connecting answers CLOUD_AGENTS_003.
-     */
-    configured: boolean;
-    /**
-     * Whether the caller can launch on at least one vendor.
-     */
-    available: boolean;
-    /**
-     * Every vendor, in order.
-     */
-    providers: Array<CloudAgentProviderStatusDto>;
-};
-
-export type PutCloudAgentCredentialRequest = {
-    apiKey: string;
-};
-
-export type CloudAgentModelResponseDto = {
-    id: string;
-    label: string;
-};
-
-export type CloudAgentRepositoryResponseDto = {
-    url: string;
-};
-
-export type CloudAgentResponseDto = {
-    id: string;
-    provider: 'cursor';
-    /**
-     * The vendor’s id for the agent.
-     */
-    externalId: string;
-    /**
-     * The agent’s own page at the vendor.
-     */
-    url: string | null;
-    name: string;
-    /**
-     * The prompt it was launched with.
-     */
-    prompt: string;
-    repositoryUrl: string;
-    /**
-     * Null is the default branch.
-     */
-    startingRef: string | null;
-    /**
-     * Null is the vendor’s default.
-     */
-    model: string | null;
-    autoCreatePr: boolean;
-    /**
-     * Where its latest run stands. `starting` and `running` still move.
-     */
-    status: 'starting' | 'running' | 'finished' | 'failed' | 'cancelled' | 'expired';
-    /**
-     * The branch it pushed.
-     */
-    branch: string | null;
-    pullRequestUrl: string | null;
-    /**
-     * The agent’s last reply, once its latest run ended.
-     */
-    summary: string | null;
-    /**
-     * When the vendor was last asked about the run.
-     */
-    syncedAt: string;
-    createdAt: string;
-};
-
-export type LaunchCloudAgentRequest = {
-    provider: 'cursor';
-    prompt: string;
-    repositoryUrl: string;
-    startingRef?: string;
-    model?: string;
-    autoCreatePr?: boolean;
-};
-
-export type FollowUpCloudAgentRequest = {
-    prompt: string;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -8221,6 +8204,60 @@ export type CreateSessionResponses = {
 
 export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
 
+export type StartCloudSessionData = {
+    body: StartCloudSessionRequest;
+    headers?: {
+        /**
+         * Send one. A retry after a lost response returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud';
+};
+
+export type StartCloudSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     */
+    404: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
+     *
+     * SESSIONS_006 — That project is archived
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the launch as asked
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 / GITHUB_015 / CLOUD_AGENTS_007 — Rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — The provider did not answer
+     */
+    502: ProblemDetailsDto;
+};
+
+export type StartCloudSessionError = StartCloudSessionErrors[keyof StartCloudSessionErrors];
+
+export type StartCloudSessionResponses = {
+    201: SessionResponseDto;
+};
+
+export type StartCloudSessionResponse = StartCloudSessionResponses[keyof StartCloudSessionResponses];
+
 export type UploadSessionAttachmentData = {
     body: {
         file: Blob | File;
@@ -8999,6 +9036,228 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type FindCloudAgentStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cloud-agents/status';
+};
+
+export type FindCloudAgentStatusErrors = {
+    /**
+     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindCloudAgentStatusError = FindCloudAgentStatusErrors[keyof FindCloudAgentStatusErrors];
+
+export type FindCloudAgentStatusResponses = {
+    200: CloudAgentStatusResponseDto;
+};
+
+export type FindCloudAgentStatusResponse = FindCloudAgentStatusResponses[keyof FindCloudAgentStatusResponses];
+
+export type RemoveCloudAgentCredentialData = {
+    body?: never;
+    path: {
+        provider: 'cursor';
+    };
+    query?: never;
+    url: '/api/v1/cloud-agents/providers/{provider}/credential';
+};
+
+export type RemoveCloudAgentCredentialErrors = {
+    /**
+     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_011 — No such provider
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RemoveCloudAgentCredentialError = RemoveCloudAgentCredentialErrors[keyof RemoveCloudAgentCredentialErrors];
+
+export type RemoveCloudAgentCredentialResponses = {
+    204: void;
+};
+
+export type RemoveCloudAgentCredentialResponse = RemoveCloudAgentCredentialResponses[keyof RemoveCloudAgentCredentialResponses];
+
+export type PutCloudAgentCredentialData = {
+    body: PutCloudAgentCredentialRequest;
+    path: {
+        provider: 'cursor';
+    };
+    query?: never;
+    url: '/api/v1/cloud-agents/providers/{provider}/credential';
+};
+
+export type PutCloudAgentCredentialErrors = {
+    /**
+     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_011 — No such provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 — The vendor refused the key
+     */
+    422: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_007 — The vendor's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — The vendor did not answer
+     */
+    502: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_003 — Cloud agents are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PutCloudAgentCredentialError = PutCloudAgentCredentialErrors[keyof PutCloudAgentCredentialErrors];
+
+export type PutCloudAgentCredentialResponses = {
+    200: CloudAgentStatusResponseDto;
+};
+
+export type PutCloudAgentCredentialResponse = PutCloudAgentCredentialResponses[keyof PutCloudAgentCredentialResponses];
+
+export type FindCloudAgentModelsData = {
+    body?: never;
+    path: {
+        provider: 'cursor';
+    };
+    query?: never;
+    url: '/api/v1/cloud-agents/providers/{provider}/models';
+};
+
+export type FindCloudAgentModelsErrors = {
+    /**
+     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_011 — No such provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
+     */
+    422: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — The provider did not answer
+     */
+    502: ProblemDetailsDto;
+};
+
+export type FindCloudAgentModelsError = FindCloudAgentModelsErrors[keyof FindCloudAgentModelsErrors];
+
+export type FindCloudAgentModelsResponses = {
+    200: Array<CloudAgentModelResponseDto>;
+};
+
+export type FindCloudAgentModelsResponse = FindCloudAgentModelsResponses[keyof FindCloudAgentModelsResponses];
+
+export type FindCloudAgentRepositoriesData = {
+    body?: never;
+    path: {
+        provider: 'cursor';
+    };
+    query?: never;
+    url: '/api/v1/cloud-agents/providers/{provider}/repositories';
+};
+
+export type FindCloudAgentRepositoriesErrors = {
+    /**
+     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_011 — No such provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
+     */
+    422: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — The provider did not answer
+     */
+    502: ProblemDetailsDto;
+};
+
+export type FindCloudAgentRepositoriesError = FindCloudAgentRepositoriesErrors[keyof FindCloudAgentRepositoriesErrors];
+
+export type FindCloudAgentRepositoriesResponses = {
+    200: Array<CloudAgentRepositoryResponseDto>;
+};
+
+export type FindCloudAgentRepositoriesResponse = FindCloudAgentRepositoriesResponses[keyof FindCloudAgentRepositoriesResponses];
 
 export type FindAutomationsData = {
     body?: never;
@@ -10559,448 +10818,6 @@ export type FindGoogleCalendarEventsResponses = {
 };
 
 export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];
-
-export type FindCloudAgentStatusData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/cloud-agents/status';
-};
-
-export type FindCloudAgentStatusErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-};
-
-export type FindCloudAgentStatusError = FindCloudAgentStatusErrors[keyof FindCloudAgentStatusErrors];
-
-export type FindCloudAgentStatusResponses = {
-    200: CloudAgentStatusResponseDto;
-};
-
-export type FindCloudAgentStatusResponse = FindCloudAgentStatusResponses[keyof FindCloudAgentStatusResponses];
-
-export type RemoveCloudAgentCredentialData = {
-    body?: never;
-    path: {
-        provider: 'cursor';
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/providers/{provider}/credential';
-};
-
-export type RemoveCloudAgentCredentialErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_011 — No such provider
-     */
-    404: ProblemDetailsDto;
-};
-
-export type RemoveCloudAgentCredentialError = RemoveCloudAgentCredentialErrors[keyof RemoveCloudAgentCredentialErrors];
-
-export type RemoveCloudAgentCredentialResponses = {
-    204: void;
-};
-
-export type RemoveCloudAgentCredentialResponse = RemoveCloudAgentCredentialResponses[keyof RemoveCloudAgentCredentialResponses];
-
-export type PutCloudAgentCredentialData = {
-    body: PutCloudAgentCredentialRequest;
-    path: {
-        provider: 'cursor';
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/providers/{provider}/credential';
-};
-
-export type PutCloudAgentCredentialErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_011 — No such provider
-     */
-    404: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 — The vendor refused the key
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The vendor's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The vendor did not answer
-     */
-    502: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_003 — Cloud agents are not configured on this server
-     */
-    503: ProblemDetailsDto;
-};
-
-export type PutCloudAgentCredentialError = PutCloudAgentCredentialErrors[keyof PutCloudAgentCredentialErrors];
-
-export type PutCloudAgentCredentialResponses = {
-    200: CloudAgentStatusResponseDto;
-};
-
-export type PutCloudAgentCredentialResponse = PutCloudAgentCredentialResponses[keyof PutCloudAgentCredentialResponses];
-
-export type FindCloudAgentModelsData = {
-    body?: never;
-    path: {
-        provider: 'cursor';
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/providers/{provider}/models';
-};
-
-export type FindCloudAgentModelsErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_011 — No such provider
-     */
-    404: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The provider did not answer
-     */
-    502: ProblemDetailsDto;
-};
-
-export type FindCloudAgentModelsError = FindCloudAgentModelsErrors[keyof FindCloudAgentModelsErrors];
-
-export type FindCloudAgentModelsResponses = {
-    200: Array<CloudAgentModelResponseDto>;
-};
-
-export type FindCloudAgentModelsResponse = FindCloudAgentModelsResponses[keyof FindCloudAgentModelsResponses];
-
-export type FindCloudAgentRepositoriesData = {
-    body?: never;
-    path: {
-        provider: 'cursor';
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/providers/{provider}/repositories';
-};
-
-export type FindCloudAgentRepositoriesErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_011 — No such provider
-     */
-    404: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The provider did not answer
-     */
-    502: ProblemDetailsDto;
-};
-
-export type FindCloudAgentRepositoriesError = FindCloudAgentRepositoriesErrors[keyof FindCloudAgentRepositoriesErrors];
-
-export type FindCloudAgentRepositoriesResponses = {
-    200: Array<CloudAgentRepositoryResponseDto>;
-};
-
-export type FindCloudAgentRepositoriesResponse = FindCloudAgentRepositoriesResponses[keyof FindCloudAgentRepositoriesResponses];
-
-export type FindCloudAgentsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/cloud-agents';
-};
-
-export type FindCloudAgentsErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-};
-
-export type FindCloudAgentsError = FindCloudAgentsErrors[keyof FindCloudAgentsErrors];
-
-export type FindCloudAgentsResponses = {
-    200: Array<CloudAgentResponseDto>;
-};
-
-export type FindCloudAgentsResponse = FindCloudAgentsResponses[keyof FindCloudAgentsResponses];
-
-export type LaunchCloudAgentData = {
-    body: LaunchCloudAgentRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/cloud-agents';
-};
-
-export type LaunchCloudAgentErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The provider did not answer
-     */
-    502: ProblemDetailsDto;
-};
-
-export type LaunchCloudAgentError = LaunchCloudAgentErrors[keyof LaunchCloudAgentErrors];
-
-export type LaunchCloudAgentResponses = {
-    201: CloudAgentResponseDto;
-};
-
-export type LaunchCloudAgentResponse = LaunchCloudAgentResponses[keyof LaunchCloudAgentResponses];
-
-export type FindCloudAgentData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/{id}';
-};
-
-export type FindCloudAgentErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_001 — No such cloud agent
-     */
-    404: ProblemDetailsDto;
-};
-
-export type FindCloudAgentError = FindCloudAgentErrors[keyof FindCloudAgentErrors];
-
-export type FindCloudAgentResponses = {
-    200: CloudAgentResponseDto;
-};
-
-export type FindCloudAgentResponse = FindCloudAgentResponses[keyof FindCloudAgentResponses];
-
-export type FollowUpCloudAgentData = {
-    body: FollowUpCloudAgentRequest;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/{id}/follow-ups';
-};
-
-export type FollowUpCloudAgentErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_001 — No such cloud agent
-     */
-    404: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_008 — The agent is still working
-     *
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The provider did not answer
-     */
-    502: ProblemDetailsDto;
-};
-
-export type FollowUpCloudAgentError = FollowUpCloudAgentErrors[keyof FollowUpCloudAgentErrors];
-
-export type FollowUpCloudAgentResponses = {
-    200: CloudAgentResponseDto;
-};
-
-export type FollowUpCloudAgentResponse = FollowUpCloudAgentResponses[keyof FollowUpCloudAgentResponses];
-
-export type CancelCloudAgentData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/cloud-agents/{id}/cancel';
-};
-
-export type CancelCloudAgentErrors = {
-    /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
-     */
-    400: ProblemDetailsDto;
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_001 — No such cloud agent
-     */
-    404: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_009 — The run already ended
-     *
-     * CLOUD_AGENTS_004 — The caller has no key stored for that provider
-     */
-    409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the request as asked
-     */
-    422: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_007 — The provider's rate limit was reached; try again after Retry-After
-     */
-    429: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_006 — The provider did not answer
-     */
-    502: ProblemDetailsDto;
-};
-
-export type CancelCloudAgentError = CancelCloudAgentErrors[keyof CancelCloudAgentErrors];
-
-export type CancelCloudAgentResponses = {
-    200: CloudAgentResponseDto;
-};
-
-export type CancelCloudAgentResponse = CancelCloudAgentResponses[keyof CancelCloudAgentResponses];
 
 export type FindPullRequestsData = {
     body?: never;

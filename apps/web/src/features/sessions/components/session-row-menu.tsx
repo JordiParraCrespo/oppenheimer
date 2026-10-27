@@ -40,7 +40,8 @@ export function SessionRowMenu({
   onSelect: () => void;
   onRename: () => void;
   onMove: (projectId: string) => void;
-  onShare: () => void;
+  /** Absent: a session with no terminal to share (a cloud one, shared at its vendor). */
+  onShare?: () => void;
   onDelete: () => void;
   projects: { id: string; name: string; isUnassigned?: boolean }[];
 }) {
@@ -71,7 +72,9 @@ export function SessionRowMenu({
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
             </DropdownMenuPaneItem>
-            <DropdownMenuItem onClick={onShare}>{t('sessions.sidebar.share')}</DropdownMenuItem>
+            {onShare ? (
+              <DropdownMenuItem onClick={onShare}>{t('sessions.sidebar.share')}</DropdownMenuItem>
+            ) : null}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               {t('sessions.sidebar.delete')}

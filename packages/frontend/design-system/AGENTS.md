@@ -51,9 +51,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   Select, for that reason; `RepositorySelect` reuses its parts for the
   multi-repo pane. A foot action with `href` is a new-tab link.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
-  Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square and
-  Grok's slashed circle from their published brand assets, in the vendor's colour where it has one
-  and the current ink otherwise. An agent with no published mark takes the
+  Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
+  Grok's slashed circle and Cursor's cube from their published brand assets,
+  in the vendor's colour where it has one and the current ink otherwise. An agent with no published mark takes the
   neutral glyph; never a redrawn imitation.
 - **The composer's foot row reads scope of action, then engine.** Left:
   attach and the `PermissionMenu`. Right: `AgentModelSelect`, one button

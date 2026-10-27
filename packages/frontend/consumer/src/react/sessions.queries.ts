@@ -23,6 +23,7 @@ import type {
   SessionEntity,
   SessionShare,
   SharedSession,
+  StartCloudSessionInput,
 } from '../modules/sessions/session.entity';
 import {
   deriveSessionStartProgress,
@@ -30,7 +31,13 @@ import {
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
-import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
+import {
+  CLOSE_WATCH_MS,
+  eitherPoll,
+  type PollKeys,
+  RESTART_WATCH_MS,
+  usePollWhile,
+} from './live-poll';
 import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 
@@ -200,17 +207,26 @@ export function useSessionListQuery() {
 }
 
 /**
- * Over the query's own rows, before any caller's `select`. Stands down while
- * the workspace event stream carries every change to these rows.
+ * Over the query's own rows, before any caller's `select`. Two polls, the
+ * faster answering: a row being built or deleted, which stands down while
+ * the workspace event stream carries every change to these rows, and a
+ * cloud session whose vendor is still working, which the stream never
+ * carries (`cloudSession`).
  */
 export function useSessionListPoll() {
   const queryClient = useQueryClient();
-  return usePollWhile<SessionEntity[]>(
+  const starting = usePollWhile<SessionEntity[]>(
     'sessionStarting',
     sessionsKeys.list(),
     (rows) =>
       closesOf(queryClient).size > 0 || (rows?.some((session) => session.isProvisioning) ?? false),
   );
+  const cloud = usePollWhile<SessionEntity[]>(
+    'cloudSession',
+    sessionsKeys.list(),
+    (rows) => rows?.some((session) => session.isCloudWorking) ?? false,
+  );
+  return eitherPoll(starting, cloud);
 }
 
 /**
@@ -272,11 +288,19 @@ async function findSession(
 /** A session polls while it is being prepared, or while a restart is being watched. */
 function useSessionPoll(id: string) {
   const queryClient = useQueryClient();
-  return usePollWhile<SessionEntity>(
+  const opening = usePollWhile<SessionEntity>(
     'sessionOpening',
     sessionsKeys.detail(id),
-    (session) => (session?.isProvisioning ?? false) || restartsOf(queryClient).has(id),
+    (session) =>
+      (!session?.isCloud && (session?.isProvisioning ?? false)) || restartsOf(queryClient).has(id),
   );
+  // A cloud session's page follows its vendor's run, which no host reports.
+  const cloud = usePollWhile<SessionEntity>(
+    'cloudSession',
+    sessionsKeys.detail(id),
+    (session) => session?.isCloudWorking ?? false,
+  );
+  return eitherPoll(opening, cloud);
 }
 
 /**
@@ -392,6 +416,31 @@ export function useCreateSession(
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
       watchSessionStart(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export interface StartCloudSessionVariables {
+  input: StartCloudSessionInput;
+  /** One per send, kept across its retries, so a retry returns the session already started. */
+  idempotencyKey: string;
+}
+
+/**
+ * Starts a session in a vendor's cloud. The answer is the session, listed at
+ * once with the others; its row opens the vendor's page.
+ */
+export function useStartCloudSession(
+  options?: UseMutationOptions<SessionEntity, Error, StartCloudSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ input, idempotencyKey }: StartCloudSessionVariables) =>
+      app.sessions.startCloud(input, idempotencyKey),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
 }

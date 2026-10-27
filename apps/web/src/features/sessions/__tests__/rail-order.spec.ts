@@ -30,7 +30,6 @@ describe('storedRailOrder', () => {
 
   it('restores the order a drop remembered', () => {
     rememberRailOrder(['plan', 'sessions', 'inbox', 'automations', 'bots', 'pulls']);
-    // An item a later build added (Cloud agents) joins at the end of a stored order.
     expect(storedRailOrder()).toEqual([
       'plan',
       'sessions',
@@ -38,7 +37,6 @@ describe('storedRailOrder', () => {
       'automations',
       'bots',
       'pulls',
-      'cloud',
     ]);
   });
 
@@ -50,7 +48,6 @@ describe('storedRailOrder', () => {
       'plan',
       'bots',
       'sessions',
-      'cloud',
       'pulls',
     ]);
   });
@@ -64,7 +61,6 @@ describe('storedRailOrder', () => {
       'automations',
       'bots',
       'pulls',
-      'cloud',
     ]);
     expect(railLanding()).toBe('/inbox');
   });
@@ -94,9 +90,22 @@ describe('useRailOrder', () => {
     act(() => result.current.handlers.onDragStart(item('plan')));
     act(() => result.current.handlers.onDragEnd({ active: item('plan'), over: item('sessions') }));
 
-    const dropped = ['inbox', 'bots', 'plan', 'sessions', 'cloud', 'pulls', 'automations'];
-    expect(result.current.order).toEqual(dropped);
-    expect(storedRailOrder()).toEqual(dropped);
+    expect(result.current.order).toEqual([
+      'inbox',
+      'bots',
+      'plan',
+      'sessions',
+      'pulls',
+      'automations',
+    ]);
+    expect(storedRailOrder()).toEqual([
+      'inbox',
+      'bots',
+      'plan',
+      'sessions',
+      'pulls',
+      'automations',
+    ]);
   });
 
   it('keeps the order when a drag is cancelled', () => {

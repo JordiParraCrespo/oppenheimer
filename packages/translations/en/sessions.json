@@ -75,7 +75,13 @@
         "description": "Open an existing directory as it is · nothing is cloned"
       },
       "hosts": "Hosts",
-      "startIn": "Start in"
+      "startIn": "Start in",
+      "cloud": {
+        "label": "Cloud",
+        "description": "A vendor's agent, in its cloud"
+      },
+      "clouds": "Cloud",
+      "connect": "Connect your key"
     },
     "project": {
       "label": "Project",
@@ -137,7 +143,8 @@
       "favourites": "Favourites",
       "favouritesEmpty": "Star a model to keep it here.",
       "addFavourite": "Add {{model}} to favourites",
-      "removeFavourite": "Remove {{model}} from favourites"
+      "removeFavourite": "Remove {{model}} from favourites",
+      "auto": "Auto"
     },
     "permission": {
       "label": "Permission level",
@@ -179,7 +186,8 @@
       "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
       "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
     },
-    "failed": "The session could not be created."
+    "failed": "The session could not be created.",
+    "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
   },
   "session": {
     "status": {
@@ -274,7 +282,8 @@
     "notDeleted": "Not deleted",
     "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
     "select": "Select",
-    "selected": "Selected"
+    "selected": "Selected",
+    "openAtVendor": "Opens in {{vendor}}"
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -591,78 +600,15 @@
     "offlineDetail": "The device comes back when the host reconnects.",
     "ended": "The session has ended"
   },
-  "cloudAgents": {
-    "sidebar": {
-      "new": "New cloud agent",
-      "agents": "Agents",
-      "listFailed": "Couldn’t load your cloud agents."
-    },
+  "cloud": {
+    "open": "Open in {{vendor}}",
     "status": {
-      "starting": "Starting",
-      "running": "Working",
-      "finished": "Finished",
-      "failed": "Failed",
-      "cancelled": "Stopped",
-      "expired": "Expired"
-    },
-    "landing": {
-      "title": "New cloud agent",
-      "description": "Runs in {{provider}}’s cloud on your key, in a repository it can reach, and pushes a branch.",
-      "connectTitle": "Connect a cloud agent provider",
-      "connectDescription": "Cloud agents run in a vendor’s cloud, not on your hosts. Connect Cursor with your API key to launch one.",
-      "connectAction": "Connect Cursor",
-      "statusFailed": "Couldn’t read whether a provider is connected."
-    },
-    "launch": {
-      "prompt": "What should it do?",
-      "promptPlaceholder": "Describe the change, as you would to a colleague",
-      "repository": "Repository",
-      "repositoryPlaceholder": "Pick a repository",
-      "repositoriesFailed": "Couldn’t load the repositories {{provider}} can reach.",
-      "searchRepositories": "Search repositories",
-      "noRepositories": "No repositories match.",
-      "model": "Model",
-      "modelDefault": "Auto ({{provider}} picks)",
-      "searchModels": "Search models",
-      "noModels": "No models match.",
-      "modelsFailed": "Couldn’t load {{provider}}’s models.",
-      "startingRef": "Starting branch",
-      "startingRefHint": "Leave empty for the repository’s default branch.",
-      "autoCreatePr": "Open a pull request when it finishes",
-      "submit": "Launch agent",
-      "submitting": "Launching…",
-      "failed": "Couldn’t launch the agent.",
-      "loading": "Loading…"
-    },
-    "detail": {
-      "loadFailed": "Couldn’t load this cloud agent.",
-      "repository": "Repository",
-      "model": "Model",
-      "modelDefault": "Auto",
-      "branch": "Branch",
-      "branchPending": "Not pushed yet",
-      "pullRequest": "Pull request",
-      "openPullRequest": "Open pull request",
-      "openAt": "Open in {{provider}}",
-      "prompt": "Asked",
-      "reply": "Last reply",
-      "working": "Working in {{provider}}’s cloud. This page follows it.",
-      "lastHeard": "Last heard from {{provider}} {{age}}",
-      "stop": "Stop",
-      "followUp": "Next instruction",
-      "followUpPlaceholder": "Tell it what to do next",
-      "followUpWhileWorking": "You can send the next instruction once this run ends.",
-      "send": "Send",
-      "sending": "Sending…",
-      "followUpFailed": "Couldn’t send the instruction.",
-      "justNow": "just now"
-    },
-    "stop": {
-      "title": "Stop “{{name}}”?",
-      "description": "The run ends where it is. What it pushed stays, and a next instruction starts it again.",
-      "confirm": "Stop agent",
-      "pending": "Stopping…",
-      "failed": "Couldn’t stop the agent."
+      "starting": "{{vendor}} is starting the agent",
+      "running": "Working in {{vendor}}’s cloud",
+      "finished": "Finished in {{vendor}}’s cloud",
+      "failed": "The agent failed in {{vendor}}’s cloud",
+      "cancelled": "Stopped in {{vendor}}",
+      "expired": "The run expired in {{vendor}}’s cloud"
     }
   }
 }

@@ -1,26 +1,45 @@
-import { expect, test } from '@playwright/test';
+import { type APIRequestContext, expect, test } from '@playwright/test';
 import { REFUSE_MARKER, STUB_KEY_PREFIX } from '../../support/cursor-stub';
+import {
+  connectInstallation,
+  createProject,
+  STUB_REPOSITORIES,
+} from '../../support/sessions';
 import { provisionedUser } from '../../support/web';
 
 /**
- * Cloud agents against the real control plane, on the Cursor stub
+ * Cloud sessions against the real control plane, on the Cursor stub
  * (`support/cursor-stub.ts`): a person connects their own Cursor key, which
- * is checked with Cursor before it is kept and never read back; launches an
- * agent; watches its run play out; follows up once it has finished; and stops
- * one. Nobody else sees the key or the agents. The
- * gateway's own spec covers Cursor's shapes; this proves the routes, the
- * registry wiring and the sealed key together.
+ * is checked with Cursor before it is kept and never read back, and starts a
+ * session in Cursor's cloud on a repository of their GitHub installation. It
+ * is a session like any other — listed with the rest, in its project — with
+ * no host: its state follows the run Cursor reports, what only a host has is
+ * refused, and closing it resolves it at once. Nobody else sees the key or
+ * the session. The gateway's own spec covers Cursor's shapes; this proves the
+ * routes, the registry wiring, the sealed key and the sync together.
  */
 
 const KEY = `${STUB_KEY_PREFIX}9f3a`;
-const LAUNCH = {
-  provider: 'cursor',
-  prompt: 'Fix the login redirect loop. Keep the change small.',
-  repositoryUrl: 'https://github.com/acme/api',
-  model: 'grok-4.7',
-};
+const PROMPT = 'Fix the login redirect loop. Keep the change small.';
 
-test.describe('Cloud agents', () => {
+/** A workspace ready for a cloud session: a key, an installation, a project. */
+async function ready(api: APIRequestContext) {
+  await api.put('/api/v1/cloud-agents/providers/cursor/credential', { data: { apiKey: KEY } });
+  const installationId = await connectInstallation(api);
+  const projectId = await createProject(api, installationId);
+  return {
+    projectId,
+    body: (prompt = PROMPT) => ({
+      provider: 'cursor',
+      projectId,
+      checkout: { installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId },
+      prompt,
+      model: 'grok-4.7',
+    }),
+  };
+}
+
+test.describe('Cloud sessions', () => {
   test('connects a Cursor key only once Cursor accepts it, and never hands it back', async () => {
     const owner = await provisionedUser('cloud-key');
 
@@ -67,85 +86,92 @@ test.describe('Cloud agents', () => {
     expect(await theirs.json()).toMatchObject({ providers: [{ connected: false }] });
   });
 
-  test('launches an agent, follows its run to the end, then gives it its next instruction', async () => {
-    const owner = await provisionedUser('cloud-launch');
-    await owner.api.put('/api/v1/cloud-agents/providers/cursor/credential', {
-      data: { apiKey: KEY },
+  test('starts a session in Cursor’s cloud that is listed with the others and follows its run', async () => {
+    const owner = await provisionedUser('cloud-start');
+    const { projectId, body } = await ready(owner.api);
+
+    const started = await owner.api.post('/api/v1/sessions/cloud', {
+      data: body(),
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
     });
-
-    const launched = await owner.api.post('/api/v1/cloud-agents', { data: LAUNCH });
-    expect(launched.status(), await launched.text()).toBe(201);
-    const agent = await launched.json();
-    expect(agent).toMatchObject({
-      provider: 'cursor',
-      externalId: `bc-${agent.id}`,
-      status: 'starting',
-      model: 'grok-4.7',
-      repositoryUrl: 'https://github.com/acme/api',
+    expect(started.status(), await started.text()).toBe(201);
+    const session = await started.json();
+    expect(session).toMatchObject({
+      place: 'cloud',
+      hostId: null,
+      agent: 'cursor',
+      projectId,
+      launch: { model: 'grok-4.7', permission: null },
+      cloud: { provider: 'cursor', status: 'starting' },
     });
+    expect(session.cloud.repositoryUrl).toMatch(/\/xrp-mobile$/);
+    expect(session.cloud.url).toContain(`bc-${session.id}`);
 
-    const list = await owner.api.get('/api/v1/cloud-agents');
-    expect((await list.json()).map((row: { id: string }) => row.id)).toEqual([agent.id]);
+    const list = await (await owner.api.get('/api/v1/sessions')).json();
+    expect(list.data.map((row: { id: string }) => row.id)).toContain(session.id);
 
-    // The stub's run finishes after a few seconds; the API reads it through.
+    // The stub's run finishes after a few seconds; a read asks Cursor and the
+    // log folds what it said into the session's state.
     await expect
       .poll(
-        async () => (await (await owner.api.get(`/api/v1/cloud-agents/${agent.id}`)).json()).status,
+        async () => {
+          const read = await (await owner.api.get(`/api/v1/sessions/${session.id}`)).json();
+          return [read.cloud.status, read.lifecycle, read.state];
+        },
         { timeout: 40_000, intervals: [2_000] },
       )
-      .toBe('finished');
-    const finished = await (await owner.api.get(`/api/v1/cloud-agents/${agent.id}`)).json();
-    expect(finished.branch).toMatch(/^cursor\//);
-    expect(finished.summary).toContain('Fix the login redirect loop');
+      .toEqual(['finished', 'open', 'idle']);
+    const finished = await (await owner.api.get(`/api/v1/sessions/${session.id}`)).json();
+    expect(finished.cloud.branch).toMatch(/^cursor\//);
 
-    const followed = await owner.api.post(`/api/v1/cloud-agents/${agent.id}/follow-ups`, {
-      data: { prompt: 'Add a test for it.' },
-    });
-    expect(followed.status(), await followed.text()).toBe(200);
-    expect(await followed.json()).toMatchObject({ status: 'starting', summary: null });
-
-    const busy = await owner.api.post(`/api/v1/cloud-agents/${agent.id}/follow-ups`, {
-      data: { prompt: 'And another.' },
-    });
-    expect(busy.status()).toBe(409);
-    expect(await busy.json()).toMatchObject({ code: 'CLOUD_AGENTS_008' });
-
-    const stranger = await provisionedUser('cloud-launch-stranger');
-    const hidden = await stranger.api.get(`/api/v1/cloud-agents/${agent.id}`);
+    const stranger = await provisionedUser('cloud-start-stranger');
+    const hidden = await stranger.api.get(`/api/v1/sessions/${session.id}`);
     expect(hidden.status()).toBe(404);
-    expect(await hidden.json()).toMatchObject({ code: 'CLOUD_AGENTS_001' });
   });
 
-  test('stops a working agent, and says why when Cursor refuses a launch', async () => {
-    const owner = await provisionedUser('cloud-stop');
-    await owner.api.put('/api/v1/cloud-agents/providers/cursor/credential', {
-      data: { apiKey: KEY },
+  test('refuses what only a host has, and closes at once', async () => {
+    const owner = await provisionedUser('cloud-host-only');
+    const { body } = await ready(owner.api);
+    const session = await (await owner.api.post('/api/v1/sessions/cloud', { data: body() })).json();
+
+    const attach = await owner.api.post(`/api/v1/sessions/${session.id}/attach-ticket`, {
+      data: {},
     });
+    expect(attach.status()).toBe(409);
+    expect(await attach.json()).toMatchObject({ code: 'SESSIONS_035' });
 
-    const agent = await (await owner.api.post('/api/v1/cloud-agents', { data: LAUNCH })).json();
-    const stopped = await owner.api.post(`/api/v1/cloud-agents/${agent.id}/cancel`);
-    expect(stopped.status(), await stopped.text()).toBe(200);
-    expect(await stopped.json()).toMatchObject({ status: 'cancelled' });
+    const closed = await owner.api.delete(`/api/v1/sessions/${session.id}`);
+    expect(closed.status(), await closed.text()).toBeLessThan(300);
+    const read = await (await owner.api.get(`/api/v1/sessions/${session.id}`)).json();
+    expect(read.lifecycle).toBe('resolved');
+  });
 
-    const again = await owner.api.post(`/api/v1/cloud-agents/${agent.id}/cancel`);
-    expect(again.status()).toBe(409);
-    expect(await again.json()).toMatchObject({ code: 'CLOUD_AGENTS_009' });
+  test('says why when Cursor refuses a start, and stores nothing', async () => {
+    const owner = await provisionedUser('cloud-refused');
+    const { body } = await ready(owner.api);
 
-    const refused = await owner.api.post('/api/v1/cloud-agents', {
-      data: { ...LAUNCH, prompt: `Do it ${REFUSE_MARKER}` },
+    const refused = await owner.api.post('/api/v1/sessions/cloud', {
+      data: body(`Do it ${REFUSE_MARKER}`),
     });
     expect(refused.status()).toBe(422);
     expect(await refused.json()).toMatchObject({
       code: 'CLOUD_AGENTS_010',
       detail: 'Cursor: Repository is not accessible',
     });
-    const list = await (await owner.api.get('/api/v1/cloud-agents')).json();
-    expect(list).toHaveLength(1);
+    const list = await (await owner.api.get('/api/v1/sessions')).json();
+    expect(list.data).toHaveLength(0);
   });
 
-  test('refuses a launch before a key is connected', async () => {
+  test('refuses a start before a key is connected', async () => {
     const owner = await provisionedUser('cloud-unconnected');
-    const response = await owner.api.post('/api/v1/cloud-agents', { data: LAUNCH });
+    const installationId = await connectInstallation(owner.api);
+    const response = await owner.api.post('/api/v1/sessions/cloud', {
+      data: {
+        provider: 'cursor',
+        checkout: { installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId },
+        prompt: PROMPT,
+      },
+    });
     expect(response.status()).toBe(409);
     expect(await response.json()).toMatchObject({ code: 'CLOUD_AGENTS_004' });
   });

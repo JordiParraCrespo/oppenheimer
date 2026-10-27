@@ -155,7 +155,7 @@
   },
   "cloudAgents": {
     "title": "Cloud agents",
-    "description": "Coding agents that run in a vendor’s cloud, on your own key. They bill your plan with the vendor.",
+    "description": "Run a session in a vendor’s cloud, on your own key: pick it under Cloud where a new session runs. It bills your plan with the vendor.",
     "unavailable": "This server can’t keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
     "loadFailed": "Couldn’t load your cloud agent providers.",
     "providers": {
