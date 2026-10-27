@@ -5,7 +5,7 @@ import type { BotApprovalStatus } from '@oppenheimer/shared';
  * Raised when an approval is written in a new state: raised (`pending`),
  * decided, expired, or its call's result recorded. The workspace stream
  * announces it, so the Inbox's pending approvals move without a poll
- * (`product/versions/mvp/28-inbox.md` §4).
+ * (`product/versions/mvp/29-inbox.md` §4).
  */
 export class BotApprovalChangedDomainEvent extends DomainEvent {
   readonly organizationId: string;

@@ -22,7 +22,7 @@ export interface InboxMarkProps {
 
 /**
  * What a person did to one occurrence of an Inbox item
- * (`product/versions/mvp/28-inbox.md` §3): done, low, snoozed until a time,
+ * (`product/versions/mvp/29-inbox.md` §3): done, low, snoozed until a time,
  * or deleted. One per person, workspace and occurrence; setting it again
  * replaces it, and removing it brings the item back as it was.
  */

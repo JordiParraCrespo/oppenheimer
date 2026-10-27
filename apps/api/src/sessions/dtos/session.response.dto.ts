@@ -219,7 +219,7 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/28-inbox.md` §3).',
+      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).',
     nullable: true,
     type: Date,
   })

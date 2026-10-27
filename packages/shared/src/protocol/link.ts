@@ -94,3 +94,8 @@ export const CHAT_ENTRY_MAX_BYTES = 64 * 1024;
 
 /** The most entries one `attachment.chat` holds; a longer history is several. */
 export const CHAT_BATCH_MAX_ENTRIES = 256;
+
+/** What the reader can do to a session's device from the console (`device.input`). */
+export const DEVICE_INPUT_KINDS = ['tap', 'swipe', 'text', 'key', 'button'] as const;
+export const DEVICE_KEYS = ['enter', 'backspace', 'escape', 'tab'] as const;
+export const DEVICE_BUTTONS = ['home', 'back', 'appSwitch'] as const;

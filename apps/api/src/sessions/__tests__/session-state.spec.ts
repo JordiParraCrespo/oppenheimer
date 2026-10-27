@@ -369,7 +369,7 @@ describe('launchPermissionFor', () => {
 });
 
 /**
- * What the agent waits on the person for (`28-inbox.md` slice 4). The Inbox shows
+ * What the agent waits on the person for (`29-inbox.md` slice 4). The Inbox shows
  * it and answers it, so a decision the agent no longer waits on must never stay:
  * an answer typed into it would land on whatever the agent asks next.
  */

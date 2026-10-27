@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * What a person did to an occurrence of an Inbox item
- * (`product/versions/mvp/28-inbox.md` §3). The items themselves are not
+ * (`product/versions/mvp/29-inbox.md` §3). The items themselves are not
  * stored: an item is there while its source says it needs you. A mark is
  * keyed by the item and the wait it answers (`"itemKey"`), so a new wait
  * comes back however the last one was marked.
@@ -30,7 +30,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   Q3 a user's delete cascading                 → IDX_inbox_mark_user
  *
  * Retention: rows only grow while their sources move on. A nightly sweep of
- * marks older than 30 days (28 §3) is planned and not built yet; until then
+ * marks older than 30 days (29 §3) is planned and not built yet; until then
  * the read is bounded by its limit.
  */
 export class AddInboxMarks1791003700000 implements MigrationInterface {

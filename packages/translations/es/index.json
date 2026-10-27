@@ -1090,6 +1090,22 @@
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
       }
+    },
+    "preview": {
+      "show": "Mostrar vista previa",
+      "hide": "Ocultar vista previa",
+      "label": "Vista previa",
+      "simulator": "Simulador",
+      "close": "Cerrar vista previa",
+      "frame": "App ejecutándose en {{name}}",
+      "title": "{{name}} ejecutándose en el host de esta sesión",
+      "connecting": "Conectando con el dispositivo de la sesión…",
+      "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+      "unavailable": "Esta sesión no tiene dispositivo",
+      "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
+      "offline": "El host está desconectado",
+      "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+      "ended": "La sesión ha terminado"
     }
   },
   "bots": {
@@ -1377,7 +1393,10 @@
         "save": "Guardar cambios",
         "saving": "Guardando…",
         "saved": "Guardado",
-        "failed": "No se ha podido guardar el bot."
+        "failed": "No se ha podido guardar el bot.",
+        "showsIn": "Aparece en",
+        "showsInHint": "Barras laterales que lo muestran, además de Empleados",
+        "showsInFailed": "No se pudo guardar dónde aparece el bot."
       },
       "instructions": {
         "title": "Instrucciones",
@@ -1490,6 +1509,10 @@
       "confirm": "Eliminar bot",
       "pending": "Eliminando…",
       "failed": "No se ha podido eliminar el bot."
+    },
+    "section": {
+      "heading": "Bots",
+      "empty": "Aún no hay bots aquí."
     }
   },
   "automations": {

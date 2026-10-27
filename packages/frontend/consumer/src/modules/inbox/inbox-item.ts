@@ -6,7 +6,7 @@ import type { SessionEntity } from '../sessions/session.entity';
 import type { InboxMarkEntity } from './inbox-mark.entity';
 
 /**
- * The Inbox (`product/versions/mvp/28-inbox.md`): what needs you, composed
+ * The Inbox (`product/versions/mvp/29-inbox.md`): what needs you, composed
  * from four reads the API already serves. Nothing here is stored but the
  * marks; an item is there while its source says it needs you.
  */

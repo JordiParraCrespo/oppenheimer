@@ -6,7 +6,7 @@ import type { InboxVisit } from '../lib/inbox-visit';
 
 /**
  * What the Inbox's list shows and the pane takes its item from
- * (`28-inbox.md` §5): Later sends an item to the end for this visit, an
+ * (`29-inbox.md` §5): Later sends an item to the end for this visit, an
  * answered one leaves before its source catches up, Show done lists only
  * what was marked done on this visit, and the facets count an item under
  * every project that holds it.

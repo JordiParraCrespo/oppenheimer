@@ -293,7 +293,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.closeRefusal;
   }
 
-  /** What the agent waits on the person for, or null (`28-inbox.md` slice 4). */
+  /** What the agent waits on the person for, or null (`29-inbox.md` slice 4). */
   get pendingDecision(): SessionDecision | null {
     return this.props.pendingDecision;
   }

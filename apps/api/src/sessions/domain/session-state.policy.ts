@@ -97,7 +97,7 @@ export const SESSION_EVENT_KINDS = {
   /**
    * What a blocked agent waits on the person for: an `AskUserQuestion` call or a
    * permission dialog, read on the host. Payload `{ decision }`, null once it
-   * cleared (`SessionDecision`, `28-inbox.md` slice 4).
+   * cleared (`SessionDecision`, `29-inbox.md` slice 4).
    */
   AGENT_DECISION: AGENT_DECISION_EVENT_KIND,
   /**

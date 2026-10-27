@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * What a session's agent is waiting on the person to decide, as the runner
- * reads it on the host (`product/versions/mvp/28-inbox.md`, slice 4), and the
+ * reads it on the host (`product/versions/mvp/29-inbox.md`, slice 4), and the
  * answer the Inbox sends back.
  *
  * Two kinds, both Claude Code's:

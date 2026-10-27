@@ -194,7 +194,7 @@ export class BotApprovalEntity {
 
 /**
  * A Needs input card as the workspace's list across its bots reads it (the
- * Inbox, `product/versions/mvp/28-inbox.md` §1): the card, the bot that
+ * Inbox, `product/versions/mvp/29-inbox.md` §1): the card, the bot that
  * asked, and the call's input, where a session it concerns may be named.
  */
 export class WorkspaceBotApprovalEntity extends BotApprovalEntity {

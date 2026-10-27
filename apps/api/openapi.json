@@ -9079,7 +9079,7 @@
     },
     "/api/v1/sessions/{id}/attach-ticket": {
       "post": {
-        "description": "Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.",
+        "description": "Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint. With `target: 'device'` the socket opens the session's device (a simulator or emulator its host gives it) instead of a terminal.",
         "operationId": "issueAttachTicket",
         "parameters": [
           {
@@ -22842,7 +22842,7 @@
           "observedSince": {
             "format": "date-time",
             "type": "string",
-            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/28-inbox.md` §3).",
+            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).",
             "nullable": true
           },
           "stateSeq": {
@@ -23176,6 +23176,10 @@
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": false
+          },
+          "target": {
+            "type": "string",
+            "enum": ["terminal", "device"]
           }
         }
       },
@@ -26899,6 +26903,14 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
+          "sections": {
+            "type": "array",
+            "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -26932,6 +26944,7 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
+          "sections",
           "createdAt",
           "updatedAt",
           "lastActivityAt",
@@ -26967,6 +26980,14 @@
           "provider": {
             "type": "string",
             "enum": ["anthropic", "glm", "openai", "chatgpt"]
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
           }
         }
       },
@@ -27024,6 +27045,14 @@
           },
           "learnAutomatically": {
             "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "enum": ["sessions", "automations", "plan", "pulls"]
+            }
           }
         }
       },

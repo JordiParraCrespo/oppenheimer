@@ -49,6 +49,7 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
         effort: input.effort,
         permission: input.permission,
         learnAutomatically: input.learnAutomatically,
+        sections: input.sections,
       });
     } catch (error) {
       if (!(error instanceof BotModelUnsupportedException)) throw error;

@@ -8,7 +8,7 @@ import { FindWorkspaceBotApprovalsQuery } from '../find-workspace-bot-approvals.
 import { FindWorkspaceBotApprovalsQueryHandler } from '../find-workspace-bot-approvals.query-handler';
 
 /**
- * The Inbox's pending approvals across bots (`28-inbox.md` §4): both reads go
+ * The Inbox's pending approvals across bots (`29-inbox.md` §4): both reads go
  * through the caller's scope, each card carries its bot's name, and a card
  * whose bot the caller cannot see is left out rather than shown nameless.
  * The SQL (status, order, workspace) is the integration suite's.

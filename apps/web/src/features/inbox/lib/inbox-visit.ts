@@ -1,5 +1,5 @@
 /**
- * What happened in the Inbox on this visit (`28-inbox.md` §5): the log above
+ * What happened in the Inbox on this visit (`29-inbox.md` §5): the log above
  * the card, the items sent to the end with Later, what was marked done (for
  * Show done) and what was answered and is waiting for its source to say so.
  * The marks behind it are stored; this is the page's memory only, kept

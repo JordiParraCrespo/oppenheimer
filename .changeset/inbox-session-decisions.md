@@ -8,7 +8,7 @@
 ---
 
 Answer a session's question or permission from anywhere but its terminal
-(the server half of the Inbox's slice 4, `28-inbox.md`).
+(the server half of the Inbox's slice 4, `29-inbox.md`).
 
 - `@oppenheimer/shared`: `SessionDecision` (a `question` from
   `AskUserQuestion`, or a `permission` dialog), the `agent.decision` payload,

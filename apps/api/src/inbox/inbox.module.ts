@@ -14,7 +14,7 @@ import { FindInboxMarksHttpController } from './queries/find-inbox-marks/find-in
 import { FindInboxMarksQueryHandler } from './queries/find-inbox-marks/find-inbox-marks.query-handler';
 
 /**
- * The Inbox's marks (`product/versions/mvp/28-inbox.md` §3, §4): what a person
+ * The Inbox's marks (`product/versions/mvp/29-inbox.md` §3, §4): what a person
  * did to an occurrence of an item. The items are not here; the console reads
  * them from their sources and leaves out what the marks hide.
  */

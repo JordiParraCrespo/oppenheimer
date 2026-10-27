@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * What a session's agent waits on the person for, folded from the log's
- * `agent.decision` entries (`product/versions/mvp/28-inbox.md`, slice 4): an
+ * `agent.decision` entries (`product/versions/mvp/29-inbox.md`, slice 4): an
  * `AskUserQuestion` call or a permission dialog, as the runner read it, so the
  * Inbox shows the question and answers it without walking a log.
  *

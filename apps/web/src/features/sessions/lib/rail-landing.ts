@@ -26,7 +26,7 @@ function isRailItemId(value: unknown): value is RailItemId {
 /**
  * Items that arrive at the front of an order stored before they existed,
  * rather than after it: the Inbox goes first for everyone once, so it is
- * where the console lands (`product/versions/mvp/28-inbox.md`, Decided 1).
+ * where the console lands (`product/versions/mvp/29-inbox.md`, Decided 1).
  * Once the reader drags it anywhere, the stored order keeps it there.
  */
 const ARRIVE_FIRST: readonly RailItemId[] = ['inbox'];

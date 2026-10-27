@@ -30,7 +30,7 @@ const InboxRailCount = lazy(() =>
  * A section rather than kit because the counts are product reads: the
  * sessions the sidebar already subscribes to, Plan's open tasks
  * (`18-plan-product.md` §1), the board's own read, and what needs you in
- * the Inbox (`28-inbox.md` §5), whose item is left out while the `inbox`
+ * the Inbox (`29-inbox.md` §5), whose item is left out while the `inbox`
  * flag is off.
  *
  * The reader drags the items into their own order, as the design's rail

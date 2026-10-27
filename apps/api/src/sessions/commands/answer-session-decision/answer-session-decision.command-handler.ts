@@ -19,7 +19,7 @@ const AGENT_WINDOW = 0;
 /**
  * Answers what a session's agent waits on — a question it asked, a permission
  * dialog — from somewhere other than its terminal: the Inbox
- * (`product/versions/mvp/28-inbox.md` slice 4).
+ * (`product/versions/mvp/29-inbox.md` slice 4).
  *
  * The answer is the keys a person would type, sent to window 0 as
  * `session.input`, one frame per key and paced like the console's chat view

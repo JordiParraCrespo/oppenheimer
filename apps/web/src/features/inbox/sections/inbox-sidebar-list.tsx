@@ -20,7 +20,7 @@ import { ALL_PROJECTS, NO_PROJECT } from '@/features/inbox/lib/inbox-search';
 import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
 /**
- * The Inbox's list in the sidebar (`28-inbox.md` §5): Needs you with its
+ * The Inbox's list in the sidebar (`29-inbox.md` §5): Needs you with its
  * count and the filter, a row per item with its age (one minute tick for the
  * list), the done ones of this visit under Show done, and Snoozed with when
  * each comes back. It reads the Inbox itself because it draws it; the pane

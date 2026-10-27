@@ -9,7 +9,7 @@ import { InboxMarkEntity, type InboxMarkProps } from '../domain/inbox-mark.entit
 import { InboxMarkMapper } from '../inbox-mark.mapper';
 
 /**
- * A person's Inbox marks against a real Postgres (`28-inbox.md` §3): one row
+ * A person's Inbox marks against a real Postgres (`29-inbox.md` §3): one row
  * per person, workspace and occurrence however many puts race, a put that
  * replaces the mark in place, the read that leaves out an ended snooze and
  * everyone else's marks, the table's own rules, an idempotent delete, the

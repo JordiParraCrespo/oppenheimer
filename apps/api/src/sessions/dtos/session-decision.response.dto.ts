@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * What a session's agent waits on the person for, as the runner read it
- * (`SessionDecision` in `@oppenheimer/shared`, `28-inbox.md` slice 4): an
+ * (`SessionDecision` in `@oppenheimer/shared`, `29-inbox.md` slice 4): an
  * `AskUserQuestion` call, or Claude Code's permission dialog. Answered with
  * `POST /sessions/{id}/decision`, naming its `id`.
  */

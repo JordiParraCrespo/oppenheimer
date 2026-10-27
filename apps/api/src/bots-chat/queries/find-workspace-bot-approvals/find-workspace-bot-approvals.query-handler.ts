@@ -13,7 +13,7 @@ import {
 /**
  * The workspace's approvals in one status across its bots, newest first, at
  * most {@link WORKSPACE_BOT_APPROVALS_MAX}: the Inbox's pending approvals
- * (`product/versions/mvp/28-inbox.md` §4). Both reads go through the caller's
+ * (`product/versions/mvp/29-inbox.md` §4). Both reads go through the caller's
  * scope, and an approval whose bot that scope cannot see is left out, so the
  * list is what the per-bot read (`GET /bots/:id/approvals`) would answer for
  * each bot the caller may read.

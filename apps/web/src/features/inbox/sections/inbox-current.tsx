@@ -23,7 +23,7 @@ function greetingKey(now: number): 'morning' | 'afternoon' | 'evening' {
 }
 
 /**
- * The pane (`28-inbox.md` §5): a greeting with what is going on, the log of
+ * The pane (`29-inbox.md` §5): a greeting with what is going on, the log of
  * what was done this visit, and the item in hand as one card with its
  * answers — or "You're clear". It takes its item from the same list the
  * sidebar draws, under the same filter; E and L act on it.

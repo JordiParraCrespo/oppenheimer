@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// A Decision is what a session's agent waits on the person for (28-inbox,
+// A Decision is what a session's agent waits on the person for (29-inbox,
 // slice 4): an AskUserQuestion call its transcript holds with no result yet,
 // or the permission dialog on its screen. The types and bounds are generated
 // from the shared schema (session_decision.gen.go); this file builds them.

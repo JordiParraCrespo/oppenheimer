@@ -27,12 +27,20 @@ const InboxSidebar = lazy(() =>
     default: module.InboxSidebar,
   })),
 );
-const PlanNav = lazy(() =>
-  import('@/features/tasks/sections/plan-nav').then((module) => ({ default: module.PlanNav })),
+const PlanSidebar = lazy(() =>
+  import('@/features/tasks/sections/plan-sidebar').then((module) => ({
+    default: module.PlanSidebar,
+  })),
 );
 const CalendarSidebar = lazy(() =>
   import('@/features/calendar/sections/calendar-sidebar').then((module) => ({
     default: module.CalendarSidebar,
+  })),
+);
+/** A section's Bots heading, lazy like the sidebars: it is the bots feature's, not the shell's. */
+const SectionBots = lazy(() =>
+  import('@/features/bots/sections/section-bots').then((module) => ({
+    default: module.SectionBots,
   })),
 );
 
@@ -42,10 +50,24 @@ const CalendarSidebar = lazy(() =>
  * route tree): Plan's sidebar is the tasks feature's head (Tasks, Milestones,
  * Calendar), with the calendar's layers and accounts under it on the
  * calendar; the board and Milestones filter by project in the page.
+ * Every section but Employees carries the bots placed in it
+ * (`product/versions/mvp/28-bots-in-sections.md`): the bots feature draws
+ * them, and each sidebar takes them as its `bots` slot and places them where
+ * the design does.
  * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {
-  if (list === 'sessions') return <SessionsSidebar />;
+  if (list === 'sessions') {
+    return (
+      <SessionsSidebar
+        bots={
+          <Suspense fallback={null}>
+            <SectionBots section="sessions" />
+          </Suspense>
+        }
+      />
+    );
+  }
   return (
     <Suspense fallback={null}>
       {list === 'inbox' ? (
@@ -53,18 +75,17 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
       ) : list === 'bots' ? (
         <BotsSidebar />
       ) : list === 'automations' ? (
-        <AutomationsSidebar />
+        <AutomationsSidebar bots={<SectionBots section="automations" />} />
       ) : list === 'pulls' ? (
-        <PullRequestsSidebar />
+        <PullRequestsSidebar bots={<SectionBots section="pulls" />} />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <PlanNav />
+        <PlanSidebar bots={<SectionBots section="plan" />}>
           {list === 'calendar' ? (
             <Suspense fallback={null}>
               <CalendarSidebar />
             </Suspense>
           ) : null}
-        </div>
+        </PlanSidebar>
       )}
     </Suspense>
   );

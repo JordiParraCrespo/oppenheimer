@@ -1,4 +1,4 @@
-# 28 — Inbox: one place for what needs you
+# 29 — Inbox: one place for what needs you
 
 The 2026-10-25 export draws an **Inbox** (`design/version1/Brain.dc.html`):
 a new first rail item with a bell, where sign-in lands. On the left, a

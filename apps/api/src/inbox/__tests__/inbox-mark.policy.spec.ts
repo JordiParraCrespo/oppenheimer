@@ -1,7 +1,7 @@
 import { inboxMarkProblem, isInboxItemKey, isInboxMarkInForce } from '../domain/inbox-mark.policy';
 
 /**
- * The mark rules (`28-inbox.md` §3) as one decision table: the key an
+ * The mark rules (`29-inbox.md` §3) as one decision table: the key an
  * occurrence may have, an end with a snooze and only with one, and that end
  * in the future. The entity and the handlers ask this; their specs prove they
  * do, this one proves what it says.

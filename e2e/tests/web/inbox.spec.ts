@@ -4,7 +4,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * The Inbox in a browser, against the real control plane
- * (`product/versions/mvp/28-inbox.md`, `design/version1/Brain.dc.html`): the
+ * (`product/versions/mvp/29-inbox.md`, `design/version1/Brain.dc.html`): the
  * console lands on it, a workspace with nothing waiting reads "You're clear",
  * a bot's pending approval comes in as a row and as the card in the pane,
  * and Mark as done puts a line in the log, keeps the row under Show done for

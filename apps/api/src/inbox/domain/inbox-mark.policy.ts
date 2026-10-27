@@ -9,7 +9,7 @@ export function isInboxItemKey(key: string): boolean {
 }
 
 /**
- * The rules a mark is held to (`product/versions/mvp/28-inbox.md` §3): a key
+ * The rules a mark is held to (`product/versions/mvp/29-inbox.md` §3): a key
  * the table can hold, and an end with a snooze and only with one, later than
  * `now`. The first problem found, in that order.
  */

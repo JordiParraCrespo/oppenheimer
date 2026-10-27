@@ -4,7 +4,7 @@ export type { InboxMark };
 
 /**
  * What a person did to one occurrence in the Inbox
- * (`product/versions/mvp/28-inbox.md` §3): the only thing it stores. The
+ * (`product/versions/mvp/29-inbox.md` §3): the only thing it stores. The
  * items themselves are read from their sources every time.
  */
 export class InboxMarkEntity {

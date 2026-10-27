@@ -8,7 +8,7 @@ import { composeInbox, type InboxSources, sessionItemKey } from '../inbox-item';
 import { InboxMarkEntity } from '../inbox-mark.entity';
 
 /**
- * The Inbox (`product/versions/mvp/28-inbox.md`): an item per occurrence of a
+ * The Inbox (`product/versions/mvp/29-inbox.md`): an item per occurrence of a
  * wait, in the order "most blocked first", filed under its projects, and the
  * reader's marks applied to that occurrence only — so a new wait comes back
  * however the last one was marked.

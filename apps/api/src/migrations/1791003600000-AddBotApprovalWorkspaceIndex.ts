@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The Inbox reads a workspace's pending approvals across its bots
- * (`GET /v1/bot-approvals?status=pending`, `product/versions/mvp/28-inbox.md`
+ * (`GET /v1/bot-approvals?status=pending`, `product/versions/mvp/29-inbox.md`
  * §4), newest first. `IDX_bot_approval_bot` leads with the bot and cannot
  * serve a read that names none.
  *

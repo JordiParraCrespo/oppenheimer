@@ -14,7 +14,7 @@ import {
  * else in storage — an unknown item, a repeat, a broken or non-list value —
  * never drops or duplicates an item, and one this build added since takes
  * its default place — except the Inbox, which a stored order that lacks it
- * gets at the front (`28-inbox.md`, Decided 1). The console opens on
+ * gets at the front (`29-inbox.md`, Decided 1). The console opens on
  * whichever item leads that order.
  */
 

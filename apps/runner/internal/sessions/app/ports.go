@@ -207,7 +207,7 @@ type Transcripts interface {
 	// runner cannot read the agent's transcript.
 	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
-	// result in the transcript yet, as the decision it asks (28-inbox,
+	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.
 	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
 }
