@@ -697,6 +697,12 @@ earlier note:
   under it and the project over it, and a session's name, state, Terminal
   / Chat and Share moved from the terminal's status line to a bar over it
   (`versions/mvp/05-screens.md`).
+- `versions/mvp/28-bots-in-sections.md` decided on 2026-10-26 that only
+  Pull requests opens a bot's chat inside the section, and that Sessions,
+  Automations and Plan send the reader to Employees, as the export's frames
+  link them. Later that day the owner, clicking a bot in Sessions, asked to
+  stay on the page: every section now opens the chat in place, under its
+  own address and sidebar (28, "Decided").
 - New session's Where and Host were two chips. On 2026-10-26 the owner
   asked for the export's one chip, the host and where on it ("mac-studio ·
   New worktree", the hosts and a Start in pane per host); the box took a
