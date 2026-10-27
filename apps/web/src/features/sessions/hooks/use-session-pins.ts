@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { rememberSessionPins, storedSessionPins, withPin } from '../lib/session-pins';
+import { createContext, useContext, useMemo } from 'react';
+import { SESSION_PINS_KEY, withPin } from '../lib/session-pins';
+import { useStoredList } from './use-stored-list';
 
 type SessionPins = {
   pins: readonly string[];
@@ -18,9 +19,7 @@ export const SessionPinsContext = createContext<SessionPins>({ pins: [], setPinn
  * them. localStorage: the pins outlive the page on this device.
  */
 export function useSessionPins(): SessionPins {
-  const [pins, setPins] = useState<string[]>(storedSessionPins);
-
-  useEffect(() => rememberSessionPins(pins), [pins]);
+  const [pins, setPins] = useStoredList(SESSION_PINS_KEY);
 
   // One identity per set of pins, so a sidebar render redraws no row through the context.
   return useMemo(
@@ -29,7 +28,7 @@ export function useSessionPins(): SessionPins {
       setPinned: (id: string, pinned: boolean) =>
         setPins((current) => withPin(current, id, pinned)),
     }),
-    [pins],
+    [pins, setPins],
   );
 }
 
