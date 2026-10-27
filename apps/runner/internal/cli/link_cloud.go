@@ -30,11 +30,17 @@ type CloudStarter interface {
 // the scratch directory. Its progress is the console's usual stepper: host,
 // clone, worktree (the scratch checkout), agent (the CLI).
 //
-// A create sent again while one runs, or after it made the session, does
-// nothing: the runner is idempotent by session id, as for any create. A
-// failed one may be sent again.
+// A create sent again while one runs does nothing; one sent again after it
+// made the session — even across a restart that lost the report — reports the
+// session it made, from the ledger, and starts nothing. The runner is
+// idempotent by session id, as for any create. A failed one may be sent again.
 func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 	if _, running := h.cloudStarts.LoadOrStore(m.SessionID, true); running {
+		return
+	}
+	ledger := newCloudLedger(h.app.Paths.State())
+	if started, ok := ledger.find(m.SessionID); ok {
+		h.reportCloudStarted(m.SessionID, started)
 		return
 	}
 	fail := func(err error) {
@@ -131,7 +137,18 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 		fail(err)
 		return
 	}
-	h.reporter.Append(m.SessionID, "session.started", map[string]any{
+	// Remembered before it is reported: a report lost with a restart is
+	// recovered from here, never by starting again.
+	if err := ledger.record(m.SessionID, started, time.Now()); err != nil {
+		h.logger.Warn("cloud start not remembered", "session", m.SessionID, "error", err)
+	}
+	h.reportCloudStarted(m.SessionID, started)
+}
+
+// reportCloudStarted is `session.started` for a cloud session: its id is the
+// agent's session, and it has no checkout on this host.
+func (h *linkHandler) reportCloudStarted(sessionID string, started cloud.Started) {
+	h.reporter.Append(sessionID, "session.started", map[string]any{
 		"agentSessionId": started.ID,
 		"cloudUrl":       started.URL,
 		"title":          started.Title,
