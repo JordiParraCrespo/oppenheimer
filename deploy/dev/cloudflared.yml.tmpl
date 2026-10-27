@@ -1,6 +1,6 @@
 # Locally-managed tunnel: ingress is reviewed here, not edited in the
-# dashboard. `oppctl` renders ${TUNNEL_ID} and ${DEV_HOSTNAME} from
-# config/host.env into the release's cloudflared.yml.
+# dashboard. `oppctl` renders ${TUNNEL_ID}, ${DEV_HOSTNAME} and
+# ${PREVIEW_HOSTNAME} from config/host.env into the release's cloudflared.yml.
 tunnel: ${TUNNEL_ID}
 credentials-file: /etc/cloudflared/credentials.json
 ingress:
@@ -9,6 +9,14 @@ ingress:
   - hostname: ${DEV_HOSTNAME}
     path: ^/(releases/|install\.sh$)
     service: http://releases:80
+  # previews:begin
+  # Sessions' previews (product/versions/mvp/28-session-previews.md): every
+  # host under the preview domain goes to the API, which serves each through
+  # its session's runner link. `oppctl` drops this rule when PREVIEW_HOSTNAME
+  # is empty.
+  - hostname: "*.${PREVIEW_HOSTNAME}"
+    service: http://api:3001
+  # previews:end
   # oppenheimer:begin web
   # One origin: nginx serves the console and proxies /api (and its WebSockets:
   # the terminal relay and the runners' link) to the API.

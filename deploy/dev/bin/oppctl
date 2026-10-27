@@ -102,8 +102,12 @@ notify() {
 # ---------------------------------------------------------------- checks ---
 
 render_tunnel_config() {
-  local rel="$1"
-  sed -e "s|\${TUNNEL_ID}|$TUNNEL_ID|g" -e "s|\${DEV_HOSTNAME}|$DEV_HOSTNAME|g" \
+  local rel="$1" previews
+  # Without a preview domain the previews' rule goes: a `*.` hostname with
+  # nothing after it would not load.
+  if [ -n "${PREVIEW_HOSTNAME:-}" ]; then previews='s|\${PREVIEW_HOSTNAME}|'"$PREVIEW_HOSTNAME"'|g'
+  else previews='/# previews:begin/,/# previews:end/d'; fi
+  sed -e "s|\${TUNNEL_ID}|$TUNNEL_ID|g" -e "s|\${DEV_HOSTNAME}|$DEV_HOSTNAME|g" -e "$previews" \
     "$rel/cloudflared.yml.tmpl" > "$rel/cloudflared.yml"
 }
 
