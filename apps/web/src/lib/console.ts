@@ -54,15 +54,22 @@ export function useConsoleList(): ConsoleList {
   return useMatches({
     select: (matches): ConsoleList => {
       const ids = matches.map((match) => match.routeId);
-      // A chat under the `bots` routes, and a bot's settings un-nested from them (`bots_`).
-      if (ids.some((id) => id.startsWith('/_authenticated/bots'))) return 'bots';
-      if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';
-      // The queue and analytics under the `pulls` layout, and a pull request un-nested from it (`pulls_`).
-      if (ids.some((id) => id.startsWith('/_authenticated/pulls'))) return 'pulls';
-      if (ids.some((id) => id.startsWith('/_authenticated/plan/calendar'))) return 'calendar';
-      // Plan's pages, and a bot's chat un-nested from them (`plan_`).
-      if (ids.some((id) => /^\/_authenticated\/plan_?\//.test(id))) return 'tasks';
-      return 'sessions';
+      const hit = LIST_BY_PREFIX.find(([prefix]) => ids.some((id) => id.startsWith(prefix)));
+      return hit ? hit[1] : 'sessions';
     },
   });
 }
+
+/**
+ * The route-id prefix each list owns, first match wins. A prefix without its
+ * slash covers a section's layout and the routes un-nested from it (`pulls_`,
+ * `plan_`, `bots_`), so a new un-nested route needs no line here; the
+ * calendar comes before the rest of Plan. Everything else is `sessions`.
+ */
+const LIST_BY_PREFIX: readonly (readonly [string, ConsoleList])[] = [
+  ['/_authenticated/bots', 'bots'],
+  ['/_authenticated/automations', 'automations'],
+  ['/_authenticated/pulls', 'pulls'],
+  ['/_authenticated/plan/calendar', 'calendar'],
+  ['/_authenticated/plan', 'tasks'],
+];
