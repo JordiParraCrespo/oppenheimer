@@ -47,6 +47,10 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * conversation draws its latest turns (`TURNS_SHOWN`), the earlier ones a
  * click away above them, opened without moving what the reader is on; while
  * the reader is up in it, new turns add below and never take one off the top.
+ * It scrolls the whole pane, its scrollbar at the pane's edge, and its turns
+ * and composer stand at the terminal grid's text width (1000px: its 1040px column less the
+ * gutters), so
+ * Terminal / Chat moves neither edge of the text.
  */
 export function SessionChat({
   chat,
@@ -95,7 +99,7 @@ export function SessionChat({
                 </EmptyState.Header>
               </EmptyState>
             ) : (
-              <ChatTranscript>
+              <ChatTranscript className="max-w-250">
                 {first > 0 ? (
                   <Button variant="ghost" size="sm" className="self-center" onClick={showEarlier}>
                     <ChevronUp />
@@ -120,7 +124,7 @@ export function SessionChat({
       </div>
       {readOnly ? null : (
         <div className="px-5 pb-3">
-          <div className="mx-auto w-full max-w-190">
+          <div className="mx-auto w-full max-w-250">
             {attach ? (
               <SessionChatAttachingSend chat={chat} attach={attach} onSent={toLatest} />
             ) : (

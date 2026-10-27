@@ -221,22 +221,21 @@ export function SessionPane({
 
   return (
     /* The terminal runs from the bar to the pane's foot with no frame around
-       it (the 2026-10-25 export dropped the 14px of canvas), on a 1040px
-       column so mono output keeps a readable measure on a wide display; the
-       ground either side is the terminal's colour, so column and pane read as
-       one surface. Read as a chat it is the same colour: the chat's ground is
-       the terminal's (`--chat-ground`), so switching views changes what is
-       drawn and never the pane's colour or the bar's. */
+       it (the 2026-10-25 export dropped the 14px of canvas). Its grid keeps a
+       1040px column (`SessionTerminal`) so mono output keeps a readable
+       measure on a wide display; the ground either side is the terminal's
+       colour, so column and pane read as one surface. Read as a chat it is
+       the same colour: the chat's ground is the terminal's (`--chat-ground`),
+       so switching views changes what is drawn and never the pane's colour or
+       the bar's, and the chat scrolls the whole pane at the grid's measure. */
     <>
       {head}
       {/* The terminal's column, and beside it the preview pane when it is
           open (`SessionsConsole.dc.html`): a row, so the terminal keeps the
           width the pane leaves it. */}
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-term-bg">
-          <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-            {terminal(session, reading, statusItems)}
-          </div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-term-bg">
+          {terminal(session, reading, statusItems)}
         </div>
         {previewOffered && previewOpen ? (
           <Suspense fallback={null}>

@@ -245,8 +245,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`
   says whose settings these are.
 - **The chat is a 46rem column on the pane's recessed ground** (a session's
-  chat stands on its terminal's ground instead, `--chat-ground`, so Terminal /
-  Chat changes no colour). The
+  chat stands on its terminal's ground instead, `--chat-ground`, and at its
+  grid's text width, 1000px, scrolling the whole pane, so Terminal / Chat
+  changes no colour and moves neither edge of the text). The
   person's turns are cards on the right, the agent's are unboxed prose
   opened by a `TurnHeader` on its hairline; what the agent did (tool calls,
   reasoning) is in muted ink so it never reads as the answer. Work in

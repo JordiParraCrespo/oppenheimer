@@ -56,8 +56,10 @@ export function SharedSessionTerminal({
 
   return (
     <Terminal className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}>
-      <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
-        <div ref={containerRef} className="isolate size-full" />
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="mx-auto size-full max-w-260 px-5 py-4">
+          <div ref={containerRef} className="isolate size-full" />
+        </div>
         {status === 'live' && !hasOutput ? (
           <div className="absolute inset-0 flex items-center justify-center bg-term-bg">
             <EmptyState>
