@@ -62,7 +62,6 @@
     "failedShort": "{{name}} failed",
     "failedTitle": "{{name}} failed",
     "failedBody": "Its host could not start it. Open it to see which step failed.",
-    "failedDetail": "Details from the host: {{detail}}",
     "startingShort": "{{name}} has not started",
     "startingTitle": "{{name}} has not started",
     "startingBody": "Its host has not finished starting it for over a minute. Open it to see where it stands.",
@@ -110,7 +109,6 @@
     "body": "The run ended on a failure. Open it to see why, or run it again.",
     "plainBody": "The run ended on a failure.",
     "exit": "Exit {{code}}",
-    "routineHint": "A bot's routine: open its bot's chat to see the run.",
     "deletedHint": "Its automation was deleted, so it cannot run again.",
     "again": "Run again",
     "open": "Open run"

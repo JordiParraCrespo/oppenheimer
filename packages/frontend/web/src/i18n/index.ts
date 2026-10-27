@@ -1,5 +1,6 @@
 export { LanguageSwitcher } from './components/language-switcher';
 export { RelativeTime } from './components/relative-time';
+export { StartFailureDetail } from './components/start-failure-detail';
 export { TimeField } from './components/time-field';
 export { useApplyUserSettings } from './hooks/use-apply-user-settings';
 export { useDatePickerCopy } from './hooks/use-date-picker-copy';

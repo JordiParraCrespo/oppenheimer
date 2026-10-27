@@ -1,8 +1,7 @@
 import { InboxCardBody } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { useStartFailure } from '@oppenheimer/frontend-web';
-import { useTranslation } from 'react-i18next';
+import { StartFailureDetail, useStartFailure } from '@oppenheimer/frontend-web';
 
 /**
  * Why a failed session did not start, on its Inbox card: the same reason its
@@ -18,18 +17,13 @@ export function InboxSessionFailure({
   session: SessionEntity;
   fallback: string;
 }) {
-  const { t } = useTranslation();
   const progress = useSessionStartProgress(session.id, { starting: false, failed: true });
   const failure = useStartFailure(progress.data?.failure, fallback);
 
   return (
     <>
       <InboxCardBody>{failure?.reason ?? fallback}</InboxCardBody>
-      {failure?.detail ? (
-        <p className="-mt-2 text-xs break-words text-fg-subtle">
-          {t('inbox.session.failedDetail', { detail: failure.detail })}
-        </p>
-      ) : null}
+      {failure?.detail ? <StartFailureDetail detail={failure.detail} className="-mt-2" /> : null}
     </>
   );
 }

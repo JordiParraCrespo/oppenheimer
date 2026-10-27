@@ -351,7 +351,13 @@
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
     },
-    "code": "Código: {{code}}"
+    "code": "Código: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "Este host crea sesiones con un solo repositorio."
+      },
+      "details": "Detalles del host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Correo electrónico",
@@ -550,11 +556,7 @@
           "shell": "Iniciar shell"
         }
       },
-      "progressFailed": "No se pudo cargar el progreso del inicio.",
-      "codes": {
-        "SESS_002": "Este host crea sesiones con un solo repositorio."
-      },
-      "details": "Detalles del host: {{detail}}"
+      "progressFailed": "No se pudo cargar el progreso del inicio."
     },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
@@ -2517,7 +2519,6 @@
       "failedShort": "{{name}} falló",
       "failedTitle": "{{name}} falló",
       "failedBody": "Su host no pudo arrancarla. Ábrela para ver qué paso falló.",
-      "failedDetail": "Detalles del host: {{detail}}",
       "startingShort": "{{name}} no ha arrancado",
       "startingTitle": "{{name}} no ha arrancado",
       "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
@@ -2565,7 +2566,6 @@
       "body": "La ejecución terminó en fallo. Ábrela para ver por qué, o vuelve a ejecutarla.",
       "plainBody": "La ejecución terminó en fallo.",
       "exit": "Salida {{code}}",
-      "routineHint": "Una rutina de bot: abre el chat de su bot para ver la ejecución.",
       "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
       "again": "Ejecutar de nuevo",
       "open": "Abrir ejecución"

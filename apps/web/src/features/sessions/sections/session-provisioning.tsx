@@ -1,7 +1,12 @@
 import { Callout, Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, PageFrame, useStartFailure } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  PageFrame,
+  StartFailureDetail,
+  useStartFailure,
+} from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
@@ -86,9 +91,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         {/* The host's own words, English and for whoever reads its logs: a
             secondary line under the translated reason, never the reason. */}
         {failed && failure?.detail ? (
-          <p className="mt-4 text-xs break-words text-fg-subtle">
-            {t('sessions.provisioning.details', { detail: failure.detail })}
-          </p>
+          <StartFailureDetail detail={failure.detail} className="mt-4" />
         ) : null}
       </div>
     </PageFrame>

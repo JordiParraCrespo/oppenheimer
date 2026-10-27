@@ -351,7 +351,13 @@
       "title": "This screen could not be drawn",
       "retry": "Try again"
     },
-    "code": "Code: {{code}}"
+    "code": "Code: {{code}}",
+    "startFailure": {
+      "codes": {
+        "SESS_002": "This host makes sessions with one repository."
+      },
+      "details": "Details from the host: {{detail}}"
+    }
   },
   "auth": {
     "email": "Email",
@@ -548,11 +554,7 @@
           "shell": "Start shell"
         }
       },
-      "progressFailed": "Could not load how the start is going.",
-      "codes": {
-        "SESS_002": "This host makes sessions with one repository."
-      },
-      "details": "Details from the host: {{detail}}"
+      "progressFailed": "Could not load how the start is going."
     },
     "closed": {
       "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
@@ -2501,7 +2503,6 @@
       "failedShort": "{{name}} failed",
       "failedTitle": "{{name}} failed",
       "failedBody": "Its host could not start it. Open it to see which step failed.",
-      "failedDetail": "Details from the host: {{detail}}",
       "startingShort": "{{name}} has not started",
       "startingTitle": "{{name}} has not started",
       "startingBody": "Its host has not finished starting it for over a minute. Open it to see where it stands.",
@@ -2549,7 +2550,6 @@
       "body": "The run ended on a failure. Open it to see why, or run it again.",
       "plainBody": "The run ended on a failure.",
       "exit": "Exit {{code}}",
-      "routineHint": "A bot's routine: open its bot's chat to see the run.",
       "deletedHint": "Its automation was deleted, so it cannot run again.",
       "again": "Run again",
       "open": "Open run"

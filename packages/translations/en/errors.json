@@ -254,5 +254,11 @@
     "title": "This screen could not be drawn",
     "retry": "Try again"
   },
-  "code": "Code: {{code}}"
+  "code": "Code: {{code}}",
+  "startFailure": {
+    "codes": {
+      "SESS_002": "This host makes sessions with one repository."
+    },
+    "details": "Details from the host: {{detail}}"
+  }
 }

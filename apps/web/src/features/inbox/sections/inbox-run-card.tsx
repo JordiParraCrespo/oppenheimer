@@ -11,7 +11,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
-import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
+import { type InboxCopy, isAnswerableRun } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
@@ -19,8 +19,8 @@ import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
  * A failed run in the pane: its failure line, its exit code when the turn
  * gave one, Run again (a new run of the automation, `POST
  * /automations/:id/run`) and Open run. The failed run stays failed for the
- * day it shows, so running again also marks it done. A bot's routine or a
- * deleted automation is read here, and the card says where it is answered.
+ * day it shows, so running again also marks it done. A run of a deleted
+ * automation is read here only, and the card says so.
  */
 export function InboxRunCard({
   item,
@@ -37,8 +37,7 @@ export function InboxRunCard({
   const runAgain = useRunAutomation();
   const mark = usePutInboxMark();
   const { run } = item;
-  // A bot's routine (no agent) lives on its bot's page, which the run does not name.
-  const isAutomation = !run.automationDeleted && run.agent !== null;
+  const isAutomation = isAnswerableRun(run);
   const exitCode = run.turn?.exitCode ?? null;
 
   return (
@@ -51,11 +50,9 @@ export function InboxRunCard({
           <span className="font-mono">{t('inbox.run.exit', { code: exitCode })}</span>
         ) : null}
       </InboxCardFacts>
-      {isAutomation ? null : (
-        <p className="text-xs text-fg-subtle">
-          {t(run.automationDeleted ? 'inbox.run.deletedHint' : 'inbox.run.routineHint')}
-        </p>
-      )}
+      {run.automationDeleted ? (
+        <p className="text-xs text-fg-subtle">{t('inbox.run.deletedHint')}</p>
+      ) : null}
       {runAgain.error ? (
         <ErrorAlert
           error={runAgain.error}
