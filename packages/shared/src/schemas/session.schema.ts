@@ -92,10 +92,12 @@ export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>
 
 /**
  * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
- * `worktree` the runner makes for each checkout, or a `folder` already on the
- * host, where nothing is cloned or written and closing only ends the terminal.
+ * `worktree` the runner makes for each checkout, a `folder` already on the
+ * host, where nothing is cloned or written and closing only ends the terminal,
+ * or Claude Code's `cloud`, started from a host and then living on
+ * claude.ai/code (`product/research/cloud-agents.md` §5B).
  */
-export const SESSION_PLACES = ['worktree', 'folder'] as const;
+export const SESSION_PLACES = ['worktree', 'folder', 'cloud'] as const;
 export type SessionPlace = (typeof SESSION_PLACES)[number];
 export const sessionPlaceSchema = z.enum(SESSION_PLACES);
 
@@ -132,6 +134,13 @@ const createSessionFields = z.object({
    * `folder` and `checkouts` is given.
    */
   folder: hostPathSchema.optional(),
+  /**
+   * A cloud session: the host starts the task in Claude Code's cloud
+   * (`claude --cloud`) from the one checkout's repository and keeps nothing
+   * running; the session lives on claude.ai/code. Claude Code only, with a
+   * `prompt` (`product/research/cloud-agents.md` §5B).
+   */
+  cloud: z.boolean().optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -189,9 +198,69 @@ export const createSessionSchema = createSessionFields
   /** The wire's own rule for `session.create`'s images: they ride a task, each once. */
   .refine((value) => attachedFilesAreValid(value.prompt, value.attachmentIds), {
     path: ['attachmentIds'],
-  });
+  })
+  /**
+   * A cloud session is Claude Code, started from one repository with a task
+   * and nothing else: the files of a first task stay on the host, which the
+   * cloud never sees.
+   */
+  .refine(
+    (value) =>
+      !value.cloud ||
+      (value.agent === 'claude-code' &&
+        value.checkouts.length === 1 &&
+        value.prompt !== undefined &&
+        !value.attachmentIds?.length),
+    { path: ['cloud'] },
+  );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
+
+/**
+ * Where a create asks the session to run: a `folder` names a folder session,
+ * `cloud` a cloud session, and anything else is a worktree per checkout. The
+ * one reading of a create's place; everything after it holds the place itself.
+ */
+export function placeOfCreate(input: Pick<CreateSessionDto, 'folder' | 'cloud'>): SessionPlace {
+  if (input.folder !== undefined) return 'folder';
+  return input.cloud ? 'cloud' : 'worktree';
+}
+
+/** A Claude Code cloud session's id, as claude.ai/code and `claude --teleport` name it. */
+export const cloudSessionIdSchema = z.string().regex(/^session_[A-Za-z0-9]{8,64}$/);
+
+/**
+ * What the browser extension saw a cloud session doing on claude.ai, in its own
+ * words: `needs-input` waits on a permission or an answer, `failed` is a failed
+ * turn or environment, `done` and `stopped` wait for a prompt.
+ */
+export const CLOUD_SESSION_STATES = [
+  'running',
+  'needs-input',
+  'failed',
+  'done',
+  'stopped',
+] as const;
+export type CloudSessionState = (typeof CLOUD_SESSION_STATES)[number];
+
+/**
+ * `POST /sessions/cloud-status`: the extension's view of the person's cloud
+ * sessions. It sends every one it tracks; the ones this workspace launched are
+ * recorded and the rest are ignored, so the API never learns of a cloud session
+ * it did not start.
+ */
+export const reportCloudStatusSchema = z.object({
+  sessions: z
+    .array(
+      z.object({
+        cloudSessionId: cloudSessionIdSchema,
+        state: z.enum(CLOUD_SESSION_STATES),
+      }),
+    )
+    .max(200),
+});
+
+export type ReportCloudStatusDto = z.infer<typeof reportCloudStatusSchema>;
 
 /**
  * `POST /sessions/{id}/checkouts`. Adding a repository to a *running* session is

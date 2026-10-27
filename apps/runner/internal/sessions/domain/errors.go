@@ -31,6 +31,11 @@ var (
 	// and the create (24 §4).
 	ErrFolderMissing      = problem.New("SESS_006", http.StatusNotFound, "The session's folder is not on this host")
 	ErrFolderNotDirectory = problem.New("SESS_007", http.StatusBadRequest, "The session's folder is not a directory")
+	// ErrCloudStart is `claude --cloud` ending without naming the cloud
+	// session it made: not signed in to claude.ai, no access to the
+	// repository there, or a CLI too old to know the flag. Its detail is
+	// the CLI's own last words.
+	ErrCloudStart = problem.New("SESS_008", http.StatusBadGateway, "Claude Code could not start the session in the cloud")
 )
 
 // Sentinels a Places adapter answers with; the use case maps them onto the

@@ -748,3 +748,9 @@ earlier note:
   stay on the host; `send_to_session` came with it, gated on the agent
   waiting at its prompt and logged with the bot as sender, and so did
   `answer_session`, which the table did not have.
+- `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
+  Claude, and said Claude would give no status. On 2026-10-27 the owner
+  asked for Claude end to end first: a `cloud` place started by the host's
+  runner with `claude --cloud`, and its status reported from claude.ai by
+  `apps/extension` (`versions/mvp/24-session-places.md` §7,
+  `next-steps/cloud-agents.md`).

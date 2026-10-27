@@ -65,6 +65,29 @@ describe('toCreateInput', () => {
     });
   });
 
+  it('sends a cloud session as Claude Code with its checkout and task, and no files', () => {
+    const input = toCreateInput(
+      { ...draft, where: 'cloud', agent: 'codex' },
+      { prompt: 'Fix it', attachmentIds: ['file-1'] },
+    );
+
+    expect(input).toMatchObject({
+      hostId: 'host-1',
+      agent: 'claude-code',
+      cloud: true,
+      checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
+      prompt: 'Fix it',
+    });
+    expect(input).not.toHaveProperty('attachmentIds');
+    expect(input).not.toHaveProperty('folder');
+  });
+
+  it('sends no cloud session without a task: the cloud starts from one', () => {
+    expect(
+      toCreateInput({ ...draft, where: 'cloud' }, { prompt: '', attachmentIds: [] }),
+    ).toBeNull();
+  });
+
   it('sends the blank terminal with no task and no permission', () => {
     expect(
       toCreateInput(

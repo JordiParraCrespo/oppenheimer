@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { placeOfCreate } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../../links/application/link-registry.port';
@@ -22,15 +23,14 @@ import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
 
 /**
- * Starts a session: the project, the slug, the checkouts, the first entry of the
- * log, and the job the host is owed.
+ * Starts a session: the project, the slug, the checkouts, the log's first entry, the host's job.
  *
- * The order matters. The host is checked **first**: `hostId` is the one reference
- * no composite key can scope (a host is a person's, with no workspace column), so a
- * foreign host is refused before anything is written; then the project, the
- * checkouts and the attached images. The row, its checkouts and its log commit
- * together, and only a session genuinely created is dispatched. A folder session
- * (24) attaches no checkout: its folder is already on the host, and the person's.
+ * The order matters. The host is checked **first**: `hostId` is the one reference no
+ * composite key can scope (a host is a person's, with no workspace column), so a foreign
+ * host is refused before anything is written; then the project, the checkouts and the
+ * attached images. The row, its checkouts and its log commit together, and only a session
+ * genuinely created is dispatched. A folder session (24) attaches no checkout: its folder
+ * is already on the host, and the person's.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -73,6 +73,7 @@ export class CreateSessionCommandHandler
       hostId: input.hostId,
       slug: mintSessionSlug(),
       agent: input.agent,
+      place: placeOfCreate(input),
       folder: input.folder,
       name: input.name,
       idempotencyKey: command.idempotencyKey,

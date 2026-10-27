@@ -335,6 +335,8 @@
       "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
+      "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -590,6 +592,10 @@
         "folder": {
           "label": "Carpeta del host",
           "description": "Abre un directorio existente tal como está · no se clona nada"
+        },
+        "cloud": {
+          "label": "Nube de Claude Code",
+          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
         "hosts": "Hosts",
         "startIn": "Empezar en"
@@ -1134,6 +1140,14 @@
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
       "opening": "Abriendo localhost:{{port}}…"
+    },
+    "cloud": {
+      "eyebrow": "Nube de Claude Code",
+      "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
+      "open": "Abrir en claude.ai",
+      "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+      "copy": "Copiar comando",
+      "copied": "Copiado"
     }
   },
   "bots": {

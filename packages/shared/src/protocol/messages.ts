@@ -91,6 +91,13 @@ export const RUNNER_CAPABILITIES = [
    * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
    */
   'port.forward',
+  /**
+   * Takes a `session.create` with `cloud`: the runner starts the task in
+   * Claude Code's cloud (`claude --cloud`) from a checkout of the repository
+   * and reports the cloud session's id, instead of opening a terminal
+   * (`product/research/cloud-agents.md` §5B).
+   */
+  'session.cloud',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -351,6 +358,25 @@ export const sessionCreateSchema = z
      * every checkout a peer.
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
+    /**
+     * A cloud session: the runner does not open a terminal. It fetches the one
+     * checkout's repository with this token (minted for that repository alone
+     * and sealed to the host, as `repository.prepare`'s is: a credential ask
+     * names a live checkout, and a cloud session leaves none on the host),
+     * checks out its base in a scratch directory, runs `claude --cloud` there
+     * with `prompt`, reports the cloud session's id on `session.started`
+     * (`agentSessionId`) and removes the scratch directory.
+     *
+     * Only with `claude-code`, one checkout and a prompt, and sent only to a
+     * runner whose `hello` named `session.cloud`.
+     */
+    cloud: z
+      .object({
+        /** The installation token, sealed to the host's Ed25519 identity. Base64. */
+        sealed: z.base64(),
+        expiresAt: z.iso.datetime(),
+      })
+      .optional(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
   .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
@@ -359,6 +385,15 @@ export const sessionCreateSchema = z
   .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
+  /** A cloud session starts Claude Code from one repository with a task. */
+  .refine(
+    (message) =>
+      message.cloud === undefined ||
+      (message.agent === 'claude-code' &&
+        message.checkouts.length === 1 &&
+        message.prompt !== undefined),
+    { path: ['cloud'] },
+  )
   .refine(
     (message) =>
       attachedFilesAreValid(

@@ -40,13 +40,16 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
 /**
  * Whether a runner whose hello named `capabilities` takes a session in `place`:
  * a worktree session always, a folder session only when it named
- * `session.folder` (it would refuse a create with no checkouts otherwise).
+ * `session.folder` (it would refuse a create with no checkouts otherwise), a
+ * cloud session only when it named `session.cloud` (it would open a terminal).
  */
 export function runnerTakesPlace(
   place: SessionPlace,
   capabilities: readonly RunnerCapability[],
 ): boolean {
-  return place === 'worktree' || capabilities.includes('session.folder');
+  if (place === 'folder') return capabilities.includes('session.folder');
+  if (place === 'cloud') return capabilities.includes('session.cloud');
+  return true;
 }
 
 /**
@@ -69,7 +72,9 @@ export function runnerRefusal(
     return SessionErrors.AGENT_UNSUPPORTED_BY_RUNNER;
   }
   if (runner.capabilities !== null && !runnerTakesPlace(launch.place, runner.capabilities)) {
-    return SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER;
+    return launch.place === 'cloud'
+      ? SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER
+      : SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER;
   }
   return null;
 }

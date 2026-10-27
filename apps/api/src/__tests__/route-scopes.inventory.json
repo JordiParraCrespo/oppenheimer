@@ -221,6 +221,7 @@
   "POST /v1/sessions/:id/restart": ["sessions:write"],
   "POST /v1/sessions/:id/stop": ["sessions:write"],
   "POST /v1/sessions/attachments": ["sessions:write"],
+  "POST /v1/sessions/cloud-status": ["sessions:write"],
   "POST /v1/sessions/prepare": ["sessions:write"],
   "POST /v1/shared-sessions/attach-ticket": ["sessions:write"],
   "POST /v1/shared-sessions/lookup": ["sessions:read"],

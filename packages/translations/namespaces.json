@@ -20,5 +20,6 @@
   "public",
   "theme",
   "toasts",
-  "emails"
+  "emails",
+  "extension"
 ]

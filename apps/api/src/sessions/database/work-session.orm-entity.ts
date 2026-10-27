@@ -36,7 +36,7 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
-@Check('CHK_work_session_place', `place IN ('worktree', 'folder')`)
+@Check('CHK_work_session_place', `place IN ('worktree', 'folder', 'cloud')`)
 @Check('CHK_work_session_folder_path', `(place = 'folder') = ("folderPath" IS NOT NULL)`)
 @Check(
   'CHK_work_session_close_accepts',
@@ -56,6 +56,10 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 // The folder picker's recent folders: this person's folder sessions on this host.
 @Index('IDX_work_session_recent_folders', ['hostId', 'createdByUserId', 'createdAt'], {
   where: `place = 'folder'`,
+})
+// The extension's status report: these Claude Code cloud ids, in this workspace.
+@Index('IDX_work_session_cloud_id', ['organizationId', 'agentSessionId'], {
+  where: `place = 'cloud'`,
 })
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])

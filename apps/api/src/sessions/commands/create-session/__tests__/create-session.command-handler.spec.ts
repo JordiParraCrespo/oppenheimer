@@ -11,6 +11,7 @@ import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
+import type { SessionLaunchCredentials } from '../../../application/session-launch-credentials.resolver';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
 import { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
@@ -58,11 +59,14 @@ function project() {
 }
 
 function launches(): SessionLaunchSpecFactory {
-  return new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+  return new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+  );
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */

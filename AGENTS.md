@@ -8,8 +8,9 @@ terminal running Claude Code or Codex, streamed to the browser through a
 control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
-what `pnpm dev:mvp` starts. The one app beyond the MVP is
-`apps/web-showcase`, the gallery of the web design system.
+what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
+gallery of the web design system, and `apps/extension`, a Chrome extension
+that tracks your Claude Code cloud sessions and tells you which need you.
 
 ## Product notes
 
@@ -55,6 +56,7 @@ oppenheimer/
 ├── apps/
 │   ├── api/              # NestJS REST API
 │   ├── docs/             # Docusaurus documentation
+│   ├── extension/        # Chrome extension: tracks your Claude Code cloud sessions, says which need you
 │   ├── runner/           # The Go host agent: pairing, service install, signed self-update (+ the REST/WS service it grew from)
 │   ├── web/              # Consumer Vite + TanStack Router SPA
 │   └── web-showcase/     # Next.js app showcasing the web design system

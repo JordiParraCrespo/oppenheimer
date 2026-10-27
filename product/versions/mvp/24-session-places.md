@@ -118,6 +118,27 @@ away in between.
 New session opens on `auto` the first time and on the last level picked
 after that, as the other chips do (05, changed 2026-10-14).
 
+## 7. Claude Code cloud, the third place
+
+Added 2026-10-27 (`../../research/cloud-agents.md` §5B,
+`../../next-steps/cloud-agents.md`). A `cloud` session is started from a
+host and then lives on claude.ai/code:
+
+- **What the runner does.** It fetches the one checkout's store with a
+  token minted for that repository and sealed into `session.create`'s
+  `cloud` field, checks the base out detached in a scratch directory,
+  runs `claude --cloud <task>` there under a pseudo-terminal, and removes
+  the directory. Nothing is made in the work folder; no tmux session, so
+  no poll ever reports it stopped. It names `session.cloud` in its hello.
+- **What the API keeps.** `place = 'cloud'` and the cloud session's id in
+  `agentSessionId` (from `session.started`); a hello never records a cloud
+  session stopped. Its state is `agent.observed`, posted by the browser
+  extension (`POST /sessions/cloud-status`).
+- **What the console shows.** Where: *Claude Code cloud* on a host, with a
+  repository and a task (Claude Code only, no files). The row's mark is a
+  cloud. The pane has no terminal: the state, *Open in claude.ai*, and
+  `claude --teleport <id>`.
+
 ## Decided
 
 - 2026-10-14: two places: the runner's home `~/.oppenheimer/`, and a work
@@ -136,3 +157,6 @@ after that, as the other chips do (05, changed 2026-10-14).
 - 2026-10-14: the account folder is named by the account id the runner
   receives at pairing (`POST /hosts/register`), not by a field on every
   command: the frames carry the workspace only.
+- 2026-10-27: a third place, `cloud`: Claude Code's cloud, started by the
+  host's runner with `claude --cloud` and followed through the browser
+  extension (§7).
