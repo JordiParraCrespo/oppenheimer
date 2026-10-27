@@ -11,9 +11,11 @@ import {
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
+  BOT_SECTIONS,
   type BotAvatarColor,
   type BotPermission,
   type BotProvider,
+  type BotSection,
   botModelOf,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
@@ -46,6 +48,8 @@ export interface BotProps {
   permission: BotPermission;
   /** Whether what it decides to remember is saved without asking (slice 3). */
   learnAutomatically: boolean;
+  /** The console sections it shows in beside Employees, each once; none when absent. */
+  sections?: readonly BotSection[];
   /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
   lastMessageAt?: Date | null;
   lastMessagePreview?: string | null;
@@ -69,6 +73,8 @@ export interface CreateBotProps {
   /** The bot that is creating it, and the key that makes that creation happen once. */
   createdByBotId?: string | null;
   idempotencyKey?: string | null;
+  /** None unless named. */
+  sections?: readonly BotSection[];
 }
 
 export interface BotEdit {
@@ -81,6 +87,7 @@ export interface BotEdit {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  sections?: readonly BotSection[];
 }
 
 /** A column an edit can set. */
@@ -94,7 +101,8 @@ export type BotEditedField =
   | 'model'
   | 'effort'
   | 'permission'
-  | 'learnAutomatically';
+  | 'learnAutomatically'
+  | 'sections';
 
 /**
  * A bot (`product/versions/mvp/25-bots.md` §1): who it is, where it sits in the
@@ -142,6 +150,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
         ...engine,
         permission: props.permission ?? BOT_DEFAULT_PERMISSION,
         learnAutomatically: true,
+        sections: inSectionOrder(props.sections ?? []),
       },
     });
     bot.pendingPlacement = 'last';
@@ -195,6 +204,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get learnAutomatically(): boolean {
     return this.props.learnAutomatically;
   }
+  get sections(): readonly BotSection[] {
+    return this.props.sections ?? [];
+  }
 
   get lastMessageAt(): Date | null {
     return this.props.lastMessageAt ?? null;
@@ -234,6 +246,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (changes.learnAutomatically !== undefined) {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
+    }
+    if (changes.sections !== undefined) {
+      props.sections = inSectionOrder(changes.sections);
+      edited.add('sections');
     }
     if (
       changes.provider !== undefined ||
@@ -301,4 +317,17 @@ export class BotEntity extends AggregateRoot<BotProps> {
       throw new ArgumentInvalidException('A position is a whole number from 0');
     }
   }
+}
+
+/**
+ * Each section once, in the catalog's order, so a stored set reads the same
+ * however it was sent. A section the console does not have is refused, never
+ * dropped.
+ */
+function inSectionOrder(sections: readonly BotSection[]): BotSection[] {
+  const unknown = sections.find((section) => !BOT_SECTIONS.includes(section));
+  if (unknown !== undefined) {
+    throw new ArgumentInvalidException(`${unknown} is not a console section`);
+  }
+  return BOT_SECTIONS.filter((section) => sections.includes(section));
 }

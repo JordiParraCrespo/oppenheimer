@@ -116,7 +116,7 @@ export interface CodingAgentEffortSpelling extends CodingAgentLaunchLevel {
 export interface CodingAgentModel {
   /** Passed to the agent verbatim, so it is a name that CLI's `--model` takes. */
   readonly id: string;
-  /** What the button and the row read ("Claude Opus 5.5"). */
+  /** What the button and the row read ("Opus 5.5"). */
   readonly label: string;
   /** Offered first, and what a session with no model chosen runs. */
   readonly default?: true;
@@ -437,21 +437,21 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     models: Object.freeze([
       Object.freeze({
         id: 'claude-opus-5-5',
-        label: 'Claude Opus 5.5',
+        label: 'Opus 5.5',
         default: true as const,
         effort: levels(CLAUDE_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'claude-fable-5-1',
-        label: 'Claude Fable 5.1',
+        label: 'Fable 5.1',
         effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'claude-sonnet-5-5',
-        label: 'Claude Sonnet 5.5',
+        label: 'Sonnet 5.5',
         effort: levels(CLAUDE_LEVELS, 'medium'),
       }),
-      Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
+      Object.freeze({ id: 'claude-haiku-4-5', label: 'Haiku 4.5' }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -525,6 +525,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         label: 'GPT-6.1 Sol',
         default: true as const,
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
+      Object.freeze({
+        id: 'gpt-6.1-terra',
+        label: 'GPT-6.1 Terra',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
       }),
       Object.freeze({
         id: 'gpt-6-astra',
@@ -661,23 +666,23 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
-        label: 'Claude Opus 5.5',
+        label: 'Opus 5.5',
         default: true as const,
         effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'anthropic/claude-fable-5-1',
-        label: 'Claude Fable 5.1',
+        label: 'Fable 5.1',
         effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'anthropic/claude-sonnet-5-5',
-        label: 'Claude Sonnet 5.5',
+        label: 'Sonnet 5.5',
         effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'anthropic/claude-haiku-4-5',
-        label: 'Claude Haiku 4.5',
+        label: 'Haiku 4.5',
         effort: levels(['none', 'high', 'max'], 'none'),
       }),
       Object.freeze({

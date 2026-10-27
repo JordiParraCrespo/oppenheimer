@@ -107,6 +107,25 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
+   * A session's device beside its terminal (`product/research/device-streaming.md`):
+   * the simulator or emulator the session's host gives it, its screen streamed
+   * into the preview pane on the session's right, taking the reader's taps and
+   * keys while the agent drives it through Argent. Read by the console, which
+   * offers the pane, and by the relay, which opens a device only for someone
+   * it is on for. On by default like every flag; it shows only on a host that
+   * offers devices. Bucketed by person, since the pane is a reader's choice.
+   */
+  session_device_preview: {
+    description: "Show a session's simulator or emulator in the preview pane beside its terminal.",
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    bucketBy: 'user',
+    expiresAt: '2027-04-30',
+  },
+  /**
    * The chat view of a Claude Code session
    * (`product/next-steps/0.7-terminal-and-chat.md`): beside the terminal, the
    * conversation read off the agent's own transcript, which the host follows
@@ -147,6 +166,20 @@ export const FEATURE_FLAGS = {
     defaultValue: true,
     client: true,
     bucketBy: 'user',
+  },
+  /**
+   * The Inbox (`product/versions/mvp/29-inbox.md`): one place for what needs
+   * you, and the marks a person leaves on its items. Gates the rail item and
+   * the `/v1/inbox/marks` routes while it settles.
+   */
+  inbox: {
+    description: 'Show the Inbox: what needs you, one item at a time, with done, low and snooze.',
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    expiresAt: '2026-12-31',
   },
 } as const satisfies Record<string, FlagDefinition>;
 

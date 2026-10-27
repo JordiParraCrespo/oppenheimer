@@ -100,6 +100,10 @@ export class PullRequestEntity {
     public readonly checksRefusal: ReadRefusal | null,
     /** What GitHub did not give on this read; an unread part is not an empty one. */
     public readonly unread: readonly ('files' | 'reviews')[],
+    /** The head commit this read saw: a new push is a new wait (the Inbox's key). */
+    public readonly headSha: string,
+    /** When it was opened, from `waitingSeconds` at the moment of the read. */
+    public readonly openedAt: Date,
   ) {}
 
   get address(): PullRequestAddress {
@@ -188,6 +192,8 @@ export class PullRequestDetailEntity extends PullRequestEntity {
       row.htmlUrl,
       row.checksRefusal,
       row.unread,
+      row.headSha,
+      row.openedAt,
     );
   }
 

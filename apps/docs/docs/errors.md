@@ -531,6 +531,9 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | That question was already answered or changed   | 409  |
+| `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
+| `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -555,6 +558,14 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
+
+`SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
+what the session's agent waits on — a question it asked or a permission dialog
+(`product/versions/mvp/29-inbox.md`, slice 4). `032` is an answer whose `id` is not
+the decision pending now: it was answered already, at the terminal or from another
+tab, or the agent moved on to another. `033` is an answer that does not fit the
+pending decision (an option it lacks, several picks for one choice). `034` is a host
+with no link: nothing was typed, and nothing is kept for when it comes back.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -778,6 +789,22 @@ A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
 
+## Inbox
+
+The marks a person leaves on Inbox items: done, low, snoozed until a time,
+or deleted. See `product/versions/mvp/29-inbox.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `INBOX_001` <a id="inbox_001" />     | The Inbox belongs to a workspace                             | 400  |
+| `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
+| `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
+| `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+
+An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
+characters, URL-encoded in the path. `INBOX_003` compares `until` with the
+server's clock.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
@@ -920,6 +947,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `UPD_006` <a id="upd_006" />           | The new version could not be activated       | 500  |
 | `UPD_007` <a id="upd_007" />           | The update was rolled back                   | 500  |
 | `UPD_008` <a id="upd_008" />           | This build has no release key and cannot self-update | 424 |
+| `DEV_001` <a id="dev_001" />           | This host has no device for the session      | 409  |
+| `DEV_002` <a id="dev_002" />           | The session's device could not be reached    | 502  |
+| `DEV_003` <a id="dev_003" />           | The device does not take that input          | 400  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |

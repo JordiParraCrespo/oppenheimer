@@ -88,6 +88,12 @@ export class PullRequestRowDto {
   @ApiProperty({ example: 'oppenheimer/keychain-tokens' })
   headRef!: string;
 
+  @ApiProperty({
+    description:
+      'The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.',
+  })
+  headSha!: string;
+
   @ApiProperty({ enum: PULL_REQUEST_SCOPES })
   scope!: PullRequestScope;
 
@@ -274,12 +280,6 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
 
   @ApiProperty()
   baseRef!: string;
-
-  @ApiProperty({
-    description:
-      'The head commit this read saw. A merge that names it is refused once newer commits land.',
-  })
-  headSha!: string;
 
   @ApiProperty({
     description:

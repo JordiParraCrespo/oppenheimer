@@ -7,22 +7,27 @@ import {
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
+  type BotPlanWindowDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
+  type BotTurnPlanLimitsDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
+  type WorkspaceBotApprovalResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
   BOT_EVENT_OUTCOMES,
   BOT_REPLY_OUTCOMES,
+  BOT_SESSION_WAKE_STATES,
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
   type BotMessageEvent,
   type BotProvider,
+  type BotSection,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -44,8 +49,11 @@ import {
   BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
+  type BotPlanLimits,
+  type BotPlanWindow,
   type BotToolStep,
   BotTurnEntity,
+  WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
 import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
@@ -69,6 +77,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.updatedAt),
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
+    dto.sections,
   );
 }
 
@@ -165,8 +174,9 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask. An outcome this client does not know reads as no event, and the
- * chat falls back to the message's first line.
+ * to an ask, or a session the bot follows waking it. An outcome or a state
+ * this client does not know reads as no event, and the chat falls back to
+ * the message's first line.
  */
 function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEvent | null {
   switch (dto.kind) {
@@ -209,6 +219,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'session': {
+      const state = BOT_SESSION_WAKE_STATES.find((candidate) => candidate === dto.state);
+      return state
+        ? {
+            kind: 'session',
+            subscriptionId: dto.subscriptionId,
+            sessionId: dto.sessionId,
+            sessionName: dto.sessionName,
+            turn: dto.turn,
+            state,
+          }
+        : null;
+    }
   }
 }
 
@@ -225,7 +248,15 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     new Date(dto.createdAt),
     dto.startedAt ? new Date(dto.startedAt) : null,
     dto.endedAt ? new Date(dto.endedAt) : null,
+    dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
+    dto.planLimits ? toPlanLimits(dto.planLimits) : null,
   );
+}
+
+function toPlanLimits(dto: BotTurnPlanLimitsDto): BotPlanLimits {
+  const window = (w: BotPlanWindowDto | null): BotPlanWindow | null =>
+    w ? { usedPercent: w.usedPercent, resetsAt: w.resetsAt ? new Date(w.resetsAt) : null } : null;
+  return { fiveHour: window(dto.fiveHour), sevenDay: window(dto.sevenDay) };
 }
 
 function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
@@ -237,6 +268,16 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
     dto.status,
     dto.result,
     new Date(dto.createdAt),
+  );
+}
+
+function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBotApprovalEntity {
+  return new WorkspaceBotApprovalEntity(
+    toApproval(dto),
+    dto.botId,
+    dto.botName,
+    dto.sessionId,
+    dto.input,
   );
 }
 
@@ -356,6 +397,16 @@ export class BotsRepository {
     return toTurn(data);
   }
 
+  /** The workspace's pending cards across the bots the caller may read, newest first. */
+  @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
+  async findWorkspacePendingApprovals(): Promise<WorkspaceBotApprovalEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findWorkspaceBotApprovals({ query: { status: 'pending' } }),
+      BotsErrors.FETCH_APPROVALS_FAILED,
+    );
+    return data.map(toWorkspaceApproval);
+  }
+
   /** The card the bot waits on, if any: at most one is pending. */
   @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
   async findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
@@ -406,11 +457,14 @@ export class BotsRepository {
 
   /**
    * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
-   * the workspace's default provider.
+   * the workspace's default provider, shown in `sections` beside Employees.
    */
   @MapApiError(BotsErrors.SAVE_FAILED)
-  async create(): Promise<BotEntity> {
-    const data = await unwrapBody(heyApiSdk.createBot({ body: {} }), BotsErrors.SAVE_FAILED);
+  async create(sections?: BotSection[]): Promise<BotEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBot({ body: { sections } }),
+      BotsErrors.SAVE_FAILED,
+    );
     return toBot(data);
   }
 

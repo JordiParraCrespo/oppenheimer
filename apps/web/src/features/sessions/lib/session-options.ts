@@ -38,6 +38,25 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  */
 
 /**
+ * The rows a picker's search leaves: the label, the second line and the hidden
+ * keywords, matched on the trimmed, lower-cased term, as `ChipSelect` matches.
+ */
+export function filterOptions<T extends ChipSelectOption>(
+  options: readonly T[],
+  term: string,
+): T[] {
+  if (!term) return [...options];
+  return options.filter((option) =>
+    `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`
+      .toLowerCase()
+      .includes(term),
+  );
+}
+
+/** A host row of the place chip: the option, and whether the machine is reachable now. */
+export type PlaceHost = ChipSelectOption & { online: boolean };
+
+/**
  * A host that is offline is shown and selectable rather than hidden: the
  * session is recorded and the work is owed to that machine the moment its
  * runner dials in, which is a real thing to want and is what `host_offline`
@@ -46,9 +65,10 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
 export function toHostOptions(
   hosts: readonly HostEntity[],
   labels: { offline: string },
-): ChipSelectOption[] {
+): PlaceHost[] {
   return hosts.map((host) => ({
     value: host.id,
+    online: host.online,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,

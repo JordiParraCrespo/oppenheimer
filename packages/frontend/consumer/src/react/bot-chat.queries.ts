@@ -12,7 +12,9 @@ import { useEffect, useState } from 'react';
 import type {
   BotConversationEntity,
   BotMessageEntity,
+  BotRoomLeft,
   BotTurnEntity,
+  BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
 import {
   appendBotText,
@@ -133,6 +135,35 @@ export function useBotActiveTurn(id: string): BotTurnEntity | null {
     select: (conversation) => conversation.activeTurn,
   });
   return data ?? null;
+}
+
+const NO_WAITING: readonly BotWaitingMessage[] = [];
+
+/**
+ * Your messages waiting behind the turn the bot works on, oldest first, for
+ * the composer to hold above its field: nothing while the chat loads.
+ */
+export function useBotWaitingMessages(id: string): readonly BotWaitingMessage[] {
+  const app = useConsumerApp();
+  const { data } = useQuery<BotConversationEntity, Error, readonly BotWaitingMessage[]>({
+    queryKey: botsKeys.conversation(id),
+    queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => conversation.waitingMessages,
+  });
+  return data ?? NO_WAITING;
+}
+
+const NO_ROOM: BotRoomLeft = { context: null, planLimits: null };
+
+/** How much room the bot has left, as of its newest turn that said; none while the chat loads. */
+export function useBotRoomLeft(id: string): BotRoomLeft {
+  const app = useConsumerApp();
+  const { data } = useQuery<BotConversationEntity, Error, BotRoomLeft>({
+    queryKey: botsKeys.conversation(id),
+    queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => conversation.roomLeft,
+  });
+  return data ?? NO_ROOM;
 }
 
 /**

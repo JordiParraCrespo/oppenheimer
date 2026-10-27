@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AutomationRunRepositoryPort } from '../../../automations/database/automation-run.repository.port';
 import type { AutomationRunEntity } from '../../../automations/domain/automation-run.entity';
 import { AutomationRunChangesDomainEventHandler } from '../event-handlers/automation-run-changes.domain-event-handler';
+import { BotApprovalChangesDomainEventHandler } from '../event-handlers/bot-approval-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from '../event-handlers/host-changes.domain-event-handler';
+import { InboxMarkChangesDomainEventHandler } from '../event-handlers/inbox-mark-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from '../event-handlers/session-changes.domain-event-handler';
 
 function bus() {
@@ -99,6 +101,36 @@ describe('HostChangesDomainEventHandler', () => {
     expect(events.publish.mock.calls).toEqual([
       [{ userId: 'jordi' }, { type: 'host.changed', id: 'host-1' }],
       [{ userId: 'jordi' }, { type: 'host.changed', id: 'host-2' }],
+    ]);
+  });
+});
+
+/** The Inbox lists pending approvals across bots: without this it learns of one only on a poll. */
+describe('BotApprovalChangesDomainEventHandler', () => {
+  it("announces the approval, and whose bot asked, to its workspace's console", async () => {
+    const events = bus();
+    await new BotApprovalChangesDomainEventHandler(events).handle({
+      aggregateId: 'ap-1',
+      organizationId: 'org-1',
+      botId: 'bot-1',
+    });
+    expect(events.publish).toHaveBeenCalledWith(
+      { organizationId: 'org-1' },
+      { type: 'botApproval.changed', id: 'ap-1', botId: 'bot-1' },
+    );
+  });
+});
+
+/** A mark is a person's: announced to the workspace, it would reach everyone in it. */
+describe('InboxMarkChangesDomainEventHandler', () => {
+  it('tells the person, and only them, which occurrence moved', async () => {
+    const events = bus();
+    await new InboxMarkChangesDomainEventHandler(events).handle({
+      userId: 'jordi',
+      itemKey: 'approval:ap-1',
+    });
+    expect(events.publish.mock.calls).toEqual([
+      [{ userId: 'jordi' }, { type: 'inboxMark.changed', itemKey: 'approval:ap-1' }],
     ]);
   });
 });

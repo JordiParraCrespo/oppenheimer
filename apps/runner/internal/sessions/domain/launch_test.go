@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"encoding/json"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -318,5 +320,29 @@ func TestThePermissionLevelWinsAnEnvironmentName(t *testing.T) {
 	env := Launch{Model: "anthropic/claude-opus-5-5", Permission: "ask", Effort: "high", EffortIsLevel: true}.Env(AgentOpenCode)
 	if !strings.HasPrefix(env["OPENCODE_PERMISSION"], `{"edit":"ask"`) {
 		t.Fatalf("OPENCODE_PERMISSION = %q, want the permission level's", env["OPENCODE_PERMISSION"])
+	}
+}
+
+func TestAClaudeSessionRunsTheRunnersStatusLineWhichIsNeverSaved(t *testing.T) {
+	launch := Launch{Permission: "auto", StatusLine: "'/opt/runner' statusline", Prompt: "fix it"}
+	got := launch.Args(AgentClaude)
+	want := []string{
+		"--settings", `{"statusLine":{"command":"'/opt/runner' statusline","type":"command"}}`,
+		"--permission-mode", "auto", "fix it",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("claude argv = %q, want %q", got, want)
+	}
+	// Another agent has no such setting; the command is this host's, so a
+	// saved launch never carries it to the next binary.
+	if args := launch.Args(AgentCodex); slices.Contains(args, "--settings") {
+		t.Fatalf("codex argv = %q", args)
+	}
+	saved, err := json.Marshal(launch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), "statusline") {
+		t.Fatalf("saved launch = %s", saved)
 	}
 }

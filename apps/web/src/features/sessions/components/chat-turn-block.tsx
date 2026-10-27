@@ -4,12 +4,13 @@ import { Markdown } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
+import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
 import { ChatToolGroup } from './chat-tool-group';
 
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
- * plan and the files changed as cards, thinking as a fold that is open while
+ * plan, what it asked and the files changed as cards, thinking as a fold that is open while
  * it is what the agent is doing, calls as a group, a stop or a compaction as
  * a note. `live` and `last` say whether this is the work in flight.
  */
@@ -32,6 +33,8 @@ export function ChatTurnBlock({
           <Markdown source={block.call.plan ?? ''} />
         </ProposedPlanCard>
       );
+    case 'question':
+      return <ChatQuestionRecord call={block.call} />;
     case 'changes':
       return <ChatChanges files={block.files} />;
     case 'thinking': {

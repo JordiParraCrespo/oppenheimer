@@ -45,6 +45,38 @@ export class BotMessageEntity {
   ) {}
 }
 
+/** What the model's context held: the tokens, against its window when the engine knew it. */
+export interface BotTurnContext {
+  tokens: number;
+  window: number | null;
+}
+
+/** One of a subscription's usage windows: the share used, 0–100, and when it resets. */
+export interface BotPlanWindow {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/** A subscription's 5-hour and weekly windows (ChatGPT's); each null when left out. */
+export interface BotPlanLimits {
+  fiveHour: BotPlanWindow | null;
+  sevenDay: BotPlanWindow | null;
+}
+
+/** A message of yours waiting behind the turn the bot is working on. */
+export interface BotWaitingMessage {
+  turnId: string;
+  text: string;
+  /** How many images it carries. */
+  images: number;
+}
+
+/** The room a bot has left, as of its newest turn that said: its context, its plan. */
+export interface BotRoomLeft {
+  context: BotTurnContext | null;
+  planLimits: BotPlanLimits | null;
+}
+
 /** One message of yours and what the bot did with it. */
 export class BotTurnEntity {
   constructor(
@@ -62,6 +94,10 @@ export class BotTurnEntity {
     public readonly createdAt: Date,
     public readonly startedAt: Date | null,
     public readonly endedAt: Date | null,
+    /** What the context held at its last answer; `null` before one. */
+    public readonly context: BotTurnContext | null = null,
+    /** A subscription's windows as that answer said them; `null` on an API key. */
+    public readonly planLimits: BotPlanLimits | null = null,
   ) {}
 
   /** Queued or running: the chat shows it working, and Stop applies to it. */
@@ -94,6 +130,40 @@ export class BotConversationEntity {
     );
   }
 
+  /**
+   * Your messages waiting behind the turn the bot is working on, oldest
+   * first: the composer holds them, and the transcript draws each once its
+   * turn starts. With nothing running, a queued turn is about to start and
+   * stays in the transcript; one opened by an event, not a message of yours,
+   * stays there too.
+   */
+  get waitingMessages(): readonly BotWaitingMessage[] {
+    if (!this.turns.some((turn) => turn.status === 'running')) return [];
+    return this.turns.flatMap((turn) => {
+      if (turn.status !== 'queued') return [];
+      const message = this.messages.find((m) => m.turnId === turn.id && m.role === 'user');
+      return message
+        ? [{ turnId: turn.id, text: message.content, images: message.attachments.length }]
+        : [];
+    });
+  }
+
+  /**
+   * The room left as of the newest turn that reported each: its context, and
+   * the plan's windows (a turn on an API key reports none, so an older
+   * subscription turn's stand).
+   */
+  get roomLeft(): BotRoomLeft {
+    let context: BotTurnContext | null = null;
+    let planLimits: BotPlanLimits | null = null;
+    for (let i = this.turns.length - 1; i >= 0 && (!context || !planLimits); i -= 1) {
+      const turn = this.turns[i];
+      context ??= turn?.context ?? null;
+      planLimits ??= turn?.planLimits ?? null;
+    }
+    return { context, planLimits };
+  }
+
   turn(id: string): BotTurnEntity | undefined {
     return this.turns.find((turn) => turn.id === id);
   }
@@ -119,5 +189,42 @@ export class BotApprovalEntity {
 
   get isPending(): boolean {
     return this.status === 'pending';
+  }
+}
+
+/**
+ * A Needs input card as the workspace's list across its bots reads it (the
+ * Inbox, `product/versions/mvp/29-inbox.md` §1): the card, the bot that
+ * asked, and the call's input, where a session it concerns may be named.
+ */
+export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
+  constructor(
+    approval: BotApprovalEntity,
+    public readonly botId: string,
+    public readonly botName: string,
+    /** The session the call started on a yes; null before. */
+    public readonly sessionId: string | null,
+    /** The call exactly as it will run on a yes. */
+    public readonly input: Readonly<Record<string, unknown>>,
+  ) {
+    super(
+      approval.id,
+      approval.turnId,
+      approval.tool,
+      approval.summary,
+      approval.status,
+      approval.result,
+      approval.createdAt,
+    );
+  }
+
+  /**
+   * The session this card concerns: the one it started, or the one its call
+   * names (`session_id`), else none.
+   */
+  get concernsSessionId(): string | null {
+    if (this.sessionId) return this.sessionId;
+    const named = this.input.session_id ?? this.input.sessionId;
+    return typeof named === 'string' && named ? named : null;
   }
 }

@@ -164,6 +164,9 @@ describe('BotsRepository', () => {
       error: null,
       inputTokens: 0,
       outputTokens: 0,
+      contextTokens: null,
+      contextWindow: null,
+      planLimits: null,
       cancelRequested: false,
       createdAt: '2026-10-15T09:00:00.000Z',
       startedAt,
@@ -199,6 +202,65 @@ describe('BotsRepository', () => {
     expect(conversation.messages[0]?.createdAt).toEqual(new Date('2026-10-15T09:00:01.000Z'));
     expect(conversation.turns[0]?.startedAt).toBeNull();
     expect(conversation.activeTurn?.id).toBe('t2');
+  });
+
+  it('reads the room left off the newest turns that said, and your messages waiting behind the running turn', async () => {
+    const turn = (id: string, status: string, extra: Record<string, unknown> = {}) => ({
+      id,
+      status,
+      provider: 'chatgpt',
+      model: 'model-placeholder',
+      error: null,
+      inputTokens: 0,
+      outputTokens: 0,
+      contextTokens: null,
+      contextWindow: null,
+      planLimits: null,
+      cancelRequested: false,
+      createdAt: '2026-10-15T09:00:00.000Z',
+      startedAt: null,
+      endedAt: null,
+      ...extra,
+    });
+    const asked = (id: string, turnId: string, content: string) => ({
+      id,
+      turnId,
+      role: 'user',
+      content,
+      steps: [],
+      createdAt: '2026-10-15T09:00:00.000Z',
+    });
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [asked('m3', 't3', 'Look first'), asked('m4', 't4', 'Then ship it')],
+        turns: [
+          turn('t1', 'completed', {
+            contextTokens: 9_000,
+            planLimits: {
+              fiveHour: { usedPercent: 12, resetsAt: '2026-10-15T12:00:00.000Z' },
+              sevenDay: null,
+            },
+          }),
+          // A newer turn on a key: its context is the latest, the plan stays t1's.
+          turn('t2', 'completed', { contextTokens: 41_000, contextWindow: 200_000 }),
+          turn('t3', 'running'),
+          turn('t4', 'queued'),
+          turn('t5', 'queued'),
+        ],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.roomLeft).toEqual({
+      context: { tokens: 41_000, window: 200_000 },
+      planLimits: {
+        fiveHour: { usedPercent: 12, resetsAt: new Date('2026-10-15T12:00:00.000Z') },
+        sevenDay: null,
+      },
+    });
+    // t5 was opened by no message of yours (a routine): it stays in the transcript.
+    expect(conversation.waitingMessages).toEqual([
+      { turnId: 't4', text: 'Then ship it', images: 0 },
+    ]);
   });
 
   it('keeps the session an approved call started on its event, for the chat to open', async () => {

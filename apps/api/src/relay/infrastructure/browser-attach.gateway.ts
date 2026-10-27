@@ -49,6 +49,7 @@ import {
   type SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
+import { DeviceAttachment } from './device-attachment.util';
 import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
 import { refuseUpgrade } from './upgrade.util';
 
@@ -208,6 +209,10 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
+    if (claim.target === 'device') {
+      this.attachDevice(ws, claim, link, early);
+      return;
+    }
     new BrowserAttachment(
       ws,
       claim,
@@ -220,6 +225,38 @@ export class BrowserAttachGateway {
       this.directPathFor(claim, link),
       this.chatFor(claim),
     ).start([...early]);
+  }
+
+  /**
+   * A session's device screen instead of a terminal: only on a host whose
+   * runner can stream one, and for a person the `session_device_preview`
+   * flag is on for. Either refusal is a `refused` with the device catalog's
+   * code, which the console shows as "no device" rather than retrying.
+   */
+  private attachDevice(
+    ws: WebSocket,
+    claim: AttachTicket,
+    link: RunnerLink,
+    early: EarlyFrame[],
+  ): void {
+    const enabled = this.flags.isEnabled('session_device_preview', {
+      userId: claim.userId,
+      organizationId: claim.organizationId,
+    });
+    if (!enabled || !link.capabilities.includes('device.screen')) {
+      this.tell(ws, {
+        type: 'refused',
+        code: 'DEV_001',
+        detail: enabled ? "This session's host offers no device." : 'Device preview is off.',
+      });
+      ws.close(ATTACH_CLOSE_CODES.REFUSED, 'no device');
+      return;
+    }
+    new DeviceAttachment(ws, claim, link, {
+      authorize: () => this.authorize(claim),
+      everyMs: this.reauthorizeIntervalMs,
+      logger: this.logger,
+    }).start([...early]);
   }
 
   /**

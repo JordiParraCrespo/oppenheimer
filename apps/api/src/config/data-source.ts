@@ -25,6 +25,7 @@ import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-ent
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
@@ -43,6 +44,7 @@ import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.
 import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
+import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -135,6 +137,8 @@ export default new DataSource({
     BotTurnOrmEntity,
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
+    BotSubscriptionOrmEntity,
+    InboxMarkOrmEntity,
     BotApprovalOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,

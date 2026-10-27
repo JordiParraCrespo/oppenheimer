@@ -53,12 +53,7 @@
   },
   "new": {
     "title": "Nueva sesión",
-    "subtitle": "Define el alcance y describe el trabajo.",
-    "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
-    "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
-    "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
-    "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
-    "subtitleFolder": "Abre una carpeta del host tal como está. No se clona nada ni se crea ninguna rama.",
+    "heading": "¿En qué trabajamos?",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -78,7 +73,9 @@
       "folder": {
         "label": "Carpeta del host",
         "description": "Abre un directorio existente tal como está · no se clona nada"
-      }
+      },
+      "hosts": "Hosts",
+      "startIn": "Empezar en"
     },
     "project": {
       "label": "Proyecto",
@@ -136,7 +133,11 @@
     "agent": {
       "label": "Agente y modelo",
       "search": "Buscar modelos…",
-      "empty": "Ningún modelo coincide con «{{query}}»."
+      "empty": "Ningún modelo coincide con «{{query}}».",
+      "favourites": "Favoritos",
+      "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+      "addFavourite": "Añadir {{model}} a favoritos",
+      "removeFavourite": "Quitar {{model}} de favoritos"
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -183,6 +184,19 @@
   "session": {
     "status": {
       "closed": "Desconectado"
+    },
+    "state": {
+      "starting": "Iniciando",
+      "failed": "Falló",
+      "stopped": "Detenida",
+      "deleted": "Eliminada",
+      "deleting": "Eliminando…",
+      "working": "En marcha",
+      "waiting-on-you": "Necesita tu respuesta",
+      "ready-for-review": "Lista para revisar",
+      "landing": "Cerrando",
+      "idle": "Inactiva",
+      "resolved": "Terminada"
     },
     "file": {
       "sending": "Enviando archivo",
@@ -464,7 +478,13 @@
       "placeholder": "Escribe a Claude",
       "send": "Enviar",
       "stop": "Detener",
-      "agent": "Claude Code"
+      "agent": "Claude Code",
+      "attach": "Adjuntar archivos",
+      "removeAttachment": "Quitar {{name}}",
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+      "attachTooMany": "Un mensaje lleva como mucho {{max}} archivos.",
+      "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
+      "attaching": "Adjuntando archivos…"
     },
     "turn": {
       "working": "Trabajando desde hace",
@@ -475,6 +495,8 @@
     "thinking": "Pensando",
     "plan": "Plan",
     "latest": "Ir a lo último",
+    "earlier_one": "Mostrar {{count}} turno anterior",
+    "earlier_other": "Mostrar {{count}} turnos anteriores",
     "truncated": "recortado en el host",
     "failedCall": "falló",
     "failed_one": "{{count}} falló",
@@ -538,6 +560,38 @@
     "thought": "Pensó",
     "thoughtFor": "Pensó {{seconds}} s",
     "changes_one": "{{count}} archivo cambiado",
-    "changes_other": "{{count}} archivos cambiados"
+    "changes_other": "{{count}} archivos cambiados",
+    "question": {
+      "waiting": "Esperando tu respuesta",
+      "dismissed": "Descartaste las preguntas",
+      "noAnswer": "No se pudo leer la respuesta",
+      "ownAnswer": "O escribe tu propia respuesta…",
+      "ownAnswerLabel": "Tu respuesta",
+      "several": "Marca con 1–{{last}} todas las que apliquen",
+      "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+      "next": "Siguiente",
+      "submit": "Enviar respuestas",
+      "dismiss": "Descartar",
+      "sending": "Enviando tus respuestas…",
+      "previous": "Pregunta anterior",
+      "nextQuestion": "Pregunta siguiente",
+      "of": "{{n}} de {{total}}"
+    }
+  },
+  "preview": {
+    "show": "Mostrar vista previa",
+    "hide": "Ocultar vista previa",
+    "label": "Vista previa",
+    "simulator": "Simulador",
+    "close": "Cerrar vista previa",
+    "frame": "App ejecutándose en {{name}}",
+    "title": "{{name}} ejecutándose en el host de esta sesión",
+    "connecting": "Conectando con el dispositivo de la sesión…",
+    "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+    "unavailable": "Esta sesión no tiene dispositivo",
+    "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
+    "offline": "El host está desconectado",
+    "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+    "ended": "La sesión ha terminado"
   }
 }

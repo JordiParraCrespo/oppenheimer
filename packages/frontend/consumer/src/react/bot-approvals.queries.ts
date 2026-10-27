@@ -25,6 +25,18 @@ export function useBotPendingApproval(id: string) {
   });
 }
 
+/**
+ * The workspace's pending cards across its bots, for the Inbox's combined
+ * read: the key and the fetch. `botApproval.changed` refetches it.
+ */
+export function usePendingBotApprovalsQuery() {
+  const app = useConsumerApp();
+  return {
+    queryKey: botsKeys.pendingApprovals(),
+    queryFn: () => app.bots.findWorkspacePendingApprovals(),
+  };
+}
+
 export interface DecideBotApprovalVariables {
   id: string;
   approvalId: string;
@@ -48,6 +60,8 @@ export function useDecideBotApproval(
       Promise.all([
         queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
         queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+        // The Inbox's list across bots, which the workspace stream also announces.
+        queryClient.invalidateQueries({ queryKey: botsKeys.pendingApprovals() }),
       ]),
     ),
   });

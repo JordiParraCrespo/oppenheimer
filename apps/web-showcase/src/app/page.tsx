@@ -59,6 +59,7 @@ import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos'
 import { DiffDemo } from '../components/diff-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
+import { InboxSpec } from '../components/inbox-demos';
 import {
   AreaChartDemo,
   CalendarAccountsDemo,
@@ -78,6 +79,7 @@ import {
 
   CarouselDemo,
   ComposerDemo,
+  ComposerPillDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
   CheckboxDemo,
@@ -896,7 +898,7 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px."
+        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 28px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
@@ -905,6 +907,7 @@ export default function Page() {
         <ComposerDemo />
         <ComposerDemo full />
         <ComposerDemo full blocked="fable is offline — pick another host" />
+        <ComposerPillDemo />
       </Spec>
 
       <Spec
@@ -1111,6 +1114,8 @@ export default function Page() {
       >
         <RoutineItemsDemo />
       </Spec>
+
+      <InboxSpec />
 
       <Spec
         id="pilltabs"

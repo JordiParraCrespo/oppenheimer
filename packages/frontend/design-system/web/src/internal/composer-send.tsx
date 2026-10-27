@@ -120,9 +120,11 @@ function ComposerFrame({
   band?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  if (!above && !band) return children;
+  // Always the same element around the field, `contents` while nothing sits
+  // on it: a notice or a queued message appearing must not remount the
+  // field, which would drop what has focus and the caret with it.
   return (
-    <div data-slot="composer-stack" className="flex flex-col">
+    <div data-slot="composer-stack" className={above || band ? 'flex flex-col' : 'contents'}>
       {above}
       {band}
       {children}

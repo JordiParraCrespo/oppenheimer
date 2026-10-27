@@ -3,6 +3,7 @@ import type {
   AttachmentDirectAnswerMessage,
   AttachmentDirectRefusedMessage,
   AttachmentPathMessage,
+  DeviceInfoMessage,
   ProtocolMessage,
   RunnerCapability,
 } from '@oppenheimer/shared/protocol';
@@ -25,6 +26,11 @@ export interface AttachmentSink {
    * terminal (0.7), as the runner compacted them. Relayed, never read here.
    */
   chat(message: AttachmentChatMessage): void;
+  /**
+   * Which device a device attachment shows (`device.info`), before its
+   * frames. Only a device attachment implements it; a terminal never hears one.
+   */
+  device?(message: DeviceInfoMessage): void;
 }
 
 /** What the runner says about an attachment's direct path. */

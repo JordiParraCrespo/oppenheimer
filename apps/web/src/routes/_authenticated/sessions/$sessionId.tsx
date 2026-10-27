@@ -5,11 +5,12 @@ import { SessionTaskLink } from '@/features/tasks/sections/session-task-link';
 /**
  * One session. The screen owns the pane — a terminal sizes itself from the box
  * it is given, so the shell gives it the whole one and keeps no scroll of its
- * own; `staticData.pane` is read by `AppShell`.
+ * own; `staticData.pane` is read by `AppShell`. It owns the bar too: the
+ * session's name, state, view switch and Share sit in it (`bar: 'own'`).
  */
 export const Route = createFileRoute('/_authenticated/sessions/$sessionId')({
   component: SessionRoute,
-  staticData: { pane: 'full' },
+  staticData: { pane: 'full', bar: 'own' },
 });
 
 function SessionRoute() {
@@ -23,7 +24,7 @@ function SessionRoute() {
     <SessionScreen
       key={sessionId}
       sessionId={sessionId}
-      statusItem={<SessionTaskLink sessionId={sessionId} />}
+      bar={{ back: <SessionTaskLink sessionId={sessionId} /> }}
     />
   );
 }
