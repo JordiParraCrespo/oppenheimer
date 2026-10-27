@@ -410,7 +410,9 @@ function ChipSelectList({
       data-slot="chip-select-list"
       className={cn(
         'min-h-0 overflow-y-auto',
-        rows === undefined ? '[scrollbar-width:thin]' : '[scrollbar-width:none]',
+        // A capped list measures its content only, so a caller's padding adds to the cap
+        // instead of clipping the last row.
+        rows === undefined ? '[scrollbar-width:thin]' : 'box-content [scrollbar-width:none]',
         className,
       )}
       style={capped === undefined ? style : { maxHeight: capped, ...style }}
