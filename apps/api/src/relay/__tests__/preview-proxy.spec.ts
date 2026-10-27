@@ -1,6 +1,6 @@
 /**
- * Sessions' previews through the relay, end to end inside one process: a
- * real HTTP server with the preview proxy in front of it, a runner link
+ * Sessions' previews through the relay, end to end inside one process: the
+ * preview proxy's own HTTP server, a runner link
  * faked as a bridge that opens each port attachment as a real TCP connection,
  * and a real app behind that (`product/versions/mvp/28-session-previews.md`).
  *
@@ -8,7 +8,7 @@
  * `localhost:<port>` and never the preview's own cookie; a redirect to
  * localhost comes back on the preview; only the console may frame it; a
  * WebSocket (a dev server's hot reload) passes; and a host that is not a
- * preview is the API's own. The runner's half is `link_ports_test.go`.
+ * preview gets nothing. The runner's half is `link_ports_test.go`.
  */
 import { createServer, type IncomingMessage, request, type Server } from 'node:http';
 import { connect, type Socket } from 'node:net';
@@ -28,7 +28,7 @@ import { previewOrigin } from '../../sessions/domain/session-preview.policy';
 import type { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
 import { PreviewProxyGateway } from '../infrastructure/preview-proxy.gateway';
 
-const BASE = 'http://preview.localhost:3001';
+const BASE = 'http://preview.localhost:3011';
 const CONSOLE = 'http://localhost:3000';
 const SESSION = '3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40';
 
@@ -167,16 +167,7 @@ describe('preview proxy', () => {
         authorize: async () => ({ allowed: true, hostId: 'host-1' }),
       } as unknown as BrowserAttachGateway,
     );
-    // The API's own handler, which a preview must never reach.
-    api = createServer((_req, res) => {
-      res.writeHead(404);
-      res.end('the console api');
-    });
-    gateway.intercept(api);
-    api.on('upgrade', (req, socket, head) => {
-      const address = gateway.addressOf(req);
-      if (address) void gateway.handleUpgrade(req, socket, head, address);
-    });
+    api = gateway.createServer();
     await new Promise<void>((resolve) => api.listen(0, '127.0.0.1', resolve));
     apiPort = (api.address() as { port: number }).port;
   });
@@ -273,8 +264,9 @@ describe('preview proxy', () => {
     ws.close();
   });
 
-  it('leaves every other host to the API', async () => {
+  it('answers no host that is not a preview, and opens nothing for one', async () => {
     const answer = await ask(apiPort, 'localhost:3001', '/api/auth/session');
-    expect(answer.body).toBe('the console api');
+    expect(answer.status).toBe(404);
+    expect(link.opened).toBe(0);
   });
 });

@@ -332,7 +332,7 @@ export class SessionPreviewResponseDto {
     description:
       "Where the preview opens: the port's own origin under the deployment's preview domain, carrying a single-use ticket that lives 60 seconds. Open it in the Browser tab's frame or a tab of its own; the origin keeps the reader in a cookie of its own from there.",
     example:
-      'http://p5173-3f0d9e2c6a4b4e9a9c3d7b1e5a2f8c40.preview.localhost:3001/__oppenheimer/enter?ticket=…&path=%2F&embed=1',
+      'http://p5173-3f0d9e2c6a4b4e9a9c3d7b1e5a2f8c40.preview.localhost:3011/__oppenheimer/enter?ticket=…&path=%2F&embed=1',
   })
   url!: string;
 

@@ -75,7 +75,7 @@ const lines = [
   '',
   "# Sessions' previews, so the Browser tab is offered. `*.localhost` resolves",
   '# to the loopback in every browser, so the API serves them with no DNS.',
-  `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3001'}`,
+  `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3011'}`,
   '',
 ].join('\n');
 

@@ -11,11 +11,12 @@ ingress:
     service: http://releases:80
   # previews:begin
   # Sessions' previews (product/versions/mvp/28-session-previews.md): every
-  # host under the preview domain goes to the API, which serves each through
-  # its session's runner link. `oppctl` drops this rule when PREVIEW_HOSTNAME
-  # is empty.
+  # host under the preview domain goes to the API's preview listener (its
+  # PREVIEW_PORT, apart from the API's own), which serves each through its
+  # session's runner link. `oppctl` drops this rule when PREVIEW_HOSTNAME is
+  # empty.
   - hostname: "*.${PREVIEW_HOSTNAME}"
-    service: http://api:3001
+    service: http://api:3011
   # previews:end
   # oppenheimer:begin web
   # One origin: nginx serves the console and proxies /api (and its WebSockets:

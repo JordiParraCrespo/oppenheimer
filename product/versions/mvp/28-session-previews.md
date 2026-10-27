@@ -34,7 +34,7 @@ interface (`.agents/rules/provider-integrations.md`).
 
 **An origin per session and port.** A preview lives at
 `p<port>-<session id, hex>.<preview domain>`, for example
-`http://p5173-1f0c….preview.localhost:3001` on the local stack. One origin
+`http://p5173-1f0c….preview.localhost:3011` on the local stack. One origin
 per port means the app sees a root path, its own cookies and its own
 storage, exactly as on `localhost:5173`, and two sessions' apps can never
 read each other's. The preview domain is `PREVIEW_BASE_URL` (scheme, domain,
@@ -120,8 +120,14 @@ state, polled while the pane is open. Behind `session_browser_preview`.
 
 ## As built (2026-10-27)
 
+- Previews have a listener of their own on the API process, `PREVIEW_PORT`
+  (3011), so the API's request path (Nest, Better Auth, its middleware)
+  never sees a preview's request, and the preview proxy owns all of its
+  own. The flow control is the link's one credit window, written down once
+  in the protocol (`ports.ts`) and kept by `flowWindow` on the runner and
+  `CreditWindow` on the control plane.
 - `PREVIEW_BASE_URL` turns it on (the `session_previews` capability); the
-  local stack sets `http://preview.localhost:3001`, the dev deployment a
+  local stack sets `http://preview.localhost:3011`, the dev deployment a
   zone of its own (`deploy/dev`, `PREVIEW_HOSTNAME`). The `/session-previews`
   skill walks both, and what an app needs.
 - The tab opens on the likeliest dev server among the session's ports

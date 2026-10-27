@@ -1,7 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
-import { parseEnv } from './env';
+import { parseEnv, positiveInt } from './env';
 
 /**
  * The relay's side of the direct terminal path
@@ -46,12 +46,20 @@ const schema = z.object({
     .refine((value) => !value || new URL(value).pathname === '/', {
       message: 'a preview base URL is an origin, with no path',
     }),
+  /**
+   * The port the API serves previews on: a listener of their own, apart from
+   * the API's, so a preview's requests never pass through the API's request
+   * pipeline (`PreviewProxyGateway`). What fronts the deployment sends the
+   * preview domain's wildcard here.
+   */
+  previewPort: positiveInt(3011),
 });
 
 export const relayConfig = registerAs('relay', () =>
   parseEnv('relay', schema, {
     iceServers: 'RELAY_ICE_SERVERS',
     previewBaseUrl: 'PREVIEW_BASE_URL',
+    previewPort: 'PREVIEW_PORT',
   }),
 );
 

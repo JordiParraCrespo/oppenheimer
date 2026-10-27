@@ -3,14 +3,11 @@ import type { Duplex } from 'node:stream';
 import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { BROWSER_ATTACH_PATH, BrowserAttachGateway } from './browser-attach.gateway';
-import { PreviewProxyGateway } from './preview-proxy.gateway';
 import { RUNNER_LINK_PATH, RunnerLinkGateway } from './runner-link.gateway';
 import { refuseUpgrade } from './upgrade.util';
 
 /**
- * Mounts the two sockets on the API's own HTTP server, and puts sessions'
- * preview origins in front of it (`PreviewProxyGateway`), their upgrades
- * (a dev server's hot reload) included.
+ * Mounts the two sockets on the API's own HTTP server.
  *
  * They are `upgrade` listeners rather than Nest gateways because neither is a
  * request/response pair: the runner link is a long-lived multiplexed stream and
@@ -27,7 +24,6 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
     private readonly adapterHost: HttpAdapterHost,
     private readonly runners: RunnerLinkGateway,
     private readonly browsers: BrowserAttachGateway,
-    private readonly previews: PreviewProxyGateway,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -40,7 +36,6 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
   }
 
   mount(server: Server): void {
-    this.previews.intercept(server);
     server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
       void this.route(request, socket, head);
     });
@@ -61,12 +56,6 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
       this.logger.debug({ message: 'upgrade socket error', pathname, error: error.message });
     });
     try {
-      // A preview origin's upgrade is its app's, whatever its path.
-      const preview = this.previews.addressOf(request);
-      if (preview) {
-        await this.previews.handleUpgrade(request, socket, head, preview);
-        return;
-      }
       switch (pathname) {
         case RUNNER_LINK_PATH:
           await this.runners.handleUpgrade(request, socket, head);

@@ -23,7 +23,7 @@ export interface PreviewAddress {
 
 const LABEL = /^p(\d{4,5})-([0-9a-f]{32})$/;
 
-/** The preview origin of one session's port, under `base` (`http://preview.localhost:3001`). */
+/** The preview origin of one session's port, under `base` (`http://preview.localhost:3011`). */
 export function previewOrigin(base: string, address: PreviewAddress): string {
   const url = new URL(base);
   const hex = address.sessionId.replaceAll('-', '').toLowerCase();

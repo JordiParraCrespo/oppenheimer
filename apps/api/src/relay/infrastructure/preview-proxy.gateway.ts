@@ -1,6 +1,19 @@
-import { Agent, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http';
+import {
+  Agent,
+  createServer,
+  type IncomingMessage,
+  request,
+  type Server,
+  type ServerResponse,
+} from 'node:http';
 import type { Duplex } from 'node:stream';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
@@ -19,6 +32,7 @@ import {
   previewOrigin,
   safePreviewPath,
 } from '../../sessions/domain/session-preview.policy';
+import { BoundedMap } from './bounded-map.util';
 import { BrowserAttachGateway, REAUTHORIZE_INTERVAL_MS } from './browser-attach.gateway';
 import { LinkPortStream, PortRefusedError } from './link-port-stream.util';
 import {
@@ -37,16 +51,22 @@ import { refuseUpgrade } from './upgrade.util';
 /** Readers whose last judgement is remembered, so a page's hundred requests are judged once a minute. */
 const MAX_JUDGED = 1_000;
 
+/** Sessions' ports with an agent of kept-alive connections. */
+const MAX_AGENTS = 1_000;
+
 /** Idle connections kept per session's port: a page's next request reuses one rather than opening a port again. */
 const MAX_SOCKETS_PER_PORT = 16;
 
 type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string }> };
 
 /**
- * Sessions' previews (`product/versions/mvp/28-session-previews.md`): every
- * request whose `Host` is a preview origin of this deployment, HTTP and
- * WebSocket alike, is served here, before Nest and Better Auth see it, and
- * relayed to the session's port through its host's runner.
+ * Sessions' previews (`product/versions/mvp/28-session-previews.md`): an HTTP
+ * listener of their own on `PREVIEW_PORT`, apart from the API's, so a
+ * preview's requests (its `/api/auth/...` included) never pass through Nest,
+ * Better Auth or the API's middleware, and the API's request path knows
+ * nothing of previews. Every request and upgrade whose `Host` is a preview
+ * origin of this deployment is relayed to the session's port through its
+ * host's runner; any other host is a 404.
  *
  * - **Who:** the origin redeems an attach ticket minted with the `preview`
  *   target at `/__oppenheimer/enter`, and keeps the reader in a signed cookie
@@ -58,13 +78,14 @@ type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string
  *   stream of its own, piped raw.
  * - **As what:** the app sees `localhost:<port>` (`preview-http.util.ts`).
  *
- * Off (no `PREVIEW_BASE_URL`), it claims nothing.
+ * Off (no `PREVIEW_BASE_URL`), it listens on nothing.
  */
 @Injectable()
-export class PreviewProxyGateway {
+export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(PreviewProxyGateway.name);
-  private readonly judged = new Map<string, Judged>();
-  private readonly agents = new Map<string, Agent>();
+  private readonly judged = new BoundedMap<string, Judged>(MAX_JUDGED);
+  private readonly agents = new BoundedMap<string, Agent>(MAX_AGENTS, (agent) => agent.destroy());
+  private server: Server | null = null;
 
   constructor(
     private readonly config: ConfigService,
@@ -76,21 +97,28 @@ export class PreviewProxyGateway {
     private readonly attach: BrowserAttachGateway,
   ) {}
 
-  /**
-   * Put the preview origins in front of the API's own request handler, so a
-   * preview's `/api/auth/...` is the app's and never Better Auth's.
-   */
-  intercept(server: Server): void {
+  onApplicationBootstrap(): void {
     if (!this.base) return;
-    const listeners = server.listeners('request') as ((
-      req: IncomingMessage,
-      res: ServerResponse,
-    ) => void)[];
-    server.removeAllListeners('request');
-    server.on('request', (req: IncomingMessage, res: ServerResponse) => {
+    const port = this.config.get<number>('relay.previewPort') ?? 3011;
+    this.server = this.createServer();
+    // A port already taken leaves previews off rather than taking the API down.
+    this.server.on('error', (error) => {
+      this.logger.error({ message: 'previews could not listen', port, error: String(error) });
+    });
+    this.server.listen(port, () => this.logger.log({ message: 'previews listening', port }));
+  }
+
+  onApplicationShutdown(): void {
+    this.server?.close();
+    for (const agent of this.agents.values()) agent.destroy();
+  }
+
+  /** The previews' server: every preview origin's requests and upgrades, and a 404 for any other host. */
+  createServer(): Server {
+    const server = createServer((req, res) => {
       const address = this.addressOf(req);
       if (!address) {
-        for (const listener of listeners) listener.call(server, req, res);
+        page(res, 404, 'Not a preview of this deployment.');
         return;
       }
       this.serve(req, res, address).catch((error: unknown) => {
@@ -99,15 +127,29 @@ export class PreviewProxyGateway {
         else res.destroy();
       });
     });
+    server.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+      // Node drops its own error listener on an upgraded socket; a reset while
+      // the reader is judged must not take the process down.
+      socket.on('error', () => socket.destroy());
+      const address = this.addressOf(req);
+      if (!address) {
+        refuseUpgrade(socket, 404, 'not a preview of this deployment');
+        return;
+      }
+      this.handleUpgrade(req, socket, head, address).catch(() =>
+        refuseUpgrade(socket, 502, 'try again'),
+      );
+    });
+    return server;
   }
 
   /** The preview a request is for, or null when its host is not one. */
-  addressOf(req: IncomingMessage): PreviewAddress | null {
+  private addressOf(req: IncomingMessage): PreviewAddress | null {
     const base = this.base;
     return base ? previewAddressOf(base, req.headers.host) : null;
   }
 
-  async handleUpgrade(
+  private async handleUpgrade(
     req: IncomingMessage,
     socket: Duplex,
     head: Buffer,
@@ -280,8 +322,6 @@ export class PreviewProxyGateway {
       );
     // A lookup that failed is asked again on the next request, not remembered.
     verdict.catch(() => this.judged.delete(key));
-    if (this.judged.size >= MAX_JUDGED)
-      this.judged.delete(this.judged.keys().next().value as string);
     this.judged.set(key, { at: now, verdict });
     return verdict;
   }
@@ -295,13 +335,6 @@ export class PreviewProxyGateway {
     let agent = this.agents.get(key);
     if (!agent) {
       agent = new PortAgent(link, address);
-      if (this.agents.size >= MAX_JUDGED) {
-        const [oldest] = this.agents;
-        if (oldest) {
-          oldest[1].destroy();
-          this.agents.delete(oldest[0]);
-        }
-      }
       this.agents.set(key, agent);
     }
     return agent;

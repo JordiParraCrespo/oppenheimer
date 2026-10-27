@@ -11,7 +11,8 @@ read it before changing anything here. In one breath:
 
 ```
 browser ──► https://p5173-<session hex>.<preview domain>   (an origin per session and port)
-              │  the API's PreviewProxyGateway: ticket → cookie, judged as an attach
+              │  the API's preview listener (PREVIEW_PORT, apart from its own):
+              │  PreviewProxyGateway, ticket → cookie, judged as an attach
               ▼
           the host's runner link (already open, outbound)   port.open / frames / credit
               ▼
@@ -33,12 +34,15 @@ an iframe, and they show the app to whoever has the URL).
 | What the session's agent is told | `writeSessionNote` in `apps/runner/internal/cli/app_devices.go` |
 
 It is on when the API has `PREVIEW_BASE_URL` (the `session_previews`
-capability) and the `session_browser_preview` flag is on for the reader.
+capability) and the `session_browser_preview` flag is on for the reader. The
+API then serves previews on a listener of its own, `PREVIEW_PORT` (3011 by
+default), so nothing of a preview passes through its request pipeline.
 
 ## 1. On the local stack
 
 `node scripts/stack/stack.mjs up --web` already sets
-`PREVIEW_BASE_URL=http://preview.localhost:3001` (`e2e/support/stub-env.ts`).
+`PREVIEW_BASE_URL=http://preview.localhost:3011` (`e2e/support/stub-env.ts`),
+served on the preview port, 3011.
 `*.localhost` resolves to the loopback in Chrome, Edge and Firefox, so
 previews need no DNS. Safari does not resolve `*.localhost`: use Chrome.
 
@@ -47,8 +51,8 @@ Check it answers before opening the console:
 ```bash
 curl -s localhost:3001/api/v1/health/capabilities | grep -o '"session_previews":[a-z]*'
 curl -s -o /dev/null -w '%{http_code}\n' \
-  -H 'Host: p5173-00000000000000000000000000000000.preview.localhost:3001' localhost:3001/
-# 401: the preview origin is served (it wants a ticket). 404: PREVIEW_BASE_URL is unset.
+  -H 'Host: p5173-00000000000000000000000000000000.preview.localhost:3011' localhost:3011/
+# 401: the preview origin is served (it wants a ticket). Refused: PREVIEW_BASE_URL is unset.
 ```
 
 To see it work end to end, pair a real runner (the `local-stack` skill), open
@@ -63,7 +67,8 @@ What any deployment needs, whatever fronts it:
    the console's (`example-preview.dev` beside `app.example.com`), never a
    subdomain of it: a preview runs what a session's agent wrote, and a
    sibling of the console could set cookies the console reads.
-2. **Wildcard DNS and TLS** for `*.<preview domain>`, pointed at the API,
+2. **Wildcard DNS and TLS** for `*.<preview domain>`, pointed at the API's
+   preview port (`PREVIEW_PORT`, 3011),
    with `Host` passed through untouched and WebSockets allowed (hot reload).
    Nothing may rewrite the path or buffer responses (server-sent events).
 3. **The API** with `PREVIEW_BASE_URL=https://<preview domain>` (an origin:
@@ -84,7 +89,8 @@ Everything above is one setting in `config/host.env` plus Cloudflare:
    cloudflared tunnel route dns oppenheimer-dev '*.example-preview.dev'
    ```
 3. On the server, `config/host.env`: `PREVIEW_HOSTNAME=example-preview.dev`.
-   `oppctl` renders the tunnel's `*.<PREVIEW_HOSTNAME>` rule to the API
+   `oppctl` renders the tunnel's `*.<PREVIEW_HOSTNAME>` rule to the API's
+   preview port
    (`cloudflared.yml.tmpl`, between `previews:begin` and `previews:end`) and
    compose sets the web image's `CSP_FRAME_ORIGINS` from it.
 4. `config/api.env`: `PREVIEW_BASE_URL=https://example-preview.dev`.
@@ -151,7 +157,8 @@ beside the checkout (`writeSessionNote`).
 | The page loads, its API calls fail | the page calls another port directly (§3) |
 | Hot reload never connects | `hmr.clientPort`/`host` set in the app's config (§3), or a proxy in front of the API that refuses WebSockets |
 
-The proxy's logs are the API's (`PreviewProxyGateway`); the runner's are
+The proxy's logs are the API's (`PreviewProxyGateway`, which logs "previews
+listening" with its port at boot); the runner's are
 `port`-prefixed attachments in its own log.
 
 ## 5. A public link (not built)
