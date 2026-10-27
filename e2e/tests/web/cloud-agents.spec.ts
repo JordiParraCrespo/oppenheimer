@@ -62,8 +62,11 @@ test('starts a session in Cursor’s cloud from New session and follows it', asy
   );
 
   // ── Listed with the others, its row opening Cursor ────────────────────────
-  const row = page.locator(`a[href*="bc-${sessionId}"]`).first();
+  // The row is the link, and still draws the row inside it: Cursor's mark
+  // before the name, not the bare name a link with children of its own puts there.
+  const row = page.locator(`[data-slot="session-item"][href*="bc-${sessionId}"]`);
   await expect(row).toHaveAttribute('target', '_blank');
+  await expect(row.locator('[data-slot="agent-mark"][data-agent="cursor"]')).toBeVisible();
 
   // ── Followed to the end ───────────────────────────────────────────────────
   await expect(page.getByText('Finished in Cursor’s cloud', { exact: false })).toBeVisible({

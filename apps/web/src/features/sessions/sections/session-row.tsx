@@ -110,15 +110,6 @@ export function SessionRow({
         ? t('sessions.sidebar.openAtVendor', { vendor: cloudProviderLabel(session.cloud.provider) })
         : undefined;
 
-  // What the row is a link to: the session's page, or a cloud session's agent at its vendor.
-  const opens = cloudUrl ? (
-    <a href={cloudUrl} target="_blank" rel="noreferrer">
-      {session.name}
-    </a>
-  ) : (
-    <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />
-  );
-
   function commitRename() {
     const name = draft?.trim();
     if (name && name !== session.name) rename.mutate({ id: session.id, name });
@@ -156,7 +147,15 @@ export function SessionRow({
         ) : undefined
       }
       active={active}
-      render={opens}
+      // What the row is a link to: the session's page, or a cloud session's
+      // agent at its vendor. The row's props carry what is drawn inside it.
+      render={
+        cloudUrl ? (
+          (props) => <a {...props} href={cloudUrl} target="_blank" rel="noreferrer" />
+        ) : (
+          <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />
+        )
+      }
       // Runs before the link's own click, which stands down on a prevented one.
       onClick={(event) => {
         const how = clickPick(event, selection.selecting);
