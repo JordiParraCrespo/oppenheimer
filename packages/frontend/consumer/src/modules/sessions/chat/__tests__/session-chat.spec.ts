@@ -222,6 +222,54 @@ describe('toTurns', () => {
     expect(kinds(turns[0]?.steps ?? [])).toEqual(['reply', 'notice', 'notice']);
     expect(turns[0]?.working).toBe(false);
   });
+
+  it("reads a background task's end as a step of the turn, not a prompt", () => {
+    const turns = toTurns([
+      user('u1', 'Merge it once CI is green'),
+      assistant('a1', [{ type: 'text', text: 'Waiting in the background.' }]),
+      user(
+        'n',
+        '<task-notification>\n<task-id>bpnz5h6eb</task-id>\n<output-file>/tmp/x.output</output-file>\n<status>completed</status>\n<summary>Background command "Wait for CI" completed (exit code 0)</summary>\n</task-notification>',
+      ),
+      user('f', [
+        {
+          type: 'text',
+          text: '<task-notification><status>failed</status></task-notification>',
+        },
+      ]),
+      assistant('a2', [{ type: 'text', text: 'Merged.' }]),
+    ]);
+    expect(turns).toHaveLength(1);
+    const steps = turns[0]?.steps ?? [];
+    expect(kinds(steps)).toEqual(['reply', 'task', 'task', 'reply']);
+    expect(steps[1]).toMatchObject({
+      status: 'completed',
+      summary: 'Background command "Wait for CI" completed (exit code 0)',
+    });
+    expect(steps[2]).toMatchObject({ status: 'failed', summary: null });
+  });
+
+  it('never reads a status it does not know as a success', () => {
+    const [turn] = toTurns([
+      user('u1', 'Go'),
+      user('n', '<task-notification><status>paused</status></task-notification>'),
+    ]);
+    expect(turn?.steps[0]).toMatchObject({ kind: 'task', status: 'unknown' });
+  });
+
+  it('is working again when a task wakes the agent after a command the CLI answered', () => {
+    const turns = toTurns([
+      user('c', '<command-name>/cost</command-name>\n<command-args></command-args>'),
+      user('o', '<local-command-stdout>Total cost: $0.42</local-command-stdout>'),
+      user('n', '<task-notification><status>completed</status></task-notification>'),
+      assistant('a1', [
+        { type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'gh pr merge' } },
+      ]),
+    ]);
+    expect(turns).toHaveLength(1);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['task', 'tool:command']);
+    expect(turns[0]?.working).toBe(true);
+  });
 });
 
 describe('SessionChat', () => {

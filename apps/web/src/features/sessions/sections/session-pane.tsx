@@ -222,7 +222,7 @@ export function SessionPane({
   return (
     /* The terminal runs from the bar to the pane's foot with no frame around
        it (the 2026-10-25 export dropped the 14px of canvas). Its grid stands
-       in the session's 1040px `TerminalColumn` so mono output keeps a readable
+       in the session's 760px `TerminalColumn` so mono output keeps a readable
        measure on a wide display; the ground either side is the terminal's
        colour, so column and pane read as one surface. Read as a chat it is
        the same colour: the chat's ground is the terminal's (`--chat-ground`),

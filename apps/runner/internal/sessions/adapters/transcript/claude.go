@@ -153,13 +153,14 @@ var (
 // typedText is a message as the person typed it. Claude Code writes a slash
 // command as tags around its name and arguments, which reads as
 // `/name arguments`; a command typed with none, a shell escape and the
-// CLI's own notes say nothing about the task, and are skipped.
+// CLI's own notes (a background task's end among them) say nothing about the task, and are skipped.
 func typedText(text string) string {
 	switch {
 	case text == "",
 		strings.HasPrefix(text, "Caveat:"),
 		strings.HasPrefix(text, "[Request interrupted"),
 		strings.HasPrefix(text, "<local-command-"),
+		strings.HasPrefix(text, "<task-notification>"),
 		strings.HasPrefix(text, "<bash-"):
 		return ""
 	case strings.HasPrefix(text, "<command-"):
