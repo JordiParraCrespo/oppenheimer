@@ -12,11 +12,8 @@ import {
 } from '../../sessions/queries/find-latest-session-events/find-latest-session-events.query';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
-import {
-  describeDecision,
-  describeSessionActivity,
-  SESSION_GROUP_PHRASES,
-} from '../bot-session-tool.mapper';
+import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
+import { describeSessionActivity } from '../domain/bot-session-activity.policy';
 import {
   cut,
   fenceUntrusted,
@@ -130,25 +127,23 @@ export class BotHostToolsFactory implements BotToolArea {
       }),
       run: async (input, context) => {
         const now = new Date();
-        // A group is read off each row against the clock, so it is filtered
-        // here over the newest sessions; `resolved` alone is also a state.
-        const scanning = input.group !== undefined && input.group !== 'resolved';
-        const state = input.group === 'resolved' ? 'resolved' : input.state;
+        const plan = groupScanOf(input.group, GROUP_SCAN);
+        const scanning = plan !== null && 'scan' in plan;
         const [page, projects] = await Promise.all([
           this.queryBus.execute<FindSessionsQuery, { data: WorkSessionEntity[]; total?: number }>(
             new FindSessionsQuery({
               scope: context.owner,
               page: 1,
-              limit: scanning ? GROUP_SCAN : input.limit,
+              limit: scanning ? plan.scan : input.limit,
               projectId: input.project_id,
               hostId: input.host_id,
-              state,
+              state: plan && 'state' in plan ? plan.state : input.state,
             }),
           ),
           this.projectNames(context),
         ]);
         const matching = scanning
-          ? page.data.filter((session) => session.group(now) === input.group)
+          ? page.data.filter((session) => session.group(now) === plan.group)
           : page.data;
         const shown = matching.slice(0, input.limit);
         return formatToolList(
