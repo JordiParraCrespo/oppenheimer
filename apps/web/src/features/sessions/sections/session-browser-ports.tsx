@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserBar } from '../components/browser-bar';
 import { BrowserMessage } from '../components/browser-message';
+import { previewPort } from '../lib/preview-port';
 import { SessionBrowserFrame } from './session-browser-frame';
 
 /**
@@ -16,9 +17,10 @@ import { SessionBrowserFrame } from './session-browser-frame';
  * draws the ports; the poll brings a dev server the agent just started.
  *
  * The port shown is the one the reader picked while it is still listened on,
- * else the first. Reload asks for the page again (a new ticket, so a new
- * frame); Open in a new tab asks for a URL of its own, into a tab opened in
- * the click so no popup blocker stands in the way.
+ * else the likeliest front end (`previewPort`). Reload asks for the page
+ * again (a new ticket, so a new frame); Open in a new tab asks for a URL of
+ * its own, into a tab opened in the click so no popup blocker stands in the
+ * way.
  */
 export function SessionBrowserPorts({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -43,7 +45,7 @@ export function SessionBrowserPorts({ sessionId }: { sessionId: string }) {
       />
     );
   }
-  const port = data.ports.find((one) => one.port === chosen)?.port ?? data.ports[0]?.port;
+  const port = previewPort(data.ports, chosen);
 
   const onOpenTab = () => {
     if (port === undefined) return;
