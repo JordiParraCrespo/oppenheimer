@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -456,6 +457,49 @@ export function useMoveSession(
     ({ sessions }, { id, projectId }) => sessions.move(id, projectId),
     options,
   );
+}
+
+export interface AnswerSessionDecisionVariables {
+  sessionId: string;
+  /** `{ id, answers }` for a question, `{ id, option }` for a permission. */
+  answer: AnswerSessionDecisionDto;
+}
+
+/** The API's refusal of an answer to a decision that is no longer the pending one. */
+const DECISION_STALE = 'SESSIONS_032';
+
+/**
+ * Answer what a session's agent waits on, from outside its terminal (the
+ * Inbox): the API types the keys and clears the decision. The row the API
+ * answers replaces the session's in every list at once, so what drew the
+ * decision stops drawing it, and the lists are read again behind it. An
+ * answer refused as stale (answered elsewhere, or the agent asks something
+ * else now) reads the session again, so the new decision shows.
+ */
+export function useAnswerSessionDecision(
+  options?: UseMutationOptions<SessionEntity, Error, AnswerSessionDecisionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, answer }: AnswerSessionDecisionVariables) =>
+      app.sessions.answerDecision(sessionId, answer),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === session.id ? session : row)),
+      );
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onError: (error, variables, context, mutation) => {
+      if ((error as { code?: string }).code === DECISION_STALE) {
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(variables.sessionId) });
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      }
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
 }
 
 export interface CloseSessionVariables {

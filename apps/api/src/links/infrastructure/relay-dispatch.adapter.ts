@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type {
@@ -6,6 +7,7 @@ import type {
   SessionCloseMessage,
   SessionCreateMessage,
   SessionImageMessage,
+  SessionInputMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
@@ -15,6 +17,7 @@ import type {
   SessionDispatchOutcome,
   SessionDispatchPort,
   SessionFileSpec,
+  SessionKeysSpec,
   SessionLaunchSpec,
   SessionPrepareSpec,
 } from '../../sessions/application/session-dispatch.port';
@@ -133,6 +136,29 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
         mediaType: file.mediaType,
       };
       return this.deliver(link, message);
+    });
+  }
+
+  async typeKeys(
+    session: WorkSessionEntity,
+    spec: SessionKeysSpec,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, async (link) => {
+      for (const [index, key] of spec.keys.entries()) {
+        if (index > 0) await sleep(spec.gapMs);
+        // The runner writes each frame in the session's lane, in order, as one
+        // `send-keys`: one frame is one key the picker reads on its own.
+        const message: SessionInputMessage = {
+          type: 'session.input',
+          commandId: randomUUID(),
+          sessionId: session.id,
+          window: spec.window,
+          data: Buffer.from(key, 'utf8').toString('base64'),
+        };
+        const outcome = this.deliver(link, message);
+        if (!outcome.delivered) return outcome;
+      }
+      return DELIVERED;
     });
   }
 

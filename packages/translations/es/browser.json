@@ -245,6 +245,10 @@
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
+      "INBOX_001": "La bandeja de entrada necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
+      "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
+      "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
@@ -326,7 +330,10 @@
       "SESSIONS_029": "Esa ruta es un archivo, no una carpeta.",
       "SESSIONS_030": "No se puede leer esa carpeta en el equipo.",
       "SESSIONS_031": "El equipo no respondió a tiempo. Inténtalo de nuevo.",
-      "SESSIONS_032": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_032": "Esa pregunta ya se respondió o cambió. Abre la sesión para ver qué pregunta ahora.",
+      "SESSIONS_033": "Esa respuesta no encaja con la pregunta. Elige entre sus opciones e inténtalo de nuevo.",
+      "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
+      "SESSIONS_035": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -1088,6 +1095,22 @@
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
       }
+    },
+    "preview": {
+      "show": "Mostrar vista previa",
+      "hide": "Ocultar vista previa",
+      "label": "Vista previa",
+      "simulator": "Simulador",
+      "close": "Cerrar vista previa",
+      "frame": "App ejecutándose en {{name}}",
+      "title": "{{name}} ejecutándose en el host de esta sesión",
+      "connecting": "Conectando con el dispositivo de la sesión…",
+      "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+      "unavailable": "Esta sesión no tiene dispositivo",
+      "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
+      "offline": "El host está desconectado",
+      "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+      "ended": "La sesión ha terminado"
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -2424,6 +2447,145 @@
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
     }
   },
+  "inbox": {
+    "title": "Bandeja",
+    "bar": {
+      "meta": "{{needs}} · {{running}}",
+      "needs_zero": "Nada te necesita",
+      "needs_one": "{{count}} te necesita",
+      "needs_other": "{{count}} te necesitan",
+      "running_one": "{{count}} sesión en marcha",
+      "running_other": "{{count}} sesiones en marcha"
+    },
+    "list": {
+      "head": "Te necesita",
+      "empty": "Nada te necesita.",
+      "noneMatching": "Nada con estos filtros te necesita.",
+      "low": "Baja",
+      "snoozed": "Pospuestos",
+      "bringBack": "Recuperar",
+      "failed": "No se pudo cargar la bandeja.",
+      "markFailed": "No se pudo guardar. Inténtalo de nuevo.",
+      "back": "Vuelve {{when}}"
+    },
+    "filter": {
+      "label": "Filtrar la bandeja",
+      "type": "Tipo",
+      "project": "Proyecto",
+      "any": "Cualquiera",
+      "showDone": "Mostrar hechos",
+      "clear": "Quitar filtros",
+      "remove": "Quitar filtro",
+      "typeChip": "Tipo: {{value}}",
+      "projectChip": "Proyecto: {{value}}"
+    },
+    "type": {
+      "all": "Todos",
+      "pull": "Pull requests",
+      "approval": "Aprobaciones de bots",
+      "session": "Sesiones",
+      "run": "Automatizaciones"
+    },
+    "project": {
+      "all": "Todos los proyectos",
+      "none": "Sin proyecto"
+    },
+    "menu": {
+      "label": "Acciones del elemento",
+      "done": "Marcar como hecho",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snoozeHour": "Posponer 1 hora",
+      "snoozeTomorrow": "Posponer hasta mañana",
+      "delete": "Eliminar"
+    },
+    "from": {
+      "session": "Sesión",
+      "approval": "{{bot}} · Aprobación de bot",
+      "run": "Automatización"
+    },
+    "session": {
+      "blockedShort": "{{name}} te está esperando",
+      "blockedTitle": "{{name}} te está esperando",
+      "blockedBody": "Su agente se detuvo para pedir algo. Abre la sesión para responderle allí.",
+      "failedShort": "{{name}} falló",
+      "failedTitle": "{{name}} falló",
+      "failedBody": "La sesión se detuvo por un fallo. Ábrela para ver qué pasó e iniciarla de nuevo.",
+      "startingShort": "{{name}} no ha arrancado",
+      "startingTitle": "{{name}} no ha arrancado",
+      "startingBody": "Su host lleva más de un minuto sin terminar de arrancarla. Ábrela para ver en qué punto está.",
+      "open": "Abrir sesión",
+      "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
+      "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
+      "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+      "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
+      "send": "Enviar respuestas",
+      "sending": "Enviando…",
+      "other": "Otra…",
+      "otherLabel": "Tu propia respuesta a la pregunta {{n}}",
+      "optionsLabel": "Respuestas a la pregunta {{n}}",
+      "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
+    },
+    "approval": {
+      "short": "Aprobar {{bot}} · {{tool}}",
+      "title": "{{bot}} quiere ejecutar {{tool}}",
+      "approve": "Aprobar",
+      "deny": "Denegar",
+      "openChat": "Abrir chat"
+    },
+    "pull": {
+      "requestedShort": "Revisar #{{number}} {{title}}",
+      "requestedTitle": "¿Revisar #{{number}} · {{title}}?",
+      "requestedBody": "{{author}} te pidió una revisión.",
+      "readyShort": "Fusionar #{{number}} {{title}}",
+      "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
+      "readyBody": "Nada lo bloquea: se puede fusionar ya.",
+      "review": "Revisar",
+      "merge": "Fusionar",
+      "checks": {
+        "passing": "Checks en verde",
+        "failing": "Checks fallando",
+        "running": "Checks en curso",
+        "none": "Sin checks",
+        "unavailable": "Checks no legibles"
+      }
+    },
+    "run": {
+      "short": "{{name}} falló",
+      "title": "{{name}} falló",
+      "body": "La ejecución terminó en fallo. Ábrela para ver por qué, o vuelve a ejecutarla.",
+      "again": "Ejecutar de nuevo",
+      "open": "Abrir ejecución"
+    },
+    "card": {
+      "later": "Más tarde",
+      "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
+    },
+    "log": {
+      "done": "Marcado como hecho · {{title}}",
+      "approved": "Aprobado {{bot}} · {{tool}}",
+      "denied": "Denegado {{bot}} · {{tool}}",
+      "merged": "Fusionado #{{number}} en {{repository}}",
+      "ranAgain": "{{name}} ejecutado de nuevo",
+      "answered": "Respondido a {{name}}: {{answer}}"
+    },
+    "pane": {
+      "greeting": {
+        "morning": "Buenos días.",
+        "afternoon": "Buenas tardes.",
+        "evening": "Buenas noches."
+      },
+      "running_one": "{{count}} sesión está en marcha.",
+      "running_other": "{{count}} sesiones están en marcha.",
+      "needs_one": "Una cosa te necesita.",
+      "needs_other": "{{count}} cosas te necesitan, de una en una.",
+      "nothing": "Ahora mismo nada te necesita.",
+      "clearTitle": "Todo al día",
+      "clear": "Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo próximo que te necesite aparecerá aquí.",
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo próximo que te necesite aparecerá aquí."
+    }
+  },
   "settings": {
     "nav": {
       "back": "Volver a la consola",
@@ -2603,7 +2765,8 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "inbox": "Bandeja"
   },
   "language": {
     "label": "Idioma",

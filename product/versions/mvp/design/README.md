@@ -303,17 +303,18 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
-- The Inbox (`Brain`), global search, Teleport, the preview pane and
-  Cursor Cloud (2026-10-25) are in no note. Teleport and cloud
-  environments run ahead of `../00-scope.md` the same way cloud sessions
-  do.
+- The Inbox (`Brain`) is planned and built in `../29-inbox.md`, minimal
+  first: its message box, model menus, suggestions and email items are
+  left out. Global search, Teleport, the preview pane and Cursor Cloud
+  (2026-10-25) are in no note. Teleport and cloud environments run ahead
+  of `../00-scope.md` the same way cloud sessions do.
 - The one-composer New session (`NewSessionComposer`, with its project
   of 2026-10-26) and the session's bar from `SessionsConsole` are in
   `../05-screens.md` and built (`ComposerPill` and `ComposerChoices` in the
   design system). Two departures: Where and Host stay two chips rather
   than the frame's one host list that opens into New worktree or a folder,
-  and the Where list has no Environments or Cloud; the preview beside a
-  session (a browser, a phone simulator) is not built.
+  and the Where list has no Environments or Cloud. Of the preview beside a
+  session, the Simulator is built (`../05-screens.md`); the Browser is not.
 - Cloud sessions in `SessionsConsole (cloud)` are in no note either:
   `../00-scope.md` keeps agents beyond the catalog, Cursor among them,
   out of the MVP, and every session in the notes runs on a host.

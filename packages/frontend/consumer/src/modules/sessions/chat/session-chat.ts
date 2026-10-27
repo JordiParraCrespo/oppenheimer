@@ -12,7 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
-import { type ChatAnswer, questionKeys } from './question-keys';
+import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 
 /** What a tool call is, for the card it gets; Claude's tools are classified, not listed. */
 export type ChatToolKind =
@@ -163,11 +163,6 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
-/**
- * The gap between the keys that answer a question: the picker redraws after
- * each one and reads the next against what it drew.
- */
-const QUESTION_KEY_GAP_MS = 120;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI

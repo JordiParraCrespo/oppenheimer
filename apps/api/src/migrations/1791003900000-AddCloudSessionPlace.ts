@@ -11,8 +11,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * a partial index on the id over cloud rows only, which every other place leaves
  * out.
  */
-export class AddCloudSessionPlace1791003600000 implements MigrationInterface {
-  name = 'AddCloudSessionPlace1791003600000';
+export class AddCloudSessionPlace1791003900000 implements MigrationInterface {
+  name = 'AddCloudSessionPlace1791003900000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE work_session DROP CONSTRAINT "CHK_work_session_place"`);
@@ -20,12 +20,12 @@ export class AddCloudSessionPlace1791003600000 implements MigrationInterface {
       `ALTER TABLE work_session ADD CONSTRAINT "CHK_work_session_place" CHECK (place IN ('worktree', 'folder', 'cloud'))`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_work_session_cloud_id" ON work_session ("organizationId", "agentSessionId") WHERE place = 'cloud'`,
+      `CREATE INDEX IF NOT EXISTS "IDX_work_session_cloud_id" ON work_session ("organizationId", "agentSessionId") WHERE place = 'cloud'`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "IDX_work_session_cloud_id"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_work_session_cloud_id"`);
     await queryRunner.query(`DELETE FROM work_session WHERE place = 'cloud'`);
     await queryRunner.query(`ALTER TABLE work_session DROP CONSTRAINT "CHK_work_session_place"`);
     await queryRunner.query(

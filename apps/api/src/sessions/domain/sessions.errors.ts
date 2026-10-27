@@ -239,11 +239,37 @@ export const SessionErrors = {
     httpStatus: 504,
   },
   /**
+   * An answer to a decision the session no longer waits on: somebody answered
+   * it already (here or at the terminal), or the agent asked something else.
+   * The answer names the decision it was for, so it never lands on another.
+   */
+  DECISION_STALE: {
+    code: 'SESSIONS_032',
+    message: 'That question was already answered or changed',
+    httpStatus: 409,
+  },
+  /**
+   * An answer that does not fit the pending decision: an option it does not
+   * have, several picks for one choice, none at all, or answers for the
+   * wrong number of questions.
+   */
+  DECISION_ANSWER_INVALID: {
+    code: 'SESSIONS_033',
+    message: 'That answer does not fit the question',
+    httpStatus: 422,
+  },
+  /** The host holds no link, so the keys that answer a decision were not sent. */
+  DECISION_HOST_OFFLINE: {
+    code: 'SESSIONS_034',
+    message: 'The host is offline, so the answer was not sent',
+    httpStatus: 503,
+  },
+  /**
    * A cloud session for a host whose live runner did not name `session.cloud`:
    * it would open a terminal instead of starting the task in the cloud.
    */
   CLOUD_UNSUPPORTED_BY_RUNNER: {
-    code: 'SESSIONS_032',
+    code: 'SESSIONS_035',
     message: "This host's runner cannot start a session in the cloud",
     httpStatus: 409,
   },

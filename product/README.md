@@ -702,6 +702,21 @@ earlier note:
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
   ("Opus 5.5") (`versions/mvp/05-screens.md`).
+- The preview pane the session frame opens beside a terminal was not
+  built. On 2026-10-26 the owner asked for the Simulator in it: a
+  session's host offers simulators and emulators (`RUNNER_DEVICES`), each
+  session holds one, its agent drives it through Argent and the reader
+  watches and taps it in the pane, its screen relayed over the link as one
+  more attachment kind (`versions/mvp/05-screens.md`,
+  `research/device-streaming.md`). The Browser tab is still not built.
+- `versions/mvp/29-inbox.md` §4 had the cross-bot approvals read list the
+  bots the caller may update. Built on 2026-10-26, it lists the bots the
+  caller may read, as the per-bot read it mirrors does; deciding a card
+  still asks `update`.
+- `versions/mvp/29-inbox.md` §3 keyed a session by `observedSince`, which
+  only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
+  keyed by its lifecycle's change count (`stateSeq`) instead, and the API
+  added both fields to a session and `headSha` to a pull request row.
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's

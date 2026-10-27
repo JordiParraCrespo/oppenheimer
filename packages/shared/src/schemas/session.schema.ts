@@ -332,6 +332,12 @@ const sessionWindowSchema = z.number().int().min(0);
  */
 export const issueAttachTicketSchema = z.object({
   window: sessionWindowSchema.optional(),
+  /**
+   * What the socket opens: the window's terminal (absent), or the session's
+   * device, a simulator or emulator its host gives it, whose screen streams
+   * as JPEG frames and which takes taps and keys.
+   */
+  target: z.enum(['terminal', 'device']).optional(),
 });
 
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;

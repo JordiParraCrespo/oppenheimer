@@ -115,6 +115,14 @@ export {
   useUpdateHostRunner,
 } from './hosts.queries';
 export {
+  inboxAnswered,
+  type PutInboxMarkVariables,
+  useDeleteInboxMark,
+  useInboxCount,
+  usePutInboxMark,
+  useSuspenseInbox,
+} from './inbox.queries';
+export {
   type ConnectInstallationVariables,
   useConnectInstallation,
   useInstallationRepositories,
@@ -197,6 +205,7 @@ export {
   type RenameSessionVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAnswerSessionDecision,
   useCloseSession,
   useCreateSession,
   useInvalidateSession,
@@ -218,7 +227,11 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream, useSharedSessionStream } from './sessions.stream';
+export {
+  useSessionDeviceStream,
+  useSessionStream,
+  useSharedSessionStream,
+} from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,

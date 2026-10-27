@@ -6,7 +6,12 @@ import {
   type CreateEntityProps,
   type ErrorDefinition,
 } from '@oppenheimer/backend-ddd';
-import type { SessionGroup, SessionPlace, SessionState } from '@oppenheimer/shared';
+import type {
+  SessionDecision,
+  SessionGroup,
+  SessionPlace,
+  SessionState,
+} from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
@@ -316,6 +321,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.closeRefusal;
   }
 
+  /** What the agent waits on the person for, or null (`29-inbox.md` slice 4). */
+  get pendingDecision(): SessionDecision | null {
+    return this.props.pendingDecision;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -364,6 +374,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       projectId: this.props.projectId,
       closeRequest: this.props.closeRequest,
       closeRefusal: this.props.closeRefusal,
+      pendingDecision: this.props.pendingDecision,
     };
   }
 
@@ -393,6 +404,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.projectId = fold.projectId ?? this.props.projectId;
     this.props.closeRequest = fold.closeRequest;
     this.props.closeRefusal = fold.closeRefusal;
+    this.props.pendingDecision = fold.pendingDecision;
   }
 
   /**

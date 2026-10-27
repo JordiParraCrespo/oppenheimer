@@ -1,7 +1,7 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "claude",
-  "version": "2026.09.18.1",
+  "version": "2026.10.27.1",
   "minEngine": 1,
   "notes": "Claude Code draws a spinner line with an elapsed time and an 'esc to interrupt' hint while it works, a numbered list when it needs an answer, and a prompt box with a '>' when it is waiting for a task. It also writes its state into the terminal title, which is the signal to trust: nothing a person types into the prompt can appear there.",
   "rules": [
@@ -29,13 +29,13 @@
       "any": [
         "(?i)\\bdo you want to (proceed|continue|allow)\\b",
         "(?i)[(\\[]?\\b(y/n|yes/no)\\b[)\\]]?",
-        "(?i)^\\s*\\d\\.\\s+(yes|no)\\b",
+        "(?im)^\\s*(?:[❯›>▶➤]\\s*)?\\d\\.\\s+(yes|no)\\b",
         "(?i)\\bpress enter to (continue|confirm)\\b",
         "(?i)\\bwaiting for (your )?(input|approval|confirmation)\\b",
         "(?i)\\bpaste (the )?code\\b",
         "(?i)\\b(permission|approval) (needed|required)\\b"
       ],
-      "note": "The screen half of the same signal, for releases and terminals where the title is not set."
+      "note": "The screen half of the same signal, for releases and terminals where the title is not set. The numbered Yes / No is read on every line of the region (`(?m)`), cursor or not: an edit or a new file asks 'Do you want to make this edit to app.ts?' or 'Do you want to create app.ts?', which no phrase above names, and a pattern anchored to the region's first line never saw the options under it (the 2026-10-27 Inbox stress)."
     },
     {
       "id": "spinner",

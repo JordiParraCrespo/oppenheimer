@@ -582,6 +582,22 @@
       "of": "{{n}} de {{total}}"
     }
   },
+  "preview": {
+    "show": "Mostrar vista previa",
+    "hide": "Ocultar vista previa",
+    "label": "Vista previa",
+    "simulator": "Simulador",
+    "close": "Cerrar vista previa",
+    "frame": "App ejecutándose en {{name}}",
+    "title": "{{name}} ejecutándose en el host de esta sesión",
+    "connecting": "Conectando con el dispositivo de la sesión…",
+    "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+    "unavailable": "Esta sesión no tiene dispositivo",
+    "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
+    "offline": "El host está desconectado",
+    "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+    "ended": "La sesión ha terminado"
+  },
   "cloud": {
     "eyebrow": "Nube de Claude Code",
     "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",

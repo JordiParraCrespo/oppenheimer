@@ -19,19 +19,22 @@ import { SessionShareButton } from './session-share-button';
  * the grid.
  *
  * Every state of the session draws it — starting, live, stopped — so the way
- * back to the sidebar never moves. The preview the frame opens beside a
- * session (a browser, a phone simulator) is not built, so it has no button.
+ * back to the sidebar never moves. `preview` is the toggle for the pane the
+ * frame opens beside a session; of its two tabs only the Simulator is built.
  */
 export function SessionBar({
   session,
   back,
   tabs,
+  preview,
 }: {
   session: SessionEntity;
   /** "Back to task", when the route has one. */
   back?: ReactNode;
   /** Terminal / Chat, once the chat is offered. */
   tabs?: ReactNode;
+  /** The preview pane's toggle, while the session is live. */
+  preview?: ReactNode;
 }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
@@ -55,7 +58,15 @@ export function SessionBar({
         </>
       }
       tabs={tabs}
-      actions={session.isCloud ? null : <SessionShareButton sessionId={session.id} />}
+      // A cloud session has no terminal here: no device beside it, nothing to share.
+      actions={
+        session.isCloud ? null : (
+          <>
+            {preview}
+            <SessionShareButton sessionId={session.id} />
+          </>
+        )
+      }
       // On the terminal's ground with a hairline under it, whichever view is
       // on screen: the chat stands on the same ground, so bar, grid and chat
       // read as one surface and switching views changes no colour.

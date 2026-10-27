@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleRail } from '../sections/console-rail';
@@ -17,7 +17,11 @@ vi.mock('react-i18next', () => ({
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSessions: () => ({ data: 3 }),
   useTasks: () => ({ data: 2 }),
+  useInboxCount: () => 4,
 }));
+
+let inboxFlag = true;
+vi.mock('@oppenheimer/frontend-core/react', () => ({ useFeatureFlag: () => inboxFlag }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
@@ -40,6 +44,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  inboxFlag = true;
   vi.unstubAllGlobals();
   cleanup();
   window.localStorage.clear();
@@ -55,6 +60,7 @@ describe('ConsoleRail', () => {
     window.localStorage.setItem('oppenheimer.rail.order', JSON.stringify(['plan', 'pulls']));
     render(<ConsoleRail />);
     expect(screen.getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
+      'nav.inbox',
       'nav.plan',
       'nav.pullRequests',
       'nav.employees',
@@ -69,5 +75,17 @@ describe('ConsoleRail', () => {
     const read = description(sessions);
     expect(read).toContain('3');
     expect(read.some((text) => text.length > 1)).toBe(true);
+  });
+
+  it('reads what needs you on the Inbox', async () => {
+    render(<ConsoleRail />);
+    const inbox = screen.getByRole('link', { name: 'nav.inbox' });
+    await waitFor(() => expect(description(inbox)).toContain('4'));
+  });
+
+  it('leaves the Inbox out while its flag is off', () => {
+    inboxFlag = false;
+    render(<ConsoleRail />);
+    expect(screen.queryByRole('link', { name: 'nav.inbox' })).toBeNull();
   });
 });

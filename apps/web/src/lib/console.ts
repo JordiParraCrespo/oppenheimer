@@ -36,10 +36,18 @@ export const useConsoleDialog = consoleDialogs.useDialogActions;
 export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 
 /** The console's lists: what the rail switches and the sidebar shows. */
-export type ConsoleList = 'sessions' | 'bots' | 'automations' | 'pulls' | 'tasks' | 'calendar';
+export type ConsoleList =
+  | 'inbox'
+  | 'sessions'
+  | 'bots'
+  | 'automations'
+  | 'pulls'
+  | 'tasks'
+  | 'calendar';
 
 /**
- * Which of the console's lists the matched routes are under: `bots` for the
+ * Which of the console's lists the matched routes are under: `inbox` for
+ * `/inbox`; `bots` for the
  * Employees section under `/bots`, a bot's settings included; `automations`
  * for everything under `/automations`, the editor included; `pulls` for the
  * queue, a pull request and analytics under `/pulls`; Plan's two,
@@ -54,6 +62,7 @@ export function useConsoleList(): ConsoleList {
   return useMatches({
     select: (matches): ConsoleList => {
       const ids = matches.map((match) => match.routeId);
+      if (ids.includes('/_authenticated/inbox')) return 'inbox';
       // A chat under the `bots` routes, and a bot's settings un-nested from them (`bots_`).
       if (ids.some((id) => id.startsWith('/_authenticated/bots'))) return 'bots';
       if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';

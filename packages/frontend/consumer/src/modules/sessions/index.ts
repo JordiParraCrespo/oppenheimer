@@ -1,4 +1,4 @@
-export type { ChatAnswer } from './chat/question-keys';
+export type { ChatAnswer } from '@oppenheimer/shared/sessions';
 export {
   type ChatBatch,
   type ChatLimit,
@@ -40,6 +40,12 @@ export type {
 } from './session-steps';
 export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export type {
+  DeviceInfo,
+  DeviceInput,
+  DeviceStatus,
+  DeviceStream,
+} from './stream/device-stream';
 export type { LocalTerminals } from './stream/local-first-stream';
 export {
   createResizeCoalescer,

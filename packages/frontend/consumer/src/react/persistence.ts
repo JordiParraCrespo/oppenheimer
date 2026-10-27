@@ -2,6 +2,7 @@ import { automationsKeys } from './automations.queries';
 import { botsKeys } from './bots.queries';
 import { calendarKeys } from './calendar.queries';
 import { hostsKeys } from './hosts.queries';
+import { inboxKeys } from './inbox.keys';
 import { installationsKeys } from './installations.queries';
 import { profileKeys } from './profile.queries';
 import { projectsKeys } from './projects.queries';
@@ -41,4 +42,5 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   calendarKeys.all[0],
   pullRequestsKeys.all[0],
   voiceKeys.all[0],
+  inboxKeys.all[0],
 ];
