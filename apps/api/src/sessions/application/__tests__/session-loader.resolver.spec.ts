@@ -9,7 +9,7 @@ import { SessionLoaderResolver } from '../session-loader.resolver';
 /**
  * What a host-only command (a terminal, a checkout, a restart, a share) asks
  * first: a cloud session runs at its vendor, so it is refused with
- * `SESSIONS_036` before anything is sent anywhere; a host session passes.
+ * `SESSIONS_037` before anything is sent anywhere; a host session passes.
  */
 
 const SCOPE = { userId: 'user-1', organizationId: 'org-acme' } as unknown as AccessScope;
@@ -52,9 +52,9 @@ function loaderOf(session: WorkSessionEntity) {
 }
 
 describe('SessionLoaderResolver.requireLiveOnHost', () => {
-  it('refuses a cloud session with SESSIONS_036', async () => {
+  it('refuses a cloud session with SESSIONS_037', async () => {
     await expect(loaderOf(cloud).requireLiveOnHost(SCOPE, cloud.id)).rejects.toMatchObject({
-      code: 'SESSIONS_036',
+      code: 'SESSIONS_037',
     });
   });
 

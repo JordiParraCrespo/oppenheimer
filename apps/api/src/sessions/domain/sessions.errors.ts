@@ -273,12 +273,22 @@ export const SessionErrors = {
     httpStatus: 501,
   },
   /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
+  },
+  /**
    * Something only a host session has — a terminal, a checkout, a restart, a
    * share — asked of a cloud session, which runs at its vendor and is opened
    * there (`product/next-steps/cloud-agents.md`).
    */
   CLOUD_SESSION: {
-    code: 'SESSIONS_036',
+    code: 'SESSIONS_037',
     message: 'That session runs in the cloud, not on a host',
     httpStatus: 409,
   },

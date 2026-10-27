@@ -78,7 +78,7 @@ to Cursor.
   me"; folding the vendor into the session costs a nullable host and a
   refusal. Every command only a host session has (a terminal, a checkout,
   a restart, a share, an answer) refuses a cloud session with
-  `SESSIONS_036` before anything is sent; closing one closes it here only.
+  `SESSIONS_037` before anything is sent; closing one closes it here only.
 - **Launch.** `POST /v1/sessions/cloud`: the vendor is asked first on the
   launcher's sealed key, then the session is created with its run and the
   first events in one transaction, then named as any session is. Cursor

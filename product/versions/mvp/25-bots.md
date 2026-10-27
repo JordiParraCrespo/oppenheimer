@@ -342,13 +342,40 @@ that did not cover the tool never runs.
 | Tool | Does | Default |
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
-| `list_sessions` / `get_session` | Sessions and their state | auto |
+| `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27 | auto |
-| `send_to_session` | Type a message into a running session | ask |
-| `read_session` | A session's recent output | auto |
+| `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
+| `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
 | `list_folders` | Browse a host's folders | auto |
+
+Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
+as the person does and act on them. Three rules hold it:
+
+- **The group is the console's.** `list_sessions` and `get_session` show the
+  derived group (`session-group.policy.ts`) and the project the sidebar
+  files the session under, never one inferred from tasks. No index holds a
+  group, so a `group` filter reads the 100 newest sessions and says so;
+  `resolved` alone is the stored state and pages like any filter.
+- **What a bot reads is the log, not the conversation.** `read_session`
+  reads the session's event log (the same rows `GET /sessions/{id}/events`
+  pages), said in words and fenced as data. Pane text never reaches
+  Postgres, and the agent's transcript stays on the host, so a bot sees what
+  the console's list would tell a person, not what was on the screen. The
+  owner turns it off like any tool (§5).
+- **What a bot says is the bot's, on the record.** `send_to_session` asks
+  first under Approve for me, and only types while the agent waits at its
+  prompt (`SESSIONS_036` otherwise: it would land as the answer to a
+  question, or mid-task). The API claims the prompt in the log before it
+  types, as `prompt.sent` with `{ kind: 'bot', botId, turnId }` as the
+  sender it read, so two prompts at once cannot both land and a host cannot
+  forge a bot's words: `read_session` names a sender only on an entry the
+  API wrote. Keys that never reach the host are `prompt.undelivered`, which
+  cancels the turn the prompt opened. The console does not draw the log
+  yet; until it does, the bot's chat (the call's activity line and the
+  approval card) and the log are where the person sees it.
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |

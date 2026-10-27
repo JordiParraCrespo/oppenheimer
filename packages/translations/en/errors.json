@@ -245,7 +245,8 @@
     "SESSIONS_033": "That answer doesn’t fit the question. Pick from its options and try again.",
     "SESSIONS_034": "The host is offline, so the answer was not sent.",
     "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
-    "SESSIONS_036": "That session runs in the cloud, not on a host. Open it in the vendor's app to do that.",
+    "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
+    "SESSIONS_037": "That session runs in the cloud, not on a host. Open it in the vendor's app to do that.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -263,5 +264,11 @@
     "title": "This screen could not be drawn",
     "retry": "Try again"
   },
-  "code": "Code: {{code}}"
+  "code": "Code: {{code}}",
+  "startFailure": {
+    "codes": {
+      "SESS_002": "This host makes sessions with one repository."
+    },
+    "details": "Details from the host: {{detail}}"
+  }
 }

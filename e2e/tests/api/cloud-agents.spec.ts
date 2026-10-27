@@ -134,7 +134,7 @@ test.describe('Cloud sessions', () => {
       data: {},
     });
     expect(attach.status()).toBe(409);
-    expect(await attach.json()).toMatchObject({ code: 'SESSIONS_036' });
+    expect(await attach.json()).toMatchObject({ code: 'SESSIONS_037' });
 
     const closed = await owner.api.delete(`/api/v1/sessions/${session.id}`);
     expect(closed.status(), await closed.text()).toBeLessThan(300);

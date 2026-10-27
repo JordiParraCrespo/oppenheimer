@@ -17,12 +17,14 @@ import { useAnswerDecision } from '@/features/inbox/hooks/use-answer-decision';
 import { answerSummary, toAnswers } from '@/features/inbox/lib/inbox-answer';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
+import { InboxSessionFailure } from '@/features/inbox/sections/inbox-session-failure';
 
 /**
  * A session waiting on you, in the pane. What its agent waits on, when the
  * host could read it (`29-inbox.md` slice 4), is answered here: a permission
  * dialog by one of its options, a question by an answer to each of its
- * questions. Otherwise the answer is Open session.
+ * questions. A failed launch says why it failed, as its page does; otherwise
+ * the answer is Open session.
  *
  * The card stays mounted for the session while its decision changes (the
  * pane keys it by session), so an answer refused as stale keeps its error
@@ -64,7 +66,11 @@ export function InboxSessionCard({
 
   return (
     <InboxCard icon={<InboxKindIcon kind="session" />} from={from} title={copy.title} age={age}>
-      <InboxCardBody>{copy.body}</InboxCardBody>
+      {session.lifecycle === 'failed' ? (
+        <InboxSessionFailure session={session} fallback={copy.body} />
+      ) : (
+        <InboxCardBody>{copy.body}</InboxCardBody>
+      )}
       <InboxCardFacts>
         <span className="flex items-center gap-1.5 [&_svg]:size-3.5">
           <AgentMark agent={session.agent} />

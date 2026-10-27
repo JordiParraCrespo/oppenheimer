@@ -518,7 +518,8 @@ are never reissued.
 | `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
 | `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
 | `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
-| `SESSIONS_036` <a id="sessions_036" /> | That session runs in the cloud, not on a host   | 409  |
+| `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
+| `SESSIONS_037` <a id="sessions_037" /> | That session runs in the cloud, not on a host   | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -544,7 +545,7 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
 
-`SESSIONS_036` is something only a session on a host has — its terminal, a checkout, a
+`SESSIONS_037` is something only a session on a host has — its terminal, a checkout, a
 restart or stop, a share, an answer typed into it — asked of a cloud session, which runs
 as a vendor's agent (`product/next-steps/cloud-agents.md`). Open it at the vendor, from
 its `cloud.url`, and do it there.

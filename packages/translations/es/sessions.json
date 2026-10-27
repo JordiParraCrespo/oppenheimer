@@ -36,11 +36,7 @@
         "shell": "Iniciar shell"
       }
     },
-    "progressFailed": "No se pudo cargar el progreso del inicio.",
-    "codes": {
-      "SESS_002": "Este host crea sesiones con un solo repositorio."
-    },
-    "details": "Detalles del host: {{detail}}"
+    "progressFailed": "No se pudo cargar el progreso del inicio."
   },
   "closed": {
     "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
