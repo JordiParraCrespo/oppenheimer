@@ -20,6 +20,7 @@ describe('resolveCapabilities', () => {
       google_calendar: false,
       bot_providers: false,
       voice_transcription: false,
+      session_previews: false,
     });
   });
 

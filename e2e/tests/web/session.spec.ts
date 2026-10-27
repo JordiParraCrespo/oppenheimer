@@ -184,4 +184,23 @@ test.describe('Session screen', () => {
 
     await owner.api.dispose();
   });
+
+  test("the preview pane's Browser tab says when the session's host is away", async ({ page }) => {
+    // Pairing here is a row with no runner, so the host never links: the
+    // ports read answers that it is offline, and the tab says so rather than
+    // waiting for a dev server (30-session-previews.md).
+    const owner = await provisionedUser('sessionbrowser');
+    const hostId = await pairHost(owner.api, 'Quiet box');
+    const installationId = await connectInstallation(owner.api);
+    const sessionId = await createSession(owner.api, hostId, installationId);
+    await markOpen(sessionId);
+
+    await signInAs(page, owner.user);
+    await page.goto(`/sessions/${sessionId}`);
+    await page.getByRole('button', { name: 'Show preview' }).click();
+    const pane = page.getByRole('complementary', { name: 'Preview' });
+    await pane.getByRole('button', { name: 'Browser' }).click();
+    await expect(pane.getByText('The host is offline')).toBeVisible();
+    await expect(pane.getByText('The preview comes back when the host reconnects.')).toBeVisible();
+  });
 });

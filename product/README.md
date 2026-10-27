@@ -723,3 +723,11 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
+  the owner asked for the Browser tab, through "tunnel technology like
+  Cloudflare, Vercel or ngrok"; offered the runner's own link as that
+  tunnel, they chose it, asking that an app with an API work. A preview is
+  an origin per session and port on a preview domain of its own, served by
+  the relay through the link, the app seeing `localhost` and its API behind
+  the dev server's proxy; cloudflared and ngrok wait for public share links
+  (`versions/mvp/30-session-previews.md`).

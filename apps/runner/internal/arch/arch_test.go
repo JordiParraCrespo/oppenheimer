@@ -30,7 +30,7 @@ const (
 	sharedPrefix = "github.com/jordiparracrespo/oppenheimer/packages/go/"
 )
 
-var contexts = []string{"apikeys", "devices", "host", "pairing", "service", "sessions", "updates"}
+var contexts = []string{"apikeys", "devices", "host", "pairing", "ports", "service", "sessions", "updates"}
 
 func TestImportBoundaries(t *testing.T) {
 	root, err := filepath.Abs("..")
