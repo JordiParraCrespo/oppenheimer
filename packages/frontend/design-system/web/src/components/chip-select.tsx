@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
@@ -558,8 +559,9 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
  * on host **mac-studio**, repo **xrp-mobile**, branch **main**". Four in a
  * row on New session, so the row reads as a sentence instead of a form.
  *
- * Every one filters. When the list can grow, a pinned action band ("Add
- * host…") ends in a chevron, because it opens something rather than choosing.
+ * Every one filters, and the current option leads the list. When the list can
+ * grow, a pinned action band ("Add host…") ends in a chevron, because it
+ * opens something rather than choosing.
  *
  * Built on Popover because Base UI Select has no filtering. The parts are
  * exported so a multi-pane picker such as `RepositorySelect` is the same chip
@@ -628,8 +630,14 @@ function ChipSelect({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
+  // The option chosen when the popup opened leads the list (`selectedFirst`).
+  const [pinned, setPinned] = React.useState<string | null>(null);
   const term = query.trim().toLowerCase();
-  const visible = onQueryChange ? options : options.filter((option) => matches(option, term));
+  const visible = selectedFirst(
+    onQueryChange ? options : options.filter((option) => matches(option, term)),
+    pinned ? [pinned] : [],
+    (option) => option.value,
+  );
   const selected = options.find((option) => option.value === value) ?? null;
 
   // Stable across a highlight move, so the memoised rows can skip it.
@@ -661,6 +669,7 @@ function ChipSelect({
       onOpenChange={(next) => {
         setOpen(next);
         setActive(0);
+        if (next) setPinned(value);
         if (!next && query !== '') {
           setQuery('');
           onQueryChange?.('');
