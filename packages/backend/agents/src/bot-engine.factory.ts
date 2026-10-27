@@ -39,6 +39,9 @@ export function createBotEngine(): BotEngine {
   });
 }
 
+/** The providers that run on the OpenAI engine (the Responses API). */
+const OPENAI_ENGINE_PROVIDERS: ReadonlySet<BotProvider> = new Set(['openai', 'chatgpt', 'xai']);
+
 /**
  * What a provider's engine lets a bot do on its own, beside the tools the
  * request brings, in words for the prompt. The Claude engine keeps web
@@ -47,7 +50,7 @@ export function createBotEngine(): BotEngine {
  * request's tools and nothing else.
  */
 export function engineCapabilities(provider: BotProvider): readonly string[] {
-  return provider === 'openai' || provider === 'chatgpt' || provider === 'xai'
+  return OPENAI_ENGINE_PROVIDERS.has(provider)
     ? []
     : ['Search the web (web search).', 'Keep a short to-do list of your own steps for this turn.'];
 }
