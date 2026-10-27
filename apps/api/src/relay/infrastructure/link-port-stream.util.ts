@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Duplex } from 'node:stream';
-import { ATTACHMENT_CREDIT_WINDOW_BYTES } from '@oppenheimer/shared/protocol';
 import type {
   AttachmentClosedReason,
   AttachmentSink,
   RunnerLink,
 } from '../../links/application/link-registry.port';
+import { CreditWindow } from './credit-window.util';
 
 /**
  * The most one frame of a port's bytes carries: well under the link's frame
@@ -36,8 +36,10 @@ export class PortClosedError extends Error {
  * One TCP connection to a port a session listens on, through its host's
  * runner (`product/versions/mvp/28-session-previews.md`): `port.open` on a
  * new attachment, then the connection's bytes as binary frames both ways.
- * Each direction has its own credit window: this side sends while the runner
- * has credited room, and credits the runner for what its reader took.
+ * Each direction is under the link's credit window (the contract is in
+ * `@oppenheimer/shared/protocol`'s `ports.ts`): this side sends while the
+ * runner has credited room (`CreditWindow`), and credits the runner for what
+ * its reader took.
  *
  * It is a `Duplex`, so Node's HTTP client and a raw upgrade both run over it
  * as over a socket; the socket methods an `http.Agent` calls are no-ops.
@@ -46,12 +48,14 @@ export class LinkPortStream extends Duplex {
   private readonly attachmentId: number;
   private open = false;
   private remoteEnded = false;
-  /** Bytes this side may still send before the runner credits more. */
-  private window = ATTACHMENT_CREDIT_WINDOW_BYTES;
+  /** Settles when the runner has dialled the port (`port.opened`), or fails with the attachment. */
+  private readonly ready: Promise<void>;
+  private markOpened: () => void = () => {};
+  private markFailed: (error: Error) => void = () => {};
+  /** The runner's credit for what this side sent. */
+  private readonly window = new CreditWindow();
   /** Bytes delivered to the reader that the runner has not been credited for. */
   private owed = 0;
-  /** Writers waiting for the port to open, or for credit. */
-  private waiters: { resolve: () => void; reject: (error: Error) => void }[] = [];
   /**
    * What the link delivers into. A field rather than this class's own
    * methods: `Duplex` already has a `closed`, which means something else.
@@ -73,6 +77,12 @@ export class LinkPortStream extends Duplex {
     port: number,
   ) {
     super({ allowHalfOpen: false });
+    this.ready = new Promise((resolve, reject) => {
+      this.markOpened = resolve;
+      this.markFailed = reject;
+    });
+    // A write is what awaits it; one that never comes must not leave it unhandled.
+    this.ready.catch(() => {});
     const commandId = randomUUID();
     this.attachmentId = link.openAttachment(this.sink, commandId);
     const sent = link.send({
@@ -89,7 +99,7 @@ export class LinkPortStream extends Duplex {
 
   private onOpened(): void {
     this.open = true;
-    this.wake();
+    this.markOpened();
   }
 
   private onBytes(bytes: Uint8Array): void {
@@ -99,8 +109,7 @@ export class LinkPortStream extends Duplex {
   }
 
   private onCredit(bytes: number): void {
-    this.window += bytes;
-    this.wake();
+    this.window.credit(bytes);
   }
 
   private onClosed(reason: AttachmentClosedReason): void {
@@ -138,7 +147,8 @@ export class LinkPortStream extends Duplex {
       if (!this.remoteEnded) this.link.send({ type: 'port.close', attachmentId: id });
     }
     const failure = error ?? new PortClosedError('runner_closed');
-    for (const waiter of this.waiters.splice(0)) waiter.reject(failure);
+    this.markFailed(failure);
+    this.window.close(failure);
     done(error);
   }
 
@@ -165,26 +175,14 @@ export class LinkPortStream extends Duplex {
   }
 
   private async send(chunk: Buffer): Promise<void> {
+    await this.ready;
     for (let offset = 0; offset < chunk.length; ) {
-      await this.until(() => this.open && this.window > 0);
-      const piece = chunk.subarray(offset, offset + Math.min(CHUNK_BYTES, this.window));
+      await this.window.acquire();
+      const piece = chunk.subarray(offset, offset + Math.min(CHUNK_BYTES, this.window.room));
       if (!this.link.sendBinary(this.attachmentId, piece)) throw new PortClosedError('link_lost');
-      this.window -= piece.length;
+      this.window.sent(piece.length);
       offset += piece.length;
     }
-  }
-
-  private until(ready: () => boolean): Promise<void> {
-    if (ready()) return Promise.resolve();
-    if (this.destroyed) return Promise.reject(new PortClosedError('runner_closed'));
-    return new Promise((resolve, reject) => {
-      const check = () => (ready() ? resolve() : this.waiters.push({ resolve: check, reject }));
-      this.waiters.push({ resolve: check, reject });
-    });
-  }
-
-  private wake(): void {
-    for (const waiter of this.waiters.splice(0)) waiter.resolve();
   }
 
   private flushCredit(): void {

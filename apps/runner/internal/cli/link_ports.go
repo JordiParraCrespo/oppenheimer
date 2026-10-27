@@ -26,30 +26,28 @@ const tunnelInput = 64
 
 // tunnel is one TCP connection to a port a session listens on, as an
 // attachment: what the port sends goes up as frames under the id, each
-// direction under its own credit window (product/versions/mvp/28-session-previews.md).
+// direction under the link's credit window (product/versions/mvp/28-session-previews.md).
+// Up, the window is the same flowWindow a terminal's PTY pump reads under;
+// down, the relay keeps it, and this side credits each frame the socket took.
 type tunnel struct {
 	id        uint32
 	sessionID string
 	conn      net.Conn
 	cancel    context.CancelFunc
-	// credits is the relay's credit for what this tunnel sent it.
-	credits chan int
+	// flow is the relay's credit for what this tunnel sent it.
+	flow *flowWindow
 	// input is the relay's bytes waiting for the socket.
 	input chan []byte
 	once  sync.Once
 }
 
-func (t *tunnel) credit(bytes int) {
-	select {
-	case t.credits <- bytes:
-	default:
-	}
-}
+func (t *tunnel) credit(bytes int) { t.flow.credit(bytes) }
 
 // close ends the connection; the pumps see it and stop.
 func (t *tunnel) close() {
 	t.once.Do(func() {
 		t.cancel()
+		t.flow.close()
 		_ = t.conn.Close()
 	})
 }
@@ -89,7 +87,7 @@ func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 	ctx, cancel := context.WithCancel(h.life)
 	t := &tunnel{
 		id: m.AttachmentID, sessionID: m.SessionID, conn: conn, cancel: cancel,
-		credits: make(chan int, 64), input: make(chan []byte, tunnelInput),
+		flow: newFlowWindow(), input: make(chan []byte, tunnelInput),
 	}
 	h.mu.Lock()
 	if !h.linkUp || h.epoch != epoch {
@@ -109,32 +107,14 @@ func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 // the relay has credit for it.
 func (h *linkHandler) tunnelUp(ctx context.Context, t *tunnel) {
 	buf := make([]byte, tunnelChunk)
-	window := link.CreditWindow
-	for {
-		for window <= 0 {
-			select {
-			case <-ctx.Done():
-				return
-			case n := <-t.credits:
-				window += n
-			}
-		}
+	for t.flow.acquire(ctx) {
 		n, err := t.conn.Read(buf)
 		if n > 0 {
 			if sendErr := h.client.SendFrame(ctx, t.id, buf[:n]); sendErr != nil {
 				h.endTunnel(t, "link refused a frame")
 				return
 			}
-			window -= n
-		}
-		// Credit that arrived while reading counts at once.
-		for drained := false; !drained; {
-			select {
-			case c := <-t.credits:
-				window += c
-			default:
-				drained = true
-			}
+			t.flow.sent(n)
 		}
 		if err != nil {
 			reason := "port closed"
