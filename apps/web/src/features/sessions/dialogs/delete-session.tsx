@@ -4,6 +4,13 @@ import { ConfirmDialog, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/** What deleting does, per place. */
+const DESCRIPTION = {
+  worktree: 'sessions.deleteSession.description',
+  folder: 'sessions.deleteSession.descriptionFolder',
+  cloud: 'sessions.deleteSession.descriptionCloud',
+} as const satisfies Record<SessionEntity['place'], string>;
+
 /**
  * Delete a session: the console's word for the API's close. The worktree and
  * transcript go, and the row stays resolved so its directory name and branch
@@ -24,7 +31,8 @@ import { useTranslation } from 'react-i18next';
  *
  * A folder session has no worktree and nothing of ours to push: its close
  * ends the terminal and leaves the folder as it is, so it says only that and
- * has no box to tick.
+ * has no box to tick. A cloud session has nothing on its host at all: the
+ * delete removes it from Oppenheimer at once, and it stays on claude.ai/code.
  */
 export function DeleteSessionDialog({
   session,
@@ -36,6 +44,8 @@ export function DeleteSessionDialog({
   const { t, i18n } = useTranslation();
   const [discard, setDiscard] = useState(false);
   const close = useCloseSession({ onSuccess: onClose });
+  // Only a worktree holds work of ours that a delete could lose.
+  const hasWork = session.place === 'worktree';
   const refusal = session.closeRefusal;
   const refusalKey = refusal ? `errors.byCode.${refusal.code}` : null;
   const refusalReason = refusalKey
@@ -47,11 +57,7 @@ export function DeleteSessionDialog({
   return (
     <ConfirmDialog
       title={t('sessions.deleteSession.title', { name: session.name })}
-      description={
-        session.isFolder
-          ? t('sessions.deleteSession.descriptionFolder')
-          : t('sessions.deleteSession.description')
-      }
+      description={t(DESCRIPTION[session.place])}
       confirmLabel={t('sessions.deleteSession.confirm')}
       pendingLabel={t('sessions.deleteSession.deleting')}
       pending={close.isPending}
@@ -59,7 +65,7 @@ export function DeleteSessionDialog({
       errorFallback={t('sessions.deleteSession.failed')}
       onClose={onClose}
       onConfirm={() =>
-        close.mutate({ id: session.id, acceptUnpushedWork: session.isFolder ? false : discard })
+        close.mutate({ id: session.id, acceptUnpushedWork: hasWork ? discard : false })
       }
     >
       {refusal ? (
@@ -68,7 +74,7 @@ export function DeleteSessionDialog({
           message={[refusalReason, refusal.detail].filter(Boolean).join(' ')}
         />
       ) : null}
-      {session.isFolder ? null : (
+      {hasWork ? (
         <ConfirmDialog.Option
           checked={discard}
           onCheckedChange={setDiscard}
@@ -76,7 +82,7 @@ export function DeleteSessionDialog({
         >
           {t('sessions.deleteSession.discard')}
         </ConfirmDialog.Option>
-      )}
+      ) : null}
     </ConfirmDialog>
   );
 }

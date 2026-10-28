@@ -26,6 +26,7 @@ import {
   type SessionPreview,
   type SessionShare,
   type SharedSession,
+  type StartCloudSessionInput,
 } from './session.entity';
 import { type SessionStartEntry, settlesStart, toStartEntry } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
@@ -134,6 +135,17 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.lastEventAt ? new Date(data.lastEventAt) : null,
     data.stateSeq ?? 0,
     toDecision(data.decision),
+    data.cloud
+      ? {
+          provider: data.cloud.provider,
+          url: data.cloud.url ?? null,
+          repositoryUrl: data.cloud.repositoryUrl,
+          status: data.cloud.status,
+          branch: data.cloud.branch ?? null,
+          pullRequestUrl: data.cloud.pullRequestUrl ?? null,
+          syncedAt: new Date(data.cloud.syncedAt),
+        }
+      : null,
     data.cloudSessionId ?? null,
   );
 }
@@ -231,6 +243,25 @@ export class SessionsRepository {
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
       SessionsErrors.CREATE_FAILED,
+    );
+    return toEntity(data);
+  }
+
+  /** A session in a vendor's cloud: the vendor is asked first, and refuses in its own words. */
+  @MapApiError(SessionsErrors.START_CLOUD_FAILED)
+  async startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.startCloudSession({
+        body: {
+          provider: input.provider,
+          checkout: input.checkout,
+          prompt: input.prompt,
+          ...(input.projectId ? { projectId: input.projectId } : {}),
+          ...(input.model ? { model: input.model } : {}),
+        },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      SessionsErrors.START_CLOUD_FAILED,
     );
     return toEntity(data);
   }

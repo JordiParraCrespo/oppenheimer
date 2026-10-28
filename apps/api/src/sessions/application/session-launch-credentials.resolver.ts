@@ -15,11 +15,13 @@ export class SessionLaunchCredentials {
   constructor(private readonly tokens: RepositoryTokenFactory) {}
 
   async for(session: WorkSessionEntity): Promise<Pick<SessionLaunchSpec, 'cloud' | 'withheld'>> {
-    if (session.place !== 'cloud') return {};
+    // A cloud session no host starts (Cursor's) is never launched by a host.
+    const hostId = session.hostId;
+    if (session.place !== 'cloud' || hostId === null) return {};
     const checkout = session.liveCheckouts[0];
     if (!checkout) return {};
     const token = await this.tokens.sealed(
-      session.hostId,
+      hostId,
       checkout.installationId,
       Number(checkout.githubRepoId),
     );

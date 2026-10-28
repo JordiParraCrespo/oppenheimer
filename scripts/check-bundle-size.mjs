@@ -27,15 +27,17 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 446.8KB measured (2026-10-27); the last raise was for the session
-    // pane's Browser tab: its strings ride the bundled locale and its ports
-    // and preview reads the consumer package the entry boots (+1.2KB), while
-    // the pane itself loads when first opened. Earlier raises and
+    // 450.0KB measured (2026-10-28, with main's Claude Code cloud merged);
+    // 449.1KB on 2026-10-27, when the last raise was for cloud sessions:
+    // Cloud in New session's place picker and Cursor in its agent picker,
+    // Cursor's mark in the design-system chunk the entry loads, and their
+    // strings in the bundled locale (+2.3KB). The one before it was the
+    // session pane's Browser tab (+1.2KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 447,
+    budgetKB: 450,
   },
   // oppenheimer:end web
 ];

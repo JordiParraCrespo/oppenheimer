@@ -37,6 +37,8 @@ export class SessionLookupResolver implements SessionLookupPort {
     const found = await this.sessions.findOneByIdForMachine(sessionId);
     if (found.isNone()) return null;
     const session = found.unwrap();
+    // A cloud session has no terminal of ours to attach to.
+    if (session.hostId === null) return null;
     return {
       id: session.id,
       organizationId: session.organizationId,
@@ -53,7 +55,7 @@ export class SessionLookupResolver implements SessionLookupPort {
     if (found.isNone()) return null;
     const session = found.unwrap();
     const checkout = session.checkouts.find((candidate) => candidate.id === checkoutId);
-    if (!checkout) return null;
+    if (!checkout || session.hostId === null) return null;
     return {
       hostId: session.hostId,
       installationId: checkout.installationId,

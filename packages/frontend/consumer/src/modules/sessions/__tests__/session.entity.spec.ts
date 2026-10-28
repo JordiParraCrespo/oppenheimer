@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  repositoryNameOf,
   SessionCheckoutEntity,
   SessionEntity,
   type SessionGroup,
@@ -141,5 +142,66 @@ describe('SessionEntity.isHostOffline', () => {
   it('reads the hint the create request came back with', () => {
     expect(session({ hints: ['host_offline'] }).isHostOffline).toBe(true);
     expect(session({ hints: [] }).isHostOffline).toBe(false);
+  });
+});
+
+/**
+ * A cloud session has no host or terminal: the console keeps asking about it
+ * while its vendor's run works, and names its repository and the vendor's
+ * branch where a host session names its checkout.
+ */
+describe('a cloud session', () => {
+  function cloud(status: 'starting' | 'running' | 'finished', branch: string | null = null) {
+    return new SessionEntity(
+      'session-2',
+      'org-1',
+      'project-1',
+      null,
+      'Fix the login redirect loop',
+      'calm-heron-2b8c1d',
+      'cursor',
+      { model: null, permission: null, effort: null },
+      'working',
+      'open',
+      null,
+      [],
+      null,
+      [],
+      new Date('2026-10-27T12:00:00Z'),
+      'cloud',
+      null,
+      null,
+      null,
+      null,
+      null,
+      0,
+      null,
+      {
+        provider: 'cursor',
+        url: 'https://cursor.com/agents?id=bc-session-2',
+        repositoryUrl: 'https://github.com/acme/api',
+        status,
+        branch,
+        pullRequestUrl: null,
+        syncedAt: new Date('2026-10-27T12:00:00Z'),
+      },
+    );
+  }
+
+  it('is worked on while its vendor’s run is starting or running, and settled once it ended', () => {
+    expect(cloud('starting').isCloudWorking).toBe(true);
+    expect(cloud('running').isCloudWorking).toBe(true);
+    expect(cloud('finished').isCloudWorking).toBe(false);
+    expect(session().isCloudWorking).toBe(false);
+  });
+
+  it('names its repository, and the vendor’s branch once it pushed one', () => {
+    expect(cloud('running').scopeLabel).toBe('acme/api');
+    expect(cloud('finished', 'cursor/fix-login').scopeLabel).toBe('acme/api · cursor/fix-login');
+  });
+
+  it('names a GitHub repository by owner and name, and leaves any other URL whole', () => {
+    expect(repositoryNameOf('https://github.com/acme/web.git')).toBe('acme/web');
+    expect(repositoryNameOf('https://gitlab.com/acme/api')).toBe('https://gitlab.com/acme/api');
   });
 });

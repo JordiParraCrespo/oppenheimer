@@ -4,6 +4,7 @@ import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
 import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
+import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
@@ -74,6 +75,8 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('oauth.google.clientSecret') &&
         calendarTokenKeyOf(configService.get<string>('calendar.tokenKey')),
     ),
+    // A valid sealing key for a person's cloud agent vendor keys.
+    cloud_agents: Boolean(cloudAgentsSealKeyOf(configService.get<string>('cloudAgents.sealKey'))),
     // A valid sealing key for the workspaces' model provider keys.
     bot_providers: Boolean(botsProviderKeyOf(configService.get<string>('bots.providerKey'))),
     // The deployment's own speech-to-text server. A workspace signed in to

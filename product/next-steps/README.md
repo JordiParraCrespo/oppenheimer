@@ -100,7 +100,14 @@ where these land is the first open question below.
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
 - 2026-10-24: customers and routes added after channels.
+- 2026-10-26: Cursor's cloud agents landed ahead of a version, as a rail
+  item of their own on the person's Cursor key ([Cloud agents](cloud-agents.md),
+  "What landed"); Claude and Codex cloud keep their place in its order.
 - 2026-10-27: Claude cloud built ahead of Cursor, at the owner's request: a
   `cloud` place started by the host's runner with `claude --cloud`, and its
   status reported by `apps/extension` from claude.ai (`cloud-agents.md`,
   `../versions/mvp/24-session-places.md` §7).
+- 2026-10-28: both clouds kept, at the owner's request: Claude Code's
+  (started by a host) and Cursor's (launched by the control plane, no host)
+  are two kinds of the one `cloud` place; Grok's comes after them
+  ([Cloud agents](cloud-agents.md), "Two kinds of cloud session").

@@ -28,6 +28,12 @@ import { CloseSessionCommand } from './close-session.command';
  *
  * Asking twice is asking once for a session already resolved: a retry after a lost
  * response is not a conflict.
+ *
+ * A cloud session left nothing on a host, so its close is recorded whole here:
+ * the request and `session.closed` together, with no host to wait for, online or
+ * not. Claude Code's stays on claude.ai/code, where it is archived; a vendor's
+ * agent stays at its vendor, its page and branch the person's to keep or delete
+ * (`product/next-steps/cloud-agents.md`).
  */
 @CommandHandler(CloseSessionCommand)
 export class CloseSessionCommandHandler
@@ -45,20 +51,30 @@ export class CloseSessionCommandHandler
     const session = await this.loader.find(command.scope, command.sessionId);
     if (session.isResolved) return { sessionId: session.id, hints: [] };
 
-    await this.sessions.appendEvents(session, [
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          command.id,
-          SESSION_EVENT_KINDS.CLOSE_REQUESTED,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED,
-        payload: { acceptUnpushedWork: command.acceptUnpushedWork },
-      },
-    ]);
+    const requested = this.entry(command, SESSION_EVENT_KINDS.CLOSE_REQUESTED, {
+      acceptUnpushedWork: command.acceptUnpushedWork,
+    });
+    if (session.closesWithoutItsHost) {
+      await this.sessions.appendEvents(session, [
+        requested,
+        this.entry(command, SESSION_EVENT_KINDS.CLOSED, { by: 'api' }),
+      ]);
+      return { sessionId: session.id, hints: [] };
+    }
+
+    await this.sessions.appendEvents(session, [requested]);
     const { hints } = await this.dispatch.close(session, {
       acceptUnpushedWork: command.acceptUnpushedWork,
     });
     return { sessionId: session.id, hints };
+  }
+
+  private entry(command: CloseSessionCommand, kind: string, payload: unknown) {
+    return {
+      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(command.id, kind),
+      source: 'api' as const,
+      kind,
+      payload,
+    };
   }
 }

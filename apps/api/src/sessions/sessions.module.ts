@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { CloudAgentsModule } from '../cloud-agents/cloud-agents.module';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
@@ -9,6 +10,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
+import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
@@ -59,6 +61,8 @@ import { RestartSessionHttpController } from './commands/restart-session/restart
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
+import { StartCloudSessionCommandHandler } from './commands/start-cloud-session/start-cloud-session.command-handler';
+import { StartCloudSessionHttpController } from './commands/start-cloud-session/start-cloud-session.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
 import { StopSessionShareCommandHandler } from './commands/stop-session-share/stop-session-share.command-handler';
@@ -66,6 +70,7 @@ import { StopSessionShareHttpController } from './commands/stop-session-share/st
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from './database/session-share.orm-entity';
 import { SessionShareRepository } from './database/session-share.repository';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
@@ -111,6 +116,7 @@ const httpControllers = [
   IssueSharedAttachTicketHttpController,
   FindSessionsHttpController,
   CreateSessionHttpController,
+  StartCloudSessionHttpController,
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
@@ -138,6 +144,7 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   CreateSessionCommandHandler,
+  StartCloudSessionCommandHandler,
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
@@ -188,6 +195,7 @@ const adapters: Provider[] = [
       WorkSessionEventOrmEntity,
       SessionTurnOrmEntity,
       SessionShareOrmEntity,
+      SessionCloudRunOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
@@ -206,6 +214,8 @@ const adapters: Provider[] = [
     // The workspace's slug for a launch and the workspaces an account owns for
     // its erasure, and nothing else of organizations'.
     OrganizationsModule,
+    // `CLOUD_RUNS`: what a cloud session asks its vendor, on its launcher's key.
+    CloudAgentsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -215,6 +225,7 @@ const adapters: Provider[] = [
     WorkSessionMapper,
     SessionShareMapper,
     AttachTicketFactory,
+    CloudSessionSyncResolver,
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,

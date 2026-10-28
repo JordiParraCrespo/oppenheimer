@@ -42,6 +42,7 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
  * a worktree session always, a folder session only when it named
  * `session.folder` (it would refuse a create with no checkouts otherwise), a
  * cloud session only when it named `session.cloud` (it would open a terminal).
+ * A cloud session no host starts (Cursor's) is never sent to a runner.
  */
 export function runnerTakesPlace(
   place: SessionPlace,

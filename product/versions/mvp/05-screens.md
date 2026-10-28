@@ -52,8 +52,10 @@
   which starts the composer on that project with its defaults) and
   Project settings (the project dialog editing; Delete project on its
   footer is the archive behind a confirm, and is disabled while the
-  project has unresolved sessions). An
-  empty project shows an empty row with a link to start one. A row's
+  project has unresolved sessions). A
+  project with no session is not listed (until 2026-10-28 it showed an
+  empty row with a link to start one); with projects but no session at
+  all, the list says so in one line. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a
@@ -75,7 +77,11 @@
   that order (a session dropped under another sort keeps what the reader
   was looking at and switches to it). Sessions hold still while a filter
   or the search hides some of them, since a drop would lose the hidden
-  ones' places. The workspace's **Unassigned** project is the first group
+  ones' places. The filter menu's Show projects checks each project
+  on or off (added 2026-10-27): a hidden project's group and sessions
+  leave the sidebar on this device, its place in the order is kept, a
+  pinned session of it stays pinned, and the project filter still
+  reaches it. Hiding is not a filter, so Clear filters leaves it. The workspace's **Unassigned** project is the first group
   until the reader moves it: a session that names no project is listed
   there. Its settings edit its
   repositories and defaults like any project's, but its name is fixed

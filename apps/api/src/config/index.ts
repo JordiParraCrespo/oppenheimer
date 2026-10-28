@@ -2,6 +2,7 @@ export { appConfig } from './app.config';
 export { automationsConfig } from './automations.config';
 export { botsConfig } from './bots.config';
 export { calendarConfig, calendarTokenKeyOf } from './calendar.config';
+export { cloudAgentsConfig, cloudAgentsSealKeyOf } from './cloud-agents.config';
 export { databaseConfig } from './database.config';
 export { emailConfig } from './email.config';
 export { githubAppConfig } from './github.config';

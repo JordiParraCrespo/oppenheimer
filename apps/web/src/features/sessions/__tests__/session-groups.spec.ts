@@ -11,8 +11,8 @@ import {
 
 /**
  * The sidebar's groups and the move pane's targets
- * (`product/versions/mvp/05-screens.md`): every project is a group even when
- * empty, a session whose project is gone still shows, and a session may move
+ * (`product/versions/mvp/05-screens.md`): only a project with sessions is
+ * drawn, a session whose project is gone still shows, and a session may move
  * to any other project.
  */
 const project = (id: string, repos: string[]) =>
@@ -85,21 +85,21 @@ describe('shownGroups', () => {
   );
   const ids = (list: typeof groups) => list.map((group) => group.project?.id);
 
-  it('keeps every group, empty ones included, when nothing narrows the list', () => {
-    expect(ids(shownGroups(groups, false, null))).toEqual(['a', 'b', 'c']);
+  it('drops the groups with no session', () => {
+    expect(ids(shownGroups(groups, new Set(), null))).toEqual(['a']);
   });
 
-  it('drops the groups a filter or search left empty', () => {
-    expect(ids(shownGroups(groups, true, null))).toEqual(['a']);
+  it('keeps an empty group whose project still holds a session, as a drag source', () => {
+    expect(ids(shownGroups(groups, new Set(['b']), null))).toEqual(['a', 'b']);
   });
 
   it('keeps the picked project even when nothing in it matches', () => {
-    expect(ids(shownGroups(groups, true, 'c'))).toEqual(['a', 'c']);
+    expect(ids(shownGroups(groups, new Set(), 'c'))).toEqual(['a', 'c']);
   });
 
   it('drops an empty group with no project, whatever project is picked', () => {
     const orphaned = [...groups, { project: null, sessions: [] }];
-    expect(ids(shownGroups(orphaned, true, 'c'))).toEqual(['a', 'c']);
+    expect(ids(shownGroups(orphaned, new Set(), 'c'))).toEqual(['a', 'c']);
   });
 });
 

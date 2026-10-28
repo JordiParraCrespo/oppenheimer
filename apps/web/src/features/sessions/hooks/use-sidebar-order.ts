@@ -1,4 +1,6 @@
 import {
+  type DragItem,
+  type DragMove,
   type SortableGroups,
   sortableProjectId,
   useSortableGroups,
@@ -8,16 +10,20 @@ import { useMoveSession } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
 import { groupByProject } from '../lib/session-groups';
 import {
-  mergeSessionOrder,
+  mergeOrder,
   orderProjects,
   orderSessions,
   rememberSidebarOrder,
   type SidebarOrder,
   storedSidebarOrder,
 } from '../lib/sidebar-order';
+import type { SessionPins } from './use-session-pins';
 
 /** The `SortableGroup` the projects sit in; a project's sessions sit in one named by its id. */
 export const PROJECTS_GROUP = 'projects';
+
+/** The `SortableGroup` of the sessions pinned above the projects. */
+export const PINNED_GROUP = 'pinned';
 
 /**
  * The sidebar's groups in the reader's order, and the drag that changes it.
@@ -36,16 +42,33 @@ export const PROJECTS_GROUP = 'projects';
  * applies under the `custom` sort; a session dropped under another sort keeps
  * the order the reader was looking at, and `onReorder` asks for `custom` so
  * it stays. Spread `handlers` on the sidebar's `DragProvider`.
+ *
+ * `projects` are all of them; `listed` says which are drawn. A project the
+ * reader hid is not, but a drop of the drawn ones keeps its place, placed
+ * by a drag or not, so showing it again puts it back where it was.
+ *
+ * Pinned is one more group (`PINNED_GROUP`): a session dropped on it is
+ * pinned where it lands, a pinned one dragged up or down it is re-pinned in
+ * that order, and one dragged out into a project is unpinned there, moved
+ * too when the project is another. `pinned` are the pinned sessions drawn,
+ * in pin order, and `sessions` the rest; `carrying` is whether a session is
+ * being dragged, for Pinned to show where a pin can go before there is one.
  */
 export function useSidebarOrder({
   projects,
+  listed = () => true,
   sessions,
+  pinned,
+  pins,
   custom,
   onReorder,
   onWrite,
 }: {
   projects: readonly ProjectEntity[];
+  listed?: (projectId: string) => boolean;
   sessions: readonly SessionEntity[];
+  pinned: readonly SessionEntity[];
+  pins: Pick<SessionPins, 'setPinned' | 'placePins'>;
   custom: boolean;
   onReorder: () => void;
   onWrite: (error: Error | null) => void;
@@ -54,6 +77,7 @@ export function useSidebarOrder({
   const [live, setLive] = useState<SortableGroups | null>(null);
   // A cross-project drop's session order, drawn until its move settles.
   const [proposed, setProposed] = useState<readonly string[] | null>(null);
+  const [carrying, setCarrying] = useState(false);
   const move = useMoveSession();
 
   // localStorage: the order outlives the page on this device.
@@ -74,16 +98,27 @@ export function useSidebarOrder({
       for (const id of live[projectId] ?? []) drawnIn.set(id, projectId);
     }
   }
-  const drawn = sessions.map((session) => {
+  // While a drag is held, Pinned holds what the drag layer says it does.
+  const everyone = new Map([...pinned, ...sessions].map((session) => [session.id, session]));
+  const pinnedRows = live
+    ? (live[PINNED_GROUP] ?? []).flatMap((id) => everyone.get(id) ?? [])
+    : [...pinned];
+  const pinnedIds = new Set(pinnedRows.map((session) => session.id));
+  const unpinned = [...everyone.values()].filter((session) => !pinnedIds.has(session.id));
+  const drawn = unpinned.map((session) => {
     const projectId = drawnIn.get(session.id);
     return projectId && projectId !== session.projectId ? session.inProject(projectId) : session;
   });
   const groups = groupByProject(
-    orderProjects(projects, projectOrder),
+    orderProjects(
+      projects.filter((project) => listed(project.id)),
+      projectOrder,
+    ),
     custom || live ? orderSessions(drawn, sessionOrder) : drawn,
   );
 
   const value: SortableGroups = {
+    [PINNED_GROUP]: pinnedRows.map((session) => session.id),
     [PROJECTS_GROUP]: groups.flatMap(({ project }) =>
       project ? [sortableProjectId(project.id)] : [],
     ),
@@ -97,16 +132,28 @@ export function useSidebarOrder({
     (next, { settled }) => setLive(settled ? null : next),
     ({ id, from, to }, next) => {
       const projectIds = projectIdsOf(next);
+      if (to === PINNED_GROUP) {
+        pins.placePins(next[PINNED_GROUP] ?? []);
+        return;
+      }
       if (from === PROJECTS_GROUP) {
-        setStored((current) => ({ ...current, projects: projectIds }));
+        setStored((current) => ({
+          ...current,
+          projects: mergeOrder(
+            projectIds,
+            orderProjects(projects, current.projects).map(({ id }) => id),
+          ),
+        }));
         return;
       }
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
       if (!custom) onReorder();
-      if (from === to) {
+      if (from === PINNED_GROUP) pins.setPinned(id, false);
+      const fromProject = from === PINNED_GROUP ? everyone.get(id)?.projectId : from;
+      if (fromProject === to) {
         setStored((current) => ({
           ...current,
-          sessions: mergeSessionOrder(order, current.sessions),
+          sessions: mergeOrder(order, current.sessions),
         }));
         return;
       }
@@ -117,7 +164,7 @@ export function useSidebarOrder({
           onSuccess: () => {
             setStored((current) => ({
               ...current,
-              sessions: mergeSessionOrder(order, current.sessions),
+              sessions: mergeOrder(order, current.sessions),
             }));
             onWrite(null);
           },
@@ -128,5 +175,26 @@ export function useSidebarOrder({
     },
   );
 
-  return { groups, handlers };
+  // A session's drag shows Pinned even when nothing is pinned yet.
+  const carryingSession = (active: DragItem) => active.data.type === 'session';
+  return {
+    groups,
+    pinned: pinnedRows,
+    carrying,
+    handlers: {
+      ...handlers,
+      onDragStart: (active: DragItem) => {
+        setCarrying(carryingSession(active));
+        handlers.onDragStart(active);
+      },
+      onDragEnd: (move: DragMove) => {
+        setCarrying(false);
+        handlers.onDragEnd(move);
+      },
+      onDragCancel: () => {
+        setCarrying(false);
+        handlers.onDragCancel();
+      },
+    },
+  };
 }

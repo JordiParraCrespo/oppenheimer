@@ -1,9 +1,37 @@
-import type { CodingAgentId, SessionEffort, SessionPermission } from '@oppenheimer/shared/agents';
-import type { SessionPlace } from '@oppenheimer/shared/schemas/session';
+import {
+  CODING_AGENTS,
+  type CodingAgentId,
+  isCodingAgentId,
+  type SessionEffort,
+  type SessionPermission,
+} from '@oppenheimer/shared/agents';
+import {
+  CLOUD_AGENT_LABELS,
+  CLOUD_AGENT_PROVIDER_LABELS,
+  type CloudAgentProviderId,
+  type CloudAgentStatus,
+  cloudAgentIsActive,
+} from '@oppenheimer/shared/schemas/cloud-agent';
+import type { SessionAgentId, SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
-export type SessionAgent = CodingAgentId;
+/** What a session runs: a host's coding agent, or a vendor's in the cloud (`cursor`). */
+export type SessionAgent = SessionAgentId;
+
+/**
+ * A cloud session's vendor half: whose agent it is, its page (which the
+ * session's row opens), and what the vendor last said about its run.
+ */
+export interface SessionCloudRun {
+  provider: CloudAgentProviderId;
+  url: string | null;
+  repositoryUrl: string;
+  status: CloudAgentStatus;
+  branch: string | null;
+  pullRequestUrl: string | null;
+  syncedAt: Date;
+}
 
 /**
  * The **derived group**: what the sidebar's dot shows, computed by the control
@@ -161,7 +189,8 @@ export class SessionEntity {
     public readonly id: string,
     public readonly organizationId: string,
     public readonly projectId: string,
-    public readonly hostId: string,
+    /** Null for a cloud session launched at its vendor, which no host started. */
+    public readonly hostId: string | null,
     public readonly name: string,
     /** The directory name and the last segment of the branch. Immutable. */
     public readonly slug: string,
@@ -199,16 +228,34 @@ export class SessionEntity {
      * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
      */
     public readonly decision: SessionDecision | null = null,
+    /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
+    public readonly cloud: SessionCloudRun | null = null,
     /**
-     * A `cloud` session's Claude Code id (`session_…`), once its host has
-     * started it; null before, and for every other place.
+     * A Claude Code cloud session's id (`session_…`), once its host has
+     * started it; null before, and for every other session.
      */
     public readonly cloudSessionId: string | null = null,
   ) {}
 
-  /** Whether it runs in Claude Code's cloud: no terminal here, its page is claude.ai/code. */
+  /**
+   * Whether it runs in a vendor's cloud, with no terminal here: Claude Code's,
+   * whose page is claude.ai/code, or one launched at its vendor (`cloud`).
+   */
   get isCloud(): boolean {
     return this.place === 'cloud';
+  }
+
+  /** Whether its vendor's run may still change on its own: the list keeps asking while it does. */
+  get isCloudWorking(): boolean {
+    return this.cloud !== null && cloudAgentIsActive(this.cloud.status);
+  }
+
+  /**
+   * Where it runs, as one key a filter can compare: its host's id, or
+   * `cloud:<vendor>` for a cloud session.
+   */
+  get runsOn(): string {
+    return this.cloud ? `cloud:${this.cloud.provider}` : (this.hostId ?? '');
   }
 
   /** The cloud session's page on claude.ai, once it has one. */
@@ -261,10 +308,15 @@ export class SessionEntity {
 
   /**
    * `repo · branch` for the status line, with a count when there are more; the
-   * folder's path for a folder session (`folderLabel` shortens it under home).
+   * folder's path for a folder session (`folderLabel` shortens it under home);
+   * the repository and, once it pushed one, the vendor's branch for a cloud one.
    */
   get scopeLabel(): string | null {
     if (this.isFolder) return this.folderPath;
+    if (this.cloud) {
+      const repository = repositoryNameOf(this.cloud.repositoryUrl);
+      return this.cloud.branch ? `${repository} · ${this.cloud.branch}` : repository;
+    }
     const checkout = this.cwdCheckout;
     if (!checkout) return null;
     const extra = this.checkouts.length - 1;
@@ -303,6 +355,7 @@ export class SessionEntity {
       this.lastEventAt,
       this.stateSeq,
       this.decision,
+      this.cloud,
       this.cloudSessionId,
     );
   }
@@ -350,7 +403,7 @@ export interface CreateFolderSession {
 
 interface CreateSessionCommon {
   hostId: string;
-  agent: SessionAgent;
+  agent: CodingAgentId;
   launch?: Partial<SessionLaunch>;
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;
@@ -358,6 +411,20 @@ interface CreateSessionCommon {
   attachmentIds?: string[];
   name?: string;
   projectId?: string;
+}
+
+/**
+ * What New session posts for a session in a vendor's cloud: the vendor, the
+ * project, one repository, the first task and a model. There is no host,
+ * folder or permission level to name.
+ */
+export interface StartCloudSessionInput {
+  provider: CloudAgentProviderId;
+  projectId?: string;
+  checkout: CreateSessionCheckout;
+  prompt: string;
+  /** Absent is the vendor's own default. */
+  model?: string;
 }
 
 /** What a host is asked to get ready while New session is still being written. */
@@ -371,4 +438,20 @@ export interface SessionAttachment {
   id: string;
   mediaType: string;
   size: number;
+}
+
+/** `owner/name` of a GitHub repository URL, the URL itself for anything else. */
+export function repositoryNameOf(url: string): string {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/.exec(url);
+  return match ? match[1] : url;
+}
+
+/** What an agent is called on screen: the host catalog's name, or a cloud agent's vendor's. */
+export function sessionAgentLabel(agent: SessionAgent): string {
+  return isCodingAgentId(agent) ? CODING_AGENTS[agent].label : CLOUD_AGENT_LABELS[agent];
+}
+
+/** What a cloud vendor is called on screen, as a place a session runs. */
+export function cloudProviderLabel(provider: CloudAgentProviderId): string {
+  return CLOUD_AGENT_PROVIDER_LABELS[provider];
 }

@@ -92,4 +92,14 @@ test('New session starts a session in Claude Code cloud, and the console follows
   await expect(page.getByText('Idle', { exact: true }).first()).toBeHidden({ timeout: 30_000 });
   await expect(page.getByText('Running', { exact: true }).first()).toBeVisible();
   await shot('cloud-3-session');
+
+  // Delete it from its pane: nothing of it is on the host, so it goes at once.
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toContainText('stays on claude.ai/code');
+  await expect(dialog.getByRole('checkbox')).toHaveCount(0);
+  await shot('cloud-4-delete');
+  await dialog.getByRole('button', { name: 'Delete session' }).click();
+  await waitForLifecycle(api, sessionId, 'resolved', 15_000);
+  await expect(page.getByRole('link', { name: opened.name, exact: true })).toHaveCount(0);
 });

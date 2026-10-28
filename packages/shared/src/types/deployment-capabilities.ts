@@ -26,6 +26,10 @@
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
  *
+ * `cloud_agents` says whether a person can store a cloud agent vendor's key:
+ * the key it is sealed under (`CLOUD_AGENTS_KEY`). Whether a person can
+ * launch one is `GET /cloud-agents/status`, which asks every provider.
+ *
  * `session_previews` says whether sessions' dev servers can be opened from
  * the console: a preview domain (`PREVIEW_BASE_URL`) the relay serves them on.
  */
@@ -41,6 +45,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'google_calendar',
   'bot_providers',
   'voice_transcription',
+  'cloud_agents',
   'session_previews',
 ] as const;
 

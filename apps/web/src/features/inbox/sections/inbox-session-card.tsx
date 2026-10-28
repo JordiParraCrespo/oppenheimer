@@ -6,9 +6,8 @@ import {
   InboxCardBody,
   InboxCardFacts,
 } from '@oppenheimer/design-system-web';
-import type { InboxItem } from '@oppenheimer/frontend-consumer';
+import { type InboxItem, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
@@ -75,7 +74,7 @@ export function InboxSessionCard({
       <InboxCardFacts>
         <span className="flex items-center gap-1.5 [&_svg]:size-3.5">
           <AgentMark agent={session.agent} />
-          {CODING_AGENTS[session.agent].label}
+          {sessionAgentLabel(session.agent)}
         </span>
         {session.scopeLabel && !decision ? (
           <span className="font-mono">{session.scopeLabel}</span>
