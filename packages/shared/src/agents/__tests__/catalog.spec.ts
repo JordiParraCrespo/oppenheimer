@@ -78,6 +78,11 @@ describe('coding agent catalog', () => {
     expect(effortFor('opencode', 'anthropic/claude-haiku-5-5')?.default).toBe('none');
     // Each provider's variants, not one list for every model OpenCode reaches.
     expect(levelsOf('opencode', 'xai/grok-4.7')).toEqual(['low', 'medium', 'high', 'xhigh']);
+    // Grok's CLI only takes the levels on the model's own menu, so `minimal`
+    // and `max` are never offered, and Grok 4.5 stops at `high`.
+    expect(levelsOf('grok', 'grok-4.6')).toEqual(['low', 'medium', 'high', 'xhigh']);
+    expect(levelsOf('grok', 'grok-4.5')).toEqual(['low', 'medium', 'high']);
+    expect(effortLevelFor('grok', 'grok-4.5', 'xhigh')).toBeNull();
     expect(levelsOf('opencode', 'google/gemini-4-argon')).toEqual(['low', 'medium', 'high']);
     // GLM under z.ai's Coding Plan has no `medium`, so one is never sent to it.
     expect(levelsOf('opencode', 'zai-coding-plan/glm-5.3')).toEqual(['low', 'high', 'max']);

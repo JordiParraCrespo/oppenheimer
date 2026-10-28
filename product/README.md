@@ -782,3 +782,10 @@ earlier note:
   bots from the page: the plus opens a menu with New bot and a check per
   bot for this section, and a row's ellipsis hides it from the section
   (slice D).
+- Grok offered sessions 4.7 and 4.6 with six effort levels, `minimal` to
+  `max`, and bots 4.7 and Grok Build 0.1 starting on `medium`. On
+  2026-10-28 the owner asked for a better Grok catalogue: sessions offer
+  4.7, 4.6 and 4.5 and bots add 4.6 and 4.5, each with the levels its own
+  menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
+  default everywhere (`versions/mvp/05-screens.md`,
+  `versions/mvp/25-bots.md`).

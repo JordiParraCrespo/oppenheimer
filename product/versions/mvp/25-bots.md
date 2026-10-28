@@ -819,3 +819,7 @@ The decisions it produced:
   like OpenAI's (§2). It offers Grok 4.7, whose effort runs low to extra
   high, and Grok Build 0.1, which xAI refuses an effort for, so its row
   has none. It comes after OpenAI and before GLM in the fallback order.
+- 2026-10-28: **Grok's catalog row grew to xAI's current models**: Grok
+  4.7 (the default), 4.6 and 4.5 beside Grok Build 0.1, each with the
+  levels xAI's reasoning guide gives it (4.5 stops at high), and `high`
+  as the default level, as it is xAI's, where it was `medium`.

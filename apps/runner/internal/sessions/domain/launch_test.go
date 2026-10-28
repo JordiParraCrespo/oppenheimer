@@ -26,8 +26,8 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("codex argv = %q, want %q", got, want)
 	}
-	got = Launch{Model: "grok-4.7", Permission: "ask", Effort: "minimal", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentGrok)
-	want = []string{"--model", "grok-4.7", "--permission-mode", "default", "--reasoning-effort", "minimal", "fix the picker"}
+	got = Launch{Model: "grok-4.7", Permission: "ask", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentGrok)
+	want = []string{"--model", "grok-4.7", "--permission-mode", "default", "--reasoning-effort", "xhigh", "fix the picker"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("grok argv = %q, want %q", got, want)
 	}
