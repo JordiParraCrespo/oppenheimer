@@ -363,8 +363,12 @@ describe('launchPermissionFor', () => {
   });
 
   it('reads an agent this build does not know as one that asks', () => {
-    expect(launchPermissionFor('cursor', null)).toBe('ask');
+    expect(launchPermissionFor('devin', null)).toBe('ask');
     expect(launchPermissionFor(null, 'full')).toBe('full');
+  });
+
+  it('records no level for a vendor’s cloud agent, which runs under the vendor’s rules', () => {
+    expect(launchPermissionFor('cursor', 'full')).toBeNull();
   });
 });
 

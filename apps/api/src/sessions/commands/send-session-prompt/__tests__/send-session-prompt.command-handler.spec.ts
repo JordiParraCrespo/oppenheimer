@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
+import { SessionCloudRunEntity } from '../../../domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { SendSessionPromptCommand } from '../../send-session-prompt/send-session-prompt.command';
@@ -165,6 +166,51 @@ describe('SendSessionPromptCommandHandler', () => {
       code: 'SESSIONS_014',
     });
     expect(sessions.appendEventsIf).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cloud session with SESSIONS_039, recording and typing nothing', async () => {
+    // Its agent waits at its vendor's prompt, not one on a host to type into.
+    const session = WorkSessionEntity.requestCloud({
+      id: 'cloud-1',
+      cloudRun: SessionCloudRunEntity.launched(
+        {
+          organizationId: 'org-acme',
+          sessionId: 'cloud-1',
+          provider: 'cursor',
+          externalId: 'bc-cloud-1',
+          url: null,
+          repositoryUrl: 'https://github.com/acme/api',
+          run: {
+            runId: 'run-1',
+            status: 'finished',
+            branch: null,
+            pullRequestUrl: null,
+            summary: null,
+          },
+        },
+        new Date(),
+      ),
+      organizationId: 'org-acme',
+      projectId: 'project-1',
+      createdByUserId: 'user-1',
+      slug: 'bold-otter-3f9a7k',
+      agent: 'cursor',
+    });
+    session.recordEvents([
+      { seq: 1, kind: SESSION_EVENT_KINDS.STARTED, payload: {}, occurredAt: new Date() },
+      {
+        seq: 2,
+        kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+        payload: { state: 'idle' },
+        occurredAt: new Date(),
+      },
+    ]);
+    const { handler, sessions, dispatch } = harness(session);
+    await expect(handler.execute(prompt(session))).rejects.toMatchObject({
+      code: 'SESSIONS_039',
+    });
+    expect(sessions.appendEventsIf).not.toHaveBeenCalled();
+    expect(dispatch.typeKeys).not.toHaveBeenCalled();
   });
 
   it('marks the prompt undelivered and answers SESSIONS_016 when the host cannot take the keys', async () => {

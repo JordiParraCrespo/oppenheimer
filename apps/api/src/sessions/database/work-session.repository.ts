@@ -5,6 +5,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
@@ -17,6 +18,7 @@ import {
 import { SessionResource } from '../sessions.resource';
 import { type AppendedEventRow, WorkSessionMapper } from '../work-session.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from './session-cloud-run.orm-entity';
 import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
 import type {
@@ -86,12 +88,15 @@ export class WorkSessionRepository
       // The same for the host, whose unpair is an update of this row: an unpair
       // that commits first turns this into zero rows, and one that arrives second
       // waits for the session, which the unpair then stops like any other and an
-      // account's erasure, a step after its unpair, deletes.
-      const paired: { id: string }[] = await manager.query(
-        `SELECT "id" FROM "host" WHERE "id" = $1 AND "unpairedAt" IS NULL FOR SHARE`,
-        [record.hostId],
-      );
-      if (paired.length === 0) return 'host-unpaired' as const;
+      // account's erasure, a step after its unpair, deletes. A cloud session has
+      // no host to lock.
+      if (record.hostId !== null) {
+        const paired: { id: string }[] = await manager.query(
+          `SELECT "id" FROM "host" WHERE "id" = $1 AND "unpairedAt" IS NULL FOR SHARE`,
+          [record.hostId],
+        );
+        if (paired.length === 0) return 'host-unpaired' as const;
+      }
 
       // The conflict target is the client's own key, so the statement itself
       // answers whether this request created the session — no second query that
@@ -141,6 +146,11 @@ export class WorkSessionRepository
       for (const checkout of session.checkouts) {
         await checkouts.insert(this.mapper.checkoutToPersistence(checkout));
       }
+      if (session.cloudRun) {
+        await manager
+          .getRepository(SessionCloudRunOrmEntity)
+          .insert(this.mapper.cloudRunToPersistence(session.cloudRun));
+      }
       await this.appendWithin(manager, session, events);
       return 'created' as const;
     });
@@ -162,6 +172,14 @@ export class WorkSessionRepository
 
     session.clearEvents();
     return { session, created: true, refused: null };
+  }
+
+  async saveCloudRunIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean> {
+    const { sessionId, organizationId, ...changes } = this.mapper.cloudRunToPersistence(run);
+    const result = await this.repository.manager
+      .getRepository(SessionCloudRunOrmEntity)
+      .update({ sessionId, organizationId, latestRunId: runIdAtLoad }, changes);
+    return result.affected === 1;
   }
 
   async appendEvents(
@@ -802,17 +820,42 @@ export class WorkSessionRepository
     return entities.map((record) => ({ record, sortKey: keys.get(record.id) ?? '' }));
   }
 
+  /** The sessions with their members: checkouts, and a cloud session's run. */
   private async withCheckoutsAll(records: WorkSessionOrmEntity[]): Promise<WorkSessionEntity[]> {
-    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
-    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+    const [checkouts, runs] = await Promise.all([
+      this.checkoutsFor(records.map((record) => record.id)),
+      this.cloudRunsFor(records),
+    ]);
+    return records.map((record) =>
+      this.mapper.toDomain(record, checkouts.get(record.id) ?? [], runs.get(record.id) ?? null),
+    );
   }
 
   private async withCheckouts(
     record: WorkSessionOrmEntity | null,
   ): Promise<Option<WorkSessionEntity>> {
     if (!record) return None as Option<WorkSessionEntity>;
-    const checkouts = await this.checkoutsFor([record.id]);
-    return Some(this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+    const [session] = await this.withCheckoutsAll([record]);
+    return Some(session);
+  }
+
+  /**
+   * The cloud runs of a page's sessions launched at a vendor, by the primary
+   * key; no query for none. Only those have a run: no host started them.
+   */
+  private async cloudRunsFor(
+    records: WorkSessionOrmEntity[],
+  ): Promise<Map<string, SessionCloudRunOrmEntity>> {
+    const sessionIds = records
+      .filter((record) => record.place === 'cloud' && record.hostId === null)
+      .map((r) => r.id);
+    if (sessionIds.length === 0) return new Map();
+    const runs = await this.repository.manager
+      .getRepository(SessionCloudRunOrmEntity)
+      .createQueryBuilder('run')
+      .where('run.sessionId IN (:...sessionIds)', { sessionIds })
+      .getMany();
+    return new Map(runs.map((run) => [run.sessionId, run]));
   }
 
   private async findOneByKeyUnscoped(

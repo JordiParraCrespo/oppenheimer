@@ -26,6 +26,7 @@ export const SCOPE_RESOURCES = [
   'bots',
   'tasks',
   'calendar',
+  'cloud-agents',
   'pulls',
   'repositories',
   'flags',
@@ -452,6 +453,32 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Calendar' },
           { action: 'update', subject: 'Calendar' },
           { action: 'delete', subject: 'Calendar' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'cloud-agents',
+    label: 'Cloud agents',
+    description:
+      'Coding agents run in a vendor’s cloud (Cursor): launching and following them, and the caller’s own key for the vendor.',
+    levels: {
+      read: {
+        scope: 'cloud-agents:read',
+        label: 'Read',
+        description:
+          'Read the caller’s cloud agents, the vendors they connected, and those vendors’ models and repositories.',
+        policies: [{ action: 'read', subject: 'CloudAgent' }],
+      },
+      write: {
+        scope: 'cloud-agents:write',
+        label: 'Edit',
+        description:
+          'Launch cloud agents, follow up on and stop them, and connect or disconnect a vendor key.',
+        policies: [
+          { action: 'create', subject: 'CloudAgent' },
+          { action: 'update', subject: 'CloudAgent' },
+          { action: 'delete', subject: 'CloudAgent' },
         ],
       },
     },

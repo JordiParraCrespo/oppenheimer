@@ -55,7 +55,10 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
   useNow: () => useSyncExternalStore(world.subscribe, () => world.get().now),
 }));
 
-const PROJECTS = [{ id: 'project-1', name: 'Web', isUnassigned: false }] as ProjectEntity[];
+const PROJECTS = [
+  { id: 'project-1', name: 'Web', isUnassigned: false },
+  { id: 'project-2', name: 'Docs', isUnassigned: false },
+] as ProjectEntity[];
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSuspenseAutomationsByProject: () => {
@@ -118,6 +121,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AutomationsSidebar', () => {
+  it('lists only the projects that have an automation', () => {
+    expect(screen.getByText('Web')).toBeTruthy();
+    expect(screen.queryByText('Docs')).toBeNull();
+  });
+
   it('renders no row when a refetch returns the same automations', () => {
     const fresh = ROWS.map((row) => automation(row.id));
     act(() => world.set({ automations: shareEntities(world.get().automations, fresh) }));

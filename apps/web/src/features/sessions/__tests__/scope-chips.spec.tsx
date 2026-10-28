@@ -35,6 +35,10 @@ describe('the scope chips', () => {
         place="worktree"
         onHostChange={vi.fn()}
         onPlaceChange={vi.fn()}
+        clouds={[]}
+        cloud={null}
+        onCloudChange={vi.fn()}
+        onConnectCloud={vi.fn()}
         onAddHost={vi.fn()}
         loading
       />,
@@ -147,6 +151,10 @@ describe('the scope chips', () => {
         place="worktree"
         onHostChange={vi.fn()}
         onPlaceChange={vi.fn()}
+        clouds={[]}
+        cloud={null}
+        onCloudChange={vi.fn()}
+        onConnectCloud={vi.fn()}
         onAddHost={vi.fn()}
         disabled
       />,

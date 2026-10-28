@@ -2,6 +2,7 @@ import {
   Button,
   InboxList,
   InboxSnoozedRow,
+  SidebarEmptyRow,
   SidebarListHead,
   useNow,
 } from '@oppenheimer/design-system-web';
@@ -119,11 +120,11 @@ export function InboxSidebarList() {
       ) : null}
 
       {rows.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-fg-subtle">
+        <SidebarEmptyRow className="ml-3.5">
           {search.dirty && inbox.open.length > 0
             ? t('inbox.list.noneMatching')
             : t('inbox.list.empty')}
-        </p>
+        </SidebarEmptyRow>
       ) : (
         <InboxList className="px-2">
           {rows.map(({ item, done: isDone }) => {

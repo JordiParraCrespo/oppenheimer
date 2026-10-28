@@ -44,7 +44,7 @@ export class AddCheckoutCommandHandler
   ) {}
 
   async execute(command: AddCheckoutCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     // The partial unique on `(sessionId, githubRepoId) WHERE removedAt IS NULL`
     // says the same thing; saying it here is what turns a constraint violation
     // into a sentence about the repository the caller named.

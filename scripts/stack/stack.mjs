@@ -6,7 +6,7 @@
  *   node scripts/stack/stack.mjs status
  *   node scripts/stack/stack.mjs down
  *
- * `up` is Postgres and Redis, the GitHub and namer stubs (`e2e/support`), the
+ * `up` is Postgres and Redis, the GitHub, namer and Cursor stubs (`e2e/support`), the
  * migrated API and, with `--web`, the console — the steps `e2e/README.md`
  * lists under "Running it", in order. Hosts are the fleet's
  * (`support/fleet.ts`); this starts none.
@@ -244,6 +244,7 @@ const KEPT_KEYS = [
   'GITHUB_APP_PRIVATE_KEY',
   'GITHUB_USER_TOKEN_KEY',
   'BOTS_PROVIDER_KEY',
+  'CLOUD_AGENTS_KEY',
 ];
 
 /**
@@ -312,6 +313,7 @@ async function up(flags) {
   await startInfrastructure();
   await startStub('github-stub', 4319);
   await startStub('namer-stub', 4320);
+  await startStub('cursor-stub', 4321);
   // Asked once: what is already answering is left alone, and what is not is
   // built — in one turbo run — and started. The console's Vite serves the
   // app's own source but resolves the workspace packages it imports from their
@@ -364,7 +366,7 @@ async function stop(pid) {
 
 async function down() {
   const state = readState();
-  for (const name of ['web', 'api', 'github-stub', 'namer-stub']) {
+  for (const name of ['web', 'api', 'github-stub', 'namer-stub', 'cursor-stub']) {
     if (state.pids[name]) await stop(state.pids[name]);
   }
   if (state.compose && succeeds('docker', ['info'])) run('docker', [...COMPOSE, 'down']);
@@ -380,6 +382,7 @@ async function status() {
     ['redis', await portOpen(6379)],
     ['github-stub', await portOpen(4319)],
     ['namer-stub', await portOpen(4320)],
+    ['cursor-stub', await portOpen(4321)],
     ['api', await httpOk(API_HEALTH)],
     ['web', await httpOk(WEB_URL)],
   ];

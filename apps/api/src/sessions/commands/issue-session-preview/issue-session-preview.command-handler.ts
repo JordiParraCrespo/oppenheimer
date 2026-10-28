@@ -42,7 +42,7 @@ export class IssueSessionPreviewCommandHandler
   async execute(command: IssueSessionPreviewCommand): Promise<IssuedSessionPreview> {
     const base = this.previewBaseUrl;
     if (!base) throw new AppError(SessionErrors.PREVIEWS_NOT_CONFIGURED);
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     await this.hosts.assertUsable(command.scope, session.hostId);
 
     const issued = await this.tickets.issue({

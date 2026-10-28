@@ -315,6 +315,14 @@
       "CALENDAR_009": "Un evento tiene que terminar después de empezar.",
       "CALENDAR_010": "Google Calendar nos ha pedido que vayamos más despacio. Vuelve a intentarlo en un minuto.",
       "CALENDAR_011": "Ya tienes cinco cuentas de Google conectadas, el máximo del calendario. Quita una para añadir otra.",
+      "CLOUD_AGENTS_002": "Los agentes en la nube pertenecen a un espacio de trabajo. Abre uno primero.",
+      "CLOUD_AGENTS_003": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
+      "CLOUD_AGENTS_004": "Conecta primero el proveedor con tu clave de API.",
+      "CLOUD_AGENTS_005": "El proveedor rechazó esa clave de API. Comprueba que sea una clave de usuario y que no se haya revocado.",
+      "CLOUD_AGENTS_006": "El proveedor no respondió. Vuelve a intentarlo en un momento.",
+      "CLOUD_AGENTS_007": "Se alcanzó el límite de peticiones del proveedor. Vuelve a intentarlo en breve.",
+      "CLOUD_AGENTS_010": "El proveedor rechazó la petición.",
+      "CLOUD_AGENTS_011": "Ese proveedor de agentes en la nube no está disponible aquí.",
       "INBOUND_001": "Esa fuente de eventos no se conoce.",
       "INBOUND_002": "La entrega no incluye un identificador de entrega.",
       "SESS_001": "El host no tiene constancia de esa sesión.",
@@ -348,6 +356,7 @@
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
       "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
       "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+      "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -609,7 +618,10 @@
           "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
         "hosts": "Hosts",
-        "startIn": "Empezar en"
+        "startIn": "Empezar en",
+        "atVendor": "Nube",
+        "clouds": "Nube",
+        "connect": "Conecta tu clave"
       },
       "project": {
         "label": "Proyecto",
@@ -671,7 +683,8 @@
         "favourites": "Favoritos",
         "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
         "addFavourite": "Añadir {{model}} a favoritos",
-        "removeFavourite": "Quitar {{model}} de favoritos"
+        "removeFavourite": "Quitar {{model}} de favoritos",
+        "auto": "Auto"
       },
       "permission": {
         "label": "Nivel de permisos",
@@ -713,7 +726,8 @@
         "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
         "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
       },
-      "failed": "No se pudo crear la sesión."
+      "failed": "No se pudo crear la sesión.",
+      "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo."
     },
     "session": {
       "status": {
@@ -793,6 +807,7 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "dropToPin": "Suelta una sesión aquí para fijarla.",
       "actions": "Acciones de la sesión",
       "rename": "Renombrar",
       "renameLabel": "Nombre de la sesión",
@@ -808,7 +823,10 @@
       "notDeleted": "No eliminada",
       "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
       "select": "Seleccionar",
-      "selected": "Seleccionada"
+      "selected": "Seleccionada",
+      "openAtVendor": "Se abre en {{vendor}}",
+      "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
+      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -819,6 +837,7 @@
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
       "refused": "Su host no la eliminó",
       "refusedUnknown": "El host se negó a eliminar la sesión."
     },
@@ -855,7 +874,11 @@
       "allRepositories": "Todos los repositorios",
       "allAgents": "Todos los agentes",
       "allHosts": "Todos los equipos",
-      "noMatches": "Ninguna sesión coincide con estos filtros."
+      "noMatches": "Ninguna sesión coincide con estos filtros.",
+      "shown": "Mostrar proyectos",
+      "shownAll": "Todos",
+      "shownSome": "{{shown}} de {{total}}",
+      "showAll": "Mostrar todos los proyectos"
     },
     "sort": {
       "custom": "Orden personalizado",
@@ -1158,7 +1181,17 @@
       "open": "Abrir en claude.ai",
       "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
       "copy": "Copiar comando",
-      "copied": "Copiado"
+      "copied": "Copiado",
+      "delete": "Eliminar",
+      "openAt": "Abrir en {{vendor}}",
+      "status": {
+        "starting": "{{vendor}} está iniciando el agente",
+        "running": "Trabajando en la nube de {{vendor}}",
+        "finished": "Terminado en la nube de {{vendor}}",
+        "failed": "El agente falló en la nube de {{vendor}}",
+        "cancelled": "Detenido en {{vendor}}",
+        "expired": "La ejecución caducó en la nube de {{vendor}}"
+      }
     }
   },
   "bots": {
@@ -1576,10 +1609,9 @@
       "search": "Buscar automatizaciones",
       "clearSearch": "Borrar búsqueda",
       "noMatch": "Ninguna automatización coincide con «{{query}}».",
-      "emptyProject": "Todavía no hay automatizaciones.",
-      "createOne": "Crea una",
       "newHere": "Nueva automatización en {{name}}",
       "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
+      "noAutomations": "Todavía no hay automatizaciones. Crea una con Nueva automatización y aparecerá aquí bajo su proyecto.",
       "noRuns": "Todavía no hay ejecuciones.",
       "running": "En curso",
       "paused": "En pausa",
@@ -2570,7 +2602,9 @@
       "short": "Aprobar {{bot}} · {{tool}}",
       "title": "{{bot}} quiere ejecutar {{tool}}",
       "approve": "Aprobar",
+      "approving": "Aprobando…",
       "deny": "Denegar",
+      "denying": "Denegando…",
       "openChat": "Abrir chat"
     },
     "pull": {
@@ -2600,6 +2634,7 @@
       "exit": "Salida {{code}}",
       "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
       "again": "Ejecutar de nuevo",
+      "starting": "Iniciando…",
       "open": "Abrir ejecución"
     },
     "card": {
@@ -2639,7 +2674,8 @@
       "profile": "Perfil",
       "hosts": "Hosts",
       "repositories": "Repositorios observados",
-      "modelProviders": "Proveedores de modelos"
+      "modelProviders": "Proveedores de modelos",
+      "cloudAgents": "Agentes en la nube"
     },
     "profile": {
       "title": "Perfil",
@@ -2753,7 +2789,8 @@
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
         "openai": "Modelos GPT, a través de la API de OpenAI.",
-        "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API."
+        "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API.",
+        "xai": "Modelos Grok, a través de la API de xAI."
       },
       "dialog": {
         "title": "Clave de {{provider}}",
@@ -2782,6 +2819,31 @@
         "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
         "done": "Hecho",
         "failed": "No se pudo iniciar sesión en ChatGPT."
+      }
+    },
+    "cloudAgents": {
+      "title": "Agentes en la nube",
+      "description": "Ejecuta una sesión en la nube de un proveedor, con tu propia clave: elígela en Nube, donde se ejecuta una sesión nueva. Se cobra en tu plan con el proveedor.",
+      "unavailable": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
+      "loadFailed": "No se pudieron cargar tus proveedores de agentes en la nube.",
+      "providers": {
+        "cursor": "Cloud Agents de Cursor, con cualquier modelo que ofrezca Cursor, Grok incluido."
+      },
+      "connectedAs": "{{name}} · {{email}} · termina en {{hint}}",
+      "connectedKey": "{{name}} · termina en {{hint}}",
+      "notConnected": "Sin conectar",
+      "connect": "Conectar",
+      "replace": "Cambiar clave",
+      "disconnect": "Desconectar",
+      "disconnectLabel": "Desconectar {{provider}}",
+      "disconnectFailed": "No se pudo desconectar.",
+      "dialog": {
+        "title": "Conectar {{provider}}",
+        "description": "Pega una clave de API de usuario del panel de {{provider}}. {{provider}} la comprueba primero y no se vuelve a mostrar.",
+        "label": "Clave de API",
+        "save": "Conectar",
+        "saving": "Comprobando…",
+        "failed": "No se pudo conectar."
       }
     }
   },

@@ -75,7 +75,10 @@
         "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
       },
       "hosts": "Hosts",
-      "startIn": "Empezar en"
+      "startIn": "Empezar en",
+      "atVendor": "Nube",
+      "clouds": "Nube",
+      "connect": "Conecta tu clave"
     },
     "project": {
       "label": "Proyecto",
@@ -137,7 +140,8 @@
       "favourites": "Favoritos",
       "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
       "addFavourite": "Añadir {{model}} a favoritos",
-      "removeFavourite": "Quitar {{model}} de favoritos"
+      "removeFavourite": "Quitar {{model}} de favoritos",
+      "auto": "Auto"
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -179,7 +183,8 @@
       "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
       "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
     },
-    "failed": "No se pudo crear la sesión."
+    "failed": "No se pudo crear la sesión.",
+    "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo."
   },
   "session": {
     "status": {
@@ -259,6 +264,7 @@
     "pinned": "Fijadas",
     "pin": "Fijar",
     "unpin": "Desfijar",
+    "dropToPin": "Suelta una sesión aquí para fijarla.",
     "actions": "Acciones de la sesión",
     "rename": "Renombrar",
     "renameLabel": "Nombre de la sesión",
@@ -274,7 +280,10 @@
     "notDeleted": "No eliminada",
     "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
     "select": "Seleccionar",
-    "selected": "Seleccionada"
+    "selected": "Seleccionada",
+    "openAtVendor": "Se abre en {{vendor}}",
+    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
+    "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",
@@ -285,6 +294,7 @@
     "discard": "Descartar también el trabajo sin enviar",
     "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+    "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
     "refused": "Su host no la eliminó",
     "refusedUnknown": "El host se negó a eliminar la sesión."
   },
@@ -321,7 +331,11 @@
     "allRepositories": "Todos los repositorios",
     "allAgents": "Todos los agentes",
     "allHosts": "Todos los equipos",
-    "noMatches": "Ninguna sesión coincide con estos filtros."
+    "noMatches": "Ninguna sesión coincide con estos filtros.",
+    "shown": "Mostrar proyectos",
+    "shownAll": "Todos",
+    "shownSome": "{{shown}} de {{total}}",
+    "showAll": "Mostrar todos los proyectos"
   },
   "sort": {
     "custom": "Orden personalizado",
@@ -624,6 +638,16 @@
     "open": "Abrir en claude.ai",
     "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
     "copy": "Copiar comando",
-    "copied": "Copiado"
+    "copied": "Copiado",
+    "delete": "Eliminar",
+    "openAt": "Abrir en {{vendor}}",
+    "status": {
+      "starting": "{{vendor}} está iniciando el agente",
+      "running": "Trabajando en la nube de {{vendor}}",
+      "finished": "Terminado en la nube de {{vendor}}",
+      "failed": "El agente falló en la nube de {{vendor}}",
+      "cancelled": "Detenido en {{vendor}}",
+      "expired": "La ejecución caducó en la nube de {{vendor}}"
+    }
   }
 }

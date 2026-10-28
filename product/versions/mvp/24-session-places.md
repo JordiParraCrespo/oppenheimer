@@ -138,6 +138,11 @@ host and then lives on claude.ai/code:
   repository and a task (Claude Code only, no files). The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
   `claude --teleport <id>`.
+- **Deleting it.** Nothing of it is on the host, so the API records the
+  close whole — the request and `session.closed` — without the host, online
+  or not, and the session leaves the console at once. It stays on
+  claude.ai/code, where it is archived. Its input (a prompt, an answer, a
+  file) is refused with `SESSIONS_038`: it is answered on claude.ai.
 
 ## Decided
 
@@ -160,3 +165,7 @@ host and then lives on claude.ai/code:
 - 2026-10-27: a third place, `cloud`: Claude Code's cloud, started by the
   host's runner with `claude --cloud` and followed through the browser
   extension (§7).
+- 2026-10-28: the `cloud` place has a second kind, a session the control
+  plane launches at a vendor through its API (Cursor's first): no host at
+  all, its vendor run beside it in `session_cloud_run`, its row opening the
+  vendor (`next-steps/cloud-agents.md`, "Two kinds of cloud session").

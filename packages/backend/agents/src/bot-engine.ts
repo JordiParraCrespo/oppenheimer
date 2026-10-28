@@ -1,8 +1,9 @@
 /**
  * Who answers a bot's turn. `glm` is z.ai's Anthropic-compatible endpoint;
- * `chatgpt` is a ChatGPT subscription, through the backend the Codex CLI uses.
+ * `chatgpt` is a ChatGPT subscription, through the backend the Codex CLI uses;
+ * `xai` is Grok, through xAI's Responses API.
  */
-export type BotProvider = 'anthropic' | 'glm' | 'openai' | 'chatgpt';
+export type BotProvider = 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
 
 /** How hard the model thinks. Each engine maps it to what its SDK takes. */
 export type BotEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';

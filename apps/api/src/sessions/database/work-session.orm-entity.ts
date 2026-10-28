@@ -33,10 +33,13 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * to a person, with no workspace column, and a grant is a row, so no composite key can
  * reference it (its plain foreign key only proves the host exists). Create loads the
  * host through the own-or-grant-scoped repository and refuses on a miss
- * (`product/versions/mvp/03-control-plane.md`).
+ * (`product/versions/mvp/03-control-plane.md`). A cloud session has none, and only a
+ * cloud session (`CHK_work_session_cloud_host`): its vendor's half is
+ * `session_cloud_run`.
  */
 @Entity('work_session')
 @Check('CHK_work_session_place', `place IN ('worktree', 'folder', 'cloud')`)
+@Check('CHK_work_session_cloud_host', `"hostId" IS NOT NULL OR place = 'cloud'`)
 @Check('CHK_work_session_folder_path', `(place = 'folder') = ("folderPath" IS NOT NULL)`)
 @Check(
   'CHK_work_session_close_accepts',
@@ -80,8 +83,9 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'uuid' })
   createdByUserId!: string;
 
-  @Column({ type: 'uuid' })
-  hostId!: string;
+  /** Null exactly for a cloud session, which runs at its vendor. */
+  @Column({ type: 'uuid', nullable: true })
+  hostId!: string | null;
 
   /** Display name. Starts equal to the slug, then the first prompt names it. */
   @Column({ type: 'varchar' })
@@ -105,8 +109,8 @@ export class WorkSessionOrmEntity {
 
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * `worktree` the runner made per checkout, or a `folder` already on the host.
-   * Immutable, like `agent`.
+   * `worktree` the runner made per checkout, a `folder` already on the host, or
+   * `cloud`, a vendor's agent. Immutable, like `agent`.
    */
   @Column({ type: 'varchar', length: 16, default: 'worktree' })
   place!: SessionPlace;

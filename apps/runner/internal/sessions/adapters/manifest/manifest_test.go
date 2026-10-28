@@ -378,3 +378,55 @@ func TestTheTitleAloneIsEnoughToKnowTheAgentIsWorking(t *testing.T) {
 		t.Fatalf("state = %q, want working from the title alone", state)
 	}
 }
+
+// Claude Code 2.1 draws its prompt as `❯` and a no-break space, captured from
+// a real pane after a turn. Go's `\s` does not match U+00A0, so this screen
+// read `unknown`, the turn never completed, and a bot waiting on its
+// follow-up never heard back.
+func TestAnEmptyPromptAfterATurnIsIdle(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "❯ Please reply with the exact phrase: Follow-up received.\n\n" +
+			"● Follow-up received.\n\n" +
+			"✻ Cooked for 1s · done 7:56 AM\n\n" +
+			rule + "\n❯  \n" + rule + "\n" +
+			"  ⏵⏵ auto mode on (shift+tab to cycle)\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateIdle {
+		t.Fatalf("state = %q, want idle", state)
+	}
+}
+
+// After most turns Claude Code 2.1 offers a next prompt in the input box. The
+// box is `❯` and a no-break space with the suggestion after it, captured from
+// a real pane; an empty-prompt pattern alone read this `unknown`.
+func TestASuggestedNextPromptIsIdle(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "  where the land meets the sea.\n\n" +
+			"✻ Baked for 14s · done 7:45 AM\n\n" +
+			rule + "\n❯ save it to a file\n" + rule + "\n" +
+			"  ⏸ manual mode on · ? for shortcuts\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateIdle {
+		t.Fatalf("state = %q, want idle", state)
+	}
+}
+
+// Mid-turn the same input box is on screen, so the prompt rule must not turn
+// a working session idle; captured from a real pane.
+func TestTheInputBoxUnderASpinnerIsStillWorking(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "❯ Write a 300-word paragraph about tide pools.\n\n" +
+			"· Envisioning… (8s · thinking)\n\n" +
+			rule + "\n❯ \n" + rule + "\n" +
+			"  ⏸ manual mode on · esc to interrupt\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateWorking {
+		t.Fatalf("state = %q, want working", state)
+	}
+}

@@ -4,10 +4,9 @@ import {
   SortableGroup,
   sortableProjectId,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +14,7 @@ import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
+import { useHiddenProjects } from '../hooks/use-hidden-projects';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
@@ -22,6 +22,7 @@ import {
   useSessionSelectionStore,
 } from '../hooks/use-session-selection';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
+import { listedProjects } from '../lib/hidden-projects';
 import {
   ALL,
   activeFilters,
@@ -34,7 +35,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { emptyMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { emptyListMessage, matchesQuery, shownGroups } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -66,9 +67,14 @@ const DeleteSessionsDialog = lazy(() =>
  *
  * The projects and their sessions drag into the reader's own order
  * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
- * reader pinned (`useSessionPins`) are drawn above the projects instead of in
- * them, still filtered and searched like the rest. The groups the reader
- * folded stay folded on the next visit (`useFoldedGroups`).
+ * reader pinned (`useSessionPins`), from a row's menu or by dropping it on
+ * Pinned, are drawn above the projects instead of in them, still filtered
+ * and searched like the rest; a project left with no session to draw is not
+ * drawn at all. The groups the reader folded stay
+ * folded on the next visit (`useFoldedGroups`), and so do the projects the
+ * reader hid from the filter menu (`useHiddenProjects`): a
+ * hidden project's group and sessions are not drawn, unless the project
+ * filter picks it, and its pinned sessions stay pinned.
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -83,6 +89,7 @@ export function SessionsSidebarBody() {
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
+  const { hidden, setShown, showAll } = useHiddenProjects();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -100,11 +107,7 @@ export function SessionsSidebarBody() {
     ),
     repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
     // An agent's name is the vendor's product name, the catalog's own.
-    agent: agentOptions(
-      all,
-      t('sessions.filters.allAgents'),
-      (agent) => CODING_AGENTS[agent].label,
-    ),
+    agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
   };
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
@@ -112,14 +115,33 @@ export function SessionsSidebarBody() {
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
   const { pinned, rest } = splitPinned(visible, pins.pins);
-  const { groups, handlers } = useSidebarOrder({
+  const picked = filters.project === ALL ? null : filters.project;
+  const listing = listedProjects(projects, rest, hidden, picked);
+  const {
+    groups,
+    pinned: pinnedRows,
+    carrying,
+    handlers,
+  } = useSidebarOrder({
     projects,
-    sessions: rest,
+    listed: listing.listed,
+    sessions: listing.sessions,
+    pinned,
+    pins,
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
-  const shown = shownGroups(groups, narrowed, filters.project === ALL ? null : filters.project);
+  const occupied = new Set(listing.sessions.map((session) => session.projectId));
+  const shown = shownGroups(groups, occupied, picked);
+  const empty = emptyListMessage(t, {
+    groups,
+    shown,
+    pinned,
+    hiddenCount: listing.hiddenCount,
+    narrowed,
+    query,
+  });
   // A folded group's rows are not drawn, so a Shift-click does not reach them.
   const drawn = [
     ...pinned,
@@ -135,10 +157,16 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          projectCount={projects.length}
+          projectCount={projects.length - listing.hiddenCount}
           filters={filters}
           options={options}
           dirty={dirty}
+          visibility={{
+            hidden,
+            hiddenCount: listing.hiddenCount,
+            onShownChange: setShown,
+            onShowAll: showAll,
+          }}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
           onFiltersClear={() =>
@@ -184,19 +212,11 @@ export function SessionsSidebarBody() {
           {/* No project at all: the way to one is the plus above and the chip
             on New session, and the row says so rather than arguing with the
             pane. */}
-          {groups.length === 0 ? (
+          {empty !== null ? (
             <div className="px-3 pt-2">
               <EmptyState compact>
                 <EmptyState.Header>
-                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
-            </div>
-          ) : shown.length === 0 && pinned.length === 0 ? (
-            <div className="px-3 pt-2">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>{emptyMessage(t, true, query)}</EmptyState.Description>
+                  <EmptyState.Description>{empty}</EmptyState.Description>
                 </EmptyState.Header>
               </EmptyState>
             </div>
@@ -206,9 +226,10 @@ export function SessionsSidebarBody() {
               labels={dragLabels}
               overlay={(active) => <SidebarDragCopy item={active} />}
             >
-              {pinned.length > 0 ? (
+              {pinnedRows.length > 0 || carrying ? (
                 <PinnedGroup
-                  sessions={pinned}
+                  sessions={pinnedRows}
+                  narrowed={narrowed}
                   onShare={(target) =>
                     dialogs.open({ kind: 'share-session', sessionId: target.id })
                   }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
+import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
 import { PAGINATION } from '../constants/index.js';
 import {
   attachedFilesAreValid,
@@ -8,6 +8,7 @@ import {
   SESSION_FILE_MEDIA_TYPES,
   type SessionFileMediaType,
 } from '../protocol/session-file.js';
+import { CLOUD_AGENT_IDS, cloudAgentProviderSchema } from './cloud-agent.schema.js';
 import { paginationSchema } from './pagination.schema.js';
 import {
   codingAgentSchema,
@@ -94,12 +95,21 @@ export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>
  * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
  * `worktree` the runner makes for each checkout, a `folder` already on the
  * host, where nothing is cloned or written and closing only ends the terminal,
- * or Claude Code's `cloud`, started from a host and then living on
- * claude.ai/code (`product/research/cloud-agents.md` §5B).
+ * or the `cloud`: a vendor's agent on a task of one repository, followed at
+ * the vendor (`product/next-steps/cloud-agents.md`). Claude Code's cloud is
+ * started by a host's runner (`claude --cloud`, `product/research/cloud-agents.md`
+ * §5B); Cursor's by the control plane through its API, with no host at all.
  */
 export const SESSION_PLACES = ['worktree', 'folder', 'cloud'] as const;
 export type SessionPlace = (typeof SESSION_PLACES)[number];
 export const sessionPlaceSchema = z.enum(SESSION_PLACES);
+
+/**
+ * What a session runs: a coding agent a host launches (the runner's catalog,
+ * `../agents/catalog`) or one that runs only in a vendor's cloud.
+ */
+export const SESSION_AGENT_IDS = [...CODING_AGENT_IDS, ...CLOUD_AGENT_IDS] as const;
+export type SessionAgentId = (typeof SESSION_AGENT_IDS)[number];
 
 export { hostPathSchema };
 
@@ -215,6 +225,26 @@ export const createSessionSchema = createSessionFields
   );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
+
+/**
+ * `POST /sessions/cloud`: a session in a vendor's cloud. The vendor runs its
+ * own agent (`CLOUD_PROVIDER_AGENT`) on one repository, from its base branch,
+ * so the body is the place, the project, that repository, the first task and
+ * a model; there is no host, folder or permission level to name. No model is
+ * the vendor's own default. Sent with an `Idempotency-Key`, as a host session is.
+ */
+export const startCloudSessionSchema = z.object({
+  provider: cloudAgentProviderSchema,
+  /** Absent lists it in the workspace's Unassigned project, as a host session. */
+  projectId: z.string().uuid().optional(),
+  name: displayNameSchema.optional(),
+  checkout: sessionCheckoutInputSchema,
+  /** A vendor's agent runs on a task, so it is required, unlike a host session's. */
+  prompt: promptSchema,
+  model: z.string().trim().min(1).max(128).optional(),
+});
+
+export type StartCloudSessionDto = z.infer<typeof startCloudSessionSchema>;
 
 /**
  * Where a create asks the session to run: a `folder` names a folder session,

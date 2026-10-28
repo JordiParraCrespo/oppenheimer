@@ -81,7 +81,9 @@
     "short": "Aprobar {{bot}} · {{tool}}",
     "title": "{{bot}} quiere ejecutar {{tool}}",
     "approve": "Aprobar",
+    "approving": "Aprobando…",
     "deny": "Denegar",
+    "denying": "Denegando…",
     "openChat": "Abrir chat"
   },
   "pull": {
@@ -111,6 +113,7 @@
     "exit": "Salida {{code}}",
     "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
     "again": "Ejecutar de nuevo",
+    "starting": "Iniciando…",
     "open": "Abrir ejecución"
   },
   "card": {
