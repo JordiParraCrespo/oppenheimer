@@ -274,7 +274,8 @@
     "notDeleted": "No eliminada",
     "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
     "select": "Seleccionar",
-    "selected": "Seleccionada"
+    "selected": "Seleccionada",
+    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",
@@ -322,7 +323,11 @@
     "allRepositories": "Todos los repositorios",
     "allAgents": "Todos los agentes",
     "allHosts": "Todos los equipos",
-    "noMatches": "Ninguna sesión coincide con estos filtros."
+    "noMatches": "Ninguna sesión coincide con estos filtros.",
+    "shown": "Mostrar proyectos",
+    "shownAll": "Todos",
+    "shownSome": "{{shown}} de {{total}}",
+    "showAll": "Mostrar todos los proyectos"
   },
   "sort": {
     "custom": "Orden personalizado",

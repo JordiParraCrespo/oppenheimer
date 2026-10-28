@@ -800,7 +800,8 @@
       "notDeleted": "Not deleted",
       "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
       "select": "Select",
-      "selected": "Selected"
+      "selected": "Selected",
+      "allHidden": "Every project is hidden. Show them again from the filter menu."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -845,7 +846,11 @@
       "allRepositories": "All repositories",
       "allAgents": "All agents",
       "allHosts": "All hosts",
-      "noMatches": "No sessions match these filters."
+      "noMatches": "No sessions match these filters.",
+      "shown": "Show projects",
+      "shownAll": "All",
+      "shownSome": "{{shown}} of {{total}}",
+      "showAll": "Show all projects"
     },
     "sort": {
       "custom": "Custom order",

@@ -33,11 +33,12 @@ const SESSIONS = [session('s1', 'a'), session('s2', 'a'), session('s3', 'b')];
 const item = (id: string, data: DragItem['data'] = { type: 'session' }): DragItem => ({ id, data });
 const group = (id: string) => item(id, { group: true });
 
-function setup() {
+function setup(projects: ProjectEntity[] = PROJECTS, listed?: (projectId: string) => boolean) {
   const onWrite = vi.fn();
   const hook = renderHook(() =>
     useSidebarOrder({
-      projects: PROJECTS,
+      projects,
+      listed,
       sessions: SESSIONS,
       custom: true,
       onReorder: () => {},
@@ -109,5 +110,15 @@ describe('useSidebarOrder', () => {
     drag(sortableProjectId('b'), item(sortableProjectId('a'), { type: 'project' }));
     expect(drawn().map(([id]) => id)).toEqual(['b', 'a']);
     expect(storedSidebarOrder().projects).toEqual(['b', 'a']);
+  });
+
+  it('keeps a hidden project never dragged in its place when the shown ones are', () => {
+    const { drag, drawn } = setup(
+      [project('a'), project('hidden'), project('b')],
+      (id) => id !== 'hidden',
+    );
+    drag(sortableProjectId('b'), item(sortableProjectId('a'), { type: 'project' }));
+    expect(drawn().map(([id]) => id)).toEqual(['b', 'a']);
+    expect(storedSidebarOrder().projects).toEqual(['b', 'a', 'hidden']);
   });
 });
