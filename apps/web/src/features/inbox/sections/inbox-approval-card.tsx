@@ -81,10 +81,21 @@ export function InboxApprovalCard({
           </>
         }
       >
-        <Button variant="secondary" disabled={decide.isPending} onClick={() => answer('deny')}>
+        <Button
+          variant="secondary"
+          pending={decide.isPending && decide.variables?.decision === 'deny'}
+          pendingLabel={t('inbox.approval.denying')}
+          disabled={decide.isPending}
+          onClick={() => answer('deny')}
+        >
           {t('inbox.approval.deny')}
         </Button>
-        <Button disabled={decide.isPending} onClick={() => answer('approve')}>
+        <Button
+          pending={decide.isPending && decide.variables?.decision === 'approve'}
+          pendingLabel={t('inbox.approval.approving')}
+          disabled={decide.isPending}
+          onClick={() => answer('approve')}
+        >
           {t('inbox.approval.approve')}
         </Button>
       </InboxCardActions>

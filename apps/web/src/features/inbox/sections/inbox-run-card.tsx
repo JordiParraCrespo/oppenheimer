@@ -89,7 +89,8 @@ export function InboxRunCard({
       >
         {isAutomation ? (
           <Button
-            disabled={runAgain.isPending}
+            pending={runAgain.isPending}
+            pendingLabel={t('inbox.run.starting')}
             onClick={() =>
               runAgain.mutate(
                 { id: run.automationId, idempotencyKey: crypto.randomUUID() },
