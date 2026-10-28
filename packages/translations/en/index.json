@@ -1916,14 +1916,16 @@
       "reviewNext": "Review next",
       "scopesLabel": "Whose pull requests",
       "scopes": {
+        "all": "All",
         "mine": "Mine",
         "requested": "Review requests",
         "watching": "Watching"
       },
       "scopeHint": {
-        "mine": "Opened by you or your sessions. Check what holds each one and merge.",
-        "requested": "Pull requests where someone asked for your review.",
-        "watching": "Open pull requests in repositories you watch, where nobody asked for your review."
+        "all": "Every open pull request in the repositories you watch.",
+        "mine": "Only the ones opened by you or your sessions. Check what holds each one and merge.",
+        "requested": "Only the ones where someone asked for your review.",
+        "watching": "Only the ones by other people that nobody asked you to review."
       },
       "search": "Search title, repo, #number, author",
       "clearSearch": "Clear search",

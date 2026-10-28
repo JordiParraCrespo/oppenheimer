@@ -3,7 +3,7 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared';
+import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -32,13 +32,13 @@ export class FindPullRequestsHttpController {
   @ApiOperation({
     summary: 'The pull request queue',
     description:
-      'Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.',
+      'Open pull requests read live through the workspace’s installations: all of them (`all`), or yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.',
   })
   @ApiQuery({
     name: 'scope',
     required: false,
-    enum: PULL_REQUEST_SCOPES,
-    description: 'Whose queue; default `mine`',
+    enum: PULL_REQUEST_QUEUES,
+    description: 'Whose queue, or `all`; default `mine`',
   })
   @ApiResponse({ status: 200, type: PullRequestQueueResponseDto })
   async list(

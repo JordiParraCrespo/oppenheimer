@@ -19,6 +19,7 @@ export {
   type PullRequestFile,
   type PullRequestLane,
   type PullRequestQueue,
+  type PullRequestQueueName,
   type PullRequestReviewer,
   type PullRequestScope,
   type ReadRefusal,

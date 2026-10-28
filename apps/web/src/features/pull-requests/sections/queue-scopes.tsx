@@ -1,14 +1,15 @@
 import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
-import type { PullRequestScope } from '@oppenheimer/frontend-consumer';
+import type { PullRequestQueueName } from '@oppenheimer/frontend-consumer';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
-import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared/schemas/pull-request';
+import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useQueueSearch } from '../hooks/use-queue-search';
 
 /**
- * Whose pull requests: mine, review requests, watching, each with its count,
- * and what the scope means. Which repositories are watched is set in
+ * Whose pull requests: all of them first, then the three ways to narrow
+ * them (mine, review requests, watching), each with its count, and what the
+ * scope means. Which repositories are watched is set in
  * Settings, which Watching links to. A count not answered yet keeps its
  * place, so the tabs do not widen when it lands.
  */
@@ -22,11 +23,11 @@ export function QueueScopes() {
       <SegmentedControl
         size="lg"
         value={scope}
-        onValueChange={(value) => setScope(value as PullRequestScope)}
+        onValueChange={(value) => setScope(value as PullRequestQueueName)}
         aria-label={t('pullRequests.queue.scopesLabel')}
         className="self-start"
       >
-        {PULL_REQUEST_SCOPES.map((value) => (
+        {PULL_REQUEST_QUEUES.map((value) => (
           <SegmentedControlItem
             key={value}
             value={value}
@@ -44,7 +45,7 @@ export function QueueScopes() {
       </SegmentedControl>
       <p className="m-0 text-sm text-fg-muted">
         {t(`pullRequests.queue.scopeHint.${scope}`)}
-        {scope === 'watching' ? (
+        {scope === 'all' || scope === 'watching' ? (
           <>
             {' '}
             <Link to="/settings/repositories" className="text-link">

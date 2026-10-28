@@ -147,6 +147,9 @@ export class PullRequestRowDto {
 }
 
 export class PullRequestScopeCountsDto {
+  @ApiProperty({ description: 'Every open pull request, whatever its scope.' })
+  all!: number;
+
   @ApiProperty()
   mine!: number;
 

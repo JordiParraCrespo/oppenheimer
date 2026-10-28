@@ -19,7 +19,7 @@ export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
   const { data: total } = usePullRequestQueue('mine', {
-    select: (queue) => queue.scopes.mine + queue.scopes.requested + queue.scopes.watching,
+    select: (queue) => queue.scopes.all,
   });
 
   return (

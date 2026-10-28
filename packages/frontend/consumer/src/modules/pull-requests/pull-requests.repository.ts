@@ -20,7 +20,7 @@ import {
   PullRequestEntity,
   type PullRequestFile,
   type PullRequestQueue,
-  type PullRequestScope,
+  type PullRequestQueueName,
   type ReviewInput,
   type ReviewOutcome,
   type ReviewSession,
@@ -148,7 +148,7 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
 @injectable()
 export class PullRequestsRepository {
   @MapApiError(PullRequestsErrors.FETCH_QUEUE_FAILED)
-  async queue(scope: PullRequestScope): Promise<PullRequestQueue> {
+  async queue(scope: PullRequestQueueName): Promise<PullRequestQueue> {
     const data = await unwrapBody(
       heyApiSdk.findPullRequests({ query: { scope } }),
       PullRequestsErrors.FETCH_QUEUE_FAILED,

@@ -72,7 +72,9 @@ export function QueueTable() {
   });
 
   if (!data.items.length) {
-    const watching = settled === 'watching';
+    // Every queue reads only the watched repositories, so an empty All is the
+    // same answer as an empty Watching: pick some.
+    const watching = settled === 'all' || settled === 'watching';
     return (
       <>
         <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />

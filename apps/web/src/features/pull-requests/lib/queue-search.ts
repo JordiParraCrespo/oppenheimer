@@ -1,5 +1,5 @@
 import { searchText } from '@oppenheimer/frontend-web';
-import { PULL_REQUEST_LANES, PULL_REQUEST_SCOPES } from '@oppenheimer/shared/schemas/pull-request';
+import { PULL_REQUEST_LANES, PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import { z } from 'zod';
 
 /** The checks states the queue's Checks facet narrows to. */
@@ -17,7 +17,7 @@ export type QueueWait = (typeof QUEUE_WAITS)[number];
  * A value the schema does not accept reads as absent, which is the default.
  */
 export const queueSearchSchema = z.object({
-  scope: z.enum(PULL_REQUEST_SCOPES).optional().catch(undefined),
+  scope: z.enum(PULL_REQUEST_QUEUES).optional().catch(undefined),
   lane: z.enum(PULL_REQUEST_LANES).optional().catch(undefined),
   checks: z.enum(QUEUE_CHECKS).optional().catch(undefined),
   wait: z.enum(QUEUE_WAITS).optional().catch(undefined),
