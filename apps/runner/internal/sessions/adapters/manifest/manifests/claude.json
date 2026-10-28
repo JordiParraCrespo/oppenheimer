@@ -1,7 +1,7 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "claude",
-  "version": "2026.10.28.1",
+  "version": "2026.10.28.2",
   "minEngine": 1,
   "notes": "Claude Code draws a spinner line with an elapsed time and an 'esc to interrupt' hint while it works, a numbered list when it needs an answer, and a prompt box with a '>' when it is waiting for a task. It also writes its state into the terminal title, which is the signal to trust: nothing a person types into the prompt can appear there.",
   "rules": [
@@ -78,9 +78,14 @@
       "state": "idle",
       "priority": 800,
       "region": "bottom:5",
-      "any": ["(?m)^[\\s\\x{00A0}]*(>|❯|›)[\\s\\x{00A0}]*$", "(?i)\\btry \"", "(?i)\\bwhat would you like\\b"],
+      "any": [
+        "(?m)^\\s*❯\\x{00A0}",
+        "(?m)^\\s*(>|❯|›)\\s*$",
+        "(?i)\\btry \"",
+        "(?i)\\bwhat would you like\\b"
+      ],
       "not": ["esc to interrupt"],
-      "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard. Claude Code 2.1 draws the prompt as '❯' and a no-break space (U+00A0), which Go's `\\s` does not match: without it an emptied prompt after a turn read `unknown` and the turn never completed (the 2026-10-28 bot follow-up)."
+      "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard. Claude Code 2.1 draws the input line as '❯' and a no-break space whether it is empty, holds a suggested next prompt or holds typed text, while its transcript echoes a prompt with '❯' and a plain space; the no-break space is what tells the box from the transcript, so it is matched, never normalised away."
     }
   ]
 }
