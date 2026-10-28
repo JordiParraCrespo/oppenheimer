@@ -82,6 +82,9 @@ describe('coding agent catalog', () => {
     // GLM under z.ai's Coding Plan has no `medium`, so one is never sent to it.
     expect(levelsOf('opencode', 'zai-coding-plan/glm-5.3')).toEqual(['low', 'high', 'max']);
     expect(effortLevelFor('opencode', 'zai-coding-plan/glm-5.3', 'medium')).toBeNull();
+    expect(levelsOf('opencode', 'alibaba/qwen3.8-max')).toEqual(['low', 'medium', 'xhigh']);
+    // A model with no reasoning options has no slider.
+    expect(effortFor('opencode', 'moonshotai/kimi-k2.7-code')).toBeUndefined();
     expect(effortFor('shell', null)).toBeUndefined();
     // A model the catalog does not list has levels nobody here knows.
     expect(effortFor('codex', 'gpt-4o')).toBeUndefined();

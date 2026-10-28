@@ -20,6 +20,8 @@
  * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
  */
 
+import { CLAUDE_LEVELS, CODEX_LEVELS, levels } from './effort-levels.js';
+import { OPENCODE_MODELS } from './opencode-models.js';
 import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
 /**
@@ -395,21 +397,8 @@ export interface CodingAgentDefinition {
   readonly install?: HostInstall;
 }
 
-/** A model's levels and default, frozen as the rest of the catalog is. */
-function levels(ids: readonly SessionEffort[], defaultLevel: SessionEffort): CodingAgentEffort {
-  return Object.freeze({ levels: Object.freeze([...ids]), default: defaultLevel });
-}
-
-const CLAUDE_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
-const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
 const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-// OpenCode's variants for xAI's and Google's reasoning models, off models.dev;
-// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS.
-const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
-const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
-// GLM 5.3's effort values on models.dev, which OpenCode offers as its variants.
-const OPENCODE_GLM_LEVELS = ['low', 'high', 'max'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -656,129 +645,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // the window along with it. That is not one login per directory, so the
     // accounts slice has nothing to set here until OpenCode has a variable of
     // its own (`product/06-multi-account.md`).
-    //
-    // `provider/model`, the form `opencode --model` takes. OpenCode reaches
-    // whatever providers the host has signed in to, and its own picker is
-    // models.dev's catalog, so this seed is the coding models of the
-    // providers it is most often signed in to, grouped by provider in that
-    // order: Anthropic (the family Claude Code offers), OpenAI (what Codex's
-    // picker lists, in its order), xAI (what Grok's lists), Google (its
-    // newest reasoning and flash models) and Z.AI (GLM 5.3 and its fast
-    // variants). A row the host's OpenCode has no provider for fails in the
-    // session's own terminal, as for the others.
-    //
-    // GLM is under `zai-coding-plan/`, OpenCode's provider for z.ai's GLM
-    // Coding Plan, the subscription z.ai sells for coding agents and the
-    // endpoint a workspace's GLM key already serves bots on. Its key is
-    // OpenCode's `/connect` → "Z.AI Coding Plan", or `ZHIPU_API_KEY` in the
-    // agent's environment; `zai/` is the pay-as-you-go API, a separate
-    // balance the plan's quota does not cover.
-    //
-    // Each model's levels are its OpenCode variants, which OpenCode derives
-    // from the model's `reasoning_options` on models.dev, and its default is
-    // what the provider runs with none: `high` for the adaptive Claude
-    // models and for Grok and Gemini, `medium` for OpenAI's. Haiku 5.5's
-    // thinking is a toggle that is off unasked, so `none` is its default and
-    // a level of its own. OpenAI's `none` variant is left off: "don't think"
-    // is not an amount of thinking anyone picks for a coding session.
-    models: Object.freeze([
-      Object.freeze({
-        id: 'anthropic/claude-opus-5-5',
-        label: 'Opus 5.5',
-        default: true as const,
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-fable-5-1',
-        label: 'Fable 5.1',
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-sonnet-5-5',
-        label: 'Sonnet 5.5',
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-haiku-5-5',
-        label: 'Haiku 5.5',
-        effort: levels(['none', ...CLAUDE_LEVELS], 'none'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6.1-sol',
-        label: 'GPT-6.1 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6.1-terra',
-        label: 'GPT-6.1 Terra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-astra',
-        label: 'GPT-6 Astra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-sol',
-        label: 'GPT-6 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-luna',
-        label: 'GPT-6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-sol',
-        label: 'GPT-5.6 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-terra',
-        label: 'GPT-5.6 Terra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-luna',
-        label: 'GPT-5.6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'xai/grok-4.7',
-        label: 'Grok 4.7',
-        effort: levels(OPENCODE_XAI_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'xai/grok-4.6',
-        label: 'Grok 4.6',
-        effort: levels(OPENCODE_XAI_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'google/gemini-4-argon',
-        label: 'Gemini 4 Argon',
-        effort: levels(OPENCODE_GOOGLE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'google/gemini-3.8-flash',
-        label: 'Gemini 3.8 Flash',
-        effort: levels(OPENCODE_GOOGLE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'zai-coding-plan/glm-5.3',
-        label: 'GLM-5.3',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'zai-coding-plan/glm-5.3-highspeed',
-        label: 'GLM-5.3 Highspeed',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'zai-coding-plan/glm-5.3-flash',
-        label: 'GLM-5.3 Flash',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
-      }),
-    ]),
+    models: OPENCODE_MODELS,
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
       // OpenCode keys its sessions by project, and a project is the directory
