@@ -8,7 +8,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * dragged back into its project is unpinned. A reload keeps the pin.
  */
 
-/** A pointer drag with a hold in the middle, the way a hand does it: past the 5px start, then on. */
+/** A pointer drag: past the drag layer's 5px start first, so the press is not a click. */
 async function drag(page: Page, from: Locator, to: () => Locator) {
   const start = await from.boundingBox();
   if (!start) throw new Error('nothing to drag');
