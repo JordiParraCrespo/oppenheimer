@@ -78,7 +78,11 @@
       "state": "idle",
       "priority": 800,
       "region": "bottom:5",
-      "any": ["(?m)^[\\s\\x{00A0}]*(>|❯|›)[\\s\\x{00A0}]*$", "(?i)\\btry \"", "(?i)\\bwhat would you like\\b"],
+      "any": [
+        "(?m)^[\\s\\x{00A0}]*(>|❯|›)[\\s\\x{00A0}]*$",
+        "(?i)\\btry \"",
+        "(?i)\\bwhat would you like\\b"
+      ],
       "not": ["esc to interrupt"],
       "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard. Claude Code 2.1 draws the prompt as '❯' and a no-break space (U+00A0), which Go's `\\s` does not match: without it an emptied prompt after a turn read `unknown` and the turn never completed (the 2026-10-28 bot follow-up)."
     }
