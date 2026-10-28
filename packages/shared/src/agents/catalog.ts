@@ -405,11 +405,14 @@ const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
 const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 // OpenCode's variants for xAI's and Google's reasoning models, off models.dev;
-// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS.
+// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS,
+// and MiniMax M3.1 Flash offers Claude's five, so it reuses CLAUDE_LEVELS.
 const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
 const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
-// GLM 5.3's effort values on models.dev, which OpenCode offers as its variants.
-const OPENCODE_GLM_LEVELS = ['low', 'high', 'max'] as const;
+// The effort values models.dev lists for GLM 5.3, DeepSeek V4 and Kimi K3.1
+// alike, which OpenCode offers as its variants; Qwen 3.8 names its own three.
+const OPENCODE_LOW_HIGH_MAX_LEVELS = ['low', 'high', 'max'] as const;
+const OPENCODE_QWEN_LEVELS = ['low', 'medium', 'xhigh'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -663,9 +666,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // providers it is most often signed in to, grouped by provider in that
     // order: Anthropic (the family Claude Code offers), OpenAI (what Codex's
     // picker lists, in its order), xAI (what Grok's lists), Google (its
-    // newest reasoning and flash models) and Z.AI (GLM 5.3 and its fast
-    // variants). A row the host's OpenCode has no provider for fails in the
-    // session's own terminal, as for the others.
+    // newest reasoning and flash models), then the open-weight coding models:
+    // Z.AI (GLM 5.3 and its fast variants), DeepSeek (V4 Pro and the V4.1
+    // Flash), Moonshot (Kimi K3.1 Pro and the K2.7 Code model), Alibaba
+    // (Qwen 3.8 Max and Flash) and MiniMax (M3.1 Flash), each under the
+    // provider that is the vendor's own international API. A row the host's
+    // OpenCode has no provider for fails in the session's own terminal, as
+    // for the others.
     //
     // GLM is under `zai-coding-plan/`, OpenCode's provider for z.ai's GLM
     // Coding Plan, the subscription z.ai sells for coding agents and the
@@ -766,17 +773,49 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       Object.freeze({
         id: 'zai-coding-plan/glm-5.3',
         label: 'GLM-5.3',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'zai-coding-plan/glm-5.3-highspeed',
         label: 'GLM-5.3 Highspeed',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
       }),
       Object.freeze({
         id: 'zai-coding-plan/glm-5.3-flash',
         label: 'GLM-5.3 Flash',
-        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'deepseek/deepseek-v4-pro',
+        label: 'DeepSeek V4 Pro',
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'deepseek/deepseek-flash',
+        label: 'DeepSeek V4.1 Flash',
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'moonshotai/kimi-k3.1-pro',
+        label: 'Kimi K3.1 Pro',
+        effort: levels(OPENCODE_LOW_HIGH_MAX_LEVELS, 'high'),
+      }),
+      // Kimi K2.7 Code has no reasoning options on models.dev, so no slider.
+      Object.freeze({ id: 'moonshotai/kimi-k2.7-code', label: 'Kimi K2.7 Code' }),
+      Object.freeze({
+        id: 'alibaba/qwen3.8-max',
+        label: 'Qwen3.8 Max',
+        effort: levels(OPENCODE_QWEN_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'alibaba/qwen3.8-flash',
+        label: 'Qwen3.8 Flash',
+        effort: levels(OPENCODE_QWEN_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'minimax/MiniMax-M3.1-Flash',
+        label: 'MiniMax M3.1 Flash',
+        effort: levels(CLAUDE_LEVELS, 'high'),
       }),
     ]),
     launch: Object.freeze({
