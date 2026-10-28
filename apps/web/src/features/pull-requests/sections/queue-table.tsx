@@ -1,18 +1,15 @@
 import {
-  Button,
   ChipSelect,
-  EmptyState,
   FacetSelect,
   PullRequestTable,
   PullRequestTableHead,
   RunsListFoot,
 } from '@oppenheimer/design-system-web';
-import { GitBranch, GitPullRequest, Settings } from '@oppenheimer/design-system-web/icons';
+import { GitBranch } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestLane } from '@oppenheimer/frontend-consumer';
 import { useSuspensePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_LANES } from '@oppenheimer/shared/schemas/pull-request';
-import { Link } from '@tanstack/react-router';
 import { useDeferredValue, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueueSearchField } from '../components/queue-search-field';
@@ -21,13 +18,8 @@ import { useQueueKeys } from '../hooks/use-queue-keys';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReadNotices } from '../hooks/use-read-notices';
 import { facetCounts, filterQueue, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
-import {
-  needsWatchedRepositories,
-  QUEUE_CHECKS,
-  QUEUE_WAITS,
-  type QueueChecks,
-  type QueueWait,
-} from '../lib/queue-search';
+import { QUEUE_CHECKS, QUEUE_WAITS, type QueueChecks, type QueueWait } from '../lib/queue-search';
+import { QueueEmpty } from './queue-empty';
 import { QueueRow } from './queue-row';
 
 /**
@@ -78,45 +70,10 @@ export function QueueTable() {
   });
 
   if (!data.items.length) {
-    const watching = needsWatchedRepositories(settled);
     return (
       <>
         <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />
-        <div className="rounded-xl bg-card py-6">
-          <EmptyState>
-            <EmptyState.Header>
-              <EmptyState.Media variant="icon">
-                <GitPullRequest />
-              </EmptyState.Media>
-              <EmptyState.Title>
-                {t(
-                  watching
-                    ? 'pullRequests.queue.emptyWatchingTitle'
-                    : 'pullRequests.queue.emptyTitle',
-                )}
-              </EmptyState.Title>
-              <EmptyState.Description>
-                {t(
-                  watching
-                    ? 'pullRequests.queue.emptyWatchingHint'
-                    : 'pullRequests.queue.emptyHint',
-                )}
-              </EmptyState.Description>
-            </EmptyState.Header>
-            {watching ? (
-              <EmptyState.Content>
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  render={<Link to="/settings/repositories" />}
-                >
-                  <Settings />
-                  {t('pullRequests.queue.configureWatched')}
-                </Button>
-              </EmptyState.Content>
-            ) : null}
-          </EmptyState>
-        </div>
+        <QueueEmpty queue={settled} />
       </>
     );
   }
