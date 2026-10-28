@@ -405,7 +405,7 @@
     "empty": "Aún no hay bots aquí.",
     "add": "Añadir uno",
     "manage": "Bots en {{section}}",
-    "showHere": "Mostrar en {{section}}",
+    "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
     "hide": "Ocultar de {{section}}"
   }

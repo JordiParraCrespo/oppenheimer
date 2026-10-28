@@ -1,20 +1,19 @@
 import {
   BotAvatar,
-  ChipSelectActionRow,
-  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
-  ChipSelectSearch,
   IconButton,
+  Input,
+  Link,
   Popover,
   PopoverTrigger,
 } from '@oppenheimer/design-system-web';
-import { Plus, UsersIcon } from '@oppenheimer/design-system-web/icons';
+import { Plus, Search } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useBots } from '@oppenheimer/frontend-consumer/react';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
-import { useNavigate } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
@@ -22,8 +21,8 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 /**
  * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
  * a search over every bot, each with a check for whether this section lists
- * it, then New bot and the way to Employees, where bots are grouped, ordered
- * and deleted. A check flips the bot's placement at once and the popup stays
+ * it, and a foot that says what the check means, with New bot and the way to
+ * Employees, where bots are grouped, ordered and deleted. A check flips the bot's placement at once and the popup stays
  * open for the next. The bots read arrives whole, as Employees' own search
  * has it, so the search filters it here, on the name and the description.
  *
@@ -50,7 +49,6 @@ export function SectionBotsMenu({
   onPlace: (bot: BotEntity, shown: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const bots = useBots();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -99,24 +97,29 @@ export function SectionBotsMenu({
       >
         <Plus />
       </PopoverTrigger>
-      <ChipSelectPopup density="menu" align="end" width={264}>
-        <ChipSelectSearch
-          density="menu"
-          value={query}
-          placeholder={t('bots.sidebar.search')}
-          aria-label={t('bots.sidebar.search')}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-        />
-        <ChipSelectHeading>{t('bots.section.showHere', { section: where })}</ChipSelectHeading>
+      <ChipSelectPopup density="menu" align="end" width={272} className="p-0">
+        <div className="px-2 pt-2">
+          <Input
+            size="md"
+            quiet
+            // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
+            autoFocus
+            leading={<Search className="size-3.5" />}
+            value={query}
+            placeholder={t('bots.sidebar.search')}
+            aria-label={t('bots.sidebar.search')}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onKeyDown}
+          />
+        </div>
         <ChipSelectList
           density="menu"
           role="listbox"
           aria-multiselectable
-          aria-label={t('bots.section.showHere', { section: where })}
+          aria-label={t('bots.section.manage', { section: where })}
           rows={8}
           total={bots.data?.length ?? 0}
           loading={bots.isPending}
@@ -129,6 +132,7 @@ export function SectionBotsMenu({
                 ? t('bots.sidebar.noMatch', { query: query.trim() })
                 : t('bots.sidebar.emptyTitle')
           }
+          className="p-1"
         >
           {visible.map((bot, index) => (
             <ChipSelectItem
@@ -136,7 +140,7 @@ export function SectionBotsMenu({
               density="menu"
               selected={shows(bot)}
               highlighted={index === active}
-              leading={<BotAvatar option={bot} size={18} color={bot.avatarColor} />}
+              leading={<BotAvatar option={bot} size={20} color={bot.avatarColor} />}
               data-disabled={saving.has(bot.id) || undefined}
               aria-disabled={saving.has(bot.id) || undefined}
               onMouseEnter={() => setActive(index)}
@@ -146,21 +150,24 @@ export function SectionBotsMenu({
             </ChipSelectItem>
           ))}
         </ChipSelectList>
-        <ChipSelectActionRow
-          action={{
-            label: creating ? t('bots.sidebar.creating') : t('bots.sidebar.new'),
-            onSelect: onCreate,
-          }}
-          onClose={() => onOpenChange(false)}
-        />
-        <ChipSelectActionRow
-          action={{
-            label: t('bots.section.manageAll', { employees: t('nav.employees') }),
-            icon: <UsersIcon />,
-            onSelect: () => void navigate({ to: '/bots' }),
-          }}
-          onClose={() => onOpenChange(false)}
-        />
+        <div className="flex flex-col gap-1.5 border-t border-border-subtle px-3 py-2.5 text-xs text-fg-subtle">
+          <p>{t('bots.section.checkedHint', { section: where })}</p>
+          <div className="flex gap-3">
+            <Link
+              muted
+              render={<button type="button" />}
+              onClick={() => {
+                onOpenChange(false);
+                onCreate();
+              }}
+            >
+              {creating ? t('bots.sidebar.creating') : t('bots.sidebar.new')}
+            </Link>
+            <Link muted render={<RouterLink to="/bots" />} onClick={() => onOpenChange(false)}>
+              {t('bots.section.manageAll', { employees: t('nav.employees') })}
+            </Link>
+          </div>
+        </div>
       </ChipSelectPopup>
     </Popover>
   );

@@ -783,6 +783,7 @@ export default function Page() {
           <Input size="md" placeholder="md · 34" leading={<SearchIcon />} />
           <Input size="lg" placeholder="lg · 42" />
           <Input pill placeholder="Search sessions" leading={<SearchIcon />} trailing={<Kbd>⌘K</Kbd>} />
+          <Input quiet placeholder="Search bots (quiet, a popup's search)" leading={<SearchIcon />} />
           <Input disabled placeholder="Disabled" />
         </div>
       </Spec>

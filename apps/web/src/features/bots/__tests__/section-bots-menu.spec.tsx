@@ -23,7 +23,9 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBots: () => ({ data: read.bots, isPending: false, isError: false }),
 }));
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ to, ...props }: { to: string }) => <a href={to} {...props} />,
+}));
 
 function bot(id: string, name: string, sections: BotSection[], description = ''): BotEntity {
   const at = new Date('2026-10-26T09:00:00Z');
