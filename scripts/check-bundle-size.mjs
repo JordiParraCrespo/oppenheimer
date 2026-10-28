@@ -27,7 +27,10 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 450.0KB measured (2026-10-28, with main's Claude Code cloud merged);
+    // 450.1KB measured (2026-10-28, with session pins (#513) and the
+    // automations sidebar (#511) merged): main went past 450KB by their
+    // strings in the bundled locale, so the budget moved to 451KB.
+    // 450.0KB measured earlier the same day, with main's Claude Code cloud merged;
     // 449.1KB on 2026-10-27, when the last raise was for cloud sessions:
     // Cloud in New session's place picker and Cursor in its agent picker,
     // Cursor's mark in the design-system chunk the entry loads, and their
@@ -37,7 +40,7 @@ const APPS = [
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
     // follow its route is the fix, as its own measured diff.
-    budgetKB: 450,
+    budgetKB: 451,
   },
   // oppenheimer:end web
 ];
