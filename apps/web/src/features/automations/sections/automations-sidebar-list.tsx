@@ -5,6 +5,7 @@ import {
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
+import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
@@ -20,14 +21,22 @@ import { AutomationGroup } from './automation-group';
  * side, and holds what the groups share (the settled search, the folded
  * groups); the half-typed search, the minute clock and each row's route
  * subscription live lower, so a keystroke, a tick or a navigation does not
- * redraw the list. The workspace's Unassigned project has no group: it holds
- * sessions that name no project, and an automation is always set up for one.
+ * redraw the list. Only a project with an automation has a group, and the
+ * head counts those; the workspace's Unassigned project never does, since an
+ * automation is always set up for a named one.
  * A refetch that fails keeps the groups and says so above them.
  */
 export function AutomationsSidebarList() {
   const { t } = useTranslation();
   const { automations, projects: everyProject, error } = useSuspenseAutomationsByProject();
-  const projects = everyProject.filter((row) => !row.isUnassigned);
+  const named = everyProject.filter((row) => !row.isUnassigned);
+  const owned = new Map<string, AutomationEntity[]>();
+  for (const automation of automations) {
+    const items = owned.get(automation.projectId);
+    if (items) items.push(automation);
+    else owned.set(automation.projectId, [automation]);
+  }
+  const projects = named.filter((project) => owned.has(project.id));
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
@@ -39,12 +48,11 @@ export function AutomationsSidebarList() {
   const term = query.trim().toLowerCase();
   const groups = projects.map((project) => ({
     project,
-    items: automations.filter(
+    items: (owned.get(project.id) ?? []).filter(
       (automation) =>
-        automation.projectId === project.id &&
-        (!term ||
-          automation.name.toLowerCase().includes(term) ||
-          project.name.toLowerCase().includes(term)),
+        !term ||
+        automation.name.toLowerCase().includes(term) ||
+        project.name.toLowerCase().includes(term),
     ),
   }));
   const shown = term ? groups.filter((group) => group.items.length) : groups;
@@ -91,7 +99,11 @@ export function AutomationsSidebarList() {
             <EmptyState compact>
               <EmptyState.Header>
                 <EmptyState.Description>
-                  {t('automations.sidebar.noProjects')}
+                  {t(
+                    named.length
+                      ? 'automations.sidebar.noAutomations'
+                      : 'automations.sidebar.noProjects',
+                  )}
                 </EmptyState.Description>
               </EmptyState.Header>
             </EmptyState>
@@ -108,7 +120,6 @@ export function AutomationsSidebarList() {
                   next ? current.filter((id) => id !== project.id) : [...current, project.id],
                 )
               }
-              searching={Boolean(term)}
               onNew={(target) => dialogs.open({ kind: 'automation', projectId: target.id })}
             />
           ))
