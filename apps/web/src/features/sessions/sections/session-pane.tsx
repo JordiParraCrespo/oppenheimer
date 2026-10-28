@@ -1,4 +1,3 @@
-import { cn } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useRestartSession,
@@ -12,6 +11,7 @@ import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatViewToggle } from '../components/chat-view-toggle';
 import { CloudSessionAway } from '../components/cloud-session-away';
+import { PreviewFrame } from '../components/preview-frame';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
@@ -266,18 +266,8 @@ export function SessionPane({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-term-bg">
           {terminal(session, reading, statusItems)}
         </div>
-        {/* The pane slides in from the right edge and back out: its frame's
-            width runs from nothing to the pane's, the pane held at its own
-            width against the frame's right edge so it moves rather than
-            reflows. */}
-        {previewOffered && preview.mounted ? (
-          <div
-            className={cn(
-              'flex shrink-0 justify-end overflow-hidden transition-[width] duration-base ease-standard starting:w-0 motion-reduce:transition-none',
-              preview.open ? 'w-110' : 'w-0',
-            )}
-            onTransitionEnd={preview.onTransitionEnd}
-          >
+        {previewOffered ? (
+          <PreviewFrame phase={preview.phase} onTransitionEnd={preview.onTransitionEnd}>
             <Suspense fallback={null}>
               <SessionPreview
                 sessionId={session.id}
@@ -285,7 +275,7 @@ export function SessionPane({
                 onClose={() => preview.toggle(false)}
               />
             </Suspense>
-          </div>
+          </PreviewFrame>
         ) : null}
       </div>
     </>
