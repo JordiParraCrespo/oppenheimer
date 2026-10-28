@@ -20,7 +20,13 @@
  * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
  */
 
-import { CLAUDE_LEVELS, CODEX_LEVELS, levels } from './effort-levels.js';
+import {
+  CLAUDE_LEVELS,
+  CODEX_LEVELS,
+  GROK_4_5_LEVELS,
+  GROK_LEVELS,
+  levels,
+} from './effort-levels.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
@@ -398,10 +404,6 @@ export interface CodingAgentDefinition {
 }
 
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
-// Grok's reasoning menus, as grok 1.0.70 carries them for its built-in
-// models: 4.6 and 4.7 run low to extra high, 4.5 tops out at high.
-const GROK_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
-const GROK_4_5_LEVELS = ['low', 'medium', 'high'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
