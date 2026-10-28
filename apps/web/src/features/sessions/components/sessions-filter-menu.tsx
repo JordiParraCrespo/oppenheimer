@@ -1,5 +1,4 @@
 import {
-  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -12,26 +11,20 @@ import {
   DropdownMenuTrigger,
   DropdownMenuValue,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
-  FACETS,
   type FilterOption,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
 } from '../lib/session-filters';
+import { FacetSearchSub } from './facet-search-sub';
 
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
-
-/** The facets the workspace grows, searched; the agents are a short fixed list. */
-const SEARCH: Partial<Record<SessionFacet, 'projects' | 'repositories' | 'hosts'>> = {
-  project: 'projects',
-  repository: 'repositories',
-  host: 'hosts',
-};
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
@@ -89,39 +82,50 @@ export function SessionsFilterMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-57.5">
-        {FACETS.map((facet) => (
-          <DropdownMenuSub key={facet}>
-            <DropdownMenuSubTrigger>
-              {t(`sessions.filters.${facet}`)}
-              <DropdownMenuValue>{labelFor(facet)}</DropdownMenuValue>
-            </DropdownMenuSubTrigger>
-            {SEARCH[facet] ? (
-              <DropdownMenuSubContent className="w-68 p-0">
-                <ChipSelectSearchList
-                  aria-label={t(`sessions.filters.${facet}`)}
-                  options={options[facet]}
-                  value={filters[facet]}
-                  onPick={(option) => onChange({ [facet]: option.value })}
-                  searchPlaceholder={t(`common.search.${SEARCH[facet]}`)}
-                  emptyText={(query) => t('common.search.noMatch', { query })}
-                />
-              </DropdownMenuSubContent>
-            ) : (
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  value={filters[facet]}
-                  onValueChange={(next) => onChange({ [facet]: next as string })}
-                >
-                  {options[facet].map((option) => (
-                    <DropdownMenuRadioItem key={option.value} value={option.value}>
-                      {option.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            )}
-          </DropdownMenuSub>
-        ))}
+        {/* Project, Repository and Host grow with the workspace and are
+            searched; the agents are a short fixed list of radio rows. */}
+        <FacetSearchSub
+          label={t('sessions.filters.project')}
+          current={labelFor('project')}
+          options={options.project}
+          value={filters.project}
+          searchPlaceholder={t('common.search.projects')}
+          onValueChange={(project) => onChange({ project })}
+        />
+        <FacetSearchSub
+          label={t('sessions.filters.repository')}
+          current={labelFor('repository')}
+          options={options.repository}
+          value={filters.repository}
+          searchPlaceholder={t('common.search.repositories')}
+          onValueChange={(repository) => onChange({ repository })}
+        />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            {t('sessions.filters.agent')}
+            <DropdownMenuValue>{labelFor('agent')}</DropdownMenuValue>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={filters.agent}
+              onValueChange={(agent) => onChange({ agent: agent as string })}
+            >
+              {options.agent.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <FacetSearchSub
+          label={t('sessions.filters.host')}
+          current={labelFor('host')}
+          options={options.host}
+          value={filters.host}
+          searchPlaceholder={t('common.search.hosts')}
+          onValueChange={(host) => onChange({ host })}
+        />
 
         <DropdownMenuSeparator />
 
@@ -140,15 +144,13 @@ export function SessionsFilterMenu({
             </DropdownMenuValue>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-68 p-0">
-            <ChipSelectSearchList
+            <SearchList
               aria-label={t('sessions.filters.shown')}
               options={projects}
               value={projects
                 .filter((project) => !visibility.hidden.includes(project.value))
                 .map((project) => project.value)}
-              onPick={(project) =>
-                visibility.onShownChange(project.value, visibility.hidden.includes(project.value))
-              }
+              onPick={(project, shown) => visibility.onShownChange(project.value, shown)}
               searchPlaceholder={t('common.search.projects')}
               emptyText={(query) => t('common.search.noMatch', { query })}
             />

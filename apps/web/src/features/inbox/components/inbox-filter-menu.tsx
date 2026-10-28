@@ -1,5 +1,4 @@
 import {
-  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -14,6 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuValue,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
@@ -107,7 +107,7 @@ export function InboxFilterMenu({
             <DropdownMenuValue>{projectLabel}</DropdownMenuValue>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-68 p-0">
-            <ChipSelectSearchList
+            <SearchList
               aria-label={t('inbox.filter.project')}
               options={projects}
               value={projectValue}

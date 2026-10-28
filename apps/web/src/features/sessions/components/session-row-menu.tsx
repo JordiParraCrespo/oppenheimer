@@ -1,5 +1,4 @@
 import {
-  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuBack,
   DropdownMenuContent,
@@ -8,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
@@ -90,7 +90,7 @@ export function SessionRowMenu({
             {projects.length === 0 ? (
               <DropdownMenuItem disabled>{t('sessions.sidebar.moveNone')}</DropdownMenuItem>
             ) : (
-              <ChipSelectSearchList
+              <SearchList
                 className="-mx-1 -mb-1"
                 aria-label={t('sessions.sidebar.moveTitle')}
                 options={projects.map((project) => ({

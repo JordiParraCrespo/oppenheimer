@@ -1,5 +1,4 @@
 import {
-  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuBack,
   DropdownMenuContent,
@@ -8,13 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-/** Ungrouped's row in the search list, which keys every row by a string. */
-const UNGROUPED = 'ungrouped';
 
 /**
  * A bot row's ellipsis in the Employees sidebar: Settings, Move to group and
@@ -81,16 +78,13 @@ export function BotRowMenu({
             {targets.length === 0 ? (
               <DropdownMenuItem disabled>{t('bots.sidebar.moveNone')}</DropdownMenuItem>
             ) : (
-              <ChipSelectSearchList
+              <SearchList
                 className="-mx-1 -mb-1"
                 aria-label={t('bots.sidebar.moveTitle')}
-                options={targets.map((target) => ({
-                  value: target.id ?? UNGROUPED,
-                  label: target.name,
-                }))}
-                value={null}
+                options={targets.map((target) => ({ value: target.id, label: target.name }))}
+                value={groupId}
                 onPick={(option) => {
-                  onMove(option.value === UNGROUPED ? null : option.value);
+                  onMove(option.value);
                   onOpenChange(false);
                   setPane('root');
                 }}

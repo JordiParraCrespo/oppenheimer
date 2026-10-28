@@ -1,4 +1,4 @@
-import { Button, FacetSelect, MilestoneGlyph } from '@oppenheimer/design-system-web';
+import { Button, MilestoneGlyph, SearchableFacetSelect } from '@oppenheimer/design-system-web';
 import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
@@ -39,7 +39,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <FacetSelect
+      <SearchableFacetSelect
         variant="pill"
         label={t('tasks.filters.project')}
         icon={<Folder />}
@@ -78,7 +78,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
         ]}
       />
       {milestone ? (
-        <FacetSelect
+        <SearchableFacetSelect
           variant="pill"
           label={t('tasks.filters.milestone')}
           icon={<MilestoneGlyph />}

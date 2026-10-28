@@ -1,7 +1,7 @@
 import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
 import { useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ChoiceToken } from '../components/choice-token';
+import { SearchChoiceToken } from '../components/search-choice-token';
 import { useRunsFilters } from '../hooks/use-runs-filters';
 import { automationTriggerText } from '../lib/trigger-text';
 
@@ -27,7 +27,7 @@ export function RunsFacets() {
 
   return (
     <>
-      <ChoiceToken
+      <SearchChoiceToken
         label={automationName ?? t('automations.runs.allAutomations')}
         value={state.automation ?? ALL}
         dirty={state.automation !== null}
@@ -43,7 +43,7 @@ export function RunsFacets() {
         ]}
         onValueChange={(value) => filters.setAutomation(value === ALL ? null : value)}
       />
-      <ChoiceToken
+      <SearchChoiceToken
         label={projectName ?? t('automations.runs.allProjects')}
         value={state.project ?? ALL}
         dirty={state.project !== null}
