@@ -20,14 +20,18 @@ import { AutomationGroup } from './automation-group';
  * side, and holds what the groups share (the settled search, the folded
  * groups); the half-typed search, the minute clock and each row's route
  * subscription live lower, so a keystroke, a tick or a navigation does not
- * redraw the list. The workspace's Unassigned project has no group: it holds
- * sessions that name no project, and an automation is always set up for one.
+ * redraw the list. Only a project with an automation has a group, and the
+ * head counts those; the workspace's Unassigned project never does, since an
+ * automation is always set up for a named one.
  * A refetch that fails keeps the groups and says so above them.
  */
 export function AutomationsSidebarList() {
   const { t } = useTranslation();
   const { automations, projects: everyProject, error } = useSuspenseAutomationsByProject();
-  const projects = everyProject.filter((row) => !row.isUnassigned);
+  const named = everyProject.filter((row) => !row.isUnassigned);
+  const projects = named.filter((project) =>
+    automations.some((automation) => automation.projectId === project.id),
+  );
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
@@ -91,7 +95,11 @@ export function AutomationsSidebarList() {
             <EmptyState compact>
               <EmptyState.Header>
                 <EmptyState.Description>
-                  {t('automations.sidebar.noProjects')}
+                  {t(
+                    named.length
+                      ? 'automations.sidebar.noAutomations'
+                      : 'automations.sidebar.noProjects',
+                  )}
                 </EmptyState.Description>
               </EmptyState.Header>
             </EmptyState>
@@ -108,7 +116,6 @@ export function AutomationsSidebarList() {
                   next ? current.filter((id) => id !== project.id) : [...current, project.id],
                 )
               }
-              searching={Boolean(term)}
               onNew={(target) => dialogs.open({ kind: 'automation', projectId: target.id })}
             />
           ))
