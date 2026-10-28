@@ -20,11 +20,12 @@ const IndexingOptOut = ".metadata_never_index"
 //
 // The marker is macOS's own unprivileged opt-out, an empty file the user can
 // delete to get indexing back. It is not enough on its own: Spotlight still
-// indexed a work folder that had it (MVP decision log, 2026-10-01), so what
-// keeps the checkouts out is their directories' `.noindex` names
-// (`domain.Layout`); the marker stays for the rest of the root. Linux's indexers read their own configuration,
-// so this is a no-op there. Failing to write it only leaves the host busier, so
-// callers log and carry on.
+// indexed a work folder that had it (MVP decision log, 2026-10-01). What keeps
+// the checkouts out is their directories' `.noindex` names (`domain.Layout`);
+// the marker stays for the rest of the root.
+//
+// Linux's indexers read their own configuration, so this is a no-op there.
+// Failing to write it only leaves the host busier, so callers log and carry on.
 //
 // A root that does not exist yet is created (0700, as `ChooseWorkspaces` would)
 // rather than skipped: the default root is otherwise first made by the first

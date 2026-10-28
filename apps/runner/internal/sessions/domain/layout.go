@@ -32,8 +32,8 @@ const LayoutVersion = 3
 const LocalID = "local"
 
 // Tenant is the account and the workspace something in the work folder belongs
-// to: the two levels above `repos/` and `sessions/`, each named by an id that
-// never changes (24 §2).
+// to: the two levels above `repos.noindex/` and `sessions.noindex/`, each
+// named by an id that never changes (24 §2).
 type Tenant struct {
 	Account   string
 	Workspace string
