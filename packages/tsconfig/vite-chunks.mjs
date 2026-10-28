@@ -19,6 +19,17 @@
  * Groups are by release cadence, not by size: libraries that version together
  * (a router and its core, a query client and its persisters) belong in one
  * chunk, because splitting them would invalidate both anyway.
+ *
+ * A group holds only what the entry loads anyway. Rollup puts every module a
+ * group names into that chunk, whoever imports it, and the entry loads the
+ * chunk, so a library that lazy routes use is pulled onto the critical path
+ * whole. `vendor-ui` held Base UI, lucide-react, vaul and cmdk, and was 115KB
+ * of the first load for components most of which only lazy routes draw;
+ * react-hook-form rode in `vendor-forms` the same way. Left out of the groups,
+ * they follow the routes that import them, and the first load went from
+ * 450.2KB to 348.6KB (2026-10-28) for 33KB more across every route chunk
+ * together (3275KB to 3308KB), which a reader pays only for the routes they
+ * open. zod stays a group: the shared schemas the entry reads need it.
  */
 const GROUPS = {
   'vendor-react': ['react', 'react-dom', 'scheduler'],
@@ -37,18 +48,9 @@ const GROUPS = {
     'html-parse-stringify',
     'void-elements',
   ],
-  'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+  'vendor-zod': ['zod'],
   'vendor-auth': ['better-auth', '@better-auth', '@better-fetch', 'nanostores', 'jose'],
-  'vendor-ui': [
-    '@base-ui',
-    'lucide-react',
-    'sonner',
-    'vaul',
-    'cmdk',
-    'class-variance-authority',
-    'clsx',
-    'tailwind-merge',
-  ],
+  'vendor-ui': ['sonner', 'class-variance-authority', 'clsx', 'tailwind-merge'],
   'vendor-di': ['inversify', '@inversifyjs', 'reflect-metadata'],
 };
 
