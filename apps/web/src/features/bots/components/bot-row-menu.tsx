@@ -1,4 +1,5 @@
 import {
+  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuBack,
   DropdownMenuContent,
@@ -11,6 +12,9 @@ import {
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+/** Ungrouped's row in the search list, which keys every row by a string. */
+const UNGROUPED = 'ungrouped';
 
 /**
  * A bot row's ellipsis in the Employees sidebar: Settings, Move to group and
@@ -56,7 +60,7 @@ export function BotRowMenu({
       >
         <Ellipsis />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-47.5">
+      <DropdownMenuContent align="end" className={pane === 'move' ? 'w-68' : 'min-w-47.5'}>
         {pane === 'root' ? (
           <>
             <DropdownMenuItem onClick={onSettings}>{t('bots.sidebar.settings')}</DropdownMenuItem>
@@ -77,11 +81,22 @@ export function BotRowMenu({
             {targets.length === 0 ? (
               <DropdownMenuItem disabled>{t('bots.sidebar.moveNone')}</DropdownMenuItem>
             ) : (
-              targets.map((target) => (
-                <DropdownMenuItem key={target.id ?? 'ungrouped'} onClick={() => onMove(target.id)}>
-                  {target.name}
-                </DropdownMenuItem>
-              ))
+              <ChipSelectSearchList
+                className="-mx-1 -mb-1"
+                aria-label={t('bots.sidebar.moveTitle')}
+                options={targets.map((target) => ({
+                  value: target.id ?? UNGROUPED,
+                  label: target.name,
+                }))}
+                value={null}
+                onPick={(option) => {
+                  onMove(option.value === UNGROUPED ? null : option.value);
+                  onOpenChange(false);
+                  setPane('root');
+                }}
+                searchPlaceholder={t('common.search.groups')}
+                emptyText={(query) => t('common.search.noMatch', { query })}
+              />
             )}
           </>
         )}

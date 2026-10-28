@@ -1,6 +1,6 @@
 import {
+  ChipSelectSearchList,
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -25,6 +25,13 @@ import {
 } from '../lib/session-filters';
 
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
+
+/** The facets the workspace grows, searched; the agents are a short fixed list. */
+const SEARCH: Partial<Record<SessionFacet, 'projects' | 'repositories' | 'hosts'>> = {
+  project: 'projects',
+  repository: 'repositories',
+  host: 'hosts',
+};
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
@@ -88,25 +95,38 @@ export function SessionsFilterMenu({
               {t(`sessions.filters.${facet}`)}
               <DropdownMenuValue>{labelFor(facet)}</DropdownMenuValue>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={filters[facet]}
-                onValueChange={(next) => onChange({ [facet]: next as string })}
-              >
-                {options[facet].map((option) => (
-                  <DropdownMenuRadioItem key={option.value} value={option.value}>
-                    {option.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
+            {SEARCH[facet] ? (
+              <DropdownMenuSubContent className="w-68 p-0">
+                <ChipSelectSearchList
+                  aria-label={t(`sessions.filters.${facet}`)}
+                  options={options[facet]}
+                  value={filters[facet]}
+                  onPick={(option) => onChange({ [facet]: option.value })}
+                  searchPlaceholder={t(`common.search.${SEARCH[facet]}`)}
+                  emptyText={(query) => t('common.search.noMatch', { query })}
+                />
+              </DropdownMenuSubContent>
+            ) : (
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={filters[facet]}
+                  onValueChange={(next) => onChange({ [facet]: next as string })}
+                >
+                  {options[facet].map((option) => (
+                    <DropdownMenuRadioItem key={option.value} value={option.value}>
+                      {option.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            )}
           </DropdownMenuSub>
         ))}
 
         <DropdownMenuSeparator />
 
-        {/* A check per project; the menu stays open so several can be
-            toggled in one go. */}
+        {/* A check per project, under a search; the menu stays open so
+            several can be toggled in one go. */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={projects.length === 0}>
             {t('sessions.filters.shown')}
@@ -119,25 +139,29 @@ export function SessionsFilterMenu({
                   })}
             </DropdownMenuValue>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-            {projects.map((project) => (
-              <DropdownMenuCheckboxItem
-                key={project.value}
-                checked={!visibility.hidden.includes(project.value)}
-                onCheckedChange={(shown) => visibility.onShownChange(project.value, shown)}
+          <DropdownMenuSubContent className="w-68 p-0">
+            <ChipSelectSearchList
+              aria-label={t('sessions.filters.shown')}
+              options={projects}
+              value={projects
+                .filter((project) => !visibility.hidden.includes(project.value))
+                .map((project) => project.value)}
+              onPick={(project) =>
+                visibility.onShownChange(project.value, visibility.hidden.includes(project.value))
+              }
+              searchPlaceholder={t('common.search.projects')}
+              emptyText={(query) => t('common.search.noMatch', { query })}
+            />
+            <DropdownMenuSeparator className="mx-0" />
+            <div className="p-1 pt-0">
+              <DropdownMenuItem
+                disabled={visibility.hiddenCount === 0}
+                onClick={visibility.onShowAll}
                 closeOnClick={false}
               >
-                {project.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={visibility.hiddenCount === 0}
-              onClick={visibility.onShowAll}
-              closeOnClick={false}
-            >
-              {t('sessions.filters.showAll')}
-            </DropdownMenuItem>
+                {t('sessions.filters.showAll')}
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 

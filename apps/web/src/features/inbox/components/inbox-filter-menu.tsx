@@ -1,4 +1,5 @@
 import {
+  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -105,20 +106,17 @@ export function InboxFilterMenu({
             {t('inbox.filter.project')}
             <DropdownMenuValue>{projectLabel}</DropdownMenuValue>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
+          <DropdownMenuSubContent className="w-68 p-0">
+            <ChipSelectSearchList
+              aria-label={t('inbox.filter.project')}
+              options={projects}
               value={projectValue}
-              onValueChange={(next) =>
-                onProjectChange(next === ALL_PROJECTS ? null : (next as string))
+              onPick={(option) =>
+                onProjectChange(option.value === ALL_PROJECTS ? null : option.value)
               }
-            >
-              {projects.map((option) => (
-                <DropdownMenuRadioItem key={option.value} value={option.value}>
-                  {option.label}
-                  <DropdownMenuShortcut className="figures">{option.count}</DropdownMenuShortcut>
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
+              searchPlaceholder={t('common.search.projects')}
+              emptyText={(query) => t('common.search.noMatch', { query })}
+            />
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 

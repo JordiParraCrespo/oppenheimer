@@ -31,6 +31,8 @@ export function RunsFacets() {
         label={automationName ?? t('automations.runs.allAutomations')}
         value={state.automation ?? ALL}
         dirty={state.automation !== null}
+        searchPlaceholder={t('common.search.automations')}
+        emptyText={(query) => t('common.search.noMatch', { query })}
         options={[
           { value: ALL, label: t('automations.runs.allAutomations') },
           ...automations.map((automation) => ({
@@ -45,6 +47,8 @@ export function RunsFacets() {
         label={projectName ?? t('automations.runs.allProjects')}
         value={state.project ?? ALL}
         dirty={state.project !== null}
+        searchPlaceholder={t('common.search.projects')}
+        emptyText={(query) => t('common.search.noMatch', { query })}
         options={[
           { value: ALL, label: t('automations.runs.allProjects') },
           ...projects.map((project) => ({ value: project.id, label: project.name })),

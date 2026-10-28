@@ -43,6 +43,8 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
         variant="pill"
         label={t('tasks.filters.project')}
         icon={<Folder />}
+        searchPlaceholder={t('common.search.projects')}
+        emptyText={(query) => t('common.search.noMatch', { query })}
         value={slug ?? ALL}
         onValueChange={(value) => {
           const project = value === ALL ? undefined : value;
@@ -80,6 +82,8 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
           variant="pill"
           label={t('tasks.filters.milestone')}
           icon={<MilestoneGlyph />}
+          searchPlaceholder={t('common.search.milestones')}
+          emptyText={(query) => t('common.search.noMatch', { query })}
           value={milestoneId ?? ALL}
           onValueChange={(value) => set({ milestone: value === ALL ? undefined : value })}
           options={[

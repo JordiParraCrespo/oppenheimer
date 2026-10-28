@@ -1,4 +1,5 @@
 import {
+  ChipSelectSearchList,
   DropdownMenu,
   DropdownMenuBack,
   DropdownMenuContent,
@@ -61,7 +62,7 @@ export function SessionRowMenu({
       >
         <Ellipsis />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-47.5">
+      <DropdownMenuContent align="end" className={pane === 'move' ? 'w-68' : 'min-w-47.5'}>
         {pane === 'root' ? (
           <>
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
@@ -89,11 +90,22 @@ export function SessionRowMenu({
             {projects.length === 0 ? (
               <DropdownMenuItem disabled>{t('sessions.sidebar.moveNone')}</DropdownMenuItem>
             ) : (
-              projects.map((project) => (
-                <DropdownMenuItem key={project.id} onClick={() => onMove(project.id)}>
-                  {project.isUnassigned ? t('projects.unassigned') : project.name}
-                </DropdownMenuItem>
-              ))
+              <ChipSelectSearchList
+                className="-mx-1 -mb-1"
+                aria-label={t('sessions.sidebar.moveTitle')}
+                options={projects.map((project) => ({
+                  value: project.id,
+                  label: project.isUnassigned ? t('projects.unassigned') : project.name,
+                }))}
+                value={null}
+                onPick={(option) => {
+                  onMove(option.value);
+                  onOpenChange(false);
+                  setPane('root');
+                }}
+                searchPlaceholder={t('common.search.projects')}
+                emptyText={(query) => t('common.search.noMatch', { query })}
+              />
             )}
           </>
         )}
