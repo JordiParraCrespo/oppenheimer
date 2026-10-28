@@ -27,15 +27,12 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 450.1KB measured (2026-10-28, with session pins (#513) and the
-    // automations sidebar (#511) merged): main went past 450KB by their
-    // strings in the bundled locale, so the budget moved to 451KB.
-    // 450.0KB measured earlier the same day, with main's Claude Code cloud merged;
-    // 449.1KB on 2026-10-27, when the last raise was for cloud sessions:
+    // 450.1KB measured (2026-10-28), when the last raise was for z.ai's GLM
+    // in OpenCode's model picker: three rows of the agent catalog, which the
+    // entry loads (+0.1KB). The one before it was for cloud sessions:
     // Cloud in New session's place picker and Cursor in its agent picker,
     // Cursor's mark in the design-system chunk the entry loads, and their
-    // strings in the bundled locale (+2.3KB). The one before it was the
-    // session pane's Browser tab (+1.2KB). Earlier raises and
+    // strings in the bundled locale (+2.3KB). Earlier raises and
     // their reasons are in git history. `manualChunks` puts every
     // design-system component in one chunk the entry loads, so a picker used
     // on one lazy route is on the critical path; letting design-system code
