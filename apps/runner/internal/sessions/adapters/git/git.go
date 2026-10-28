@@ -749,13 +749,12 @@ func credentialRefused(verb, repo, session string) *problem.Error {
 		verb, subject, session, subject)
 }
 
-// startPoint prefers the store's view of the base branch, so a session is
-// cut from what was just fetched rather than from a stale local ref.
+// startPoint is the store's view of the base branch, so a session is cut
+// from what was just fetched rather than from a stale local ref. base is
+// always a branch name, and one may have slashes in it (`claude/x`), so it
+// is qualified in full rather than guessed at.
 func startPoint(base string) string {
-	if strings.Contains(base, "/") {
-		return base
-	}
-	return "origin/" + base
+	return "refs/remotes/origin/" + base
 }
 
 func pushRejected(out string, err error) error {
