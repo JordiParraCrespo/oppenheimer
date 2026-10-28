@@ -1,3 +1,4 @@
+import type { StartCloudSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCloudAgentStatus,
   useCreateSession,
@@ -100,8 +101,7 @@ export function NewSessionSend({
     },
   });
   const startCloud = useStartCloudSession();
-  // The task the last cloud launch sent, so Try again sends the same draft.
-  const cloudPrompt = useRef('');
+  const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
   // a file is never dropped without a word.
   const [filesRefused, setFilesRefused] = useState(false);
@@ -118,9 +118,18 @@ export function NewSessionSend({
     const input = toStartCloudInput({ ...draft, projectId }, prompt);
     setFilesRefused(files.length > 0);
     if (!input || files.length > 0) return;
+    launchInCloud(input);
+  }
+
+  /**
+   * Launches `input` at its vendor. It is kept as the last launch, so Try
+   * again sends this very request — its task, its repository and its key —
+   * whatever the chips hold by then.
+   */
+  function launchInCloud(input: StartCloudSessionInput) {
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
-    cloudPrompt.current = prompt;
+    lastCloudLaunch.current = input;
     const tab = window.open('', '_blank');
     startCloud.reset();
     startCloud.mutate(
@@ -206,8 +215,9 @@ export function NewSessionSend({
         <CloudLaunchAlert
           failure={cloudFailure}
           vendor={vendor?.label ?? t('sessions.new.cloudFailure.vendor')}
-          onConnect={() => navigate({ to: '/settings/cloud-agents' })}
-          onRetry={() => sendToCloud(cloudPrompt.current, [])}
+          // In a tab of its own: leaving New session would drop the task typed here.
+          onConnect={() => window.open('/settings/cloud-agents', '_blank', 'noopener')}
+          onRetry={() => lastCloudLaunch.current && launchInCloud(lastCloudLaunch.current)}
           onDismiss={() => startCloud.reset()}
         />
       ) : (
