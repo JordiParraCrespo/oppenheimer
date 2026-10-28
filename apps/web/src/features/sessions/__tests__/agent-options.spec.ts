@@ -3,6 +3,7 @@ import {
   defaultModelFor,
   effortChoiceFor,
   launchControlsFor,
+  toEngineAgents,
   toLaunchInput,
 } from '../lib/session-options';
 
@@ -17,6 +18,17 @@ describe('agent options', () => {
     expect(defaultModelFor('opencode')).toBe('anthropic/claude-opus-5-5');
     expect(defaultModelFor('grok')).toBe('grok-4.6');
     expect(defaultModelFor('shell')).toBeNull();
+  });
+
+  it('offers Claude Code alone in Claude Code’s cloud, and every agent elsewhere', () => {
+    const cursor = { id: 'cursor', label: 'Cursor', models: [] } as Parameters<
+      typeof toEngineAgents
+    >[1];
+
+    expect(toEngineAgents(true, cursor).map((option) => option.id)).toEqual(['claude-code']);
+    const elsewhere = toEngineAgents(false, cursor).map((option) => option.id);
+    expect(elsewhere).toContain('codex');
+    expect(elsewhere.at(-1)).toBe('cursor');
   });
 
   it('shows the permission chip only where the agent takes approvals', () => {

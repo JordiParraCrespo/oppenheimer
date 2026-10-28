@@ -1,10 +1,12 @@
 import { AgentMark, ChipSelectItem } from '@oppenheimer/design-system-web';
+import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import type { PlaceHost } from '../lib/session-options';
 
 /**
  * The place chip's Claude Code row, first under Cloud: Claude Code's cloud
- * started from `host`, which it names ("From mac-studio"). With no host that
+ * started from `host`, which it names ("From mac-studio"), and a way into the
+ * Start from pane where the reader picks another. With no host that
  * can start it the row is greyed out as Needs a host, as
  * `NewSessionComposer.dc.html` draws a cloud account that cannot run
  * (`product/versions/mvp/24-session-places.md` §7).
@@ -33,10 +35,13 @@ export function ClaudeCloudItem({
       aria-label={label}
       leading={<AgentMark agent="claude-code" />}
       trailing={
-        <span className="truncate text-xs text-fg-muted">
-          {host
-            ? t('sessions.new.where.claudeCloud.from', { host: host.label })
-            : t('sessions.new.where.claudeCloud.noHost')}
+        <span className="flex min-w-0 shrink items-center gap-1.5 text-xs text-fg-muted">
+          <span className="truncate">
+            {host
+              ? t('sessions.new.where.claudeCloud.from', { host: host.label })
+              : t('sessions.new.where.claudeCloud.noHost')}
+          </span>
+          {host ? <ChevronRight className="size-3.5 shrink-0 text-fg-subtle" /> : null}
         </span>
       }
       onMouseEnter={onMouseEnter}

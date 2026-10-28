@@ -62,8 +62,12 @@ export function filterOptions<T extends ChipSelectOption>(
   );
 }
 
-/** A host row of the place chip: the option, and whether the machine is reachable now. */
-export type PlaceHost = ChipSelectOption & { online: boolean };
+/**
+ * A host row of the place chip: the option, whether the machine is reachable
+ * now, and whether it can start a Claude Code cloud session (`null`: the API
+ * could not tell, so it is worth trying).
+ */
+export type PlaceHost = ChipSelectOption & { online: boolean; startsCloud: boolean | null };
 
 /** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
 export type PlaceCloud = ChipSelectOption & {
@@ -135,10 +139,33 @@ export function toHostOptions(
   return hosts.map((host) => ({
     value: host.id,
     online: host.online,
+    startsCloud: host.details.startsCloud,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,
   }));
+}
+
+/** The one agent Claude Code's cloud runs, whichever host starts it. */
+export const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
+
+/**
+ * The Claude Code row's Start from pane: every host, the ones that cannot
+ * start a cloud session disabled and saying why — offline, or a runner the
+ * API says cannot — rather than hidden (`.agents/rules/frontend-ui.md`).
+ */
+export function toStartFromOptions(
+  hosts: readonly PlaceHost[],
+  labels: { offline: string; cannot: string },
+): (PlaceHost & { disabled: boolean })[] {
+  return hosts.map((host) => {
+    const reason = !host.online
+      ? labels.offline
+      : host.startsCloud === false
+        ? labels.cannot
+        : null;
+    return { ...host, disabled: reason !== null, description: reason ?? host.description };
+  });
 }
 
 /**
@@ -206,7 +233,7 @@ export function toBranchOptions(
  * the button names the agent, which is exactly the case the plain terminal is
  * in.
  */
-export function toAgentOptions(): AgentOption[] {
+function toAgentOptions(): AgentOption[] {
   return CODING_AGENT_IDS.map((id) => ({
     id,
     label: CODING_AGENTS[id].label,
@@ -215,6 +242,20 @@ export function toAgentOptions(): AgentOption[] {
       label: model.label,
     })),
   }));
+}
+
+/**
+ * The engine button's tabs: every agent a host runs, then the vendor's cloud
+ * agent when the reader holds its key. In Claude Code's cloud, Claude Code
+ * alone: it is the only agent that cloud runs.
+ */
+export function toEngineAgents(
+  atClaudeCloud: boolean,
+  cloudAgent: AgentOption | null,
+): AgentOption[] {
+  const agents = toAgentOptions();
+  if (atClaudeCloud) return agents.filter((option) => option.id === CLAUDE_CLOUD_AGENT);
+  return cloudAgent ? [...agents, cloudAgent] : agents;
 }
 
 export function defaultModelFor(agent: CodingAgentId): string | null {
