@@ -33,7 +33,7 @@ import {
   type CloudAgentId,
   type CloudAgentProviderId,
 } from '@oppenheimer/shared/schemas/cloud-agent';
-import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
+import { MAX_SESSION_CHECKOUTS, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { NewSessionDraft } from './new-session-draft';
 
 // The key a picker's row is named by is the console's, kept in the product
@@ -62,17 +62,14 @@ export function filterOptions<T extends ChipSelectOption>(
   );
 }
 
+/** A host row of the place chip: the option, and whether the machine is reachable now. */
+export type PlaceHost = ChipSelectOption & { online: boolean };
+
 /**
- * A host row of the place chip: the option, whether the machine is reachable
- * now, and whether it can start a Claude Code cloud session (`null`: the API
- * could not tell, so it is worth trying).
+ * A host row of the Claude Code row's Start from pane: a host row whose line
+ * says what starting from it means, and whether it can.
  */
-export type PlaceHost = ChipSelectOption & {
-  online: boolean;
-  startsCloud: boolean | null;
-  /** The claude.ai account the host's `claude` is signed in as, when it says. */
-  claudeAccount: string | null;
-};
+export type StartFromHost = PlaceHost & { disabled: boolean };
 
 /** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
 export type PlaceCloud = ChipSelectOption & {
@@ -144,8 +141,6 @@ export function toHostOptions(
   return hosts.map((host) => ({
     value: host.id,
     online: host.online,
-    startsCloud: host.details.startsCloud,
-    claudeAccount: host.details.claudeAccount,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,
@@ -153,7 +148,33 @@ export function toHostOptions(
 }
 
 /** The one agent Claude Code's cloud runs, whichever host starts it. */
-export const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
+const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
+
+/**
+ * Whether a draft's place is Claude Code's cloud: the cloud place started
+ * from a host, not a vendor's. It runs Claude Code alone
+ * (`createSessionSchema` refuses another agent there).
+ */
+export function isClaudeCloud(place: {
+  where: SessionPlace;
+  cloudProvider: CloudAgentProviderId | null;
+}): boolean {
+  return place.where === 'cloud' && place.cloudProvider === null;
+}
+
+/**
+ * The engine a place takes: in Claude Code's cloud, Claude Code with its
+ * default model unless Claude Code is already picked; anywhere else, the
+ * engine as it is. The one rule the draft, the place chip and the engine
+ * button all read.
+ */
+export function engineForPlace(
+  place: { where: SessionPlace; cloudProvider: CloudAgentProviderId | null },
+  engine: { agent: CodingAgentId; model: string | null },
+): { agent: CodingAgentId; model: string | null } {
+  if (!isClaudeCloud(place) || engine.agent === CLAUDE_CLOUD_AGENT) return engine;
+  return { agent: CLAUDE_CLOUD_AGENT, model: defaultModelFor(CLAUDE_CLOUD_AGENT) };
+}
 
 /**
  * The Claude Code row's Start from pane: every host, the ones that cannot
@@ -163,19 +184,22 @@ export const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
  * account the session runs on: two accounts are two hosts to pick between.
  */
 export function toStartFromOptions(
-  hosts: readonly PlaceHost[],
+  hosts: readonly HostEntity[],
   labels: { offline: string; cannot: string },
-): (PlaceHost & { disabled: boolean })[] {
+): StartFromHost[] {
   return hosts.map((host) => {
     const reason = !host.online
       ? labels.offline
-      : host.startsCloud === false
+      : host.details.startsCloud === false
         ? labels.cannot
         : null;
     return {
-      ...host,
+      value: host.id,
+      label: host.name,
+      keywords: host.hostname ?? undefined,
+      online: host.online,
       disabled: reason !== null,
-      description: reason ?? host.claudeAccount ?? host.description,
+      description: reason ?? host.details.claudeAccount ?? host.summary,
     };
   });
 }
@@ -262,11 +286,11 @@ function toAgentOptions(): AgentOption[] {
  * alone: it is the only agent that cloud runs.
  */
 export function toEngineAgents(
-  atClaudeCloud: boolean,
+  claudeCloud: boolean,
   cloudAgent: AgentOption | null,
 ): AgentOption[] {
   const agents = toAgentOptions();
-  if (atClaudeCloud) return agents.filter((option) => option.id === CLAUDE_CLOUD_AGENT);
+  if (claudeCloud) return agents.filter((option) => option.id === CLAUDE_CLOUD_AGENT);
   return cloudAgent ? [...agents, cloudAgent] : agents;
 }
 

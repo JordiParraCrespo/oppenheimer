@@ -12,7 +12,7 @@ import {
 } from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import { rememberedFolder } from './folder-memory';
-import { CLAUDE_CLOUD_AGENT, defaultModelFor, type EffortPicks } from './session-options';
+import { defaultModelFor, type EffortPicks, engineForPlace } from './session-options';
 
 /**
  * What New session has been set to and remembers between visits, every chip
@@ -166,16 +166,15 @@ export function openDraft(seed: DraftSeed = {}): {
 }
 
 /**
- * Claude Code's cloud runs Claude Code (`createSessionSchema` refuses another
- * agent), so a draft opening there brings that agent along, unless the
- * address names another one: then the address wins and the place falls back
- * to a new worktree.
+ * A draft opening on Claude Code's cloud brings the agent that place runs
+ * (`engineForPlace`), unless the address names another one: then the address
+ * wins and the place falls back to a new worktree.
  */
 function fitClaudeCloud(draft: NewSessionDraft, seed: DraftSeed): NewSessionDraft {
-  if (draft.where !== 'cloud' || draft.cloudProvider !== null) return draft;
-  if (draft.agent === CLAUDE_CLOUD_AGENT) return draft;
+  const engine = engineForPlace(draft, draft);
+  if (engine.agent === draft.agent) return draft;
   if (seed.agent) return { ...draft, where: 'worktree' };
-  return { ...draft, agent: CLAUDE_CLOUD_AGENT, model: defaultModelFor(CLAUDE_CLOUD_AGENT) };
+  return { ...draft, ...engine };
 }
 
 /** An absolute path is the folder; one under `~` waits for the host's home; none takes the host's last. */

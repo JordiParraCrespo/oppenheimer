@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   defaultModelFor,
   effortChoiceFor,
+  engineForPlace,
   launchControlsFor,
   toEngineAgents,
   toLaunchInput,
@@ -18,6 +19,20 @@ describe('agent options', () => {
     expect(defaultModelFor('opencode')).toBe('anthropic/claude-opus-5-5');
     expect(defaultModelFor('grok')).toBe('grok-4.6');
     expect(defaultModelFor('shell')).toBeNull();
+  });
+
+  it('brings Claude Code to Claude Code’s cloud, and leaves the engine alone elsewhere', () => {
+    const codex = { agent: 'codex' as const, model: 'gpt-6-astra' };
+    const claude = { agent: 'claude-code' as const, model: 'claude-sonnet-5-5' };
+
+    expect(engineForPlace({ where: 'cloud', cloudProvider: null }, codex)).toEqual({
+      agent: 'claude-code',
+      model: defaultModelFor('claude-code'),
+    });
+    // Claude Code already picked keeps its model; a vendor's cloud and a host place keep theirs.
+    expect(engineForPlace({ where: 'cloud', cloudProvider: null }, claude)).toBe(claude);
+    expect(engineForPlace({ where: 'cloud', cloudProvider: 'cursor' }, codex)).toBe(codex);
+    expect(engineForPlace({ where: 'worktree', cloudProvider: null }, codex)).toBe(codex);
   });
 
   it('offers Claude Code alone in Claude Code’s cloud, and every agent elsewhere', () => {

@@ -8,11 +8,11 @@ import { PlaceSelect } from '../components/place-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import {
-  CLAUDE_CLOUD_AGENT,
   claudeCloudHost,
-  defaultModelFor,
+  engineForPlace,
   toCloudOptions,
   toHostOptions,
+  toStartFromOptions,
 } from '../lib/session-options';
 
 /**
@@ -26,8 +26,9 @@ import {
  * Settings → Cloud agents. `?host=` still names one in the address, for a
  * link that arrives with a machine.
  *
- * Claude Code's cloud from a host sets the agent to Claude Code, the only one
- * it runs; the engine button then offers Claude's models alone.
+ * A place is picked with the engine it takes (`engineForPlace`): Claude
+ * Code's cloud brings Claude Code, the only agent it runs. The Start from
+ * pane's rows are judged here from the hosts (`toStartFromOptions`).
  *
  * A cloud pick runs the vendor's own agent, so it is the agent chip's too
  * (`NewSessionAgent`): the draft keeps the host, folder and host agent as they
@@ -58,16 +59,21 @@ export function NewSessionPlace() {
       hostId={hosts.data?.some((candidate) => candidate.id === host.value) ? host.value : null}
       place={where.value}
       claudeCloud={hostOptions.find((option) => option.value === claudeHost?.id) ?? null}
+      startFrom={toStartFromOptions(hosts.data ?? [], {
+        offline: t('sessions.new.host.offline'),
+        cannot: t('sessions.new.where.claudeCloud.cannot'),
+      })}
       clouds={toCloudOptions(status.data, { connect: t('sessions.new.where.connect') })}
       cloud={cloudProvider.value}
       onHostChange={host.onChange}
       onPlaceChange={(place) => {
         // Only when leaving a vendor: a write wakes every chip that watches it.
         if (cloudProvider.value !== null) cloudProvider.onChange(null);
-        // Claude Code's cloud runs Claude Code, whatever agent was picked before.
-        if (place === 'cloud' && getValues('agent') !== CLAUDE_CLOUD_AGENT) {
-          setValue('agent', CLAUDE_CLOUD_AGENT);
-          setValue('model', defaultModelFor(CLAUDE_CLOUD_AGENT));
+        const [agent, model] = getValues(['agent', 'model']);
+        const engine = engineForPlace({ where: place, cloudProvider: null }, { agent, model });
+        if (engine.agent !== agent) {
+          setValue('agent', engine.agent);
+          setValue('model', engine.model);
         }
         where.onChange(place);
       }}

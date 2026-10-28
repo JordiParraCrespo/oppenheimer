@@ -15,15 +15,16 @@ vi.mock('react-i18next', () => ({
 afterEach(cleanup);
 
 const HOSTS = [
-  {
-    value: 'host-1',
-    label: 'mac-studio',
-    online: true,
-    startsCloud: true,
-    claudeAccount: 'ana@example.com',
-  },
-  { value: 'host-2', label: 'optimus', online: false, startsCloud: false, claudeAccount: null },
-  { value: 'host-3', label: 'old-box', online: true, startsCloud: false, claudeAccount: null },
+  { value: 'host-1', label: 'mac-studio', online: true },
+  { value: 'host-2', label: 'optimus', online: false },
+  { value: 'host-3', label: 'old-box', online: true },
+];
+
+// As the section judges them: mac-studio can, the other two cannot.
+const START_FROM = [
+  { ...HOSTS[0], disabled: false, description: 'ana@example.com' },
+  { ...HOSTS[1], disabled: true, description: 'Offline' },
+  { ...HOSTS[2], disabled: true, description: 'This runner can’t start it' },
 ];
 
 const CLOUDS = [
@@ -54,6 +55,7 @@ function renderChip(
       hostId="host-1"
       place={picked.place}
       claudeCloud={claudeCloud}
+      startFrom={START_FROM}
       clouds={clouds}
       cloud={picked.cloud}
       onHostChange={onHostChange}
