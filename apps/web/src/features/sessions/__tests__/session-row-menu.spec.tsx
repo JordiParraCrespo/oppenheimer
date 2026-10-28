@@ -14,7 +14,14 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-afterEach(cleanup);
+// jsdom draws no layout, so it has no scrollIntoView; the pane calls it on each arrow.
+const scrolled = vi.fn();
+Element.prototype.scrollIntoView = scrolled;
+
+afterEach(() => {
+  cleanup();
+  scrolled.mockClear();
+});
 
 function renderMenu() {
   const onMove = vi.fn();
@@ -43,7 +50,7 @@ function renderMenu() {
 describe('SessionRowMenu', () => {
   it('narrows the projects as you type and moves the session to the one Enter picks', () => {
     const { onMove, onOpenChange } = renderMenu();
-    const search = screen.getByRole('textbox', { name: 'common.search.projects' });
+    const search = screen.getByRole('combobox', { name: 'common.search.projects' });
 
     fireEvent.change(search, { target: { value: 'xrp' } });
 
@@ -56,9 +63,20 @@ describe('SessionRowMenu', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('tells assistive technology which row Enter will pick, and keeps it in view', () => {
+    renderMenu();
+    const search = screen.getByRole('combobox', { name: 'common.search.projects' });
+
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+
+    const row = screen.getByRole('option', { name: 'Superseo' });
+    expect(search.getAttribute('aria-activedescendant')).toBe(row.id);
+    expect(scrolled.mock.contexts.at(-1)).toBe(row);
+  });
+
   it('says nothing matches rather than showing an empty pane', () => {
     renderMenu();
-    fireEvent.change(screen.getByRole('textbox', { name: 'common.search.projects' }), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'common.search.projects' }), {
       target: { value: 'nope' },
     });
 

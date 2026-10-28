@@ -748,7 +748,9 @@ function ChipSelect({
  * pane of a row's menu. Its rows are not menu items, so a menu around it
  * neither moves focus to the row under the pointer nor reads the typed text
  * as typeahead; the field keeps every key but Escape and Tab to itself. The
- * arrows move the highlight and Enter picks it.
+ * arrows move the highlight, scrolling it into view, and Enter picks it; the
+ * field is a combobox whose active descendant is the highlighted row, so a
+ * screen reader hears which one Enter will pick.
  *
  * `value` is one value or, for a set of checks, an array; `onPick` fires per
  * row and the caller decides whether that closes anything. The field empties
@@ -784,11 +786,19 @@ function ChipSelectSearchList({
   className?: string;
   'aria-label'?: string;
 }) {
+  const id = React.useId();
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
   const term = query.trim().toLowerCase();
   const visible = options.filter((option) => matches(option, term));
   const multiple = Array.isArray(value);
+  const optionId = (index: number) => `${id}-option-${index}`;
+  // The field keeps focus, so the list follows the arrow keys on its own.
+  const move = (step: number) => {
+    const next = Math.min(Math.max(active + step, 0), visible.length - 1);
+    setActive(next);
+    document.getElementById(optionId(next))?.scrollIntoView({ block: 'nearest' });
+  };
   const isSelected = (option: ChipSelectOption) =>
     multiple ? value.includes(option.value) : option.value === value;
   const pick = (option: ChipSelectOption | undefined) => {
@@ -801,10 +811,10 @@ function ChipSelectSearchList({
     event.stopPropagation();
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setActive((index) => Math.min(index + 1, visible.length - 1));
+      move(1);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      setActive((index) => Math.max(index - 1, 0));
+      move(-1);
     } else if (event.key === 'Enter') {
       event.preventDefault();
       pick(visible[active]);
@@ -823,6 +833,11 @@ function ChipSelectSearchList({
           value={query}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
+          role="combobox"
+          aria-expanded
+          aria-autocomplete="list"
+          aria-controls={`${id}-list`}
+          aria-activedescendant={visible[active] ? optionId(active) : undefined}
           onChange={(event) => {
             setQuery(event.target.value);
             setActive(0);
@@ -832,6 +847,7 @@ function ChipSelectSearchList({
       </div>
       <ChipSelectList
         density="menu"
+        id={`${id}-list`}
         role="listbox"
         aria-label={ariaLabel}
         aria-multiselectable={multiple || undefined}
@@ -844,6 +860,8 @@ function ChipSelectSearchList({
         {visible.map((option, index) => (
           <ChipSelectItem
             key={option.value}
+            id={optionId(index)}
+            tabIndex={-1}
             density="menu"
             selected={isSelected(option)}
             highlighted={index === active}
