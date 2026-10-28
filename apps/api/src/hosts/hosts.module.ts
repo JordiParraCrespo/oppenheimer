@@ -14,6 +14,7 @@ import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
+import { HostReadResolver } from './application/host-read.resolver';
 import type { HostUsagePort } from './application/host-usage.port';
 import { HostUsageRegistry } from './application/host-usage.registry';
 import { HostVitalsResolver } from './application/host-vitals.resolver';
@@ -180,6 +181,7 @@ const resolvers: Provider[] = [
     ...UsersModule.contributeAccountErasure([HostAccountErasure]),
     RunnerReleaseConfig,
     HostUsageRegistry,
+    HostReadResolver,
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
     HostNetworkChangedDomainEventHandler,

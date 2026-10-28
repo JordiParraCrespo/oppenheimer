@@ -790,6 +790,10 @@ export type HostResponseDto = {
      * Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.
      */
     runningSessionCount: number;
+    /**
+     * Whether the host can start a Claude Code cloud session now: online, its runner takes `session.cloud`, and `claude` is installed. Null when online but not known on the replica that answered.
+     */
+    startsCloudSessions?: boolean | null;
     lastSeenAt?: string | null;
     /**
      * What the machine is. Null until the runner has reported its facts.

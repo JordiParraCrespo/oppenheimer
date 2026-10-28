@@ -620,6 +620,11 @@
           "label": "Nube de Claude Code",
           "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
+        "claudeCloud": {
+          "label": "Claude Code",
+          "from": "Desde {{host}}",
+          "noHost": "Necesita un host"
+        },
         "hosts": "Hosts",
         "startIn": "Empezar en",
         "atVendor": "Nube",

@@ -782,6 +782,9 @@ earlier note:
   bots from the page: the plus opens a menu with New bot and a check per
   bot for this section, and a row's ellipsis hides it from the section
   (slice D).
+- `versions/mvp/24-session-places.md` §7 had Claude Code's cloud only as a
+  place in a host's Start in pane. It is now also the Claude Code row under
+  Cloud, which picks a host that can start it (2026-10-28).
 - Grok offered sessions 4.7 and 4.6 with six effort levels, `minimal` to
   `max`, and bots 4.7 and Grok Build 0.1 starting on `medium`. On
   2026-10-28 the owner asked for a better Grok catalogue: sessions offer

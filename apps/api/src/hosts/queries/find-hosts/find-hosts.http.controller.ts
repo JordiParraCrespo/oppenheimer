@@ -9,7 +9,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { HostOverview } from '../../application/host-usage.registry';
+import type { HostRead } from '../../application/host-read.resolver';
 import { HostResponseDto } from '../../dtos/host.response.dto';
 import { HostMapper } from '../../host.mapper';
 import { FindHostsQuery } from './find-hosts.query';
@@ -48,7 +48,7 @@ export class FindHostsHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Query() query: FindHostsRequest,
   ): Promise<HostResponseDto[]> {
-    const hosts = await this.queryBus.execute<FindHostsQuery, HostOverview[]>(
+    const hosts = await this.queryBus.execute<FindHostsQuery, HostRead[]>(
       new FindHostsQuery({ scope, includeUnpaired: query.include === 'unpaired' }),
     );
     return hosts.map((overview) => this.mapper.toResponse(overview.host, overview));

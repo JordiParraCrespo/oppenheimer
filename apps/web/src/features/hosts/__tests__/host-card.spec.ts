@@ -27,6 +27,7 @@ function host(
       city: null,
       asnOrg: null,
       roundTripMillis: null,
+      startsCloud: false,
       ...details,
     },
   );

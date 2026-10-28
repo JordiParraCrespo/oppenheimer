@@ -618,6 +618,11 @@
           "label": "Claude Code cloud",
           "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
+        "claudeCloud": {
+          "label": "Claude Code",
+          "from": "From {{host}}",
+          "noHost": "Needs a host"
+        },
         "hosts": "Hosts",
         "startIn": "Start in",
         "atVendor": "Cloud",

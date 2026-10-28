@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { HostEntity } from '../domain/host.entity';
+import { type HostCapabilities, HostEntity } from '../domain/host.entity';
 import { HostMapper } from '../host.mapper';
 
-function host(unpairedAt: Date | null = null) {
+function host(unpairedAt: Date | null = null, capabilities: HostCapabilities | null = null) {
   return HostEntity.create({
     id: 'host-1',
     props: {
@@ -12,7 +12,7 @@ function host(unpairedAt: Date | null = null) {
       os: 'ubuntu 24.04',
       arch: 'amd64',
       runnerVersion: '0.14.2',
-      capabilities: null,
+      capabilities,
       publicKey: 'a'.repeat(44),
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: new Date(),
@@ -41,5 +41,21 @@ describe('HostMapper.toResponse', () => {
     const dto = mapper.toResponse(host(new Date()), { online: true, runningSessions: 0 });
 
     expect(dto.status).toBe('unpaired');
+  });
+
+  it('does not offer Claude Code cloud from a host whose runner probed for claude and did not find it', () => {
+    const tools = (claude: { path?: string }) => ({
+      tools: [
+        { name: 'git', path: '/usr/bin/git', required: true },
+        { name: 'claude', required: false, ...claude },
+      ],
+    });
+    const view = { online: true, liveCapabilities: ['session.cloud'] as const };
+
+    expect(mapper.toResponse(host(null, tools({})), view).startsCloudSessions).toBe(false);
+    expect(
+      mapper.toResponse(host(null, tools({ path: '/usr/local/bin/claude' })), view)
+        .startsCloudSessions,
+    ).toBe(true);
   });
 });

@@ -48,6 +48,11 @@ type Starter struct {
 	Command string
 	// Timeout bounds the whole start; zero is two minutes.
 	Timeout time.Duration
+	// Trust answers Claude Code's "do you trust this folder?" for dir before
+	// the CLI runs: each start is in a scratch checkout it has never seen,
+	// and the question would hold it until the timeout, so a folder it cannot
+	// mark fails the start at once. Nil asks nothing.
+	Trust func(dir string) error
 }
 
 var (
@@ -62,6 +67,12 @@ var (
 func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error) {
 	ctx, cancel := context.WithTimeout(ctx, s.timeout())
 	defer cancel()
+
+	if s.Trust != nil {
+		if err := s.Trust(dir); err != nil {
+			return Started{}, domain.ErrCloudStart.WithDetail("trust %s for claude: %v", dir, err).WithCause(err)
+		}
+	}
 
 	cmd := exec.CommandContext(ctx, s.command(), "--cloud", prompt) //nolint:gosec // the CLI by name, and the task one argument: no shell reads it
 	cmd.Dir = dir
