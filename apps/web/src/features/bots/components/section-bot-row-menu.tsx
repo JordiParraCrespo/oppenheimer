@@ -10,10 +10,10 @@ import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A bot row's ellipsis under a section's Bots heading: Settings, and Hide
- * from the section (`where`, its name), which takes the bot off this sidebar
- * only; it stays in Employees and wherever else it is placed. Props in,
- * choice out: the row owns the write.
+ * A bot row's ellipsis under a section's Bots heading: Settings, Hide from
+ * the section (`where`, its name), which takes the bot off this sidebar only
+ * (it stays in Employees and wherever else it is placed), and Delete bot,
+ * which removes it everywhere. Props in, choice out: the row owns the writes.
  */
 export function SectionBotRowMenu({
   open,
@@ -21,12 +21,14 @@ export function SectionBotRowMenu({
   where,
   onSettings,
   onHide,
+  onDelete,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   where: string;
   onSettings: () => void;
   onHide: () => void;
+  onDelete: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -42,6 +44,10 @@ export function SectionBotRowMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onHide}>
           {t('bots.section.hide', { section: where })}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          {t('bots.sidebar.delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
