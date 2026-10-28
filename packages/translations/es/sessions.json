@@ -189,7 +189,19 @@
       "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
     },
     "failed": "No se pudo crear la sesión.",
-    "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo."
+    "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo.",
+    "cloudFailure": {
+      "vendor": "El proveedor",
+      "connect": "Conecta {{vendor}} con tu clave de API para iniciar allí una sesión en la nube.",
+      "connectAction": "Conectar {{vendor}}",
+      "reconnect": "{{vendor}} ya no acepta tu clave de API. Puede que se haya revocado o que no sea una clave de API de usuario. Vuelve a conectarla para iniciar allí sesiones en la nube.",
+      "reconnectAction": "Volver a conectar {{vendor}}",
+      "unavailable": "{{vendor}} no respondió. Tu tarea sigue aquí; inténtalo de nuevo en un momento.",
+      "limited": "{{vendor}} nos pidió ir más despacio. Espera un minuto y vuelve a intentarlo.",
+      "refused": "{{vendor}} no quiso iniciar esta sesión.",
+      "refusedSaying": "{{vendor}} no quiso iniciar esta sesión: «{{says}}»",
+      "retry": "Reintentar"
+    }
   },
   "session": {
     "status": {

@@ -733,7 +733,19 @@
         "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
       "failed": "The session could not be created.",
-      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
+      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host.",
+      "cloudFailure": {
+        "vendor": "The provider",
+        "connect": "Connect {{vendor}} with your API key to start a cloud session there.",
+        "connectAction": "Connect {{vendor}}",
+        "reconnect": "{{vendor}} no longer accepts your API key. It may have been revoked, or it isn't a user API key. Reconnect it to start cloud sessions there again.",
+        "reconnectAction": "Reconnect {{vendor}}",
+        "unavailable": "{{vendor}} didn't answer. Your task is still here; try again in a moment.",
+        "limited": "{{vendor}} asked us to slow down. Wait a minute, then try again.",
+        "refused": "{{vendor}} wouldn't start this session.",
+        "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
+        "retry": "Try again"
+      }
     },
     "session": {
       "status": {
