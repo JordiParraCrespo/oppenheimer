@@ -57,6 +57,27 @@ echo 'View: https://claude.ai/code/session_01abcdefgh'
 	}
 }
 
+// A scratch checkout is a folder Claude Code has never seen: unless it is
+// trusted before the CLI runs, the CLI sits on its trust question until the
+// start times out.
+func TestStartTrustsTheCheckoutBeforeTheCLIRuns(t *testing.T) {
+	dir := t.TempDir()
+	trusted := filepath.Join(t.TempDir(), "trusted")
+	claude := fakeClaude(t, `[ "$(cat '`+trusted+`' 2>/dev/null)" = "$(pwd -P)" ] || { echo 'Yes, I trust this folder'; sleep 60; }
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+`)
+	starter := Starter{
+		Command: claude,
+		Timeout: 5 * time.Second,
+		Trust: func(dir string) error {
+			return os.WriteFile(trusted, []byte(mustReal(t, dir)), 0o600)
+		},
+	}
+	if _, err := starter.Start(context.Background(), dir, "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+}
+
 func TestStartReportsTheCLIsRefusal(t *testing.T) {
 	claude := fakeClaude(t, `echo 'Error: You are not signed in to claude.ai. Run /login.'
 exit 1

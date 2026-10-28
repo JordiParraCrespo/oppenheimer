@@ -22,6 +22,9 @@ import { useTranslation } from 'react-i18next';
 import { filterOptions, type PlaceCloud, type PlaceHost } from '../lib/session-options';
 import { PlaceIcon } from './place-icon';
 
+/** The Claude Code row's value: no host id or vendor id is spelled this way. */
+const CLAUDE_CLOUD_ROW = 'claude-code-cloud';
+
 /**
  * The first chip of New session: where the session runs, read as one — a
  * host and where on it ("mac-studio · New worktree"), or a vendor's cloud
@@ -33,9 +36,12 @@ import { PlaceIcon } from './place-icon';
  * a place there picks the host with it
  * (`product/versions/mvp/24-session-places.md` §3). Claude Code cloud is a
  * place on a host: that host starts the task in the cloud with its own
- * `claude` (`product/research/cloud-agents.md` §5B). A connected vendor is
- * picked outright, and one with no key yet goes to connect it. Add host… is
- * the foot. Props in, choices out: the section above fetches.
+ * `claude` (`product/research/cloud-agents.md` §5B). It is offered twice: in
+ * each host's pane, and as the Claude Code row first under Cloud, which picks
+ * `claudeCloud` — the host the section above chose — with it, and is greyed
+ * out with no host to start from (§7). A connected vendor is picked outright,
+ * and one with no key yet goes to connect it. Add host… is the foot. Props
+ * in, choices out: the section above fetches.
  *
  * Both panes are one list under one search: the hosts and the clouds, or the
  * host's places. The arrows move through it and Enter takes the row, as in
@@ -48,6 +54,7 @@ export function PlaceSelect({
   hosts,
   hostId,
   place,
+  claudeCloud,
   clouds,
   cloud,
   onHostChange,
@@ -62,6 +69,8 @@ export function PlaceSelect({
   hosts: PlaceHost[];
   hostId: string | null;
   place: SessionPlace;
+  /** The host the Claude Code row starts its cloud session from; null greys the row out. */
+  claudeCloud: PlaceHost | null;
   /** The vendors a cloud session can run on; none when this server keeps no keys. */
   clouds: PlaceCloud[];
   /** The vendor picked to launch the session at, with no host; null for a host's place. */
@@ -93,10 +102,19 @@ export function PlaceSelect({
     description: t(`sessions.new.where.${candidate}.description`),
     leading: <PlaceIcon place={candidate} />,
   }));
+  const claudeRow: ChipSelectOption = {
+    value: CLAUDE_CLOUD_ROW,
+    label: t('sessions.new.where.claudeCloud.label'),
+    description: claudeCloud
+      ? t('sessions.new.where.claudeCloud.from', { host: claudeCloud.label })
+      : t('sessions.new.where.claudeCloud.noHost'),
+  };
   const term = query.trim().toLowerCase();
   // The root pane's rows are the hosts, then the clouds: one list, one index.
+  // A loading host list has no host to start Claude Code's cloud from yet.
   const hostRows = pane ? [] : filterOptions<PlaceHost>(hosts, term);
-  const cloudRows = pane ? [] : filterOptions<PlaceCloud>(clouds, term);
+  const cloudRows =
+    pane || loading ? [] : filterOptions<ChipSelectOption>([claudeRow, ...clouds], term);
   const rows: ChipSelectOption[] = pane
     ? filterOptions<ChipSelectOption>(places, term)
     : [...hostRows, ...cloudRows];
@@ -113,6 +131,13 @@ export function PlaceSelect({
   }
 
   function choose(row: ChipSelectOption) {
+    if (!pane && row.value === CLAUDE_CLOUD_ROW) {
+      if (!claudeCloud) return;
+      if (claudeCloud.value !== hostId) onHostChange(claudeCloud.value);
+      if (place !== 'cloud' || atVendor) onPlaceChange('cloud');
+      onOpenChange(false);
+      return;
+    }
     if (!pane) {
       const vendor = clouds.find((candidate) => candidate.value === row.value);
       if (vendor) {
@@ -158,6 +183,24 @@ export function PlaceSelect({
           aria-label={option.label}
           leading={option.leading}
           description={option.description}
+          onMouseEnter={() => setActive(index)}
+          onClick={() => choose(option)}
+        >
+          {option.label}
+        </ChipSelectItem>
+      );
+    }
+    if (option.value === CLAUDE_CLOUD_ROW) {
+      return (
+        <ChipSelectItem
+          key={option.value}
+          selected={!atVendor && place === 'cloud'}
+          highlighted={index === active}
+          disabled={!claudeCloud}
+          data-disabled={claudeCloud ? undefined : ''}
+          aria-label={option.label}
+          leading={<AgentMark agent="claude-code" />}
+          trailing={<span className="truncate text-xs text-fg-muted">{option.description}</span>}
           onMouseEnter={() => setActive(index)}
           onClick={() => choose(option)}
         >

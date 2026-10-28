@@ -7,12 +7,13 @@ import { useConsoleDialog } from '@/lib/console';
 import { PlaceSelect } from '../components/place-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
-import { toCloudOptions, toHostOptions } from '../lib/session-options';
+import { claudeCloudHost, toCloudOptions, toHostOptions } from '../lib/session-options';
 
 /**
  * The place chip, bound to the draft: a host and where on it — a new
  * worktree, a folder already there, or Claude Code's cloud started from it —
- * or a vendor's cloud the console launches the session at (`cloudProvider`). It reads the hosts and
+ * or a vendor's cloud the console launches the session at (`cloudProvider`). The Claude
+ * Code row under Cloud picks a host that can start it (`claudeCloudHost`). It reads the hosts and
  * whether the reader can run in the cloud, because it draws both. Add host…
  * asks the console for its Add a host dialog; the machine it pairs is picked
  * here the moment Use this host is pressed. A vendor with no key yet goes to
@@ -37,14 +38,17 @@ export function NewSessionPlace() {
   const hosts = useHosts();
   const status = useCloudAgentStatus();
   useSearchPick(search.host, hosts.data, true, (picked) => host.onChange(picked.id));
+  const hostOptions = toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') });
+  const claudeHost = claudeCloudHost(hosts.data ?? [], host.value);
 
   return (
     <PlaceSelect
-      hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
+      hosts={hostOptions}
       // A remembered host the workspace no longer has is shown as none once
       // the list answers, the way the project chip treats a project.
       hostId={hosts.data?.some((candidate) => candidate.id === host.value) ? host.value : null}
       place={where.value}
+      claudeCloud={hostOptions.find((option) => option.value === claudeHost?.id) ?? null}
       clouds={toCloudOptions(status.data, { connect: t('sessions.new.where.connect') })}
       cloud={cloudProvider.value}
       onHostChange={host.onChange}

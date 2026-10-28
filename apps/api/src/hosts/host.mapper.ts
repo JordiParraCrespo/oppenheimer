@@ -6,6 +6,7 @@ import {
   type HostToolDto,
   hostFactsSchema,
 } from '@oppenheimer/shared';
+import type { RunnerCapability } from '@oppenheimer/shared/protocol';
 import { HostOrmEntity } from './database/host.orm-entity';
 import type { HostEventOrmEntity } from './database/host-event.orm-entity';
 import type { HostInventoryOrmEntity } from './database/host-inventory.orm-entity';
@@ -21,6 +22,7 @@ import {
   platformLabelOf,
   type RegisterHostProps,
 } from './domain/host.entity';
+import { hostStartsCloud } from './domain/host-cloud.policy';
 import { inventoryFromFacts } from './domain/host-inventory.policy';
 import type {
   HostInventory,
@@ -58,6 +60,7 @@ export interface HostRegistration {
 export interface HostResponseView {
   online?: boolean;
   runningSessions?: number;
+  liveCapabilities?: readonly RunnerCapability[] | null;
   inventory?: StoredHostInventory | null;
   vitals?: HostVitals | null;
   network?: HostNetwork | null;
@@ -280,6 +283,11 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.online = online;
     dto.status = hostStatusOf({ unpaired: entity.isUnpaired, online, runningSessions });
     dto.runningSessionCount = runningSessions;
+    dto.startsCloudSessions = hostStartsCloud({
+      online: online && !entity.isUnpaired,
+      liveCapabilities: view.liveCapabilities ?? null,
+      probedTools: this.toProbedTools(entity.capabilities),
+    });
     dto.lastSeenAt = entity.lastSeenAt;
     dto.machine = view.inventory ? this.toMachineResponse(view.inventory) : null;
     dto.vitals = view.vitals ? this.toVitalsResponse(view.vitals) : null;

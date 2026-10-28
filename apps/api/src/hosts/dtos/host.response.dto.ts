@@ -66,6 +66,14 @@ export class HostResponseDto {
   })
   runningSessionCount!: number;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Boolean,
+    description:
+      'Whether the host can start a Claude Code cloud session now: online, its runner takes `session.cloud`, and `claude` is installed. Null when online but not known on the replica that answered.',
+  })
+  startsCloudSessions!: boolean | null;
+
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;
 

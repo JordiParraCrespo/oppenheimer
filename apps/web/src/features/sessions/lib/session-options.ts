@@ -142,6 +142,27 @@ export function toHostOptions(
 }
 
 /**
+ * The host the place chip's Claude Code row starts a cloud session from
+ * (`product/versions/mvp/24-session-places.md` §7): the picked host when it
+ * can, else the first that can, then one the API could not vouch for either
+ * way (online, its link held elsewhere); null when no host can, which greys
+ * the row out. A host the API says cannot is never chosen.
+ */
+export function claudeCloudHost(
+  hosts: readonly HostEntity[],
+  pickedId: string | null,
+): HostEntity | null {
+  const picked = hosts.find((host) => host.id === pickedId);
+  const can = (host: HostEntity) => host.online && host.details.startsCloud === true;
+  const maybe = (host: HostEntity) => host.online && host.details.startsCloud === null;
+  if (picked && can(picked)) return picked;
+  const ready = hosts.find(can);
+  if (ready) return ready;
+  if (picked && maybe(picked)) return picked;
+  return hosts.find(maybe) ?? null;
+}
+
+/**
  * The repositories of every connected installation, as the repository chip's
  * rows, with the branches of the ones already picked.
  *

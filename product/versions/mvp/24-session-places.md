@@ -127,15 +127,23 @@ host and then lives on claude.ai/code:
 - **What the runner does.** It fetches the one checkout's store with a
   token minted for that repository and sealed into `session.create`'s
   `cloud` field, checks the base out detached in a scratch directory,
-  runs `claude --cloud <task>` there under a pseudo-terminal, and removes
-  the directory. Nothing is made in the work folder; no tmux session, so
-  no poll ever reports it stopped. It names `session.cloud` in its hello.
+  marks the directory trusted in Claude Code's own state (as a worktree
+  session's folder is), runs `claude --cloud <task>` there under a
+  pseudo-terminal, and removes the directory. Nothing is made in the work
+  folder; no tmux session, so no poll ever reports it stopped. It names `session.cloud` in its hello.
 - **What the API keeps.** `place = 'cloud'` and the cloud session's id in
   `agentSessionId` (from `session.started`); a hello never records a cloud
   session stopped. Its state is `agent.observed`, posted by the browser
   extension (`POST /sessions/cloud-status`).
 - **What the console shows.** Where: *Claude Code cloud* on a host, with a
-  repository and a task (Claude Code only, no files). The row's mark is a
+  repository and a task (Claude Code only, no files). It is also the
+  **Claude Code** row first under Cloud, beside the vendors, which picks the
+  host for the reader: the one already picked when it can, else the first
+  that can (online, its runner's live link named `session.cloud`, `claude`
+  installed; the host read's `startsCloudSessions`), named on the row as
+  "From mac-studio". With no host that can, the row is greyed out as *Needs
+  a host*, as `NewSessionComposer.dc.html` draws a cloud account that cannot
+  run. The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
   `claude --teleport <id>`.
 - **Deleting it.** Nothing of it is on the host, so the API records the
@@ -169,3 +177,8 @@ host and then lives on claude.ai/code:
   plane launches at a vendor through its API (Cursor's first): no host at
   all, its vendor run beside it in `session_cloud_run`, its row opening the
   vendor (`next-steps/cloud-agents.md`, "Two kinds of cloud session").
+- 2026-10-28: Claude Code's cloud is also a row under Cloud, not only a
+  place in a host's pane: the console picks a host that can start it and
+  says which (§7). The runner trusts the scratch checkout before
+  `claude --cloud` runs; a fresh folder held the start on Claude Code's
+  trust question until it timed out.

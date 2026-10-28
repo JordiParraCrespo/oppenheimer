@@ -35,6 +35,7 @@ function renderChip(
     place: 'worktree',
     cloud: null,
   },
+  claudeCloud: (typeof HOSTS)[number] | null = HOSTS[0],
 ) {
   const onHostChange = vi.fn();
   const onPlaceChange = vi.fn();
@@ -45,6 +46,7 @@ function renderChip(
       hosts={HOSTS}
       hostId="host-1"
       place={picked.place}
+      claudeCloud={claudeCloud}
       clouds={clouds}
       cloud={picked.cloud}
       onHostChange={onHostChange}
@@ -125,11 +127,39 @@ describe('PlaceSelect', () => {
     expect(onPlaceChange).toHaveBeenCalledWith('cloud');
   });
 
+  /**
+   * Claude Code under Cloud starts from a host the section above chose, so the
+   * row picks that host with the place; with no host that can, it is greyed
+   * out and picks nothing rather than a session the host would refuse.
+   */
+  it('starts Claude Code’s cloud from the host it names, and from none when there is none', () => {
+    const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[1]);
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
+    expect(picked.onHostChange).toHaveBeenCalledWith('host-2');
+    expect(picked.onPlaceChange).toHaveBeenCalledWith('cloud');
+    cleanup();
+
+    const none = renderChip(CLOUDS, { place: 'worktree', cloud: null }, null);
+    const row = screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' });
+    expect(row).toHaveProperty('disabled', true);
+    fireEvent.click(row);
+    expect(none.onHostChange).not.toHaveBeenCalled();
+    expect(none.onPlaceChange).not.toHaveBeenCalled();
+  });
+
+  it('takes Claude Code’s cloud back from Cursor, though the place stays the cloud', () => {
+    const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
+
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
+
+    expect(onPlaceChange).toHaveBeenCalledWith('cloud');
+  });
+
   it('walks from the hosts into the clouds with the arrows', () => {
     const { onCloudChange } = renderChip();
     const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
 
-    for (let step = 0; step < 2; step++) fireEvent.keyDown(search, { key: 'ArrowDown' });
+    for (let step = 0; step < 3; step++) fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
 
     expect(onCloudChange).toHaveBeenCalledWith('cursor');

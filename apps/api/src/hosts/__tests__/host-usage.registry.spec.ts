@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import type { HostUsagePort } from '../application/host-usage.port';
 import { HostUsageRegistry } from '../application/host-usage.registry';
 import type { HostPresence } from '../database/host.repository.port';
@@ -20,9 +21,19 @@ describe('HostUsageRegistry', () => {
     const overview = await registry.overview([presence('a'), presence('b', false)]);
 
     expect(overview).toEqual([
-      { ...presence('a'), runningSessions: 2 },
-      { ...presence('b', false), runningSessions: 0 },
+      { ...presence('a'), runningSessions: 2, liveCapabilities: null },
+      { ...presence('b', false), runningSessions: 0, liveCapabilities: null },
     ]);
+  });
+
+  it("carries what a host's live link said it takes, and nothing for a host with no link here", async () => {
+    const links = {
+      find: (hostId: string) => (hostId === 'a' ? { capabilities: ['session.cloud'] } : undefined),
+    } as unknown as LinkRegistryPort;
+
+    const overview = await new HostUsageRegistry(links).overview([presence('a'), presence('b')]);
+
+    expect(overview.map((host) => host.liveCapabilities)).toEqual([['session.cloud'], null]);
   });
 
   it('answers with nothing running when no module contributed, rather than refusing', async () => {

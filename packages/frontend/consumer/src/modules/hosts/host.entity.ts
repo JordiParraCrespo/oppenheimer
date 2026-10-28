@@ -21,6 +21,12 @@ export interface HostDetails {
   city: string | null;
   asnOrg: string | null;
   roundTripMillis: number | null;
+  /**
+   * Whether the host can start a Claude Code cloud session now: online, its
+   * runner takes them, and `claude` is installed. `null` when the API could
+   * not tell (online, its link held elsewhere): worth trying, not promised.
+   */
+  startsCloud: boolean | null;
 }
 
 const NO_DETAILS: HostDetails = {
@@ -34,6 +40,7 @@ const NO_DETAILS: HostDetails = {
   city: null,
   asnOrg: null,
   roundTripMillis: null,
+  startsCloud: false,
 };
 
 /**

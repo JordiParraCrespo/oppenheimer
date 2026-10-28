@@ -782,3 +782,6 @@ earlier note:
   bots from the page: the plus opens a menu with New bot and a check per
   bot for this section, and a row's ellipsis hides it from the section
   (slice D).
+- `versions/mvp/24-session-places.md` §7 had Claude Code's cloud only as a
+  place in a host's Start in pane. It is now also the Claude Code row under
+  Cloud, which picks a host that can start it (2026-10-28).
