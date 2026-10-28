@@ -183,27 +183,50 @@ const SEARCH_CLASSES: Record<ChipSelectDensity, string> = {
   engine: 'my-1 border-b px-2.5 py-1.5',
 };
 
-/** The sticky search row: glyph, borderless input, hairline under it. */
+/**
+ * The sticky search row: glyph, borderless input.
+ *
+ * `row` is a hairlined row across the pane. `boxed` is a filled box on the
+ * rows' own grid: their side padding, their gap and, with `leadingSize`, their
+ * leading slot, so the glyph centres over the rows' marks and the typed text
+ * starts where their labels do.
+ */
 function ChipSelectSearch({
   density = 'chip',
+  variant = 'row',
+  leadingSize = 'mark',
   className,
   ...props
-}: Omit<React.ComponentProps<'input'>, 'type'> & { density?: ChipSelectDensity }) {
+}: Omit<React.ComponentProps<'input'>, 'type'> & {
+  density?: ChipSelectDensity;
+  variant?: 'row' | 'boxed';
+  leadingSize?: ChipSelectLeadingSize;
+}) {
+  const boxed = variant === 'boxed';
   return (
     <div
       data-slot="chip-select-search"
       className={cn(
-        'sticky top-0 z-1 flex items-center gap-[7px] border-border-subtle bg-popover',
-        SEARCH_CLASSES[density],
+        'sticky top-0 z-1 flex items-center',
+        boxed
+          ? cn('mb-1 h-(--control-h-md) rounded-sm bg-control px-2.5', ROW_GAP[density])
+          : cn('gap-[7px] border-border-subtle bg-popover', SEARCH_CLASSES[density]),
       )}
     >
-      <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      {boxed ? (
+        <ChipSelectLeading size={leadingSize}>
+          <SearchIcon className="size-3.5" />
+        </ChipSelectLeading>
+      ) : (
+        <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      )}
       <input
         // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
         autoFocus
         type="text"
         className={cn(
-          'min-w-0 flex-1 bg-transparent p-0 text-[12.5px] text-fg outline-none placeholder:text-field-placeholder',
+          'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
+          boxed ? 'text-[13px]' : 'text-[12.5px]',
           className,
         )}
         {...props}
@@ -261,11 +284,49 @@ function ChipSelectHeading({ className, ...props }: React.ComponentProps<'div'>)
 const ITEM_CLASSES =
   'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
-const ITEM_DENSITY: Record<ChipSelectDensity, string> = {
-  chip: 'gap-2.5 leading-[1.35]',
-  menu: 'gap-[9px] leading-[1.47]',
-  engine: 'min-h-9 gap-2.5 py-1 text-[13.5px] leading-[1.35]',
+/** The gap after a row's leading slot, shared with a boxed search. */
+const ROW_GAP: Record<ChipSelectDensity, string> = {
+  chip: 'gap-2.5',
+  menu: 'gap-[9px]',
+  engine: 'gap-2.5',
 };
+
+const ITEM_DENSITY: Record<ChipSelectDensity, string> = {
+  chip: 'leading-[1.35]',
+  menu: 'leading-[1.47]',
+  engine: 'min-h-9 py-1 text-[13.5px] leading-[1.35]',
+};
+
+/**
+ * The leading slot's width, fixed so every row's label starts on one line:
+ * `mark` holds a 15px glyph (an `AgentMark`, an icon), `avatar` a 20px
+ * `BotAvatar`.
+ */
+type ChipSelectLeadingSize = 'mark' | 'avatar';
+
+const LEADING_WIDTH: Record<ChipSelectLeadingSize, string> = {
+  mark: 'w-[15px]',
+  avatar: 'w-5',
+};
+
+function ChipSelectLeading({
+  size,
+  children,
+}: {
+  size: ChipSelectLeadingSize;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]',
+        LEADING_WIDTH[size],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 /**
  * One option row: leading mark, label and description, the check when selected.
@@ -281,6 +342,7 @@ function ChipSelectItem({
   density = 'chip',
   selected,
   leading,
+  leadingSize = 'mark',
   description,
   mono,
   highlighted,
@@ -293,6 +355,7 @@ function ChipSelectItem({
   density?: ChipSelectDensity;
   selected?: boolean;
   leading?: React.ReactNode;
+  leadingSize?: ChipSelectLeadingSize;
   description?: React.ReactNode;
   mono?: boolean;
   highlighted?: boolean;
@@ -310,17 +373,14 @@ function ChipSelectItem({
       data-highlighted={highlighted || undefined}
       className={cn(
         ITEM_CLASSES,
+        ROW_GAP[density],
         ITEM_DENSITY[density],
         selected && density === 'chip' && 'text-link',
         className,
       )}
       {...props}
     >
-      {leading ? (
-        <span className="flex min-w-[15px] shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
-          {leading}
-        </span>
-      ) : null}
+      {leading ? <ChipSelectLeading size={leadingSize}>{leading}</ChipSelectLeading> : null}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className={cn('truncate', mono && 'figures text-xs leading-[1.45]')}>{children}</span>
         {description ? (
