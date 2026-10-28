@@ -107,21 +107,6 @@ export function NewSessionSend({
   const [filesRefused, setFilesRefused] = useState(false);
 
   /**
-   * A cloud session opens at its vendor, in a tab of its own, as
-   * `SessionsConsole.dc.html` draws it. The tab is opened in the press itself,
-   * so no browser blocks it, and pointed at the vendor's page once the session
-   * exists; the console goes to the session, as for any start.
-   */
-  function sendToCloud(prompt: string, files: File[]) {
-    const draft = getValues();
-    const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input = toStartCloudInput({ ...draft, projectId }, prompt);
-    setFilesRefused(files.length > 0);
-    if (!input || files.length > 0) return;
-    launchInCloud(input);
-  }
-
-  /**
    * Launches `input` at its vendor. It is kept as the last launch, so Try
    * again sends this very request — its task, its repository and its key —
    * whatever the chips hold by then.
@@ -148,6 +133,21 @@ export function NewSessionSend({
         onError: () => tab?.close(),
       },
     );
+  }
+
+  /**
+   * A cloud session opens at its vendor, in a tab of its own, as
+   * `SessionsConsole.dc.html` draws it. The tab is opened in the press itself,
+   * so no browser blocks it, and pointed at the vendor's page once the session
+   * exists; the console goes to the session, as for any start.
+   */
+  function sendToCloud(prompt: string, files: File[]) {
+    const draft = getValues();
+    const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
+    const input = toStartCloudInput({ ...draft, projectId }, prompt);
+    setFilesRefused(files.length > 0);
+    if (!input || files.length > 0) return;
+    launchInCloud(input);
   }
 
   /**
