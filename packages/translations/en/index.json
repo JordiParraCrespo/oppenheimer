@@ -1583,10 +1583,8 @@
       "add": "Add one",
       "manage": "Bots in {{section}}",
       "showHere": "Show in {{section}}",
-      "noBots": "No bots yet",
       "manageAll": "Manage in {{employees}}",
-      "hide": "Hide from {{section}}",
-      "placeFailed": "Could not change where the bot shows."
+      "hide": "Hide from {{section}}"
     }
   },
   "automations": {

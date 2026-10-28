@@ -127,7 +127,7 @@ export function SectionBotsMenu({
               ? t('bots.sidebar.loadFailed')
               : term
                 ? t('bots.sidebar.noMatch', { query: query.trim() })
-                : t('bots.section.noBots')
+                : t('bots.sidebar.emptyTitle')
           }
         >
           {visible.map((bot, index) => (

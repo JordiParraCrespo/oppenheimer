@@ -61,7 +61,7 @@ export function SectionBots({ section }: { section: BotSection }) {
       />
       <ErrorAlert
         error={place.error}
-        fallback={t('bots.section.placeFailed')}
+        fallback={t('bots.settings.profile.showsInFailed')}
         onDismiss={() => place.reset()}
         className="mx-3 mb-2"
       />

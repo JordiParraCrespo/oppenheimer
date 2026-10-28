@@ -406,9 +406,7 @@
     "add": "Añadir uno",
     "manage": "Bots en {{section}}",
     "showHere": "Mostrar en {{section}}",
-    "noBots": "Aún no hay bots",
     "manageAll": "Gestionar en {{employees}}",
-    "hide": "Ocultar de {{section}}",
-    "placeFailed": "No se pudo cambiar dónde aparece el bot."
+    "hide": "Ocultar de {{section}}"
   }
 }
