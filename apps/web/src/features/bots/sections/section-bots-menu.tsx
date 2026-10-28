@@ -1,30 +1,34 @@
 import {
   BotAvatar,
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  ChipSelectActionRow,
+  ChipSelectHeading,
+  ChipSelectItem,
+  ChipSelectList,
+  ChipSelectPopup,
+  ChipSelectSearch,
   IconButton,
+  Popover,
+  PopoverTrigger,
 } from '@oppenheimer/design-system-web';
-import { Plus } from '@oppenheimer/design-system-web/icons';
+import { Plus, UsersIcon } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useBots } from '@oppenheimer/frontend-consumer/react';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
 /**
  * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
- * New bot, then every bot with a check for whether this section lists it, then
- * the way to Employees, where bots are grouped, ordered and deleted. A check
- * flips the bot's placement at once and the menu stays open for the next.
+ * a search over every bot, each with a check for whether this section lists
+ * it, then New bot and the way to Employees, where bots are grouped, ordered
+ * and deleted. A check flips the bot's placement at once and the popup stays
+ * open for the next. The bots read arrives whole, as Employees' own search
+ * has it, so the search filters it here, on the name and the description.
+ *
  * The heading owns the open state (the empty line opens it too) and the
- * writes, so their failures show under the heading once the menu is closed.
+ * writes, so their failures show under the heading once the popup is closed.
  * `saving` is each placement in flight, by bot: that bot's check shows it and
  * holds still until it lands, and the others stay clickable.
  */
@@ -46,12 +50,44 @@ export function SectionBotsMenu({
   onPlace: (bot: BotEntity, shown: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const bots = useBots();
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
   const where = t(SECTION_NAMES[section]);
+  const term = query.trim().toLowerCase();
+  const visible = (bots.data ?? []).filter(
+    (bot) => bot.name.toLowerCase().includes(term) || bot.description.toLowerCase().includes(term),
+  );
+  const shows = (bot: BotEntity) => (saving.get(bot.id) ?? bot.sections).includes(section);
+  const toggle = (bot: BotEntity) => {
+    if (!saving.has(bot.id)) onPlace(bot, !shows(bot));
+  };
+
+  function onKeyDown(event: React.KeyboardEvent) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActive((index) => Math.min(index + 1, visible.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActive((index) => Math.max(index - 1, 0));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const bot = visible[active];
+      if (bot) toggle(bot);
+    }
+  }
 
   return (
-    <DropdownMenu open={open} onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        setActive(0);
+        if (!next) setQuery('');
+      }}
+    >
+      <PopoverTrigger
         render={
           <IconButton
             variant="quiet"
@@ -62,39 +98,70 @@ export function SectionBotsMenu({
         }
       >
         <Plus />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuItem disabled={creating} onClick={onCreate}>
-          {creating ? t('bots.sidebar.creating') : t('bots.sidebar.new')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{t('bots.section.showHere', { section: where })}</DropdownMenuLabel>
-          {bots.isPending ? (
-            <DropdownMenuItem disabled>{t('common.loading')}</DropdownMenuItem>
-          ) : bots.isError ? (
-            <DropdownMenuItem disabled>{t('bots.sidebar.loadFailed')}</DropdownMenuItem>
-          ) : bots.data.length === 0 ? (
-            <DropdownMenuItem disabled>{t('bots.section.noBots')}</DropdownMenuItem>
-          ) : (
-            bots.data.map((bot) => (
-              <DropdownMenuCheckboxItem
-                key={bot.id}
-                disabled={saving.has(bot.id)}
-                checked={(saving.get(bot.id) ?? bot.sections).includes(section)}
-                onCheckedChange={(shown) => onPlace(bot, shown)}
-              >
-                <BotAvatar option={bot} size={18} color={bot.avatarColor} />
-                <span className="truncate">{bot.name}</span>
-              </DropdownMenuCheckboxItem>
-            ))
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link to="/bots" />}>
-          {t('bots.section.manageAll', { employees: t('nav.employees') })}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </PopoverTrigger>
+      <ChipSelectPopup density="menu" align="end" width={264}>
+        <ChipSelectSearch
+          density="menu"
+          value={query}
+          placeholder={t('bots.sidebar.search')}
+          aria-label={t('bots.sidebar.search')}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setActive(0);
+          }}
+          onKeyDown={onKeyDown}
+        />
+        <ChipSelectHeading>{t('bots.section.showHere', { section: where })}</ChipSelectHeading>
+        <ChipSelectList
+          density="menu"
+          role="listbox"
+          aria-multiselectable
+          aria-label={t('bots.section.showHere', { section: where })}
+          rows={8}
+          total={bots.data?.length ?? 0}
+          loading={bots.isPending}
+          loadingText={t('common.loading')}
+          empty={bots.isError || visible.length === 0}
+          emptyText={
+            bots.isError
+              ? t('bots.sidebar.loadFailed')
+              : term
+                ? t('bots.sidebar.noMatch', { query: query.trim() })
+                : t('bots.section.noBots')
+          }
+        >
+          {visible.map((bot, index) => (
+            <ChipSelectItem
+              key={bot.id}
+              density="menu"
+              selected={shows(bot)}
+              highlighted={index === active}
+              leading={<BotAvatar option={bot} size={18} color={bot.avatarColor} />}
+              data-disabled={saving.has(bot.id) || undefined}
+              aria-disabled={saving.has(bot.id) || undefined}
+              onMouseEnter={() => setActive(index)}
+              onClick={() => toggle(bot)}
+            >
+              {bot.name}
+            </ChipSelectItem>
+          ))}
+        </ChipSelectList>
+        <ChipSelectActionRow
+          action={{
+            label: creating ? t('bots.sidebar.creating') : t('bots.sidebar.new'),
+            onSelect: onCreate,
+          }}
+          onClose={() => onOpenChange(false)}
+        />
+        <ChipSelectActionRow
+          action={{
+            label: t('bots.section.manageAll', { employees: t('nav.employees') }),
+            icon: <UsersIcon />,
+            onSelect: () => void navigate({ to: '/bots' }),
+          }}
+          onClose={() => onOpenChange(false)}
+        />
+      </ChipSelectPopup>
+    </Popover>
   );
 }
