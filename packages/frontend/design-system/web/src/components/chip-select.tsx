@@ -59,6 +59,9 @@ type ChipSelectDensity = 'chip' | 'menu' | 'engine';
  */
 const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5, engine: 35.5 };
 
+/** A popup's width, when the call site does not set one. */
+const POPUP_WIDTH: Record<ChipSelectDensity, number> = { chip: 248, menu: 252, engine: 280 };
+
 function matches(option: ChipSelectOption, term: string) {
   if (!term) return true;
   const hay = `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`.toLowerCase();
@@ -168,7 +171,7 @@ function ChipSelectPopup({
         'flex w-auto flex-col gap-0 overflow-x-hidden overflow-y-auto rounded-md border-0 bg-popover p-1 text-fg shadow-popover [scrollbar-width:thin]',
         className,
       )}
-      style={{ width: width ?? (density === 'chip' ? 248 : 252), maxHeight: height, ...style }}
+      style={{ width: width ?? POPUP_WIDTH[density], maxHeight: height, ...style }}
       {...props}
     />
   );
