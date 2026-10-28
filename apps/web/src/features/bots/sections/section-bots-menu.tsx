@@ -98,13 +98,15 @@ export function SectionBotsMenu({
         <Plus />
       </PopoverTrigger>
       <ChipSelectPopup density="menu" align="end" width={272} className="p-0">
-        <div className="px-2 pt-2">
+        <div className="px-1.5 pt-1.5 pb-1">
           <Input
             size="md"
             quiet
             // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
             autoFocus
             leading={<Search className="size-3.5" />}
+            // Puts the placeholder over the bots' names, past their 20px avatars.
+            inputClassName="pl-1"
             value={query}
             placeholder={t('bots.sidebar.search')}
             aria-label={t('bots.sidebar.search')}
@@ -132,7 +134,7 @@ export function SectionBotsMenu({
                 ? t('bots.sidebar.noMatch', { query: query.trim() })
                 : t('bots.sidebar.emptyTitle')
           }
-          className="p-1"
+          className="px-1.5 pb-1.5"
         >
           {visible.map((bot, index) => (
             <ChipSelectItem
@@ -150,9 +152,9 @@ export function SectionBotsMenu({
             </ChipSelectItem>
           ))}
         </ChipSelectList>
-        <div className="flex flex-col gap-1.5 border-t border-border-subtle px-3 py-2.5 text-xs text-fg-subtle">
+        <div className="flex flex-col gap-2 border-t border-border-subtle px-4 py-3 text-xs text-fg-subtle">
           <p>{t('bots.section.checkedHint', { section: where })}</p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               className="inline-flex items-center gap-1 font-medium"
               render={<button type="button" />}

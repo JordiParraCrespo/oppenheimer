@@ -317,7 +317,7 @@ function ChipSelectItem({
       {...props}
     >
       {leading ? (
-        <span className="flex w-[15px] shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
+        <span className="flex min-w-[15px] shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
           {leading}
         </span>
       ) : null}
