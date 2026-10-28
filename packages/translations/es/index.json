@@ -1936,10 +1936,10 @@
         "watching": "Seguidas"
       },
       "scopeHint": {
-        "all": "Todas las pull requests abiertas en los repositorios que sigues.",
-        "mine": "Solo las abiertas por ti o por tus sesiones. Mira qué frena cada una y fusiónala.",
-        "requested": "Solo las que alguien te pidió revisar.",
-        "watching": "Solo las de otras personas que nadie te pidió revisar."
+        "all": "Todas las pull requests abiertas que sigues.",
+        "mine": "Abiertas por ti o por tus sesiones. Mira qué frena cada una y fusiónala.",
+        "requested": "Pull requests en las que alguien pidió tu revisión.",
+        "watching": "El resto: de otras personas, sin revisión pedida a ti."
       },
       "search": "Busca por título, repositorio, #número o autor",
       "clearSearch": "Borrar la búsqueda",

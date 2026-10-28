@@ -22,10 +22,10 @@
       "watching": "Watching"
     },
     "scopeHint": {
-      "all": "Every open pull request in the repositories you watch.",
-      "mine": "Only the ones opened by you or your sessions. Check what holds each one and merge.",
-      "requested": "Only the ones where someone asked for your review.",
-      "watching": "Only the ones by other people that nobody asked you to review."
+      "all": "Every open pull request you watch.",
+      "mine": "Opened by you or your sessions. Check what holds each one and merge.",
+      "requested": "Pull requests where someone asked for your review.",
+      "watching": "The rest, where nobody asked for your review."
     },
     "search": "Search title, repo, #number, author",
     "clearSearch": "Clear search",
