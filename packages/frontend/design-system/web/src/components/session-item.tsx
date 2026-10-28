@@ -37,6 +37,9 @@ type SessionRename = {
  * hundreds, so the row is a glyph and a name: the branch icon coloured by run
  * state (green running, amber needs input, red failed, grey otherwise), the
  * name truncated, and a mono age that appears on hover and on the active row.
+ * While its agent is at work (`working`) the name breathes like the chat's
+ * work in flight (`animate-shimmer`), so a busy session reads as one from
+ * the list.
  * A session still provisioning is `pending`: the grey glyph pulses, so a row
  * that joined the list a second ago reads as on its way rather than idle.
  * A row waiting on something says so in a `status` word that stays in the
@@ -54,6 +57,7 @@ function SessionItem({
   age,
   status,
   state = 'idle',
+  working,
   active,
   icon,
   action,
@@ -77,6 +81,8 @@ function SessionItem({
    */
   status?: string;
   state?: StatusState;
+  /** Whether the agent is at work: the name shimmers while it is. */
+  working?: boolean;
   active?: boolean;
   /** Replaces the branch glyph. */
   icon?: React.ReactNode;
@@ -165,7 +171,12 @@ function SessionItem({
           className="-my-0.5 h-[22px] min-w-0 flex-1 rounded-xs border border-primary bg-card px-1.5 text-[13px] text-fg ring-3 ring-ring outline-none"
         />
       ) : (
-        <span className="min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium">
+        <span
+          className={cn(
+            'min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium',
+            working && 'motion-safe:animate-shimmer',
+          )}
+        >
           {name}
         </span>
       )}

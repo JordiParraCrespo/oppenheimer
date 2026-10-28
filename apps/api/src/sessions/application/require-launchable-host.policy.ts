@@ -1,10 +1,18 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import type { CreateSessionDto } from '@oppenheimer/shared';
+import { type CreateSessionDto, placeOfCreate } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { runnerRefusal } from '../domain/runner-refusal.policy';
 import { SessionErrors } from '../domain/sessions.errors';
+
+/** What an out-of-date runner is told to do, per place it cannot take yet. */
+const REFUSAL_DETAIL: Record<string, (hostId: string) => string> = {
+  [SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER.code]: (hostId) =>
+    `The runner on host ${hostId} predates folder sessions; update it to start one in a folder`,
+  [SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER.code]: (hostId) =>
+    `The runner on host ${hostId} predates cloud sessions; update it to start one in the cloud`,
+};
 
 /**
  * The host a session may be put on, for the agent and the place it names, or
@@ -20,18 +28,17 @@ export async function requireLaunchableHost(
   hosts: HostAccessPort,
   links: LinkRegistryPort,
   scope: AccessScope,
-  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder'>,
+  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder' | 'cloud'>,
 ): Promise<void> {
   const { hostId, agent } = input;
   const host = await hosts.assertUsable(scope, hostId);
   const refusal = runnerRefusal(
-    { agent, place: input.folder ? 'folder' : 'worktree' },
+    { agent, place: placeOfCreate(input) },
     { probedTools: host.probedTools, capabilities: links.find(hostId)?.capabilities ?? null },
   );
   if (!refusal) return;
   const detail =
-    refusal === SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER
-      ? `The runner on host ${hostId} predates folder sessions; update it to start one in a folder`
-      : `The runner on host ${hostId} does not know the agent ${agent}; update it to start one`;
+    REFUSAL_DETAIL[refusal.code]?.(hostId) ??
+    `The runner on host ${hostId} does not know the agent ${agent}; update it to start one`;
   throw new AppError(refusal, { detail });
 }

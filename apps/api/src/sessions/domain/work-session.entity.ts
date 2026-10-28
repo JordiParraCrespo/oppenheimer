@@ -21,6 +21,7 @@ import type { SessionCloudRunEntity } from './session-cloud-run.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
 import {
+  type AgentObservedState,
   foldSessionEvent,
   INITIAL_SESSION_FOLD,
   launchPermissionFor,
@@ -51,9 +52,9 @@ export interface WorkSessionProps extends SessionFold {
   projectId: string;
   createdByUserId: string;
   /**
-   * Guarded by a handler, not a key: see `WorkSessionOrmEntity`. Null exactly
-   * for a cloud session, which runs at its vendor; with `folderPath`, the facts
-   * the place is read from (`place`).
+   * Guarded by a handler, not a key: see `WorkSessionOrmEntity`. Null only for
+   * a cloud session the control plane launched at its vendor (Cursor's), which
+   * no host starts; Claude Code's cloud session names the host that started it.
    */
   hostId: string | null;
   slug: string;
@@ -64,6 +65,14 @@ export interface WorkSessionProps extends SessionFold {
    * (`product/versions/mvp/24-session-places.md`). Immutable, like the agent.
    */
   folderPath: string | null;
+  /**
+   * Where it runs (`product/versions/mvp/24-session-places.md`): a worktree
+   * per checkout, a folder on the host (`folderPath`), or a vendor's cloud:
+   * Claude Code's, started from the host and then living on claude.ai/code
+   * (§7), or Cursor's, launched by the control plane with no host
+   * (`cloudRun`). The one stored fact the place is; immutable, like the agent.
+   */
+  place: SessionPlace;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -95,6 +104,11 @@ export interface CreateWorkSessionProps {
    * checkouts are attached after the request.
    */
   folder?: string | null;
+  /**
+   * Where it runs. Absent is a worktree session; `folder` needs `folder`, the
+   * path it runs in, and no other place takes one.
+   */
+  place?: SessionPlace;
   name?: string;
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
@@ -119,8 +133,10 @@ export interface CreateCloudSessionProps {
 
 /**
  * Work-session aggregate root: a terminal, an agent, and a set of checkouts —
- * or, in the place `cloud`, a vendor's agent, whose log the API writes from
- * what the vendor says about its run (`product/next-steps/cloud-agents.md`).
+ * or, in the place `cloud`, a vendor's agent: Claude Code's, which a host
+ * starts and the browser extension follows, or one the control plane launched
+ * (Cursor's), whose log the API writes from what the vendor says about its
+ * run (`product/next-steps/cloud-agents.md`).
  *
  * **`recordEvent` is the only mutator.** No `setState`, `setName` or
  * `setCwdCheckout`: every `work_session` column, launch checkout and sidebar inputs
@@ -154,6 +170,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * prompt, so a deployment that names nothing loses nothing.
    */
   static request(props: CreateWorkSessionProps): WorkSessionEntity {
+    const place = props.place ?? 'worktree';
+    if ((place === 'folder') !== Boolean(props.folder)) {
+      throw new ArgumentInvalidException('A folder session names its folder, and only it does');
+    }
     const session = new WorkSessionEntity({
       id: randomUUID(),
       props: {
@@ -170,7 +190,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
-        folderPath: props.folder || null,
+        place,
+        folderPath: place === 'folder' ? (props.folder ?? null) : null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         cloudRun: null,
@@ -213,6 +234,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: null,
         slug: props.slug,
         agent: props.agent,
+        place: 'cloud',
         folderPath: null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
@@ -275,7 +297,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.cloudRun;
   }
 
-  /** Null for a cloud session; a host-only command asks {@link hostRefusal} first. */
+  /** Null for a cloud session no host started; a host-only command asks {@link hostRefusal} first. */
   get hostId(): string | null {
     return this.props.hostId;
   }
@@ -285,7 +307,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * cannot be asked of this one, or `null` when it can.
    */
   get hostRefusal(): ErrorDefinition | null {
-    return this.props.hostId === null ? SessionErrors.CLOUD_SESSION : null;
+    return this.props.hostId === null ? SessionErrors.VENDOR_SESSION : null;
   }
 
   get slug(): string {
@@ -305,13 +327,17 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agent;
   }
 
-  /**
-   * Where it runs, read off the host and `folderPath`: in the cloud with no
-   * host, else a folder on the host, or a worktree per checkout.
-   */
+  /** Where it runs: a worktree per checkout, a folder on the host, or a vendor's cloud. */
   get place(): SessionPlace {
-    if (this.props.hostId === null) return 'cloud';
-    return this.props.folderPath === null ? 'worktree' : 'folder';
+    return this.props.place;
+  }
+
+  /**
+   * The Claude Code cloud session's id (`session_…`), once the host has started
+   * it: what claude.ai/code and `claude --teleport` name it by. Null otherwise.
+   */
+  get cloudSessionId(): string | null {
+    return this.place === 'cloud' ? this.props.agentSessionId : null;
   }
 
   /** The folder a folder session runs in; null for a worktree session. */
@@ -333,6 +359,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get idempotencyKey(): string | null {
     return this.props.idempotencyKey;
+  }
+
+  /** What the agent was last observed doing, and since when that was confirmed; null until reported. */
+  get lastObservedState(): AgentObservedState | null {
+    return this.props.lastObservedState;
+  }
+
+  get observedSince(): Date | null {
+    return this.props.observedSince;
   }
 
   get state(): SessionState {
@@ -378,8 +413,24 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * image — or `null` when it can. Closed is final and stopped has no window
    * to type into; both are facts about the session, whatever the input is.
    */
+  /**
+   * Whether closing it is the control plane's alone to record. A cloud session
+   * keeps nothing on its host — no worktree, no branch of ours, no terminal —
+   * so there is nothing for the host to push or remove, and nothing to wait for
+   * it to answer. The session stays on claude.ai/code, where it is archived.
+   */
+  get closesWithoutItsHost(): boolean {
+    return this.place === 'cloud';
+  }
+
   get inputRefusal(): ErrorDefinition | null {
     if (this.isResolved) return SessionErrors.ALREADY_RESOLVED;
+    // A session no host started has no terminal anywhere of ours.
+    const noHost = this.hostRefusal;
+    if (noHost) return noHost;
+    // A cloud session has no terminal on its host to type into: it is
+    // answered and prompted on claude.ai.
+    if (this.place === 'cloud') return SessionErrors.CLOUD_TAKES_NO_INPUT;
     if (this.stoppedAt) return SessionErrors.NOT_RUNNING;
     return null;
   }
@@ -566,13 +617,13 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     if (!this.props.projectId?.trim()) {
       throw new ArgumentNotProvidedException('A session must belong to a project');
     }
-    // A host session names its host; a cloud session names none, and so has
-    // no folder on one either.
+    // Every session names the host that runs or started it, except a cloud
+    // session the control plane launched at its vendor, which has none.
     if (this.props.hostId !== null && !this.props.hostId.trim()) {
       throw new ArgumentNotProvidedException('A session on a host must name it');
     }
-    if (this.props.hostId === null && this.props.folderPath !== null) {
-      throw new ArgumentInvalidException('A folder session runs on a host');
+    if (this.props.hostId === null && this.props.place !== 'cloud') {
+      throw new ArgumentInvalidException('Only a cloud session runs without a host');
     }
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(

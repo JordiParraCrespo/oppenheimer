@@ -1,5 +1,6 @@
 import { useCloudAgentModels, useCloudAgentStatus } from '@oppenheimer/frontend-consumer/react';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
+import { CLOUD_AGENT_PROVIDERS } from '@oppenheimer/shared/schemas/cloud-agent';
 import { useController, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
@@ -35,22 +36,26 @@ export function NewSessionAgent() {
     control,
     name: ['agent', 'model', 'cloudProvider', 'cloudModel'],
   });
-  // A boolean, so a switch between a worktree and a folder leaves this still.
-  const cloudPicked = useWatch({ control, name: 'where', compute: (where) => where === 'cloud' });
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
   const status = useCloudAgentStatus();
+  // The vendor whose tab the button shows: the one picked, or else the first
+  // the reader holds a key for.
+  const vendor =
+    cloudProvider ??
+    status.data?.providers.find((provider) => provider.connected)?.id ??
+    CLOUD_AGENT_PROVIDERS[0];
   const connected =
-    status.data?.providers.some(
-      (provider) => provider.id === cloudProvider && provider.connected,
-    ) ?? false;
-  const models = useCloudAgentModels(cloudProvider, connected);
+    status.data?.providers.some((provider) => provider.id === vendor && provider.connected) ??
+    false;
+  // Unconnected, the models are never asked for (`skipToken`).
+  const models = useCloudAgentModels(vendor, connected);
   const cloudAgent = connected
-    ? toCloudAgentOption(cloudProvider, status.data, models.data ?? [], {
+    ? toCloudAgentOption(vendor, status.data, models.data ?? [], {
         auto: t('sessions.new.agent.auto'),
       })
     : null;
-  const inCloud = cloudPicked && cloudAgent !== null;
+  const inCloud = cloudProvider !== null && cloudAgent !== null;
 
   return (
     <AgentSelect
@@ -63,11 +68,15 @@ export function NewSessionAgent() {
       onValueChange={(engine) => {
         if (!isCodingAgentId(engine.agent)) {
           setValue('cloudModel', engine.model === CLOUD_DEFAULT_MODEL ? null : engine.model);
+          setValue('cloudProvider', vendor);
           setValue('where', 'cloud');
           return;
         }
         const next = engine.agent;
-        if (cloudPicked) setValue('where', 'worktree');
+        if (cloudProvider !== null) {
+          setValue('cloudProvider', null);
+          setValue('where', 'worktree');
+        }
         setValue('agent', next);
         setValue('model', engine.model ?? defaultModelFor(next));
       }}

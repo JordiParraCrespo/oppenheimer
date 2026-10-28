@@ -1,15 +1,16 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Cloud sessions (`product/next-steps/cloud-agents.md`): a session that runs
- * as a vendor's agent in the vendor's cloud, Cursor's first, started from New
- * session on a person's own key for the vendor and listed with every other
- * session.
+ * Cloud sessions the control plane launches (`product/next-steps/cloud-agents.md`):
+ * a session that runs as a vendor's agent in the vendor's cloud, Cursor's
+ * first, started from New session on a person's own key for the vendor and
+ * listed with every other session.
  *
- * `work_session` gains a third place, `cloud`, and a cloud session has no
- * host: `hostId` becomes nullable, and `CHK_work_session_cloud_host` says the
- * two go together, so a host session can never lose its host and a cloud one
- * can never name one. Everything else about the row holds as it is: the
+ * The place is `cloud`, which `AddCloudSessionPlace` added for Claude Code's
+ * cloud, started by a host. One the control plane launches has no host:
+ * `hostId` becomes nullable, and `CHK_work_session_cloud_host` keeps that to
+ * the cloud, so a worktree or folder session can never lose its host.
+ * Everything else about the row holds as it is: the
  * project it is listed under, its slug, its log and the fold of it, which a
  * cloud session's log feeds from what the vendor says about its run rather
  * than from a runner. Its agent is the vendor's (`cursor`), outside the
@@ -44,8 +45,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * `owner` gains `manage CloudAgent` in its workspace (the person's key and
  * the vendor's lists); the sessions themselves are `Session`'s, as any.
  */
-export class AddCloudSessions1791004000000 implements MigrationInterface {
-  name = 'AddCloudSessions1791004000000';
+export class AddCloudSessions1791004100000 implements MigrationInterface {
+  name = 'AddCloudSessions1791004100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -71,12 +72,8 @@ export class AddCloudSessions1791004000000 implements MigrationInterface {
     );
 
     await queryRunner.query(`ALTER TABLE work_session ALTER COLUMN "hostId" DROP NOT NULL`);
-    await queryRunner.query('ALTER TABLE work_session DROP CONSTRAINT "CHK_work_session_place"');
     await queryRunner.query(
-      `ALTER TABLE work_session ADD CONSTRAINT "CHK_work_session_place" CHECK (place IN ('worktree', 'folder', 'cloud'))`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE work_session ADD CONSTRAINT "CHK_work_session_cloud_host" CHECK ((place = 'cloud') = ("hostId" IS NULL))`,
+      `ALTER TABLE work_session ADD CONSTRAINT "CHK_work_session_cloud_host" CHECK ("hostId" IS NOT NULL OR place = 'cloud')`,
     );
 
     await queryRunner.query(
@@ -127,19 +124,16 @@ export class AddCloudSessions1791004000000 implements MigrationInterface {
     );
     await queryRunner.query(`UPDATE "role_catalog_version" SET "version" = "version" + 1`);
     await queryRunner.query('DROP TABLE session_cloud_run');
-    // A cloud session has no host to give it back: its log, turns and row go.
+    // A session no host started has no host to give it back: its log, turns
+    // and row go. Claude Code's cloud sessions name theirs and stay.
     for (const table of ['work_session_event', 'session_turn']) {
       await queryRunner.query(
-        `DELETE FROM ${table} WHERE "sessionId" IN (SELECT id FROM work_session WHERE place = 'cloud')`,
+        `DELETE FROM ${table} WHERE "sessionId" IN (SELECT id FROM work_session WHERE "hostId" IS NULL)`,
       );
     }
-    await queryRunner.query(`DELETE FROM work_session WHERE place = 'cloud'`);
+    await queryRunner.query(`DELETE FROM work_session WHERE "hostId" IS NULL`);
     await queryRunner.query(
       'ALTER TABLE work_session DROP CONSTRAINT "CHK_work_session_cloud_host"',
-    );
-    await queryRunner.query('ALTER TABLE work_session DROP CONSTRAINT "CHK_work_session_place"');
-    await queryRunner.query(
-      `ALTER TABLE work_session ADD CONSTRAINT "CHK_work_session_place" CHECK (place IN ('worktree', 'folder'))`,
     );
     await queryRunner.query(`ALTER TABLE work_session ALTER COLUMN "hostId" SET NOT NULL`);
     await queryRunner.query('DROP TABLE cloud_agent_credential');

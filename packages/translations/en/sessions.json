@@ -70,12 +70,13 @@
         "label": "Folder on host",
         "description": "Open an existing directory as it is · nothing is cloned"
       },
+      "cloud": {
+        "label": "Claude Code cloud",
+        "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
+      },
       "hosts": "Hosts",
       "startIn": "Start in",
-      "cloud": {
-        "label": "Cloud",
-        "description": "A vendor's agent, in its cloud"
-      },
+      "atVendor": "Cloud",
       "clouds": "Cloud",
       "connect": "Connect your key"
     },
@@ -279,7 +280,8 @@
     "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
     "select": "Select",
     "selected": "Selected",
-    "openAtVendor": "Opens in {{vendor}}"
+    "openAtVendor": "Opens in {{vendor}}",
+    "allHidden": "Every project is hidden. Show them again from the filter menu."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -290,6 +292,7 @@
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
     "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
     "refused": "Its host did not delete it",
     "refusedUnknown": "The host refused to remove the session."
   },
@@ -323,7 +326,11 @@
     "allRepositories": "All repositories",
     "allAgents": "All agents",
     "allHosts": "All hosts",
-    "noMatches": "No sessions match these filters."
+    "noMatches": "No sessions match these filters.",
+    "shown": "Show projects",
+    "shownAll": "All",
+    "shownSome": "{{shown}} of {{total}}",
+    "showAll": "Show all projects"
   },
   "sort": {
     "custom": "Custom order",
@@ -511,6 +518,12 @@
       "interrupted": "You stopped this turn",
       "compacted": "Context compacted"
     },
+    "task": {
+      "completed": "Background task finished",
+      "failed": "Background task failed",
+      "killed": "Background task stopped",
+      "unknown": "Background task ended"
+    },
     "verb": {
       "command": "Ran",
       "read": "Read",
@@ -615,7 +628,14 @@
     "opening": "Opening localhost:{{port}}…"
   },
   "cloud": {
-    "open": "Open in {{vendor}}",
+    "eyebrow": "Claude Code cloud",
+    "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+    "open": "Open in claude.ai",
+    "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+    "copy": "Copy command",
+    "copied": "Copied",
+    "delete": "Delete",
+    "openAt": "Open in {{vendor}}",
     "status": {
       "starting": "{{vendor}} is starting the agent",
       "running": "Working in {{vendor}}’s cloud",

@@ -13,7 +13,7 @@ import {
 
 /**
  * The vendor's half of a cloud session, one row per session and keyed by it
- * (`1791004000000-AddCloudSessions`): the vendor's agent, its page, the
+ * (`1791004100000-AddCloudSessions`): the vendor's agent, its page, the
  * repository it runs on, and what the vendor last said about its latest run.
  * The session's state is the fold of its log; this is what the next read asks
  * the vendor about, and what the session's row shows beside it.

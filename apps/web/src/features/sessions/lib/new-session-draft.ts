@@ -28,12 +28,17 @@ export interface NewSessionDraft {
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
    * new worktree of a project's repository, a folder already on the host, or
-   * a vendor's cloud. In the cloud the host, folder, agent and model below are
-   * kept as they were, so leaving it puts back the host session it left.
+   * the cloud — Claude Code's, which the host starts, or a vendor's the
+   * console launches (`cloudProvider`).
    */
   where: SessionPlace;
-  /** The vendor a cloud session runs on: whose agent, on the reader's key. */
-  cloudProvider: CloudAgentProviderId;
+  /**
+   * The vendor a cloud session is launched at, on the reader's key, with no
+   * host; null for every session a host runs or starts. While it is set the
+   * host, folder, agent and model below are kept as they were, so leaving
+   * the vendor puts back the host session it left.
+   */
+  cloudProvider: CloudAgentProviderId | null;
   /** The vendor's model; null is its own default ("Auto"). */
   cloudModel: string | null;
   /** The body of work the session belongs to; picking one prefills the rest. */
@@ -59,7 +64,7 @@ export interface NewSessionDraft {
 
 const FALLBACK: NewSessionDraft = {
   where: 'worktree',
-  cloudProvider: 'cursor',
+  cloudProvider: null,
   cloudModel: null,
   projectId: null,
   hostId: null,
@@ -210,7 +215,11 @@ function rememberedChoices(): Partial<RememberedChoices> {
     const agent = isCodingAgentId(stored.agent) ? stored.agent : undefined;
     return {
       where: SESSION_PLACES.find((place) => place === stored.where),
-      cloudProvider: CLOUD_AGENT_PROVIDERS.find((provider) => provider === stored.cloudProvider),
+      // A vendor is only ever picked with the cloud as the place.
+      cloudProvider:
+        stored.where === 'cloud'
+          ? (CLOUD_AGENT_PROVIDERS.find((provider) => provider === stored.cloudProvider) ?? null)
+          : null,
       // A vendor's model list moves with its releases: kept as it was, and the
       // vendor refuses one it no longer offers in its own words.
       cloudModel: typeof stored.cloudModel === 'string' ? stored.cloudModel : undefined,

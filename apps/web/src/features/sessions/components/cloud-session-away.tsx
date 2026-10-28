@@ -32,7 +32,7 @@ export function CloudSessionAway({ session }: { session: SessionEntity }) {
         <EmptyState.Content>
           <Button render={<a href={cloud.url} target="_blank" rel="noreferrer" />}>
             <ExternalLink />
-            {t('sessions.cloud.open', { vendor })}
+            {t('sessions.cloud.openAt', { vendor })}
           </Button>
         </EmptyState.Content>
       ) : null}

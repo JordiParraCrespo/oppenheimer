@@ -45,9 +45,10 @@ export function NewSessionSend({
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
-  const inCloud = useWatch({ control, name: 'where', compute: (where) => where === 'cloud' });
+  // A vendor picked: the session is launched there, with no host.
   const cloudProvider = useWatch({ control, name: 'cloudProvider' });
-  // Whether the reader holds a key for the cloud picked: without one, send
+  const atVendor = cloudProvider !== null;
+  // Whether the reader holds a key for the vendor picked: without one, send
   // stays off, and the place chip's Cloud row says to connect it.
   const { data: cloudConnected } = useCloudAgentStatus();
   const connected =
@@ -153,7 +154,7 @@ export function NewSessionSend({
   }
 
   async function start(prompt: string, files: File[]) {
-    if (getValues('where') === 'cloud') {
+    if (getValues('cloudProvider')) {
       sendToCloud(prompt, files);
       return;
     }
@@ -173,7 +174,7 @@ export function NewSessionSend({
 
   useAutoStart(
     search.start === true,
-    !inCloud && Boolean(hostId) && hostKnown === true && placed,
+    !atVendor && Boolean(hostId) && hostKnown === true && placed,
     () => start('', []),
   );
 
@@ -183,7 +184,7 @@ export function NewSessionSend({
         onSubmit={start}
         busy={upload.isPending || create.isPending || startCloud.isPending}
         taskOptional={taskOptional}
-        disabled={inCloud ? !connected || !placed : !hostId || hostKnown === false || !placed}
+        disabled={atVendor ? !connected || !placed : !hostId || hostKnown === false || !placed}
         scope={scope}
         tools={tools}
         engine={engine}
@@ -191,7 +192,7 @@ export function NewSessionSend({
       />
 
       <ErrorAlert
-        message={inCloud && filesRefused ? t('sessions.new.cloudNoFiles') : null}
+        message={atVendor && filesRefused ? t('sessions.new.cloudNoFiles') : null}
         onDismiss={() => setFilesRefused(false)}
       />
       <ErrorAlert

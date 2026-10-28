@@ -189,7 +189,7 @@ export class SessionEntity {
     public readonly id: string,
     public readonly organizationId: string,
     public readonly projectId: string,
-    /** Null for a cloud session, which runs at its vendor. */
+    /** Null for a cloud session launched at its vendor, which no host started. */
     public readonly hostId: string | null,
     public readonly name: string,
     /** The directory name and the last segment of the branch. Immutable. */
@@ -228,11 +228,19 @@ export class SessionEntity {
      * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
      */
     public readonly decision: SessionDecision | null = null,
-    /** A cloud session's vendor half; null for a session on a host. */
+    /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
     public readonly cloud: SessionCloudRun | null = null,
+    /**
+     * A Claude Code cloud session's id (`session_…`), once its host has
+     * started it; null before, and for every other session.
+     */
+    public readonly cloudSessionId: string | null = null,
   ) {}
 
-  /** Whether it runs as a vendor's agent: no host, no terminal; its row opens the vendor's page. */
+  /**
+   * Whether it runs in a vendor's cloud, with no terminal here: Claude Code's,
+   * whose page is claude.ai/code, or one launched at its vendor (`cloud`).
+   */
   get isCloud(): boolean {
     return this.place === 'cloud';
   }
@@ -248,6 +256,18 @@ export class SessionEntity {
    */
   get runsOn(): string {
     return this.cloud ? `cloud:${this.cloud.provider}` : (this.hostId ?? '');
+  }
+
+  /** The cloud session's page on claude.ai, once it has one. */
+  get cloudUrl(): string | null {
+    return this.cloudSessionId
+      ? `https://claude.ai/code/${encodeURIComponent(this.cloudSessionId)}`
+      : null;
+  }
+
+  /** The command that brings the cloud session's branch and conversation into a terminal. */
+  get teleportCommand(): string | null {
+    return this.cloudSessionId ? `claude --teleport ${this.cloudSessionId}` : null;
   }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
@@ -336,6 +356,7 @@ export class SessionEntity {
       this.stateSeq,
       this.decision,
       this.cloud,
+      this.cloudSessionId,
     );
   }
 }
@@ -353,7 +374,11 @@ export interface CreateSessionCheckout {
 export type CreateSessionInput = CreateSessionCommon &
   (CreateWorktreeSession | CreateFolderSession);
 
-/** A new worktree: the runner clones and cuts a branch. */
+/**
+ * A new worktree: the runner clones and cuts a branch. With `cloud`, the host
+ * starts the task in Claude Code's cloud from that repository instead, and
+ * keeps nothing: Claude Code only, with a prompt.
+ */
 export interface CreateWorktreeSession {
   /**
    * At least one, at most `MAX_SESSION_CHECKOUTS`, each a different repository: the
@@ -363,6 +388,7 @@ export interface CreateWorktreeSession {
   checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
+  cloud?: boolean;
   folder?: never;
 }
 
@@ -372,6 +398,7 @@ export interface CreateFolderSession {
   folder: string;
   checkouts?: never;
   cwdGithubRepoId?: never;
+  cloud?: never;
 }
 
 interface CreateSessionCommon {

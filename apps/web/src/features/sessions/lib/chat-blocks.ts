@@ -1,6 +1,7 @@
 import type {
   ChatStatus,
   ChatStep,
+  ChatTaskStatus,
   ChatTodo,
   ChatToolCall,
   ChatToolKind,
@@ -61,6 +62,7 @@ export type ChatBlock =
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
+  | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
   | { kind: 'changes'; id: string; files: ChangedFile[] };
 
 export function blocksOf(turn: ChatTurn): ChatBlock[] {
@@ -93,6 +95,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       };
     case 'notice':
       return { kind: 'notice', id: step.id, notice: step.notice };
+    case 'task':
+      return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
     case 'tool':
       if (step.call.kind === 'todo') return null;
       if (step.call.kind === 'plan' && step.call.plan) {

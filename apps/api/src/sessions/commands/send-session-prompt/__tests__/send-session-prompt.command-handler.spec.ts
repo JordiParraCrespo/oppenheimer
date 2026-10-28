@@ -168,7 +168,7 @@ describe('SendSessionPromptCommandHandler', () => {
     expect(sessions.appendEventsIf).not.toHaveBeenCalled();
   });
 
-  it('refuses a cloud session with SESSIONS_037, recording and typing nothing', async () => {
+  it('refuses a cloud session with SESSIONS_039, recording and typing nothing', async () => {
     // Its agent waits at its vendor's prompt, not one on a host to type into.
     const session = WorkSessionEntity.requestCloud({
       id: 'cloud-1',
@@ -207,7 +207,7 @@ describe('SendSessionPromptCommandHandler', () => {
     ]);
     const { handler, sessions, dispatch } = harness(session);
     await expect(handler.execute(prompt(session))).rejects.toMatchObject({
-      code: 'SESSIONS_037',
+      code: 'SESSIONS_039',
     });
     expect(sessions.appendEventsIf).not.toHaveBeenCalled();
     expect(dispatch.typeKeys).not.toHaveBeenCalled();

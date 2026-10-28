@@ -352,6 +352,19 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
+  async findCloudByCloudIds(
+    scope: AccessScope,
+    cloudIds: readonly string[],
+  ): Promise<WorkSessionEntity[]> {
+    if (cloudIds.length === 0) return [];
+    const records = await this.scopedQuery(scope)
+      .andWhere(`session.place = 'cloud'`)
+      .andWhere('session.agentSessionId IN (:...cloudIds)', { cloudIds })
+      .andWhere(`session.state <> 'resolved'`)
+      .getMany();
+    return this.withCheckoutsAll(records);
+  }
+
   async findOneByIdempotencyKey(
     scope: AccessScope,
     key: string,
@@ -826,11 +839,16 @@ export class WorkSessionRepository
     return Some(session);
   }
 
-  /** The cloud runs of a page's cloud sessions, by the primary key; no query for none. */
+  /**
+   * The cloud runs of a page's sessions launched at a vendor, by the primary
+   * key; no query for none. Only those have a run: no host started them.
+   */
   private async cloudRunsFor(
     records: WorkSessionOrmEntity[],
   ): Promise<Map<string, SessionCloudRunOrmEntity>> {
-    const sessionIds = records.filter((record) => record.place === 'cloud').map((r) => r.id);
+    const sessionIds = records
+      .filter((record) => record.place === 'cloud' && record.hostId === null)
+      .map((r) => r.id);
     if (sessionIds.length === 0) return new Map();
     const runs = await this.repository.manager
       .getRepository(SessionCloudRunOrmEntity)

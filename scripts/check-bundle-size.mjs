@@ -27,7 +27,8 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 449.1KB measured (2026-10-27); the last raise was for cloud sessions:
+    // 450.0KB measured (2026-10-28, with main's Claude Code cloud merged);
+    // 449.1KB on 2026-10-27, when the last raise was for cloud sessions:
     // Cloud in New session's place picker and Cursor in its agent picker,
     // Cursor's mark in the design-system chunk the entry loads, and their
     // strings in the bundled locale (+2.3KB). The one before it was the

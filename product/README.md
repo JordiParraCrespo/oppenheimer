@@ -753,6 +753,10 @@ earlier note:
   session is a `work_session` in place `cloud` with no host, its vendor
   run beside it in `session_cloud_run`, its row in the sidebar opening
   the vendor (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md`).
+  On 2026-10-28, with Claude Code's cloud on `main` as the same place
+  started by a host, the owner kept both: two kinds of the one `cloud`
+  place, with a host or without, and Grok's to come
+  (`next-steps/cloud-agents.md`, "Two kinds of cloud session").
 - Bots ran on Anthropic, GLM, OpenAI and ChatGPT. On 2026-10-26 Grok (xAI)
   joined them on the OpenAI engine (`versions/mvp/25-bots.md`).
 - `versions/mvp/25-bots.md` §4.2 planned `read_session` as "a session's
@@ -761,3 +765,9 @@ earlier note:
   stay on the host; `send_to_session` came with it, gated on the agent
   waiting at its prompt and logged with the bot as sender, and so did
   `answer_session`, which the table did not have.
+- `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
+  Claude, and said Claude would give no status. On 2026-10-27 the owner
+  asked for Claude end to end first: a `cloud` place started by the host's
+  runner with `claude --cloud`, and its status reported from claude.ai by
+  `apps/extension` (`versions/mvp/24-session-places.md` §7,
+  `next-steps/cloud-agents.md`).

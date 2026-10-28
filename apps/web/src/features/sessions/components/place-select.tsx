@@ -13,24 +13,27 @@ import {
   Popover,
   PopoverTrigger,
 } from '@oppenheimer/design-system-web';
-import { ChevronRight, Folder, GitBranch } from '@oppenheimer/design-system-web/icons';
+import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
-import { HOST_SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
+import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { filterOptions, type PlaceCloud, type PlaceHost } from '../lib/session-options';
+import { PlaceIcon } from './place-icon';
 
 /**
  * The first chip of New session: where the session runs, read as one — a
  * host and where on it ("mac-studio · New worktree"), or a vendor's cloud
  * ("Cursor · Cloud") — as `NewSessionComposer.dc.html` draws it. The pane
  * lists the hosts under a Hosts heading with their count, each with its
- * presence dot and summary, and under a Cloud heading the vendors a cloud
- * session runs on, each with whose key it is (the frame's saved
+ * presence dot and summary, and under a Cloud heading the vendors the console
+ * launches a cloud session at, each with whose key it is (the frame's saved
  * environments are not built). A host opens its Start in pane, and picking
  * a place there picks the host with it
- * (`product/versions/mvp/24-session-places.md` §3); a connected vendor is
+ * (`product/versions/mvp/24-session-places.md` §3). Claude Code cloud is a
+ * place on a host: that host starts the task in the cloud with its own
+ * `claude` (`product/research/cloud-agents.md` §5B). A connected vendor is
  * picked outright, and one with no key yet goes to connect it. Add host… is
  * the foot. Props in, choices out: the section above fetches.
  *
@@ -61,7 +64,7 @@ export function PlaceSelect({
   place: SessionPlace;
   /** The vendors a cloud session can run on; none when this server keeps no keys. */
   clouds: PlaceCloud[];
-  /** The vendor picked while `place` is `cloud`. */
+  /** The vendor picked to launch the session at, with no host; null for a host's place. */
   cloud: CloudAgentProviderId | null;
   onHostChange: (hostId: string) => void;
   onPlaceChange: (place: SessionPlace) => void;
@@ -80,15 +83,15 @@ export function PlaceSelect({
   const [active, setActive] = useState(0);
 
   const host = hosts.find((candidate) => candidate.value === hostId) ?? null;
-  const inCloud = place === 'cloud';
-  const pickedCloud = inCloud
+  const atVendor = cloud !== null;
+  const pickedCloud = atVendor
     ? (clouds.find((candidate) => candidate.value === cloud) ?? null)
     : null;
-  const places: ChipSelectOption[] = HOST_SESSION_PLACES.map((candidate) => ({
+  const places: ChipSelectOption[] = SESSION_PLACES.map((candidate) => ({
     value: candidate,
     label: t(`sessions.new.where.${candidate}.label`),
     description: t(`sessions.new.where.${candidate}.description`),
-    leading: candidate === 'folder' ? <Folder /> : <GitBranch />,
+    leading: <PlaceIcon place={candidate} />,
   }));
   const term = query.trim().toLowerCase();
   // The root pane's rows are the hosts, then the clouds: one list, one index.
@@ -122,10 +125,11 @@ export function PlaceSelect({
       if (picked) show({ pane: picked });
       return;
     }
-    const next = HOST_SESSION_PLACES.find((candidate) => candidate === row.value);
+    const next = SESSION_PLACES.find((candidate) => candidate === row.value);
     if (!next) return;
     if (pane.value !== hostId) onHostChange(pane.value);
-    if (next !== place) onPlaceChange(next);
+    // Also from a vendor: a host's place takes the session back to the host.
+    if (next !== place || atVendor) onPlaceChange(next);
     onOpenChange(false);
   }
 
@@ -149,7 +153,7 @@ export function PlaceSelect({
       return (
         <ChipSelectItem
           key={option.value}
-          selected={pane.value === hostId && option.value === place}
+          selected={!atVendor && pane.value === hostId && option.value === place}
           highlighted={index === active}
           aria-label={option.label}
           leading={option.leading}
@@ -163,7 +167,7 @@ export function PlaceSelect({
     }
     const vendor = clouds.find((candidate) => candidate.value === option.value);
     const machine = vendor ? null : hosts.find((candidate) => candidate.value === option.value);
-    const chosen = vendor ? inCloud && vendor.value === cloud : !inCloud && option.value === hostId;
+    const chosen = vendor ? vendor.value === cloud : !atVendor && option.value === hostId;
     return (
       <ChipSelectItem
         key={option.value}
@@ -199,21 +203,15 @@ export function PlaceSelect({
         render={
           <ChipSelectTrigger
             icon={
-              pickedCloud ? (
-                <AgentMark agent={pickedCloud.agent} />
-              ) : place === 'folder' ? (
-                <Folder />
-              ) : (
-                <GitBranch />
-              )
+              pickedCloud ? <AgentMark agent={pickedCloud.agent} /> : <PlaceIcon place={place} />
             }
             open={open}
             disabled={disabled}
             variant="tab"
             aria-label={t('sessions.new.host.label')}
           >
-            {inCloud
-              ? `${pickedCloud?.label ?? t('sessions.new.where.cloud.label')} · ${t('sessions.new.where.cloud.label')}`
+            {pickedCloud
+              ? `${pickedCloud.label} · ${t('sessions.new.where.atVendor')}`
               : `${host?.label ?? t('sessions.new.host.placeholder')} · ${t(`sessions.new.where.${place}.label`)}`}
           </ChipSelectTrigger>
         }

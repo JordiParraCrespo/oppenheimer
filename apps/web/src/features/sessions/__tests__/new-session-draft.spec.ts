@@ -23,7 +23,7 @@ describe('initialDraft', () => {
   it('opens on the fallback with nothing remembered', () => {
     expect(initialDraft()).toEqual({
       where: 'worktree',
-      cloudProvider: 'cursor',
+      cloudProvider: null,
       cloudModel: null,
       projectId: null,
       hostId: null,
@@ -144,6 +144,14 @@ describe('rememberDraft', () => {
       permission: 'ask',
       efforts: { codex: 'low' },
     });
+  });
+
+  it('reads a remembered vendor back only beside the cloud, so a host place stays a host’s', () => {
+    store({ where: 'cloud', cloudProvider: 'cursor' });
+    expect(initialDraft().cloudProvider).toBe('cursor');
+
+    store({ where: 'worktree', cloudProvider: 'cursor' });
+    expect(initialDraft().cloudProvider).toBeNull();
   });
 
   it('swallows a storage that refuses the write', () => {

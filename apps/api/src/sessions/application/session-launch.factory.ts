@@ -5,6 +5,7 @@ import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { SessionLaunchSpec } from './session-dispatch.port';
+import { SessionLaunchCredentials } from './session-launch-credentials.resolver';
 
 /**
  * Builds what the host is told to make, from the session and the one name it
@@ -19,6 +20,7 @@ export class SessionLaunchSpecFactory {
   constructor(
     @Inject(WORKSPACE_LOOKUP)
     private readonly workspaces: WorkspaceLookupPort,
+    private readonly credentials: SessionLaunchCredentials,
   ) {}
 
   async build(
@@ -32,11 +34,12 @@ export class SessionLaunchSpecFactory {
     return {
       organizationSlug,
       workspaceId: session.organizationId,
-      ...(session.place === 'worktree'
+      ...(session.place !== 'folder'
         ? { branch: session.branch ?? sessionBranchName(session.slug) }
         : {}),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
       ...(extra.images?.length ? { images: extra.images } : {}),
+      ...(await this.credentials.for(session)),
     };
   }
 }

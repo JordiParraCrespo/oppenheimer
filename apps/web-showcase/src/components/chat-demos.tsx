@@ -46,6 +46,7 @@ import {
 } from '@oppenheimer/design-system-web/chat-decisions';
 import {
   ChatCodeBlock,
+  ChatJsonBlock,
   ChatMarker,
   ChatSource,
   ChatSources,
@@ -125,11 +126,24 @@ import {
   XIcon,
   ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
+import { JsonTree } from '@oppenheimer/design-system-web/json-tree';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { TemplateTile, TemplateTiles } from '@oppenheimer/design-system-web/template-grid';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
 import { GroupHead, Spec } from './page-shell';
+
+const JSON_DEMO = JSON.stringify(
+  {
+    referral: {
+      campaign: { id: 'xrp-winter', startsAt: '2026-11-16T00:00:00.000Z', endsAt: '2026-12-22T23:59:59.000Z', active: true },
+      rewards: [{ tier: 1, amount: 25 }, { tier: 2, amount: 50 }],
+      notes: null,
+    },
+  },
+  null,
+  2,
+);
 
 /** The chat sits on the pane's recessed ground in the product (grey in light, the canvas in dark), so its cards read as cards here too. */
 function ChatSurface({ children }: { children: React.ReactNode }) {
@@ -310,6 +324,15 @@ function ChatElementsBody() {
         <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
       </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
+      <pre className="m-0 rounded-sm bg-term-bg px-3 py-2.5 text-term-fg">
+        <JsonTree value={{ ok: true, items: [{ id: 'run_81', status: 'passed' }], next: null }} />
+      </pre>
+      <ChatJsonBlock
+        code={JSON_DEMO}
+        value={JSON.parse(JSON_DEMO)}
+        language="json"
+        annotate={(value) => (typeof value === 'string' && value.endsWith('Z') ? new Date(value).toUTCString().slice(5, 22) : null)}
+      />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <ChatComposer
         value="What is wrong in this run?"
@@ -1112,8 +1135,8 @@ export function ChatSection() {
       <Spec
         id="chatelements"
         title="AI elements"
-        meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
+        meta="chat-elements.tsx · json-tree.tsx · chat-composer.tsx · chat-image.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A fence that parses as JSON is a ChatJsonBlock on the same card: it opens as a JsonTree (json-tree.tsx), keys in the attribute yellow, objects and arrays folding with their size in mono, a muted note after a leaf such as a time in words, the path on hover, and Tree / Raw on its band; Copy keeps the text as written. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />

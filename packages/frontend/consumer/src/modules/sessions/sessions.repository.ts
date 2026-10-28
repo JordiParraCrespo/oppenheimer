@@ -146,6 +146,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
           syncedAt: new Date(data.cloud.syncedAt),
         }
       : null,
+    data.cloudSessionId ?? null,
   );
 }
 
@@ -173,6 +174,7 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
           ...(input.cwdGithubRepoId !== undefined
             ? { cwdGithubRepoId: input.cwdGithubRepoId }
             : {}),
+          ...(input.cloud ? { cloud: true } : {}),
         }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),

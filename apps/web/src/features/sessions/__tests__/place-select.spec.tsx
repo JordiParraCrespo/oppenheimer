@@ -29,7 +29,13 @@ const CLOUDS = [
   },
 ];
 
-function renderChip(clouds = CLOUDS) {
+function renderChip(
+  clouds = CLOUDS,
+  picked: { place: 'worktree' | 'folder' | 'cloud'; cloud: 'cursor' | null } = {
+    place: 'worktree',
+    cloud: null,
+  },
+) {
   const onHostChange = vi.fn();
   const onPlaceChange = vi.fn();
   const onCloudChange = vi.fn();
@@ -38,9 +44,9 @@ function renderChip(clouds = CLOUDS) {
     <PlaceSelect
       hosts={HOSTS}
       hostId="host-1"
-      place="worktree"
+      place={picked.place}
       clouds={clouds}
-      cloud={null}
+      cloud={picked.cloud}
       onHostChange={onHostChange}
       onPlaceChange={onPlaceChange}
       onCloudChange={onCloudChange}
@@ -103,6 +109,20 @@ describe('PlaceSelect', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
     expect(unconnected.onConnectCloud).toHaveBeenCalled();
     expect(unconnected.onCloudChange).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Claude Code cloud is a host's place, Cursor a vendor with no host: both
+   * are the place `cloud`, so going from Cursor to a host's Claude Code cloud
+   * changes no place, and still has to say the host takes the session back.
+   */
+  it('takes a host’s Claude Code cloud from Cursor, though the place stays the cloud', () => {
+    const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
+
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+    fireEvent.click(screen.getByRole('option', { name: /sessions.new.where.cloud.label/ }));
+
+    expect(onPlaceChange).toHaveBeenCalledWith('cloud');
   });
 
   it('walks from the hosts into the clouds with the arrows', () => {

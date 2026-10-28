@@ -187,6 +187,7 @@ export type {
   RegisterHostRequest,
   RenameHostRequest,
   RenameSessionRequest,
+  ReportCloudStatusRequest,
   RepositoryBranchResponseDto,
   RepositoryResponseDto,
   ResourceActionDto,

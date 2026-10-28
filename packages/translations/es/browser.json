@@ -75,6 +75,11 @@
         "sendNow": "Enviar ahora",
         "edit": "Editar",
         "remove": "Quitar de la cola"
+      },
+      "json": {
+        "tree": "Árbol",
+        "raw": "Texto",
+        "more": "Mostrar {{count}} más"
       }
     }
   },
@@ -343,7 +348,9 @@
       "SESSIONS_034": "El equipo está desconectado, así que la respuesta no se envió.",
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
-      "SESSIONS_037": "Esa sesión se ejecuta en la nube, no en un equipo. Ábrela en la app del proveedor para hacerlo.",
+      "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+      "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -600,12 +607,13 @@
           "label": "Carpeta del host",
           "description": "Abre un directorio existente tal como está · no se clona nada"
         },
+        "cloud": {
+          "label": "Nube de Claude Code",
+          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
+        },
         "hosts": "Hosts",
         "startIn": "Empezar en",
-        "cloud": {
-          "label": "Nube",
-          "description": "El agente de un proveedor, en su nube"
-        },
+        "atVendor": "Nube",
         "clouds": "Nube",
         "connect": "Conecta tu clave"
       },
@@ -809,7 +817,8 @@
       "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
       "select": "Seleccionar",
       "selected": "Seleccionada",
-      "openAtVendor": "Se abre en {{vendor}}"
+      "openAtVendor": "Se abre en {{vendor}}",
+      "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -820,6 +829,7 @@
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
       "refused": "Su host no la eliminó",
       "refusedUnknown": "El host se negó a eliminar la sesión."
     },
@@ -856,7 +866,11 @@
       "allRepositories": "Todos los repositorios",
       "allAgents": "Todos los agentes",
       "allHosts": "Todos los equipos",
-      "noMatches": "Ninguna sesión coincide con estos filtros."
+      "noMatches": "Ninguna sesión coincide con estos filtros.",
+      "shown": "Mostrar proyectos",
+      "shownAll": "Todos",
+      "shownSome": "{{shown}} de {{total}}",
+      "showAll": "Mostrar todos los proyectos"
     },
     "sort": {
       "custom": "Orden personalizado",
@@ -1044,6 +1058,12 @@
         "interrupted": "Detuviste este turno",
         "compacted": "Contexto compactado"
       },
+      "task": {
+        "completed": "Tarea en segundo plano terminada",
+        "failed": "Tarea en segundo plano fallida",
+        "killed": "Tarea en segundo plano detenida",
+        "unknown": "Tarea en segundo plano finalizada"
+      },
       "verb": {
         "command": "Ejecutó",
         "read": "Leyó",
@@ -1148,7 +1168,14 @@
       "opening": "Abriendo localhost:{{port}}…"
     },
     "cloud": {
-      "open": "Abrir en {{vendor}}",
+      "eyebrow": "Nube de Claude Code",
+      "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
+      "open": "Abrir en claude.ai",
+      "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+      "copy": "Copiar comando",
+      "copied": "Copiado",
+      "delete": "Eliminar",
+      "openAt": "Abrir en {{vendor}}",
       "status": {
         "starting": "{{vendor}} está iniciando el agente",
         "running": "Trabajando en la nube de {{vendor}}",
@@ -2568,7 +2595,9 @@
       "short": "Aprobar {{bot}} · {{tool}}",
       "title": "{{bot}} quiere ejecutar {{tool}}",
       "approve": "Aprobar",
+      "approving": "Aprobando…",
       "deny": "Denegar",
+      "denying": "Denegando…",
       "openChat": "Abrir chat"
     },
     "pull": {
@@ -2598,6 +2627,7 @@
       "exit": "Salida {{code}}",
       "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
       "again": "Ejecutar de nuevo",
+      "starting": "Iniciando…",
       "open": "Abrir ejecución"
     },
     "card": {

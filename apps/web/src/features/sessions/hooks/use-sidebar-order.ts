@@ -8,7 +8,7 @@ import { useMoveSession } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
 import { groupByProject } from '../lib/session-groups';
 import {
-  mergeSessionOrder,
+  mergeOrder,
   orderProjects,
   orderSessions,
   rememberSidebarOrder,
@@ -36,15 +36,21 @@ export const PROJECTS_GROUP = 'projects';
  * applies under the `custom` sort; a session dropped under another sort keeps
  * the order the reader was looking at, and `onReorder` asks for `custom` so
  * it stays. Spread `handlers` on the sidebar's `DragProvider`.
+ *
+ * `projects` are all of them; `listed` says which are drawn. A project the
+ * reader hid is not, but a drop of the drawn ones keeps its place, placed
+ * by a drag or not, so showing it again puts it back where it was.
  */
 export function useSidebarOrder({
   projects,
+  listed = () => true,
   sessions,
   custom,
   onReorder,
   onWrite,
 }: {
   projects: readonly ProjectEntity[];
+  listed?: (projectId: string) => boolean;
   sessions: readonly SessionEntity[];
   custom: boolean;
   onReorder: () => void;
@@ -79,7 +85,10 @@ export function useSidebarOrder({
     return projectId && projectId !== session.projectId ? session.inProject(projectId) : session;
   });
   const groups = groupByProject(
-    orderProjects(projects, projectOrder),
+    orderProjects(
+      projects.filter((project) => listed(project.id)),
+      projectOrder,
+    ),
     custom || live ? orderSessions(drawn, sessionOrder) : drawn,
   );
 
@@ -98,7 +107,13 @@ export function useSidebarOrder({
     ({ id, from, to }, next) => {
       const projectIds = projectIdsOf(next);
       if (from === PROJECTS_GROUP) {
-        setStored((current) => ({ ...current, projects: projectIds }));
+        setStored((current) => ({
+          ...current,
+          projects: mergeOrder(
+            projectIds,
+            orderProjects(projects, current.projects).map(({ id }) => id),
+          ),
+        }));
         return;
       }
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
@@ -106,7 +121,7 @@ export function useSidebarOrder({
       if (from === to) {
         setStored((current) => ({
           ...current,
-          sessions: mergeSessionOrder(order, current.sessions),
+          sessions: mergeOrder(order, current.sessions),
         }));
         return;
       }
@@ -117,7 +132,7 @@ export function useSidebarOrder({
           onSuccess: () => {
             setStored((current) => ({
               ...current,
-              sessions: mergeSessionOrder(order, current.sessions),
+              sessions: mergeOrder(order, current.sessions),
             }));
             onWrite(null);
           },

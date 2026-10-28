@@ -14,10 +14,12 @@ import { CloudSessionSyncResolver } from './application/cloud-session-sync.resol
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLaunchCredentials } from './application/session-launch-credentials.resolver';
 import { SessionLoaderResolver } from './application/session-loader.resolver';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
@@ -47,6 +49,8 @@ import { PrepareSessionCommandHandler } from './commands/prepare-session/prepare
 import { PrepareSessionHttpController } from './commands/prepare-session/prepare-session.http.controller';
 import { PutSessionShareCommandHandler } from './commands/put-session-share/put-session-share.command-handler';
 import { PutSessionShareHttpController } from './commands/put-session-share/put-session-share.http.controller';
+import { RecordCloudStatusCommandHandler } from './commands/record-cloud-status/record-cloud-status.command-handler';
+import { RecordCloudStatusHttpController } from './commands/record-cloud-status/record-cloud-status.http.controller';
 import { RecordSessionEventsCommandHandler } from './commands/record-session-events/record-session-events.command-handler';
 import { RemoveCheckoutCommandHandler } from './commands/remove-checkout/remove-checkout.command-handler';
 import { RemoveCheckoutHttpController } from './commands/remove-checkout/remove-checkout.http.controller';
@@ -124,6 +128,7 @@ const httpControllers = [
   PasteSessionImageHttpController,
   AnswerSessionDecisionHttpController,
   StopSessionHttpController,
+  RecordCloudStatusHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
   AddCheckoutHttpController,
@@ -143,6 +148,7 @@ const commandHandlers: Provider[] = [
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
+  RecordCloudStatusCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
   CloseSessionCommandHandler,
@@ -223,6 +229,8 @@ const adapters: Provider[] = [
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,
+    SessionLaunchCredentials,
+    RepositoryTokenFactory,
     SessionNamingResolver,
     SessionLoaderResolver,
     SessionAttachmentsResolver,

@@ -1,0 +1,40 @@
+{
+  "name": "@oppenheimer/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/build.mjs --watch",
+    "build": "tsc -b && node scripts/build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "lint": "biome check src/ scripts/ playwright/ *.ts",
+    "lint:design": "oxlint -c ../../packages/frontend/design-system/web/oxlint.design.json src",
+    "clean": "rimraf dist .turbo node_modules"
+  },
+  "dependencies": {
+    "@oppenheimer/design-system-web": "workspace:*",
+    "@oppenheimer/translations": "workspace:*",
+    "i18next": "^26.4.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-i18next": "^17.0.14"
+  },
+  "devDependencies": {
+    "@oppenheimer/tsconfig": "workspace:^",
+    "@playwright/test": "^1.57.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/chrome": "^0.3.5",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxc-transform-react": "0.145.0",
+    "rimraf": "^6.1.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
+  }
+}

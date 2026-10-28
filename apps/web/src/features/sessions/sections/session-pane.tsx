@@ -20,6 +20,7 @@ import { type PreviewTab, rememberPreviewOpen, storedPreviewOpen } from '../lib/
 import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
+import { SessionCloud } from './session-cloud';
 import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
 
@@ -166,10 +167,10 @@ export function SessionPane({
     </>
   );
 
-  // A cloud session has no terminal of ours to attach to or start: it runs at
-  // its vendor, which is where it is followed. Its bar is its name alone, with
-  // none of a host session's Share or latency.
-  if (session.isCloud) {
+  // A cloud session launched at its vendor has no host and no terminal of
+  // ours to attach to or start: it is followed at the vendor. Its bar is its
+  // name alone, with none of a host session's Share or latency.
+  if (session.cloud) {
     return (
       <>
         {bar ? <PageBar title={session.name} /> : null}
@@ -183,6 +184,22 @@ export function SessionPane({
   // group is organised by what needs you, so an `idle` session has a live PTY
   // and a `waiting-on-you` one may be a terminal or a failure. What the pane
   // turns on is whether a terminal exists to attach to.
+  // A cloud session the host has started is on claude.ai/code from then on:
+  // no terminal to attach to, so it never reaches the panes below.
+  if (
+    session.isCloud &&
+    session.cloudSessionId &&
+    session.lifecycle !== 'failed' &&
+    !session.isResolved
+  ) {
+    return (
+      <>
+        {alert}
+        <SessionCloud session={session} />
+      </>
+    );
+  }
+
   if (session.isProvisioning || opening || session.lifecycle === 'failed') {
     return (
       <>
@@ -236,7 +253,7 @@ export function SessionPane({
   return (
     /* The terminal runs from the bar to the pane's foot with no frame around
        it (the 2026-10-25 export dropped the 14px of canvas). Its grid stands
-       in the session's 1040px `TerminalColumn` so mono output keeps a readable
+       in the session's 760px `TerminalColumn` so mono output keeps a readable
        measure on a wide display; the ground either side is the terminal's
        colour, so column and pane read as one surface. Read as a chat it is
        the same colour: the chat's ground is the terminal's (`--chat-ground`),

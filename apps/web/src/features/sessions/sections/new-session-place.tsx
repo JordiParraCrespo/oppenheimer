@@ -10,8 +10,9 @@ import { useSearchPick } from '../hooks/use-search-pick';
 import { toCloudOptions, toHostOptions } from '../lib/session-options';
 
 /**
- * The place chip, bound to the draft: a host and where on it, a new worktree
- * or a folder already there, or a vendor's cloud. It reads the hosts and
+ * The place chip, bound to the draft: a host and where on it — a new
+ * worktree, a folder already there, or Claude Code's cloud started from it —
+ * or a vendor's cloud the console launches the session at (`cloudProvider`). It reads the hosts and
  * whether the reader can run in the cloud, because it draws both. Add host…
  * asks the console for its Add a host dialog; the machine it pairs is picked
  * here the moment Use this host is pressed. A vendor with no key yet goes to
@@ -47,7 +48,11 @@ export function NewSessionPlace() {
       clouds={toCloudOptions(status.data, { connect: t('sessions.new.where.connect') })}
       cloud={cloudProvider.value}
       onHostChange={host.onChange}
-      onPlaceChange={where.onChange}
+      onPlaceChange={(place) => {
+        // Only when leaving a vendor: a write wakes every chip that watches it.
+        if (cloudProvider.value !== null) cloudProvider.onChange(null);
+        where.onChange(place);
+      }}
       onCloudChange={(provider) => {
         cloudProvider.onChange(provider);
         where.onChange('cloud');

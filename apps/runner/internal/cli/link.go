@@ -94,6 +94,9 @@ type linkHandler struct {
 	// ports is the session's listening ports (link_ports.go); nil is a
 	// platform the runner cannot read them on.
 	ports *portsapp.Service
+	// cloudStarts holds the sessions whose `claude --cloud` is running or
+	// done (link_cloud.go), so a create sent again does not start a second.
+	cloudStarts sync.Map
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
@@ -289,7 +292,7 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat,
+		link.CapabilityAttachmentChat, link.CapabilitySessionCloud,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)

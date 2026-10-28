@@ -10,7 +10,7 @@ import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-optio
  */
 const draft: NewSessionDraft = {
   where: 'worktree',
-  cloudProvider: 'cursor',
+  cloudProvider: null,
   cloudModel: null,
   projectId: null,
   hostId: 'host-1',
@@ -67,6 +67,29 @@ describe('toCreateInput', () => {
     });
   });
 
+  it('sends a cloud session as Claude Code with its checkout and task, and no files', () => {
+    const input = toCreateInput(
+      { ...draft, where: 'cloud', agent: 'codex' },
+      { prompt: 'Fix it', attachmentIds: ['file-1'] },
+    );
+
+    expect(input).toMatchObject({
+      hostId: 'host-1',
+      agent: 'claude-code',
+      cloud: true,
+      checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
+      prompt: 'Fix it',
+    });
+    expect(input).not.toHaveProperty('attachmentIds');
+    expect(input).not.toHaveProperty('folder');
+  });
+
+  it('sends no cloud session without a task: the cloud starts from one', () => {
+    expect(
+      toCreateInput({ ...draft, where: 'cloud' }, { prompt: '', attachmentIds: [] }),
+    ).toBeNull();
+  });
+
   it('sends the blank terminal with no task and no permission', () => {
     expect(
       toCreateInput(
@@ -102,7 +125,12 @@ describe('hasPlace', () => {
  * session.
  */
 describe('toStartCloudInput', () => {
-  const cloud = { ...draft, where: 'cloud' as const, cloudModel: 'grok-4.7' };
+  const cloud = {
+    ...draft,
+    where: 'cloud' as const,
+    cloudProvider: 'cursor' as const,
+    cloudModel: 'grok-4.7',
+  };
 
   it('sends the vendor, the repository, the task and the model, and no host', () => {
     expect(toStartCloudInput({ ...cloud, projectId: 'project-1' }, 'Fix it')).toEqual({
@@ -123,5 +151,9 @@ describe('toStartCloudInput', () => {
     expect(toStartCloudInput(cloud, '  ')).toBeNull();
     expect(toStartCloudInput({ ...cloud, scope: [] }, 'Fix it')).toBeNull();
     expect(toStartCloudInput(draft, 'Fix it')).toBeNull();
+    // Claude Code's cloud is a place the host starts: it is a host session's create.
+    const claudeCloud: NewSessionDraft = { ...draft, where: 'cloud' };
+    expect(toStartCloudInput(claudeCloud, 'Fix it')).toBeNull();
+    expect(toCreateInput(claudeCloud, extras)).toMatchObject({ cloud: true });
   });
 });

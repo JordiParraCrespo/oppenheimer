@@ -67,6 +67,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // Only a host's coding agent is launched by a runner; a vendor's is not.
       const agent = session.agent;
       if (!isCodingAgentId(agent)) return NOT_SUPPORTED;
+      // Something the launch must carry could not be made yet.
+      if (spec.withheld) return { delivered: false, hints: [spec.withheld] };
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
@@ -266,6 +268,9 @@ function createMessage(
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
     ...placeOf(session, spec),
+    ...(spec.cloud
+      ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
+      : {}),
   };
 }
 

@@ -11,10 +11,14 @@ import { launchControlsFor } from '../lib/session-options';
 export function NewSessionPermission() {
   const { control } = useNewSessionDraft();
   const agent = useWatch({ control, name: 'agent' });
-  const inCloud = useWatch({ control, name: 'where', compute: (where) => where === 'cloud' });
+  const atVendor = useWatch({
+    control,
+    name: 'cloudProvider',
+    compute: (provider) => provider !== null,
+  });
   const { field } = useController({ control, name: 'permission' });
 
-  if (inCloud || !launchControlsFor(agent).permission) return null;
+  if (atVendor || !launchControlsFor(agent).permission) return null;
 
   return <PermissionSelect value={field.value} onValueChange={field.onChange} />;
 }

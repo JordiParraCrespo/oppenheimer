@@ -293,8 +293,9 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
 
 /**
  * Whether the draft names somewhere to run, as the create would carry it: a
- * repository `toCheckouts` keeps for a new worktree, a folder for a folder
- * session (`product/versions/mvp/24-session-places.md`).
+ * repository `toCheckouts` keeps for a new worktree or Claude Code's cloud
+ * (the cloud takes the first), a folder for a folder session
+ * (`product/versions/mvp/24-session-places.md`).
  */
 export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
   return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
@@ -302,14 +303,14 @@ export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folde
 
 /**
  * The draft as `POST /sessions/cloud` takes it, or null while it cannot be
- * sent: not in the cloud, no repository, or no task — a vendor's agent runs
+ * sent: no vendor picked, no repository, or no task — a vendor's agent runs
  * on one. The project is the caller's to have checked, as for a host session.
  */
 export function toStartCloudInput(
-  draft: Pick<NewSessionDraft, 'where' | 'cloudProvider' | 'cloudModel' | 'projectId' | 'scope'>,
+  draft: Pick<NewSessionDraft, 'cloudProvider' | 'cloudModel' | 'projectId' | 'scope'>,
   prompt: string,
 ): StartCloudSessionInput | null {
-  if (draft.where !== 'cloud' || !prompt.trim()) return null;
+  if (!draft.cloudProvider || !prompt.trim()) return null;
   const [checkout] = toCheckouts(draft.scope);
   if (!checkout) return null;
   return {
@@ -323,7 +324,7 @@ export function toStartCloudInput(
 
 /**
  * The draft as `POST /sessions` takes it, or null while it cannot be sent: no
- * host, or no place. A folder session carries its folder and no checkouts; a
+ * host, no place, or a vendor's cloud picked. A folder session carries its folder and no checkouts; a
  * worktree session a checkout per picked repository and no folder — never
  * both. The project
  * is the caller's to have checked against the workspace's list: an id it
@@ -333,6 +334,7 @@ export function toCreateInput(
   draft: Pick<
     NewSessionDraft,
     | 'where'
+    | 'cloudProvider'
     | 'hostId'
     | 'projectId'
     | 'scope'
@@ -344,7 +346,8 @@ export function toCreateInput(
   >,
   extras: { prompt: string; attachmentIds: readonly string[] },
 ): CreateSessionInput | null {
-  if (!draft.hostId || draft.where === 'cloud') return null;
+  // A vendor's cloud is launched by `POST /sessions/cloud`, with no host.
+  if (!draft.hostId || draft.cloudProvider) return null;
   const common = {
     hostId: draft.hostId,
     agent: draft.agent,
@@ -355,7 +358,15 @@ export function toCreateInput(
   };
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
   const [first, ...rest] = toCheckouts(draft.scope);
-  return first ? { ...common, checkouts: [first, ...rest] } : null;
+  if (!first) return null;
+  // Claude Code's cloud takes a task and one repository, nothing else: its
+  // files would stay on the host, which the cloud never sees.
+  if (draft.where === 'cloud') {
+    if (!extras.prompt) return null;
+    const { attachmentIds: _files, ...task } = common;
+    return { ...task, agent: 'claude-code', checkouts: [first], cloud: true };
+  }
+  return { ...common, checkouts: [first, ...rest] };
 }
 
 /**

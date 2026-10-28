@@ -6,6 +6,26 @@ the console, next to sessions on hosts. A session can also be brought
 back onto a host as an ordinary terminal session. The owner raised this
 on 2026-10-22, and it has no version yet.
 
+**Claude is built** (2026-10-27), ahead of the order below, because the
+owner asked for it end to end:
+
+- **Cloud is a third place** (`../versions/mvp/24-session-places.md` §7). New
+  session's Where chip offers *Claude Code cloud* on a host.
+- **The dispatching host's runner starts it.** It fetches the repository with
+  a token sealed into the create, runs `claude --cloud <task>` in a scratch
+  checkout of the base (the CLI insists on a terminal, so it gets a
+  pseudo-terminal), reports the cloud session's id on `session.started` and
+  removes the checkout. Nothing is left on the host and nothing is polled.
+- **Status comes from the browser.** `apps/extension` reads the person's
+  cloud sessions on claude.ai with the sign-in already in their Chrome, and,
+  once connected with a personal token pinned to the workspace, posts what it
+  sees to `POST /sessions/cloud-status`. The API keeps it for the sessions the
+  workspace launched, as the agent's observed state, so their dots follow the
+  usual rules. No claude.ai credential ever leaves the browser.
+- **Bring it here** is the command, `claude --teleport <id>`, on the
+  session's pane. A Teleport button that opens a worktree session on a host
+  is not built.
+
 The proposal is [`../research/cloud-agents.md`](../research/cloud-agents.md)
 §5, and its open questions are §6. This file keeps only what decides
 whether it lands, and in which version. In short, the remote features for
@@ -63,8 +83,8 @@ section, the engine button's vendor tab). Asked to choose the storage, they
 left it to us and asked for the long-term decision; the row was to link out
 to Cursor.
 
-- **The model.** A cloud session is a `work_session` with place `cloud` and
-  no host (`CHK_work_session_cloud_host`). Its vendor half is one row of
+- **The model.** A cloud session Cursor runs is a `work_session` with place
+  `cloud` and no host (`CHK_work_session_cloud_host`). Its vendor half is one row of
   `session_cloud_run` (provider, the vendor's agent and run ids, its
   status, URL, branch and pull request), and what the vendor reports is
   folded into the session's own log with idempotency keys
@@ -78,7 +98,7 @@ to Cursor.
   me"; folding the vendor into the session costs a nullable host and a
   refusal. Every command only a host session has (a terminal, a checkout,
   a restart, a share, an answer) refuses a cloud session with
-  `SESSIONS_037` before anything is sent; closing one closes it here only.
+  `SESSIONS_039` before anything is sent; closing one closes it here only.
 - **Launch.** `POST /v1/sessions/cloud`: the vendor is asked first on the
   launcher's sealed key, then the session is created with its run and the
   first events in one transaction, then named as any session is. Cursor
@@ -96,22 +116,54 @@ to Cursor.
   its page says the run's state and links there.
 - **Settings → Cloud agents** stays where the key is stored.
 
+## Two kinds of cloud session (2026-10-28)
+
+Claude's cloud (above, built on `main`) and Cursor's (this branch) landed
+the same day as two readings of the one `cloud` place: Claude's with a host
+that starts it, Cursor's with none. The owner asked for both, with Grok's
+after them. They are two kinds of the one place, not two places:
+
+- **Who starts it.** Claude Code's cloud is started by a host's runner
+  (`claude --cloud`), so its session names that host and is created by
+  `POST /sessions` with `cloud: true`. A vendor the control plane reaches
+  through an API (Cursor's) is launched by `POST /sessions/cloud` and has
+  no host: `hostId` is null, which `CHK_work_session_cloud_host` allows for
+  `cloud` alone.
+- **Who follows it.** Claude's state comes from the browser extension
+  (`POST /sessions/cloud-status`); a launched vendor's from its own API,
+  synced on read into the same log.
+- **What each refuses.** Neither has a terminal. A Claude Code cloud
+  session refuses input with `SESSIONS_038` (answer it on claude.ai);
+  anything only a session a host started has (terminal, checkout, restart,
+  share, prompt) refuses a launched vendor's with `SESSIONS_039`.
+- **In the console.** *Claude Code cloud* is a place in a host's Start in
+  pane, with a cloud mark on its row and a pane with Open in claude.ai and
+  the teleport command. A launched vendor is the place chip's **Cloud**
+  section, with the vendor's mark on its row, which opens the vendor. The
+  draft tells them apart by `cloudProvider`: set for a launched vendor,
+  null for every place a host runs or starts.
+- **Grok next.** It is a provider of whichever kind xAI offers: the
+  launched kind if it publishes an agent API (a provider and its id, as
+  Cursor), the host-started kind if its CLI gets a cloud mode (a runner
+  adapter, as Claude). Until then Grok runs as one of Cursor's models.
+
 ## Questions to answer first
 
 1. ~~Does the control plane holding a person's Cursor API key need F23
    reworded to "no subscription sign-in"?~~ Answered 2026-10-26: F23
    carries a dated line saying so (`../04-security-review.md`).
 2. Which version takes it, and does the first step (remote features for
-   host sessions) go into 0.7 with the chat? Cursor landed ahead of any
-   version; Claude and Codex still wait on this.
+   host sessions) go into 0.7 with the chat? Cursor and Claude landed
+   ahead of any version; Codex and Grok still wait on this.
 3. ~~Do cloud sessions started elsewhere show up in our list?~~ Answered
    2026-10-26: only the ones we launched.
 4. ~~Does Cloud as a third place hold?~~ Answered 2026-10-26 for now: a
    session with no terminal has a model of its own (`cloud_agent`).
    **Reversed 2026-10-27**: it holds, as `research/cloud-agents.md` §5
    proposed. A cloud session is a `work_session` in place `cloud` (see
-   "Cloud sessions are sessions"), so Claude `--cloud` and Codex cloud
-   are each a provider of the same place, not a module each.
+   "Cloud sessions are sessions"), so Claude `--cloud`, Codex cloud and
+   Grok's are each a provider of the same place, not a module each (see
+   "Two kinds of cloud session").
 5. A chat for a cloud agent: Cursor streams a run (`…/runs/{runId}/stream`,
    SSE) in shapes close to the 0.7 chat's entries. Does the console stream
    it through the API, and does the run's transcript get kept?
