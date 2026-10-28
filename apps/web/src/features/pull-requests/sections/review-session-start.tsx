@@ -24,7 +24,7 @@ export function ReviewSessionStart({ pull }: { pull: PullRequestDetailEntity }) 
     select: (sessions) =>
       [...sessions]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .map((session) => session.hostId),
+        .flatMap((session) => (session.hostId ? [session.hostId] : [])),
   });
   const review = useReviewSession(pull);
   const list = hosts.data ?? [];

@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import {
@@ -47,7 +47,7 @@ export class SendSessionPromptCommandHandler
   ) {}
 
   async execute(command: SendSessionPromptCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const refusal = session.inputRefusal;
     if (refusal) {
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });

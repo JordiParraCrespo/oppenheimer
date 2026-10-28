@@ -35,6 +35,7 @@ export class TurnCredentialsResolver implements TurnCredentialsPort {
       glm: key('glm'),
       openai: key('openai'),
       chatgpt: (organizationId, now) => chatgpt.turnCredential(organizationId, now),
+      xai: key('xai'),
     };
   }
 

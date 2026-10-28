@@ -34,7 +34,10 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
       <span className="pt-1 text-sm text-fg-muted">{t('tasks.dialog.sessions')}</span>
       <div className="flex min-w-0 flex-col gap-1.5">
         {linked.map(({ link, session }) => {
-          const state = sessionStateOf(session, hosts?.get(session.hostId)?.online);
+          const state = sessionStateOf(
+            session,
+            session.hostId ? hosts?.get(session.hostId)?.online : undefined,
+          );
           return (
             <div
               key={session.id}

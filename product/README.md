@@ -742,6 +742,23 @@ earlier note:
   the relay through the link, the app seeing `localhost` and its API behind
   the dev server's proxy; cloudflared and ngrok wait for public share links
   (`versions/mvp/30-session-previews.md`).
+- `research/cloud-agents.md` §5 proposed a cloud session as a third
+  place of `work_session`. On 2026-10-26 Cursor's cloud agents landed as
+  their own module and table instead, since a vendor's agent has no host,
+  terminal or checkout to fold (`next-steps/cloud-agents.md`), and F23
+  gained a line saying a vendor API key the control plane uses itself is
+  not the subscription sign-in it forbids (`04-security-review.md`). On
+  2026-10-27 the owner asked for cloud sessions where the other sessions
+  are, chosen in New session's place picker, and §5 came back: a cloud
+  session is a `work_session` in place `cloud` with no host, its vendor
+  run beside it in `session_cloud_run`, its row in the sidebar opening
+  the vendor (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md`).
+  On 2026-10-28, with Claude Code's cloud on `main` as the same place
+  started by a host, the owner kept both: two kinds of the one `cloud`
+  place, with a host or without, and Grok's to come
+  (`next-steps/cloud-agents.md`, "Two kinds of cloud session").
+- Bots ran on Anthropic, GLM, OpenAI and ChatGPT. On 2026-10-26 Grok (xAI)
+  joined them on the OpenAI engine (`versions/mvp/25-bots.md`).
 - `versions/mvp/25-bots.md` §4.2 planned `read_session` as "a session's
   recent output". Built on 2026-10-27 (issue #493), it reads the session's
   event log in words, never the terminal or the agent's conversation, which

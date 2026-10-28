@@ -77,6 +77,10 @@ export const KNOWN_SUBJECTS = [
   // Bots (`product/versions/mvp/25-bots.md`), workspace-owned like automations:
   // `Bot` covers a bot, its sidebar groups, its documents and its memory.
   'Bot',
+  // Cloud agents (`product/next-steps/cloud-agents.md`): a coding agent run in
+  // a vendor's cloud, and the caller's own key for that vendor. Workspace-owned
+  // like sessions, and every read is also the caller's own.
+  'CloudAgent',
   'all',
 ] as const;
 
@@ -380,6 +384,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Bot',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'CloudAgent',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

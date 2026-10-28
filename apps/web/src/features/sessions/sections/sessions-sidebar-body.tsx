@@ -4,10 +4,9 @@ import {
   SortableGroup,
   sortableProjectId,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -106,11 +105,7 @@ export function SessionsSidebarBody() {
     ),
     repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
     // An agent's name is the vendor's product name, the catalog's own.
-    agent: agentOptions(
-      all,
-      t('sessions.filters.allAgents'),
-      (agent) => CODING_AGENTS[agent].label,
-    ),
+    agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
   };
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));

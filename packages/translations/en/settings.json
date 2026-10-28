@@ -6,7 +6,8 @@
     "profile": "Profile",
     "hosts": "Hosts",
     "repositories": "Watched repositories",
-    "modelProviders": "Model providers"
+    "modelProviders": "Model providers",
+    "cloudAgents": "Cloud agents"
   },
   "profile": {
     "title": "Profile",
@@ -120,7 +121,8 @@
       "anthropic": "Claude models, through Anthropic’s API.",
       "glm": "GLM models, through z.ai.",
       "openai": "GPT models, through OpenAI’s API.",
-      "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key."
+      "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key.",
+      "xai": "Grok models, through xAI’s API."
     },
     "dialog": {
       "title": "{{provider}} key",
@@ -149,6 +151,31 @@
       "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
       "done": "Done",
       "failed": "Couldn’t sign in to ChatGPT."
+    }
+  },
+  "cloudAgents": {
+    "title": "Cloud agents",
+    "description": "Run a session in a vendor’s cloud, on your own key: pick it under Cloud where a new session runs. It bills your plan with the vendor.",
+    "unavailable": "This server can’t keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
+    "loadFailed": "Couldn’t load your cloud agent providers.",
+    "providers": {
+      "cursor": "Cursor’s Cloud Agents, on any model Cursor offers, Grok included."
+    },
+    "connectedAs": "{{name}} · {{email}} · ending {{hint}}",
+    "connectedKey": "{{name}} · ending {{hint}}",
+    "notConnected": "Not connected",
+    "connect": "Connect",
+    "replace": "Replace key",
+    "disconnect": "Disconnect",
+    "disconnectLabel": "Disconnect {{provider}}",
+    "disconnectFailed": "Couldn’t disconnect.",
+    "dialog": {
+      "title": "Connect {{provider}}",
+      "description": "Paste a user API key from {{provider}}’s dashboard. {{provider}} checks it first, and it is never shown again.",
+      "label": "API key",
+      "save": "Connect",
+      "saving": "Checking…",
+      "failed": "Couldn’t connect."
     }
   }
 }

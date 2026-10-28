@@ -34,7 +34,7 @@ export class FindSessionPortsQueryHandler
   ) {}
 
   async execute(query: FindSessionPortsQuery): Promise<SessionPortsRead> {
-    const session = await this.loader.requireLive(query.scope, query.sessionId);
+    const session = await this.loader.requireLiveOnHost(query.scope, query.sessionId);
     await this.hosts.assertUsable(query.scope, session.hostId);
     const outcome = await this.ports.list(session.hostId, session.id);
     switch (outcome.kind) {

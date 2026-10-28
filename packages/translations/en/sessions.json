@@ -75,7 +75,10 @@
         "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
       },
       "hosts": "Hosts",
-      "startIn": "Start in"
+      "startIn": "Start in",
+      "atVendor": "Cloud",
+      "clouds": "Cloud",
+      "connect": "Connect your key"
     },
     "project": {
       "label": "Project",
@@ -137,7 +140,8 @@
       "favourites": "Favourites",
       "favouritesEmpty": "Star a model to keep it here.",
       "addFavourite": "Add {{model}} to favourites",
-      "removeFavourite": "Remove {{model}} from favourites"
+      "removeFavourite": "Remove {{model}} from favourites",
+      "auto": "Auto"
     },
     "permission": {
       "label": "Permission level",
@@ -179,7 +183,8 @@
       "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
       "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
     },
-    "failed": "The session could not be created."
+    "failed": "The session could not be created.",
+    "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
   },
   "session": {
     "status": {
@@ -275,6 +280,7 @@
     "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
     "select": "Select",
     "selected": "Selected",
+    "openAtVendor": "Opens in {{vendor}}",
     "allHidden": "Every project is hidden. Show them again from the filter menu."
   },
   "deleteSession": {
@@ -628,6 +634,15 @@
     "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
     "copy": "Copy command",
     "copied": "Copied",
-    "delete": "Delete"
+    "delete": "Delete",
+    "openAt": "Open in {{vendor}}",
+    "status": {
+      "starting": "{{vendor}} is starting the agent",
+      "running": "Working in {{vendor}}’s cloud",
+      "finished": "Finished in {{vendor}}’s cloud",
+      "failed": "The agent failed in {{vendor}}’s cloud",
+      "cancelled": "Stopped in {{vendor}}",
+      "expired": "The run expired in {{vendor}}’s cloud"
+    }
   }
 }

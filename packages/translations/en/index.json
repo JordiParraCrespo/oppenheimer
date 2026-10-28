@@ -309,6 +309,14 @@
       "CALENDAR_009": "An event has to end after it starts.",
       "CALENDAR_010": "Google Calendar asked us to slow down. Try again in a minute.",
       "CALENDAR_011": "You've connected five Google accounts, the most the calendar takes. Remove one to add another.",
+      "CLOUD_AGENTS_002": "Cloud agents belong to a workspace. Open one first.",
+      "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
+      "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
+      "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
+      "CLOUD_AGENTS_006": "The provider didn't answer. Try again in a moment.",
+      "CLOUD_AGENTS_007": "The provider's rate limit was reached. Try again shortly.",
+      "CLOUD_AGENTS_010": "The provider refused the request.",
+      "CLOUD_AGENTS_011": "That cloud agent provider isn't offered here.",
       "INBOUND_001": "That event source isn't known.",
       "INBOUND_002": "The delivery carries no delivery id.",
       "SESS_001": "The host has no record of that session.",
@@ -342,6 +350,7 @@
       "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
       "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
       "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
+      "SESSIONS_039": "That session runs at its vendor, with no host here. Open it at the vendor to do that.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
@@ -601,7 +610,10 @@
           "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
         "hosts": "Hosts",
-        "startIn": "Start in"
+        "startIn": "Start in",
+        "atVendor": "Cloud",
+        "clouds": "Cloud",
+        "connect": "Connect your key"
       },
       "project": {
         "label": "Project",
@@ -663,7 +675,8 @@
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
         "addFavourite": "Add {{model}} to favourites",
-        "removeFavourite": "Remove {{model}} from favourites"
+        "removeFavourite": "Remove {{model}} from favourites",
+        "auto": "Auto"
       },
       "permission": {
         "label": "Permission level",
@@ -705,7 +718,8 @@
         "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
         "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
-      "failed": "The session could not be created."
+      "failed": "The session could not be created.",
+      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
     },
     "session": {
       "status": {
@@ -801,6 +815,7 @@
       "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
       "select": "Select",
       "selected": "Selected",
+      "openAtVendor": "Opens in {{vendor}}",
       "allHidden": "Every project is hidden. Show them again from the filter menu."
     },
     "deleteSession": {
@@ -1154,7 +1169,16 @@
       "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
       "copy": "Copy command",
       "copied": "Copied",
-      "delete": "Delete"
+      "delete": "Delete",
+      "openAt": "Open in {{vendor}}",
+      "status": {
+        "starting": "{{vendor}} is starting the agent",
+        "running": "Working in {{vendor}}’s cloud",
+        "finished": "Finished in {{vendor}}’s cloud",
+        "failed": "The agent failed in {{vendor}}’s cloud",
+        "cancelled": "Stopped in {{vendor}}",
+        "expired": "The run expired in {{vendor}}’s cloud"
+      }
     }
   },
   "bots": {
@@ -2555,7 +2579,9 @@
       "short": "Approve {{bot}} · {{tool}}",
       "title": "{{bot}} wants to run {{tool}}",
       "approve": "Approve",
+      "approving": "Approving…",
       "deny": "Deny",
+      "denying": "Denying…",
       "openChat": "Open chat"
     },
     "pull": {
@@ -2585,6 +2611,7 @@
       "exit": "Exit {{code}}",
       "deletedHint": "Its automation was deleted, so it cannot run again.",
       "again": "Run again",
+      "starting": "Starting…",
       "open": "Open run"
     },
     "card": {
@@ -2624,7 +2651,8 @@
       "profile": "Profile",
       "hosts": "Hosts",
       "repositories": "Watched repositories",
-      "modelProviders": "Model providers"
+      "modelProviders": "Model providers",
+      "cloudAgents": "Cloud agents"
     },
     "profile": {
       "title": "Profile",
@@ -2738,7 +2766,8 @@
         "anthropic": "Claude models, through Anthropic’s API.",
         "glm": "GLM models, through z.ai.",
         "openai": "GPT models, through OpenAI’s API.",
-        "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key."
+        "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key.",
+        "xai": "Grok models, through xAI’s API."
       },
       "dialog": {
         "title": "{{provider}} key",
@@ -2767,6 +2796,31 @@
         "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
         "done": "Done",
         "failed": "Couldn’t sign in to ChatGPT."
+      }
+    },
+    "cloudAgents": {
+      "title": "Cloud agents",
+      "description": "Run a session in a vendor’s cloud, on your own key: pick it under Cloud where a new session runs. It bills your plan with the vendor.",
+      "unavailable": "This server can’t keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
+      "loadFailed": "Couldn’t load your cloud agent providers.",
+      "providers": {
+        "cursor": "Cursor’s Cloud Agents, on any model Cursor offers, Grok included."
+      },
+      "connectedAs": "{{name}} · {{email}} · ending {{hint}}",
+      "connectedKey": "{{name}} · ending {{hint}}",
+      "notConnected": "Not connected",
+      "connect": "Connect",
+      "replace": "Replace key",
+      "disconnect": "Disconnect",
+      "disconnectLabel": "Disconnect {{provider}}",
+      "disconnectFailed": "Couldn’t disconnect.",
+      "dialog": {
+        "title": "Connect {{provider}}",
+        "description": "Paste a user API key from {{provider}}’s dashboard. {{provider}} checks it first, and it is never shown again.",
+        "label": "API key",
+        "save": "Connect",
+        "saving": "Checking…",
+        "failed": "Couldn’t connect."
       }
     }
   },

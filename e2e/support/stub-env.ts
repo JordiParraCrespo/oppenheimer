@@ -2,7 +2,7 @@ import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 /**
- * The configuration the two stubs need, printed as `.env` lines.
+ * The configuration the stubs need, printed as `.env` lines.
  *
  * `node --experimental-strip-types e2e/support/stub-env.ts >> .env`, before the
  * API is started: the API reads where the stubs are at boot, so a test cannot
@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
  */
 const GITHUB_STUB = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 const NAMER_STUB = process.env.NAMER_STUB_URL ?? 'http://127.0.0.1:4320';
+const CURSOR_STUB = process.env.CURSOR_STUB_URL ?? 'http://127.0.0.1:4321';
 /** The App's slug, shared with the specs that assert on the install URL. */
 const { slug: GITHUB_APP_SLUG } = JSON.parse(
   readFileSync(new URL('./github-app.json', import.meta.url), 'utf8'),
@@ -73,6 +74,10 @@ const lines = [
   `VOICE_STT_BASE_URL=${NAMER_STUB}/v1`,
   'VOICE_STT_MODEL=a-stub-transcriber',
   '',
+  "# Cloud agents, on a stand-in for Cursor's Cloud Agents API that takes any",
+  '# key starting `crsr_stub_` and plays each run out on its own clock.',
+  `CLOUD_AGENTS_KEY=${randomBytes(32).toString('base64')}`,
+  `CLOUD_AGENTS_CURSOR_API_URL=${CURSOR_STUB}`,
   "# Sessions' previews, so the Browser tab is offered. `*.localhost` resolves",
   '# to the loopback in every browser, so the API serves them with no DNS.',
   `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3011'}`,

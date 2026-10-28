@@ -70,7 +70,10 @@ export function LinkSessionPicker({ task }: { task: TaskEntity }) {
       leading={
         <span
           className={dotVariants({
-            state: SESSION_STATUS[sessionStateOf(session, online?.get(session.hostId))],
+            state:
+              SESSION_STATUS[
+                sessionStateOf(session, session.hostId ? online?.get(session.hostId) : undefined)
+              ],
           })}
         />
       }

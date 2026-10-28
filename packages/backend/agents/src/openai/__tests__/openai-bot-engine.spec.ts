@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 import type { OpenAiStreamEvent } from '../openai-events';
+import { XaiBotEngine } from '../xai-bot-engine';
 
 /** A tool as the mocked `tool()` keeps it: the options the adapter passed. */
 interface ToolOptions {
@@ -422,5 +423,19 @@ describe('OpenAiBotEngine', () => {
       { type: 'done', reason: 'cancelled' },
     ]);
     expect(run.seen?.options.signal.aborted).toBe(true);
+  });
+  it('sends an xAI turn to xAI’s API with its effort, unless the request names another endpoint', async () => {
+    const run = scripted(async function* () {});
+
+    await collect(new XaiBotEngine().run(request({ provider: 'xai', effort: 'high' })));
+    expect(run.seen).toMatchObject({
+      provider: { apiKey: KEY, baseURL: 'https://api.x.ai/v1' },
+      agent: { modelSettings: { reasoning: { effort: 'high' } } },
+    });
+
+    await collect(
+      new XaiBotEngine().run(request({ provider: 'xai', baseUrl: 'https://example.test/v1' })),
+    );
+    expect(run.seen?.provider.baseURL).toBe('https://example.test/v1');
   });
 });

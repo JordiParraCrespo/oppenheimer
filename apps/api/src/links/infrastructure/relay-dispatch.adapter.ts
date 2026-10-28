@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
+import { CODING_AGENTS, type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
 import type {
   ProtocolMessage,
   SessionCloseMessage,
@@ -64,6 +64,9 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
       if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
+      // Only a host's coding agent is launched by a runner; a vendor's is not.
+      const agent = session.agent;
+      if (!isCodingAgentId(agent)) return NOT_SUPPORTED;
       // Something the launch must carry could not be made yet.
       if (spec.withheld) return { delivered: false, hints: [spec.withheld] };
       // A runner that cannot take these files at launch would drop them or
@@ -71,7 +74,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // log, so the hello of an updated runner is sent them.
       const types = (spec.images ?? []).map((file) => file.mediaType);
       if (missingFileCapability(link.capabilities, 'create', types)) return NOT_SUPPORTED;
-      return this.deliver(link, createMessage(session, spec));
+      return this.deliver(link, createMessage(session, agent, spec));
     });
   }
 
@@ -122,7 +125,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       if (missingFileCapability(link.capabilities, 'paste', [file.mediaType])) return NOT_SUPPORTED;
       const commandId = randomUUID();
       await this.files.park(commandId, {
-        hostId: session.hostId,
+        hostId: link.hostId,
         sessionId: session.id,
         mediaType: file.mediaType,
         data: file.data,
@@ -203,11 +206,16 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     });
   }
 
-  /** `send` on the session's host link, or `host_offline` when it holds none. */
+  /**
+   * `send` on the session's host link, or `host_offline` when it holds none. A
+   * cloud session has no host to send to: its commands are refused before
+   * here (`requireOnHost`), and one that slipped through is not supported.
+   */
   private async withLink(
     session: WorkSessionEntity,
     send: (link: RunnerLink) => SessionDispatchOutcome | Promise<SessionDispatchOutcome>,
   ): Promise<SessionDispatchOutcome> {
+    if (session.hostId === null) return NOT_SUPPORTED;
     const link = this.links.find(session.hostId);
     return link ? send(link) : OFFLINE;
   }
@@ -230,7 +238,11 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
  * folder already on the host, with neither (`product/versions/mvp/24-session-places.md`):
  * the schema refuses a frame with both or with none.
  */
-function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): SessionCreateMessage {
+function createMessage(
+  session: WorkSessionEntity,
+  agent: CodingAgentId,
+  spec: SessionLaunchSpec,
+): SessionCreateMessage {
   return {
     type: 'session.create',
     commandId: randomUUID(),
@@ -238,7 +250,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     organizationSlug: spec.organizationSlug,
     workspaceId: spec.workspaceId,
     sessionSlug: session.slug,
-    agent: session.agent,
+    agent,
     launch: {
       ...(session.launch.model ? { model: session.launch.model } : {}),
       ...(session.launch.permission ? { permission: session.launch.permission } : {}),
@@ -251,9 +263,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
       // Only for an agent that has a conversation to name: a blank terminal
       // keeps no transcript, and sending it an id would be a field the host
       // has nothing to do with.
-      ...(CODING_AGENTS[session.agent]?.launch.conversation?.create
-        ? { conversation: session.id }
-        : {}),
+      ...(CODING_AGENTS[agent]?.launch.conversation?.create ? { conversation: session.id } : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),

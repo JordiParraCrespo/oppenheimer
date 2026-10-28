@@ -300,4 +300,15 @@ export const SessionErrors = {
     message: 'A cloud session takes input on claude.ai, not here',
     httpStatus: 409,
   },
+  /**
+   * Something only a session a host started has — a terminal, a checkout, a
+   * restart, a share, a prompt — asked of a cloud session the control plane
+   * launched at its vendor (Cursor's), which is followed and answered there
+   * (`product/next-steps/cloud-agents.md`).
+   */
+  VENDOR_SESSION: {
+    code: 'SESSIONS_039',
+    message: 'That session runs at its vendor, not on a host',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;
