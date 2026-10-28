@@ -285,6 +285,7 @@
     "discard": "Descartar también el trabajo sin enviar",
     "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
     "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
+    "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
     "refused": "Su host no la eliminó",
     "refusedUnknown": "El host se negó a eliminar la sesión."
   },
@@ -624,6 +625,7 @@
     "open": "Abrir en claude.ai",
     "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
     "copy": "Copiar comando",
-    "copied": "Copiado"
+    "copied": "Copiado",
+    "delete": "Eliminar"
   }
 }
