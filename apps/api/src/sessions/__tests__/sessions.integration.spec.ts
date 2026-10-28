@@ -1310,16 +1310,16 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(listed.data.find((row) => row.id === work.id)?.cloudRun?.status).toBe('running');
     });
 
-    it('holds a host to a host session and none to a cloud one', async () => {
+    it('lets only a cloud session go without a host', async () => {
+      // A cloud session may also name one: Claude Code's is started by a host.
       const work = cloudSession();
       await repository.createIfUnclaimed(work, requested());
-
       await expect(
         dataSource.query(`UPDATE "work_session" SET "hostId" = $2 WHERE "id" = $1`, [
           work.id,
           hostId,
         ]),
-      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+      ).resolves.toBeDefined();
       const host = session();
       await repository.createIfUnclaimed(host, requested());
       await expect(
