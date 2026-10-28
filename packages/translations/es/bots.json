@@ -402,6 +402,11 @@
   },
   "section": {
     "heading": "Bots",
-    "empty": "Aún no hay bots aquí."
+    "empty": "Aún no hay bots aquí.",
+    "add": "Añadir uno",
+    "manage": "Bots en {{section}}",
+    "checkedHint": "Los bots marcados aparecen en {{section}}.",
+    "manageAll": "Gestionar en {{employees}}",
+    "hide": "Ocultar de {{section}}"
   }
 }

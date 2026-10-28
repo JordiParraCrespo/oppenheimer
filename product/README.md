@@ -776,3 +776,9 @@ earlier note:
   asked for the sidebar to list only projects that hold sessions: an empty
   project is not drawn (New session and the project filter still reach
   it), and a sidebar with projects but no session says so in one line.
+- `versions/mvp/28-bots-in-sections.md` had a section's Bots plus make a
+  blank bot placed there, and placing or hiding any other bot happen in its
+  Settings → Profile. On 2026-10-28 the owner asked to manage each page's
+  bots from the page: the plus opens a menu with New bot and a check per
+  bot for this section, and a row's ellipsis hides it from the section
+  (slice D).
