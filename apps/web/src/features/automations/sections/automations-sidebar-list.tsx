@@ -5,6 +5,7 @@ import {
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
+import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
@@ -29,9 +30,13 @@ export function AutomationsSidebarList() {
   const { t } = useTranslation();
   const { automations, projects: everyProject, error } = useSuspenseAutomationsByProject();
   const named = everyProject.filter((row) => !row.isUnassigned);
-  const projects = named.filter((project) =>
-    automations.some((automation) => automation.projectId === project.id),
-  );
+  const owned = new Map<string, AutomationEntity[]>();
+  for (const automation of automations) {
+    const items = owned.get(automation.projectId);
+    if (items) items.push(automation);
+    else owned.set(automation.projectId, [automation]);
+  }
+  const projects = named.filter((project) => owned.has(project.id));
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
@@ -43,12 +48,11 @@ export function AutomationsSidebarList() {
   const term = query.trim().toLowerCase();
   const groups = projects.map((project) => ({
     project,
-    items: automations.filter(
+    items: (owned.get(project.id) ?? []).filter(
       (automation) =>
-        automation.projectId === project.id &&
-        (!term ||
-          automation.name.toLowerCase().includes(term) ||
-          project.name.toLowerCase().includes(term)),
+        !term ||
+        automation.name.toLowerCase().includes(term) ||
+        project.name.toLowerCase().includes(term),
     ),
   }));
   const shown = term ? groups.filter((group) => group.items.length) : groups;
