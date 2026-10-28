@@ -192,3 +192,10 @@ host and then lives on claude.ai/code:
   instead of starting from the one the console chose, which it still names;
   and in Claude Code's cloud the engine button offers Claude Code alone
   (§7).
+- 2026-10-28: which Claude account a cloud session runs on is the host's:
+  the runner reports the claude.ai account its `claude` is signed in as
+  (`claudeAccount` in the facts, read from `oauthAccount.emailAddress` in
+  Claude Code's state), Settings → Hosts names it on each card, and Start
+  from names it on each host that can start the session. Two accounts are
+  two hosts to pick between, until multi-account
+  (`../../next-steps/multi-account.md`) gives one host several.

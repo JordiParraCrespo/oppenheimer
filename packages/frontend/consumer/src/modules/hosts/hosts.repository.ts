@@ -35,6 +35,7 @@ function toEntity(data: HostDto): HostEntity {
       asnOrg: data.network?.asnOrg ?? null,
       roundTripMillis: data.vitals?.roundTripMillis ?? null,
       startsCloud: data.startsCloudSessions ?? null,
+      claudeAccount: data.claudeAccount ?? null,
     },
   );
 }

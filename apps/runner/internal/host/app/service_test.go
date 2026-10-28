@@ -31,6 +31,26 @@ func TestCollectReportsTheInventory(t *testing.T) {
 	}
 }
 
+// Which claude.ai account the host's `claude` is signed in as rides the
+// inventory, so the console can say which account a host's cloud session
+// runs on.
+func TestCollectReportsTheClaudeAccount(t *testing.T) {
+	svc := app.New(app.Options{
+		Prober: fake.New(), WorkspaceRoot: "/home/jordi/oppenheimer", Version: "1.2.3",
+		ClaudeAccount: func() string { return "ana@example.com" },
+	})
+	facts, err := svc.Collect(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if facts.ClaudeAccount != "ana@example.com" {
+		t.Fatalf("ClaudeAccount = %q", facts.ClaudeAccount)
+	}
+	if facts, _ := service(fake.New()).Collect(context.Background()); facts.ClaudeAccount != "" {
+		t.Fatalf("with no reader, ClaudeAccount = %q, want none", facts.ClaudeAccount)
+	}
+}
+
 func TestCollectReportsAMissingAgentWithoutFailing(t *testing.T) {
 	// `claude` is not installed: a fact for the UI, never a refusal.
 	facts, err := service(fake.New()).Collect(context.Background())

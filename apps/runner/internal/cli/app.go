@@ -127,6 +127,7 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
+		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,

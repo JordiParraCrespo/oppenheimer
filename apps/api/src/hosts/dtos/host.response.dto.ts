@@ -74,6 +74,14 @@ export class HostResponseDto {
   })
   startsCloudSessions!: boolean | null;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description:
+      'The claude.ai account (email) the host’s `claude` is signed in as: the account a Claude Code cloud session started there runs on. Null when it is not signed in, or its runner does not report it.',
+  })
+  claudeAccount!: string | null;
+
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;
 

@@ -67,7 +67,12 @@ export function filterOptions<T extends ChipSelectOption>(
  * now, and whether it can start a Claude Code cloud session (`null`: the API
  * could not tell, so it is worth trying).
  */
-export type PlaceHost = ChipSelectOption & { online: boolean; startsCloud: boolean | null };
+export type PlaceHost = ChipSelectOption & {
+  online: boolean;
+  startsCloud: boolean | null;
+  /** The claude.ai account the host's `claude` is signed in as, when it says. */
+  claudeAccount: string | null;
+};
 
 /** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
 export type PlaceCloud = ChipSelectOption & {
@@ -140,6 +145,7 @@ export function toHostOptions(
     value: host.id,
     online: host.online,
     startsCloud: host.details.startsCloud,
+    claudeAccount: host.details.claudeAccount,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,
@@ -152,7 +158,9 @@ export const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
 /**
  * The Claude Code row's Start from pane: every host, the ones that cannot
  * start a cloud session disabled and saying why — offline, or a runner the
- * API says cannot — rather than hidden (`.agents/rules/frontend-ui.md`).
+ * API says cannot — rather than hidden (`.agents/rules/frontend-ui.md`). One
+ * that can names the claude.ai account it is signed in as, which is the
+ * account the session runs on: two accounts are two hosts to pick between.
  */
 export function toStartFromOptions(
   hosts: readonly PlaceHost[],
@@ -164,7 +172,11 @@ export function toStartFromOptions(
       : host.startsCloud === false
         ? labels.cannot
         : null;
-    return { ...host, disabled: reason !== null, description: reason ?? host.description };
+    return {
+      ...host,
+      disabled: reason !== null,
+      description: reason ?? host.claudeAccount ?? host.description,
+    };
   });
 }
 

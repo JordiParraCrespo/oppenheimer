@@ -56,7 +56,8 @@ const runnerFactsJson = `{
   "virtualization": "none",
   "timezone": "Europe/Madrid",
   "bootedAt": "2026-09-20T08:14:03Z",
-  "serviceManager": "launchd"
+  "serviceManager": "launchd",
+  "claudeAccount": "ana@example.com"
 }`;
 
 const validFacts = JSON.parse(runnerFactsJson);

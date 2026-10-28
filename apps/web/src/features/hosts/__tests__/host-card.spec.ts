@@ -28,6 +28,7 @@ function host(
       asnOrg: null,
       roundTripMillis: null,
       startsCloud: false,
+      claudeAccount: null,
       ...details,
     },
   );
@@ -60,6 +61,13 @@ describe('metaPartsOf', () => {
       { kind: 'text', value: 'Madrid, ES' },
       { kind: 'runner', version: '0.14.2' },
     ]);
+  });
+
+  it('ends on the claude.ai account the host’s claude is signed in as', () => {
+    expect(metaPartsOf(host({ claudeAccount: 'ana@example.com' })).at(-1)).toEqual({
+      kind: 'claude',
+      account: 'ana@example.com',
+    });
   });
 
   it('places a host by country alone when the city is unknown', () => {

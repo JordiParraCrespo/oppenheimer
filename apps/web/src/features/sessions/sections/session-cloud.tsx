@@ -15,7 +15,8 @@ const DeleteSessionDialog = lazy(() =>
  * (`product/research/cloud-agents.md` §5B). There is no terminal here: the
  * session lives on claude.ai/code, so the pane says what it is doing, opens
  * it there, and hands over the command that brings it into a terminal
- * (`claude --teleport`). Its state is what the Oppenheimer extension saw on
+ * (`claude --teleport`). Its address is written out as a link too, to open,
+ * copy or open in another window. Its state is what the Oppenheimer extension saw on
  * claude.ai, which is the only witness a cloud session has. Delete takes it out
  * of Oppenheimer at once; it stays on claude.ai/code.
  */
@@ -30,6 +31,16 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
         <p className="figures text-micro text-fg-muted uppercase">{t('sessions.cloud.eyebrow')}</p>
         <h1 className="mt-2 font-display text-h2 font-semibold text-fg">{session.name}</h1>
         <p className="mt-1.5 text-operate text-fg-muted">{session.scopeLabel}</p>
+        {session.cloudUrl ? (
+          <a
+            href={session.cloudUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="figures mt-1 block truncate text-sm text-link hover:underline"
+          >
+            {session.cloudUrl.replace(/^https:\/\//, '')}
+          </a>
+        ) : null}
 
         <StatusDot state={dot} className="mt-6.5">
           {t(`sessions.session.state.${stateWordFor(session)}`)}

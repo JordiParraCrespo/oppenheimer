@@ -15,9 +15,15 @@ vi.mock('react-i18next', () => ({
 afterEach(cleanup);
 
 const HOSTS = [
-  { value: 'host-1', label: 'mac-studio', online: true, startsCloud: true },
-  { value: 'host-2', label: 'optimus', online: false, startsCloud: false },
-  { value: 'host-3', label: 'old-box', online: true, startsCloud: false },
+  {
+    value: 'host-1',
+    label: 'mac-studio',
+    online: true,
+    startsCloud: true,
+    claudeAccount: 'ana@example.com',
+  },
+  { value: 'host-2', label: 'optimus', online: false, startsCloud: false, claudeAccount: null },
+  { value: 'host-3', label: 'old-box', online: true, startsCloud: false, claudeAccount: null },
 ];
 
 const CLOUDS = [
@@ -146,6 +152,10 @@ describe('PlaceSelect', () => {
     }
     expect(picked.onHostChange).not.toHaveBeenCalled();
 
+    // The host names the account the session would run on.
+    expect(screen.getByRole('option', { name: 'mac-studio' }).textContent).toContain(
+      'ana@example.com',
+    );
     fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
     expect(picked.onPlaceChange).toHaveBeenCalledWith('cloud');
     cleanup();
