@@ -19,6 +19,11 @@
  * Groups are by release cadence, not by size: libraries that version together
  * (a router and its core, a query client and its persisters) belong in one
  * chunk, because splitting them would invalidate both anyway.
+ *
+ * A group holds only what the entry loads anyway. Rollup puts every module a
+ * group names into that chunk, whoever imports it, and the entry loads the
+ * chunk, so a library that lazy routes use (Base UI, lucide-react, vaul, cmdk,
+ * react-hook-form) is left out of the groups and follows those routes.
  */
 const GROUPS = {
   'vendor-react': ['react', 'react-dom', 'scheduler'],
@@ -37,18 +42,9 @@ const GROUPS = {
     'html-parse-stringify',
     'void-elements',
   ],
-  'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+  'vendor-zod': ['zod'],
   'vendor-auth': ['better-auth', '@better-auth', '@better-fetch', 'nanostores', 'jose'],
-  'vendor-ui': [
-    '@base-ui',
-    'lucide-react',
-    'sonner',
-    'vaul',
-    'cmdk',
-    'class-variance-authority',
-    'clsx',
-    'tailwind-merge',
-  ],
+  'vendor-ui': ['sonner', 'class-variance-authority', 'clsx', 'tailwind-merge'],
   'vendor-di': ['inversify', '@inversifyjs', 'reflect-metadata'],
 };
 
