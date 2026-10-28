@@ -117,7 +117,7 @@ function AgentModelTabs({
   'aria-label': string;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 border-b border-border-subtle px-1.5 pt-1.5">
+    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 border-b border-border-subtle px-1 pt-1">
       {tabs.map((item) => {
         const on = selected === item.id;
         return (
@@ -129,21 +129,21 @@ function AgentModelTabs({
             aria-label={item.label}
             title={item.label}
             onClick={() => onSelect(item.id)}
-            className="group/tab flex flex-1 flex-col items-center gap-1.5 pt-1.5 outline-none"
+            className="group/tab flex flex-1 flex-col items-center gap-1 pt-0.5 outline-none"
           >
             <span
               className={cn(
-                'flex h-7 w-8 items-center justify-center rounded-sm text-fg-muted transition-[background-color,opacity] duration-fast group-hover/tab:bg-hover-surface group-focus-visible/tab:outline-2 group-focus-visible/tab:outline-ring',
+                'flex h-6 w-7 items-center justify-center rounded-sm text-fg-muted transition-[background-color,opacity] duration-fast group-hover/tab:bg-hover-surface group-focus-visible/tab:outline-2 group-focus-visible/tab:outline-ring',
                 on ? 'opacity-100' : 'opacity-55',
               )}
             >
               {item.id === FAVOURITES ? (
-                <StarIcon className="size-4.5" fill="currentColor" strokeWidth={0} aria-hidden />
+                <StarIcon className="size-3.5" fill="currentColor" strokeWidth={0} aria-hidden />
               ) : (
-                <AgentMark agent={item.id} className="[&_svg]:size-4.5" />
+                <AgentMark agent={item.id} className="[&_svg]:size-3.5" />
               )}
             </span>
-            <span className={cn('h-0.5 w-5 rounded-pill', on ? 'bg-fg' : 'bg-transparent')} />
+            <span className={cn('h-0.5 w-4 rounded-pill', on ? 'bg-fg' : 'bg-transparent')} />
           </button>
         );
       })}
@@ -347,7 +347,7 @@ function AgentModelSelect<V extends string = string>({
           </ComposerToolButton>
         }
       />
-      <ChipSelectPopup density="engine" side="top" align="end" width={340} className="p-0">
+      <ChipSelectPopup density="engine" side="top" align="end" width={280} className="p-0">
         <AgentModelTabs
           tabs={tabs}
           selected={term ? null : shownTab}
@@ -357,12 +357,12 @@ function AgentModelSelect<V extends string = string>({
           }}
           aria-label={ariaLabel}
         />
-        <div className="px-2 pt-2">
+        <div className="px-1.5 pt-1.5">
           <Input
-            size="md"
+            size="sm"
             // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
             autoFocus
-            leading={<SearchIcon className="size-3.5" />}
+            leading={<SearchIcon className="size-3" />}
             // Focus is where the popup opens; the halo would light up every opening.
             className="has-focus-visible:ring-0"
             value={query}
