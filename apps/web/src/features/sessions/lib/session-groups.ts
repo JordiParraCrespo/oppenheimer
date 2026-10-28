@@ -36,7 +36,9 @@ export function groupByProject(
  * The groups worth drawing: a project with no session is noise, so it goes.
  * A group stays while one of `occupied`'s sessions is its own, so the group a
  * drag lifts its last session out of holds still under the pointer, and the
- * project the project filter picked stays to say it has no match.
+ * project the project filter picked stays to say it has no match. A project
+ * whose only sessions are pinned is not drawn: they are drawn above the
+ * projects, and are not in `occupied`.
  */
 export function shownGroups<T extends ProjectGroup>(
   groups: readonly T[],
