@@ -199,9 +199,9 @@ function AgentModelEffortFoot<V extends string>({
   return (
     <div
       data-slot="agent-model-effort"
-      className="flex flex-col gap-[11px] border-t border-border-subtle px-3.5 py-[13px]"
+      className="flex flex-col gap-2 border-t border-border-subtle px-3 py-2.5"
     >
-      <div className="flex items-center gap-2 text-[13px]">
+      <div className="flex items-center gap-2 text-xs">
         <span className="text-fg-muted">{labels.effort}</span>
         <span key={effort.value} className="motion-safe:animate-effort-in text-fg">
           {current?.label}
@@ -209,14 +209,14 @@ function AgentModelEffortFoot<V extends string>({
         <span className="flex-1" />
         {/* The glyph is the pointer's way to the hint; the slider carries it as its description. */}
         <span className="flex text-fg-subtle" title={labels.effortHint}>
-          <CircleQuestionMarkIcon className="size-[15px]" aria-hidden />
+          <CircleQuestionMarkIcon className="size-3.5" aria-hidden />
         </span>
         <span id={hintId} className="sr-only">
           {labels.effortHint}
         </span>
       </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between text-xs text-fg-muted">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex justify-between text-[11px] text-fg-muted">
           <span>{labels.faster}</span>
           <span>{labels.smarter}</span>
         </div>
@@ -347,7 +347,7 @@ function AgentModelSelect<V extends string = string>({
           </ComposerToolButton>
         }
       />
-      <ChipSelectPopup density="engine" side="top" align="end" width={280} className="p-0">
+      <ChipSelectPopup density="engine" side="top" align="end" className="p-0">
         <AgentModelTabs
           tabs={tabs}
           selected={term ? null : shownTab}
