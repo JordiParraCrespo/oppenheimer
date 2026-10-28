@@ -286,7 +286,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.startsCloudSessions = hostStartsCloud({
       online: online && !entity.isUnpaired,
       liveCapabilities: view.liveCapabilities ?? null,
-      probedTools: this.toProbedTools(entity.capabilities),
+      installedTools: this.toInstalledTools(entity.capabilities),
     });
     dto.lastSeenAt = entity.lastSeenAt;
     dto.machine = view.inventory ? this.toMachineResponse(view.inventory) : null;
@@ -375,6 +375,22 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       const name =
         typeof tool === 'object' && tool !== null ? Reflect.get(tool, 'name') : undefined;
       return typeof name === 'string' ? [name] : [];
+    });
+  }
+
+  /**
+   * The `name` of each tool the runner found on the host, the ones with a
+   * `path`; null when there is no inventory yet.
+   */
+  toInstalledTools(capabilities: unknown): string[] | null {
+    if (typeof capabilities !== 'object' || capabilities === null) return null;
+    const { tools } = capabilities as { tools?: unknown };
+    if (!Array.isArray(tools)) return null;
+    return tools.flatMap((tool: unknown) => {
+      if (typeof tool !== 'object' || tool === null) return [];
+      const name = Reflect.get(tool, 'name');
+      const path = Reflect.get(tool, 'path');
+      return typeof name === 'string' && typeof path === 'string' && path !== '' ? [name] : [];
     });
   }
 }

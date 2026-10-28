@@ -78,6 +78,28 @@ echo 'View: https://claude.ai/code/session_01abcdefgh'
 	}
 }
 
+// A checkout that cannot be marked trusted is one the CLI would sit in until
+// the timeout: the start fails at once, naming why, and the CLI never runs.
+func TestStartFailsAtOnceWhenTheCheckoutCannotBeTrusted(t *testing.T) {
+	ran := filepath.Join(t.TempDir(), "ran")
+	claude := fakeClaude(t, "touch '"+ran+"'\nsleep 60\n")
+	start := time.Now()
+	_, err := Starter{
+		Command: claude,
+		Timeout: 30 * time.Second,
+		Trust:   func(string) error { return errors.New("claude config is read-only") },
+	}.Start(context.Background(), t.TempDir(), "task")
+	if !isCloudStart(err) || !strings.Contains(err.Error(), "read-only") {
+		t.Fatalf("err = %v, want ErrCloudStart naming the trust failure", err)
+	}
+	if took := time.Since(start); took > 5*time.Second {
+		t.Fatalf("took %s to fail", took)
+	}
+	if _, statErr := os.Stat(ran); statErr == nil {
+		t.Fatal("the CLI ran in a checkout that was not trusted")
+	}
+}
+
 func TestStartReportsTheCLIsRefusal(t *testing.T) {
 	claude := fakeClaude(t, `echo 'Error: You are not signed in to claude.ai. Run /login.'
 exit 1

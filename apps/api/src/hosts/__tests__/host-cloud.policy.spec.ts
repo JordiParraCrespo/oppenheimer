@@ -5,7 +5,7 @@ describe('hostStartsCloud', () => {
   const ready = {
     online: true,
     liveCapabilities: ['session.folder', 'session.cloud'] as const,
-    probedTools: ['git', 'tmux', 'claude'],
+    installedTools: ['git', 'tmux', 'claude'],
   };
 
   it('offers a host whose live runner takes cloud sessions and has claude', () => {
@@ -17,7 +17,7 @@ describe('hostStartsCloud', () => {
   });
 
   it('refuses a host without claude, whatever its runner takes', () => {
-    expect(hostStartsCloud({ ...ready, probedTools: ['git', 'tmux'] })).toBe(false);
+    expect(hostStartsCloud({ ...ready, installedTools: ['git', 'tmux'] })).toBe(false);
   });
 
   it('refuses an offline host, whose link is gone', () => {
@@ -28,7 +28,7 @@ describe('hostStartsCloud', () => {
     expect(hostStartsCloud({ ...ready, liveCapabilities: null })).toBeNull();
   });
 
-  it('does not rule out a runner that reported no tools', () => {
-    expect(hostStartsCloud({ ...ready, probedTools: null })).toBe(true);
+  it('does not rule out a host with no inventory yet', () => {
+    expect(hostStartsCloud({ ...ready, installedTools: null })).toBe(true);
   });
 });

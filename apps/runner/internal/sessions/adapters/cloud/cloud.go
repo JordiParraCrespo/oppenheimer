@@ -50,7 +50,8 @@ type Starter struct {
 	Timeout time.Duration
 	// Trust answers Claude Code's "do you trust this folder?" for dir before
 	// the CLI runs: each start is in a scratch checkout it has never seen,
-	// and the question would hold it until the timeout. Nil asks nothing.
+	// and the question would hold it until the timeout, so a folder it cannot
+	// mark fails the start at once. Nil asks nothing.
 	Trust func(dir string) error
 }
 
@@ -68,8 +69,9 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	defer cancel()
 
 	if s.Trust != nil {
-		// Best-effort: unmarked, the CLI asks, and the timeout says so.
-		_ = s.Trust(dir)
+		if err := s.Trust(dir); err != nil {
+			return Started{}, domain.ErrCloudStart.WithDetail("trust %s for claude: %v", dir, err).WithCause(err)
+		}
 	}
 
 	cmd := exec.CommandContext(ctx, s.command(), "--cloud", prompt) //nolint:gosec // the CLI by name, and the task one argument: no shell reads it

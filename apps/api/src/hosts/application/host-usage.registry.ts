@@ -1,18 +1,10 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
-import type { RunnerCapability } from '@oppenheimer/shared/protocol';
-import type { LinkRegistryPort } from '../../links/application/link-registry.port';
-import { LINK_REGISTRY } from '../../links/links.di-tokens';
+import { Injectable } from '@nestjs/common';
 import type { HostPresence } from '../database/host.repository.port';
 import type { HostUsagePort } from './host-usage.port';
 
-/**
- * A host as the console reads it: the row, whether it is attached, what runs
- * on it, and what its runner's live link said it takes (`null` when this
- * process holds no link for it).
- */
+/** A host as the console reads it: the row, whether it is attached, and what runs on it. */
 export interface HostOverview extends HostPresence {
   runningSessions: number;
-  liveCapabilities: readonly RunnerCapability[] | null;
 }
 
 /**
@@ -27,12 +19,6 @@ export interface HostOverview extends HostPresence {
 export class HostUsageRegistry {
   private readonly usages: HostUsagePort[] = [];
 
-  constructor(
-    @Optional()
-    @Inject(LINK_REGISTRY)
-    private readonly links: LinkRegistryPort | null = null,
-  ) {}
-
   register(usage: HostUsagePort): void {
     if (this.usages.includes(usage)) return;
     this.usages.push(usage);
@@ -42,11 +28,7 @@ export class HostUsageRegistry {
     for (const usage of usages) this.register(usage);
   }
 
-  /**
-   * The presences, each with what runs on it and what its live runner takes.
-   * One round trip per contribution, not per host; the links are this
-   * process's memory.
-   */
+  /** The presences, each with what runs on it. One round trip per contribution, not per host. */
   async overview(presences: readonly HostPresence[]): Promise<HostOverview[]> {
     const ids = presences.map(({ host }) => host.id);
     const totals = new Map<string, number>();
@@ -61,7 +43,6 @@ export class HostUsageRegistry {
     return presences.map((presence) => ({
       ...presence,
       runningSessions: totals.get(presence.host.id) ?? 0,
-      liveCapabilities: this.links?.find(presence.host.id)?.capabilities ?? null,
     }));
   }
 }

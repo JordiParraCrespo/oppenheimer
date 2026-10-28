@@ -143,23 +143,24 @@ export function toHostOptions(
 
 /**
  * The host the place chip's Claude Code row starts a cloud session from
- * (`product/versions/mvp/24-session-places.md` §7): the picked host when it
- * can, else the first that can, then one the API could not vouch for either
- * way (online, its link held elsewhere); null when no host can, which greys
- * the row out. A host the API says cannot is never chosen.
+ * (`product/versions/mvp/24-session-places.md` §7). Online hosts the API says
+ * can start it come first, then ones it could not vouch for either way
+ * (`startsCloud: null`: online, its link held by another replica), and within
+ * each the picked host before the rest. Null when none qualifies, which greys
+ * the row out; a host the API says cannot is never chosen.
  */
 export function claudeCloudHost(
   hosts: readonly HostEntity[],
   pickedId: string | null,
 ): HostEntity | null {
   const picked = hosts.find((host) => host.id === pickedId);
-  const can = (host: HostEntity) => host.online && host.details.startsCloud === true;
-  const maybe = (host: HostEntity) => host.online && host.details.startsCloud === null;
-  if (picked && can(picked)) return picked;
-  const ready = hosts.find(can);
-  if (ready) return ready;
-  if (picked && maybe(picked)) return picked;
-  return hosts.find(maybe) ?? null;
+  for (const verdict of [true, null] as const) {
+    const fits = (host: HostEntity) => host.online && host.details.startsCloud === verdict;
+    if (picked && fits(picked)) return picked;
+    const other = hosts.find(fits);
+    if (other) return other;
+  }
+  return null;
 }
 
 /**

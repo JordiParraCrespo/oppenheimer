@@ -181,4 +181,6 @@ host and then lives on claude.ai/code:
   place in a host's pane: the console picks a host that can start it and
   says which (§7). The runner trusts the scratch checkout before
   `claude --cloud` runs; a fresh folder held the start on Claude Code's
-  trust question until it timed out.
+  trust question until it timed out. A checkout it cannot mark fails the
+  start at once (`SESS_008`, naming why) rather than waiting for that
+  timeout.
