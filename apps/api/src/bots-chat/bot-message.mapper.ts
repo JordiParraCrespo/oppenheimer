@@ -169,6 +169,25 @@ function count(value: unknown): number {
 }
 
 /** A stored attachment, narrowed once; one the mapper did not write is dropped. */
+/**
+ * The images a `show_image` call stored, narrowed once from the JSON its
+ * data carried (a tool's data is strings only). Anything else reads as none,
+ * and an image it cannot read is dropped.
+ */
+export function toShownImages(raw: string | undefined): BotAttachment[] {
+  if (!raw) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap((item) =>
+    item && typeof item === 'object' ? toAttachment(item as Record<string, unknown>) : [],
+  );
+}
+
 function toAttachment(raw: Record<string, unknown>): BotAttachment[] {
   const mimeType = BOT_IMAGE_MIME_TYPES.find((known) => known === raw.mimeType);
   if (!mimeType || typeof raw.id !== 'string') return [];

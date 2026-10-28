@@ -2,9 +2,10 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
-import type { BotPermission, BotSubagentRun, Scope } from '@oppenheimer/shared';
+import type { BotAttachment, BotPermission, BotSubagentRun, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
+import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
@@ -80,6 +81,8 @@ export interface BotToolAnswer {
   sessionId?: string;
   /** The children a `delegate` call ran, for the chat to show under its line. */
   subagents?: readonly BotSubagentRun[];
+  /** The images a `show_image` call stored, for the chat to show the person. */
+  images?: readonly BotAttachment[];
 }
 
 /** What a call ended with: the words the model reads, and the session it started, if any. */
@@ -88,6 +91,7 @@ export interface BotToolResult {
   isError: boolean;
   sessionId?: string;
   subagents?: readonly BotSubagentRun[];
+  images?: readonly BotAttachment[];
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -208,6 +212,7 @@ export function defineBotTool<Input extends z.ZodType>(
         isError: false,
         ...(answer.sessionId ? { sessionId: answer.sessionId } : {}),
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
+        ...(answer.images?.length ? { images: answer.images } : {}),
       };
     } catch (error) {
       return { content: describeToolFailure(error), isError: true };
@@ -229,10 +234,15 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          const { sessionId, subagents, ...result } = await call(parsed.data, context, signal);
+          const { sessionId, subagents, images, ...result } = await call(
+            parsed.data,
+            context,
+            signal,
+          );
           const data = {
             ...(sessionId ? { sessionId } : {}),
             ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
+            ...(images ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
           };
           return Object.keys(data).length > 0 ? { ...result, data } : result;
         },

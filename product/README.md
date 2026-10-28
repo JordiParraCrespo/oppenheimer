@@ -795,3 +795,7 @@ earlier note:
   pasted images, now shows them and the screenshots the agent reads, from
   a preview the runner sends within the link's entry bound
   (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for bots to send images back: `show_image`
+  fetches an image from the web by its address (the only images a bot,
+  which has no files, can reach), stores it as the chat's own and draws it
+  in the bot's answer (`versions/mvp/25-bots.md` §4.7).

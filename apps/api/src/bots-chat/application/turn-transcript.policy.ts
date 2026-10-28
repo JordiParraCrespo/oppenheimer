@@ -1,11 +1,13 @@
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import { toSubagentRuns } from '../bot-message.mapper';
+import type { BotAttachment } from '@oppenheimer/shared';
+import { toShownImages, toSubagentRuns } from '../bot-message.mapper';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
+import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import {
   BOT_TURN_TIME_LIMIT_MS,
@@ -37,7 +39,9 @@ export interface TranscriptOutcome {
  * Turns a turn's engine events into the chat's messages (`25-bots.md` §3):
  * each finished block of text is a message, and each run of tool calls
  * between two of them is one activity line whose steps fill in as the calls
- * finish. Text as it streams is only passed on. Your message is position 0,
+ * finish. The images a `show_image` call stored are a message of the bot's
+ * of their own, after the line, which the next call does not join. Text as
+ * it streams is only passed on. Your message is position 0,
  * so the bot's start at 1.
  */
 export class TurnTranscript {
@@ -133,8 +137,8 @@ export class TurnTranscript {
 
   /**
    * A call's end: its words, cut, and what the tool said it made: the
-   * session it started, or the children it ran, whose tokens are the turn's
-   * cost too.
+   * session it started, the children it ran, whose tokens are the turn's
+   * cost too, or the images it showed, which follow the line as a message.
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
     const { callId, output, isError, data } = event;
@@ -149,10 +153,21 @@ export class TurnTranscript {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;
     }
-    return [{ kind: 'steps', message: this.activity }];
+    const writes: TranscriptWrite[] = [{ kind: 'steps', message: this.activity }];
+    const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
+    if (images.length > 0) {
+      this.activity = null;
+      writes.push({ kind: 'insert', message: this.message('assistant', '', [], images) });
+    }
+    return writes;
   }
 
-  private message(role: 'assistant' | 'activity', content: string, steps: BotToolStep[]) {
+  private message(
+    role: 'assistant' | 'activity',
+    content: string,
+    steps: BotToolStep[],
+    attachments: readonly BotAttachment[] = [],
+  ) {
     return BotMessageEntity.createNew({
       organizationId: this.turn.organizationId,
       botId: this.turn.botId,
@@ -161,6 +176,7 @@ export class TurnTranscript {
       content,
       steps,
       position: this.position++,
+      attachments,
     });
   }
 }

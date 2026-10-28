@@ -1557,6 +1557,42 @@ describe('bots chat (integration)', () => {
     );
     expect(await attachments.deleteUnclaimed(images.map((image) => image.id))).toBe(2);
   });
+  it('claims for the bot’s message only the images it showed, never a person’s upload, and leaves the sidebar’s last words', async () => {
+    const bot = await create('Shows');
+    const { turn, message } = sent(bot, 'Show me a chart');
+    await turns.enqueue(turn, message, null);
+    const shown = BotAttachmentEntity.upload(
+      {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        uploadedByUserId: null,
+        mimeType: 'image/png',
+        sizeBytes: 2048,
+        name: 'Revenue by quarter',
+      },
+      'png',
+    );
+    await attachments.insert(shown);
+    const persons = await uploaded(bot);
+    const reply = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      role: 'assistant',
+      content: '',
+      steps: [],
+      position: 2,
+      attachments: [shown.toMessageAttachment(), persons.toMessageAttachment()],
+    });
+    await messages.insert(reply);
+
+    const claimed = await attachments.findForMessage(organizationId, reply.id);
+    expect(claimed.map((image) => image.id)).toEqual([shown.id]);
+    const [{ lastMessagePreview }]: { lastMessagePreview: string | null }[] =
+      await dataSource.query(`SELECT "lastMessagePreview" FROM bot WHERE id = $1`, [bot.id]);
+    expect(lastMessagePreview).toBe('Show me a chart');
+  });
+
   describe('subscriptions (27-bot-subscriptions.md)', () => {
     const SESSION = '7b1c4f9e-0000-4000-8000-0000000000aa';
 
