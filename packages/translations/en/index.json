@@ -799,6 +799,7 @@
       "pinned": "Pinned",
       "pin": "Pin",
       "unpin": "Unpin",
+      "dropToPin": "Drop a session here to pin it.",
       "actions": "Session actions",
       "rename": "Rename",
       "renameLabel": "Session name",
