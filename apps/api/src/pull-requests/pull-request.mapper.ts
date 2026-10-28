@@ -100,7 +100,9 @@ export class PullRequestMapper {
     viewerLogin: string | null,
     reads: RepositoryPulls<PullRequestSnapshot>[],
   ): PullRequestQueueResponseDto {
-    const items = rows.filter((row) => scope === 'all' || row.scope === scope).sort(queueOrder);
+    const items = (scope === 'all' ? [...rows] : rows.filter((row) => row.scope === scope)).sort(
+      queueOrder,
+    );
     const count = (predicate: (row: PullRequestRowDto) => boolean) =>
       items.filter(predicate).length;
     return {

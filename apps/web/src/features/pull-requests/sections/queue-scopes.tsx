@@ -5,6 +5,7 @@ import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useQueueSearch } from '../hooks/use-queue-search';
+import { needsWatchedRepositories } from '../lib/queue-search';
 
 /**
  * Whose pull requests: all of them first, then the three ways to narrow
@@ -45,7 +46,7 @@ export function QueueScopes() {
       </SegmentedControl>
       <p className="m-0 text-sm text-fg-muted">
         {t(`pullRequests.queue.scopeHint.${scope}`)}
-        {scope === 'all' || scope === 'watching' ? (
+        {needsWatchedRepositories(scope) ? (
           <>
             {' '}
             <Link to="/settings/repositories" className="text-link">

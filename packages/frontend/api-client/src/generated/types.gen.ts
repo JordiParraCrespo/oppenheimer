@@ -11002,7 +11002,7 @@ export type FindPullRequestsData = {
     path?: never;
     query?: {
         /**
-         * Whose queue, or `all`; default `mine`
+         * Whose queue, or `all`; default `all`
          */
         scope?: 'all' | 'mine' | 'requested' | 'watching';
     };

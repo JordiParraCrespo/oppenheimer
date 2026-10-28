@@ -38,7 +38,7 @@ export class FindPullRequestsHttpController {
     name: 'scope',
     required: false,
     enum: PULL_REQUEST_QUEUES,
-    description: 'Whose queue, or `all`; default `mine`',
+    description: 'Whose queue, or `all`; default `all`',
   })
   @ApiResponse({ status: 200, type: PullRequestQueueResponseDto })
   async list(

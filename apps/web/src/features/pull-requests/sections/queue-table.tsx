@@ -21,7 +21,13 @@ import { useQueueKeys } from '../hooks/use-queue-keys';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReadNotices } from '../hooks/use-read-notices';
 import { facetCounts, filterQueue, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
-import { QUEUE_CHECKS, QUEUE_WAITS, type QueueChecks, type QueueWait } from '../lib/queue-search';
+import {
+  needsWatchedRepositories,
+  QUEUE_CHECKS,
+  QUEUE_WAITS,
+  type QueueChecks,
+  type QueueWait,
+} from '../lib/queue-search';
 import { QueueRow } from './queue-row';
 
 /**
@@ -72,9 +78,7 @@ export function QueueTable() {
   });
 
   if (!data.items.length) {
-    // Every queue reads only the watched repositories, so an empty All is the
-    // same answer as an empty Watching: pick some.
-    const watching = settled === 'all' || settled === 'watching';
+    const watching = needsWatchedRepositories(settled);
     return (
       <>
         <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />

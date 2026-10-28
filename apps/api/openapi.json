@@ -14658,7 +14658,7 @@
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Whose queue, or `all`; default `mine`",
+            "description": "Whose queue, or `all`; default `all`",
             "schema": {
               "enum": ["all", "mine", "requested", "watching"],
               "type": "string"

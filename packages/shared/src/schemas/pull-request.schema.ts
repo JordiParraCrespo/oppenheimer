@@ -40,9 +40,9 @@ export type PullRequestAnalyticsRange = (typeof PULL_REQUEST_ANALYTICS_RANGES)[n
 
 export const REVIEW_COMMENT_MAX = 65_000;
 
-/** `GET /pulls`. */
+/** `GET /pulls`. Absent, the scope is `all`, the queue the console opens on. */
 export const pullRequestsQuerySchema = z.object({
-  scope: z.enum(PULL_REQUEST_QUEUES).default('mine'),
+  scope: z.enum(PULL_REQUEST_QUEUES).default('all'),
 });
 export type PullRequestsQueryDto = z.infer<typeof pullRequestsQuerySchema>;
 

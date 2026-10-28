@@ -1,6 +1,19 @@
 import { searchText } from '@oppenheimer/frontend-web';
-import { PULL_REQUEST_LANES, PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
+import {
+  PULL_REQUEST_LANES,
+  PULL_REQUEST_QUEUES,
+  type PullRequestQueueName,
+} from '@oppenheimer/shared/schemas/pull-request';
 import { z } from 'zod';
+
+/**
+ * The queues that are empty until the reader watches a repository: every
+ * queue reads only the watched ones, and these two hold nothing else. Their
+ * empty state and their hint both point at Settings.
+ */
+export function needsWatchedRepositories(queue: PullRequestQueueName): boolean {
+  return queue === 'all' || queue === 'watching';
+}
 
 /** The checks states the queue's Checks facet narrows to. */
 export const QUEUE_CHECKS = ['passing', 'failing', 'running'] as const;
