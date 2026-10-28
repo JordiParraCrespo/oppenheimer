@@ -11,12 +11,14 @@ import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatViewToggle } from '../components/chat-view-toggle';
 import { CloudSessionAway } from '../components/cloud-session-away';
+import { PreviewFrame } from '../components/preview-frame';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
+import { usePreviewPane } from '../hooks/use-preview-pane';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import type { PaneReading, SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
-import { type PreviewTab, rememberPreviewOpen, storedPreviewOpen } from '../lib/preview-open';
+import type { PreviewTab } from '../lib/preview-open';
 import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
@@ -104,11 +106,7 @@ export function SessionPane({
     ...(simulatorOffered ? (['simulator'] as const) : []),
   ];
   const previewOffered = previewTabs.length > 0 && Boolean(bar);
-  const [previewOpen, setPreviewOpen] = useState(storedPreviewOpen);
-  const togglePreview = (open: boolean) => {
-    setPreviewOpen(open);
-    rememberPreviewOpen(open);
-  };
+  const preview = usePreviewPane();
   const chat = useSessionChat();
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
@@ -143,7 +141,7 @@ export function SessionPane({
             tabs={session.isLive ? viewToggle : null}
             preview={
               session.isLive && previewOffered ? (
-                <PreviewToggle open={previewOpen} onToggle={() => togglePreview(!previewOpen)} />
+                <PreviewToggle open={preview.open} onToggle={() => preview.toggle(!preview.open)} />
               ) : null
             }
           />
@@ -268,14 +266,16 @@ export function SessionPane({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-term-bg">
           {terminal(session, reading, statusItems)}
         </div>
-        {previewOffered && previewOpen ? (
-          <Suspense fallback={null}>
-            <SessionPreview
-              sessionId={session.id}
-              offered={previewTabs}
-              onClose={() => togglePreview(false)}
-            />
-          </Suspense>
+        {previewOffered ? (
+          <PreviewFrame phase={preview.phase} onTransitionEnd={preview.onTransitionEnd}>
+            <Suspense fallback={null}>
+              <SessionPreview
+                sessionId={session.id}
+                offered={previewTabs}
+                onClose={() => preview.toggle(false)}
+              />
+            </Suspense>
+          </PreviewFrame>
         ) : null}
       </div>
     </>
