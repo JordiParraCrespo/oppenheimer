@@ -281,7 +281,8 @@
     "select": "Seleccionar",
     "selected": "Seleccionada",
     "openAtVendor": "Se abre en {{vendor}}",
-    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros."
+    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
+    "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",

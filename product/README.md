@@ -771,3 +771,8 @@ earlier note:
   runner with `claude --cloud`, and its status reported from claude.ai by
   `apps/extension` (`versions/mvp/24-session-places.md` §7,
   `next-steps/cloud-agents.md`).
+- `versions/mvp/05-screens.md` had an empty project show in the sidebar
+  with an empty row and a link to start a session. On 2026-10-28 the owner
+  asked for the sidebar to list only projects that hold sessions: an empty
+  project is not drawn (New session and the project filter still reach
+  it), and a sidebar with projects but no session says so in one line.

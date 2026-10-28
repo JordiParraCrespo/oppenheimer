@@ -816,7 +816,8 @@
       "select": "Select",
       "selected": "Selected",
       "openAtVendor": "Opens in {{vendor}}",
-      "allHidden": "Every project is hidden. Show them again from the filter menu."
+      "allHidden": "Every project is hidden. Show them again from the filter menu.",
+      "noSessions": "No sessions yet. Start one with New session above."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
