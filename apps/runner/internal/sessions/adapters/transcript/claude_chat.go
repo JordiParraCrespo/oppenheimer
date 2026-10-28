@@ -95,20 +95,27 @@ type chatBlock struct {
 	// Images are the images a tool's result carried, in order, each with
 	// its preview when it fit (a screenshot the agent read).
 	Images []chatImage `json:"images,omitempty"`
+	// sources are the transcript's own sources of the images the block
+	// carries, one per slot (slots), never sent.
+	sources []json.RawMessage
+}
+
+// slots are where the previews of the block's images go, in the order of
+// its sources: an image block's own source, or each of a tool result's.
+func (b *chatBlock) slots() []**chatImageSource {
+	if b.Type == "image" {
+		return []**chatImageSource{&b.Source}
+	}
+	slots := make([]**chatImageSource, len(b.Images))
+	for i := range b.Images {
+		slots[i] = &b.Images[i].Source
+	}
+	return slots
 }
 
 // chatImage is one image of a tool's result.
 type chatImage struct {
 	Source *chatImageSource `json:"source,omitempty"`
-}
-
-// pendingImage is an image a kept block carries, waiting for its share of
-// the entry's bytes: the transcript's own source, the block, and which of a
-// tool result's images it is (-1 for an image block itself).
-type pendingImage struct {
-	raw   json.RawMessage
-	block int
-	image int
 }
 
 // chatEntry turns one transcript line into a chat entry, or reports none
@@ -147,21 +154,12 @@ func (claudeReader) chatEntry(line []byte, max int) ([]byte, bool) {
 			return nil, false
 		}
 		kept := make([]chatBlock, 0, len(blocks))
-		var images []pendingImage
+		images := 0
 		for _, block := range blocks {
-			compact, ok := compactBlock(block)
-			if !ok {
-				continue
+			if compact, ok := compactBlock(block); ok {
+				kept = append(kept, compact)
+				images += len(compact.sources)
 			}
-			switch block.Type {
-			case "image":
-				images = append(images, pendingImage{raw: block.Source, block: len(kept), image: -1})
-			case "tool_result":
-				for i, raw := range resultImages(block.Content) {
-					images = append(images, pendingImage{raw: raw, block: len(kept), image: i})
-				}
-			}
-			kept = append(kept, compact)
 		}
 		if len(kept) == 0 {
 			return nil, false
@@ -171,7 +169,7 @@ func (claudeReader) chatEntry(line []byte, max int) ([]byte, bool) {
 		if err != nil {
 			return nil, false
 		}
-		if len(images) == 0 {
+		if images == 0 {
 			return encoded, true
 		}
 		return withPreviews(out, kept, encoded, images, max)
@@ -183,20 +181,17 @@ func (claudeReader) chatEntry(line []byte, max int) ([]byte, bool) {
 	return encoded, true
 }
 
-// withPreviews fills in the images' previews, the room the entry has left
-// under max shared between them, and encodes the entry again. An entry the
+// withPreviews fills in the previews of the entry's images, the room it
+// has left under max shared between them, and encodes it again. An entry the
 // previews took over max (they cannot, by their budget) goes without them.
-func withPreviews(out chatEntry, kept []chatBlock, bare []byte, images []pendingImage, max int) ([]byte, bool) {
-	room := max - len(bare) - len(images)*previewOverhead
-	if room/len(images) < previewMinBytes {
+func withPreviews(out chatEntry, kept []chatBlock, bare []byte, images, max int) ([]byte, bool) {
+	share := (max - len(bare) - images*previewOverhead) / images
+	if share < previewMinBytes {
 		return bare, true
 	}
-	for _, image := range images {
-		preview := previewImage(image.raw, room/len(images))
-		if image.image < 0 {
-			kept[image.block].Source = preview
-		} else {
-			kept[image.block].Images[image.image].Source = preview
+	for i := range kept {
+		for n, slot := range kept[i].slots() {
+			*slot = previewImage(kept[i].sources[n], share)
 		}
 	}
 	encoded, err := json.Marshal(out)
@@ -227,13 +222,16 @@ func compactBlock(block claudeBlock) (chatBlock, bool) {
 		return chatBlock{Type: "tool_use", ID: block.ID, Name: block.Name, Input: input, Truncated: cut}, true
 	case "tool_result":
 		text, cut := truncate(resultText(block.Content), chatToolResultMax)
+		sources := resultImages(block.Content)
 		var images []chatImage
-		if n := len(resultImages(block.Content)); n > 0 {
-			images = make([]chatImage, n)
+		if len(sources) > 0 {
+			images = make([]chatImage, len(sources))
 		}
-		return chatBlock{Type: "tool_result", ToolUseID: block.ToolUseID, IsError: block.IsError, Content: text, Truncated: cut, Images: images}, true
-	case "image", "document":
-		return chatBlock{Type: block.Type}, true
+		return chatBlock{Type: "tool_result", ToolUseID: block.ToolUseID, IsError: block.IsError, Content: text, Truncated: cut, Images: images, sources: sources}, true
+	case "image":
+		return chatBlock{Type: "image", sources: []json.RawMessage{block.Source}}, true
+	case "document":
+		return chatBlock{Type: "document"}, true
 	}
 	return chatBlock{}, false
 }

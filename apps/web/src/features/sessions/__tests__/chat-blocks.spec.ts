@@ -45,7 +45,7 @@ const t = ((key: string, options?: { count?: number }) =>
   `${key.split('.').at(-1)}×${options?.count}`) as unknown as TFunction;
 
 describe('blocksOf', () => {
-  it('puts the images a call read right after it, and leaves out one the host only named', () => {
+  it('puts the images a run of calls read after the run, which they do not split, and leaves out one the host only named', () => {
     const chat = new SessionChat();
     const jpeg = { source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } };
     chat.apply({
@@ -81,7 +81,12 @@ describe('blocksOf', () => {
     const turn = chat.snapshot().turns[0];
     if (!turn) throw new Error('no turn');
     const blocks = blocksOf(turn);
-    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'images', 'tools']);
+    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'images']);
+    expect(blocks[0]?.kind === 'tools' && blocks[0].calls.map((call) => call.id)).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
     expect(blocks[1]).toMatchObject({
       source: '/tmp/shot.png',
       images: [{ src: 'data:image/jpeg;base64,AAAA' }],

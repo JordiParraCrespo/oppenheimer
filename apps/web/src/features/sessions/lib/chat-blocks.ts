@@ -53,8 +53,8 @@ export interface ChangedFile {
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
  * commands"), the way Synara and Codex fold work; a plan is a card of its
  * own, and so are questions the agent asked, with what was answered; the
- * images a call's result carried (a screenshot the agent read) follow it as
- * tiles that open; a turn that has settled after changing files ends on the
+ * images a call's result carried (a screenshot the agent read) follow its
+ * group as tiles that open; a turn that has settled after changing files ends on the
  * card that lists them, as Codex's does. The task list is not here: the composer keeps
  * it (`latestTodos`), because each `TodoWrite` restates the whole list.
  */
@@ -76,16 +76,31 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
     const block = blockOf(step, turn.steps[index + 1]);
     if (!block) return;
     const previous = blocks.at(-1);
-    if (block.kind === 'tools' && previous?.kind === 'tools') previous.calls.push(...block.calls);
-    else blocks.push(block);
-    const images = step.kind === 'tool' ? shownImages(step.call.images) : [];
-    if (step.kind === 'tool' && images.length > 0) {
-      blocks.push({ kind: 'images', id: `${step.id}:images`, source: step.call.target, images });
+    if (block.kind === 'tools' && previous?.kind === 'tools') {
+      previous.calls.push(...block.calls);
+      return;
     }
+    blocks.push(block);
   });
   const files = turn.working ? [] : changedFiles(turn.steps);
   if (files.length > 0) blocks.push({ kind: 'changes', id: `${turn.id}:changes`, files });
-  return blocks;
+  return blocks.flatMap((block) =>
+    block.kind === 'tools' ? [block, ...imagesOf(block)] : [block],
+  );
+}
+
+/**
+ * The images a group's calls read, one block per call, after the group:
+ * placed once the calls are folded, so a call that read a picture never
+ * splits the run it belongs to.
+ */
+function imagesOf(group: Extract<ChatBlock, { kind: 'tools' }>): ChatBlock[] {
+  return group.calls.flatMap((call) => {
+    const images = shownImages(call.images);
+    return images.length > 0
+      ? [{ kind: 'images' as const, id: `${call.id}:images`, source: call.target, images }]
+      : [];
+  });
 }
 
 function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
