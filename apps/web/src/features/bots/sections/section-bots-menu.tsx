@@ -21,8 +21,8 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 /**
  * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
  * a search over every bot, each with a check for whether this section lists
- * it, and a foot that says what the check means, with New bot and the way to
- * Employees, where bots are grouped, ordered and deleted. A check flips the bot's placement at once and the popup stays
+ * it, and a foot that says what the check means, with New bot in the link
+ * blue (the one way to make a bot from here) and the way to Employees, where bots are grouped, ordered and deleted. A check flips the bot's placement at once and the popup stays
  * open for the next. The bots read arrives whole, as Employees' own search
  * has it, so the search filters it here, on the name and the description.
  *
@@ -152,15 +152,16 @@ export function SectionBotsMenu({
         </ChipSelectList>
         <div className="flex flex-col gap-1.5 border-t border-border-subtle px-3 py-2.5 text-xs text-fg-subtle">
           <p>{t('bots.section.checkedHint', { section: where })}</p>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <Link
-              muted
+              className="inline-flex items-center gap-1 font-medium"
               render={<button type="button" />}
               onClick={() => {
                 onOpenChange(false);
                 onCreate();
               }}
             >
+              <Plus className="size-3.5" />
               {creating ? t('bots.sidebar.creating') : t('bots.sidebar.new')}
             </Link>
             <Link muted render={<RouterLink to="/bots" />} onClick={() => onOpenChange(false)}>
