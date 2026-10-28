@@ -1,6 +1,5 @@
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -12,17 +11,18 @@ import {
   DropdownMenuTrigger,
   DropdownMenuValue,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
-  FACETS,
   type FilterOption,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
 } from '../lib/session-filters';
+import { FacetSearchSub } from './facet-search-sub';
 
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
@@ -82,31 +82,55 @@ export function SessionsFilterMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-57.5">
-        {FACETS.map((facet) => (
-          <DropdownMenuSub key={facet}>
-            <DropdownMenuSubTrigger>
-              {t(`sessions.filters.${facet}`)}
-              <DropdownMenuValue>{labelFor(facet)}</DropdownMenuValue>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={filters[facet]}
-                onValueChange={(next) => onChange({ [facet]: next as string })}
-              >
-                {options[facet].map((option) => (
-                  <DropdownMenuRadioItem key={option.value} value={option.value}>
-                    {option.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        ))}
+        {/* Project, Repository and Host grow with the workspace and are
+            searched; the agents are a short fixed list of radio rows. */}
+        <FacetSearchSub
+          label={t('sessions.filters.project')}
+          current={labelFor('project')}
+          options={options.project}
+          value={filters.project}
+          searchPlaceholder={t('common.search.projects')}
+          onValueChange={(project) => onChange({ project })}
+        />
+        <FacetSearchSub
+          label={t('sessions.filters.repository')}
+          current={labelFor('repository')}
+          options={options.repository}
+          value={filters.repository}
+          searchPlaceholder={t('common.search.repositories')}
+          onValueChange={(repository) => onChange({ repository })}
+        />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            {t('sessions.filters.agent')}
+            <DropdownMenuValue>{labelFor('agent')}</DropdownMenuValue>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={filters.agent}
+              onValueChange={(agent) => onChange({ agent: agent as string })}
+            >
+              {options.agent.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <FacetSearchSub
+          label={t('sessions.filters.host')}
+          current={labelFor('host')}
+          options={options.host}
+          value={filters.host}
+          searchPlaceholder={t('common.search.hosts')}
+          onValueChange={(host) => onChange({ host })}
+        />
 
         <DropdownMenuSeparator />
 
-        {/* A check per project; the menu stays open so several can be
-            toggled in one go. */}
+        {/* A check per project, under a search; the menu stays open so
+            several can be toggled in one go. */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={projects.length === 0}>
             {t('sessions.filters.shown')}
@@ -119,25 +143,27 @@ export function SessionsFilterMenu({
                   })}
             </DropdownMenuValue>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-80 overflow-y-auto">
-            {projects.map((project) => (
-              <DropdownMenuCheckboxItem
-                key={project.value}
-                checked={!visibility.hidden.includes(project.value)}
-                onCheckedChange={(shown) => visibility.onShownChange(project.value, shown)}
+          <DropdownMenuSubContent className="w-68 p-0">
+            <SearchList
+              aria-label={t('sessions.filters.shown')}
+              options={projects}
+              value={projects
+                .filter((project) => !visibility.hidden.includes(project.value))
+                .map((project) => project.value)}
+              onPick={(project, shown) => visibility.onShownChange(project.value, shown)}
+              searchPlaceholder={t('common.search.projects')}
+              emptyText={(query) => t('common.search.noMatch', { query })}
+            />
+            <DropdownMenuSeparator className="mx-0" />
+            <div className="p-1 pt-0">
+              <DropdownMenuItem
+                disabled={visibility.hiddenCount === 0}
+                onClick={visibility.onShowAll}
                 closeOnClick={false}
               >
-                {project.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={visibility.hiddenCount === 0}
-              onClick={visibility.onShowAll}
-              closeOnClick={false}
-            >
-              {t('sessions.filters.showAll')}
-            </DropdownMenuItem>
+                {t('sessions.filters.showAll')}
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
