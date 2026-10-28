@@ -27,16 +27,29 @@ function failed(code: string, detail?: string) {
 
 describe('cloudLaunchFailure', () => {
   it('sends a refused or missing key to settings, with no reference', () => {
-    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_005'))).toEqual({ kind: 'reconnect' });
-    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_004'))).toEqual({ kind: 'connect' });
+    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_005'))).toEqual({
+      kind: 'reconnect',
+      vendorSays: null,
+      correlationId: undefined,
+    });
+    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_004'))).toEqual({
+      kind: 'connect',
+      vendorSays: null,
+      correlationId: undefined,
+    });
   });
 
   it('offers a retry for an outage, keeping its reference, and for a rate limit', () => {
     expect(cloudLaunchFailure(failed('CLOUD_AGENTS_006'))).toEqual({
       kind: 'unavailable',
+      vendorSays: null,
       correlationId: 'ref-1',
     });
-    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_007'))).toEqual({ kind: 'limited' });
+    expect(cloudLaunchFailure(failed('CLOUD_AGENTS_007'))).toEqual({
+      kind: 'limited',
+      vendorSays: null,
+      correlationId: undefined,
+    });
   });
 
   it("keeps the vendor's sentence from a refusal, and none from a bare status", () => {

@@ -191,8 +191,11 @@ export function NewSessionSend({
   );
 
   const failure = lastFailure([upload, create, startCloud]);
-  // A vendor's refusal says what fixes it; any other failure keeps the generic alert.
-  const cloudFailure = failure.index === 2 ? cloudLaunchFailure(failure.error) : null;
+  // The launch at a vendor says what fixes it; any other failure keeps the generic alert.
+  const cloudFailure =
+    failure.error && failure.error === startCloud.error
+      ? cloudLaunchFailure(startCloud.error)
+      : null;
 
   return (
     <div className="flex flex-col gap-4.5">
