@@ -104,8 +104,9 @@ var launchCatalog = map[string]launchMap{
 		},
 		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
 		effortLevels: map[string][]string{
-			"grok-4.7": {"minimal", "low", "medium", "high", "xhigh", "max"},
-			"grok-4.6": {"minimal", "low", "medium", "high", "xhigh", "max"},
+			"grok-4.7": {"low", "medium", "high", "xhigh"},
+			"grok-4.6": {"low", "medium", "high", "xhigh"},
+			"grok-4.5": {"low", "medium", "high"},
 		},
 		prompt:             []string{"<prompt>"},
 		conversationCreate: []string{"--session-id", "<conversation>"},

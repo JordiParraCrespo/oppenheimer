@@ -139,12 +139,18 @@ const GLM_LEVELS = Object.freeze({
 });
 
 /**
- * The levels xAI's Responses API takes for Grok 4.7 as `reasoning.effort`.
+ * The levels xAI's Responses API takes as `reasoning.effort`, per its reasoning
+ * guide: Grok 4.7 and 4.6 run low to extra high, 4.5 tops out at high (an
+ * `xhigh` sent to it is read as `high`), and all three default to `high`.
  * Grok Build 0.1 refuses the parameter, so its row offers none.
  */
 const GROK_LEVELS = Object.freeze({
   levels: Object.freeze(['low', 'medium', 'high', 'xhigh'] as SessionEffort[]),
-  default: 'medium' as SessionEffort,
+  default: 'high' as SessionEffort,
+});
+const GROK_4_5_LEVELS = Object.freeze({
+  levels: Object.freeze(['low', 'medium', 'high'] as SessionEffort[]),
+  default: 'high' as SessionEffort,
 });
 
 /**
@@ -202,6 +208,8 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
           default: true as const,
           effort: GROK_LEVELS,
         }),
+        Object.freeze({ id: 'grok-4.6', label: 'Grok 4.6', effort: GROK_LEVELS }),
+        Object.freeze({ id: 'grok-4.5', label: 'Grok 4.5', effort: GROK_4_5_LEVELS }),
         Object.freeze({ id: 'grok-build-0.1', label: 'Grok Build 0.1' }),
       ]),
     }),

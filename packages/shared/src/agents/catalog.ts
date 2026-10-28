@@ -398,7 +398,10 @@ export interface CodingAgentDefinition {
 }
 
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
-const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+// Grok's reasoning menus, as grok 1.0.70 carries them for its built-in
+// models: 4.6 and 4.7 run low to extra high, 4.5 tops out at high.
+const GROK_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
+const GROK_4_5_LEVELS = ['low', 'medium', 'high'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -756,17 +759,18 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // "Override config directory (default: `~/.grok`)", and `auth.json` lives
     // in that directory, so it scopes the login and nothing else.
     configDirEnv: 'GROK_HOME',
-    // The two Grok generations the CLI offers, with the ids `grok --model`
-    // takes. 4.6 is the default because it is the CLI's own (`grok models`
-    // on 1.0.41 reads "grok-4.6 (default)"); 4.7 is xAI's newest, first in
-    // capability order as Codex's list is. Same seed argument as the others:
-    // whether a given account's `grok` offers 4.7 is the probe still open in
-    // `product/versions/mvp/05-screens.md`.
+    // The Grok models the CLI offers, newest first, with the ids `grok
+    // --model` takes. 4.6 is the default because it is the CLI's own (grok
+    // 1.0.70's built-in `default_models.json` reads `"default": "grok-4.6"`,
+    // with 4.5 beside it); 4.7 is xAI's newest, which the CLI lists once the
+    // account's catalog is fetched after sign-in. Same seed argument as the
+    // others: whether a given account's `grok` offers 4.7 is the probe still
+    // open in `product/versions/mvp/05-screens.md`.
     //
-    // Which effort levels a Grok model takes comes from xAI's model catalog
-    // after sign-in, which this repo has no copy of, so both rows offer the six
-    // grok's `--reasoning-effort` knows (`none` left off, as for Sol), with
-    // the models' own `high` as the default.
+    // Each row's levels are that model's own menu: grok takes the canonical
+    // `none` to `max` on `--reasoning-effort` but "a model only accepts the
+    // levels its menu advertises" (1.0.70's `--help`), and xAI's reasoning
+    // guide gives the same menus for the API, `high` the default on all three.
     models: Object.freeze([
       Object.freeze({
         id: 'grok-4.7',
@@ -778,6 +782,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         label: 'Grok 4.6',
         default: true as const,
         effort: levels(GROK_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'grok-4.5',
+        label: 'Grok 4.5',
+        effort: levels(GROK_4_5_LEVELS, 'high'),
       }),
     ]),
     launch: Object.freeze({
