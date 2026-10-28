@@ -17,14 +17,12 @@ export function usePreviewPane() {
   const open = phase === 'entering' || phase === 'shown';
   const toggle = (next: boolean) => {
     rememberPreviewOpen(next);
-    const instant = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (next) setPhase(instant ? 'shown' : 'entering');
-    else setPhase(instant ? 'closed' : 'leaving');
+    const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setPhase(next ? (instant ? 'shown' : 'entering') : instant ? 'closed' : 'leaving');
   };
+  // Only `entering` and `leaving` run a transition of the frame's own.
   const onTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (phase === 'entering') setPhase('shown');
-    if (phase === 'leaving') setPhase('closed');
+    if (event.target === event.currentTarget) setPhase(open ? 'shown' : 'closed');
   };
   return { phase, open, toggle, onTransitionEnd };
 }

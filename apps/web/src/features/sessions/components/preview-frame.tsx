@@ -1,4 +1,3 @@
-import { cn } from '@oppenheimer/design-system-web';
 import type { ReactNode, TransitionEvent } from 'react';
 import type { PreviewPhase } from '../hooks/use-preview-pane';
 
@@ -22,11 +21,7 @@ export function PreviewFrame({
   if (phase === 'closed') return null;
   return (
     <div
-      className={cn(
-        'flex shrink-0 justify-end overflow-hidden transition-[width] duration-base ease-standard motion-reduce:transition-none',
-        phase === 'leaving' ? 'w-0' : 'w-110',
-        phase === 'entering' && 'starting:w-0',
-      )}
+      className={`flex shrink-0 justify-end overflow-hidden transition-[width] duration-base ease-standard motion-reduce:transition-none ${phase === 'leaving' ? 'w-0' : phase === 'entering' ? 'w-110 starting:w-0' : 'w-110'}`}
       onTransitionEnd={onTransitionEnd}
     >
       {children}
