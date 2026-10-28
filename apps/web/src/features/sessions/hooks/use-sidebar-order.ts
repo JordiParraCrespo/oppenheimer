@@ -58,7 +58,7 @@ export function useSidebarOrder({
   projects,
   listed = () => true,
   sessions,
-  pinned = [],
+  pinned,
   pins,
   custom,
   onReorder,
@@ -67,8 +67,8 @@ export function useSidebarOrder({
   projects: readonly ProjectEntity[];
   listed?: (projectId: string) => boolean;
   sessions: readonly SessionEntity[];
-  pinned?: readonly SessionEntity[];
-  pins?: Pick<SessionPins, 'setPinned' | 'placePins'>;
+  pinned: readonly SessionEntity[];
+  pins: Pick<SessionPins, 'setPinned' | 'placePins'>;
   custom: boolean;
   onReorder: () => void;
   onWrite: (error: Error | null) => void;
@@ -133,7 +133,7 @@ export function useSidebarOrder({
     ({ id, from, to }, next) => {
       const projectIds = projectIdsOf(next);
       if (to === PINNED_GROUP) {
-        pins?.placePins(next[PINNED_GROUP] ?? []);
+        pins.placePins(next[PINNED_GROUP] ?? []);
         return;
       }
       if (from === PROJECTS_GROUP) {
@@ -148,7 +148,7 @@ export function useSidebarOrder({
       }
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
       if (!custom) onReorder();
-      if (from === PINNED_GROUP) pins?.setPinned(id, false);
+      if (from === PINNED_GROUP) pins.setPinned(id, false);
       const fromProject = from === PINNED_GROUP ? everyone.get(id)?.projectId : from;
       if (fromProject === to) {
         setStored((current) => ({
