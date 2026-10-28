@@ -6,7 +6,8 @@
     "profile": "Perfil",
     "hosts": "Hosts",
     "repositories": "Repositorios observados",
-    "modelProviders": "Proveedores de modelos"
+    "modelProviders": "Proveedores de modelos",
+    "cloudAgents": "Agentes en la nube"
   },
   "profile": {
     "title": "Perfil",
@@ -120,7 +121,8 @@
       "anthropic": "Modelos Claude, a través de la API de Anthropic.",
       "glm": "Modelos GLM, a través de z.ai.",
       "openai": "Modelos GPT, a través de la API de OpenAI.",
-      "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API."
+      "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API.",
+      "xai": "Modelos Grok, a través de la API de xAI."
     },
     "dialog": {
       "title": "Clave de {{provider}}",
@@ -149,6 +151,31 @@
       "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
       "done": "Hecho",
       "failed": "No se pudo iniciar sesión en ChatGPT."
+    }
+  },
+  "cloudAgents": {
+    "title": "Agentes en la nube",
+    "description": "Ejecuta una sesión en la nube de un proveedor, con tu propia clave: elígela en Nube, donde se ejecuta una sesión nueva. Se cobra en tu plan con el proveedor.",
+    "unavailable": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
+    "loadFailed": "No se pudieron cargar tus proveedores de agentes en la nube.",
+    "providers": {
+      "cursor": "Cloud Agents de Cursor, con cualquier modelo que ofrezca Cursor, Grok incluido."
+    },
+    "connectedAs": "{{name}} · {{email}} · termina en {{hint}}",
+    "connectedKey": "{{name}} · termina en {{hint}}",
+    "notConnected": "Sin conectar",
+    "connect": "Conectar",
+    "replace": "Cambiar clave",
+    "disconnect": "Desconectar",
+    "disconnectLabel": "Desconectar {{provider}}",
+    "disconnectFailed": "No se pudo desconectar.",
+    "dialog": {
+      "title": "Conectar {{provider}}",
+      "description": "Pega una clave de API de usuario del panel de {{provider}}. {{provider}} la comprueba primero y no se vuelve a mostrar.",
+      "label": "Clave de API",
+      "save": "Conectar",
+      "saving": "Comprobando…",
+      "failed": "No se pudo conectar."
     }
   }
 }

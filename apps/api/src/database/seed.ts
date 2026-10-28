@@ -32,6 +32,7 @@ import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
+import { CloudAgentCredentialOrmEntity } from '../cloud-agents/database/cloud-agent-credential.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
@@ -67,6 +68,7 @@ import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
@@ -130,6 +132,8 @@ const dataSource = new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    SessionCloudRunOrmEntity,
+    CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,
     WatchedRepositoryOrmEntity,
     BotOrmEntity,

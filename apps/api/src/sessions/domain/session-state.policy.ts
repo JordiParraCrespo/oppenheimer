@@ -1,5 +1,5 @@
 import type {
-  CreateSessionDto,
+  SessionAgentId,
   SessionDecision,
   SessionEffortDto,
   SessionPermissionDto,
@@ -8,6 +8,7 @@ import type {
 import {
   AGENT_DECISION_EVENT_KIND,
   agentDecisionPayloadSchema,
+  CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
   SESSION_PERMISSIONS,
 } from '@oppenheimer/shared';
@@ -28,8 +29,11 @@ import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/sha
  * disagrees with.
  */
 
-/** The coding agent a session runs: the create DTO's union over the closed agent catalog. */
-export type SessionAgent = CreateSessionDto['agent'];
+/**
+ * What a session runs: a coding agent a host launches, from the runner's closed
+ * catalog, or a vendor's agent in the cloud (`SESSION_AGENT_IDS`).
+ */
+export type SessionAgent = SessionAgentId;
 
 /**
  * What the screen manifest reports. An **input** to the derived group, never a
@@ -269,6 +273,8 @@ export function launchPermissionFor(
   requested: string | null | undefined,
 ): SessionPermissionDto | null {
   if (agent && isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.permission) return null;
+  // A vendor's agent runs under the vendor's rules: there is no level to record.
+  if ((CLOUD_AGENT_IDS as readonly (string | null)[]).includes(agent)) return null;
   return SESSION_PERMISSIONS.includes(requested as SessionPermissionDto)
     ? (requested as SessionPermissionDto)
     : 'ask';

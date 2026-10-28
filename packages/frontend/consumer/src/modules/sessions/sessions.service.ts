@@ -12,6 +12,7 @@ import type {
   SessionPreview,
   SessionShare,
   SharedSession,
+  StartCloudSessionInput,
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
@@ -50,6 +51,10 @@ export class SessionsService {
 
   create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
     return this.repository.create(input, idempotencyKey);
+  }
+
+  startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    return this.repository.startCloud(input, idempotencyKey);
   }
 
   prepare(input: PrepareSessionInput): Promise<string[]> {

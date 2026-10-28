@@ -6,6 +6,10 @@ import {
   SESSION_PERMISSIONS,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
+import {
+  CLOUD_AGENT_PROVIDERS,
+  type CloudAgentProviderId,
+} from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import { rememberedFolder } from './folder-memory';
 import { defaultModelFor, type EffortPicks } from './session-options';
@@ -23,9 +27,20 @@ const STORAGE_KEY = 'oppenheimer.new-session.draft';
 export interface NewSessionDraft {
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * new worktree of a project's repository, or a folder already on the host.
+   * new worktree of a project's repository, a folder already on the host, or
+   * the cloud — Claude Code's, which the host starts, or a vendor's the
+   * console launches (`cloudProvider`).
    */
   where: SessionPlace;
+  /**
+   * The vendor a cloud session is launched at, on the reader's key, with no
+   * host; null for every session a host runs or starts. While it is set the
+   * host, folder, agent and model below are kept as they were, so leaving
+   * the vendor puts back the host session it left.
+   */
+  cloudProvider: CloudAgentProviderId | null;
+  /** The vendor's model; null is its own default ("Auto"). */
+  cloudModel: string | null;
   /** The body of work the session belongs to; picking one prefills the rest. */
   projectId: string | null;
   hostId: string | null;
@@ -49,6 +64,8 @@ export interface NewSessionDraft {
 
 const FALLBACK: NewSessionDraft = {
   where: 'worktree',
+  cloudProvider: null,
+  cloudModel: null,
   projectId: null,
   hostId: null,
   scope: [],
@@ -65,12 +82,23 @@ const FALLBACK: NewSessionDraft = {
  */
 type RememberedChoices = Pick<
   NewSessionDraft,
-  'where' | 'projectId' | 'hostId' | 'scope' | 'agent' | 'model' | 'permission' | 'efforts'
+  | 'where'
+  | 'cloudProvider'
+  | 'cloudModel'
+  | 'projectId'
+  | 'hostId'
+  | 'scope'
+  | 'agent'
+  | 'model'
+  | 'permission'
+  | 'efforts'
 >;
 
 /** The fields `rememberDraft` writes out, for the form's subscription to name. */
 export const REMEMBERED_FIELDS = [
   'where',
+  'cloudProvider',
+  'cloudModel',
   'projectId',
   'hostId',
   'scope',
@@ -124,6 +152,8 @@ export function openDraft(seed: DraftSeed = {}): {
   const draft: NewSessionDraft = {
     ...FALLBACK,
     where: seed.where ?? stored.where ?? FALLBACK.where,
+    cloudProvider: stored.cloudProvider ?? FALLBACK.cloudProvider,
+    cloudModel: stored.cloudModel ?? FALLBACK.cloudModel,
     projectId: stored.projectId ?? FALLBACK.projectId,
     hostId,
     scope: stored.scope ?? FALLBACK.scope,
@@ -144,6 +174,8 @@ function seedFolder(path: string | undefined, hostId: string | null): string | n
 
 export function rememberDraft({
   where,
+  cloudProvider,
+  cloudModel,
   projectId,
   hostId,
   scope,
@@ -155,7 +187,18 @@ export function rememberDraft({
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ where, projectId, hostId, scope, agent, model, permission, efforts }),
+      JSON.stringify({
+        where,
+        cloudProvider,
+        cloudModel,
+        projectId,
+        hostId,
+        scope,
+        agent,
+        model,
+        permission,
+        efforts,
+      }),
     );
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
@@ -172,6 +215,14 @@ function rememberedChoices(): Partial<RememberedChoices> {
     const agent = isCodingAgentId(stored.agent) ? stored.agent : undefined;
     return {
       where: SESSION_PLACES.find((place) => place === stored.where),
+      // A vendor is only ever picked with the cloud as the place.
+      cloudProvider:
+        stored.where === 'cloud'
+          ? (CLOUD_AGENT_PROVIDERS.find((provider) => provider === stored.cloudProvider) ?? null)
+          : null,
+      // A vendor's model list moves with its releases: kept as it was, and the
+      // vendor refuses one it no longer offers in its own words.
+      cloudModel: typeof stored.cloudModel === 'string' ? stored.cloudModel : undefined,
       projectId: typeof stored.projectId === 'string' ? stored.projectId : undefined,
       hostId: typeof stored.hostId === 'string' ? stored.hostId : undefined,
       scope: scopePicks(stored.scope),

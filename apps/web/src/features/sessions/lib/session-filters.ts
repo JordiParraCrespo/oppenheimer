@@ -1,4 +1,4 @@
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 
 /** The value every facet starts on, and the one that means "do not narrow". */
 export const ALL = 'all';
@@ -117,10 +117,14 @@ export function hostOptions(
   const names = new Map(hosts?.map((host) => [host.id, host.name]));
   return [
     { value: ALL, label: allLabel },
-    ...distinct(sessions.map((session) => session.hostId)).map((hostId) => ({
-      value: hostId,
-      label: names.get(hostId) ?? hostId,
-    })),
+    // A cloud session runs at its vendor, which stands in the host's place.
+    ...distinct(sessions.map(runsOn)).map((place) => {
+      const provider = sessions.find((session) => runsOn(session) === place)?.cloud?.provider;
+      return {
+        value: place,
+        label: provider ? cloudProviderLabel(provider) : (names.get(place) ?? place),
+      };
+    }),
   ];
 }
 
@@ -135,7 +139,7 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
             (checkout) => checkout.repositoryFullName === filters.repository,
           )) &&
         (filters.agent === ALL || session.agent === filters.agent) &&
-        (filters.host === ALL || session.hostId === filters.host),
+        (filters.host === ALL || runsOn(session) === filters.host),
     )
     .sort((a, b) => {
       if (filters.sort === 'name') return a.name.localeCompare(b.name);
@@ -154,4 +158,9 @@ export function activeFilters(
     key,
     label: options[key].find((option) => option.value === filters[key])?.label ?? filters[key],
   }));
+}
+
+/** Where a session runs, as one key a filter compares: its host, or `cloud:<vendor>`. */
+function runsOn(session: Pick<SessionEntity, 'hostId' | 'cloud'>): string {
+  return session.cloud ? `cloud:${session.cloud.provider}` : (session.hostId ?? '');
 }

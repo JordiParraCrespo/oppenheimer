@@ -34,7 +34,7 @@ import {
 )
 @Check('CHK_bot_position', `"position" >= 0`)
 @Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)
-@Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
+@Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
 @Check(
   'CHK_bot_sections',
   `"sections" <@ ARRAY['sessions', 'automations', 'plan', 'pulls']::character varying(16)[]`,

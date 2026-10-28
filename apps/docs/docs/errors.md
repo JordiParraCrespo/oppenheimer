@@ -521,6 +521,7 @@ are never reissued.
 | `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
 | `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
 | `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input on claude.ai, not here | 409 |
+| `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -545,6 +546,12 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `031` no answer within five seconds. `028`, `029` and `030` are the runner's own refusals,
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
+
+`SESSIONS_039` is something only a session a host started has — its terminal, a checkout, a
+restart or stop, a share, a prompt or an answer typed into it — asked of a cloud session
+the control plane launched at its vendor (Cursor's), which no host started
+(`product/next-steps/cloud-agents.md`). Open it at the vendor, from its `cloud.url`, and
+do it there.
 
 `SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
 what the session's agent waits on — a question it asked or a permission dialog
@@ -870,6 +877,43 @@ since removed), or one Google has since revoked (or one sealed under a
 
 `CALENDAR_011` is a sixth Google account: a person connects five at most.
 Remove one, or reconnect one already listed, which does not count again.
+
+## Cloud agents
+
+A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
+person's own key for the vendor: the key, what the vendor offers, and its
+refusals of a launch (`POST /sessions/cloud`). See
+`product/next-steps/cloud-agents.md`.
+
+| Code                                       | Title                                               | HTTP |
+| ------------------------------------------ | --------------------------------------------------- | ---- |
+| `CLOUD_AGENTS_002` <a id="cloud_agents_002" /> | Cloud agents belong to an organization          | 400  |
+| `CLOUD_AGENTS_003` <a id="cloud_agents_003" /> | Cloud agents are not configured on this server  | 503  |
+| `CLOUD_AGENTS_004` <a id="cloud_agents_004" /> | That cloud agent provider is not connected      | 409  |
+| `CLOUD_AGENTS_005` <a id="cloud_agents_005" /> | The provider refused the API key                | 422  |
+| `CLOUD_AGENTS_006` <a id="cloud_agents_006" /> | The cloud agent provider did not answer         | 502  |
+| `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
+| `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
+| `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+
+`CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
+working, or already stopped belonged to the agent's own page, which a cloud
+session leaves to its vendor. They are never reissued.
+
+`CLOUD_AGENTS_003` is a server with no `CLOUD_AGENTS_KEY`: no one can store a
+vendor key, so no one can launch.
+
+`CLOUD_AGENTS_004` is no key stored for the vendor (or one sealed under a
+`CLOUD_AGENTS_KEY` since replaced): connect it again under Cloud agents.
+
+`CLOUD_AGENTS_005` is the vendor refusing the key when it is stored, or later
+when it is used (revoked at the vendor). `CLOUD_AGENTS_010` is the vendor
+refusing what was asked: a repository it cannot reach, a model it does not
+offer, a feature the account lacks; its `detail` carries the vendor's words and
+`upstreamCode` the vendor's code.
+
+`CLOUD_AGENTS_007` carries `Retry-After`. Reads of sessions never answer it:
+a cloud session shows as last heard of.
 
 ## Inbound events
 

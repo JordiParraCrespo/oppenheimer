@@ -1,14 +1,23 @@
 import { ApiExtraModels, ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { nullableEnum, PaginatedResponseDto } from '@oppenheimer/backend-core';
-import type { SessionEffortDto, SessionPermissionDto, SessionPlace } from '@oppenheimer/shared';
+import type {
+  CloudAgentProviderId,
+  CloudAgentStatus,
+  SessionAgentId,
+  SessionEffortDto,
+  SessionPermissionDto,
+  SessionPlace,
+} from '@oppenheimer/shared';
 import {
+  CLOUD_AGENT_PROVIDERS,
+  CLOUD_AGENT_STATUSES,
+  SESSION_AGENT_IDS,
   SESSION_EFFORTS,
   SESSION_GROUPS,
   SESSION_PERMISSIONS,
   SESSION_PLACES,
   SESSION_STATES,
 } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import {
   type SessionDecisionResponseDto,
   SessionPermissionDecisionResponseDto,
@@ -134,6 +143,46 @@ export class SessionCloseRefusalResponseDto {
   detail!: string | null;
 }
 
+/**
+ * A cloud session's vendor half: whose agent it is, its page, and what the
+ * vendor last said about its run. The session's `state` is the fold of what
+ * that said; this is what a row shows beside it and opens.
+ */
+export class SessionCloudRunResponseDto {
+  @ApiProperty({ enum: CLOUD_AGENT_PROVIDERS, example: 'cursor' })
+  provider!: CloudAgentProviderId;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'The agent’s own page at the vendor, where it is followed up, stopped or deleted.',
+    example: 'https://cursor.com/agents?id=bc-6f1c…',
+  })
+  url!: string | null;
+
+  @ApiProperty({ example: 'https://github.com/acme/api' })
+  repositoryUrl!: string;
+
+  @ApiProperty({
+    enum: CLOUD_AGENT_STATUSES,
+    description: 'Where the vendor said the latest run stands, when it was last asked.',
+  })
+  status!: CloudAgentStatus;
+
+  @ApiProperty({ nullable: true, type: String, description: 'The branch the agent pushed.' })
+  branch!: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  pullRequestUrl!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'When the vendor was last asked.',
+  })
+  syncedAt!: Date;
+}
+
 @ApiExtraModels(SessionQuestionDecisionResponseDto, SessionPermissionDecisionResponseDto)
 export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -145,8 +194,13 @@ export class SessionResponseDto {
   @ApiProperty({ format: 'uuid', description: 'The project the session is listed under.' })
   projectId!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  hostId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description: 'The host it runs on; null for a cloud session, which runs at its vendor.',
+  })
+  hostId!: string | null;
 
   @ApiProperty({
     description: 'Display name. It starts equal to the slug, then the first prompt names it.',
@@ -162,16 +216,17 @@ export class SessionResponseDto {
   slug!: string;
 
   @ApiProperty({
-    enum: CODING_AGENT_IDS,
-    description: 'The coding agent this session runs.',
+    enum: SESSION_AGENT_IDS,
+    description:
+      'The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).',
     example: 'claude-code',
   })
-  agent!: CodingAgentId;
+  agent!: SessionAgentId;
 
   @ApiProperty({
     enum: SESSION_PLACES,
     description:
-      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, Claude Code's cloud, started from the host and living on claude.ai/code.",
+      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).",
     example: 'worktree',
   })
   place!: SessionPlace;
@@ -249,6 +304,13 @@ export class SessionResponseDto {
 
   @ApiProperty({ type: [SessionCheckoutResponseDto] })
   checkouts!: SessionCheckoutResponseDto[];
+
+  @ApiProperty({
+    type: SessionCloudRunResponseDto,
+    nullable: true,
+    description: 'A cloud session’s vendor half; null for a session on a host.',
+  })
+  cloud!: SessionCloudRunResponseDto | null;
 
   @ApiProperty({
     isArray: true,

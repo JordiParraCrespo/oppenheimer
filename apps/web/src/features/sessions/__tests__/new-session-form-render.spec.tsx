@@ -165,6 +165,17 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     submittedAt: 0,
   }),
   useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
+  // No server key for cloud agents here: the composer is a host's.
+  useCloudAgentStatus: () => ({ data: undefined, isPending: false }),
+  useCloudAgentModels: () => ({ data: [], isPending: false }),
+  useStartCloudSession: () => ({
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+    submittedAt: 0,
+  }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({

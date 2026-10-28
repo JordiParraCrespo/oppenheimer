@@ -5,6 +5,8 @@ import type { BotsRepository } from '../modules/bots';
 import { BotsModule } from '../modules/bots';
 import type { CalendarRepository } from '../modules/calendar';
 import { CalendarModule } from '../modules/calendar';
+import type { CloudAgentsRepository } from '../modules/cloud-agents';
+import { CloudAgentsModule } from '../modules/cloud-agents';
 import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
 import type { InboxRepository } from '../modules/inbox';
@@ -41,6 +43,7 @@ export const consumerModules = [
   PullRequestsModule,
   TasksModule,
   CalendarModule,
+  CloudAgentsModule,
   HostsModule,
   InboxModule,
   InstallationsModule,
@@ -118,6 +121,11 @@ export class ConsumerApp {
   /** Plan's calendar: the workspace's events and the viewer's Google Calendar. */
   get calendar(): CalendarRepository {
     return this.kernel.container.get(TOKENS.CalendarRepository);
+  }
+
+  /** Coding agents in a vendor's cloud, on the reader's own key for the vendor. */
+  get cloudAgents(): CloudAgentsRepository {
+    return this.kernel.container.get(TOKENS.CloudAgentsRepository);
   }
 
   /** Dictation: a recording in, the text it says out. */

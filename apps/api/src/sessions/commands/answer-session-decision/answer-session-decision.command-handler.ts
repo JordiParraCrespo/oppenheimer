@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { QUESTION_KEY_GAP_MS } from '@oppenheimer/shared/sessions';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import { decisionAnswerKeys } from '../../domain/session-decision.policy';
@@ -49,7 +49,7 @@ export class AnswerSessionDecisionCommandHandler
   ) {}
 
   async execute(command: AnswerSessionDecisionCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const refusal = session.inputRefusal;
     if (refusal) {
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });

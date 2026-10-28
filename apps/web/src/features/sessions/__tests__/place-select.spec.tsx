@@ -19,21 +19,43 @@ const HOSTS = [
   { value: 'host-2', label: 'optimus', online: false },
 ];
 
-function renderChip() {
+const CLOUDS = [
+  {
+    value: 'cursor' as const,
+    agent: 'cursor' as const,
+    label: 'Cursor',
+    description: 'ana@example.com',
+    connected: true,
+  },
+];
+
+function renderChip(
+  clouds = CLOUDS,
+  picked: { place: 'worktree' | 'folder' | 'cloud'; cloud: 'cursor' | null } = {
+    place: 'worktree',
+    cloud: null,
+  },
+) {
   const onHostChange = vi.fn();
   const onPlaceChange = vi.fn();
+  const onCloudChange = vi.fn();
+  const onConnectCloud = vi.fn();
   render(
     <PlaceSelect
       hosts={HOSTS}
       hostId="host-1"
-      place="worktree"
+      place={picked.place}
+      clouds={clouds}
+      cloud={picked.cloud}
       onHostChange={onHostChange}
       onPlaceChange={onPlaceChange}
+      onCloudChange={onCloudChange}
+      onConnectCloud={onConnectCloud}
       onAddHost={vi.fn()}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'sessions.new.host.label' }));
-  return { onHostChange, onPlaceChange };
+  return { onHostChange, onPlaceChange, onCloudChange, onConnectCloud };
 }
 
 describe('PlaceSelect', () => {
@@ -69,5 +91,47 @@ describe('PlaceSelect', () => {
 
     expect(onHostChange).toHaveBeenCalledWith('host-2');
     expect(onPlaceChange).toHaveBeenCalledWith('folder');
+  });
+
+  /**
+   * Under the hosts, the clouds (`NewSessionComposer.dc.html`): a vendor with
+   * the reader's key is picked outright, as the place; one without sends the
+   * reader to connect it rather than starting a session it would refuse.
+   */
+  it('picks a connected cloud outright, and sends a vendor with no key to connect it', () => {
+    const picked = renderChip();
+    fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
+    expect(picked.onCloudChange).toHaveBeenCalledWith('cursor');
+    expect(picked.onHostChange).not.toHaveBeenCalled();
+    cleanup();
+
+    const unconnected = renderChip([{ ...CLOUDS[0], connected: false }]);
+    fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
+    expect(unconnected.onConnectCloud).toHaveBeenCalled();
+    expect(unconnected.onCloudChange).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Claude Code cloud is a host's place, Cursor a vendor with no host: both
+   * are the place `cloud`, so going from Cursor to a host's Claude Code cloud
+   * changes no place, and still has to say the host takes the session back.
+   */
+  it('takes a host’s Claude Code cloud from Cursor, though the place stays the cloud', () => {
+    const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
+
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+    fireEvent.click(screen.getByRole('option', { name: /sessions.new.where.cloud.label/ }));
+
+    expect(onPlaceChange).toHaveBeenCalledWith('cloud');
+  });
+
+  it('walks from the hosts into the clouds with the arrows', () => {
+    const { onCloudChange } = renderChip();
+    const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
+
+    for (let step = 0; step < 2; step++) fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'Enter' });
+
+    expect(onCloudChange).toHaveBeenCalledWith('cursor');
   });
 });

@@ -53,8 +53,8 @@ pnpm screens --phone /sessions anon:/login   # from the root: scripts/stack/scre
 
 ## The two stubs, and what they are for
 
-Two of the console's surfaces talk to something this repository does not own,
-and a deployment here has neither — so `support/` carries a stand-in for each,
+Three of the console's surfaces talk to something this repository does not own,
+and a deployment here has none of them — so `support/` carries a stand-in for each,
 and the API is pointed at them when the stack is started. **Nothing else in a
 run is faked**: the browser, the console, the API's guards, its Zod pipe, its
 problem-document filter and its Postgres are all the real ones.
@@ -63,8 +63,9 @@ problem-document filter and its Postgres are all the real ones.
 | --- | --- | --- | --- |
 | `support/github-stub.ts` | GitHub's REST API | `GITHUB_APP_API_URL`, `GITHUB_APP_OAUTH_URL` | Repositories and branches are answered live through a GitHub App installation. Without an App, `POST /sessions` cannot validate a repository and New session has nothing to pick |
 | `support/namer-stub.ts` | The model that names a session | `LLM_BASE_URL` | The namer asks the deployment's LLM, here as an `openai-compatible` server (Groq, vLLM, a local Ollama). Its stub answers a title derived from the prompt it was given, so a request carrying the wrong text fails visibly |
+| `support/cursor-stub.ts` | Cursor's Cloud Agents API | `CLOUD_AGENTS_CURSOR_API_URL` | A cloud agent runs on a person's own Cursor key and bills their plan. The stub takes any key starting `crsr_stub_`, refuses others with Cursor's 401, and plays each run out on its own clock (starting, running, finished with a pushed branch) |
 
-Both run before the API, because the API reads their URLs at boot — and the
+All three run before the API, because the API reads their URLs at boot — and the
 configuration that points it at them is generated rather than committed, since
 it includes a GitHub App key and a control-plane signing key:
 
@@ -72,6 +73,7 @@ it includes a GitHub App key and a control-plane signing key:
 node --experimental-strip-types e2e/support/stub-env.ts >> .env   # keys, per run
 node --experimental-strip-types e2e/support/github-stub.ts &      # :4319
 node --experimental-strip-types e2e/support/namer-stub.ts &       # :4320
+node --experimental-strip-types e2e/support/cursor-stub.ts &      # :4321
 ```
 
 CI does exactly this in the `End-to-End Tests (API)` job, which is why the
