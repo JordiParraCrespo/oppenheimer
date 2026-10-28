@@ -801,6 +801,7 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "dropToPin": "Suelta una sesión aquí para fijarla.",
       "actions": "Acciones de la sesión",
       "rename": "Renombrar",
       "renameLabel": "Nombre de la sesión",

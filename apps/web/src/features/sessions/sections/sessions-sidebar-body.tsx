@@ -67,9 +67,10 @@ const DeleteSessionsDialog = lazy(() =>
  *
  * The projects and their sessions drag into the reader's own order
  * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
- * reader pinned (`useSessionPins`) are drawn above the projects instead of in
- * them, still filtered and searched like the rest; a project left with no
- * session to draw is not drawn at all. The groups the reader folded stay
+ * reader pinned (`useSessionPins`), from a row's menu or by dropping it on
+ * Pinned, are drawn above the projects instead of in them, still filtered
+ * and searched like the rest; a project left with no session to draw is not
+ * drawn at all. The groups the reader folded stay
  * folded on the next visit (`useFoldedGroups`), and so do the projects the
  * reader hid from the filter menu (`useHiddenProjects`): a
  * hidden project's group and sessions are not drawn, unless the project
@@ -116,10 +117,17 @@ export function SessionsSidebarBody() {
   const { pinned, rest } = splitPinned(visible, pins.pins);
   const picked = filters.project === ALL ? null : filters.project;
   const listing = listedProjects(projects, rest, hidden, picked);
-  const { groups, handlers } = useSidebarOrder({
+  const {
+    groups,
+    pinned: pinnedRows,
+    carrying,
+    handlers,
+  } = useSidebarOrder({
     projects,
     listed: listing.listed,
     sessions: listing.sessions,
+    pinned,
+    pins,
     custom: filters.sort === 'custom',
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
@@ -218,9 +226,10 @@ export function SessionsSidebarBody() {
               labels={dragLabels}
               overlay={(active) => <SidebarDragCopy item={active} />}
             >
-              {pinned.length > 0 ? (
+              {pinnedRows.length > 0 || carrying ? (
                 <PinnedGroup
-                  sessions={pinned}
+                  sessions={pinnedRows}
+                  narrowed={narrowed}
                   onShare={(target) =>
                     dialogs.open({ kind: 'share-session', sessionId: target.id })
                   }
