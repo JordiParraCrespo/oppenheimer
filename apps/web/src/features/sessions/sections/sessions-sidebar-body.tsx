@@ -69,9 +69,10 @@ const DeleteSessionsDialog = lazy(() =>
  * The projects and their sessions drag into the reader's own order
  * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
  * reader pinned (`useSessionPins`) are drawn above the projects instead of in
- * them, still filtered and searched like the rest. The groups the reader
- * folded stay folded on the next visit (`useFoldedGroups`), and so do the
- * projects the reader hid from the filter menu (`useHiddenProjects`): a
+ * them, still filtered and searched like the rest; a project left with no
+ * session to draw is not drawn at all. The groups the reader folded stay
+ * folded on the next visit (`useFoldedGroups`), and so do the projects the
+ * reader hid from the filter menu (`useHiddenProjects`): a
  * hidden project's group and sessions are not drawn, unless the project
  * filter picks it, and its pinned sessions stay pinned.
  *
@@ -128,7 +129,8 @@ export function SessionsSidebarBody() {
     onReorder: () => setFilters((current) => ({ ...current, sort: 'custom' })),
     onWrite: setFailure,
   });
-  const shown = shownGroups(groups, narrowed, picked);
+  const occupied = new Set(listing.sessions.map((session) => session.projectId));
+  const shown = shownGroups(groups, occupied, picked);
   const empty = emptyListMessage(t, {
     groups,
     shown,

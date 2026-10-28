@@ -52,8 +52,10 @@
   which starts the composer on that project with its defaults) and
   Project settings (the project dialog editing; Delete project on its
   footer is the archive behind a confirm, and is disabled while the
-  project has unresolved sessions). An
-  empty project shows an empty row with a link to start one. A row's
+  project has unresolved sessions). A
+  project with no session is not listed (until 2026-10-28 it showed an
+  empty row with a link to start one); with projects but no session at
+  all, the list says so in one line. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a

@@ -275,7 +275,8 @@
     "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
     "select": "Seleccionar",
     "selected": "Seleccionada",
-    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros."
+    "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
+    "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",

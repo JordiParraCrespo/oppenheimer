@@ -803,7 +803,8 @@
       "notDeletedHint": "Su host se negó a eliminarla. Vuelve a eliminarla para ver por qué.",
       "select": "Seleccionar",
       "selected": "Seleccionada",
-      "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros."
+      "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
+      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -2571,7 +2572,9 @@
       "short": "Aprobar {{bot}} · {{tool}}",
       "title": "{{bot}} quiere ejecutar {{tool}}",
       "approve": "Aprobar",
+      "approving": "Aprobando…",
       "deny": "Denegar",
+      "denying": "Denegando…",
       "openChat": "Abrir chat"
     },
     "pull": {
@@ -2601,6 +2604,7 @@
       "exit": "Salida {{code}}",
       "deletedHint": "Su automatización se eliminó, así que no puede volver a ejecutarse.",
       "again": "Ejecutar de nuevo",
+      "starting": "Iniciando…",
       "open": "Abrir ejecución"
     },
     "card": {

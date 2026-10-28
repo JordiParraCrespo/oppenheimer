@@ -801,7 +801,8 @@
       "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
       "select": "Select",
       "selected": "Selected",
-      "allHidden": "Every project is hidden. Show them again from the filter menu."
+      "allHidden": "Every project is hidden. Show them again from the filter menu.",
+      "noSessions": "No sessions yet. Start one with New session above."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -2555,7 +2556,9 @@
       "short": "Approve {{bot}} · {{tool}}",
       "title": "{{bot}} wants to run {{tool}}",
       "approve": "Approve",
+      "approving": "Approving…",
       "deny": "Deny",
+      "denying": "Denying…",
       "openChat": "Open chat"
     },
     "pull": {
@@ -2585,6 +2588,7 @@
       "exit": "Exit {{code}}",
       "deletedHint": "Its automation was deleted, so it cannot run again.",
       "again": "Run again",
+      "starting": "Starting…",
       "open": "Open run"
     },
     "card": {
