@@ -27,11 +27,8 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 348.6KB measured (2026-10-28), when vendor chunking stopped pulling
-    // libraries that lazy routes use onto the critical path: Base UI,
-    // lucide-react, vaul, cmdk and react-hook-form now follow the routes that
-    // import them (`@oppenheimer/tsconfig/vite-chunks.mjs`), down from 450.2KB.
-    // Earlier raises and their reasons are in git history.
+    // 348.6KB measured (2026-10-28); what goes in a vendor group is the rule in
+    // `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in git history.
     budgetKB: 350,
   },
   // oppenheimer:end web
