@@ -378,3 +378,22 @@ func TestTheTitleAloneIsEnoughToKnowTheAgentIsWorking(t *testing.T) {
 		t.Fatalf("state = %q, want working from the title alone", state)
 	}
 }
+
+// Claude Code 2.1 draws its prompt as `❯` and a no-break space, captured from
+// a real pane after a turn. Go's `\s` does not match U+00A0, so this screen
+// read `unknown`, the turn never completed, and a bot waiting on its
+// follow-up never heard back.
+func TestAnEmptyPromptAfterATurnIsIdle(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "❯ Please reply with the exact phrase: Follow-up received.\n\n" +
+			"● Follow-up received.\n\n" +
+			"✻ Cooked for 1s · done 7:56 AM\n\n" +
+			rule + "\n❯  \n" + rule + "\n" +
+			"  ⏵⏵ auto mode on (shift+tab to cycle)\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateIdle {
+		t.Fatalf("state = %q, want idle", state)
+	}
+}
