@@ -408,6 +408,8 @@ const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as cons
 // OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS.
 const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
 const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
+// GLM 5.3's effort values on models.dev, which OpenCode offers as its variants.
+const OPENCODE_GLM_LEVELS = ['low', 'high', 'max'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -657,12 +659,20 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     //
     // `provider/model`, the form `opencode --model` takes. OpenCode reaches
     // whatever providers the host has signed in to, and its own picker is
-    // models.dev's catalog, so this seed is the coding models of the four
+    // models.dev's catalog, so this seed is the coding models of the
     // providers it is most often signed in to, grouped by provider in that
     // order: Anthropic (the family Claude Code offers), OpenAI (what Codex's
-    // picker lists, in its order), xAI (what Grok's lists) and Google (its
-    // newest reasoning and flash models). A row the host's OpenCode has no
-    // provider for fails in the session's own terminal, as for the others.
+    // picker lists, in its order), xAI (what Grok's lists), Google (its
+    // newest reasoning and flash models) and Z.AI (GLM 5.3 and its fast
+    // variants). A row the host's OpenCode has no provider for fails in the
+    // session's own terminal, as for the others.
+    //
+    // GLM is under `zai-coding-plan/`, OpenCode's provider for z.ai's GLM
+    // Coding Plan, the subscription z.ai sells for coding agents and the
+    // endpoint a workspace's GLM key already serves bots on. Its key is
+    // OpenCode's `/connect` → "Z.AI Coding Plan", or `ZHIPU_API_KEY` in the
+    // agent's environment; `zai/` is the pay-as-you-go API, a separate
+    // balance the plan's quota does not cover.
     //
     // Each model's levels are its OpenCode variants, which OpenCode derives
     // from the model's `reasoning_options` on models.dev, and its default is
@@ -752,6 +762,21 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         id: 'google/gemini-3.8-flash',
         label: 'Gemini 3.8 Flash',
         effort: levels(OPENCODE_GOOGLE_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'zai-coding-plan/glm-5.3',
+        label: 'GLM-5.3',
+        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'zai-coding-plan/glm-5.3-highspeed',
+        label: 'GLM-5.3 Highspeed',
+        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'zai-coding-plan/glm-5.3-flash',
+        label: 'GLM-5.3 Flash',
+        effort: levels(OPENCODE_GLM_LEVELS, 'high'),
       }),
     ]),
     launch: Object.freeze({

@@ -79,6 +79,9 @@ describe('coding agent catalog', () => {
     // Each provider's variants, not one list for every model OpenCode reaches.
     expect(levelsOf('opencode', 'xai/grok-4.7')).toEqual(['low', 'medium', 'high', 'xhigh']);
     expect(levelsOf('opencode', 'google/gemini-4-argon')).toEqual(['low', 'medium', 'high']);
+    // GLM under z.ai's Coding Plan has no `medium`, so one is never sent to it.
+    expect(levelsOf('opencode', 'zai-coding-plan/glm-5.3')).toEqual(['low', 'high', 'max']);
+    expect(effortLevelFor('opencode', 'zai-coding-plan/glm-5.3', 'medium')).toBeNull();
     expect(effortFor('shell', null)).toBeUndefined();
     // A model the catalog does not list has levels nobody here knows.
     expect(effortFor('codex', 'gpt-4o')).toBeUndefined();
