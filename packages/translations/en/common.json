@@ -79,6 +79,15 @@
       "tree": "Tree",
       "raw": "Raw",
       "more": "Show {{count}} more"
+    },
+    "images": {
+      "open": "Open {{name}}",
+      "unavailable": "This image couldn't be loaded.",
+      "previous": "Previous image",
+      "next": "Next image",
+      "download": "Download",
+      "position": "{{position}} of {{total}}",
+      "pasted": "Pasted image"
     }
   }
 }

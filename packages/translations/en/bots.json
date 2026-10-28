@@ -61,7 +61,6 @@
     "images": {
       "attach": "Add images",
       "remove": "Remove {{name}}",
-      "open": "Open {{name}}",
       "pasted": "Pasted image",
       "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
       "tooLarge": "{{name}} is larger than 5 MB.",
@@ -70,8 +69,7 @@
       "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
       "uploading": "Wait for the images to finish adding.",
       "failedHeld": "Remove the image that couldn't be added.",
-      "uploadFailed": "{{name}} couldn't be added.",
-      "unavailable": "This image couldn't be loaded."
+      "uploadFailed": "{{name}} couldn't be added."
     },
     "turn": {
       "queued": "Waiting",

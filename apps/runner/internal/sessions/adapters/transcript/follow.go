@@ -59,7 +59,7 @@ func (r *Reader) Follow(ctx context.Context, agent domain.Agent, conversation st
 // follower is one conversation's read position.
 type follower struct {
 	find     func() string
-	entry    func(line []byte) ([]byte, bool)
+	entry    func(line []byte, max int) ([]byte, bool)
 	entryMax int
 	batchMax int
 	emit     func(app.ChatBatch) error
@@ -162,7 +162,7 @@ func (f *follower) check() {
 	}
 	f.partial = append([]byte(nil), data[end+1:]...)
 	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
-		entry, ok := f.entry(line)
+		entry, ok := f.entry(line, f.entryMax)
 		if !ok || len(entry) > f.entryMax {
 			continue
 		}

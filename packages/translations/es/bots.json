@@ -62,7 +62,6 @@
     "images": {
       "attach": "Añadir imágenes",
       "remove": "Quitar {{name}}",
-      "open": "Abrir {{name}}",
       "pasted": "Imagen pegada",
       "notSupported": "{{name}} no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
       "tooLarge": "{{name}} ocupa más de 5 MB.",
@@ -71,8 +70,7 @@
       "noVisionHeld": "{{model}} no puede leer imágenes. Quítalas o cambia de modelo para enviar este mensaje.",
       "uploading": "Espera a que terminen de añadirse las imágenes.",
       "failedHeld": "Quita la imagen que no se pudo añadir.",
-      "uploadFailed": "No se pudo añadir {{name}}.",
-      "unavailable": "No se pudo cargar esta imagen."
+      "uploadFailed": "No se pudo añadir {{name}}."
     },
     "turn": {
       "queued": "Esperando",

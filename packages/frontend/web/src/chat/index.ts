@@ -1,5 +1,7 @@
 export { ChatCode } from './components/chat-code';
+export { ChatImageGallery } from './components/chat-image-gallery';
 export { ChatQueuedRow } from './components/chat-queued-row';
 export { ChatToolOutput } from './components/chat-tool-output';
 export { ChatUsage } from './components/chat-usage';
+export type { ChatGalleryImage } from './lib/chat-images';
 export type { ChatUsageContext, ChatUsageLimit } from './lib/chat-usage';

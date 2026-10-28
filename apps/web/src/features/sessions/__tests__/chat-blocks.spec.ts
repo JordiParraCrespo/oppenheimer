@@ -45,6 +45,49 @@ const t = ((key: string, options?: { count?: number }) =>
   `${key.split('.').at(-1)}×${options?.count}`) as unknown as TFunction;
 
 describe('blocksOf', () => {
+  it('puts the images a call read right after it, and leaves out one the host only named', () => {
+    const chat = new SessionChat();
+    const jpeg = { source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } };
+    chat.apply({
+      reset: true,
+      entries: [
+        { type: 'user', uuid: 'u', message: { role: 'user', content: 'Look' } },
+        {
+          type: 'assistant',
+          uuid: 'a',
+          message: {
+            role: 'assistant',
+            content: [
+              tool('1', 'Read', { file_path: '/tmp/shot.png' }),
+              tool('2', 'Read', { file_path: '/tmp/big.png' }),
+              tool('3', 'Bash', { command: 'ls' }),
+            ],
+          },
+        },
+        {
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [
+              { type: 'tool_result', tool_use_id: '1', content: '[image]', images: [jpeg] },
+              { type: 'tool_result', tool_use_id: '2', content: '[image]', images: [{}] },
+              { type: 'tool_result', tool_use_id: '3', content: 'a.ts' },
+            ],
+          },
+        },
+      ].map((entry) => JSON.stringify(entry)),
+    });
+    const turn = chat.snapshot().turns[0];
+    if (!turn) throw new Error('no turn');
+    const blocks = blocksOf(turn);
+    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'images', 'tools']);
+    expect(blocks[1]).toMatchObject({
+      source: '/tmp/shot.png',
+      images: [{ src: 'data:image/jpeg;base64,AAAA' }],
+    });
+  });
+
   it('folds a run of calls into one group, keeps a reply and a plan apart, and leaves the task list to the composer', () => {
     const turn = turnOf([
       tool('1', 'Read', { file_path: 'a.ts' }),

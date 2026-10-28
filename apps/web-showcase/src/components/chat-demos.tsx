@@ -19,7 +19,13 @@ import {
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
 import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
-import { ChatImage, ChatImageRemove } from '@oppenheimer/design-system-web/chat-image';
+import {
+  ChatImage,
+  ChatImageButton,
+  ChatImageRemove,
+  ChatImageViewer,
+  ChatImageViewerImage,
+} from '@oppenheimer/design-system-web/chat-image';
 import {
   ComposerContextMeter,
   ComposerMenu,
@@ -301,6 +307,43 @@ const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db7f5"/><stop offset="1" stop-color="#3b5bdb"/></linearGradient></defs><rect width="160" height="160" fill="url(#g)"/></svg>',
 )}`;
 
+const VIEWER_IMAGES = ['build-log.png', 'trace.png'];
+
+/** Tiles that open whole in the viewer, ← and → through the others. */
+function ChatImageViewerDemo() {
+  const [open, setOpen] = React.useState<number | null>(null);
+  const name = VIEWER_IMAGES[open ?? 0] ?? '';
+  return (
+    <div className="flex gap-1.5">
+      {VIEWER_IMAGES.map((image, index) => (
+        <ChatImageButton key={image} label={`Open ${image}`} onClick={() => setOpen(index)}>
+          <ChatImage src={SAMPLE_IMAGE} alt={image} size="lg" />
+        </ChatImageButton>
+      ))}
+      <ChatImageViewer
+        open={open !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpen(null);
+        }}
+        index={open ?? 0}
+        count={VIEWER_IMAGES.length}
+        onIndexChange={setOpen}
+        name={name}
+        download={{ href: SAMPLE_IMAGE, filename: name }}
+        labels={{
+          close: 'Close',
+          previous: 'Previous image',
+          next: 'Next image',
+          download: 'Download',
+          position: (position, count) => `${position} of ${count}`,
+        }}
+      >
+        <ChatImageViewerImage src={SAMPLE_IMAGE} alt={name} />
+      </ChatImageViewer>
+    </div>
+  );
+}
+
 function ChatElementsBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-6">
@@ -333,6 +376,7 @@ function ChatElementsBody() {
         language="json"
         annotate={(value) => (typeof value === 'string' && value.endsWith('Z') ? new Date(value).toUTCString().slice(5, 22) : null)}
       />
+      <ChatImageViewerDemo />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <ChatComposer
         value="What is wrong in this run?"

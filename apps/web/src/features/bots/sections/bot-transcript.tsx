@@ -25,7 +25,7 @@ import {
   newestTurn,
   retryContent,
 } from '@/features/bots/lib/chat-turns';
-import { BotMessageImage } from '@/features/bots/sections/bot-message-image';
+import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
 import { BotHello } from './bot-hello';
 
 /**
@@ -96,8 +96,8 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                   <BotTurn
                     block={block}
                     live={live[block.turnId]}
-                    image={(attachment) => (
-                      <BotMessageImage key={attachment.id} botId={botId} attachment={attachment} />
+                    images={(attachments) => (
+                      <BotMessageImages botId={botId} attachments={attachments} />
                     )}
                     onRetry={
                       again !== null && block.turnId === newest

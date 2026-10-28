@@ -37,19 +37,19 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * trail copies the answer, offers Retry on the newest turn, and says its
  * model and the tokens it took (Stopped first when someone pressed Stop); a
  * failure says why, with Retry beside it. The images your message carried
- * sit above its bubble, each drawn by `image`, which reads it.
+ * sit above its bubble, drawn by `images`, which reads them.
  */
 export function BotTurn({
   block,
   live,
-  image,
+  images,
   onRetry,
   retrying = false,
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
-  /** One image a message of yours carried, as the section that reads it draws it. */
-  image: (attachment: BotAttachment) => ReactNode;
+  /** The images a message of yours carried, as the section that reads them draws them. */
+  images: (attachments: readonly BotAttachment[]) => ReactNode;
   /** Sends your last message again; only the newest turn, once it has ended. */
   onRetry?: () => void;
   retrying?: boolean;
@@ -87,9 +87,7 @@ export function BotTurn({
                 <CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />
               ) : undefined
             }
-            attachments={
-              message.attachments.length > 0 ? <>{message.attachments.map(image)}</> : undefined
-            }
+            attachments={message.attachments.length > 0 ? images(message.attachments) : undefined}
           >
             {message.content || null}
           </ChatUserMessage>

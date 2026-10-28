@@ -5,6 +5,7 @@ import type {
   ChatTodo,
   ChatToolCall,
   ChatToolKind,
+  ChatTranscriptImage,
   ChatTurn,
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
@@ -51,8 +52,10 @@ export interface ChangedFile {
  * How a turn of the chat view is drawn: its steps in blocks. A run of tool
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
  * commands"), the way Synara and Codex fold work; a plan is a card of its
- * own, and so are questions the agent asked, with what was answered; a turn that has settled after changing files ends on the card that
- * lists them, as Codex's does. The task list is not here: the composer keeps
+ * own, and so are questions the agent asked, with what was answered; the
+ * images a call's result carried (a screenshot the agent read) follow it as
+ * tiles that open; a turn that has settled after changing files ends on the
+ * card that lists them, as Codex's does. The task list is not here: the composer keeps
  * it (`latestTodos`), because each `TodoWrite` restates the whole list.
  */
 export type ChatBlock =
@@ -63,7 +66,9 @@ export type ChatBlock =
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
   | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
-  | { kind: 'changes'; id: string; files: ChangedFile[] };
+  | { kind: 'changes'; id: string; files: ChangedFile[] }
+  /** What the call read them from, a path or a URL, when it says. */
+  | { kind: 'images'; id: string; source: string | null; images: ChatTranscriptImage[] };
 
 export function blocksOf(turn: ChatTurn): ChatBlock[] {
   const blocks: ChatBlock[] = [];
@@ -71,11 +76,12 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
     const block = blockOf(step, turn.steps[index + 1]);
     if (!block) return;
     const previous = blocks.at(-1);
-    if (block.kind === 'tools' && previous?.kind === 'tools') {
-      previous.calls.push(...block.calls);
-      return;
+    if (block.kind === 'tools' && previous?.kind === 'tools') previous.calls.push(...block.calls);
+    else blocks.push(block);
+    const images = step.kind === 'tool' ? shownImages(step.call.images) : [];
+    if (step.kind === 'tool' && images.length > 0) {
+      blocks.push({ kind: 'images', id: `${step.id}:images`, source: step.call.target, images });
     }
-    blocks.push(block);
   });
   const files = turn.working ? [] : changedFiles(turn.steps);
   if (files.length > 0) blocks.push({ kind: 'changes', id: `${turn.id}:changes`, files });
@@ -107,6 +113,11 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       }
       return { kind: 'tools', id: step.id, calls: [step.call] };
   }
+}
+
+/** The images that came with a preview: one the host only named has nothing to show. */
+export function shownImages(images: readonly ChatTranscriptImage[] | null): ChatTranscriptImage[] {
+  return images?.filter((image) => image.src !== null) ?? [];
 }
 
 /**

@@ -268,7 +268,9 @@ over the text as soon as it is picked, and a message may be images alone.
   answering without it. Retry is not offered on a message with images: an
   image is sent once, so it is picked again.
 - **In the chat.** Your images sit above your bubble as 160px tiles that
-  open full size; the bytes come from `GET /bots/:id/attachments/:id/content`,
+  open whole in a viewer over the chat (← and → through the message's
+  others, Esc to close, a download button; 2026-10-28, before that a new
+  tab); the bytes come from `GET /bots/:id/attachments/:id/content`,
   which serves them only to whoever may read the chat. They stay in the
   history with the message.
 - **Storage and retention.** The files are in the deployment's storage

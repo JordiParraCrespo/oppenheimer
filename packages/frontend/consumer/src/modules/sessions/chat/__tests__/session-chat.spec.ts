@@ -67,6 +67,45 @@ describe('toTurns', () => {
     expect(second?.working).toBe(true);
   });
 
+  it("shows the previews the host sent of a prompt's images and a result's, as data URLs", () => {
+    const jpeg = { type: 'base64', media_type: 'image/jpeg', data: '/9j/4AAQSkZJRg==' };
+    const turns = toTurns([
+      user('u1', [
+        { type: 'text', text: 'Match this' },
+        { type: 'image', source: jpeg },
+        // Only named: no room on the link, or a host from before previews.
+        { type: 'image' },
+        // Never drawn: a type an img could run, or bytes that are not base64.
+        { type: 'image', source: { ...jpeg, media_type: 'image/svg+xml' } },
+        { type: 'image', source: { ...jpeg, data: 'not base64"><script>' } },
+      ]),
+      assistant('a1', [
+        { type: 'tool_use', id: 't1', name: 'Read', input: { file_path: '/tmp/shot.png' } },
+      ]),
+      user('r1', [
+        {
+          type: 'tool_result',
+          tool_use_id: 't1',
+          content: '[image]',
+          images: [{ source: jpeg }, {}],
+        },
+      ]),
+    ]);
+
+    expect(turns[0]?.prompt?.files).toBe(4);
+    expect(turns[0]?.prompt?.images).toEqual([
+      { src: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' },
+      { src: null },
+      { src: null },
+      { src: null },
+    ]);
+    const read = turns[0]?.steps[0];
+    expect(read?.kind === 'tool' && read.call.images).toEqual([
+      { src: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' },
+      { src: null },
+    ]);
+  });
+
   it('keeps a call running until its result lands, and the turn with it', () => {
     const turns = toTurns([
       user('u1', 'Read it'),
