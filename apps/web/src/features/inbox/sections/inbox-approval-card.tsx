@@ -38,6 +38,8 @@ export function InboxApprovalCard({
   const decide = useDecideBotApproval();
   const { approval } = item;
   const call = formatApprovalInput(approval.input);
+  // The decision whose request is in flight: its button says so, the other waits.
+  const inFlight = decide.isPending ? (decide.variables?.decision ?? null) : null;
   const answer = (decision: 'approve' | 'deny') =>
     decide.mutate(
       { id: approval.botId, approvalId: approval.id, decision },
@@ -83,17 +85,17 @@ export function InboxApprovalCard({
       >
         <Button
           variant="secondary"
-          pending={decide.isPending && decide.variables?.decision === 'deny'}
+          pending={inFlight === 'deny'}
           pendingLabel={t('inbox.approval.denying')}
-          disabled={decide.isPending}
+          disabled={inFlight !== null}
           onClick={() => answer('deny')}
         >
           {t('inbox.approval.deny')}
         </Button>
         <Button
-          pending={decide.isPending && decide.variables?.decision === 'approve'}
+          pending={inFlight === 'approve'}
           pendingLabel={t('inbox.approval.approving')}
-          disabled={decide.isPending}
+          disabled={inFlight !== null}
           onClick={() => answer('approve')}
         >
           {t('inbox.approval.approve')}
