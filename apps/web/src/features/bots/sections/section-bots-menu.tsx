@@ -23,9 +23,10 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
  * New bot, then every bot with a check for whether this section lists it, then
  * the way to Employees, where bots are grouped, ordered and deleted. A check
  * flips the bot's placement at once and the menu stays open for the next.
- * The heading owns the open state (the empty line opens it too) and the two
+ * The heading owns the open state (the empty line opens it too) and the
  * writes, so their failures show under the heading once the menu is closed.
- * `saving` is the placement in flight: the checks hold still and show it.
+ * `saving` is each placement in flight, by bot: that bot's check shows it and
+ * holds still until it lands, and the others stay clickable.
  */
 export function SectionBotsMenu({
   section,
@@ -41,7 +42,7 @@ export function SectionBotsMenu({
   onOpenChange: (open: boolean) => void;
   creating: boolean;
   onCreate: () => void;
-  saving: { id: string; sections: readonly BotSection[] } | undefined;
+  saving: ReadonlyMap<string, readonly BotSection[]>;
   onPlace: (bot: BotEntity, shown: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -79,8 +80,8 @@ export function SectionBotsMenu({
             bots.data.map((bot) => (
               <DropdownMenuCheckboxItem
                 key={bot.id}
-                disabled={saving !== undefined}
-                checked={(saving?.id === bot.id ? saving.sections : bot.sections).includes(section)}
+                disabled={saving.has(bot.id)}
+                checked={(saving.get(bot.id) ?? bot.sections).includes(section)}
                 onCheckedChange={(shown) => onPlace(bot, shown)}
               >
                 <BotAvatar option={bot} size={18} color={bot.avatarColor} />

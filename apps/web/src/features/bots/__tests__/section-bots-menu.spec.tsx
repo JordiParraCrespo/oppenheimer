@@ -64,7 +64,7 @@ function renderMenu(props: Partial<Parameters<typeof SectionBotsMenu>[0]> = {}) 
       onOpenChange={() => {}}
       creating={false}
       onCreate={onCreate}
-      saving={undefined}
+      saving={new Map()}
       onPlace={onPlace}
       {...props}
     />,
@@ -88,12 +88,14 @@ describe('SectionBotsMenu', () => {
     expect(onPlace).toHaveBeenCalledWith(planner, true);
   });
 
-  it('shows the placement in flight and holds the checks still until it lands', async () => {
-    read.bots = [bot('b2', 'Planning Bot', ['plan'])];
-    renderMenu({ saving: { id: 'b2', sections: ['plan', 'pulls'] } });
-    const item = await screen.findByRole('menuitemcheckbox', { name: /Planning Bot/ });
-    expect(item.getAttribute('aria-checked')).toBe('true');
-    expect(item.getAttribute('aria-disabled')).toBe('true');
+  it('holds only the bot whose placement is in flight, showing what was asked', async () => {
+    read.bots = [bot('b1', 'Release Bot', ['pulls']), bot('b2', 'Planning Bot', ['plan'])];
+    renderMenu({ saving: new Map([['b2', ['plan', 'pulls']]]) });
+    const saving = await screen.findByRole('menuitemcheckbox', { name: /Planning Bot/ });
+    const other = screen.getByRole('menuitemcheckbox', { name: /Release Bot/ });
+    expect(saving.getAttribute('aria-checked')).toBe('true');
+    expect(saving.getAttribute('aria-disabled')).toBe('true');
+    expect(other.getAttribute('aria-disabled')).not.toBe('true');
   });
 
   it('still makes a new bot', async () => {
