@@ -81,6 +81,15 @@
         "raw": "Texto",
         "more": "Mostrar {{count}} más"
       }
+    },
+    "search": {
+      "projects": "Buscar proyectos",
+      "milestones": "Buscar hitos",
+      "automations": "Buscar automatizaciones",
+      "repositories": "Buscar repositorios",
+      "hosts": "Buscar hosts",
+      "groups": "Buscar grupos",
+      "noMatch": "Nada coincide con «{{query}}»."
     }
   },
   "validation": {

@@ -292,7 +292,7 @@ export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
 export type { FacetOption } from './components/facet-select';
-export { FacetSelect } from './components/facet-select';
+export { FacetSelect, SearchableFacetSelect } from './components/facet-select';
 export {
   Field,
   FieldAction,
@@ -448,6 +448,8 @@ export {
   RunsListFoot,
   RunsListHead,
 } from './components/runs-list';
+export type { SearchListOption } from './components/search-list';
+export { SearchList } from './components/search-list';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';

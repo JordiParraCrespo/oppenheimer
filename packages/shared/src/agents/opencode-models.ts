@@ -1,10 +1,10 @@
 import type { CodingAgentModel } from './catalog.js';
-import { CLAUDE_LEVELS, CODEX_LEVELS, levels } from './effort-levels.js';
+import { CLAUDE_LEVELS, CODEX_LEVELS, GROK_LEVELS, levels } from './effort-levels.js';
 
-// OpenCode's variants for xAI's and Google's reasoning models, off models.dev;
-// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS,
-// and MiniMax M3.1 Flash offers Claude's five, so it reuses CLAUDE_LEVELS.
-const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
+// OpenCode's variants for Google's reasoning models, off models.dev; its
+// xAI variants are Grok's own menu (GROK_LEVELS), OpenAI's are Codex's own
+// levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS, and MiniMax M3.1
+// Flash offers Claude's five, so it reuses CLAUDE_LEVELS.
 const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
 // The effort values models.dev lists for GLM 5.3, DeepSeek V4 and Kimi K3.1
 // alike, which OpenCode offers as its variants; Qwen 3.8 names its own three.
@@ -109,12 +109,12 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
   Object.freeze({
     id: 'xai/grok-4.7',
     label: 'Grok 4.7',
-    effort: levels(OPENCODE_XAI_LEVELS, 'high'),
+    effort: levels(GROK_LEVELS, 'high'),
   }),
   Object.freeze({
     id: 'xai/grok-4.6',
     label: 'Grok 4.6',
-    effort: levels(OPENCODE_XAI_LEVELS, 'high'),
+    effort: levels(GROK_LEVELS, 'high'),
   }),
   Object.freeze({
     id: 'google/gemini-4-argon',

@@ -192,7 +192,7 @@ export const TOC: TocGroup[] = [
       { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
       { id: 'calendaraccounts', label: 'CalendarAccountList', icon: CalendarDaysIcon, components: [] },
       { id: 'milestones', label: 'MilestoneTimeline', icon: MilestoneIcon, components: ['milestone-timeline'] },
-      { id: 'facetselect', label: 'FacetSelect', icon: ListFilterIcon, components: ['facet-select'] },
+      { id: 'facetselect', label: 'FacetSelect', icon: ListFilterIcon, components: ['facet-select', 'search-list'] },
       { id: 'daterange', label: 'DateRangePicker', icon: CalendarRangeIcon, components: ['date-range-picker'] },
       { id: 'areachart', label: 'AreaChart', icon: ChartAreaIcon, components: [] },
       { id: 'plandialogs', label: 'Task & session dialogs', icon: AppWindowIcon, components: [] },

@@ -80,5 +80,14 @@
       "raw": "Raw",
       "more": "Show {{count}} more"
     }
+  },
+  "search": {
+    "projects": "Search projects",
+    "milestones": "Search milestones",
+    "automations": "Search automations",
+    "repositories": "Search repositories",
+    "hosts": "Search hosts",
+    "groups": "Search groups",
+    "noMatch": "Nothing matches “{{query}}”."
   }
 }
