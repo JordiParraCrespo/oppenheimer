@@ -2,13 +2,14 @@ import { type DragItem, sortableProjectId } from '@oppenheimer/design-system-web
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSidebarOrder } from '../hooks/use-sidebar-order';
+import { PINNED_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { storedSidebarOrder } from '../lib/sidebar-order';
 
 /**
  * What a drop keeps: a reorder inside a project is remembered at once, a
  * drop in another project moves the session and is remembered only once
  * the move lands, and a move that fails leaves the stored order as it was.
+ * Pinned is a group too: a drop on it pins, a drag out of it unpins.
  */
 
 type MoveCallbacks = {
@@ -33,13 +34,21 @@ const SESSIONS = [session('s1', 'a'), session('s2', 'a'), session('s3', 'b')];
 const item = (id: string, data: DragItem['data'] = { type: 'session' }): DragItem => ({ id, data });
 const group = (id: string) => item(id, { group: true });
 
-function setup(projects: ProjectEntity[] = PROJECTS, listed?: (projectId: string) => boolean) {
+function setup(
+  projects: ProjectEntity[] = PROJECTS,
+  listed?: (projectId: string) => boolean,
+  pinned: SessionEntity[] = [],
+) {
   const onWrite = vi.fn();
+  const pins = { setPinned: vi.fn(), placePins: vi.fn() };
+  const pinnedIds = new Set(pinned.map((p) => p.id));
   const hook = renderHook(() =>
     useSidebarOrder({
       projects,
       listed,
-      sessions: SESSIONS,
+      sessions: SESSIONS.filter((s) => !pinnedIds.has(s.id)),
+      pinned,
+      pins,
       custom: true,
       onReorder: () => {},
       onWrite,
@@ -54,7 +63,7 @@ function setup(projects: ProjectEntity[] = PROJECTS, listed?: (projectId: string
     });
   const drawn = () =>
     hook.result.current.groups.map((g) => [g.project?.id, g.sessions.map((s) => s.id)]);
-  return { drag, drawn, onWrite };
+  return { drag, drawn, onWrite, pins };
 }
 
 beforeEach(() => mutate.mockReset());
@@ -120,5 +129,33 @@ describe('useSidebarOrder', () => {
     drag(sortableProjectId('b'), item(sortableProjectId('a'), { type: 'project' }));
     expect(drawn().map(([id]) => id)).toEqual(['b', 'a']);
     expect(storedSidebarOrder().projects).toEqual(['b', 'a', 'hidden']);
+  });
+
+  it('pins a session dropped on Pinned, where it lands', () => {
+    const { drag, pins } = setup(PROJECTS, undefined, [session('s3', 'b')]);
+    drag('s1', group(PINNED_GROUP));
+    expect(pins.placePins).toHaveBeenCalledWith(['s3', 's1']);
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('pins a session dropped on an empty Pinned', () => {
+    const { drag, pins } = setup();
+    drag('s2', group(PINNED_GROUP));
+    expect(pins.placePins).toHaveBeenCalledWith(['s2']);
+  });
+
+  it('unpins a pinned session dragged back into its project, and moves nothing', () => {
+    const { drag, pins } = setup(PROJECTS, undefined, [session('s1', 'a')]);
+    drag('s1', group('a'));
+    expect(pins.setPinned).toHaveBeenCalledWith('s1', false);
+    expect(mutate).not.toHaveBeenCalled();
+    expect(storedSidebarOrder().sessions).toEqual(['s2', 's1', 's3']);
+  });
+
+  it('unpins and moves a pinned session dragged into another project', () => {
+    const { drag, pins } = setup(PROJECTS, undefined, [session('s1', 'a')]);
+    drag('s1', group('b'));
+    expect(pins.setPinned).toHaveBeenCalledWith('s1', false);
+    expect(mutate).toHaveBeenCalledWith({ id: 's1', projectId: 'b' }, expect.anything());
   });
 });

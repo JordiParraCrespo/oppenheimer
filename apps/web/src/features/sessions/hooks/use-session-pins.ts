@@ -1,10 +1,16 @@
 import { createContext, useContext, useMemo } from 'react';
 import { SESSION_PINS_KEY, withPin } from '../lib/session-pins';
+import { mergeOrder } from '../lib/sidebar-order';
 import { useStoredList } from './use-stored-list';
 
-type SessionPins = {
+export type SessionPins = {
   pins: readonly string[];
   setPinned: (id: string, pinned: boolean) => void;
+  /**
+   * The pins a drop on Pinned left, in the order it left them; a pin the
+   * drop did not see (filtered out) keeps its place.
+   */
+  placePins: (dropped: readonly string[]) => void;
 };
 
 /**
@@ -12,7 +18,11 @@ type SessionPins = {
  * row is drawn in, and a row reads only whether it is pinned, so no group in
  * between carries the pin. The value changes only when a pin does.
  */
-export const SessionPinsContext = createContext<SessionPins>({ pins: [], setPinned: () => {} });
+export const SessionPinsContext = createContext<SessionPins>({
+  pins: [],
+  setPinned: () => {},
+  placePins: () => {},
+});
 
 /**
  * The sessions pinned to the top of the sidebar, and the pin that changes
@@ -27,6 +37,7 @@ export function useSessionPins(): SessionPins {
       pins,
       setPinned: (id: string, pinned: boolean) =>
         setPins((current) => withPin(current, id, pinned)),
+      placePins: (dropped: readonly string[]) => setPins((current) => mergeOrder(dropped, current)),
     }),
     [pins, setPins],
   );
