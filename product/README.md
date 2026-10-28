@@ -789,3 +789,13 @@ earlier note:
   menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
   default everywhere (`versions/mvp/05-screens.md`,
   `versions/mvp/25-bots.md`).
+- `versions/mvp/24-session-places.md` §2 put a workspace's stores and
+  sessions in `repos/` and `sessions/`, and kept Spotlight out with
+  `.metadata_never_index` at the work folder's root. The MVP decision log
+  had already measured that marker as not working (2026-10-01), and the
+  hidden `.worktrees/` that did work was lost with the move to the work
+  folder: on a Mac host every session's checkout, `node_modules` included,
+  was indexed again. On 2026-10-28 the two directories became
+  `repos.noindex/` and `sessions.noindex/`, the suffix Spotlight skips (as
+  Xcode's DerivedData and Orca do), layout version 3, with no migration
+  (24 §2).

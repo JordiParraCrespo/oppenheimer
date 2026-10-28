@@ -25,7 +25,7 @@ const (
 
 // LayoutVersion is the work folder's layout, written to `layout.json` at its
 // root. A runner on this layout ignores whatever an older one left.
-const LayoutVersion = 2
+const LayoutVersion = 3
 
 // LocalID names the account and the workspace levels of a session made from
 // the host's own CLI, which no control plane has given an id.
@@ -108,14 +108,25 @@ func ValidateName(name string) error {
 // Layout is the work folder: where stores and sessions live on a host, and
 // the only place that decides it (24 §2).
 //
-//	<root>/layout.json                                   {"version": 2}
+//	<root>/layout.json                                   {"version": 3}
 //	<root>/<account>/.oppenheimer/meta.json              {"kind":"account"}
 //	<root>/<account>/<workspace>/.oppenheimer/meta.json  {"kind":"workspace"}
-//	<root>/<account>/<workspace>/repos/<owner>--<repo>.git        a bare store
-//	<root>/<account>/<workspace>/repos/.spares/<owner>--<repo>    the spare worktree
-//	<root>/<account>/<workspace>/sessions/<slug>/.oppenheimer/meta.json
-//	<root>/<account>/<workspace>/sessions/<slug>/<directory>      a checkout
+//	<root>/<account>/<workspace>/repos.noindex/<owner>--<repo>.git        a bare store
+//	<root>/<account>/<workspace>/repos.noindex/.spares/<owner>--<repo>    the spare worktree
+//	<root>/<account>/<workspace>/sessions.noindex/<slug>/.oppenheimer/meta.json
+//	<root>/<account>/<workspace>/sessions.noindex/<slug>/<directory>      a checkout
+//
+// The two directories that hold checkouts end in `.noindex`, the suffix
+// Spotlight skips along with everything below it (Xcode's DerivedData uses it
+// the same way). A worktree is a whole checkout, `node_modules` included,
+// rewritten whenever an agent installs something; indexed, `mdworker_shared`
+// outspends the agents on a macOS host. `.metadata_never_index` at the root
+// does not keep Spotlight out (MVP decision log, 2026-10-01), so the name has
+// to. Elsewhere the suffix is only a name.
 type Layout struct{ Root string }
+
+// NoIndex is the suffix Spotlight skips a directory by.
+const NoIndex = ".noindex"
 
 // Account is an account's folder.
 func (l Layout) Account(account string) string {
@@ -129,7 +140,7 @@ func (l Layout) Workspace(t Tenant) string {
 
 // Repos is the directory a workspace's stores are in.
 func (l Layout) Repos(t Tenant) string {
-	return filepath.Join(l.Workspace(t), "repos")
+	return filepath.Join(l.Workspace(t), "repos"+NoIndex)
 }
 
 // Store is where a repository's bare store is made: `<owner>--<repo>.git`. A
@@ -147,7 +158,7 @@ func (l Layout) Spare(store string) string {
 
 // Sessions is the directory a workspace's sessions are in.
 func (l Layout) Sessions(t Tenant) string {
-	return filepath.Join(l.Workspace(t), "sessions")
+	return filepath.Join(l.Workspace(t), "sessions"+NoIndex)
 }
 
 // Session is one session's folder.
