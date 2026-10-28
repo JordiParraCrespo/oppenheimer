@@ -1,4 +1,4 @@
-import type { PullRequestLane, PullRequestScope } from '@oppenheimer/frontend-consumer';
+import type { PullRequestLane, PullRequestQueueName } from '@oppenheimer/frontend-consumer';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import type { QueueChecks, QueueWait } from '../lib/queue-search';
 
@@ -7,11 +7,11 @@ export function useQueueSearch() {
   const search = useSearch({ from: '/_authenticated/pulls/' });
   const navigate = useNavigate({ from: '/pulls/' });
   return {
-    scope: search.scope ?? ('mine' as PullRequestScope),
+    scope: search.scope ?? ('all' as PullRequestQueueName),
     filters: { repo: search.repo, lane: search.lane, checks: search.checks, wait: search.wait },
-    setScope: (scope: PullRequestScope) =>
+    setScope: (scope: PullRequestQueueName) =>
       navigate({
-        search: (prev) => ({ ...prev, scope: scope === 'mine' ? undefined : scope }),
+        search: (prev) => ({ ...prev, scope: scope === 'all' ? undefined : scope }),
       }),
     setRepo: (repo: string | undefined) => navigate({ search: (prev) => ({ ...prev, repo }) }),
     setLane: (lane: PullRequestLane | undefined) =>

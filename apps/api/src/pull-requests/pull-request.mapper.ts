@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   PullRequestAnalyticsRange,
   PullRequestLane,
-  PullRequestScope,
+  PullRequestQueueName,
 } from '@oppenheimer/shared';
 import type {
   ClosedPullRequestSnapshot,
@@ -96,16 +96,19 @@ export class PullRequestMapper {
 
   toQueue(
     rows: PullRequestRowDto[],
-    scope: PullRequestScope,
+    scope: PullRequestQueueName,
     viewerLogin: string | null,
     reads: RepositoryPulls<PullRequestSnapshot>[],
   ): PullRequestQueueResponseDto {
-    const items = rows.filter((row) => row.scope === scope).sort(queueOrder);
+    const items = (scope === 'all' ? [...rows] : rows.filter((row) => row.scope === scope)).sort(
+      queueOrder,
+    );
     const count = (predicate: (row: PullRequestRowDto) => boolean) =>
       items.filter(predicate).length;
     return {
       items,
       scopes: {
+        all: rows.length,
         mine: rows.filter((row) => row.scope === 'mine').length,
         requested: rows.filter((row) => row.scope === 'requested').length,
         watching: rows.filter((row) => row.scope === 'watching').length,

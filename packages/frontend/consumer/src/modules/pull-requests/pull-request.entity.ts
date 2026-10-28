@@ -2,6 +2,7 @@ import type {
   MergeMethod,
   PullRequestAnalyticsRange,
   PullRequestLane,
+  PullRequestQueueName,
   PullRequestScope,
   ReviewVerdict,
 } from '@oppenheimer/shared/schemas/pull-request';
@@ -10,6 +11,7 @@ export type {
   MergeMethod,
   PullRequestAnalyticsRange,
   PullRequestLane,
+  PullRequestQueueName,
   PullRequestScope,
   ReviewVerdict,
 };
@@ -122,8 +124,9 @@ export interface PullRequestQueue {
   unreadable: UnreadableRepository[];
   /** Some rows still have parts nobody has read; the next read fills more (#247). */
   filling: boolean;
-  scopes: Record<PullRequestScope, number>;
-  /** Within the scope asked for. */
+  /** Every open pull request (`all`) and each scope's share of them. */
+  scopes: Record<PullRequestQueueName, number>;
+  /** Within the queue asked for. */
   lanes: Record<PullRequestLane, number>;
   readyToMerge: number;
   withConflicts: number;

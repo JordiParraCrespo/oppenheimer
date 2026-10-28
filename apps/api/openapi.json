@@ -14651,16 +14651,16 @@
     },
     "/api/v1/pulls": {
       "get": {
-        "description": "Open pull requests read live through the workspace’s installations: yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
+        "description": "Open pull requests read live through the workspace’s installations: all of them (`all`), or yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
         "operationId": "findPullRequests",
         "parameters": [
           {
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Whose queue; default `mine`",
+            "description": "Whose queue, or `all`; default `all`",
             "schema": {
-              "enum": ["mine", "requested", "watching"],
+              "enum": ["all", "mine", "requested", "watching"],
               "type": "string"
             }
           }
@@ -27187,6 +27187,10 @@
       "PullRequestScopeCountsDto": {
         "type": "object",
         "properties": {
+          "all": {
+            "type": "number",
+            "description": "Every open pull request, whatever its scope."
+          },
           "mine": {
             "type": "number"
           },
@@ -27197,7 +27201,7 @@
             "type": "number"
           }
         },
-        "required": ["mine", "requested", "watching"]
+        "required": ["all", "mine", "requested", "watching"]
       },
       "PullRequestLaneCountsDto": {
         "type": "object",

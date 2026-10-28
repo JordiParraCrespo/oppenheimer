@@ -27,7 +27,7 @@ import type {
   PullRequestDetailEntity,
   PullRequestFile,
   PullRequestQueue,
-  PullRequestScope,
+  PullRequestQueueName,
   ReviewInput,
   ReviewOutcome,
   ReviewSession,
@@ -54,7 +54,7 @@ import { watchSessionStart } from './sessions.queries';
 export const pullRequestsKeys = {
   all: ['pullRequests'] as const,
   queues: () => [...pullRequestsKeys.all, 'queue'] as const,
-  queue: (scope: PullRequestScope) => [...pullRequestsKeys.queues(), scope] as const,
+  queue: (scope: PullRequestQueueName) => [...pullRequestsKeys.queues(), scope] as const,
   details: () => [...pullRequestsKeys.all, 'detail'] as const,
   detail: (address: PullRequestAddress | undefined) =>
     [
@@ -87,7 +87,7 @@ export const pullRequestsKeys = {
  * table reads its scope through `useDeferredValue`, so the rows on screen stay
  * until the next scope has answered.
  */
-export function useSuspensePullRequestQueue(scope: PullRequestScope) {
+export function useSuspensePullRequestQueue(scope: PullRequestQueueName) {
   return useSuspenseQuery<PullRequestQueue, Error>(usePullRequestQueueQuery(scope));
 }
 
@@ -95,7 +95,7 @@ export function useSuspensePullRequestQueue(scope: PullRequestScope) {
  * One scope's queue read, polling while the answer is still filling: the key,
  * the fetch and the poll, for every hook over it (the Inbox reads two scopes).
  */
-export function usePullRequestQueueQuery(scope: PullRequestScope) {
+export function usePullRequestQueueQuery(scope: PullRequestQueueName) {
   const app = useConsumerApp();
   return {
     queryKey: pullRequestsKeys.queue(scope),
@@ -109,7 +109,7 @@ export function usePullRequestQueueQuery(scope: PullRequestScope) {
 }
 
 export function usePullRequestQueue<TData = PullRequestQueue>(
-  scope: PullRequestScope,
+  scope: PullRequestQueueName,
   options?: Omit<UseQueryOptions<PullRequestQueue, Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();

@@ -2860,6 +2860,10 @@ export type PullRequestRowDto = {
 };
 
 export type PullRequestScopeCountsDto = {
+    /**
+     * Every open pull request, whatever its scope.
+     */
+    all: number;
     mine: number;
     requested: number;
     watching: number;
@@ -10998,9 +11002,9 @@ export type FindPullRequestsData = {
     path?: never;
     query?: {
         /**
-         * Whose queue; default `mine`
+         * Whose queue, or `all`; default `all`
          */
-        scope?: 'mine' | 'requested' | 'watching';
+        scope?: 'all' | 'mine' | 'requested' | 'watching';
     };
     url: '/api/v1/pulls';
 };

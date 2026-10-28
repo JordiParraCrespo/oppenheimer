@@ -1935,14 +1935,16 @@
       "reviewNext": "Revisar la siguiente",
       "scopesLabel": "De quién son las pull requests",
       "scopes": {
+        "all": "Todas",
         "mine": "Mías",
         "requested": "Revisiones pedidas",
         "watching": "Seguidas"
       },
       "scopeHint": {
+        "all": "Todas las pull requests abiertas que sigues.",
         "mine": "Abiertas por ti o por tus sesiones. Mira qué frena cada una y fusiónala.",
         "requested": "Pull requests en las que alguien pidió tu revisión.",
-        "watching": "Pull requests abiertas en repositorios que sigues, donde nadie pidió tu revisión."
+        "watching": "El resto: de otras personas, sin revisión pedida a ti."
       },
       "search": "Busca por título, repositorio, #número o autor",
       "clearSearch": "Borrar la búsqueda",
