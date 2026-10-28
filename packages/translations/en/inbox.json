@@ -81,7 +81,9 @@
     "short": "Approve {{bot}} · {{tool}}",
     "title": "{{bot}} wants to run {{tool}}",
     "approve": "Approve",
+    "approving": "Approving…",
     "deny": "Deny",
+    "denying": "Denying…",
     "openChat": "Open chat"
   },
   "pull": {
@@ -111,6 +113,7 @@
     "exit": "Exit {{code}}",
     "deletedHint": "Its automation was deleted, so it cannot run again.",
     "again": "Run again",
+    "starting": "Starting…",
     "open": "Open run"
   },
   "card": {

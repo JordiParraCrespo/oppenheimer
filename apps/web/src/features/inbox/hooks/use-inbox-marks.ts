@@ -20,37 +20,39 @@ function tomorrowMorning(now: Date): Date {
  */
 export function useInboxMarks() {
   const { t } = useTranslation();
-  const put = usePutInboxMark();
-  const remove = useDeleteInboxMark();
+  // The stable parts only: the mutation result itself is a new object on
+  // every render, and the rows' handlers are built from these.
+  const { mutate: put, error: putError, reset: resetPut } = usePutInboxMark();
+  const { mutate: clear, error: clearError, reset: resetClear } = useDeleteInboxMark();
 
   return {
-    error: put.error ?? remove.error,
+    error: putError ?? clearError,
     dismiss: () => {
-      put.reset();
-      remove.reset();
+      resetPut();
+      resetClear();
     },
     done(item: InboxItem, short: string) {
-      put.mutate({ itemKey: item.key, mark: 'done' });
+      put({ itemKey: item.key, mark: 'done' });
       inboxVisit.done(item.key);
       inboxVisit.log(t('inbox.log.done', { title: short }));
     },
     toggleLow(item: InboxItem) {
-      if (item.low) remove.mutate(item.key);
-      else put.mutate({ itemKey: item.key, mark: 'low' });
+      if (item.low) clear(item.key);
+      else put({ itemKey: item.key, mark: 'low' });
     },
     snoozeHour(item: InboxItem) {
-      put.mutate({ itemKey: item.key, mark: 'snoozed', until: new Date(Date.now() + HOUR) });
+      put({ itemKey: item.key, mark: 'snoozed', until: new Date(Date.now() + HOUR) });
     },
     snoozeTomorrow(item: InboxItem) {
-      put.mutate({ itemKey: item.key, mark: 'snoozed', until: tomorrowMorning(new Date()) });
+      put({ itemKey: item.key, mark: 'snoozed', until: tomorrowMorning(new Date()) });
     },
     /** Hides it for good, with no log line; a done item leaves Show done too (Decided 4). */
     remove(item: InboxItem) {
-      put.mutate({ itemKey: item.key, mark: 'deleted' });
+      put({ itemKey: item.key, mark: 'deleted' });
       inboxVisit.forget(item.key);
     },
     bringBack(item: InboxItem) {
-      remove.mutate(item.key);
+      clear(item.key);
     },
   };
 }
