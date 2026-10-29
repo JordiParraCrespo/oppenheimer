@@ -1,3 +1,4 @@
+import { mailPlanSchema } from '@oppenheimer/shared';
 import type { GmailCallResolver } from '../application/gmail-call.resolver';
 import { MailComposeResolver } from '../application/mail-compose.resolver';
 import { GmailConnectionEntity } from '../domain/gmail-connection.entity';
@@ -210,7 +211,7 @@ describe('MailComposeResolver', () => {
     });
   });
 
-  it('plans a draft with every recipient it carries, Bcc included, and holds it to the ten-recipient limit', async () => {
+  it('plans a draft with every recipient it carries, Bcc included, and holds it to the ten-recipient limit, a long body cut for its card', async () => {
     const { compose, provider } = setup();
     const draft = (to: string, bcc: string) => ({
       id: 'd1',
@@ -226,6 +227,15 @@ describe('MailComposeResolver', () => {
       bcc: ['audit@acme.test'],
       draftMessageId: 'dm1',
     });
+
+    const long = {
+      id: 'd1',
+      message: { ...draft('bo@client.test', '').message, body: 'x'.repeat(150_000) },
+    };
+    withDraft(long);
+    const plan = await compose.planDraft(CONNECTION, 'd1');
+    expect(mailPlanSchema.safeParse(plan).success).toBe(true);
+    expect(plan.body).toContain('it is sent whole');
 
     const many = Array.from({ length: 6 }, (_, i) => `p${i}@client.test`).join(', ');
     withDraft(draft(many, many));

@@ -110,7 +110,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
         important: z.boolean().optional().describe('true marks important, false not important.'),
       }),
       normalize: (call, context) => {
-        changeOf(markChange(call));
+        assertChanges(markChange(call));
         return this.frozen(call, context);
       },
       summarize: async (call, context) =>
@@ -306,13 +306,18 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
   }
 }
 
-/** A label change, refused when it changes nothing. */
-function changeOf<Change extends MailLabelChange>(change: Change): Change {
+/** A label change that changes nothing is refused, before a card or a call. */
+function assertChanges(change: MailLabelChange): void {
   if (change.add.length + change.remove.length === 0) {
     throw new BotToolRefusal(
       'Say what to change: which marks, or which labels to put on or take off.',
     );
   }
+}
+
+/** The change, once {@link assertChanges} holds. */
+function changeOf<Change extends MailLabelChange>(change: Change): Change {
+  assertChanges(change);
   return change;
 }
 
