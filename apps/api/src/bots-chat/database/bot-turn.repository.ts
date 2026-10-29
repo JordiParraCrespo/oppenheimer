@@ -23,6 +23,8 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
 /** The job that queues an ask's answer on the bot that asked; its payload is `{ turnId }`, the asked turn. */
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
+/** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
+export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
 
 /** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
 const LANE_ORDER = `CASE "lane" WHEN 'owner' THEN 0 WHEN 'bots' THEN 1 ELSE 2 END`;
@@ -208,6 +210,23 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findQueuedBySourcePrefix(
+    organizationId: string,
+    botId: string,
+    prefix: string,
+  ): Promise<BotTurnEntity[]> {
+    // IDX_bot_turn_bot narrows to the bot; its queued turns are a handful.
+    const records = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere(`turn.status = 'queued' AND starts_with(turn."sourceKey", :prefix)`, { prefix })
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   async findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null> {
     // IDX_bot_turn_bot, read backwards from the newest turn.
     const record = await this.repository
@@ -290,6 +309,22 @@ export class BotTurnRepository
           jobName: DELIVER_BOT_ANSWER_JOB,
           payload: { turnId: turn.id },
           reason: `bot ${turn.botId}: turn ${turn.id} answers turn ${turn.askedByTurnId}`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
+      // UQ_bot_goal_bot. Read in the end's transaction, so a goal set in this
+      // turn is seen, and the job is owed exactly when this end commits.
+      const goals: unknown[] = await manager.query(
+        `SELECT 1 FROM bot_goal WHERE "organizationId" = $1 AND "botId" = $2`,
+        [turn.organizationId, turn.botId],
+      );
+      if (goals.length > 0) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: CONTINUE_BOT_GOAL_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
           aggregateId: turn.id,
           correlationId,
         });

@@ -11,6 +11,7 @@ import { BotApprovedCallResolver } from './application/bot-approved-call.resolve
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
+import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotMailToolsFactory } from './application/bot-mail-tools.factory';
@@ -41,6 +42,7 @@ import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory'
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
+import { BotGoalMapper } from './bot-goal.mapper';
 import { BotMessageMapper } from './bot-message.mapper';
 import { BotPermissionRuleMapper } from './bot-permission-rule.mapper';
 import { BotSubscriptionMapper } from './bot-subscription.mapper';
@@ -53,6 +55,7 @@ import {
   BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
+  BOT_GOAL_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
   BOT_PERMISSION_RULE_REPOSITORY,
   BOT_STREAM,
@@ -66,6 +69,9 @@ import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-b
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
 import { ClearBotConversationCommandHandler } from './commands/clear-bot-conversation/clear-bot-conversation.command-handler';
 import { ClearBotConversationHttpController } from './commands/clear-bot-conversation/clear-bot-conversation.http.controller';
+import { ClearBotGoalCommandHandler } from './commands/clear-bot-goal/clear-bot-goal.command-handler';
+import { ClearBotGoalHttpController } from './commands/clear-bot-goal/clear-bot-goal.http.controller';
+import { ContinueBotGoalCommandHandler } from './commands/continue-bot-goal/continue-bot-goal.command-handler';
 import { CreateBotPermissionRuleCommandHandler } from './commands/create-bot-permission-rule/create-bot-permission-rule.command-handler';
 import { CreateBotPermissionRuleHttpController } from './commands/create-bot-permission-rule/create-bot-permission-rule.http.controller';
 import { DecideBotApprovalCommandHandler } from './commands/decide-bot-approval/decide-bot-approval.command-handler';
@@ -94,6 +100,8 @@ import { BotAttachmentRepository } from './database/bot-attachment.repository';
 import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
+import { BotGoalOrmEntity } from './database/bot-goal.orm-entity';
+import { BotGoalRepository } from './database/bot-goal.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
 import { BotPermissionRuleOrmEntity } from './database/bot-permission-rule.orm-entity';
@@ -121,6 +129,8 @@ import { FindBotApprovalsQueryHandler } from './queries/find-bot-approvals/find-
 import { FindBotAttachmentQueryHandler } from './queries/find-bot-attachment/find-bot-attachment.query-handler';
 import { FindBotConversationHttpController } from './queries/find-bot-conversation/find-bot-conversation.http.controller';
 import { FindBotConversationQueryHandler } from './queries/find-bot-conversation/find-bot-conversation.query-handler';
+import { FindBotGoalHttpController } from './queries/find-bot-goal/find-bot-goal.http.controller';
+import { FindBotGoalQueryHandler } from './queries/find-bot-goal/find-bot-goal.query-handler';
 import { FindBotPermissionsHttpController } from './queries/find-bot-permissions/find-bot-permissions.http.controller';
 import { FindBotPermissionsQueryHandler } from './queries/find-bot-permissions/find-bot-permissions.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
@@ -140,6 +150,8 @@ const httpControllers = [
   UploadBotAttachmentHttpController,
   ReadBotAttachmentHttpController,
   CancelBotTurnHttpController,
+  ClearBotGoalHttpController,
+  FindBotGoalHttpController,
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
@@ -164,6 +176,9 @@ const commandHandlers: Provider[] = [
   SummarizeBotConversationCommandHandler,
   WakeSubscribedBotCommandHandler,
   WakeOnTerminalMatchCommandHandler,
+  ContinueBotGoalCommandHandler,
+  ClearBotGoalCommandHandler,
+  FindBotGoalQueryHandler,
   SetBotToolDecisionCommandHandler,
   CreateBotPermissionRuleCommandHandler,
   DeleteBotPermissionRuleCommandHandler,
@@ -206,6 +221,7 @@ const queryHandlers: Provider[] = [
       BotConversationSummaryOrmEntity,
       BotAttachmentOrmEntity,
       BotSubscriptionOrmEntity,
+      BotGoalOrmEntity,
       BotToolPermissionOrmEntity,
       BotPermissionRuleOrmEntity,
     ]),
@@ -230,6 +246,7 @@ const queryHandlers: Provider[] = [
     BotConversationSummaryMapper,
     BotAttachmentMapper,
     BotSubscriptionMapper,
+    BotGoalMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
     BotMessageAttachmentsResolver,
@@ -247,6 +264,7 @@ const queryHandlers: Provider[] = [
     BotSessionWatchResolver,
     BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,
+    BotGoalToolsFactory,
     BotSelfToolsFactory,
     BotPlanToolsFactory,
     BotGithubToolsFactory,
@@ -276,6 +294,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
+    { provide: BOT_GOAL_REPOSITORY, useClass: BotGoalRepository },
     { provide: BOT_TOOL_PERMISSION_REPOSITORY, useClass: BotToolPermissionRepository },
     { provide: BOT_PERMISSION_RULE_REPOSITORY, useClass: BotPermissionRuleRepository },
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },

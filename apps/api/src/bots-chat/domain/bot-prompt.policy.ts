@@ -192,7 +192,8 @@ type EventPrompts = {
 /**
  * The prompt of a turn an event opened, one entry per kind, so a new kind
  * is a row the compiler asks for. A routine's opening already says what to
- * do (`routineOpening`), so it is read as the note it is.
+ * do (`routineOpening`), and so does a goal's continuation
+ * (`goalContinuationText`), so each is read as the note it is.
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (_event, content) => approvalPrompt(content),
@@ -200,6 +201,7 @@ const EVENT_PROMPTS: EventPrompts = {
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,
   session: sessionWakePrompt,
+  goal: (_event, content) => eventNote(content),
 };
 
 /**

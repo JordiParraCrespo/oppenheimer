@@ -7,6 +7,7 @@ import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
+import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
@@ -50,9 +51,11 @@ export class BotToolboxFactory {
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
+    goals: BotGoalToolsFactory,
   ) {
     this.areas = [
       self,
+      goals,
       hosts,
       sessions,
       watches,

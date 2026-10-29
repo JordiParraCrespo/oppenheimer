@@ -10,6 +10,7 @@ import { KeyRound } from '@oppenheimer/design-system-web/icons';
 import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
+  useBotGoal,
   useBotWaitingMessages,
   useCancelBotTurn,
   useModelProviders,
@@ -40,6 +41,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { botDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
+import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
@@ -103,6 +105,8 @@ export function BotComposer({
     },
   });
   const cancel = useCancelBotTurn();
+  // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
+  const { data: goal } = useBotGoal(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
   const blocked =
@@ -224,6 +228,8 @@ export function BotComposer({
             <ComposerNotice icon={<KeyRound />} action={addKey}>
               {noKey}
             </ComposerNotice>
+          ) : goal ? (
+            <BotGoalNotice botId={botId} goal={goal} />
           ) : undefined
         }
         dictation={dictationSlots(dictation)}

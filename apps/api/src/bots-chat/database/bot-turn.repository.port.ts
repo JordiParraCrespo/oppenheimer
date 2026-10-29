@@ -66,6 +66,12 @@ export interface BotTurnRepositoryPort {
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
+  findQueuedBySourcePrefix(
+    organizationId: string,
+    botId: string,
+    prefix: string,
+  ): Promise<BotTurnEntity[]>;
   /**
    * What the model's context held at the end of the bot's newest turn that
    * reported it, for the next turn to be told how full it is. Null before any

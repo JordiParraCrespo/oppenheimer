@@ -1,12 +1,14 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
+  type BotGoalActivity,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
@@ -223,12 +225,46 @@ export class BotSessionEventResponseDto {
   match?: BotSessionMatchResponseDto | null;
 }
 
+export class BotGoalEventResponseDto {
+  @ApiProperty({ enum: ['goal'] })
+  kind!: 'goal';
+
+  @ApiProperty({
+    enum: BOT_GOAL_ACTIVITIES,
+    description:
+      '`continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).',
+  })
+  activity!: BotGoalActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  goalId!: string;
+
+  @ApiProperty({ description: "The goal's objective at the time." })
+  objective!: string;
+
+  @ApiProperty({
+    description: 'For `continued`, which continuation this is; otherwise how many ran.',
+  })
+  step!: number;
+
+  @ApiProperty({ description: 'The continuations the goal may take.' })
+  limit!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'For `stopped`: the status of the turn that ended it, or `access_lost`.',
+  })
+  reason!: string | null;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
-  | BotSessionEventResponseDto;
+  | BotSessionEventResponseDto
+  | BotGoalEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -237,6 +273,7 @@ export type BotMessageEventResponseDto =
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
+  BotGoalEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -267,6 +304,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotGoalEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

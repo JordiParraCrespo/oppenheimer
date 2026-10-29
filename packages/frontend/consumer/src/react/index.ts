@@ -44,6 +44,7 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
+export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
 export {
   type AddBotPermissionRuleVariables,
   type DeleteBotPermissionRuleVariables,

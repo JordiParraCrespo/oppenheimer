@@ -3685,6 +3685,31 @@ export type BotSessionEventResponseDto = {
     match?: BotSessionMatchResponseDto | null;
 };
 
+export type BotGoalEventResponseDto = {
+    kind: 'goal';
+    /**
+     * `continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
+     */
+    activity: 'continued' | 'cleared' | 'exhausted' | 'stopped';
+    goalId: string;
+    /**
+     * The goal's objective at the time.
+     */
+    objective: string;
+    /**
+     * For `continued`, which continuation this is; otherwise how many ran.
+     */
+    step: number;
+    /**
+     * The continuations the goal may take.
+     */
+    limit: number;
+    /**
+     * For `stopped`: the status of the turn that ended it, or `access_lost`.
+     */
+    reason: string | null;
+};
+
 export type BotSubagentRunResponseDto = {
     /**
      * The task the bot gave it.
@@ -3766,7 +3791,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -3851,6 +3876,27 @@ export type SendBotMessageRequest = {
     content?: string;
     attachmentIds?: Array<string>;
     timeZone?: string;
+};
+
+export type BotGoalResponseDto = {
+    id: string;
+    /**
+     * What the bot keeps working toward, in its words.
+     */
+    objective: string;
+    /**
+     * The continuation turns queued so far.
+     */
+    continuations: number;
+    /**
+     * The continuation turns it may queue.
+     */
+    limit: number;
+    createdAt: string;
+};
+
+export type BotGoalStateResponseDto = {
+    goal: BotGoalResponseDto | null;
 };
 
 export type BotApprovalResponseDto = {
@@ -13704,6 +13750,73 @@ export type CancelBotTurnResponses = {
 };
 
 export type CancelBotTurnResponse = CancelBotTurnResponses[keyof CancelBotTurnResponses];
+
+export type ClearBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal';
+};
+
+export type ClearBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ClearBotGoalError = ClearBotGoalErrors[keyof ClearBotGoalErrors];
+
+export type ClearBotGoalResponses = {
+    /**
+     * The bot has no goal now.
+     */
+    204: void;
+};
+
+export type ClearBotGoalResponse = ClearBotGoalResponses[keyof ClearBotGoalResponses];
+
+export type FindBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal';
+};
+
+export type FindBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotGoalError = FindBotGoalErrors[keyof FindBotGoalErrors];
+
+export type FindBotGoalResponses = {
+    200: BotGoalStateResponseDto;
+};
+
+export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
 
 export type StreamBotData = {
     body?: never;

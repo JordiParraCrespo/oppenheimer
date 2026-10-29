@@ -30,6 +30,7 @@ import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conve
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
+import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotToolPermissionOrmEntity } from '../bots-chat/database/bot-tool-permission.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
@@ -156,6 +157,7 @@ const dataSource = new DataSource({
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
+    BotGoalOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,
     BotToolPermissionOrmEntity,
