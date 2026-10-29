@@ -373,6 +373,43 @@ that did not cover the tool never runs.
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
+| `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+
+**Goals** (2026-10-29, from Grok Bot's goals,
+`research/lessons-from-grok-bot.md` §9 row 10). A goal is for work that
+takes several steps on the bot's own: "get the release branch green". When
+a turn of the bot ends and the goal is still open, one continuation turn is
+queued. It runs in the background lane, after your messages and other bots',
+and it is opened by a line: "Goal · continuation 2 of 5".
+
+- **Bounds.** A goal takes at most 5 continuations unless the bot asks for
+  up to 10. A bot has one goal at a time; setting another replaces it.
+- **Who it runs as.** A continuation runs as the owner, with the reach of
+  the turn that set the goal (its credential scopes and zone), as a
+  subscription keeps them.
+- **No self-renewal.** A continuation is not offered `set_goal`, so a goal
+  never renews itself.
+- **One at a time.** Only the goal's own turns move it on: the turn that
+  set it, and its continuations. A person's message, a routine or a wake
+  ending in between changes nothing. The continuation is keyed by the goal
+  and its number, so an end delivered twice queues one, and its count is
+  claimed in the same transaction that queues it. A Stop that won the race
+  leaves nothing to queue.
+- **How it ends.** The bot ends it with `end_goal`, and the call is the
+  record. The goal also ends when:
+  - the owner presses Stop on the goal above the composer, which also
+    cancels a continuation still waiting;
+  - its continuations run out;
+  - a turn of it (the one that set it, or a continuation) fails or is
+    stopped. A person's Stop is a stop, and a failure would only fail again.
+
+  Each of these is a line in the chat outside any turn. However a goal
+  ends, or is replaced by a new one, a continuation of it still waiting is
+  cancelled with it.
+- **Clearing the chat** deletes the goal, since a continuation would read a
+  history that no longer exists.
+- **No card.** Neither tool asks. The spend is bounded, every continuation
+  is a line, and Stop is one click.
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
@@ -380,10 +417,11 @@ that did not cover the tool never runs.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27 | auto |
+| `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
+| `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
 | `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
-| `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan) | auto |
+| `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
 | `list_folders` | Browse a host's folders | auto |
 

@@ -18,6 +18,7 @@ import {
   decisionAnswerSummary,
   planSession,
   promptSummary,
+  readAfterHint,
   sentTurnOf,
   sessionHostId,
   sessionSummary,
@@ -142,7 +143,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         const watched =
           input.watch === false
             ? 'You are not watching it; read it later with get_session.'
-            : await this.watches.watchStarted(context, result.sessionId);
+            : await this.watches.follow(context, result.sessionId, 'first_task');
         return {
           content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own. ${watched}`,
           sessionId: result.sessionId,
@@ -180,7 +181,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       run: async (input, context) => {
         // Read first: the prompt opens the next task, or joins the live one.
         const turn = sentTurnOf((await this.session(context, input.session_id)).latestTurn);
-        await this.commandBus.execute<SendSessionPromptCommand, SessionCommandResult>(
+        const sent = await this.commandBus.execute<SendSessionPromptCommand, SessionCommandResult>(
           new SendSessionPromptCommand({
             scope: context.owner,
             sessionId: input.session_id,
@@ -191,8 +192,8 @@ export class BotSessionToolsFactory implements BotToolArea {
         const watched =
           input.watch === false
             ? 'Read how it goes with get_session or read_session.'
-            : await this.watches.watchSent(context, input.session_id, turn);
-        return `Sent the prompt to session ${input.session_id}. ${watched}`;
+            : await this.watches.follow(context, input.session_id, { turn });
+        return `Sent the prompt to session ${input.session_id}. ${watched}${readAfterHint(sent.seq)}`;
       },
     });
   }
@@ -246,14 +247,17 @@ export class BotSessionToolsFactory implements BotToolArea {
             'Give answers (for a question) or option (for a permission dialog), not both.',
           );
         }
-        await this.commandBus.execute<AnswerSessionDecisionCommand, SessionCommandResult>(
+        const answered = await this.commandBus.execute<
+          AnswerSessionDecisionCommand,
+          SessionCommandResult
+        >(
           new AnswerSessionDecisionCommand({
             scope: context.owner,
             sessionId: input.session_id,
             answer: decisionAnswerOf(input),
           }),
         );
-        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.`;
+        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.${readAfterHint(answered.seq)}`;
       },
     });
   }

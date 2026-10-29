@@ -38,6 +38,7 @@ import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
+import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
@@ -49,6 +50,8 @@ import { BotAttachmentRepository } from '../database/bot-attachment.repository';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
+import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
+import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotSubscriptionOrmEntity } from '../database/bot-subscription.orm-entity';
@@ -58,6 +61,8 @@ import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
+import { BotGoalEntity } from '../domain/bot-goal.entity';
+import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import {
   routineActivityLine,
@@ -101,6 +106,7 @@ describe('bots chat (integration)', () => {
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
+  let goals: BotGoalRepository;
   let organizationId: string;
   let userId: string;
 
@@ -142,6 +148,7 @@ describe('bots chat (integration)', () => {
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
+        BotGoalOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -201,6 +208,12 @@ describe('bots chat (integration)', () => {
     subscriptions = new BotSubscriptionRepository(
       dataSource.getRepository(BotSubscriptionOrmEntity),
       new BotSubscriptionMapper(),
+    );
+    goals = new BotGoalRepository(
+      dataSource.getRepository(BotGoalOrmEntity),
+      dataSource,
+      new BotGoalMapper(),
+      new BotMessageMapper(),
     );
   }, 180000);
 
@@ -1772,6 +1785,39 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 
+    it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {
+      const bot = await create('Pattern watcher');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const first = randomUUID();
+      const second = randomUUID();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: first, pattern: 'FAIL' }),
+      ).toBeNull();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: second, pattern: 'PASS' }),
+      ).toBe(first);
+      expect(await subscriptions.findForTerminalWatch(first)).toBeNull();
+
+      const found = (await subscriptions.findForTerminalWatch(second)) as BotSubscriptionEntity;
+      expect(found).toMatchObject({
+        id: stored.id,
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 0,
+      });
+      found.recordMatch(4);
+      expect(await subscriptions.recordWake(found)).toBe(true);
+      // A second subscribe keeps the watch and what it counted.
+      await subscriptions.subscribe(watching(bot, { until: 'closed', watchedTurn: null }));
+      expect(await subscriptions.findForWake(stored.id)).toMatchObject({
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 4,
+        wakes: 1,
+      });
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET pattern = NULL WHERE id = $1`, [stored.id]),
+      ).rejects.toThrow(/CHK_bot_subscription_pattern/);
+    });
+
     it('refuses what the table does not hold, goes with its bot, and outlives a cleared chat', async () => {
       const bot = await create('Cascade');
       await expect(
@@ -1804,15 +1850,19 @@ describe('bots chat (integration)', () => {
         sessionId: SESSION,
         sessionName: 'Research',
         purpose: 'research',
-        task: {
-          seq: 1,
-          state: 'completed',
-          prompt: 'Research',
-          result: 'Done',
-          failureDetail: null,
-        },
-        state: 'completed',
         ends: true,
+        cause: {
+          kind: 'state',
+          task: {
+            seq: 1,
+            state: 'completed',
+            prompt: 'Research',
+            result: 'Done',
+            failureDetail: null,
+          },
+          state: 'completed',
+          silentPattern: null,
+        },
       };
       const props = {
         organizationId: bot.organizationId,
@@ -1847,6 +1897,144 @@ describe('bots chat (integration)', () => {
         [first.turn.id],
       );
       expect(row.origin).toBe('subscription');
+    });
+  });
+  // What breaks this: two goals for one bot; two ends at once both storing a
+  // continuation (two would run); an ended goal ending again with a second
+  // line; a turn's end owing the goal's job when the bot has no goal, or not
+  // owing it when the goal was set in that very turn.
+  describe('goals (25-bots.md §4.1)', () => {
+    function goalFor(bot: BotEntity, originTurnId: string, objective = 'Ship it') {
+      return BotGoalEntity.set({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        originTurnId,
+        objective,
+        limit: 3,
+        credentialScopes: ['bots:read'],
+        timeZone: 'Europe/Madrid',
+      });
+    }
+
+    it('holds one goal per bot: setting another replaces it and answers the old one', async () => {
+      const bot = await create('Goalie');
+      const turn = await runningTurn(bot);
+      const first = goalFor(bot, turn.id, 'Triage the bugs');
+      expect(await goals.set(first)).toBeNull();
+      const replaced = await goals.set(goalFor(bot, turn.id, 'Ship it'));
+      expect(replaced).toMatchObject({ id: first.id, objective: 'Triage the bugs' });
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        objective: 'Ship it',
+        continuations: 0,
+        credentialScopes: ['bots:read'],
+      });
+    });
+
+    function continuation(bot: BotEntity, goal: BotGoalEntity) {
+      return goalContinuationTurn(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          requestedByUserId: userId,
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: null,
+        },
+        goal,
+        goal.advance(),
+      );
+    }
+
+    // What breaks this: a count stored apart from its turn, so a process that
+    // dies between the two leaves a goal counted with nothing queued, or two
+    // ends racing both queue a continuation.
+    it('queues a continuation and claims its count together, once when two ends race', async () => {
+      const bot = await create('Racer');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const [a, b] = await Promise.all([
+        goals.findForBot(bot.organizationId, bot.id),
+        goals.findForBot(bot.organizationId, bot.id),
+      ]);
+      const first = continuation(bot, a as BotGoalEntity);
+      const second = continuation(bot, b as BotGoalEntity);
+      const outcomes = await Promise.all([
+        turns.enqueueContinuation(first.turn, first.opening, null, a as BotGoalEntity),
+        turns.enqueueContinuation(second.turn, second.opening, null, b as BotGoalEntity),
+      ]);
+      // Both carry the key of continuation 1: one queues it, the other finds it.
+      expect(outcomes.sort()).toEqual(['existing', 'waiting']);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.continuations).toBe(1);
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toHaveLength(1);
+    });
+
+    // What breaks this: a Stop deleting the goal while its continuation is
+    // being queued, and the continuation queued after the Stop returned.
+    it('queues nothing for a goal stopped before its continuation was claimed', async () => {
+      const bot = await create('Stopped');
+      const turn = await runningTurn(bot);
+      const goal = goalFor(bot, turn.id);
+      await goals.set(goal);
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      await goals.end(goal, null);
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('lost');
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toEqual([]);
+    });
+
+    it('ends once, with its line outside any turn, and a second end writes nothing', async () => {
+      const bot = await create('Ender');
+      const turn = await runningTurn(bot);
+      const goal = goalFor(bot, turn.id);
+      await goals.set(goal);
+      expect(await goals.end(goal, goalEndLine(goal, 'cleared', null))).toBe(true);
+      expect(await goals.end(goal, goalEndLine(goal, 'cleared', null))).toBe(false);
+      const lines: { turnId: string | null }[] = await dataSource.query(
+        `SELECT "turnId" FROM bot_message WHERE "botId" = $1 AND event->>'kind' = 'goal'`,
+        [bot.id],
+      );
+      expect(lines).toEqual([{ turnId: null }]);
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
+    });
+
+    it('stages the goal’s job when one of its turns ends, and none for any other turn', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const withGoal = await create('Driven');
+      const without = await create('Idle');
+      const driven = await runningTurn(withGoal);
+      const idle = await runningTurn(without);
+      // Set in the very turn that is ending: the end's transaction sees it.
+      await goals.set(goalFor(withGoal, driven.id));
+      for (const turn of [driven, idle]) {
+        turn.end('completed', new Date());
+        expect(await turns.finish(turn, null)).toBe(true);
+      }
+      // A later turn of the same bot that is not the goal's owes it nothing.
+      const other = await runningTurn(withGoal);
+      other.end('completed', new Date());
+      expect(await turns.finish(other, null)).toBe(true);
+      const jobs: { payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
+      );
+      expect(jobs.map((job) => job.payload.turnId)).toEqual([driven.id]);
+    });
+
+    it('goes with the chat: clearing the conversation deletes the goal its turn set', async () => {
+      const bot = await create('Forgetful');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      turn.end('completed', new Date());
+      await turns.finish(turn, null);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
     });
   });
 });

@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
   type BotAttachment,
@@ -21,6 +22,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotGoalEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
@@ -237,6 +239,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'goal':
+      return Object.assign(new BotGoalEventResponseDto(), event);
   }
 }
 
@@ -285,7 +289,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'session') {
-    const state = BOT_SESSION_WAKE_STATES.find((known) => known === raw.state);
+    const state = BOT_SESSION_EVENT_STATES.find((known) => known === raw.state);
     if (!state || typeof raw.subscriptionId !== 'string' || typeof raw.sessionId !== 'string') {
       return null;
     }
@@ -296,7 +300,30 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       sessionName: String(raw.sessionName ?? ''),
       turn: typeof raw.turn === 'number' ? raw.turn : 0,
       state,
+      ...matchOf(raw.match),
+    };
+  }
+  if (raw.kind === 'goal') {
+    const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.goalId !== 'string') return null;
+    return {
+      kind: 'goal',
+      activity,
+      goalId: raw.goalId,
+      objective: String(raw.objective ?? ''),
+      step: typeof raw.step === 'number' ? raw.step : 0,
+      limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
   return null;
+}
+
+/** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */
+function matchOf(raw: unknown): { match?: { pattern: string; count: number } } {
+  if (typeof raw !== 'object' || raw === null) return {};
+  const { pattern, count } = raw as Record<string, unknown>;
+  return typeof pattern === 'string' && typeof count === 'number' && count > 0
+    ? { match: { pattern, count } }
+    : {};
 }

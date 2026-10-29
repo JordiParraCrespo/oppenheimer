@@ -21,12 +21,14 @@ import {
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_REPLY_OUTCOMES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   type BotApprovalDecision,
   type BotApprovalReach,
   type BotAttachment,
   type BotDocumentName,
+  type BotGoal,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -225,7 +227,7 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
         : null;
     }
     case 'session': {
-      const state = BOT_SESSION_WAKE_STATES.find((candidate) => candidate === dto.state);
+      const state = BOT_SESSION_EVENT_STATES.find((candidate) => candidate === dto.state);
       return state
         ? {
             kind: 'session',
@@ -234,6 +236,21 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             sessionName: dto.sessionName,
             turn: dto.turn,
             state,
+            match: dto.match ? { pattern: dto.match.pattern, count: dto.match.count } : null,
+          }
+        : null;
+    }
+    case 'goal': {
+      const activity = BOT_GOAL_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'goal',
+            activity,
+            goalId: dto.goalId,
+            objective: dto.objective,
+            step: dto.step,
+            limit: dto.limit,
+            reason: dto.reason,
           }
         : null;
     }
@@ -432,6 +449,22 @@ export class BotsRepository {
 
   /** The card the bot waits on, if any: at most one is pending. */
   @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
+  /** The goal the bot set itself and keeps working toward; null when it has none. */
+  @MapApiError(BotsErrors.FETCH_GOAL_FAILED)
+  async findGoal(id: string): Promise<BotGoal | null> {
+    const { goal } = await unwrapBody(
+      heyApiSdk.findBotGoal({ path: { id } }),
+      BotsErrors.FETCH_GOAL_FAILED,
+    );
+    return goal;
+  }
+
+  /** Stops the bot's goal: no more continuation turns, and one still waiting is cancelled. */
+  @MapApiError(BotsErrors.CLEAR_GOAL_FAILED)
+  async clearGoal(id: string): Promise<void> {
+    await unwrap(heyApiSdk.clearBotGoal({ path: { id } }), BotsErrors.CLEAR_GOAL_FAILED);
+  }
+
   async findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
     const data = await unwrapBody(
       heyApiSdk.findBotApprovals({ path: { id }, query: { status: 'pending' } }),

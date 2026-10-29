@@ -110,13 +110,13 @@ function setup(permission: BotToolContext['permission']) {
     })),
   };
   const commandBus = {
-    execute: vi.fn(async () => ({ sessionId: 'session-1', hints: [] as string[] })),
+    // A prompt or an answer comes back with the log entry it was recorded as.
+    execute: vi.fn(async () => ({ sessionId: 'session-1', hints: [] as string[], seq: 7 })),
   };
   const watches = {
-    watchStarted: vi.fn<BotSessionWatchResolver['watchStarted']>(
-      async () => 'You are subscribed to it.',
+    follow: vi.fn<BotSessionWatchResolver['follow']>(async (_context, _sessionId, from) =>
+      from === 'first_task' ? 'You are subscribed to it.' : 'You follow its task.',
     ),
-    watchSent: vi.fn<BotSessionWatchResolver['watchSent']>(async () => 'You follow its task.'),
   };
   const factory = new BotSessionToolsFactory(
     queryBus as unknown as QueryBus,
@@ -192,9 +192,10 @@ describe('BotSessionToolsFactory', () => {
   it('subscribes the bot to the session it started, and says so in its answer', async () => {
     const { watches, call } = setup('full');
     const result = await call('start_session', { task: 'Research', project_id: PROJECT });
-    expect(watches.watchStarted).toHaveBeenCalledWith(
+    expect(watches.follow).toHaveBeenCalledWith(
       expect.objectContaining({ turnId: 'turn-1' }),
       'session-1',
+      'first_task',
     );
     expect(result.content).toContain('You are subscribed to it.');
   });
@@ -202,7 +203,7 @@ describe('BotSessionToolsFactory', () => {
   it('starts without a watch when asked not to', async () => {
     const { watches, call } = setup('full');
     const unwatched = await call('start_session', { task: 'A', project_id: PROJECT, watch: false });
-    expect(watches.watchStarted).not.toHaveBeenCalled();
+    expect(watches.follow).not.toHaveBeenCalled();
     expect(unwatched.content).toContain('You are not watching it');
   });
 
@@ -295,8 +296,10 @@ describe('BotSessionToolsFactory', () => {
       sender: { kind: 'bot', botId: 'bot-1', turnId: 'turn-1' },
     });
     // The session had no task yet, so the prompt opens task 1, and that is the one watched.
-    expect(watches.watchSent).toHaveBeenCalledWith(expect.anything(), session.id, 1);
+    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), session.id, { turn: 1 });
     expect(result.content).toContain('You follow its task.');
+    // Where the log stood once the prompt was in, so the next read starts after it.
+    expect(result.content).toContain('read_session with after_seq 7 reads only what followed');
   });
 
   it('names the option it picks on the card, read against what the session waits on', async () => {

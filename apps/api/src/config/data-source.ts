@@ -24,6 +24,7 @@ import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provide
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
@@ -66,6 +67,7 @@ import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.or
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
+import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
@@ -115,6 +117,7 @@ export default new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
     AutomationOrmEntity,
@@ -146,6 +149,7 @@ export default new DataSource({
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
+    BotGoalOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,
     BotToolPermissionOrmEntity,

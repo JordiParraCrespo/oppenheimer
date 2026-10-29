@@ -124,6 +124,7 @@ export class BotTurnContextResolver {
         permission: bot.permission,
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
+        origin: turn.origin,
         approvals: this.approvals,
         permissions,
         // The owner's rules are read on the turn's own model, only when there are some.
@@ -150,7 +151,11 @@ export class BotTurnContextResolver {
         facts: [...facts].reverse().map((fact) => fact.content),
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
-          ? this.toolbox.catalog(turn.credentialScopes, { preset: bot.permission, permissions })
+          ? this.toolbox.catalog(turn.credentialScopes, {
+              preset: bot.permission,
+              permissions,
+              origin: turn.origin,
+            })
           : [],
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),

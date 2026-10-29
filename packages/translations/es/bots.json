@@ -238,7 +238,15 @@
         "completed": "La sesión «{{name}}» ha terminado",
         "failed": "La sesión «{{name}}» ha fallado",
         "cancelled": "La sesión «{{name}}» se detuvo",
-        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+        "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
+        "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+      },
+      "goal": {
+        "continued": "Objetivo · continuación {{step}} de {{limit}}",
+        "cleared": "Has detenido el objetivo «{{objective}}»",
+        "exhausted": "El objetivo «{{objective}}» usó sus {{limit}} continuaciones",
+        "stopped": "El objetivo «{{objective}}» se detuvo: uno de sus turnos falló o se detuvo"
       }
     },
     "routineReason": {
@@ -251,7 +259,13 @@
       "owner_lost_access": "su propietario ya no puede ejecutarla",
       "unknown": "algo salió mal"
     },
-    "openSession": "Abrir sesión"
+    "openSession": "Abrir sesión",
+    "goal": {
+      "title": "Objetivo: {{objective}}",
+      "progress": "{{step}} de {{limit}} continuaciones",
+      "stop": "Detener objetivo",
+      "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo."
+    }
   },
   "settings": {
     "back": "Volver al chat",

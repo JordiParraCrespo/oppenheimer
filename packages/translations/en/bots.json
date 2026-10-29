@@ -231,7 +231,15 @@
         "completed": "Session “{{name}}” finished",
         "failed": "Session “{{name}}” failed",
         "cancelled": "Session “{{name}}” was stopped",
-        "expired": "Session “{{name}}” expired before it ran"
+        "expired": "Session “{{name}}” expired before it ran",
+        "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
+        "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
+      },
+      "goal": {
+        "continued": "Goal · continuation {{step}} of {{limit}}",
+        "cleared": "You stopped the goal “{{objective}}”",
+        "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
+        "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
       }
     },
     "routineReason": {
@@ -244,7 +252,13 @@
       "owner_lost_access": "its owner can no longer run it",
       "unknown": "something went wrong"
     },
-    "openSession": "Open session"
+    "openSession": "Open session",
+    "goal": {
+      "title": "Goal: {{objective}}",
+      "progress": "{{step}} of {{limit}} continuations",
+      "stop": "Stop goal",
+      "stopFailed": "Could not stop the goal. Try again."
+    }
   },
   "settings": {
     "back": "Back to the chat",

@@ -422,4 +422,13 @@ its last column.
 line's wait while a provider's refusal is retried, and how long a turn
 worked. Rows 6 and 7 landed the same day in `versions/mvp/25-bots.md` §5:
 grants for one thing, merging per call, and rules read by a reviewer that
-fails closed, with Settings → Permissions and the card's reach.
+fails closed, with Settings → Permissions and the card's reach. Rows 8
+and 9 landed the same day in `versions/mvp/27-bot-subscriptions.md` §2 and
+`versions/mvp/25-bots.md` §4.2. A watch takes a pattern that the runner
+matches on the host and reports as a count, never the text; a wait inside
+the turn is bounded at 120 seconds; and `read_session` takes `after_seq`,
+which the two tools that type into a session hand back. Row 10 landed the
+same day in `versions/mvp/25-bots.md` §4.1, as a bounded goal the bot sets
+itself rather than a routine. A continuation turn is queued when a turn
+ends with the goal open: at most 5 unless the bot asks for up to 10, never
+renewed by a continuation, and stopped by its owner from the chat.

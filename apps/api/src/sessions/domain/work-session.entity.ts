@@ -14,6 +14,7 @@ import type {
 } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
+import { SessionTerminalMatchedDomainEvent } from './events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
@@ -537,6 +538,21 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       );
     }
 
+    if (entry.kind === SESSION_EVENT_KINDS.TERMINAL_MATCHED) {
+      const match = terminalMatchOf(entry.payload);
+      if (match) {
+        this.addEvent(
+          new SessionTerminalMatchedDomainEvent({
+            aggregateId: this.id,
+            reason: `a terminal watch on this session matched (${match.count} so far)`,
+            organizationId: this.props.organizationId,
+            watchId: match.watchId,
+            count: match.count,
+          }),
+        );
+      }
+    }
+
     if (folded.state !== before) {
       this.addEvent(
         new SessionStateChangedDomainEvent({
@@ -638,4 +654,13 @@ function checkoutIdOf(payload: unknown): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as { checkoutId?: unknown }).checkoutId;
   return typeof value === 'string' ? value : null;
+}
+
+/** A `terminal.matched` payload, narrowed once; anything else is no match. */
+function terminalMatchOf(payload: unknown): { watchId: string; count: number } | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const { watchId, count } = payload as Record<string, unknown>;
+  return typeof watchId === 'string' && Number.isInteger(count) && (count as number) > 0
+    ? { watchId, count: count as number }
+    : null;
 }

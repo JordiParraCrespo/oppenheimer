@@ -541,6 +541,8 @@ are never reissued.
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
 | `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
+| `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
+| `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -592,6 +594,11 @@ receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no c
 a day long, minted again whenever the create is sent). `040` is a task whose text and those
 links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
 `041` is a link that expired or never existed.
+
+`SESSIONS_042` and `SESSIONS_043` are a terminal watch (`session_terminal_watch`): a pattern the
+session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
+so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
+(`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -1073,6 +1080,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `INVALID_PATTERN` <a id="invalid_pattern" /> | The watch pattern is not a valid expression | 400 |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |

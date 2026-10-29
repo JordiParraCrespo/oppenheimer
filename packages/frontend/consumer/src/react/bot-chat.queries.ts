@@ -185,11 +185,15 @@ export function useBotRoomLeft(id: string): BotRoomLeft {
 }
 
 /**
- * The chat read again; when a turn has ended, the bot too (its last activity
- * moved) and its Needs input card (the turn may have raised one).
+ * The chat read again, and its goal (a line or a turn may have set, moved or
+ * ended it); when a turn has ended, the bot too (its last activity moved) and
+ * its Needs input card (the turn may have raised one).
  */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
-  const reads = [queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) })];
+  const reads = [
+    queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+    queryClient.invalidateQueries({ queryKey: botsKeys.goal(id) }),
+  ];
   if (ended) {
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));

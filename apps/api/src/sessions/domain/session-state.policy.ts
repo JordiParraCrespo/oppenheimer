@@ -128,6 +128,13 @@ export const SESSION_EVENT_KINDS = {
    * refused `session.close`, which ends the close the log was owed.
    */
   COMMAND_FAILED: 'command.failed',
+  /**
+   * A terminal watch's pattern matched lines the runner had not matched
+   * before. Payload `{ watchId, count }`, the count cumulative; never the
+   * text, which stays on the host (`session_terminal_watch`). It moves no
+   * state: the entity raises `SessionTerminalMatchedDomainEvent` for it.
+   */
+  TERMINAL_MATCHED: 'terminal.matched',
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */

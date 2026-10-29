@@ -91,7 +91,7 @@ export class AnswerSessionDecisionCommandHandler
         detail: 'Nothing is kept for a host that comes back: answer again once it is online.',
       });
     }
-    return { sessionId: session.id, hints: [] };
+    return { sessionId: session.id, hints: [], seq: claimed.appended.at(-1)?.seq };
   }
 
   private entry(command: AnswerSessionDecisionCommand, kind: string, payload: unknown) {

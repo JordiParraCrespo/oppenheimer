@@ -509,6 +509,10 @@ export const BOT_SESSION_WAKE_STATES = [
 ] as const;
 export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
+/** What a session event says: a task's wake state, or that the terminal matched a watch's pattern. */
+export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'matched'] as const;
+export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
+
 export interface BotSessionEvent {
   kind: 'session';
   /** The subscription that woke the bot. */
@@ -518,14 +522,66 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
-  state: BotSessionWakeState;
+  /** What became of the task, or `matched`: its terminal printed what the bot watches for. */
+  state: BotSessionEventState;
+  /**
+   * For `matched`: the pattern the bot watches the terminal for, and how many
+   * new lines have matched it so far. Never the text: it stays on the host.
+   */
+  match?: { pattern: string; count: number } | null;
+}
+
+/**
+ * A goal a bot set itself keeps it going (`25-bots.md` §4.1; from Grok Bot's
+ * goals, `research/lessons-from-grok-bot.md` §9 row 10): after a turn ends
+ * with the goal still open, a continuation turn is queued, up to the goal's
+ * limit. One goal per bot at a time; an ended goal is deleted. This is the
+ * longest objective, in the bot's words.
+ */
+export const BOT_GOAL_OBJECTIVE_MAX = 500;
+/** The continuations a goal may queue: at most this many, and five unless the bot asks for fewer or more. */
+export const BOT_GOAL_CONTINUATIONS_MAX = 10;
+export const BOT_GOAL_CONTINUATIONS_DEFAULT = 5;
+
+/**
+ * What a goal line says: a continuation opens a turn (`continued`); the
+ * others say, outside any turn, how the goal ended when the bot did not end
+ * it itself (its `end_goal` call is the record of that): the owner stopped
+ * it (`cleared`), its continuations ran out (`exhausted`), or a turn of it
+ * failed or was stopped (`stopped`).
+ */
+export const BOT_GOAL_ACTIVITIES = ['continued', 'cleared', 'exhausted', 'stopped'] as const;
+export type BotGoalActivity = (typeof BOT_GOAL_ACTIVITIES)[number];
+
+export interface BotGoalEvent {
+  kind: 'goal';
+  activity: BotGoalActivity;
+  goalId: string;
+  /** The goal's objective at the time. */
+  objective: string;
+  /** For `continued`, which continuation this is; otherwise how many ran. */
+  step: number;
+  /** The goal's limit of continuations. */
+  limit: number;
+  /** Why, as a code, for `stopped`: the status of the turn that ended it. */
+  reason: string | null;
+}
+
+/** A bot's goal as the console reads it: `GET /bots/:id/goal`. */
+export interface BotGoal {
+  id: string;
+  objective: string;
+  continuations: number;
+  limit: number;
+  createdAt: string;
 }
 
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
- * decision, a routine's run, or a session the bot is subscribed to.
+ * decision, a routine's run, a session the bot is subscribed to, or a goal
+ * it set itself.
  */
-export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription'] as const;
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription', 'goal'] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
@@ -619,7 +675,8 @@ export type BotMessageEvent =
   | BotRoutineEvent
   | BotPeerMessageEvent
   | BotPeerReplyEvent
-  | BotSessionEvent;
+  | BotSessionEvent
+  | BotGoalEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -628,6 +685,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_message',
   'bot_reply',
   'session',
+  'goal',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 

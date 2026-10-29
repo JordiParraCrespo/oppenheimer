@@ -1,16 +1,18 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
+  type BotGoalActivity,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
-  type BotSessionWakeState,
+  type BotSessionEventState,
   type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
@@ -182,6 +184,15 @@ export class BotPeerReplyEventResponseDto {
 }
 
 /** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
+/** A terminal watch's match, as a session event names it. */
+export class BotSessionMatchResponseDto {
+  @ApiProperty({ description: 'The pattern the bot watches the terminal for.' })
+  pattern!: string;
+
+  @ApiProperty({ description: 'New matching lines counted so far.' })
+  count!: number;
+}
+
 export class BotSessionEventResponseDto {
   @ApiProperty({ enum: ['session'] })
   kind!: 'session';
@@ -198,8 +209,53 @@ export class BotSessionEventResponseDto {
   @ApiProperty({ description: "Which of the session's tasks: its turn's number, from 1." })
   turn!: number;
 
-  @ApiProperty({ enum: BOT_SESSION_WAKE_STATES, description: 'What became of the task.' })
-  state!: BotSessionWakeState;
+  @ApiProperty({
+    enum: BOT_SESSION_EVENT_STATES,
+    description:
+      'What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for.',
+  })
+  state!: BotSessionEventState;
+
+  @ApiProperty({
+    type: BotSessionMatchResponseDto,
+    nullable: true,
+    required: false,
+    description: 'For `matched`: the pattern and how many lines matched so far; never the text.',
+  })
+  match?: BotSessionMatchResponseDto | null;
+}
+
+export class BotGoalEventResponseDto {
+  @ApiProperty({ enum: ['goal'] })
+  kind!: 'goal';
+
+  @ApiProperty({
+    enum: BOT_GOAL_ACTIVITIES,
+    description:
+      '`continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).',
+  })
+  activity!: BotGoalActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  goalId!: string;
+
+  @ApiProperty({ description: "The goal's objective at the time." })
+  objective!: string;
+
+  @ApiProperty({
+    description: 'For `continued`, which continuation this is; otherwise how many ran.',
+  })
+  step!: number;
+
+  @ApiProperty({ description: 'The continuations the goal may take.' })
+  limit!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'For `stopped`: the status of the turn that ended it, or `access_lost`.',
+  })
+  reason!: string | null;
 }
 
 export type BotMessageEventResponseDto =
@@ -207,7 +263,8 @@ export type BotMessageEventResponseDto =
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
-  | BotSessionEventResponseDto;
+  | BotSessionEventResponseDto
+  | BotGoalEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -216,6 +273,7 @@ export type BotMessageEventResponseDto =
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
+  BotGoalEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -246,6 +304,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotGoalEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',
