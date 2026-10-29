@@ -51,9 +51,10 @@ func New(opts Options) *Store {
 // Claude Code reads a worktree's own entry for the question itself, but the
 // repository's entry before it lets the repository's `.claude/settings.json`
 // pre-approve tools, and without it asks again, in a trusted folder, whether
-// to "continue without these permissions". The
-// write is a temporary file renamed over the old one, so a CLI starting at the
-// same moment reads the old file or the new one, never half of either.
+// to "continue without these permissions".
+//
+// The write is a temporary file renamed over the old one, so a CLI starting at
+// the same moment reads the old file or the new one, never half of either.
 //
 // The file is written back as Claude Code writes it, two-space JSON; Go
 // orders its keys, which Claude Code neither reads nor keeps, since it

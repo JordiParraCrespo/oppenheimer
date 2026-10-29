@@ -62,7 +62,9 @@ var (
 )
 
 // trustPrompt is the confirm label of Claude Code's "do you trust this
-// folder?" dialog: with input closed nobody can answer it.
+// folder?" dialog: with input closed nobody can answer it. It is the CLI's
+// own wording (2.1.x), so a release that rewords it only loses the early
+// failure: the start still ends at the timeout.
 const trustPrompt = "Yes, I trust this folder"
 
 // Start creates the cloud session for prompt from the repository checked out
