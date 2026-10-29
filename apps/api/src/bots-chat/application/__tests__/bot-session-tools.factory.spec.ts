@@ -8,6 +8,7 @@ import { SendSessionPromptCommand } from '../../../sessions/commands/send-sessio
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
+import { FindLatestSessionEventsQuery } from '../../../sessions/queries/find-latest-session-events/find-latest-session-events.query';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
@@ -100,6 +101,7 @@ function setup(permission: BotToolContext['permission']) {
     execute: vi.fn(async (query: unknown) => {
       if (query instanceof FindHostQuery) return { host: { name: 'build-02' }, online: true };
       if (query instanceof FindSessionQuery) return session;
+      if (query instanceof FindLatestSessionEventsQuery) return { session, events: [{ seq: 7 }] };
       return project;
     }),
   };
@@ -297,6 +299,8 @@ describe('BotSessionToolsFactory', () => {
     // The session had no task yet, so the prompt opens task 1, and that is the one watched.
     expect(watches.watchSent).toHaveBeenCalledWith(expect.anything(), session.id, 1);
     expect(result.content).toContain('You follow its task.');
+    // Where the log stood once the prompt was in, so the next read starts after it.
+    expect(result.content).toContain('read_session with after_seq 7 reads only what followed');
   });
 
   it('names the option it picks on the card, read against what the session waits on', async () => {

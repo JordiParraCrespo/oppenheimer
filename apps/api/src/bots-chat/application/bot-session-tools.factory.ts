@@ -12,6 +12,10 @@ import { SendSessionPromptCommand } from '../../sessions/commands/send-session-p
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
+import {
+  FindLatestSessionEventsQuery,
+  type LatestSessionEvents,
+} from '../../sessions/queries/find-latest-session-events/find-latest-session-events.query';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
   decisionAnswerOf,
@@ -192,7 +196,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           input.watch === false
             ? 'Read how it goes with get_session or read_session.'
             : await this.watches.watchSent(context, input.session_id, turn);
-        return `Sent the prompt to session ${input.session_id}. ${watched}`;
+        return `Sent the prompt to session ${input.session_id}. ${watched}${await this.readAfter(context, input.session_id)}`;
       },
     });
   }
@@ -253,7 +257,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             answer: decisionAnswerOf(input),
           }),
         );
-        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.`;
+        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.${await this.readAfter(context, input.session_id)}`;
       },
     });
   }
@@ -282,6 +286,26 @@ export class BotSessionToolsFactory implements BotToolArea {
         return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
       },
     });
+  }
+
+  /**
+   * Where the session's log stood once your input was in, as the hint the
+   * answer ends with: `read_session` after it reads only what followed. None
+   * when the log cannot be read, which changes nothing that was sent.
+   */
+  private async readAfter(context: BotToolCallContext, sessionId: string): Promise<string> {
+    let latest: LatestSessionEvents | undefined;
+    try {
+      latest = await this.queryBus.execute<FindLatestSessionEventsQuery, LatestSessionEvents>(
+        new FindLatestSessionEventsQuery({ scope: context.owner, sessionId, limit: 1 }),
+      );
+    } catch {
+      return '';
+    }
+    const seq = latest?.events.at(-1)?.seq;
+    return seq === undefined
+      ? ''
+      : ` Its log was at entry ${seq}: read_session with after_seq ${seq} reads only what followed.`;
   }
 
   /** The session a call acts on, as a card offers to always allow the tool on it. */

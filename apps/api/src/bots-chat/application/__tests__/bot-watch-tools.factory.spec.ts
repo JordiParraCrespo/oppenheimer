@@ -59,7 +59,10 @@ function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
 }
 
 function setup(
-  options: { read?: WorkSessionEntity | Error; following?: BotSubscriptionEntity[] } = {},
+  options: {
+    read?: WorkSessionEntity | Error | (() => WorkSessionEntity);
+    following?: BotSubscriptionEntity[];
+  } = {},
 ) {
   const subscriptions = {
     subscribe: vi.fn<BotSubscriptionRepositoryPort['subscribe']>(
@@ -75,7 +78,7 @@ function setup(
       expect(query).toBeInstanceOf(FindSessionQuery);
       const read = options.read ?? liveSession('in_progress');
       if (read instanceof Error) throw read;
-      return read;
+      return typeof read === 'function' ? read() : read;
     }),
   };
   const repository = subscriptions as unknown as BotSubscriptionRepositoryPort;
@@ -86,7 +89,12 @@ function setup(
     commands as unknown as CommandBus,
     new BotSubscriptionMapper(),
   );
-  const factory = new BotWatchToolsFactory(resolver, repository, new BotSubscriptionMapper());
+  const factory = new BotWatchToolsFactory(
+    resolver,
+    repository,
+    new BotSubscriptionMapper(),
+    queries as unknown as QueryBus,
+  );
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
   const context: BotToolContext = {
     owner,
@@ -234,5 +242,47 @@ describe('BotWatchToolsFactory', () => {
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
+  });
+});
+
+describe('wait_for_session', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('answers at once when the task already ended, reading the session in the owner’s scope', async () => {
+    const { call, queries } = setup({ read: liveSession('completed') });
+    const result = await call('wait_for_session', { session_id: SESSION, seconds: 30 });
+    expect(result.content).toMatch(/finished its task \(after 0s\)/);
+    expect(queries.execute).toHaveBeenCalledTimes(1);
+    expect(queries.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: SESSION });
+  });
+
+  it('waits until the task asks for input, reading again every few seconds', async () => {
+    vi.useFakeTimers();
+    let reads = 0;
+    const { call } = setup({
+      read: () => liveSession(++reads < 3 ? 'in_progress' : 'requires_action'),
+    });
+    const waiting = call('wait_for_session', { session_id: SESSION, seconds: 60 });
+    await vi.advanceTimersByTimeAsync(6_000);
+    const result = await waiting;
+    expect(reads).toBe(3);
+    expect(result.content).toMatch(/needs input \(after 6s\)/);
+  });
+
+  it('says the session is still working when its time runs out', async () => {
+    vi.useFakeTimers();
+    const { call } = setup({ read: liveSession('in_progress') });
+    const waiting = call('wait_for_session', { session_id: SESSION, seconds: 10 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect((await waiting).content).toMatch(/still working after 9s/);
+  });
+
+  it('refuses a fourth wait in one turn, reading nothing', async () => {
+    const { call, queries } = setup({ read: liveSession('completed') });
+    for (let i = 0; i < 3; i++) await call('wait_for_session', { session_id: SESSION });
+    const fourth = await call('wait_for_session', { session_id: SESSION });
+    expect(fourth.isError).toBe(true);
+    expect(fourth.content).toContain('watch_session');
+    expect(queries.execute).toHaveBeenCalledTimes(3);
   });
 });
