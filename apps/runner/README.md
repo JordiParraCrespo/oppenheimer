@@ -64,17 +64,19 @@ host: remove it under Settings → Hosts).
   images/             files pasted into sessions, one directory per session
 
 ~/oppenheimer/                                   the work folder (--workspaces, RUNNER_WORKSPACES)
-  layout.json                                    {"version": 2}
+  layout.json                                    {"version": 3}
   <account-id>/.oppenheimer/meta.json            {"kind":"account"}
   <account-id>/<workspace-id>/
     .oppenheimer/meta.json                       {"kind":"workspace","slug":…}
-    repos/<owner>--<repo>.git                    a bare store, found by GitHub id (oppenheimer.repo-id)
-    repos/.spares/<owner>--<repo>                the worktree the next create takes
-    sessions/<slug>/.oppenheimer/meta.json       {"kind":"session","id":…}
-    sessions/<slug>/<directory>                  the checkout the agent works in
+    repos.noindex/<owner>--<repo>.git            a bare store, found by GitHub id (oppenheimer.repo-id)
+    repos.noindex/.spares/<owner>--<repo>        the worktree the next create takes
+    sessions.noindex/<slug>/.oppenheimer/meta.json  {"kind":"session","id":…}
+    sessions.noindex/<slug>/<directory>          the checkout the agent works in
 ```
 
-The layout is `product/versions/mvp/24-session-places.md` §2. Every level is
+The layout is `product/versions/mvp/24-session-places.md` §2. The two
+directories that hold checkouts end in `.noindex`, which Spotlight skips:
+indexing a host's sessions costs it more CPU than the agents use. Every level is
 named by an id that never changes, and only a folder whose marker names the
 session being closed is ever deleted. A session the CLI makes has no
 control-plane ids and uses `local` for both. A **folder session** runs in a

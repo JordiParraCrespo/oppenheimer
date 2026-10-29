@@ -28,20 +28,26 @@ the OS's application-support directory, its worktrees under
 
 ```
 ~/oppenheimer/                                   the work folder
-├── layout.json                                  {"version": 2}
+├── layout.json                                  {"version": 3}
 └── <account-id>/                                one Oppenheimer account (a pairing)
     ├── .oppenheimer/meta.json                   {"kind":"account", …}
     └── <workspace-id>/                          one workspace (organization) of that account
         ├── .oppenheimer/meta.json               {"kind":"workspace", "slug": …}
-        ├── repos/                               stores: a cache of GitHub, safe to rebuild
+        ├── repos.noindex/                       stores: a cache of GitHub, safe to rebuild
         │   ├── <owner>--<repo>.git/             bare, found by GitHub id (oppenheimer.repo-id)
         │   └── .spares/<owner>--<repo>/         the pre-built worktree that makes a create instant
         ├── agents/<agent-id>/                   reserved (bots moved into Oppenheimer: 25-bots.md)
-        └── sessions/<slug>/                     a worktree session
+        └── sessions.noindex/<slug>/             a worktree session
             ├── .oppenheimer/meta.json           {"kind":"session", "id": …, "origin": …}
             └── <repo>/                          a checkout: the agent's working directory
 ```
 
+- **The directories that hold checkouts end in `.noindex`**, the suffix
+  Spotlight skips with everything below it. A session is a whole
+  checkout, dependencies included, rewritten whenever an agent installs
+  something; indexed, `mdworker_shared` takes more CPU than the agents on
+  a Mac host. `.metadata_never_index` at the root does not keep Spotlight
+  out (MVP decision log, 2026-10-01); the runner still writes it.
 - **Every level is named by an id that never changes**, never by a name
   someone can edit. A path never changes after it is made, because the
   agents key their own history on the working directory (Claude Code's
@@ -68,7 +74,7 @@ the OS's application-support directory, its worktrees under
 
 | Where | What the runner does | Its working directory | Closing it |
 |-------|---------------------|----------------------|------------|
-| **New worktree** | Clones or fetches the stores, cuts `oppenheimer/<slug>` from each base, adds a worktree per repository under `sessions/<slug>/` | The checkout the control plane names | Removes the worktrees (after the branch is pushed, as today) and the session folder |
+| **New worktree** | Clones or fetches the stores, cuts `oppenheimer/<slug>` from each base, adds a worktree per repository under `sessions.noindex/<slug>/` | The checkout the control plane names | Removes the worktrees (after the branch is pushed, as today) and the session folder |
 | **Folder on host** | Nothing on disk: no clone, no branch, no marker | The folder the person picked, which must exist and be a directory | Ends the tmux session; nothing on disk is touched |
 | **Blank terminal** | The `shell` agent, in either of the above | As above | As above |
 
@@ -191,7 +197,9 @@ place with the agent `codex`; what differs is the vendor's CLI:
 - 2026-10-14: two places: the runner's home `~/.oppenheimer/`, and a work
   folder the person chooses, `~/oppenheimer/` by default.
 - 2026-10-14: the work folder is `<account>/<workspace>/{repos, agents,
-  sessions}`, every level named by an id; no project level.
+  sessions}`, every level named by an id; no project level. Since
+  2026-10-28 `repos.noindex` and `sessions.noindex`, so Spotlight skips
+  them (layout version 3, no migration).
 - 2026-10-14: a session is a new worktree or a folder on the host; the
   blank terminal is an agent, not a place. A folder session's folder is
   the person's: never written, never deleted.
