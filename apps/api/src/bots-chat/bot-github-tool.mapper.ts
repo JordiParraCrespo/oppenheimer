@@ -182,15 +182,20 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
   return lines;
 }
 
-/** What failing checks on this head were already found to be (`record_ci_findings`), so a look is not repeated. */
+/**
+ * What failing checks on this head were already found to be
+ * (`record_ci_findings`), so a look is not repeated. A finding's check name
+ * and cause can repeat what a check printed, so they come back fenced too.
+ */
 function describeCiFindings(findings: PullRequestDetailView['ciFindings']): string[] {
   if (findings.length === 0) return [];
+  const rows = findings.map(
+    (finding) =>
+      `- ${finding.check}: ${finding.relation}, ${finding.flake}, ${finding.action} (${finding.confidence}). ${cut(finding.rootCause, 200)}`,
+  );
   return [
-    'Findings already recorded on this head:',
-    ...findings.map(
-      (finding) =>
-        `- ${finding.check}: ${finding.relation}, ${finding.flake}, ${finding.action} (${finding.confidence}). ${cut(finding.rootCause, 200)}`,
-    ),
+    `Findings already recorded on this head (${UNTRUSTED_NOTE}):`,
+    untrusted(rows.join('\n')),
   ];
 }
 
