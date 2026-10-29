@@ -57,7 +57,8 @@ of the `cloud` place with the agent `codex`
 - **Files ride the task as links**, as for Claude Code's cloud ("Files for
   a cloud session"): the API keeps them and the task ends with a download
   line per file. A Codex environment whose internet access is off cannot
-  fetch them; the agent says so in the task.
+  fetch them: give the environment access to the API's host for files to
+  reach the task.
 - **Bring it here** is `codex apply <id>` on the session's pane, which
   applies the task's diff to a checkout. A button that opens a worktree
   session with it applied is not built, as for Claude's teleport.

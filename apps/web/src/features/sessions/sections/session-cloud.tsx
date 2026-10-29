@@ -5,7 +5,7 @@ import { PageFrame } from '@oppenheimer/frontend-web';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
-import { cloudPaneKeys } from '../lib/session-options';
+import { hostCloudCopy } from '../lib/session-options';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
 
 const DeleteSessionDialog = lazy(() =>
@@ -28,7 +28,7 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
   const [deleting, setDeleting] = useState(false);
-  const copy = cloudPaneKeys(session.agent);
+  const copy = hostCloudCopy(session.agent).pane;
 
   return (
     <PageFrame size="status">

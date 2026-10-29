@@ -38,24 +38,48 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
 }
 
 /**
- * Whether a runner whose hello named `capabilities` takes `launch`'s place: a
- * worktree session always, a folder session only when it named
- * `session.folder` (it would refuse a create with no checkouts otherwise), a
- * cloud session only when it named the capability for the cloud's agent (it
- * would open a terminal, or refuse the agent). A cloud session no host starts
- * (Cursor's) is never sent to a runner.
+ * What a runner must have named in its hello to take a launch's place, with
+ * the refusal when it did not: nothing for a worktree; `session.folder` for a
+ * folder (it would refuse a create with no checkouts otherwise); for a cloud,
+ * the capability of the cloud's agent, `HOST_CLOUD_CAPABILITIES` (it would
+ * open a terminal, or refuse the agent). A cloud of an agent no host starts
+ * (Cursor's) is never sent to a runner, so no runner takes it.
  */
+type PlaceNeed =
+  | { kind: 'none' }
+  | { kind: 'capability'; capability: RunnerCapability; refusal: ErrorDefinition }
+  | { kind: 'no-runner'; refusal: ErrorDefinition };
+
+function placeNeed(launch: RunnerLaunch): PlaceNeed {
+  switch (launch.place) {
+    case 'worktree':
+      return { kind: 'none' };
+    case 'folder':
+      return {
+        kind: 'capability',
+        capability: 'session.folder',
+        refusal: SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER,
+      };
+    case 'cloud':
+      return isHostCloudAgent(launch.agent)
+        ? {
+            kind: 'capability',
+            capability: HOST_CLOUD_CAPABILITIES[launch.agent],
+            refusal: SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER,
+          }
+        : { kind: 'no-runner', refusal: SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER };
+  }
+}
+
+/** Whether a runner whose hello named `capabilities` takes `launch`'s place (`placeNeed`). */
 export function runnerTakesPlace(
   launch: RunnerLaunch,
   capabilities: readonly RunnerCapability[],
 ): boolean {
-  if (launch.place === 'folder') return capabilities.includes('session.folder');
-  if (launch.place === 'cloud') {
-    return (
-      isHostCloudAgent(launch.agent) && capabilities.includes(HOST_CLOUD_CAPABILITIES[launch.agent])
-    );
-  }
-  return true;
+  const need = placeNeed(launch);
+  return (
+    need.kind === 'none' || (need.kind === 'capability' && capabilities.includes(need.capability))
+  );
 }
 
 /**
@@ -77,10 +101,7 @@ export function runnerRefusal(
   if (!runnerCanStart(launch.agent, runner.probedTools)) {
     return SessionErrors.AGENT_UNSUPPORTED_BY_RUNNER;
   }
-  if (runner.capabilities !== null && !runnerTakesPlace(launch, runner.capabilities)) {
-    return launch.place === 'cloud'
-      ? SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER
-      : SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER;
-  }
-  return null;
+  const need = placeNeed(launch);
+  if (need.kind === 'none' || runner.capabilities === null) return null;
+  return runnerTakesPlace(launch, runner.capabilities) ? null : need.refusal;
 }

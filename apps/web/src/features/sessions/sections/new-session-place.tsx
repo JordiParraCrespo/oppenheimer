@@ -11,8 +11,8 @@ import { useSearchPick } from '../hooks/use-search-pick';
 import {
   engineFor,
   engineForPlace,
+  hostCloudCopy,
   hostCloudHost,
-  hostCloudKey,
   toCloudOptions,
   toHostOptions,
   toStartFromOptions,
@@ -68,7 +68,7 @@ export function NewSessionPlace() {
       host: hostOptions.find((option) => option.value === from?.id) ?? null,
       startFrom: toStartFromOptions(hosts.data ?? [], rowAgent, {
         offline: t('sessions.new.host.offline'),
-        cannot: t(`sessions.new.where.${hostCloudKey(rowAgent)}.cannot`),
+        cannot: t(hostCloudCopy(rowAgent).where.cannot),
       }),
     };
   });

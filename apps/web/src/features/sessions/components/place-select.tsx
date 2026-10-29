@@ -25,13 +25,14 @@ import { useTranslation } from 'react-i18next';
 import {
   filterOptions,
   type HostCloudRow,
-  hostCloudKey,
+  hostCloudCopy,
   type PlaceCloud,
   type PlaceHost,
   placeLabelKey,
 } from '../lib/session-options';
 import { HostCloudItem } from './host-cloud-item';
 import { PlaceIcon } from './place-icon';
+import { StartFromHead } from './start-from-head';
 import { StartFromItem } from './start-from-item';
 
 /** A host-cloud row's value: no host id or vendor id is spelled this way. */
@@ -150,7 +151,7 @@ export function PlaceSelect({
               ? []
               : hostClouds.map((row) => ({
                   value: hostCloudRowValue(row.agent),
-                  label: t(`sessions.new.where.${hostCloudKey(row.agent)}.label`),
+                  label: t(hostCloudCopy(row.agent).where.label),
                   description: row.host?.label,
                 }))),
             ...clouds,
@@ -379,19 +380,7 @@ export function PlaceSelect({
           </>
         );
       case 'start-from':
-        return (
-          <>
-            <ChipSelectBack onClick={() => show({ pane: ROOT })}>
-              <span className="flex items-center gap-2">
-                <AgentMark agent={pane.cloud.agent} />
-                {t(`sessions.new.where.${hostCloudKey(pane.cloud.agent)}.label`)}
-              </span>
-            </ChipSelectBack>
-            <ChipSelectHeading>
-              {t(`sessions.new.where.${hostCloudKey(pane.cloud.agent)}.startFrom`)}
-            </ChipSelectHeading>
-          </>
-        );
+        return <StartFromHead agent={pane.cloud.agent} onBack={() => show({ pane: ROOT })} />;
       case 'root':
         return (
           <ChipSelectTabs aria-label={t('sessions.new.where.label')}>

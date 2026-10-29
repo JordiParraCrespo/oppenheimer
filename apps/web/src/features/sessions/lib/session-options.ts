@@ -166,40 +166,55 @@ export function toHostOptions(
  */
 const DEFAULT_HOST_CLOUD_AGENT = HOST_CLOUD_AGENT_IDS[0];
 
-/** Where each host-cloud agent's copy lives under `sessions.new.where`. */
-const HOST_CLOUD_KEYS = {
-  'claude-code': 'claudeCloud',
-  codex: 'codexCloud',
-} as const satisfies Record<HostCloudAgentId, string>;
-
-export function hostCloudKey(agent: HostCloudAgentId): (typeof HOST_CLOUD_KEYS)[HostCloudAgentId] {
-  return HOST_CLOUD_KEYS[agent];
+/** A host cloud's words in New session, under `sessions.new.where.<key>`. */
+function whereCopy<K extends 'claudeCloud' | 'codexCloud'>(key: K) {
+  return {
+    /** Its row under Cloud, and its Start from pane's way back. */
+    label: `sessions.new.where.${key}.label`,
+    /** The place chip once it is picked ("Codex cloud"). */
+    place: `sessions.new.where.${key}.place`,
+    from: `sessions.new.where.${key}.from`,
+    noHost: `sessions.new.where.${key}.noHost`,
+    startFrom: `sessions.new.where.${key}.startFrom`,
+    cannot: `sessions.new.where.${key}.cannot`,
+  } as const;
 }
 
 /**
- * The words a host cloud's session pane says, per agent: whose cloud it is,
- * where its status comes from, where it opens, and how its work comes back
- * to a terminal. The link and the command themselves are the session's
- * (`cloudUrl`, `teleportCommand`).
+ * Every word the console says about a cloud a host starts, per agent: its
+ * row, its Start from pane and the place chip (`where`), and the pane of a
+ * session started there (`pane`: whose cloud it is, where its status comes
+ * from, where it opens, how its work comes back to a terminal; the link and
+ * the command themselves are the session's, `cloudUrl` and
+ * `teleportCommand`). A new host-started agent is one entry here.
  */
-const CLOUD_PANE_KEYS = {
+const HOST_CLOUDS = {
   'claude-code': {
-    eyebrow: 'sessions.cloud.eyebrow',
-    statusSource: 'sessions.cloud.statusSource',
-    open: 'sessions.cloud.open',
-    teleport: 'sessions.cloud.teleport',
+    where: whereCopy('claudeCloud'),
+    pane: {
+      eyebrow: 'sessions.cloud.eyebrow',
+      statusSource: 'sessions.cloud.statusSource',
+      open: 'sessions.cloud.open',
+      teleport: 'sessions.cloud.teleport',
+    },
   },
   codex: {
-    eyebrow: 'sessions.cloud.codex.eyebrow',
-    statusSource: 'sessions.cloud.codex.statusSource',
-    open: 'sessions.cloud.codex.open',
-    teleport: 'sessions.cloud.codex.teleport',
+    where: whereCopy('codexCloud'),
+    pane: {
+      eyebrow: 'sessions.cloud.codex.eyebrow',
+      statusSource: 'sessions.cloud.codex.statusSource',
+      open: 'sessions.cloud.codex.open',
+      teleport: 'sessions.cloud.codex.teleport',
+    },
   },
-} as const satisfies Record<HostCloudAgentId, Record<string, string>>;
+} as const satisfies Record<
+  HostCloudAgentId,
+  { where: ReturnType<typeof whereCopy>; pane: Record<string, string> }
+>;
 
-/** A host cloud session's pane copy; a session of any other agent reads as Claude Code's, the first. */
-export function cloudPaneKeys(agent: string) {
-  return CLOUD_PANE_KEYS[isHostCloudAgent(agent) ? agent : DEFAULT_HOST_CLOUD_AGENT];
+/** A host cloud's words; an agent with no cloud of its own reads as Claude Code's, the first. */
+export function hostCloudCopy(agent: string) {
+  return HOST_CLOUDS[isHostCloudAgent(agent) ? agent : DEFAULT_HOST_CLOUD_AGENT];
 }
 
 /**
@@ -208,7 +223,7 @@ export function cloudPaneKeys(agent: string) {
  */
 export function placeLabelKey(place: SessionPlace, agent: CodingAgentId | null) {
   return place === 'cloud' && isHostCloudAgent(agent)
-    ? (`sessions.new.where.${hostCloudKey(agent)}.place` as const)
+    ? hostCloudCopy(agent).where.place
     : (`sessions.new.where.${place}.label` as const);
 }
 
