@@ -34,18 +34,18 @@ export interface MailSendProps {
   plan: MailPlan | null;
 }
 
-/**
- * One message a bot sent, or is sending, from a person's Gmail
- * (`product/next-steps/mail.md` §3.4): claimed before Gmail is asked, so a
- * retried job never sends twice, and the record of what went out. The body
- * is not kept: Gmail's Sent folder has it.
- */
 /** What a send is claimed or scheduled with: who, from where, to whom, about what. */
 export type MailSendClaim = Omit<
   MailSendProps,
   'status' | 'gmailMessageId' | 'gmailThreadId' | 'sentAt' | 'scheduledFor' | 'plan'
 >;
 
+/**
+ * One message a bot sent, is sending or will send, from a person's Gmail
+ * (`product/next-steps/mail.md` §3.4): claimed before Gmail is asked, so a
+ * retried job never sends twice, and the record of what went out. The body
+ * is not kept: Gmail's Sent folder has it.
+ */
 export class MailSendEntity extends AggregateRoot<MailSendProps> {
   static create(create: CreateEntityProps<MailSendProps>): MailSendEntity {
     return new MailSendEntity(create);
