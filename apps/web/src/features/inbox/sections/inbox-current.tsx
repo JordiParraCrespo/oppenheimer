@@ -7,22 +7,16 @@ import {
   TrendingUp,
   X,
 } from '@oppenheimer/design-system-web/icons';
-import { useSessions, useSuspenseInbox } from '@oppenheimer/frontend-consumer/react';
+import { useSessions } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatAge } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useInboxKeys } from '@/features/inbox/hooks/use-inbox-keys';
+import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useMarkRead } from '@/features/inbox/hooks/use-inbox-read';
-import { useInboxSearch } from '@/features/inbox/hooks/use-inbox-search';
-import { useInboxVisit } from '@/features/inbox/hooks/use-inbox-visit';
-import { inboxCopy, inboxFrom, matchesQuery } from '@/features/inbox/lib/inbox-copy';
-import { currentItem } from '@/features/inbox/lib/inbox-current';
-import { listedItems } from '@/features/inbox/lib/inbox-filter';
-import { InboxApprovalCard } from '@/features/inbox/sections/inbox-approval-card';
-import { InboxPullCard } from '@/features/inbox/sections/inbox-pull-card';
-import { InboxRunCard } from '@/features/inbox/sections/inbox-run-card';
-import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
+import { inboxCopy, inboxFrom } from '@/features/inbox/lib/inbox-copy';
+import { InboxItemMessage } from '@/features/inbox/sections/inbox-item-message';
 
 /**
  * The reading pane (`29-inbox.md` §5, the 2026-10-29 frame): a toolbar that
@@ -35,18 +29,12 @@ import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
 export function InboxCurrent() {
   const { t } = useTranslation();
   const now = useNow(60_000);
-  const inbox = useSuspenseInbox(now);
-  const visit = useInboxVisit();
-  const search = useInboxSearch();
+  const { inbox, search, open, current: item } = useInboxListing(now);
   const marks = useInboxMarks();
   const { data: running } = useSessions({
     select: (rows) => rows.filter((session) => session.isLive).length,
   });
 
-  const found = (entry: (typeof inbox.open)[number]) =>
-    matchesQuery(inboxCopy(entry, t), search.query);
-  const { open } = listedItems(inbox, visit, search.filter, search.showDone, found);
-  const item = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
   const copy = item ? inboxCopy(item, t) : null;
   useMarkRead(item?.key ?? null, search.item !== null);
   useInboxKeys(
@@ -103,29 +91,6 @@ export function InboxCurrent() {
     now - item.since.getTime() < 60_000
       ? formatAge(item.since, now, t)
       : t('inbox.pane.ago', { age: formatAge(item.since, now, t) });
-  // Keyed by the item, so the next one rises in fresh, with its own answer state.
-  const message = (() => {
-    switch (item.kind) {
-      case 'approval':
-        return <InboxApprovalCard key={item.key} item={item} copy={copy} from={from} age={age} />;
-      case 'pull':
-        return <InboxPullCard key={item.key} item={item} copy={copy} from={from} age={age} />;
-      case 'run':
-        return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
-      case 'session':
-        // By the session, so a refused answer stays over the decision it now waits on.
-        return (
-          <InboxSessionCard
-            key={`session:${item.session.id}`}
-            item={item}
-            copy={copy}
-            from={from}
-            age={age}
-          />
-        );
-    }
-  })();
-
   return (
     <>
       <InboxToolbar
@@ -154,7 +119,7 @@ export function InboxCurrent() {
       </InboxToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {errors}
-        {message}
+        <InboxItemMessage item={item} copy={copy} from={from} age={age} />
       </div>
     </>
   );

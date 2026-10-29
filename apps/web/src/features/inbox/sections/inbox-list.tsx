@@ -8,7 +8,6 @@ import {
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { useSuspenseInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
   ErrorAlert,
@@ -20,13 +19,11 @@ import {
 import { useTranslation } from 'react-i18next';
 import { InboxFilterChips } from '@/features/inbox/components/inbox-filter-chips';
 import { InboxFilterMenu } from '@/features/inbox/components/inbox-filter-menu';
+import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
-import { useInboxSearch } from '@/features/inbox/hooks/use-inbox-search';
-import { useInboxVisit } from '@/features/inbox/hooks/use-inbox-visit';
-import { inboxCopy, matchesQuery } from '@/features/inbox/lib/inbox-copy';
-import { currentItem } from '@/features/inbox/lib/inbox-current';
-import { facetCounts, listedItems } from '@/features/inbox/lib/inbox-filter';
+import { inboxCopy } from '@/features/inbox/lib/inbox-copy';
+import { facetCounts } from '@/features/inbox/lib/inbox-filter';
 import { ALL_PROJECTS, NO_PROJECT } from '@/features/inbox/lib/inbox-search';
 import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
@@ -41,21 +38,13 @@ export function InboxList() {
   const { t } = useTranslation();
   const locale = useLocale();
   const now = useNow(60_000);
-  const inbox = useSuspenseInbox(now);
-  const visit = useInboxVisit();
+  const listing = useInboxListing(now);
+  const { inbox, search, open, done } = listing;
   const read = useInboxRead();
-  const search = useInboxSearch();
   const marks = useInboxMarks();
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
-
-  const found = (item: (typeof inbox.open)[number]) =>
-    matchesQuery(inboxCopy(item, t), search.query);
-  const { open, done } = listedItems(inbox, visit, search.filter, search.showDone, found);
-  const current =
-    phone && search.item === null
-      ? null
-      : currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
+  const current = phone && search.item === null ? null : listing.current;
   const unread = inbox.open.filter((item) => !read.has(item.key) && item.key !== current?.key);
   const projectName = (id: string) => inbox.projects.find((project) => project.id === id)?.name;
   const counts = facetCounts(inbox.open, search.filter);
