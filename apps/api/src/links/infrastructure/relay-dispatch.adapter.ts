@@ -64,7 +64,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // A runner that predates folder sessions would refuse a create with no
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
-      if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
+      if (!runnerTakesPlace(session, link.capabilities)) return NOT_SUPPORTED;
       // Only a host's coding agent is launched by a runner; a vendor's is not.
       const agent = session.agent;
       if (!isCodingAgentId(agent)) return NOT_SUPPORTED;

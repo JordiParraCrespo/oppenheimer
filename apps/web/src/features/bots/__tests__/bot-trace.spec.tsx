@@ -27,6 +27,7 @@ const step = (callId: string, overrides: Partial<BotToolStep> = {}): BotToolStep
   sessionId: null,
   subagents: null,
   allowedBy: null,
+  mailDraft: null,
   ...overrides,
 });
 

@@ -15,7 +15,10 @@ import { BotGoalResolver } from './application/bot-goal.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
+import { BotMailAccountsResolver } from './application/bot-mail-accounts.resolver';
+import { BotMailOrganizeToolsFactory } from './application/bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './application/bot-mail-tools.factory';
+import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.factory';
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
@@ -281,6 +284,9 @@ const queryHandlers: Provider[] = [
     BotPeerToolsFactory,
     BotWebToolsFactory,
     BotMailToolsFactory,
+    BotMailWriteToolsFactory,
+    BotMailOrganizeToolsFactory,
+    BotMailAccountsResolver,
     BotSubagentToolsFactory,
     BotSubagentRunnerFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },

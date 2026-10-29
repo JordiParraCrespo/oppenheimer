@@ -73,6 +73,9 @@ type App struct {
 	// Cloud starts a task in Claude Code's cloud with the host's own
 	// `claude` (link_cloud.go); nil is the real CLI.
 	Cloud CloudStarter
+	// CodexCloud starts tasks in Codex cloud with the host's own `codex` and
+	// reads their status (link_cloud_codex.go); nil is the real CLI.
+	CodexCloud CodexCloud
 	// WorkFolder is the work folder's own bookkeeping: its layout file and
 	// the markers of the folders the runner makes there.
 	WorkFolder *workfolder.Folder

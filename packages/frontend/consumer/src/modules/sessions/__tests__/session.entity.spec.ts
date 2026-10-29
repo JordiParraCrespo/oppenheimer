@@ -205,3 +205,58 @@ describe('a cloud session', () => {
     expect(repositoryNameOf('https://gitlab.com/acme/api')).toBe('https://gitlab.com/acme/api');
   });
 });
+
+/**
+ * A cloud session started from a host lives at its agent's vendor: the page
+ * and the command that brings its work into a terminal follow the agent, so a
+ * Codex task never links to claude.ai.
+ */
+describe('SessionEntity cloud links', () => {
+  function cloudSession(agent: 'claude-code' | 'codex', cloudSessionId: string | null) {
+    return new SessionEntity(
+      'session-1',
+      'org-1',
+      'project-1',
+      'host-1',
+      'Fix the wallet list empty state',
+      'bold-otter-3f9a7k',
+      agent,
+      { model: null, permission: 'ask', effort: null },
+      'working',
+      'open',
+      null,
+      [],
+      null,
+      [],
+      new Date('2026-06-15T12:00:00Z'),
+      'cloud',
+      null,
+      null,
+      null,
+      null,
+      null,
+      0,
+      null,
+      null,
+      cloudSessionId,
+    );
+  }
+
+  it("opens Claude Code's on claude.ai and teleports it", () => {
+    const session = cloudSession('claude-code', 'session_014a8EH8DJs95X1iK8ZH9Y82');
+    expect(session.cloudUrl).toBe('https://claude.ai/code/session_014a8EH8DJs95X1iK8ZH9Y82');
+    expect(session.teleportCommand).toBe('claude --teleport session_014a8EH8DJs95X1iK8ZH9Y82');
+  });
+
+  it('opens a Codex task on chatgpt.com and applies its diff', () => {
+    const session = cloudSession('codex', 'task_e_68a1b2c3d4');
+    expect(session.cloudUrl).toBe('https://chatgpt.com/codex/tasks/task_e_68a1b2c3d4');
+    expect(session.teleportCommand).toBe('codex apply task_e_68a1b2c3d4');
+  });
+
+  it('has neither before its host has started it', () => {
+    const session = cloudSession('codex', null);
+    expect(session.cloudUrl).toBeNull();
+    expect(session.teleportCommand).toBeNull();
+  });
+});

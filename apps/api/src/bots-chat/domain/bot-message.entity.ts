@@ -9,6 +9,7 @@ import {
   BOT_MESSAGE_IMAGES_MAX,
   BOT_MESSAGE_ROLES,
   type BotAttachment,
+  type BotMailDraft,
   type BotMessageEvent,
   type BotMessageRole,
   type BotSubagentRun,
@@ -33,6 +34,8 @@ export interface BotToolStep {
    * (`25-bots.md` §5); null when it asked, or never had to.
    */
   allowedBy: string | null;
+  /** The draft a mail call saved, for the chat's card; null for any other call. */
+  mailDraft: BotMailDraft | null;
 }
 
 /** How much of a tool's answer a message keeps: enough to read, never a whole page. */

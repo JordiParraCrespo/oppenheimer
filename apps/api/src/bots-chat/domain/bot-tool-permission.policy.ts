@@ -45,15 +45,18 @@ export interface BotToolTraits {
   asks: boolean;
   /** Every call is decided on its own: no Allow in Settings, no standing grant. */
   perCallOnly: boolean;
+  /** It asks under every preset, Full access included (mail sent from the owner's address). */
+  always?: boolean;
 }
 
 /**
  * What the catalog says for a tool on its own, under the bot's preset: one
  * that reaches outside Oppenheimer asks under Approve for me and runs under
- * Full access; one that stays inside runs.
+ * Full access; one that always asks does so under both; one that stays
+ * inside runs.
  */
 export function defaultDecision(tool: BotToolTraits, preset: BotPermission): 'allow' | 'ask' {
-  return tool.asks && preset !== 'full' ? 'ask' : 'allow';
+  return tool.asks && (tool.always || preset !== 'full') ? 'ask' : 'allow';
 }
 
 /**

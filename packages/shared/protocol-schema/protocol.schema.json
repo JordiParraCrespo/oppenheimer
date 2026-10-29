@@ -1886,6 +1886,7 @@
       "device.screen",
       "port.forward",
       "session.cloud",
+      "session.cloud.codex",
       "session.watch"
     ],
     "maxEventPayloadBytes": 8192,

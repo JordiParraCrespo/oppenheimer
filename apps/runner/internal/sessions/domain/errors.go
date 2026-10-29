@@ -36,6 +36,10 @@ var (
 	// repository there, or a CLI too old to know the flag. Its detail is
 	// the CLI's own last words.
 	ErrCloudStart = problem.New("SESS_008", http.StatusBadGateway, "Claude Code could not start the session in the cloud")
+	// ErrCodexCloudStart is `codex cloud` refusing or failing: not signed in
+	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
+	// old to know the command. Its detail is the CLI's own last words.
+	ErrCodexCloudStart = problem.New("SESS_009", http.StatusBadGateway, "Codex could not start the task in the cloud")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.

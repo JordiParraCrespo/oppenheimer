@@ -28,7 +28,7 @@ export interface NewSessionDraft {
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
    * new worktree of a project's repository, a folder already on the host, or
-   * the cloud — Claude Code's, which the host starts, or a vendor's the
+   * the cloud — Claude Code's or Codex's, which the host starts, or a vendor's the
    * console launches (`cloudProvider`).
    */
   where: SessionPlace;
@@ -162,15 +162,15 @@ export function openDraft(seed: DraftSeed = {}): {
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
   };
-  return { draft: fitClaudeCloud(draft, seed), fillable: landingFillable(stored) };
+  return { draft: fitHostCloud(draft, seed), fillable: landingFillable(stored) };
 }
 
 /**
- * A draft opening on Claude Code's cloud brings the agent that place runs
+ * A draft opening on a host's cloud brings an agent that place runs
  * (`engineForPlace`), unless the address names another one: then the address
  * wins and the place falls back to a new worktree.
  */
-function fitClaudeCloud(draft: NewSessionDraft, seed: DraftSeed): NewSessionDraft {
+function fitHostCloud(draft: NewSessionDraft, seed: DraftSeed): NewSessionDraft {
   const engine = engineForPlace(draft, draft);
   if (engine.agent === draft.agent) return draft;
   if (seed.agent) return { ...draft, where: 'worktree' };
