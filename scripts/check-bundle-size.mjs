@@ -27,9 +27,9 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 353.3KB measured (2026-10-29, bot permissions); what goes in a vendor group is the rule in
+    // 355.1KB measured (2026-10-29, bot memory tiers and scopes); what goes in a vendor group is the rule in
     // `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in git history.
-    budgetKB: 354,
+    budgetKB: 356,
   },
   // oppenheimer:end web
 ];

@@ -14,8 +14,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Turns that failed before this column existed read as no kind, which the
  * chat treats as `other`.
  */
-export class AddBotTurnFailure1791004500000 implements MigrationInterface {
-  name = 'AddBotTurnFailure1791004500000';
+export class AddBotTurnFailure1791004550000 implements MigrationInterface {
+  name = 'AddBotTurnFailure1791004550000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "bot_turn" ADD "failure" character varying(16)`);
