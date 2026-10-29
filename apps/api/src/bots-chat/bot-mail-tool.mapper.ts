@@ -1,4 +1,9 @@
-import { type BotMailDraft, MAIL_DRAFT_CARD_BODY_MAX, type MailPlan } from '@oppenheimer/shared';
+import {
+  type BotMailDraft,
+  MAIL_DRAFT_CARD_BODY_MAX,
+  type MailPlan,
+  type MailPlanAttachment,
+} from '@oppenheimer/shared';
 import type { GmailConnectionEntity } from '../mail/domain/gmail-connection.entity';
 import type { MailSendEntity } from '../mail/domain/mail-send.entity';
 import type {
@@ -98,6 +103,22 @@ export function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${bytes} B`;
+}
+
+/** An image from the bot's chat as a planned mail file. */
+export function chatImageAttachment(image: {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+}): Extract<MailPlanAttachment, { source: 'chat' }> {
+  return {
+    source: 'chat',
+    attachmentId: image.id,
+    filename: image.name,
+    mimeType: image.mimeType,
+    sizeBytes: image.sizeBytes,
+  };
 }
 
 /** Where a draft opens in Gmail, in the account it belongs to. */

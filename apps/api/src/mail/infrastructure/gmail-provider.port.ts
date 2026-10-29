@@ -48,6 +48,8 @@ export interface GmailMessageSummary {
 
 /** One message read in full, its body as plain text. */
 export interface GmailMessage extends GmailMessageSummary {
+  /** Only a draft (or the account's own sent mail) carries one. */
+  bcc: string;
   replyTo: string;
   /** The `Message-ID` header, which a reply's `In-Reply-To` names. */
   messageIdHeader: string;
@@ -183,7 +185,7 @@ export interface GmailProviderPort {
   ): Promise<GmailAttachmentContent>;
   /** The addresses the account sends from, the default first. */
   listSendAs(grant: GmailCallGrant): Promise<GmailSendAs[]>;
-  /** One message in full, for an answer or a forward to be built from. */
+  /** One message in full, its body whole, for an answer or a forward to be built from. */
   readMessage(grant: GmailCallGrant, messageId: string): Promise<GmailMessage>;
   readDraft(grant: GmailCallGrant, draftId: string): Promise<GmailDraftRead>;
   createDraft(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailDraftRef>;
