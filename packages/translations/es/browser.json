@@ -2455,6 +2455,7 @@
     "backToTask": "Volver a la tarea",
     "nav": {
       "label": "Plan",
+      "inbox": "Bandeja",
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos"
@@ -2792,24 +2793,18 @@
   },
   "inbox": {
     "title": "Bandeja",
-    "bar": {
-      "meta": "{{needs}} · {{running}}",
-      "needs_zero": "Nada te necesita",
-      "needs_one": "{{count}} te necesita",
-      "needs_other": "{{count}} te necesitan",
-      "running_one": "{{count}} sesión en marcha",
-      "running_other": "{{count}} sesiones en marcha"
-    },
     "list": {
-      "head": "Te necesita",
       "empty": "Nada te necesita.",
-      "noneMatching": "Nada con estos filtros te necesita.",
+      "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",
       "bringBack": "Recuperar",
       "failed": "No se pudo cargar la bandeja.",
       "markFailed": "No se pudo guardar. Inténtalo de nuevo.",
-      "back": "Vuelve {{when}}"
+      "back": "Vuelve {{when}}",
+      "unread": "{{count}} sin leer",
+      "search": "Buscar en la bandeja",
+      "clearSearch": "Borrar búsqueda"
     },
     "filter": {
       "label": "Filtrar la bandeja",
@@ -2844,7 +2839,7 @@
     },
     "from": {
       "session": "Sesión",
-      "approval": "{{bot}} · Aprobación de bot",
+      "approval": "Aprobación de bot",
       "run": "Automatización"
     },
     "session": {
@@ -2885,7 +2880,6 @@
       "readyShort": "Fusionar #{{number}} {{title}}",
       "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
       "readyBody": "Nada lo bloquea: se puede fusionar ya.",
-      "by": "de {{author}}",
       "open": "Abrir",
       "viewOnGithub": "Ver en GitHub",
       "merge": "Fusionar",
@@ -2912,29 +2906,16 @@
       "later": "Más tarde",
       "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
     },
-    "log": {
-      "done": "Marcado como hecho · {{title}}",
-      "approved": "Aprobado {{bot}} · {{tool}}",
-      "denied": "Denegado {{bot}} · {{tool}}",
-      "merged": "Fusionado #{{number}} en {{repository}}",
-      "ranAgain": "{{name}} ejecutado de nuevo",
-      "answered": "Respondido a {{name}}: {{answer}}"
-    },
     "pane": {
-      "greeting": {
-        "morning": "Buenos días.",
-        "afternoon": "Buenas tardes.",
-        "evening": "Buenas noches."
-      },
-      "running_one": "{{count}} sesión está en marcha.",
-      "running_other": "{{count}} sesiones están en marcha.",
-      "needs_one": "Una cosa te necesita.",
-      "needs_other": "{{count}} cosas te necesitan, de una en una.",
-      "nothing": "Ahora mismo nada te necesita.",
-      "clearTitle": "Todo al día",
-      "clear": "Lo próximo que te necesite aparecerá aquí.",
-      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo próximo que te necesite aparecerá aquí.",
-      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo próximo que te necesite aparecerá aquí."
+      "label": "Panel de lectura",
+      "toolbar": "Acciones del elemento",
+      "back": "Volver a la lista",
+      "position": "{{n}} de {{total}}",
+      "ago": "hace {{age}}",
+      "clearTitle": "Nada te necesita",
+      "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
     }
   },
   "settings": {
@@ -3176,8 +3157,7 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados",
-    "inbox": "Bandeja"
+    "employees": "Empleados"
   },
   "language": {
     "label": "Idioma",

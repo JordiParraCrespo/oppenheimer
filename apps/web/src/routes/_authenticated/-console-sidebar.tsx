@@ -22,11 +22,6 @@ const PullRequestsSidebar = lazy(() =>
     default: module.PullRequestsSidebar,
   })),
 );
-const InboxSidebar = lazy(() =>
-  import('@/features/inbox/sections/inbox-sidebar').then((module) => ({
-    default: module.InboxSidebar,
-  })),
-);
 const PlanSidebar = lazy(() =>
   import('@/features/tasks/sections/plan-sidebar').then((module) => ({
     default: module.PlanSidebar,
@@ -47,8 +42,8 @@ const SectionBots = lazy(() =>
 /**
  * The sidebar body beside the rail, for the list the address is under. Route
  * composition, beside the layout that mounts it (the `-` keeps it out of the
- * route tree): Plan's sidebar is the tasks feature's head (Tasks, Milestones,
- * Calendar), with the calendar's layers and accounts under it on the
+ * route tree): Plan's sidebar is the tasks feature's head (Inbox, Tasks,
+ * Milestones, Calendar), with the calendar's layers and accounts under it on the
  * calendar; the board and Milestones filter by project in the page.
  * Every section but Employees carries the bots placed in it
  * (`product/versions/mvp/28-bots-in-sections.md`): the bots feature draws
@@ -70,9 +65,7 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
   }
   return (
     <Suspense fallback={null}>
-      {list === 'inbox' ? (
-        <InboxSidebar />
-      ) : list === 'bots' ? (
+      {list === 'bots' ? (
         <BotsSidebar />
       ) : list === 'automations' ? (
         <AutomationsSidebar bots={<SectionBots section="automations" />} />

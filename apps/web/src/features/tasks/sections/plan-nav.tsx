@@ -1,13 +1,15 @@
 import { MilestoneGlyph, RoutineItem } from '@oppenheimer/design-system-web';
 import { CalendarDays, CircleCheck } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
+import { PlanInboxItem } from './plan-inbox-item';
 
 /**
- * The head of Plan's sidebar (the 2026-10-13 `Tasks` frame): Tasks with the
- * open count, Milestones with how many there are, and Calendar with today's
+ * The head of Plan's sidebar (the `Tasks` frame): the Inbox first with what
+ * needs you (while the `inbox` flag is on), Tasks with the open count, Milestones with how many there are, and Calendar with today's
  * events. The calendar puts its layers and accounts under it.
  */
 export function PlanNav() {
@@ -15,12 +17,14 @@ export function PlanNav() {
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const today = useTodayEventCount();
+  const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
   const onCalendar = Boolean(matchRoute({ to: '/plan/calendar', fuzzy: true }));
   const onMilestones = Boolean(matchRoute({ to: '/plan/milestones', fuzzy: true }));
 
   return (
     <nav aria-label={t('tasks.nav.label')} className="flex flex-col gap-0.5 px-3 pb-3">
+      {inbox ? <PlanInboxItem /> : null}
       <RoutineItem
         name={t('tasks.nav.tasks')}
         icon={<CircleCheck />}
