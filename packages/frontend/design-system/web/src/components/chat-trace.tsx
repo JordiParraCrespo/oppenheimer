@@ -60,6 +60,27 @@ function TraceGlyph({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * A line's words and its mono meta ("1 failed", "14 results", the clock),
+ * on one baseline: centred, the 12px mono rides above the 15px words.
+ */
+function TraceWords({
+  meta,
+  metaClassName,
+  children,
+}: {
+  meta?: React.ReactNode;
+  metaClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="flex min-w-0 items-baseline gap-2.5">
+      <span className="min-w-0 truncate">{children}</span>
+      {meta ? <span className={cn('figures shrink-0 font-mono text-[12px]', metaClassName)}>{meta}</span> : null}
+    </span>
+  );
+}
+
 function TraceGroup({
   icon,
   summary,
@@ -85,8 +106,9 @@ function TraceGroup({
         className={cn(LINE_METRICS, 'gap-2.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
       >
         <TraceGlyph>{icon}</TraceGlyph>
-        <span className="min-w-0 truncate">{summary}</span>
-        {failed ? <span className="figures shrink-0 font-mono text-[12px] text-danger">{failed}</span> : null}
+        <TraceWords meta={failed} metaClassName="text-danger">
+          {summary}
+        </TraceWords>
       </FoldTrigger>
       <FoldPanel role="list" className={GROUP_RAIL}>
         {children}
@@ -126,20 +148,13 @@ function TraceStep({
   const line = (
     <>
       <TraceGlyph>{icon}</TraceGlyph>
-      <span className="min-w-0 truncate">
+      <TraceWords
+        meta={meta}
+        metaClassName={cn('flex gap-1.5', tone === 'danger' ? 'text-danger' : 'text-fg-subtle')}
+      >
         {title}
         {target ? <span className={tone === 'danger' ? undefined : 'text-fg'}> {target}</span> : null}
-      </span>
-      {meta ? (
-        <span
-          className={cn(
-            'figures flex shrink-0 gap-1.5 font-mono text-[12px]',
-            tone === 'danger' ? 'text-danger' : 'text-fg-subtle',
-          )}
-        >
-          {meta}
-        </span>
-      ) : null}
+      </TraceWords>
     </>
   );
   const withAction = (head: React.ReactNode) =>
@@ -278,12 +293,9 @@ function TraceLive({
       className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
     >
       <LoaderIcon aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
-      <span className="flex min-w-0 items-baseline gap-2">
-        <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
-        {elapsed ? (
-          <span className="figures shrink-0 font-mono text-[12px] text-fg-subtle">{elapsed}</span>
-        ) : null}
-      </span>
+      <TraceWords meta={elapsed} metaClassName="text-fg-subtle">
+        <span className="motion-safe:animate-shimmer">{children}</span>
+      </TraceWords>
     </div>
   );
 }
