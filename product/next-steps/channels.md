@@ -26,10 +26,10 @@ permissions, and come later. A channel never grants a connector: talking to
 a bot in Slack does not let it read your Slack.
 
 **The first version is a connector, not a channel** (2026-10-29): reading
-your own mailboxes from your bots and sending from them, [Mail](mail.md). It needs no MCP:
+your own Gmail from your bots, drafts and sends included, [Mail](mail.md). It needs no MCP:
 Grok Bot reaches your Gmail through Google's hosted Gmail MCP server, and
 Codex's connectors are one hosted MCP server, but our mail connector calls
-Gmail, IMAP and SMTP directly and gives the bot its tools the way the calendar
+the Gmail API directly and gives the bot its tools the way the calendar
 does. Our bots' tools are already an in-process MCP server shared by both
 engines (note 25 §4), so a remote MCP server (Linear, Notion) can join the
 same turn later, with the owner's OAuth token and the tool permissions of
