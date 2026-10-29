@@ -156,8 +156,13 @@ test('reports what it tracks to the Oppenheimer it is connected to', async ({
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
 
-  await expect.poll(() => reports.length).toBeGreaterThan(0);
-  expect(reports[0]).toEqual({
+  // The connection being saved can report before the page has read the
+  // list, so an empty report may come first; the one that carries the
+  // sessions is the one this checks.
+  const tracked = () =>
+    reports.find((report) => ((report.body as { sessions?: unknown[] }).sessions ?? []).length > 0);
+  await expect.poll(tracked).toBeDefined();
+  expect(tracked()).toEqual({
     authorization: 'Bearer oppenheimer_pat_test',
     body: {
       sessions: expect.arrayContaining([
