@@ -1,7 +1,7 @@
 import { BotEntity } from '@oppenheimer/frontend-consumer';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SectionBotsList } from '../sections/section-bots-list';
 
 /**
@@ -23,6 +23,8 @@ const listed = vi.hoisted(() => ({ bots: [] as unknown[] }));
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSuspenseSectionBots: () => ({ data: listed.bots, error: null }),
   useDeleteBot: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+  useUpdateBot: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
+  useBotsSnapshot: () => () => listed.bots,
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -56,7 +58,18 @@ function bot(id: string, name: string, sections: BotSection[]): BotEntity {
   );
 }
 
+beforeEach(() => {
+  // The drag layer asks whether the reader prefers reduced motion; jsdom has no media queries.
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+});
+
 afterEach(() => {
+  vi.unstubAllGlobals();
   cleanup();
   listed.bots = [];
 });
@@ -94,6 +107,16 @@ describe('SectionBotsList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'bots.sidebar.rowActions' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'bots.section.hide' }));
     expect(onHide).toHaveBeenCalledWith(release);
+  });
+
+  it('lets each row be picked up from the keyboard, while Enter still opens its chat', () => {
+    listed.bots = [bot('b5', 'Release Bot', ['pulls']), bot('b6', 'Planning Bot', ['pulls'])];
+    render(<SectionBotsList section="pulls" onAdd={() => {}} onHide={() => {}} />);
+    for (const link of screen.getAllByRole('link')) {
+      // The drag layer's role description, and its instructions for a row that is also a link.
+      expect(link.getAttribute('aria-roledescription')).toBe('sortable');
+      expect(link.getAttribute('aria-describedby')).toBeTruthy();
+    }
   });
 
   it('asks before a row’s Delete removes the bot, from the section’s sidebar', async () => {

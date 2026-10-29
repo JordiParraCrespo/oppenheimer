@@ -850,3 +850,11 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked for bots to be dragged into order on every page
+  that shows them. There is still one order, the Employees order, and no
+  per-page one: a section's Bots heading now drags its rows too, and a drop
+  there moves the bot in Employees (between the same two bots, keeping its
+  group when a neighbour is in it), so every heading follows. The bots list
+  the API serves is that order (groups by position, then Ungrouped); it had
+  been Ungrouped first with groups by id, so a heading's order differed from
+  Employees' (`versions/mvp/28-bots-in-sections.md`, Decided).

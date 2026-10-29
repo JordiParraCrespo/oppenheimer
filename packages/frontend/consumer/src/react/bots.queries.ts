@@ -93,11 +93,20 @@ function useBotGroupListQuery() {
   return { queryKey: botsKeys.groupList(), queryFn: () => app.bots.findGroups() };
 }
 
-/** The workspace's bots, ungrouped first, then by group and position. */
+/** The workspace's bots in the Employees order: by group, then Ungrouped, each by position. */
 export function useBots<TData = BotEntity[]>(
   options?: Omit<UseQueryOptions<BotEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery<BotEntity[], Error, TData>({ ...useBotListQuery(), ...options });
+}
+
+/**
+ * The bots as last read, for a handler that needs every one without
+ * subscribing to the list (a section's drag, which draws only its own).
+ */
+export function useBotsSnapshot(): () => BotEntity[] | undefined {
+  const queryClient = useQueryClient();
+  return () => queryClient.getQueryData<BotEntity[]>(botsKeys.list());
 }
 
 /** The sidebar's groups, in their order: a picker that waits on nothing. */

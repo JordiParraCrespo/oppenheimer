@@ -66,6 +66,7 @@ export {
   useBotDocuments,
   useBotGroups,
   useBots,
+  useBotsSnapshot,
   useClearBotMemory,
   useCreateBot,
   useCreateBotGroup,

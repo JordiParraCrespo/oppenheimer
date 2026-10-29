@@ -588,6 +588,17 @@ function useSortableControl({ id, data, disabled }: { id: string; data?: DragDat
       ref: setActivatorNodeRef,
       'aria-roledescription': attributes['aria-roledescription'],
       'aria-describedby': instructions,
+      // Space picks the item up here, before the control's own handler sees
+      // it: a Base UI button drawn as a link prevents Space's default on
+      // keydown, and dnd-kit ignores a prevented key by the time it bubbles
+      // to the node.
+      onKeyDown: (event: React.KeyboardEvent) => {
+        if (event.code === 'Space' && event.target === event.currentTarget) listeners?.onKeyDown?.(event);
+      },
+      // ...and never opens it: that same button clicks on Space's keyup unless it is prevented.
+      onKeyUp: (event: React.KeyboardEvent) => {
+        if (event.code === 'Space' && event.target === event.currentTarget && listeners) event.preventDefault();
+      },
     },
   };
 }

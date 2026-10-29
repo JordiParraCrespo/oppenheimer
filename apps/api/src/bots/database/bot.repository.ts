@@ -14,6 +14,7 @@ import { BotOrmEntity } from './bot.orm-entity';
 import type { BotCreatorCheck, BotRepositoryPort, BotWriteOutcome } from './bot.repository.port';
 import { BotDocumentOrmEntity } from './bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity';
+import { BotGroupOrmEntity } from './bot-group.orm-entity';
 
 const FOREIGN_KEY_VIOLATION = '23503';
 const UNIQUE_VIOLATION = '23505';
@@ -34,9 +35,18 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
   }
 
   async findAll(scope: AccessScope): Promise<BotEntity[]> {
-    // IDX_bot_group_position.
+    // The Employees order, which every list of bots draws: the groups by
+    // their position, Ungrouped after them, each group's bots by position.
+    // IDX_bot_group_position, and UQ_bot_group_organization_id for the join.
     const records = await this.scopedQuery(scope)
-      .orderBy('bot.groupId', 'ASC', 'NULLS FIRST')
+      .leftJoin(
+        BotGroupOrmEntity,
+        'botGroup',
+        'botGroup.organizationId = bot.organizationId AND botGroup.id = bot.groupId',
+      )
+      .orderBy('botGroup.position', 'ASC', 'NULLS LAST')
+      .addOrderBy('botGroup.createdAt', 'ASC', 'NULLS LAST')
+      .addOrderBy('bot.groupId', 'ASC', 'NULLS LAST')
       .addOrderBy('bot.position', 'ASC')
       .addOrderBy('bot.createdAt', 'ASC')
       .addOrderBy('bot.id', 'ASC')
