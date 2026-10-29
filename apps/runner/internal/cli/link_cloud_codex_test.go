@@ -12,10 +12,12 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/cloud"
 )
 
-// sentEvents is a link that takes every batch and keeps what it said.
+// sentEvents is a link that takes every batch and keeps what it said; the
+// control plane's ack is the test's to send (ackAll).
 type sentEvents struct {
-	mu     sync.Mutex
-	events []sentEvent
+	mu      sync.Mutex
+	events  []sentEvent
+	batches []link.EventsAppend
 }
 
 type sentEvent struct {
@@ -30,12 +32,28 @@ func (s *sentEvents) Send(message any) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.batches = append(s.batches, batch)
 	for _, event := range batch.Events {
 		var payload map[string]any
 		_ = json.Unmarshal([]byte(event.Payload), &payload)
 		s.events = append(s.events, sentEvent{session: batch.SessionID, kind: event.Kind, payload: payload})
 	}
 	return nil
+}
+
+// ackAll is the control plane taking every batch sent so far.
+func (s *sentEvents) ackAll(r *link.Reporter) {
+	s.mu.Lock()
+	batches := s.batches
+	s.batches = nil
+	s.mu.Unlock()
+	for _, batch := range batches {
+		keys := make([]string, 0, len(batch.Events))
+		for _, event := range batch.Events {
+			keys = append(keys, event.IdempotencyKey)
+		}
+		r.Ack(link.EventsAck{Type: "events.ack", BatchID: batch.BatchID, Accepted: keys})
+	}
 }
 
 // take answers what was sent since the last take.
@@ -178,6 +196,7 @@ func TestTheCodexCloudPollReportsEachTaskOnceWhenItMoves(t *testing.T) {
 	h.createCloud(context.Background(), codexCreate("s-1"))
 	h.createCloud(context.Background(), codexCreate("s-2"))
 	sent.take()
+	sent.ackAll(h.reporter)
 
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
@@ -198,6 +217,7 @@ func TestTheCodexCloudPollReportsEachTaskOnceWhenItMoves(t *testing.T) {
 	if reported["s-1"] != "agent.observed:done" || reported["s-2"] != "session.failed:" {
 		t.Fatalf("reported = %v", reported)
 	}
+	sent.ackAll(h.reporter)
 
 	lists := codex.lists
 	if err := h.pollCodexCloud(context.Background()); err != nil {
@@ -236,5 +256,48 @@ func TestTheCodexCloudPollAsksNothingWithNothingToWatch(t *testing.T) {
 	}
 	if codex.lists != 0 {
 		t.Fatalf("lists = %d, want 0", codex.lists)
+	}
+}
+
+// A status reported while the link is down waits in memory; until the
+// control plane acks it, the ledger still holds the last one it took. A
+// runner that restarts before the ack reports it again rather than taking
+// the task for settled, and one that keeps running sends it only once.
+func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
+	h, codex, sent := newCodexCloudHarness(t)
+	h.createCloud(context.Background(), codexCreate("s-1"))
+	sent.ackAll(h.reporter)
+	sent.take()
+
+	codex.set("task_e_a", cloud.CodexReady)
+	for range 2 {
+		if err := h.pollCodexCloud(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := kinds(sent.take()); len(got) != 1 || got[0] != "agent.observed:done" {
+		t.Fatalf("events before the ack = %q, want done once", got)
+	}
+
+	// The runner restarts with that event unacked: a new handler, the same ledger.
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	again := &sentEvents{}
+	restarted := &linkHandler{app: h.app, logger: logger, life: context.Background()}
+	restarted.reporter = link.NewReporter("run-test-2", again, logger)
+	if err := restarted.pollCodexCloud(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := kinds(again.take()); len(got) != 1 || got[0] != "agent.observed:done" {
+		t.Fatalf("events after the restart = %q, want done again", got)
+	}
+
+	// Taken this time: the task is settled, and Codex is not asked again.
+	again.ackAll(restarted.reporter)
+	lists := codex.lists
+	if err := restarted.pollCodexCloud(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if codex.lists != lists {
+		t.Fatal("Codex was asked about a task whose finish the control plane took")
 	}
 }

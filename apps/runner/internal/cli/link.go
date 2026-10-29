@@ -98,6 +98,10 @@ type linkHandler struct {
 	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
 	cloudStarts sync.Map
+	// codexReporting holds, by session, the Codex status whose event waits on
+	// the control plane's ack (link_cloud_codex.go), so a poll in between does
+	// not send it twice.
+	codexReporting sync.Map
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment

@@ -130,22 +130,42 @@ func (h *linkHandler) pollCodexCloud(ctx context.Context) error {
 // running is the agent working, finished (ready, or already applied) is done,
 // and an error is the session failed. A status this runner does not know is
 // left unreported, so a newer CLI's word never reads as one of these.
+//
+// The ledger remembers a status only once the control plane has acked its
+// event: one held in memory when the runner ends is reported again by the
+// next poll, never lost behind a ledger that says it was sent. While it waits
+// for that ack, a poll that sees the same status again sends nothing more.
 func (h *linkHandler) reportCodexStatus(ledger cloudLedger, sessionID, status string) {
-	switch status {
-	case cloud.CodexPending:
-		h.reporter.Append(sessionID, "agent.observed", map[string]any{"state": "working"})
-	case cloud.CodexReady, cloud.CodexApplied:
-		h.reporter.Append(sessionID, "agent.observed", map[string]any{"state": "done"})
-	case cloud.CodexError:
-		h.reporter.Append(sessionID, "session.failed", map[string]any{
-			"detail": "Codex cloud reported the task failed; its page on chatgpt.com/codex says why",
-		})
-	default:
+	kind, payload, known := codexStatusEvent(status)
+	if !known {
 		return
 	}
-	if err := ledger.reported(sessionID, status); err != nil {
-		h.logger.Warn("codex cloud status not remembered", "session", sessionID, "error", err)
+	if waiting, ok := h.codexReporting.Load(sessionID); ok && waiting == status {
+		return
 	}
+	h.codexReporting.Store(sessionID, status)
+	h.reporter.AppendSettled(sessionID, kind, payload, func() {
+		h.codexReporting.CompareAndDelete(sessionID, status)
+		if err := ledger.reported(sessionID, status); err != nil {
+			h.logger.Warn("codex cloud status not remembered", "session", sessionID, "error", err)
+		}
+	})
+}
+
+// codexStatusEvent is the log entry a Codex status is reported as, or false
+// for a status this runner does not know.
+func codexStatusEvent(status string) (string, map[string]any, bool) {
+	switch status {
+	case cloud.CodexPending:
+		return "agent.observed", map[string]any{"state": "working"}, true
+	case cloud.CodexReady, cloud.CodexApplied:
+		return "agent.observed", map[string]any{"state": "done"}, true
+	case cloud.CodexError:
+		return "session.failed", map[string]any{
+			"detail": "Codex cloud reported the task failed; its page on chatgpt.com/codex says why",
+		}, true
+	}
+	return "", nil, false
 }
 
 func (h *linkHandler) codexCloud() CodexCloud {
