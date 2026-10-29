@@ -519,6 +519,37 @@ export interface BotSubagentRun {
 }
 
 /**
+ * Where one of a `delegate` call's children is while the call runs: waiting
+ * for a slot, running, or ended as a {@link BotSubagentStatus}.
+ */
+export const BOT_SUBAGENT_PROGRESS_STATES = [
+  'queued',
+  'running',
+  ...BOT_SUBAGENT_STATUSES,
+] as const;
+export type BotSubagentProgressState = (typeof BOT_SUBAGENT_PROGRESS_STATES)[number];
+
+/** The most of a child's task a progress frame carries: enough for its line. */
+export const BOT_SUBAGENT_PROGRESS_TASK_MAX = 300;
+
+/**
+ * One child of a running `delegate` call, as the chat shows it live: its
+ * task, where it is, the tools it has called so far, in order, when it
+ * started and, once it has ended, how long it took. The stored
+ * {@link BotSubagentRun} replaces it when the call ends.
+ */
+export const botSubagentProgressSchema = z.object({
+  task: z.string().max(BOT_SUBAGENT_PROGRESS_TASK_MAX),
+  state: z.enum(BOT_SUBAGENT_PROGRESS_STATES),
+  toolCalls: z.array(z.string()),
+  /** Null while it waits for a slot. */
+  startedAt: z.string().datetime().nullable(),
+  /** Null until it has ended. */
+  durationMs: z.number().int().nonnegative().nullable(),
+});
+export type BotSubagentProgress = z.infer<typeof botSubagentProgressSchema>;
+
+/**
  * A message another bot sent this one through `message_bot` or `ask_bot`
  * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
  * Oppenheimer recorded it, never a name the message claims; its name is the
@@ -682,7 +713,7 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
- * turn writes it, a nudge to read the conversation again when a message
+ * turn writes it, where a running `delegate` call's children are, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is
  * raised or settled. The stored messages are the record; this is how
  * they arrive early.
@@ -696,6 +727,17 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('approval'),
     approvalId: z.string(),
     status: z.enum(BOT_APPROVAL_STATUSES),
+  }),
+  /**
+   * Where each child of a running `delegate` call is, the whole set each
+   * time one moves; `callId` is the call's step. Never stored: the call's
+   * step carries the runs once it ends.
+   */
+  z.object({
+    type: z.literal('subagents'),
+    turnId: z.string(),
+    callId: z.string(),
+    runs: z.array(botSubagentProgressSchema),
   }),
 ]);
 export type BotStreamEvent = z.infer<typeof botStreamEventSchema>;

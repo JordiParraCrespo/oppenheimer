@@ -56,11 +56,13 @@ export function createToolServer(
         isError: true,
       };
     }
+    const callId = request.params._meta?.[TOOL_USE_ID_META];
     const result = await runTool(tool, request.params.arguments ?? {}, {
       signal: AbortSignal.any([turn.signal, extra.signal]),
       apiKey: turn.apiKey,
+      ...(typeof callId === 'string' ? { callId } : {}),
     });
-    made.record(request.params._meta?.[TOOL_USE_ID_META], result.data);
+    made.record(callId, result.data);
     return { content: [{ type: 'text' as const, text: result.content }], isError: result.isError };
   });
 

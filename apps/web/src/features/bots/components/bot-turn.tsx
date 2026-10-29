@@ -10,6 +10,7 @@ import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import {
   BOT_PROVIDER_CATALOG,
   type BotAttachment,
+  type BotSubagentProgress,
   botModelOf,
 } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
@@ -33,7 +34,8 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * bot's answer unboxed across the column: a quiet trace line per tool call,
  * each opening to what it returned, and what it said, as markdown, the
  * words it is still writing with the write head after them. While it runs,
- * a live line says what it is doing, with its clock. Once it has ended, a
+ * a live line says what it is doing, with its clock, and the subagents a
+ * running `delegate` call has at work under it. Once it has ended, a
  * trail copies the answer, offers Retry on the newest turn, and says its
  * model and the tokens it took (Stopped first when someone pressed Stop); a
  * failure says why, with Retry beside it. The images your message carried
@@ -43,12 +45,15 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
 export function BotTurn({
   block,
   live,
+  subagents,
   images,
   onRetry,
   retrying = false,
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
+  /** Where each running `delegate` call's children are, by the call's id. */
+  subagents: Readonly<Record<string, readonly BotSubagentProgress[]>>;
   /** The images a message carried, yours or the bot's, as the section that reads them draws them. */
   images: (attachments: readonly BotAttachment[]) => ReactNode;
   /** Sends your last message again; only the newest turn, once it has ended. */
@@ -62,6 +67,7 @@ export function BotTurn({
   const phase = turn ? turnPhase(turn, block.answer.length > 0 || Boolean(live)) : null;
   const active = turn?.isActive ?? false;
   const text = replyText(block);
+  const step = active ? runningStep(block.answer) : undefined;
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const meta = turn
     ? [
@@ -111,7 +117,8 @@ export function BotTurn({
         {turn && active ? (
           <BotTurnLive
             queued={turn.status === 'queued'}
-            step={runningStep(block.answer)}
+            step={step}
+            subagents={step ? subagents[step.callId] : undefined}
             writing={Boolean(live)}
             since={turn.startedAt}
           />

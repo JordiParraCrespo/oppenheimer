@@ -119,7 +119,10 @@ export class BotTurnContextResolver {
       // A child runs on the turn's model and key, with the turn's read-only
       // tools and its budget: it reaches no further than the bot does.
       const childTools = this.toolbox.readOnlyTools(context, turn.credentialScopes, held);
-      const subagents = this.subagents.create(model, bot.name, childTools);
+      const subagents = this.subagents.create(model, bot.name, childTools, {
+        botId: bot.id,
+        turnId: turn.id,
+      });
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
     const documentText = (name: string) =>

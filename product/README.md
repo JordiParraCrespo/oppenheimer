@@ -820,3 +820,8 @@ earlier note:
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it
   in the bot's answer (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked to see a bot's subagents while they work:
+  "Running 3 subagents" now has a line per child under it (its task,
+  waiting or running with its clock or how it ended, the tools it has
+  called so far), from frames the bot's stream sends each time one moves,
+  until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
