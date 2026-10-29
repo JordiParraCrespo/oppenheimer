@@ -28,6 +28,7 @@ import {
   type GmailLabel,
   type GmailLabelChange,
   type GmailMessage,
+  type GmailNewMail,
   GmailNotFoundError,
   GmailProviderError,
   type GmailProviderPort,
@@ -340,6 +341,66 @@ export class GmailGateway implements GmailProviderPort {
         messageListVisibility: 'show',
       }),
     );
+  }
+
+  async currentHistoryId(grant: GmailCallGrant): Promise<string> {
+    const session = await this.session(grant);
+    const profile = await session.get('profile', {});
+    if (typeof profile.historyId !== 'string') {
+      throw new GmailProviderError('Gmail returned no history id');
+    }
+    return profile.historyId;
+  }
+
+  async newMessages(
+    grant: GmailCallGrant,
+    startHistoryId: string,
+    max: number,
+  ): Promise<GmailNewMail | null> {
+    const session = await this.session(grant);
+    const ids: string[] = [];
+    let historyId = startHistoryId;
+    let pageToken: string | null = null;
+    do {
+      const params: Record<string, string> = {
+        startHistoryId,
+        historyTypes: 'messageAdded',
+        maxResults: '100',
+      };
+      if (pageToken) params.pageToken = pageToken;
+      let page: Record<string, unknown>;
+      try {
+        page = await session.get('history', params);
+      } catch (error) {
+        // Gmail keeps about a week of history; older than that is a 404.
+        if (error instanceof GmailNotFoundError) return null;
+        throw error;
+      }
+      for (const entry of list(page.history)) {
+        // At the cap, the next read starts at this entry: a message seen twice is one event.
+        if (ids.length >= max) return { messageIds: ids, historyId };
+        const entryId = record(entry).id;
+        for (const added of list(record(entry).messagesAdded)) {
+          const message = record(record(added).message);
+          const labels = list(message.labelIds).filter((label) => typeof label === 'string');
+          if (labels.includes('DRAFT') || labels.includes('SENT')) continue;
+          if (typeof message.id === 'string' && !ids.includes(message.id)) ids.push(message.id);
+        }
+        if (typeof entryId === 'string') historyId = entryId;
+      }
+      pageToken = typeof page.nextPageToken === 'string' ? page.nextPageToken : null;
+      // Only the last page moves the mark to where the mailbox stands now.
+      if (!pageToken && typeof page.historyId === 'string') historyId = page.historyId;
+    } while (pageToken);
+    return { messageIds: ids, historyId };
+  }
+
+  async searchIds(grant: GmailCallGrant, query: string, max: number): Promise<string[]> {
+    const session = await this.session(grant);
+    const page = await session.get('messages', { q: query, maxResults: String(max) });
+    return list(page.messages)
+      .map((entry) => record(entry).id)
+      .filter((id): id is string => typeof id === 'string');
   }
 
   async revoke(grant: GmailCallGrant): Promise<void> {

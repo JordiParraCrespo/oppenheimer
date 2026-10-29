@@ -325,4 +325,72 @@ describe('GmailGateway', () => {
     expect(new URL(fetch.mock.calls[1][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/trash');
     expect(new URL(fetch.mock.calls[3][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/untrash');
   });
+
+  it('reads new mail from a history id across pages, leaves out drafts and sent mail, and moves the mark', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            {
+              id: '101',
+              messagesAdded: [{ message: { id: 'm1', labelIds: ['INBOX', 'UNREAD'] } }],
+            },
+            { id: '102', messagesAdded: [{ message: { id: 'd1', labelIds: ['DRAFT'] } }] },
+          ],
+          nextPageToken: 'p2',
+          historyId: '200',
+        }),
+      )
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            {
+              id: '103',
+              messagesAdded: [
+                { message: { id: 's1', labelIds: ['SENT'] } },
+                { message: { id: 'm2', labelIds: ['INBOX'] } },
+              ],
+            },
+          ],
+          historyId: '200',
+        }),
+      );
+    vi.stubGlobal('fetch', fetch);
+
+    const mail = await new GmailGateway(config).newMessages(ANA, '100', 50);
+
+    expect(mail).toEqual({ messageIds: ['m1', 'm2'], historyId: '200' });
+    const first = new URL(fetch.mock.calls[1][0]);
+    expect(first.pathname).toBe('/gmail/v1/users/me/history');
+    expect(first.searchParams.get('startHistoryId')).toBe('100');
+    expect(first.searchParams.get('historyTypes')).toBe('messageAdded');
+    expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  it('stops at its cap where it stopped, and answers null for history Gmail no longer keeps', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            { id: '101', messagesAdded: [{ message: { id: 'm1', labelIds: ['INBOX'] } }] },
+            { id: '102', messagesAdded: [{ message: { id: 'm2', labelIds: ['INBOX'] } }] },
+          ],
+          historyId: '300',
+        }),
+      )
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(404, { error: { code: 404 } }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(gateway.newMessages(ANA, '100', 1)).resolves.toEqual({
+      messageIds: ['m1'],
+      historyId: '101',
+    });
+    await expect(gateway.newMessages(ANA, '1', 50)).resolves.toBeNull();
+  });
 });

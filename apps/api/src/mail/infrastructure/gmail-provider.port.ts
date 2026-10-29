@@ -88,6 +88,12 @@ export interface GmailDraftRead {
   message: GmailMessage;
 }
 
+/** Mail that arrived since a history id, and the id to read from next. */
+export interface GmailNewMail {
+  messageIds: string[];
+  historyId: string;
+}
+
 /** Labels to add and to take off, by Gmail's label ids. */
 export type GmailLabelChange = MailLabelChange;
 
@@ -220,6 +226,21 @@ export interface GmailProviderPort {
     trash: boolean,
   ): Promise<GmailBulkOutcome>;
   createLabel(grant: GmailCallGrant, name: string): Promise<GmailLabel>;
+  /** Where the mailbox's history stands now: new mail is read from here on. */
+  currentHistoryId(grant: GmailCallGrant): Promise<string>;
+  /**
+   * The messages that arrived since `startHistoryId` (`users.history.list`),
+   * oldest first, at most `max`, leaving out drafts and the account's own
+   * sent mail; and the history id to read from next. Null when Gmail no
+   * longer keeps history that old: start again from `currentHistoryId`.
+   */
+  newMessages(
+    grant: GmailCallGrant,
+    startHistoryId: string,
+    max: number,
+  ): Promise<GmailNewMail | null>;
+  /** The ids of messages a Gmail query matches, newest first, at most `max`; nothing else is read. */
+  searchIds(grant: GmailCallGrant, query: string, max: number): Promise<string[]>;
   /** Best effort: a grant Google already dropped is not an error. */
   revoke(grant: GmailCallGrant): Promise<void>;
 }
