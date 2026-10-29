@@ -18,6 +18,7 @@ describe('resolveCapabilities', () => {
       session_namer: false,
       ip_geolocation: false,
       google_calendar: false,
+      gmail: false,
       bot_providers: false,
       cloud_agents: false,
       voice_transcription: false,
@@ -56,6 +57,17 @@ describe('resolveCapabilities', () => {
     expect(
       resolveCapabilities(configWith({ ...client, 'calendar.tokenKey': key })).google_calendar,
     ).toBe(true);
+  });
+
+  it('reports Gmail only with the Google client and a 32-byte sealing key', () => {
+    const client = { 'oauth.google.clientId': 'id', 'oauth.google.clientSecret': 'secret' };
+    const key = Buffer.alloc(32, 7).toString('base64');
+    expect(resolveCapabilities(configWith(client)).gmail).toBe(false);
+    expect(resolveCapabilities(configWith({ ...client, 'mail.tokenKey': 'too-short' })).gmail).toBe(
+      false,
+    );
+    expect(resolveCapabilities(configWith({ 'mail.tokenKey': key })).gmail).toBe(false);
+    expect(resolveCapabilities(configWith({ ...client, 'mail.tokenKey': key })).gmail).toBe(true);
   });
 
   it('reports IP geolocation once either database is named', () => {

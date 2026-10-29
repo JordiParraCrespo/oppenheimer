@@ -39,6 +39,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/milestones', group: 'tasks' },
     { templatePrefix: '/v1/plan', group: 'tasks' },
     { templatePrefix: '/v1/calendar', group: 'calendar' },
+    { templatePrefix: '/v1/mail', group: 'mail' },
     { templatePrefix: '/v1/cloud-agents', group: 'cloud_agents' },
     { templatePrefix: '/v1/pulls', group: 'github' },
     { templatePrefix: '/v1/installations', group: 'github' },

@@ -49,6 +49,7 @@ import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entit
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
+import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -134,6 +135,7 @@ const dataSource = new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    GmailConnectionOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,

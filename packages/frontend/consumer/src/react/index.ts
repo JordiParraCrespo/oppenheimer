@@ -143,6 +143,13 @@ export {
   useStartInstallation,
 } from './installations.queries';
 export {
+  useConnectGmail,
+  useDisconnectGmail,
+  useRenameGmailConnection,
+  useStartGmailConnection,
+  useSuspenseGmailConnections,
+} from './mail.queries';
+export {
   useModelProviders,
   usePutModelProviderKey,
   useRemoveModelProviderKey,

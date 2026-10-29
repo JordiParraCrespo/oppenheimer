@@ -13,6 +13,8 @@ import type { InboxRepository } from '../modules/inbox';
 import { InboxModule } from '../modules/inbox';
 import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
+import type { MailRepository } from '../modules/mail';
+import { MailModule } from '../modules/mail';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { PermissionsRepository } from '../modules/permissions';
@@ -44,6 +46,7 @@ export const consumerModules = [
   TasksModule,
   CalendarModule,
   CloudAgentsModule,
+  MailModule,
   HostsModule,
   InboxModule,
   InstallationsModule,
@@ -126,6 +129,10 @@ export class ConsumerApp {
   /** Coding agents in a vendor's cloud, on the reader's own key for the vendor. */
   get cloudAgents(): CloudAgentsRepository {
     return this.kernel.container.get(TOKENS.CloudAgentsRepository);
+  }
+
+  get mail(): MailRepository {
+    return this.kernel.container.get(TOKENS.MailRepository);
   }
 
   /** Dictation: a recording in, the text it says out. */

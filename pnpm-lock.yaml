@@ -142,6 +142,9 @@ importers:
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       helmet:
         specifier: ^8.3.0
         version: 8.3.0
@@ -178,6 +181,9 @@ importers:
       typeorm:
         specifier: ^0.3.31
         version: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(ts-node@10.9.2(@swc/core@1.15.24(@swc/helpers@0.5.23))(@types/node@22.20.1)(typescript@6.0.3))
+      unpdf:
+        specifier: ^2.0.0
+        version: 2.0.0
       ws:
         specifier: ^8.21.1
         version: 8.21.1
@@ -8526,6 +8532,9 @@ packages:
   fflate@0.4.9:
     resolution: {integrity: sha512-zdxgIEddhfsyCaWpJ2SdXEP8ZMrKJ6+5jl4OupODcywU0IhRk6gdXuVGcPICyfx2H97hVK7xmJtRLPjkxAX8Vw==}
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   file-entry-cache@11.1.5:
     resolution: {integrity: sha512-+PFTHITI08JIGhnNpGNI8T8inUpgZfk3GNEqfT9R2zZV2iFXg3CvqzSl/uEhs7TSGujYRELEANyDvS8Fj7+S7Q==}
 
@@ -12460,6 +12469,15 @@ packages:
   universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
+
+  unpdf@2.0.0:
+    resolution: {integrity: sha512-dh6HL3IqnKzJFJ8KWblwd0yd4BC+GgOa7GIs514htpmMlfkOZjbZYDQKuQwm2DxsVvaoOomXfzVR3+/pf+jJnQ==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      '@napi-rs/canvas': ^0.1.69 || ^1.0.0
+    peerDependenciesMeta:
+      '@napi-rs/canvas':
+        optional: true
 
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -21042,6 +21060,8 @@ snapshots:
 
   fflate@0.4.9: {}
 
+  fflate@0.8.3: {}
+
   file-entry-cache@11.1.5:
     dependencies:
       flat-cache: 6.1.23
@@ -25608,6 +25628,8 @@ snapshots:
   universalify@0.1.2: {}
 
   universalify@2.0.1: {}
+
+  unpdf@2.0.0: {}
 
   unpipe@1.0.0: {}
 
