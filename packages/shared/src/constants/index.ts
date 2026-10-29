@@ -80,4 +80,6 @@ export const QUEUE_NAMES = {
   BOT_SUMMARIES: 'bot-summaries',
   /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
   BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
+  /** The one-minute tick that sends the bot mail whose scheduled time has come. */
+  MAIL_MINUTE: 'mail-minute',
 } as const;

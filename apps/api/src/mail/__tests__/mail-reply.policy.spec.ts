@@ -7,7 +7,12 @@ import {
   replyRecipients,
   replySubject,
 } from '../domain/mail-reply.policy';
-import { dailyRefusal, recipientsRefusal, sizeRefusal } from '../domain/mail-send.policy';
+import {
+  dailyRefusal,
+  recipientsRefusal,
+  scheduleRefusal,
+  sizeRefusal,
+} from '../domain/mail-send.policy';
 
 /**
  * How an answer is addressed and threaded, and what a bot may send
@@ -91,6 +96,16 @@ describe('send limits', () => {
     expect(dailyRefusal(50)).not.toBeNull();
     expect(sizeRefusal(18 * 1024 * 1024, 0)).toBeNull();
     expect(sizeRefusal(19 * 1024 * 1024, 0)).not.toBeNull();
+  });
+
+  it('schedules only for a time ahead, and at most 90 days ahead', () => {
+    const now = new Date('2026-10-29T12:00:00Z');
+    const day = 24 * 60 * 60 * 1000;
+    expect(scheduleRefusal(new Date(now.getTime() + 60_000), now)).toBeNull();
+    expect(scheduleRefusal(now, now)).not.toBeNull();
+    expect(scheduleRefusal(new Date(now.getTime() + 90 * day), now)).toBeNull();
+    expect(scheduleRefusal(new Date(now.getTime() + 90 * day + 1), now)).not.toBeNull();
+    expect(scheduleRefusal(new Date('nonsense'), now)).not.toBeNull();
   });
 });
 

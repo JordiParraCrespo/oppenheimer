@@ -2939,6 +2939,27 @@ export type UpdateGmailConnectionRequest = {
     label: string;
 };
 
+export type ScheduledMailResponseDto = {
+    id: string;
+    /**
+     * The account it goes from.
+     */
+    accountEmail: string;
+    /**
+     * To, cc and bcc, as the card showed them.
+     */
+    recipients: Array<string>;
+    subject: string;
+    /**
+     * When it goes.
+     */
+    scheduledFor: string;
+    /**
+     * The bot that scheduled it; null once that bot is deleted.
+     */
+    botId: string | null;
+};
+
 export type PullRequestLaneReasonDto = {
     code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change' | 'files_unread';
     /**
@@ -11698,6 +11719,67 @@ export type UpdateGmailConnectionResponses = {
 };
 
 export type UpdateGmailConnectionResponse = UpdateGmailConnectionResponses[keyof UpdateGmailConnectionResponses];
+
+export type FindScheduledMailData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mail/scheduled';
+};
+
+export type FindScheduledMailErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindScheduledMailError = FindScheduledMailErrors[keyof FindScheduledMailErrors];
+
+export type FindScheduledMailResponses = {
+    200: Array<ScheduledMailResponseDto>;
+};
+
+export type FindScheduledMailResponse = FindScheduledMailResponses[keyof FindScheduledMailResponses];
+
+export type CancelScheduledMailData = {
+    body?: never;
+    path: {
+        /**
+         * The scheduled send.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/mail/scheduled/{id}/cancel';
+};
+
+export type CancelScheduledMailErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * MAIL_017 — Not waiting any more
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CancelScheduledMailError = CancelScheduledMailErrors[keyof CancelScheduledMailErrors];
+
+export type CancelScheduledMailResponses = {
+    204: void;
+};
+
+export type CancelScheduledMailResponse = CancelScheduledMailResponses[keyof CancelScheduledMailResponses];
 
 export type FindPullRequestsData = {
     body?: never;

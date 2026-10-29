@@ -2,6 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
 import { CreateMailDraftCommand } from '../../../mail/commands/create-mail-draft/create-mail-draft.command';
+import { ScheduleMailCommand } from '../../../mail/commands/schedule-mail/schedule-mail.command';
 import { SendMailCommand } from '../../../mail/commands/send-mail/send-mail.command';
 import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
@@ -233,5 +234,32 @@ describe('BotMailWriteToolsFactory', () => {
 
     const [command] = commands.mock.calls[0] as [SendMailCommand];
     expect(command.localFiles.get(`chat:${RECEIPT.id}`)).toEqual(Buffer.from('png'));
+  });
+
+  it('asks before scheduling under every preset, the time on the card, and schedules the stored plan once approved', async () => {
+    const { context, request, commands, definition } = setup('full');
+    const sendAt = '2030-01-07T09:00:00+01:00';
+
+    await definition('schedule_mail')
+      .bind(context)
+      .run({ ...SEND, send_at: sendAt }, { signal });
+    expect(commands).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'schedule_mail',
+        input: expect.objectContaining({ plan: PLAN, send_at: sendAt }),
+        summary: expect.stringMatching(/^At .*2030.*: Send from ana@gmail.test/),
+      }),
+    );
+
+    await definition('schedule_mail').runApproved(
+      { ...SEND, send_at: sendAt, plan: PLAN },
+      { ...context, approvalId: 'approval-1' },
+      signal,
+    );
+    const [command] = commands.mock.calls[0] as [ScheduleMailCommand];
+    expect(command).toBeInstanceOf(ScheduleMailCommand);
+    expect(command).toMatchObject({ approvalId: 'approval-1', plan: PLAN });
+    expect(command.sendAt.toISOString()).toBe('2030-01-07T08:00:00.000Z');
   });
 });

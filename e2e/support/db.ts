@@ -238,3 +238,26 @@ export async function insertBotActivity(
     [botId, JSON.stringify(steps)],
   );
 }
+
+/**
+ * A send a bot scheduled from its owner's Gmail (`next-steps/mail.md` §3.4),
+ * written straight into `mail_send` in the bot's workspace: the stack has no
+ * Gmail to approve one against, and the list and its Cancel are the API's.
+ */
+export async function insertScheduledMail(
+  botId: string,
+  userId: string,
+  subject: string,
+  scheduledFor: Date,
+): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `INSERT INTO mail_send ("organizationId", "userId", "botId", "approvalId", kind, "accountEmail",
+                            recipients, subject, status, "scheduledFor", plan)
+     SELECT bot."organizationId", $2, $1, gen_random_uuid(), 'new', 'ana@acme.test',
+            ARRAY['Bo Ruiz <bo@client.test>'], $3, 'scheduled', $4, '{}'::jsonb
+       FROM bot WHERE bot.id = $1
+     RETURNING id`,
+    [botId, userId, subject, scheduledFor],
+  );
+  return rows[0].id;
+}

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { insertBotActivity, insertPendingBotApproval } from '../../support/db';
+import { insertBotActivity, insertPendingBotApproval, insertScheduledMail } from '../../support/db';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -10,7 +10,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  * disconnect here, in the shapes the API serves; what the API does with them
  * is its own specs' (`apps/api/src/mail`). A bot's send card draws the message
  * it would send from what the card stored, in the chat and in the Inbox, and a
- * draft it saved shows as a card under the call.
+ * draft it saved shows as a card under the call. Mail a bot scheduled is listed
+ * under Settings → Mail and cancelled there, against the real API.
  */
 
 test('a reader with no Gmail account is told what connecting gives their bots', async ({
@@ -192,5 +193,43 @@ test('a draft the bot saved shows under its call, with Open in Gmail', async ({ 
     draft.getByText('Saved as a draft in ana@acme.test. Nothing was sent.'),
   ).toBeVisible();
   await expect(draft.getByRole('link', { name: 'Open in Gmail' })).toHaveAttribute('href', link);
+  await owner.api.dispose();
+});
+
+test('scheduled mail is listed in Settings → Mail and cancelled there', async ({ page }) => {
+  const owner = await provisionedUser('mailsched');
+  await signInAs(page, owner.user);
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Ops', provider: 'glm' } })
+  ).json()) as { id: string };
+  const day = 24 * 60 * 60 * 1000;
+  await insertScheduledMail(
+    bot.id,
+    owner.userId,
+    'Invoice 42 reminder',
+    new Date(Date.now() + day),
+  );
+  await insertScheduledMail(
+    bot.id,
+    owner.userId,
+    'Quarterly report',
+    new Date(Date.now() + 3 * day),
+  );
+
+  await page.goto('/settings/mail');
+
+  await expect(page.getByRole('heading', { name: 'Scheduled' })).toBeVisible();
+  const rows = page.getByTestId('scheduled-mail');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText('Invoice 42 reminder');
+  await expect(rows.first()).toContainText('To Bo Ruiz <bo@client.test> · from ana@acme.test');
+
+  await page.getByRole('button', { name: 'Cancel “Invoice 42 reminder”' }).click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Quarterly report');
+
+  // The cancel is the server's: it is gone after a reload too.
+  await page.reload();
+  await expect(page.getByTestId('scheduled-mail')).toHaveCount(1);
   await owner.api.dispose();
 });

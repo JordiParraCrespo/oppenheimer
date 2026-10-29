@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { type MailPlan, mailPlanSchema } from '@oppenheimer/shared';
 import { MailSendOrmEntity } from './database/mail-send.orm-entity';
 import { MailSendEntity } from './domain/mail-send.entity';
+import { ScheduledMailResponseDto } from './dtos/scheduled-mail.response.dto';
 
 @Injectable()
 export class MailSendMapper {
@@ -20,7 +22,21 @@ export class MailSendMapper {
     record.gmailMessageId = entity.gmailMessageId;
     record.gmailThreadId = entity.gmailThreadId;
     record.sentAt = entity.sentAt;
+    record.scheduledFor = entity.scheduledFor;
+    record.plan = entity.plan;
     return record;
+  }
+
+  /** A scheduled send as Settings lists it; only one still waiting has a time. */
+  toScheduledResponse(entity: MailSendEntity): ScheduledMailResponseDto {
+    const dto = new ScheduledMailResponseDto();
+    dto.id = entity.id;
+    dto.accountEmail = entity.accountEmail;
+    dto.recipients = entity.recipients;
+    dto.subject = entity.subject;
+    dto.scheduledFor = (entity.scheduledFor ?? entity.createdAt).toISOString();
+    dto.botId = entity.botId;
+    return dto;
   }
 
   toDomain(record: MailSendOrmEntity): MailSendEntity {
@@ -42,7 +58,16 @@ export class MailSendMapper {
         gmailMessageId: record.gmailMessageId,
         gmailThreadId: record.gmailThreadId,
         sentAt: record.sentAt,
+        scheduledFor: record.scheduledFor,
+        plan: planOf(record.plan),
       },
     });
   }
+}
+
+/** A stored plan, narrowed once: one that no longer reads as a plan cannot be sent. */
+function planOf(raw: unknown): MailPlan | null {
+  if (raw === null || raw === undefined) return null;
+  const parsed = mailPlanSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }

@@ -2,12 +2,13 @@
 
 import { useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { GmailConnectionEntity } from '../modules/mail';
+import type { GmailConnectionEntity, ScheduledMailEntity } from '../modules/mail';
 import { useConsumerApp } from './context';
 
 export const mailKeys = {
   all: ['mail'] as const,
   connections: () => [...mailKeys.all, 'connections'] as const,
+  scheduled: () => [...mailKeys.all, 'scheduled'] as const,
 };
 
 /** The reader's own Gmail accounts, oldest first, under a Suspense `QueryState`: Settings → Mail. */
@@ -74,5 +75,29 @@ export function useDisconnectGmail(options?: UseMutationOptions<void, Error, str
     ...withCacheOnSuccess(options, () =>
       queryClient.invalidateQueries({ queryKey: mailKeys.connections() }),
     ),
+  });
+}
+
+/** The mail the reader's bots scheduled, still waiting, soonest first, under a Suspense `QueryState`. */
+export function useSuspenseScheduledMail() {
+  const app = useConsumerApp();
+  return useSuspenseQuery<ScheduledMailEntity[], Error>({
+    queryKey: mailKeys.scheduled(),
+    queryFn: () => app.mail.findScheduled(),
+  });
+}
+
+/** Cancels one scheduled send; it leaves the list, and the list is read again. */
+export function useCancelScheduledMail(options?: UseMutationOptions<void, Error, string>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => app.mail.cancelScheduled(id),
+    ...withCacheOnSuccess(options, (_result, id) => {
+      queryClient.setQueryData<ScheduledMailEntity[]>(mailKeys.scheduled(), (rows) =>
+        rows?.filter((row) => row.id !== id),
+      );
+      return queryClient.invalidateQueries({ queryKey: mailKeys.scheduled() });
+    }),
   });
 }

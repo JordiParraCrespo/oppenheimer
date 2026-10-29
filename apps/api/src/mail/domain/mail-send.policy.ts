@@ -1,6 +1,7 @@
 import {
   MAIL_MESSAGE_MAX_BYTES,
   MAIL_RECIPIENTS_MAX,
+  MAIL_SCHEDULE_MAX_DAYS,
   MAIL_SENDS_PER_DAY,
   type MailPlanAttachment,
 } from '@oppenheimer/shared';
@@ -62,3 +63,13 @@ export interface MailRequest {
 
 /** The bytes of a plan's files held outside Gmail, by `mailAttachmentKey`. */
 export type MailLocalFiles = ReadonlyMap<string, Buffer>;
+
+/** Why a send cannot be scheduled for `at`, or null: it must be in the future, and within the window. */
+export function scheduleRefusal(at: Date, now: Date): string | null {
+  if (Number.isNaN(at.getTime())) return 'Not a time';
+  if (at.getTime() <= now.getTime()) return 'That time has passed';
+  const latest = now.getTime() + MAIL_SCHEDULE_MAX_DAYS * 24 * 60 * 60 * 1000;
+  return at.getTime() > latest
+    ? `More than ${MAIL_SCHEDULE_MAX_DAYS} days ahead; a bot schedules at most that far`
+    : null;
+}

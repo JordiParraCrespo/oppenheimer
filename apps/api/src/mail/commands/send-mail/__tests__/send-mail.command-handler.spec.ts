@@ -2,7 +2,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { GmailCallResolver } from '../../../application/gmail-call.resolver';
-import type { MailComposeResolver } from '../../../application/mail-compose.resolver';
+import { MailComposeResolver } from '../../../application/mail-compose.resolver';
 import type { MailSendRepositoryPort } from '../../../database/mail-send.repository.port';
 import { GmailConnectionEntity } from '../../../domain/gmail-connection.entity';
 import { MailSendEntity } from '../../../domain/mail-send.entity';
@@ -83,15 +83,19 @@ function setup(
     save: vi.fn(async () => undefined),
     countSince: vi.fn(async () => options.sentToday ?? 0),
     findRecentOwn: vi.fn(),
+    findDue: vi.fn(),
+    claimDue: vi.fn(),
+    cancelOwn: vi.fn(),
+    findScheduledOwn: vi.fn(),
   } satisfies MailSendRepositoryPort;
   const gmail = {
     activeConnection: vi.fn(async () => CONNECTION),
     call: async <T>(_c: unknown, run: (p: GmailProviderPort, g: unknown) => Promise<T>) =>
       run(provider as unknown as GmailProviderPort, {}),
   } as unknown as GmailCallResolver;
-  const compose = {
-    build: vi.fn(async () => ({ raw: Buffer.from('mime'), threadId: null })),
-  } as unknown as MailComposeResolver;
+  // The real send step, over a stubbed build: the draft check is the resolver's.
+  const compose = new MailComposeResolver(gmail);
+  vi.spyOn(compose, 'build').mockResolvedValue({ raw: Buffer.from('mime'), threadId: null });
   const handler = new SendMailCommandHandler(gmail, compose, sends);
   const send = (plan: MailPlan = PLAN) =>
     handler.execute(

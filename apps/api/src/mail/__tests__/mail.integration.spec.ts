@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { MailPlan } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
@@ -139,6 +140,25 @@ describe('mail (integration)', () => {
     expect(count).toBe(0);
   });
 
+  const PLAN = (connectionId: string): MailPlan => ({
+    kind: 'new',
+    connectionId,
+    accountEmail: 'ana@gmail.test',
+    from: { email: 'ana@gmail.test', name: null },
+    to: ['bo@client.test'],
+    cc: [],
+    bcc: [],
+    recipientsFromMail: false,
+    subject: 'Invoice 42',
+    body: 'Paid',
+    signature: true,
+    original: null,
+    threadId: null,
+    attachments: [],
+    draftId: null,
+    draftMessageId: null,
+  });
+
   const claimOf = (connectionId: string, approvalId = randomUUID()) =>
     MailSendEntity.claim({
       organizationId,
@@ -189,5 +209,49 @@ describe('mail (integration)', () => {
       gmailMessageId: 'g1',
     });
     await expect(sends.findRecentOwn(scopeOf(ben, true), 10)).resolves.toEqual([]);
+  });
+
+  it('finds a due send, lets one of a claim and a cancel win, and keeps the plan only while it waits', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const due = MailSendEntity.schedule(
+      {
+        organizationId,
+        userId: ana,
+        connectionId: account.id,
+        botId: null,
+        approvalId: randomUUID(),
+        kind: 'new',
+        accountEmail: 'ana@gmail.test',
+        recipients: ['bo@client.test'],
+        subject: 'Invoice 42',
+      },
+      PLAN(account.id),
+      new Date(Date.now() - 60_000),
+    );
+    await sends.claim(due);
+
+    const found = (await sends.findDue(new Date(), 10)).filter((send) => send.id === due.id);
+    expect(found).toHaveLength(1);
+    expect(found[0].plan).toMatchObject({ subject: 'Invoice 42' });
+    await expect(sends.findScheduledOwn(scopeOf(ana), 10)).resolves.toHaveLength(1);
+
+    const [claimed, cancelled] = await Promise.all([
+      sends.claimDue(due),
+      sends.cancelOwn(scopeOf(ana), due.id),
+    ]);
+    expect([claimed, cancelled].filter(Boolean)).toHaveLength(1);
+    await expect(sends.findScheduledOwn(scopeOf(ana), 10)).resolves.toEqual([]);
+    await expect(sends.cancelOwn(scopeOf(ben), due.id)).resolves.toBe(false);
+  });
+
+  it('refuses a scheduled row without its time or its plan', async () => {
+    await expect(
+      dataSource.query(
+        `INSERT INTO mail_send ("organizationId", "userId", "approvalId", kind, "accountEmail", subject, status)
+         VALUES ($1, $2, $3, 'new', 'ana@gmail.test', 'x', 'scheduled')`,
+        [organizationId, ana, randomUUID()],
+      ),
+    ).rejects.toThrow(/CHK_mail_send_scheduled/);
   });
 });
