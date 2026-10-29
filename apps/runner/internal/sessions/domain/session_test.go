@@ -100,6 +100,8 @@ func TestOnlyLiveStatesExpectATmuxSession(t *testing.T) {
 // own history on its working directory, so a path that moved when a slug was
 // edited would strand every conversation the session had. A store is bare and
 // named `<owner>--<repo>.git` beside the sessions, and its spare beside it.
+// Both directories that hold checkouts end in `.noindex`, so Spotlight skips
+// them: a host whose sessions are indexed spends its CPU on mdworker.
 func TestTheWorkFolderIsNamedByAccountWorkspaceAndSession(t *testing.T) {
 	layout := domain.Layout{Root: "/home/jordi/oppenheimer"}
 	tenant := domain.Tenant{Account: "acct-1", Workspace: "ws-1"}
@@ -107,9 +109,9 @@ func TestTheWorkFolderIsNamedByAccountWorkspaceAndSession(t *testing.T) {
 
 	for got, want := range map[string]string{
 		layout.Workspace(tenant):            "/home/jordi/oppenheimer/acct-1/ws-1",
-		layout.Store(repo):                  "/home/jordi/oppenheimer/acct-1/ws-1/repos/acme-labs--xrp-mobile.git",
-		layout.Spare(layout.Store(repo)):    "/home/jordi/oppenheimer/acct-1/ws-1/repos/.spares/acme-labs--xrp-mobile",
-		layout.Session(tenant, "fix-login"): "/home/jordi/oppenheimer/acct-1/ws-1/sessions/fix-login",
+		layout.Store(repo):                  "/home/jordi/oppenheimer/acct-1/ws-1/repos.noindex/acme-labs--xrp-mobile.git",
+		layout.Spare(layout.Store(repo)):    "/home/jordi/oppenheimer/acct-1/ws-1/repos.noindex/.spares/acme-labs--xrp-mobile",
+		layout.Session(tenant, "fix-login"): "/home/jordi/oppenheimer/acct-1/ws-1/sessions.noindex/fix-login",
 	} {
 		if got != want {
 			t.Errorf("got %q, want %q", got, want)

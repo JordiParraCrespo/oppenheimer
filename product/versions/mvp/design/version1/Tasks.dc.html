@@ -27,7 +27,6 @@ textarea::placeholder{color:var(--fg-subtle)}
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
-<a class="op-rail__btn" href="./Brain.dc.html" aria-label="Inbox" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Inbox</span></a>
 <button class="op-rail__btn" type="button" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></button>
 <a class="op-rail__btn" href="./Bots.dc.html" aria-label="Employees" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Employees</span></a>
 <a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
@@ -44,6 +43,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div class="op-sbsearch" data-on="{{ sbQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search tasks" placeholder="Search tasks" value="{{ sbQ }}" onChange="{{ sbQSet }}" onKeyDown="{{ sbQKey }}"><sc-if value="{{ sbQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sbQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-sidebar__scroll">
 <div class="op-sessionlist">
+<button class="op-session" type="button" data-active="{{ navInbox }}" onClick="{{ goInbox }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Inbox</span><span class="op-session__age" style="opacity:1">5</span></button>
 <button class="op-session" type="button" data-active="{{ navTasks }}" onClick="{{ goTasks }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Tasks</span><span class="op-session__age" style="opacity:1">{{ openN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navMs }}" onClick="{{ goMs }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:8px;height:8px;box-sizing:border-box;transform:rotate(45deg);border:1.5px solid currentColor"></span></span><span class="op-session__name">Milestones</span><span class="op-session__age" style="opacity:1">{{ goalsN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navCal }}" onClick="{{ goCal }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Calendar</span><span class="op-session__age" style="opacity:1">{{ todayN }}</span></button>
@@ -89,6 +89,9 @@ textarea::placeholder{color:var(--fg-subtle)}
 </nav>
 
 <main style="flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;background:var(--canvas)">
+<sc-if value="{{ isInbox }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;flex:1;min-height:0;overflow:hidden;background:var(--background)"><dc-import name="Inbox" hint-size="100%,100%" style="display:block;flex:1;min-height:0"></dc-import></div>
+</sc-if>
 <sc-if value="{{ isProj }}">
 <div style="height:100%;display:flex;flex-direction:column;background:var(--background)">
 <header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
@@ -844,7 +847,7 @@ Milestones split a project into stages with a target date. Progress is the share
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tasks&quot;,&quot;calendar&quot;,&quot;projects&quot;],&quot;default&quot;:&quot;tasks&quot;,&quot;tsType&quot;:&quot;'tasks' | 'calendar' | 'projects'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;showGoals&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;inbox&quot;,&quot;tasks&quot;,&quot;calendar&quot;,&quot;projects&quot;],&quot;default&quot;:&quot;inbox&quot;,&quot;tsType&quot;:&quot;'tasks' | 'calendar' | 'projects'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;showGoals&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
 let PROJECTS = [
   { id: 'mobile', name: 'XRP Mobile' },
   { id: 'atlas', name: 'Atlas' },
@@ -1031,7 +1034,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     const q = new URLSearchParams(window.location.search).get('section');
-    if (q === 'calendar' || q === 'tasks' || q === 'projects') this.setState({ section: q });
+    if (q === 'calendar' || q === 'tasks' || q === 'projects' || q === 'inbox') this.setState({ section: q });
     const tq = new URLSearchParams(window.location.search).get('task');
     if (tq && this.state.tasks.some(t => t.id === tq)) this.openTask(tq);
     this._move = e => this.onMove(e);
@@ -1220,7 +1223,7 @@ class Component extends DCLogic {
     this.setState(s => ({ hov: null, tasks: s.tasks.map(x => (x.id === taskId ? { ...x, sessions: (x.sessions || []).concat(id), status: x.status === 'done' ? 'done' : 'doing' } : x)) }));
   }
   openProject() { this.setState({ dlg: { kind: 'project', draft: { id: null, name: '' } }, dp: null, tp: null, more: null, compose: null }); }
-  sec() { return this.state.section || this.props.section || 'tasks'; }
+  sec() { return this.state.section || this.props.section || 'inbox'; }
   openEvent(id, iso) {
     const ev = id && this.state.events.find(x => x.id === id);
     const draft = ev ? { ...ev } : { id: null, title: '', date: iso || day(0), start: '10:00', end: '10:30', allDay: false, busy: true, notes: '', source: 'manual' };
@@ -1597,7 +1600,7 @@ class Component extends DCLogic {
     };
     const calVals = {
       ...launchVals,
-      isTasks: sec === 'tasks' ? 'true' : undefined, isCal: sec === 'calendar' ? 'true' : undefined,
+      isTasks: sec === 'tasks' ? 'true' : undefined, isInbox: sec === 'inbox' ? 'true' : undefined, navInbox: sec === 'inbox' ? 'true' : 'false', goInbox: () => this.setState({ section: 'inbox', more: null, compose: null }), isCal: sec === 'calendar' ? 'true' : undefined,
       navTasks: sec === 'tasks' && s.tab !== 'goals' ? 'true' : 'false', navMs: sec === 'tasks' && s.tab === 'goals' ? 'true' : 'false', navCal: sec === 'calendar' ? 'true' : 'false',
       goTasks: () => this.setState({ section: 'tasks', tab: 'board', more: null }), goMs: () => this.setState({ section: 'tasks', tab: 'goals', more: null, compose: null }), goCal: () => this.setState({ section: 'calendar', compose: null }),
       todayN: s.events.filter(e => e.date === todayIso).length,
@@ -1879,7 +1882,7 @@ class Component extends DCLogic {
     const allMsDone = s.goals.filter(g => { const gt = s.tasks.filter(t => t.goal === g.id); return gt.length && gt.every(t => t.status === 'done'); }).length;
     const all = stats.reduce((a, x) => ({ d: a.d + x.done, t: a.t + x.total, b: a.b + x.blockers.length, r: a.r + x.doing.length }), { d: 0, t: 0, b: 0, r: 0 });
     return {
-      isProj: isProj ? 'true' : undefined, notProj: isProj ? undefined : 'true', navProj: isProj ? 'true' : 'false',
+      isProj: isProj ? 'true' : undefined, notProj: isProj || sec === 'inbox' ? undefined : 'true', navProj: isProj ? 'true' : 'false',
       goProj: () => this.setState({ section: 'projects', more: null, compose: null }),
       agProjN: s.projects.length, agRows, agPmOn: isPm ? 'true' : 'false', agPmBg: isPm ? 'var(--selected-surface)' : 'transparent', agPmLive: s.agRun && isPm, agOpenPm: () => this.agOpen('pm'),
       agIsPm: isPm, agIsProject: !isPm,
