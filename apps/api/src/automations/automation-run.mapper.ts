@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
+import type { CommandProps } from '@oppenheimer/backend-ddd';
 import type { SessionEffortDto } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
+  AUTOMATION_PLACE_RULES,
   AUTOMATION_RUN_CAUSES,
   AUTOMATION_RUN_OUTCOMES,
   AUTOMATION_RUN_STATUSES,
@@ -15,6 +17,8 @@ import {
   isVendorPlace,
 } from '@oppenheimer/shared/automations';
 import type { StoredExternalEvent } from '../inbound-events/domain/external-event.types';
+import { CreateSessionCommand } from '../sessions/commands/create-session/create-session.command';
+import { StartCloudSessionCommand } from '../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { sessionTargetOf } from './application/session-target.policy';
 import type { AutomationRunOrmEntity } from './database/automation-run.orm-entity';
 import type { AutomationEntity } from './domain/automation.entity';
@@ -122,11 +126,13 @@ export class AutomationRunMapper {
   }
 
   /**
-   * The session a run starts, in its create route's own words: the
-   * revision's place, host, agent and engine, the repository and branch the
-   * event decided, and the composed prompt. A vendor's place is launched at
-   * the vendor with no host; Claude Code's cloud is started by the host's
-   * runner, from one repository, on a task.
+   * The session a run starts, in its create route's own words, read off the
+   * revision's place (`AUTOMATION_PLACE_RULES`): a place with no host is
+   * launched at its vendor; a place whose host only starts the session is
+   * New session's `cloud` create, which takes no permission or effort; a
+   * place whose host runs it is the ordinary create with the revision's
+   * launch. Each takes the repository and branch the event decided and the
+   * composed prompt.
    */
   toSessionLaunch(
     automation: AutomationEntity,
@@ -139,37 +145,30 @@ export class AutomationRunMapper {
       githubRepoId: Number(checkout.repository.githubRepoId),
       ...(checkout.baseBranch ? { baseBranch: checkout.baseBranch } : {}),
     };
+    const model = revision.model ? { model: revision.model } : {};
     if (isVendorPlace(revision.place)) {
       return {
         kind: 'vendor',
-        input: {
-          provider: revision.place,
-          projectId,
-          checkout: repository,
-          prompt,
-          ...(revision.model ? { model: revision.model } : {}),
-        },
+        input: { provider: revision.place, projectId, checkout: repository, prompt, ...model },
       };
     }
+    // An agent this build no longer knows, as before places; the host is the
+    // type's half of what CHK_automation_revision_place_host already holds.
     if (!isCodingAgentId(revision.agent) || !revision.hostId) {
       // A refusal the dispatcher records as a skip, not a fault to retry.
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
-        detail: `Automation ${automation.id} names an agent or a place this build cannot run`,
+        detail: `Automation ${automation.id} names an agent this build does not know`,
       });
     }
-    if (revision.place === 'claude-cloud') {
-      return {
-        kind: 'host',
-        input: {
-          hostId: revision.hostId,
-          agent: revision.agent,
-          projectId,
-          checkouts: [repository],
-          cloud: true,
-          ...(revision.model ? { launch: { model: revision.model } } : {}),
-          prompt,
-        },
-      };
+    const common = {
+      hostId: revision.hostId,
+      agent: revision.agent,
+      projectId,
+      checkouts: [repository],
+      prompt,
+    };
+    if (AUTOMATION_PLACE_RULES[revision.place].host === 'starts') {
+      return { kind: 'host', input: { ...common, cloud: true, launch: model } };
     }
     const effort = (SESSION_EFFORTS as readonly string[]).includes(revision.effort ?? '')
       ? (revision.effort as SessionEffortDto)
@@ -177,18 +176,23 @@ export class AutomationRunMapper {
     return {
       kind: 'host',
       input: {
-        hostId: revision.hostId,
-        agent: revision.agent,
-        projectId,
-        checkouts: [repository],
-        launch: {
-          ...(revision.model ? { model: revision.model } : {}),
-          permission: revision.permission,
-          ...(effort ? { effort } : {}),
-        },
-        prompt,
+        ...common,
+        launch: { ...model, permission: revision.permission, ...(effort ? { effort } : {}) },
       },
     };
+  }
+
+  /**
+   * The command that starts a launch, as the automation's owner: the one
+   * place a launch's kind chooses between a host's create and a vendor's.
+   */
+  toLaunchCommand(
+    launch: RunSessionLaunch,
+    props: Omit<CommandProps<CreateSessionCommand>, 'input'>,
+  ): CreateSessionCommand | StartCloudSessionCommand {
+    return launch.kind === 'vendor'
+      ? new StartCloudSessionCommand({ ...props, input: launch.input })
+      : new CreateSessionCommand({ ...props, input: launch.input });
   }
 
   /** One event the trigger preview lists: "#124 · Harden API config loading · jordiparra · 2h ago". */

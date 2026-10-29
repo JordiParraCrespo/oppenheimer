@@ -41,26 +41,26 @@ export class StartTaskSessionCommandHandler
     const idempotencyKey = command.idempotencyKey
       ? `task:${task.id}:${command.idempotencyKey}`
       : null;
-    const result = input.cloud
-      ? await this.commandBus.execute<StartCloudSessionCommand, SessionCommandResult>(
-          new StartCloudSessionCommand({
-            scope,
-            userId,
-            input: { ...input.cloud, projectId: task.projectId },
-            idempotencyKey,
-            origin: 'person',
-          }),
-        )
-      : await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-          new CreateSessionCommand({
-            scope,
-            userId,
-            // The schema holds exactly one of the two.
-            input: { ...requireSession(input.session), projectId: task.projectId },
-            idempotencyKey,
-            origin: 'person',
-          }),
-        );
+    const result =
+      'cloud' in input
+        ? await this.commandBus.execute<StartCloudSessionCommand, SessionCommandResult>(
+            new StartCloudSessionCommand({
+              scope,
+              userId,
+              input: { ...input.cloud, projectId: task.projectId },
+              idempotencyKey,
+              origin: 'person',
+            }),
+          )
+        : await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
+            new CreateSessionCommand({
+              scope,
+              userId,
+              input: { ...input.session, projectId: task.projectId },
+              idempotencyKey,
+              origin: 'person',
+            }),
+          );
 
     // The session exists whatever happens next; a link that fails is retried
     // with the same key and finds it.
@@ -76,9 +76,4 @@ export class StartTaskSessionCommandHandler
     );
     return result;
   }
-}
-
-function requireSession<T>(session: T | undefined): T {
-  if (session === undefined) throw new Error('A task session names a session or a cloud launch');
-  return session;
 }

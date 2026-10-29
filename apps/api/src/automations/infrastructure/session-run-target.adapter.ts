@@ -1,10 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, type ICommand } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { hostHeldBy } from '@oppenheimer/shared/automations';
 import type { HostVitalsPort } from '../../hosts/application/host-vitals.port';
 import { HOST_VITALS } from '../../hosts/hosts.di-tokens';
-import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
-import { StartCloudSessionCommand } from '../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type {
   AutomationRunTargetPort,
@@ -61,9 +60,8 @@ export class SessionRunTarget implements AutomationRunTargetPort<RunSessionLaunc
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<RunSessionLaunch>> {
     const { run, automation, limits, now } = context;
-    const { revision } = sessionTargetOf(automation);
     // The host whose slots and disk the session takes; none in the cloud.
-    const hostId = revision.place === 'host' ? revision.hostId : null;
+    const hostId = hostHeldBy(sessionTargetOf(automation).revision);
     // A run live past the run limit is being stopped; it holds no place.
     const liveSince = new Date(now.getTime() - limits.maxRunSeconds * 1000);
     const [otherLive, liveOnHost, freeDisk] = await Promise.all([
@@ -108,20 +106,14 @@ export class SessionRunTarget implements AutomationRunTargetPort<RunSessionLaunc
 
   async launch(context: RunTargetContext, launch: RunSessionLaunch): Promise<RunDispatchRef> {
     const { run, automation, scope } = context;
-    const props = {
-      scope,
-      userId: automation.ownerUserId,
-      idempotencyKey: `automation-run:${run.id}`,
-      origin: 'automation' as const,
-    };
-    const result =
-      launch.kind === 'vendor'
-        ? await this.commandBus.execute<StartCloudSessionCommand, SessionCommandResult>(
-            new StartCloudSessionCommand({ ...props, input: launch.input }),
-          )
-        : await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-            new CreateSessionCommand({ ...props, input: launch.input }),
-          );
+    const result = await this.commandBus.execute<ICommand, SessionCommandResult>(
+      this.mapper.toLaunchCommand(launch, {
+        scope,
+        userId: automation.ownerUserId,
+        idempotencyKey: `automation-run:${run.id}`,
+        origin: 'automation',
+      }),
+    );
     return { kind: 'session', sessionId: result.sessionId };
   }
 

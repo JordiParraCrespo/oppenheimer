@@ -2595,7 +2595,7 @@ export type MoveTaskRequest = {
 };
 
 export type StartTaskSessionRequest = {
-    session?: {
+    session: {
         hostId: string;
         agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
         projectId?: string;
@@ -2616,7 +2616,20 @@ export type StartTaskSessionRequest = {
         prompt?: string;
         attachmentIds?: Array<string>;
     };
-    cloud?: {
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+};
+
+export type StartTaskSessionResponseDto = {
+    task: TaskResponseDto;
+    sessionId: string;
+    /**
+     * What the control plane could not do just now: `host_offline` when the session waits for its host.
+     */
+    hints: Array<string>;
+};
+
+export type StartTaskCloudSessionRequest = {
+    cloud: {
         provider: 'cursor';
         name?: string;
         checkout: {
@@ -2628,15 +2641,6 @@ export type StartTaskSessionRequest = {
         model?: string;
     };
     seenStatus: 'later' | 'todo' | 'doing' | 'done';
-};
-
-export type StartTaskSessionResponseDto = {
-    task: TaskResponseDto;
-    sessionId: string;
-    /**
-     * What the control plane could not do just now: `host_offline` when the session waits for its host.
-     */
-    hints: Array<string>;
 };
 
 export type LinkTaskSessionRequest = {
@@ -10836,13 +10840,9 @@ export type StartTaskSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that cloud provider
+     * SESSIONS_006 — Project archived
      */
     409: ProblemDetailsDto;
-    /**
-     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The cloud provider refused the stored key, or the launch as asked
-     */
-    422: ProblemDetailsDto;
     /**
      * RATE_001 — Rate limit reached
      */
@@ -10856,6 +10856,60 @@ export type StartTaskSessionResponses = {
 };
 
 export type StartTaskSessionResponse = StartTaskSessionResponses[keyof StartTaskSessionResponses];
+
+export type StartTaskCloudSessionData = {
+    body: StartTaskCloudSessionRequest;
+    headers?: {
+        /**
+         * A retry with the same key returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/cloud';
+};
+
+export type StartTaskCloudSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 / GITHUB_010 — Task not found, or a repository its GitHub installation does not cover
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that provider
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the launch as asked
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 / CLOUD_AGENTS_007 — Rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — No answer
+     */
+    502: ProblemDetailsDto;
+};
+
+export type StartTaskCloudSessionError = StartTaskCloudSessionErrors[keyof StartTaskCloudSessionErrors];
+
+export type StartTaskCloudSessionResponses = {
+    201: StartTaskSessionResponseDto;
+};
+
+export type StartTaskCloudSessionResponse = StartTaskCloudSessionResponses[keyof StartTaskCloudSessionResponses];
 
 export type UnlinkTaskSessionData = {
     body?: never;

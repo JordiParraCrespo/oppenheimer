@@ -11,6 +11,8 @@ import {
 } from '@oppenheimer/frontend-consumer';
 import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import {
+  AUTOMATION_PLACE_RULES,
+  AUTOMATION_PLACES,
   type AutomationPlace,
   externalEventDefinition,
   type GithubEventType,
@@ -203,18 +205,60 @@ export function placePatch(
   place: AutomationPlace,
   fallbackHostId: string | null,
 ): Pick<AutomationDraft, 'place' | 'agent' | 'hostId' | 'model'> {
-  const agent: AutomationAgentId = isVendorPlace(place)
-    ? place
-    : place === 'claude-cloud' || !isAutomationAgent(draft.agent)
-      ? 'claude-code'
-      : draft.agent;
+  const rule = AUTOMATION_PLACE_RULES[place];
+  const agent: AutomationAgentId =
+    rule.agent ?? (isAutomationAgent(draft.agent) ? draft.agent : 'claude-code');
   return {
     place,
     agent,
-    hostId: isVendorPlace(place) ? null : (draft.hostId ?? fallbackHostId),
+    hostId: rule.host === null ? null : (draft.hostId ?? fallbackHostId),
     model: agent === draft.agent ? draft.model : null,
   };
 }
+
+/**
+ * The places as Runs in lists them, from `AUTOMATION_PLACES`: a vendor's is
+ * offered once the reader holds a key for it, and stays offered to an
+ * automation already there.
+ */
+export function placeOptions(
+  t: (key: PlaceCopyKey) => string,
+  connected: (provider: AutomationPlace) => boolean,
+  current: AutomationPlace,
+) {
+  return AUTOMATION_PLACES.map((place) => {
+    const copy = PLACE_COPY[place];
+    const ready = !isVendorPlace(place) || connected(place);
+    return {
+      value: place,
+      label: t(copy.label),
+      // Picking it with no key would save an automation that pauses on its first run.
+      disabled: !ready && place !== current,
+      description: t(ready ? copy.description : copy.connect),
+    };
+  });
+}
+
+const PLACE_COPY = {
+  host: {
+    label: 'automations.editor.placeHost',
+    description: 'automations.editor.placeHostDesc',
+    connect: 'automations.editor.placeHostDesc',
+  },
+  'claude-cloud': {
+    label: 'automations.editor.placeClaudeCloud',
+    description: 'automations.editor.placeClaudeCloudDesc',
+    connect: 'automations.editor.placeClaudeCloudDesc',
+  },
+  cursor: {
+    label: 'automations.editor.placeCursor',
+    description: 'automations.editor.placeCursorDesc',
+    connect: 'automations.editor.placeCursorConnect',
+  },
+} as const satisfies Record<AutomationPlace, Record<'label' | 'description' | 'connect', string>>;
+
+type PlaceCopyKey =
+  (typeof PLACE_COPY)[AutomationPlace][keyof (typeof PLACE_COPY)[AutomationPlace]];
 
 /** Whether a revision's agent is one a host runs: the editor's agent picker offers only these. */
 export function isAutomationAgent(agent: AutomationAgentId): agent is CodingAgentId {

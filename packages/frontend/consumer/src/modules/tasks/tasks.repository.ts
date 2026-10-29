@@ -125,17 +125,22 @@ export class TasksRepository {
 
   @MapApiError(TasksErrors.START_SESSION_FAILED)
   async startSession(id: string, input: StartTaskSessionInput): Promise<StartedTaskSession> {
+    const headers = { 'Idempotency-Key': input.idempotencyKey };
     const data = await unwrapBody(
-      heyApiSdk.startTaskSession({
-        path: { id },
-        body: {
-          ...(input.cloud
-            ? { cloud: toStartCloudSessionRequest(input.cloud) }
-            : { session: toCreateSessionRequest(input.session) }),
-          seenStatus: input.seenStatus,
-        },
-        headers: { 'Idempotency-Key': input.idempotencyKey },
-      }),
+      input.cloud
+        ? heyApiSdk.startTaskCloudSession({
+            path: { id },
+            body: { cloud: toStartCloudSessionRequest(input.cloud), seenStatus: input.seenStatus },
+            headers,
+          })
+        : heyApiSdk.startTaskSession({
+            path: { id },
+            body: {
+              session: toCreateSessionRequest(input.session),
+              seenStatus: input.seenStatus,
+            },
+            headers,
+          }),
       TasksErrors.START_SESSION_FAILED,
     );
     return { task: toTask(data.task), sessionId: data.sessionId, hints: data.hints };

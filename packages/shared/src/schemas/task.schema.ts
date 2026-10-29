@@ -130,23 +130,28 @@ export type MoveTaskDto = z.infer<typeof moveTaskSchema>;
 const seenStatusSchema = taskStatusSchema;
 
 /**
- * `POST /tasks/{id}/sessions`: start a session for the task, filed under the
- * task's project whatever `projectId` says. Exactly one of the two: `session`
- * is New session's body for a session a host runs or starts (a worktree, a
- * folder, or Claude Code's cloud with `cloud: true`); `cloud` is the body of
- * `POST /sessions/cloud`, a session a vendor (Cursor) runs with no host.
+ * `POST /tasks/{id}/sessions`: start a session for the task. The session is
+ * New session's body (a worktree, a folder, or Claude Code's cloud with
+ * `cloud: true`), filed under the task's project whatever `projectId` says.
  */
-export const startTaskSessionSchema = z
-  .object({
-    session: createSessionSchema.optional(),
-    cloud: startCloudSessionSchema.omit({ projectId: true }).optional(),
-    seenStatus: seenStatusSchema,
-  })
-  .refine((value) => (value.session === undefined) !== (value.cloud === undefined), {
-    path: ['session'],
-  });
+export const startTaskSessionSchema = z.object({
+  session: createSessionSchema,
+  seenStatus: seenStatusSchema,
+});
 
 export type StartTaskSessionDto = z.infer<typeof startTaskSessionSchema>;
+
+/**
+ * `POST /tasks/{id}/sessions/cloud`: start a session for the task in a
+ * vendor's cloud (Cursor's), with no host: `POST /sessions/cloud`'s body,
+ * filed under the task's project.
+ */
+export const startTaskCloudSessionSchema = z.object({
+  cloud: startCloudSessionSchema.omit({ projectId: true }),
+  seenStatus: seenStatusSchema,
+});
+
+export type StartTaskCloudSessionDto = z.infer<typeof startTaskCloudSessionSchema>;
 
 /** `PUT /tasks/{id}/sessions/{sessionId}`: link a session that already exists. */
 export const linkTaskSessionSchema = z.object({

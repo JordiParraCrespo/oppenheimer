@@ -6,6 +6,7 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 import { CODING_AGENTS, type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
+  AUTOMATION_PLACE_RULES,
   AUTOMATION_PLACES,
   type AutomationPlace,
   isVendorPlace,
@@ -41,10 +42,52 @@ export function asPlace(value: string): StartPlace | null {
   return (AUTOMATION_PLACES as readonly string[]).includes(value) ? (value as StartPlace) : null;
 }
 
-/** The agent each place runs: Claude Code in its cloud, and whatever was picked on a host. */
+/** The agent a place runs: its own where it names one, else whatever was picked. */
 export function agentFor(place: StartPlace, agent: CodingAgentId): CodingAgentId {
-  return place === 'claude-cloud' ? 'claude-code' : agent;
+  const own = AUTOMATION_PLACE_RULES[place].agent;
+  return own && isCodingAgentId(own) ? own : agent;
 }
+
+/**
+ * The places as the Where chip lists them, from `AUTOMATION_PLACES`: a
+ * vendor's is offered once the reader holds a key for it.
+ */
+export function placeOptions(
+  t: (key: PlaceCopyKey) => string,
+  connected: (provider: AutomationPlace) => boolean,
+) {
+  return AUTOMATION_PLACES.map((place) => {
+    const copy = PLACE_COPY[place];
+    const ready = !isVendorPlace(place) || connected(place);
+    return {
+      value: place,
+      label: t(copy.label),
+      disabled: !ready,
+      description: t(ready ? copy.description : copy.connect),
+    };
+  });
+}
+
+const PLACE_COPY = {
+  host: {
+    label: 'tasks.start.placeHost',
+    description: 'tasks.start.placeHostDesc',
+    connect: 'tasks.start.placeHostDesc',
+  },
+  'claude-cloud': {
+    label: 'tasks.start.placeClaudeCloud',
+    description: 'tasks.start.placeClaudeCloudDesc',
+    connect: 'tasks.start.placeClaudeCloudDesc',
+  },
+  cursor: {
+    label: 'tasks.start.placeCursor',
+    description: 'tasks.start.placeCursorDesc',
+    connect: 'tasks.start.placeCursorConnect',
+  },
+} as const satisfies Record<AutomationPlace, Record<'label' | 'description' | 'connect', string>>;
+
+type PlaceCopyKey =
+  (typeof PLACE_COPY)[AutomationPlace][keyof (typeof PLACE_COPY)[AutomationPlace]];
 
 /**
  * What the dialog opens with: the task's title and notes as the prompt, and the
@@ -95,7 +138,9 @@ export function toStartSession(
     baseBranch: repository.baseBranch,
   };
   const prompt = values.prompt.trim() || undefined;
-  if (values.place !== 'host' && !prompt) return null;
+  const rule = AUTOMATION_PLACE_RULES[values.place];
+  // A place whose host does not run the session (a cloud) starts on a task.
+  if (rule.host !== 'runs' && !prompt) return null;
   if (isVendorPlace(values.place) && prompt) {
     return {
       cloud: {
@@ -107,7 +152,7 @@ export function toStartSession(
     };
   }
   const agent = agentFor(values.place, values.agent);
-  const cloud = values.place === 'claude-cloud';
+  const cloud = rule.host === 'starts';
   return {
     session: {
       hostId: values.hostId,

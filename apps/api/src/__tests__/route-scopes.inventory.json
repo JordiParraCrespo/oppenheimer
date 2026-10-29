@@ -240,6 +240,7 @@
   "POST /v1/tasks": ["tasks:write"],
   "POST /v1/tasks/:id/move": ["tasks:write"],
   "POST /v1/tasks/:id/sessions": ["tasks:write", "sessions:write"],
+  "POST /v1/tasks/:id/sessions/cloud": ["tasks:write", "sessions:write"],
   "POST /v1/tokens": ["tokens:write"],
   "POST /v1/voice/transcriptions": ["sessions:write"],
   "POST /v1/workspaces": ["workspaces:write"],

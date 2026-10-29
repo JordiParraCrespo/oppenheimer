@@ -13984,7 +13984,7 @@
     },
     "/api/v1/tasks/{id}/sessions": {
       "post": {
-        "description": "New session’s body under `session` (a host session, or Claude Code’s cloud with `cloud: true`), or a vendor’s cloud session under `cloud` (`POST /sessions/cloud`’s body, on the caller’s key for the vendor), filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
         "operationId": "startTaskSession",
         "parameters": [
           {
@@ -14065,17 +14065,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that cloud provider",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The cloud provider refused the stored key, or the launch as asked",
+            "description": "SESSIONS_006 — Project archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14101,6 +14091,138 @@
           }
         ],
         "summary": "Start a session from a task",
+        "tags": ["Tasks"]
+      }
+    },
+    "/api/v1/tasks/{id}/sessions/cloud": {
+      "post": {
+        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "operationId": "startTaskCloudSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retry with the same key returns the session already started.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTaskCloudSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartTaskSessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 / GITHUB_010 — Task not found, or a repository its GitHub installation does not cover",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the launch as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 / CLOUD_AGENTS_007 — Rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — No answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a cloud session from a task",
         "tags": ["Tasks"]
       }
     },
@@ -27330,6 +27452,36 @@
             },
             "required": ["hostId", "agent"]
           },
+          "seenStatus": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          }
+        },
+        "required": ["session", "seenStatus"]
+      },
+      "StartTaskSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskResponseDto"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hints": {
+            "description": "What the control plane could not do just now: `host_offline` when the session waits for its host.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["task", "sessionId", "hints"]
+      },
+      "StartTaskCloudSessionRequest": {
+        "type": "object",
+        "properties": {
           "cloud": {
             "type": "object",
             "properties": {
@@ -27380,27 +27532,7 @@
             "enum": ["later", "todo", "doing", "done"]
           }
         },
-        "required": ["seenStatus"]
-      },
-      "StartTaskSessionResponseDto": {
-        "type": "object",
-        "properties": {
-          "task": {
-            "$ref": "#/components/schemas/TaskResponseDto"
-          },
-          "sessionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "hints": {
-            "description": "What the control plane could not do just now: `host_offline` when the session waits for its host.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": ["task", "sessionId", "hints"]
+        "required": ["cloud", "seenStatus"]
       },
       "LinkTaskSessionRequest": {
         "type": "object",

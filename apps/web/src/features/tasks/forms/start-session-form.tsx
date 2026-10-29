@@ -16,6 +16,7 @@ import {
   type ResolvedErrorMessage,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
+import { AUTOMATION_PLACE_RULES, isVendorPlace } from '@oppenheimer/shared/automations';
 import type { ReactNode } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -66,10 +67,10 @@ export function StartSessionForm({
   const hostId = useWatch({ control, name: 'hostId' });
   const place = useWatch({ control, name: 'place' });
   const prompt = useWatch({ control, name: 'prompt' });
-  const atVendor = place === 'cursor';
-  const note = hostId && !atVendor ? offline(hostId) : null;
+  const rule = AUTOMATION_PLACE_RULES[place];
+  const note = hostId && rule.host ? offline(hostId) : null;
   // A cloud session starts on a task; a host session may start on nothing.
-  const needsTask = place !== 'host' && !prompt.trim();
+  const needsTask = rule.host !== 'runs' && !prompt.trim();
   const submit = handleSubmit(onSubmit);
 
   return (
@@ -117,11 +118,11 @@ export function StartSessionForm({
               onValueChange={(value) => {
                 const next = asPlace(value);
                 if (!next) return;
-                const leftVendor = field.value === 'cursor';
+                const leftVendor = isVendorPlace(field.value);
                 field.onChange(next);
                 const agent = agentFor(next, getValues('agent'));
                 // A model of another agent, or of the vendor's, does not carry over.
-                if (next === 'cursor') setValue('model', null);
+                if (isVendorPlace(next)) setValue('model', null);
                 else if (agent !== getValues('agent') || leftVendor) {
                   setValue('agent', agent);
                   setValue('model', defaultModelFor(agent));
@@ -136,11 +137,11 @@ export function StartSessionForm({
             />
           )}
         />
-        {atVendor ? null : (
+        {rule.host === null ? null : (
           <Controller
             control={control}
             name="hostId"
-            rules={{ required: !atVendor }}
+            rules={{ required: true }}
             render={({ field }) => (
               <ChipSelect
                 value={field.value}
@@ -155,7 +156,7 @@ export function StartSessionForm({
             )}
           />
         )}
-        {atVendor ? null : (
+        {rule.host === null ? null : (
           <Controller
             control={control}
             name="agent"
@@ -165,9 +166,9 @@ export function StartSessionForm({
                 name="model"
                 render={({ field: model }) => (
                   <AgentModelSelect
-                    // Claude Code's cloud runs Claude Code alone.
+                    // A place that names its agent offers that one alone.
                     agents={toAgentOptions().filter(
-                      (option) => place !== 'claude-cloud' || option.id === 'claude-code',
+                      (option) => rule.agent === null || option.id === rule.agent,
                     )}
                     value={{ agent: field.value, model: model.value }}
                     onValueChange={(next) => {
@@ -196,7 +197,7 @@ export function StartSessionForm({
         <Button
           type="submit"
           pending={pending}
-          disabled={!repositories.length || (!atVendor && !hosts.length) || needsTask}
+          disabled={!repositories.length || (rule.host !== null && !hosts.length) || needsTask}
         >
           {note ? t('tasks.start.queue') : t('tasks.start.start')}
         </Button>

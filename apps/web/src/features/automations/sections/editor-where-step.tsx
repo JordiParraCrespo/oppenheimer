@@ -14,6 +14,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import {
+  AUTOMATION_PLACE_RULES,
   AUTOMATION_PLACES,
   type AutomationPlace,
   isVendorPlace,
@@ -23,6 +24,7 @@ import {
   AUTOMATION_AGENTS,
   type AutomationDraft,
   isAutomationAgent,
+  placeOptions,
   placePatch,
 } from '../lib/automation-draft';
 
@@ -68,13 +70,18 @@ export function EditorWhereStep({
     label: shortName(repository.fullName),
     description: repository.fullName,
   }));
-  const vendor = isVendorPlace(draft.place);
+  const rule = AUTOMATION_PLACE_RULES[draft.place];
+  const vendor = isVendorPlace(draft.place) ? draft.place : null;
   const { data: cloudStatus } = useCloudAgentStatus();
-  const cursorConnected =
-    cloudStatus?.providers.some((row) => row.id === 'cursor' && row.connected) ?? false;
-  const { data: cursorModels = [] } = useCloudAgentModels('cursor', vendor && cursorConnected);
+  const connected = (provider: string) =>
+    cloudStatus?.providers.some((row) => row.id === provider && row.connected) ?? false;
+  // A vendor's own models, once there is a key to ask with; any vendor reads the same way.
+  const { data: vendorModels = [] } = useCloudAgentModels(
+    vendor ?? 'cursor',
+    vendor !== null && connected(vendor),
+  );
   const models = vendor
-    ? cursorModels
+    ? vendorModels
     : isAutomationAgent(draft.agent)
       ? CODING_AGENTS[draft.agent].models
       : [];
@@ -149,38 +156,18 @@ export function EditorWhereStep({
               searchPlaceholder={t('automations.editor.runsIn')}
               emptyText={(query) => t('automations.editor.noMatch', { query })}
               value={draft.place}
-              options={[
-                {
-                  value: 'host',
-                  label: t('automations.editor.placeHost'),
-                  description: t('automations.editor.placeHostDesc'),
-                },
-                {
-                  value: 'claude-cloud',
-                  label: t('automations.editor.placeClaudeCloud'),
-                  description: t('automations.editor.placeClaudeCloudDesc'),
-                },
-                {
-                  value: 'cursor',
-                  label: t('automations.editor.placeCursor'),
-                  // Picking it with no key would save an automation that pauses on its first run.
-                  disabled: !cursorConnected && draft.place !== 'cursor',
-                  description: cursorConnected
-                    ? t('automations.editor.placeCursorDesc')
-                    : t('automations.editor.placeCursorConnect'),
-                },
-              ]}
+              options={placeOptions(t, connected, draft.place)}
               onValueChange={(place) => {
                 if (!isAutomationPlace(place)) return;
                 onChange(placePatch(draft, place, project?.defaultHostId ?? hosts[0]?.id ?? null));
               }}
             />
           </FieldSelectRow>
-          {vendor ? null : (
+          {rule.host === null ? null : (
             <FieldSelectRow
               icon={<Cpu />}
               label={
-                draft.place === 'claude-cloud'
+                rule.host === 'starts'
                   ? t('automations.editor.startedFrom')
                   : t('automations.editor.host')
               }
@@ -197,7 +184,7 @@ export function EditorWhereStep({
                   label: host.name,
                   // In Claude Code's cloud, the account a run goes out on is the host's.
                   description:
-                    draft.place === 'claude-cloud'
+                    rule.host === 'starts'
                       ? (host.details.claudeAccount ?? host.summary)
                       : host.summary,
                 }))}
@@ -205,7 +192,7 @@ export function EditorWhereStep({
               />
             </FieldSelectRow>
           )}
-          {draft.place === 'host' ? (
+          {rule.agent === null ? (
             <FieldSelectRow icon={<Bot />} label={t('automations.editor.agent')}>
               <FieldSelect
                 variant="quiet"
@@ -250,7 +237,7 @@ export function EditorWhereStep({
         </FieldSelectGroup>
       </div>
       <FieldDescription>
-        {draft.place === 'host'
+        {rule.host === 'runs'
           ? t('automations.editor.branchHint')
           : t('automations.editor.cloudHint')}
       </FieldDescription>

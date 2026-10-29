@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
+import { StartCloudSessionCommand } from '../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationEntity, type RevisionInput } from '../domain/automation.entity';
 import { runRefusalOf } from '../domain/run-refusal.policy';
@@ -84,6 +86,29 @@ describe('the session a run starts', () => {
     expect(() => automation({ place: 'host', agent: 'cursor' })).toThrow();
     expect(() => automation({ place: 'claude-cloud', agent: 'codex' })).toThrow();
     expect(() => automation({ place: 'host', hostId: null })).toThrow();
+  });
+});
+
+describe('the command a launch dispatches', () => {
+  const props = {
+    scope: { userId: 'user-1' } as never,
+    userId: 'user-1',
+    idempotencyKey: 'automation-run:run-1',
+    origin: 'automation' as const,
+  };
+  const mapper = new AutomationRunMapper();
+
+  it('starts a vendor’s launch at the vendor, and every host place through New session', () => {
+    const vendor = launchOf(automation({ place: 'cursor', hostId: null, agent: 'cursor' }));
+    expect(mapper.toLaunchCommand(vendor, props)).toBeInstanceOf(StartCloudSessionCommand);
+    for (const place of ['host', 'claude-cloud'] as const) {
+      const command = mapper.toLaunchCommand(launchOf(automation({ place })), props);
+      expect(command).toBeInstanceOf(CreateSessionCommand);
+      expect(command).toMatchObject({
+        idempotencyKey: 'automation-run:run-1',
+        origin: 'automation',
+      });
+    }
   });
 });
 

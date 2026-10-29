@@ -12,7 +12,7 @@ import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StartSessionForm } from '../forms/start-session-form';
-import { startDefaults, toStartSession } from '../lib/start-session';
+import { placeOptions, startDefaults, toStartSession } from '../lib/start-session';
 
 const board = getRouteApi('/_authenticated/plan/');
 
@@ -34,8 +34,6 @@ export function StartSessionDraft() {
   const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
   const { tasks, projects, hosts, error } = useSuspenseStartSession();
   const { data: cloudStatus } = useCloudAgentStatus();
-  const cursorConnected =
-    cloudStatus?.providers.some((row) => row.id === 'cursor' && row.connected) ?? false;
   const task = tasks.find((row) => row.id === start);
   const project = projects.find((row) => row.id === task?.projectId);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -75,26 +73,9 @@ export function StartSessionDraft() {
           label: host.name,
           description: host.online ? host.summary : t('tasks.start.offlineShort'),
         }))}
-        places={[
-          {
-            value: 'host',
-            label: t('tasks.start.placeHost'),
-            description: t('tasks.start.placeHostDesc'),
-          },
-          {
-            value: 'claude-cloud',
-            label: t('tasks.start.placeClaudeCloud'),
-            description: t('tasks.start.placeClaudeCloudDesc'),
-          },
-          {
-            value: 'cursor',
-            label: t('tasks.start.placeCursor'),
-            disabled: !cursorConnected,
-            description: cursorConnected
-              ? t('tasks.start.placeCursorDesc')
-              : t('tasks.start.placeCursorConnect'),
-          },
-        ]}
+        places={placeOptions(t, (provider) =>
+          Boolean(cloudStatus?.providers.some((row) => row.id === provider && row.connected)),
+        )}
         offline={(hostId) => {
           const host = found.hosts.find((row) => row.id === hostId);
           if (!host || host.online) return null;

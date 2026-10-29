@@ -159,11 +159,17 @@ automation's runs now pick **where** as New session does:
   `AUTOMATION_PLACES` (`host`, `claude-cloud`, `cursor`), names them for
   both; a vendor's place is its provider id, so the next vendor is a value
   there too.
-- **A task.** `POST /tasks/{id}/sessions` takes New session's body under
-  `session` (Claude Code's cloud is that body with `cloud: true`) or
-  `POST /sessions/cloud`'s under `cloud`, exactly one, and dispatches the
-  same command New session would; the session is linked to the task as
-  `started` either way. The dialog's Where chip offers Cursor once the
+- **The table.** `AUTOMATION_PLACE_RULES` says, per place, what its host
+  does (`runs` the session, only `starts` it, or none) and which agent it
+  runs (one, or any a host can). The API's checks, a run's guards and
+  launch, and the console's chips all read that row, so a new place is a
+  row, not a branch in each of them.
+- **A task.** As New session has two doors, so does a task:
+  `POST /tasks/{id}/sessions` takes New session's body (Claude Code's cloud
+  is that body with `cloud: true`), and `POST /tasks/{id}/sessions/cloud`
+  takes `POST /sessions/cloud`'s under `cloud`. Each dispatches the command
+  New session would; the session is linked to the task as `started` either
+  way. The dialog's Where chip offers Cursor once the
   reader has a key, hides the host for it, and offers Claude Code alone in
   Claude Code's cloud. A cloud session starts on a task, so Start waits for
   one.
