@@ -21,6 +21,7 @@ export function PullRequestRail({
   comments: ReactNode;
 }) {
   const { t } = useTranslation();
+  const findings = new Map(pull.ciFindings.map((finding) => [finding.check, finding]));
   const base = pull.baseRef;
   const merge =
     pull.state === 'merged'
@@ -80,11 +81,7 @@ export function PullRequestRail({
         {pull.failingChecks.length ? (
           <div className="flex flex-col gap-4">
             {pull.failingChecks.map((check) => (
-              <FailingCheck
-                key={check.name}
-                check={check}
-                finding={pull.ciFindings.find((finding) => finding.check === check.name)}
-              />
+              <FailingCheck key={check.name} check={check} finding={findings.get(check.name)} />
             ))}
           </div>
         ) : null}

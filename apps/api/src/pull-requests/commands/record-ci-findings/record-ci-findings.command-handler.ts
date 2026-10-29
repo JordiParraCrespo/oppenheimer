@@ -28,7 +28,8 @@ export class RecordCiFindingsCommandHandler
 
   async execute(command: RecordCiFindingsCommand): Promise<string> {
     const { scope, address } = command;
-    if (!scope.organizationId) throw new AppError(PullRequestsErrors.NO_ACTIVE_ORGANIZATION);
+    const { organizationId } = scope;
+    if (!organizationId) throw new AppError(PullRequestsErrors.NO_ACTIVE_ORGANIZATION);
     const snapshot = await this.access.pullRequest(scope, address);
     if (!snapshot.checks.value) {
       throw new AppError(PullRequestsErrors.CHECKS_UNREADABLE, {
@@ -36,7 +37,8 @@ export class RecordCiFindingsCommandHandler
       });
     }
     const failing = (snapshot.checks.value.failing ?? []).map((check) => check.name);
-    const strangers = command.findings.filter((finding) => !failing.includes(finding.check.trim()));
+    // The tool's schema trimmed every field: the name compared is the name stored.
+    const strangers = command.findings.filter((finding) => !failing.includes(finding.check));
     if (strangers.length > 0) {
       throw new AppError(PullRequestsErrors.CHECK_NOT_FAILING, {
         detail: `Not failing on ${snapshot.pull.headSha.slice(0, 7)}: ${strangers.map((finding) => finding.check).join(', ')}. Failing: ${failing.join(', ') || 'none'}`,
@@ -46,7 +48,7 @@ export class RecordCiFindingsCommandHandler
       command.findings.map((finding) =>
         CiFindingEntity.record({
           ...finding,
-          organizationId: scope.organizationId as string,
+          organizationId,
           githubRepoId: address.githubRepoId,
           number: address.number,
           headSha: snapshot.pull.headSha,

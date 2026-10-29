@@ -19,7 +19,10 @@ import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import { AddPullRequestCommentCommand } from '../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
 import { AddPullRequestConversationCommentCommand } from '../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
-import { RecordCiFindingsCommand } from '../../pull-requests/commands/record-ci-findings/record-ci-findings.command';
+import {
+  type CiFindingInput,
+  RecordCiFindingsCommand,
+} from '../../pull-requests/commands/record-ci-findings/record-ci-findings.command';
 import { StartReviewSessionCommand } from '../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
 import { FindPullRequestQuery } from '../../pull-requests/queries/find-pull-request/find-pull-request.query';
@@ -104,6 +107,15 @@ const ciFinding = z.object({
 });
 
 /**
+ * A finding as the model wrote it, as the command takes it: the one field
+ * whose name differs is renamed, and every other passes through, so a field
+ * added to the schema reaches the command without another line here.
+ */
+function toCiFinding({ root_cause, ...rest }: z.output<typeof ciFinding>): CiFindingInput {
+  return { ...rest, rootCause: root_cause };
+}
+
+/**
  * GitHub and pull requests, the writes (`25-bots.md` §4.4): comment, review,
  * merge, and start a review session. Each reaches outside Oppenheimer, so
  * under Approve for me each asks first and its card names the pull request
@@ -151,16 +163,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           new RecordCiFindingsCommand({
             scope: context.owner,
             address: addressOf(input),
-            findings: input.findings.map((finding) => ({
-              check: finding.check,
-              rootCause: finding.root_cause,
-              relation: finding.relation,
-              flake: finding.flake,
-              action: finding.action,
-              next: finding.next,
-              confidence: finding.confidence,
-              evidence: finding.evidence,
-            })),
+            findings: input.findings.map(toCiFinding),
             botId: context.botId,
           }),
         );

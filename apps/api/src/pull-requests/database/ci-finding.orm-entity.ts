@@ -1,7 +1,11 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import {
+  CI_FINDING_ACTIONS,
   CI_FINDING_CHECK_MAX,
+  CI_FINDING_CONFIDENCE,
+  CI_FINDING_FLAKE,
   CI_FINDING_NEXT_MAX,
+  CI_FINDING_RELATIONS,
   CI_FINDING_ROOT_CAUSE_MAX,
 } from '@oppenheimer/shared';
 import {
@@ -14,6 +18,11 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+
+/** A closed set as SQL, from the shared constants the schema reads too. */
+function sqlList(values: readonly string[]): string {
+  return values.map((value) => `'${value}'`).join(', ');
+}
 
 /**
  * What one failing check on a pull request's head came to
@@ -40,16 +49,13 @@ import {
   'CHK_pull_request_ci_finding_text',
   `char_length("check") > 0 AND char_length("rootCause") > 0 AND char_length("headSha") > 0`,
 )
+@Check('CHK_pull_request_ci_finding_relation', `relation IN (${sqlList(CI_FINDING_RELATIONS)})`)
+@Check('CHK_pull_request_ci_finding_flake', `flake IN (${sqlList(CI_FINDING_FLAKE)})`)
+@Check('CHK_pull_request_ci_finding_action', `action IN (${sqlList(CI_FINDING_ACTIONS)})`)
 @Check(
-  'CHK_pull_request_ci_finding_relation',
-  `relation IN ('this_change', 'unrelated', 'unclear')`,
+  'CHK_pull_request_ci_finding_confidence',
+  `confidence IN (${sqlList(CI_FINDING_CONFIDENCE)})`,
 )
-@Check('CHK_pull_request_ci_finding_flake', `flake IN ('flake', 'real', 'unsure')`)
-@Check(
-  'CHK_pull_request_ci_finding_action',
-  `action IN ('fix_here', 'rerun', 'fix_elsewhere', 'ask')`,
-)
-@Check('CHK_pull_request_ci_finding_confidence', `confidence IN ('high', 'medium', 'low')`)
 @Check('CHK_pull_request_ci_finding_evidence', `jsonb_typeof(evidence) = 'array'`)
 export class CiFindingOrmEntity {
   @PrimaryGeneratedColumn('uuid')

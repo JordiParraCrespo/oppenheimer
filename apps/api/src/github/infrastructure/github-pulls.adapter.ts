@@ -9,6 +9,7 @@ import {
   openPullRequestsOf,
 } from './github-open-pulls.util';
 import {
+  type CheckOutcome,
   checkRunOutcome,
   checksOf,
   commitStatusOutcome,
@@ -301,32 +302,30 @@ export class GithubPullsAdapter implements GithubPullsPort {
         credential,
       }),
     ]);
-    const checkRuns = runs.check_runs ?? [];
-    const statuses = combined.statuses ?? [];
-    const failing: GithubFailingCheck[] = [
-      ...checkRuns
-        .filter((run) => checkRunOutcome(run.status, run.conclusion) === 'failed')
-        .map((run) => ({
+    // One pass: each check's outcome, and what a failing one said.
+    const read: { outcome: CheckOutcome; failing: GithubFailingCheck }[] = [
+      ...(runs.check_runs ?? []).map((run) => ({
+        outcome: checkRunOutcome(run.status, run.conclusion),
+        failing: {
           name: run.name ?? 'check',
           url: run.details_url ?? run.html_url ?? null,
           title: run.output?.title || null,
           summary: run.output?.summary ? run.output.summary.slice(0, FAILING_SUMMARY_MAX) : null,
-        })),
-      ...statuses
-        .filter((status) => commitStatusOutcome(status.state) === 'failed')
-        .map((status) => ({
+        },
+      })),
+      ...(combined.statuses ?? []).map((status) => ({
+        outcome: commitStatusOutcome(status.state),
+        failing: {
           name: status.context ?? 'status',
           url: status.target_url ?? null,
           title: status.description || null,
           summary: null,
-        })),
+        },
+      })),
     ];
     return {
-      ...checksOf([
-        ...checkRuns.map((run) => checkRunOutcome(run.status, run.conclusion)),
-        ...statuses.map((status) => commitStatusOutcome(status.state)),
-      ]),
-      failing,
+      ...checksOf(read.map((check) => check.outcome)),
+      failing: read.filter((check) => check.outcome === 'failed').map((check) => check.failing),
     };
   }
 

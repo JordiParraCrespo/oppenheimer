@@ -241,7 +241,9 @@ describe('record_ci_findings', () => {
 
   it('files the findings as the owner and the bot, without a card, and says on which commit', async () => {
     const { call, approvals, dispatched } = setup('auto');
-    const result = await call('record_ci_findings', { ...PR, findings: [finding] });
+    // The schema is the one place a finding is trimmed: the command gets it as stored.
+    const padded = { ...finding, check: ' unit ', root_cause: ` ${finding.root_cause}\n` };
+    const result = await call('record_ci_findings', { ...PR, findings: [padded] });
     expect(result.isError).toBeFalsy();
     expect(result.content).toBe(
       "Recorded 1 finding on #412 at a1b2c3d: unit. The person sees them with the pull request's checks; a push leaves them on the commit before.",
