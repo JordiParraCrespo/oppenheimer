@@ -70,7 +70,7 @@ const fileFacts = {
  * A file the message carries, by where its bytes are: an attachment of a
  * message in the account, or an image from the bot's chat.
  */
-export const mailPlanAttachmentSchema = z.discriminatedUnion('source', [
+const sourcedAttachmentSchema = z.discriminatedUnion('source', [
   /** A file of a message in the account, by its message and part. */
   z.object({
     source: z.literal('mail'),
@@ -82,7 +82,16 @@ export const mailPlanAttachmentSchema = z.discriminatedUnion('source', [
   z.object({ source: z.literal('chat'), attachmentId: z.string().uuid(), ...fileFacts }),
 ]);
 
-export type MailPlanAttachment = z.infer<typeof mailPlanAttachmentSchema>;
+/** A file as a plan carries it; one stored before files had a `source` was always a file of a message. */
+export const mailPlanAttachmentSchema = z.preprocess(
+  (value) =>
+    value && typeof value === 'object' && !('source' in value)
+      ? { ...value, source: 'mail' }
+      : value,
+  sourcedAttachmentSchema,
+);
+
+export type MailPlanAttachment = z.infer<typeof sourcedAttachmentSchema>;
 
 /** Where a planned file is fetched from, as one key: what the send's local bytes are looked up by. */
 export function mailAttachmentKey(file: MailPlanAttachment): string {
