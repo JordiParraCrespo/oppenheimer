@@ -204,6 +204,38 @@ describe('PlaceSelect', () => {
     expect(onCloudChange).toHaveBeenCalledWith('cursor');
   });
 
+  /**
+   * Only the hosts wait on their read: the Cloud tab lists the vendors while
+   * the hosts load, and holds back only Claude Code, which needs a host.
+   */
+  it('lists the vendors on Cloud while the hosts load', () => {
+    render(
+      <PlaceSelect
+        hosts={[]}
+        hostId={null}
+        place="worktree"
+        claudeCloud={null}
+        startFrom={[]}
+        clouds={CLOUDS}
+        cloud={null}
+        onHostChange={vi.fn()}
+        onPlaceChange={vi.fn()}
+        onCloudChange={vi.fn()}
+        onConnectCloud={vi.fn()}
+        onAddHost={vi.fn()}
+        loading
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.new.host.label' }));
+    expect(screen.getByText('sessions.new.host.loading')).toBeTruthy();
+
+    openTab('clouds');
+    expect(screen.getByRole('option', { name: 'Cursor' })).toBeTruthy();
+    expect(
+      screen.queryByRole('option', { name: 'sessions.new.where.claudeCloud.label' }),
+    ).toBeNull();
+  });
+
   it('counts what each tab holds under the search', () => {
     renderChip();
     fireEvent.change(screen.getByRole('textbox', { name: 'sessions.new.host.search' }), {

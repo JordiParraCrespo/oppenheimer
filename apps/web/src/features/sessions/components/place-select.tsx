@@ -126,40 +126,61 @@ export function PlaceSelect({
   const term = query.trim().toLowerCase();
 
   // Both tabs filter under the one search, so each tab's count says what it
-  // holds; the rows are the open tab's. A loading host list has no host to
-  // start Claude Code's cloud from yet.
+  // holds. The vendors do not wait for the hosts; the Claude Code row does,
+  // since a loading host list has no host to start its cloud from yet.
   const hostRows = pane.kind === 'root' ? filterOptions<PlaceHost>(hosts, term) : [];
   const cloudRows =
-    pane.kind === 'root' && !loading
+    pane.kind === 'root'
       ? filterOptions<ChipSelectOption>(
           // Searchable as the vendors are; `ClaudeCloudItem` draws it.
           [
-            {
-              value: CLAUDE_CLOUD_ROW,
-              label: t('sessions.new.where.claudeCloud.label'),
-              description: claudeCloud?.label,
-            },
+            ...(loading
+              ? []
+              : [
+                  {
+                    value: CLAUDE_CLOUD_ROW,
+                    label: t('sessions.new.where.claudeCloud.label'),
+                    description: claudeCloud?.label,
+                  },
+                ]),
             ...clouds,
           ],
           term,
         )
       : [];
-  const rows: ChipSelectOption[] =
+
+  // The open list and what is said around its rows, decided once: the root's
+  // tab or a pane. Only the hosts wait on a read; the panes list what is here.
+  const hostsList = {
+    search: t('sessions.new.host.search'),
+    empty: failure ?? t('sessions.new.host.empty'),
+    loading: false,
+  };
+  const list: { rows: ChipSelectOption[]; search: string; empty: string; loading: boolean } =
     pane.kind === 'host'
-      ? filterOptions<ChipSelectOption>(
-          SESSION_PLACES.map((candidate) => ({
-            value: candidate,
-            label: t(`sessions.new.where.${candidate}.label`),
-            description: t(`sessions.new.where.${candidate}.description`),
-            leading: <PlaceIcon place={candidate} />,
-          })),
-          term,
-        )
+      ? {
+          ...hostsList,
+          rows: filterOptions<ChipSelectOption>(
+            SESSION_PLACES.map((candidate) => ({
+              value: candidate,
+              label: t(`sessions.new.where.${candidate}.label`),
+              description: t(`sessions.new.where.${candidate}.description`),
+              leading: <PlaceIcon place={candidate} />,
+            })),
+            term,
+          ),
+        }
       : pane.kind === 'start-from'
-        ? filterOptions(startFrom, term)
+        ? { ...hostsList, rows: filterOptions(startFrom, term) }
         : tab === 'hosts'
-          ? hostRows
-          : cloudRows;
+          ? { ...hostsList, rows: hostRows, loading: Boolean(loading) }
+          : {
+              rows: cloudRows,
+              search: t('sessions.new.where.searchClouds'),
+              empty: t('sessions.new.where.cloudsEmpty'),
+              loading: false,
+            };
+  const rows = list.rows;
 
   function show(next: { pane?: Pane; query?: string }) {
     if (next.pane) setPane(next.pane);
@@ -366,12 +387,6 @@ export function PlaceSelect({
     }
   }
 
-  const searchLabel = t(
-    pane.kind === 'root' && tab === 'cloud'
-      ? 'sessions.new.where.searchClouds'
-      : 'sessions.new.host.search',
-  );
-
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger
@@ -394,8 +409,8 @@ export function PlaceSelect({
       <ChipSelectPopup width={320} maxHeight={420}>
         <ChipSelectSearch
           value={query}
-          placeholder={searchLabel}
-          aria-label={searchLabel}
+          placeholder={list.search}
+          aria-label={list.search}
           onChange={(event) => show({ query: event.target.value })}
           onKeyDown={onKeyDown}
         />
@@ -405,14 +420,10 @@ export function PlaceSelect({
           aria-label={t(
             pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
           )}
-          loading={pane.kind === 'root' && loading}
+          loading={list.loading}
           loadingText={t('sessions.new.host.loading')}
           empty={rows.length === 0}
-          emptyText={
-            pane.kind === 'root' && tab === 'cloud'
-              ? t('sessions.new.where.cloudsEmpty')
-              : (failure ?? t('sessions.new.host.empty'))
-          }
+          emptyText={list.empty}
         >
           {rows.map(row)}
         </ChipSelectList>
