@@ -111,7 +111,10 @@ worker runs it and streams what happens back to the chat.
   windows are what the ChatGPT backend answers each call with (the
   `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
   reads); a bot on an API key has none to show. There is no Compact: the
-  engines compact on their own.
+  engines compact on their own. Since 2026-10-29 the model is told too:
+  the turn context says how full the context was when the bot's last turn
+  ended, against its window, and from half full asks for narrow reads; a
+  turn whose engine reported no window is told nothing.
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -124,7 +127,10 @@ worker runs it and streams what happens back to the chat.
   before it. In order:
   - who the bot is;
   - how a turn goes: answer or say what it is about to do, act, report
-    only what a tool confirmed;
+    only what a tool confirmed; a reply commits to something (what it took
+    on, where it stands, when the person hears next), and asking again for
+    work under way is the same errand, reported rather than started again
+    (2026-10-29);
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
@@ -221,6 +227,17 @@ worker runs it and streams what happens back to the chat.
   messages when the turn ends. The stored messages are the record; the
   stream is only how they arrive early.
 
+- **A failed turn says what kind of failure it was** (2026-10-29, from
+  Grok Bot's failure lines, `research/lessons-from-grok-bot.md` §9). The
+  engine names it from the provider's answer (the Claude SDK's error code,
+  the HTTP status of an OpenAI error): `rate_limit`, `usage_limit` (a spent
+  quota or credit, no longer waited out as a rate limit), `credential`,
+  `refused` (this request: its content, the model), `unavailable`, or
+  `other`; the worker adds `time_limit` and `interrupted`, and a provider
+  with no key for the turn is `credential`. It is `bot_turn."failure"`,
+  beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
+  whether sending the message again can help.
+
 ## 3. The chat
 
 The chat shows what the bot says, not everything it does:
@@ -235,6 +252,16 @@ The chat shows what the bot says, not everything it does:
   itself *Scout*", "Remembered: deploys go out on Tuesdays", "Forgot a
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
+
+While a turn runs, its live line says what it is doing: waiting its turn,
+thinking, the call running ("Searching the web for …"), writing, or, while
+the engine waits out a provider that refused a call, "Anthropic is limiting
+requests, retrying…" (the stream's `retrying` event, until the turn writes
+again; 2026-10-29). An ended turn's trail says how long it worked ("Worked
+for 1m 13s"), its model and its tokens. A failed turn's line says what
+happened and whether sending it again helps, from its kind (§2): Retry only
+when it can, Model providers for a refused key or sign-in, and the
+provider's own words under Show details.
 
 ### 3.1 Images
 
@@ -317,8 +344,10 @@ one `Bot<Area>ToolsFactory` declaring its tools (a name, a description
 whose first sentence the prompt's "What you can do" list shows, a zod
 input) and dispatching that area's own queries and commands with the
 owner's scope. The input is checked before anything runs; the answer is
-labelled text with ids inline, times in the sender's zone, cut at 12,000
-characters with the cut said; a catalog error comes back as its code,
+labelled text with ids inline, times in the sender's zone, kept within
+12,000 characters by its start and its end, with how much of the middle
+was cut said (2026-10-29; it kept only the start, and a session's error is
+at the end); a catalog error comes back as its code,
 title and detail. Text from outside (a page, a pull request, a session's
 result) comes back fenced as data. A message sent through an API token or an
 OAuth grant rather than the console keeps that credential's scopes on its
@@ -343,6 +372,7 @@ that did not cover the tool never runs.
 | `remember` | Save a fact with its source; an activity line, no revision | auto with *Learn automatically*, else ask |
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory | auto |
+| `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
@@ -835,3 +865,11 @@ The decisions it produced:
   address, fetched through `web_fetch`'s guard and judged by its bytes; it
   is stored as the chat's own image and drawn in the answer, opening in the
   viewer your images open in.
+- 2026-10-29: **five things from Grok Bot's harness**
+  (`research/lessons-from-grok-bot.md` §9, rows 1 to 5): a long tool
+  answer keeps its end as well as its start (§4); the turn context says
+  how full the context was (§2); a reply commits, and a repeated ask
+  reports (§2); a failed turn has a kind that says whether a retry helps,
+  drawn in the chat (§2, §3); and `search_chat` (§4.1). With them the live
+  line shows a provider's retry wait and the trail how long a turn worked
+  (§3).

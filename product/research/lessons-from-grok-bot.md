@@ -416,3 +416,8 @@ Ranked by value for cost:
 
 Nothing here is decided. A row someone takes is written in the note in
 its last column.
+
+**Landed (2026-10-29):** rows 1 to 5, written in `versions/mvp/25-bots.md`
+§2 to §4.1, with two pieces of the chat UI that go with them: the live
+line's wait while a provider's refusal is retried, and how long a turn
+worked.

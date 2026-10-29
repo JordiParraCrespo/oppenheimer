@@ -813,3 +813,9 @@ earlier note:
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it
   in the bot's answer (`versions/mvp/25-bots.md` §4.7).
+- A bot's tool answer was cut to its first 12,000 characters. On
+  2026-10-29, from Grok Bot's harness (`research/lessons-from-grok-bot.md`
+  §9), it keeps its start and its end within that, since a session's
+  error is at the end; and a failed turn records a kind, so the chat no
+  longer offers Retry where the same message fails again
+  (`versions/mvp/25-bots.md` §2–§4).
