@@ -144,6 +144,10 @@ type Facts struct {
 	DiskTotalBytes uint64 `json:"diskTotalBytes,omitempty"`
 	// ServiceManager is how this runner is kept running: launchd or systemd.
 	ServiceManager string `json:"serviceManager,omitempty"`
+	// ClaudeAccount is the claude.ai account the host's `claude` is signed in
+	// as (its email), which a Claude Code cloud session started here runs on.
+	// Omitted when `claude` is not signed in, or not there.
+	ClaudeAccount string `json:"claudeAccount,omitempty"`
 }
 
 // Machine is what the operating system says about the hardware and itself.

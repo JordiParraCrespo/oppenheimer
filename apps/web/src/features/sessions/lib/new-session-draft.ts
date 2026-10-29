@@ -12,7 +12,7 @@ import {
 } from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import { rememberedFolder } from './folder-memory';
-import { defaultModelFor, type EffortPicks } from './session-options';
+import { defaultModelFor, type EffortPicks, engineForPlace } from './session-options';
 
 /**
  * What New session has been set to and remembers between visits, every chip
@@ -162,7 +162,19 @@ export function openDraft(seed: DraftSeed = {}): {
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
   };
-  return { draft, fillable: landingFillable(stored) };
+  return { draft: fitClaudeCloud(draft, seed), fillable: landingFillable(stored) };
+}
+
+/**
+ * A draft opening on Claude Code's cloud brings the agent that place runs
+ * (`engineForPlace`), unless the address names another one: then the address
+ * wins and the place falls back to a new worktree.
+ */
+function fitClaudeCloud(draft: NewSessionDraft, seed: DraftSeed): NewSessionDraft {
+  const engine = engineForPlace(draft, draft);
+  if (engine.agent === draft.agent) return draft;
+  if (seed.agent) return { ...draft, where: 'worktree' };
+  return { ...draft, ...engine };
 }
 
 /** An absolute path is the folder; one under `~` waits for the host's home; none takes the host's last. */

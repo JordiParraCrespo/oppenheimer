@@ -21,6 +21,7 @@ function host(id: string, online: boolean, startsCloud: boolean | null): HostEnt
     asnOrg: null,
     roundTripMillis: null,
     startsCloud,
+    claudeAccount: null,
   });
 }
 

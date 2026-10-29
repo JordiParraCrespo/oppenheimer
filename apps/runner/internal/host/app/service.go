@@ -24,6 +24,9 @@ type Options struct {
 	// Directories lists the host's folders for the folder picker. Nil
 	// refuses ListFolders.
 	Directories Directories
+	// ClaudeAccount reads the claude.ai account `claude` is signed in as, ""
+	// when none. Nil reports none.
+	ClaudeAccount func() string
 }
 
 // Service collects the host inventory.
@@ -34,13 +37,14 @@ type Service struct {
 	dirs      Directories
 	workspace string
 	version   string
+	account   func() string
 }
 
 // New builds the service.
 func New(opts Options) *Service {
 	return &Service{
 		prober: opts.Prober, updater: opts.Updater, installer: opts.Installer, dirs: opts.Directories,
-		workspace: opts.WorkspaceRoot, version: opts.Version,
+		workspace: opts.WorkspaceRoot, version: opts.Version, account: opts.ClaudeAccount,
 	}
 }
 
@@ -82,6 +86,9 @@ func (s *Service) Collect(ctx context.Context) (domain.Facts, error) {
 	}
 	facts.Machine = s.prober.Machine(ctx)
 	facts.ServiceManager = platform.ServiceKind()
+	if s.account != nil {
+		facts.ClaudeAccount = s.account()
+	}
 	return facts, nil
 }
 

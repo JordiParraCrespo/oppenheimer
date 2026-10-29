@@ -27,6 +27,12 @@ export interface HostDetails {
    * not tell (online, its link held elsewhere): worth trying, not promised.
    */
   startsCloud: boolean | null;
+  /**
+   * The claude.ai account (email) the host's `claude` is signed in as: the
+   * one a Claude Code cloud session started there runs on. `null` when it is
+   * not signed in, or the runner does not say.
+   */
+  claudeAccount: string | null;
 }
 
 const NO_DETAILS: HostDetails = {
@@ -41,6 +47,7 @@ const NO_DETAILS: HostDetails = {
   asnOrg: null,
   roundTripMillis: null,
   startsCloud: false,
+  claudeAccount: null,
 };
 
 /**

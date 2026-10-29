@@ -58,4 +58,12 @@ describe('HostMapper.toResponse', () => {
         .startsCloudSessions,
     ).toBe(true);
   });
+
+  it('names the claude.ai account the host’s claude is signed in as, and none without one', () => {
+    expect(mapper.toResponse(host(null, { claudeAccount: 'ana@example.com' })).claudeAccount).toBe(
+      'ana@example.com',
+    );
+    expect(mapper.toResponse(host(null, { tools: [] })).claudeAccount).toBeNull();
+    expect(mapper.toResponse(host()).claudeAccount).toBeNull();
+  });
 });

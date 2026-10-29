@@ -17,6 +17,14 @@ afterEach(cleanup);
 const HOSTS = [
   { value: 'host-1', label: 'mac-studio', online: true },
   { value: 'host-2', label: 'optimus', online: false },
+  { value: 'host-3', label: 'old-box', online: true },
+];
+
+// As the section judges them: mac-studio can, the other two cannot.
+const START_FROM = [
+  { ...HOSTS[0], disabled: false, description: 'ana@example.com' },
+  { ...HOSTS[1], disabled: true, description: 'Offline' },
+  { ...HOSTS[2], disabled: true, description: 'This runner can’t start it' },
 ];
 
 const CLOUDS = [
@@ -47,6 +55,7 @@ function renderChip(
       hostId="host-1"
       place={picked.place}
       claudeCloud={claudeCloud}
+      startFrom={START_FROM}
       clouds={clouds}
       cloud={picked.cloud}
       onHostChange={onHostChange}
@@ -128,14 +137,28 @@ describe('PlaceSelect', () => {
   });
 
   /**
-   * Claude Code under Cloud starts from a host the section above chose, so the
-   * row picks that host with the place; with no host that can, it is greyed
-   * out and picks nothing rather than a session the host would refuse.
+   * Claude Code under Cloud opens a Start from pane of every host: the one
+   * picked there comes with the place, and one that cannot start it (offline,
+   * or a runner that cannot) is disabled rather than sent a session it would
+   * refuse. With no host that can, the row itself is greyed out.
    */
-  it('starts Claude Code’s cloud from the host it names, and from none when there is none', () => {
-    const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[1]);
+  it('starts Claude Code’s cloud from the host picked in its pane, and from none that cannot', () => {
+    const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0]);
     fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
-    expect(picked.onHostChange).toHaveBeenCalledWith('host-2');
+    expect(picked.onPlaceChange).not.toHaveBeenCalled();
+
+    for (const cannot of ['optimus', 'old-box']) {
+      const row = screen.getByRole('option', { name: cannot });
+      expect(row).toHaveProperty('disabled', true);
+      fireEvent.click(row);
+    }
+    expect(picked.onHostChange).not.toHaveBeenCalled();
+
+    // The host names the account the session would run on.
+    expect(screen.getByRole('option', { name: 'mac-studio' }).textContent).toContain(
+      'ana@example.com',
+    );
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
     expect(picked.onPlaceChange).toHaveBeenCalledWith('cloud');
     cleanup();
 
@@ -151,6 +174,7 @@ describe('PlaceSelect', () => {
     const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
 
     fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
 
     expect(onPlaceChange).toHaveBeenCalledWith('cloud');
   });
@@ -159,7 +183,8 @@ describe('PlaceSelect', () => {
     const { onCloudChange } = renderChip();
     const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
 
-    for (let step = 0; step < 3; step++) fireEvent.keyDown(search, { key: 'ArrowDown' });
+    for (let step = 0; step < HOSTS.length + 1; step++)
+      fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
 
     expect(onCloudChange).toHaveBeenCalledWith('cursor');

@@ -623,7 +623,9 @@
         "claudeCloud": {
           "label": "Claude Code",
           "from": "Desde {{host}}",
-          "noHost": "Necesita un host"
+          "noHost": "Necesita un host",
+          "startFrom": "Empezar desde",
+          "cannot": "Este runner no puede iniciarla"
         },
         "hosts": "Hosts",
         "startIn": "Empezar en",
@@ -2519,7 +2521,8 @@
       },
       "meta": {
         "cpus": "{{count}} vCPU",
-        "runner": "runner {{version}}"
+        "runner": "runner {{version}}",
+        "claude": "Claude: {{account}}"
       },
       "actions": "Acciones de {{name}}",
       "updateRunner": "Actualizar runner",

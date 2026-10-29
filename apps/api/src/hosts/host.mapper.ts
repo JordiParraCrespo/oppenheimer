@@ -288,6 +288,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       liveCapabilities: view.liveCapabilities ?? null,
       installedTools: this.toInstalledTools(entity.capabilities),
     });
+    dto.claudeAccount = this.toClaudeAccount(entity.capabilities);
     dto.lastSeenAt = entity.lastSeenAt;
     dto.machine = view.inventory ? this.toMachineResponse(view.inventory) : null;
     dto.vitals = view.vitals ? this.toVitalsResponse(view.vitals) : null;
@@ -376,6 +377,13 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
         typeof tool === 'object' && tool !== null ? Reflect.get(tool, 'name') : undefined;
       return typeof name === 'string' ? [name] : [];
     });
+  }
+
+  /** The claude.ai account the inventory says `claude` is signed in as; null when none. */
+  toClaudeAccount(capabilities: unknown): string | null {
+    if (typeof capabilities !== 'object' || capabilities === null) return null;
+    const account = Reflect.get(capabilities, 'claudeAccount');
+    return typeof account === 'string' && account !== '' ? account : null;
   }
 
   /**

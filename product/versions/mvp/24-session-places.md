@@ -137,13 +137,17 @@ host and then lives on claude.ai/code:
   extension (`POST /sessions/cloud-status`).
 - **What the console shows.** Where: *Claude Code cloud* on a host, with a
   repository and a task (Claude Code only, no files). It is also the
-  **Claude Code** row first under Cloud, beside the vendors, which picks the
-  host for the reader: the one already picked when it can, else the first
-  that can (online, its runner's live link named `session.cloud`, `claude`
-  installed; the host read's `startsCloudSessions`), named on the row as
-  "From mac-studio". With no host that can, the row is greyed out as *Needs
-  a host*, as `NewSessionComposer.dc.html` draws a cloud account that cannot
-  run. The row's mark is a
+  **Claude Code** row first under Cloud, beside the vendors. The row names
+  the host it would start from, the one already picked when it can, else the
+  first that can (online, its runner's live link named `session.cloud`,
+  `claude` installed; the host read's `startsCloudSessions`), as "From
+  mac-studio", and opens a *Start from* pane of every host where the reader
+  picks one. A host that cannot is shown disabled with the reason (*Offline*,
+  *This runner can't start it*). With no host that can, the row is greyed out
+  as *Needs a host*, as `NewSessionComposer.dc.html` draws a cloud account
+  that cannot run. Picking it sets the agent to Claude Code, and the engine
+  button then offers Claude's models alone: the API refuses any other agent
+  in this place. The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
   `claude --teleport <id>`.
 - **Deleting it.** Nothing of it is on the host, so the API records the
@@ -184,3 +188,14 @@ host and then lives on claude.ai/code:
   trust question until it timed out. A checkout it cannot mark fails the
   start at once (`SESS_008`, naming why) rather than waiting for that
   timeout.
+- 2026-10-28: the Claude Code row opens a *Start from* pane of the hosts
+  instead of starting from the one the console chose, which it still names;
+  and in Claude Code's cloud the engine button offers Claude Code alone
+  (§7).
+- 2026-10-28: which Claude account a cloud session runs on is the host's:
+  the runner reports the claude.ai account its `claude` is signed in as
+  (`claudeAccount` in the facts, read from `oauthAccount.emailAddress` in
+  Claude Code's state), Settings → Hosts names it on each card, and Start
+  from names it on each host that can start the session. Two accounts are
+  two hosts to pick between, until multi-account
+  (`../../next-steps/multi-account.md`) gives one host several.
