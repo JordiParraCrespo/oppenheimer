@@ -3,11 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotEngine, BotEngineTool, BotTurnRequest } from '@oppenheimer/backend-agents';
-import {
-  BOT_SUBAGENT_PROGRESS_TASK_MAX,
-  type BotSubagentProgress,
-  type BotSubagentRun,
-} from '@oppenheimer/shared';
+import type { BotSubagentProgress, BotSubagentRun } from '@oppenheimer/shared';
+import { toQueuedSubagentProgress } from '../bot-message.mapper';
 import { BOT_ENGINE, BOT_STREAM } from '../bots-chat.di-tokens';
 import {
   composeSubagentPrompt,
@@ -147,13 +144,7 @@ class ProgressBoard {
     tasks: readonly BotSubagentTask[],
     private readonly onChange: (runs: BotSubagentProgress[]) => void,
   ) {
-    this.runs = tasks.map(({ task }) => ({
-      task: cut(task, BOT_SUBAGENT_PROGRESS_TASK_MAX),
-      state: 'queued',
-      toolCalls: [],
-      startedAt: null,
-      durationMs: null,
-    }));
+    this.runs = tasks.map(({ task }) => toQueuedSubagentProgress(task));
   }
 
   publish(): void {
