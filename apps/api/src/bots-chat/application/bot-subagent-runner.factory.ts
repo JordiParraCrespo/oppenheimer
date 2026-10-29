@@ -152,7 +152,7 @@ class ProgressBoard {
   }
 
   child(index: number): ChildProgress {
-    const run = this.runs[index] as BotSubagentProgress;
+    const run = this.runs[index];
     return {
       started: (at) => {
         run.state = 'running';

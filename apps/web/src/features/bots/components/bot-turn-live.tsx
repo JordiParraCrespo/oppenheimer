@@ -4,7 +4,7 @@ import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { BotSubagentsLive } from '@/features/bots/components/bot-subagents-live';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { liveWords, toolAction } from '@/features/bots/lib/tool-activity';
+import { liveLabel } from '@/features/bots/lib/tool-activity';
 
 /**
  * The turn in flight, after what it has done so far (the Bots frame's live
@@ -31,21 +31,11 @@ export function BotTurnLive({
   since: Date | null;
 }) {
   const { t } = useTranslation();
-  const words = step ? liveWords(toolAction(step)) : null;
-  const done = subagents?.filter((run) => run.state !== 'queued' && run.state !== 'running').length;
-  const label = queued
-    ? t('bots.chat.turn.queued')
-    : subagents && done
-      ? t('bots.chat.activity.delegatingDone', { count: subagents.length, done })
-      : words
-        ? t(words.key, words.values)
-        : writing
-          ? t('bots.chat.turn.writing')
-          : t('bots.chat.turn.thinking');
+  const label = liveLabel({ queued, step, subagents, writing });
   return (
     <>
       <TraceLive elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}>
-        {label}
+        {t(label.key, label.values)}
       </TraceLive>
       {subagents?.length ? <BotSubagentsLive runs={subagents} /> : null}
     </>

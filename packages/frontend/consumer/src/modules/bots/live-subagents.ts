@@ -29,10 +29,9 @@ export function forgetEndedBotSubagents(
   conversation: BotConversationEntity | undefined,
 ): BotSubagentFrames {
   if (!conversation) return frames;
-  const ended = Object.keys(frames).filter((callId) => {
-    const turn = conversation.turn(frames[callId]?.turnId ?? '');
-    return turn !== undefined && !turn.isActive;
-  });
+  const ended = Object.entries(frames)
+    .filter(([, { turnId }]) => hasEnded(conversation, turnId))
+    .map(([callId]) => callId);
   if (ended.length === 0) return frames;
   const next = { ...frames };
   for (const callId of ended) delete next[callId];
@@ -55,9 +54,14 @@ export function botLiveSubagents(
   );
   const live: Record<string, readonly BotSubagentProgress[]> = {};
   for (const [callId, { turnId, runs }] of Object.entries(frames)) {
-    const turn = conversation.turn(turnId);
-    if (finished.has(callId) || (turn !== undefined && !turn.isActive)) continue;
+    if (finished.has(callId) || hasEnded(conversation, turnId)) continue;
     live[callId] = runs;
   }
   return live;
+}
+
+/** The conversation shows the turn ended; one it does not show yet is still running. */
+function hasEnded(conversation: BotConversationEntity, turnId: string): boolean {
+  const turn = conversation.turn(turnId);
+  return turn !== undefined && !turn.isActive;
 }
