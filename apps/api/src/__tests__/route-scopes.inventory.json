@@ -69,6 +69,7 @@
   "GET /v1/cloud-agents/providers/:provider/models": ["cloud-agents:read"],
   "GET /v1/cloud-agents/providers/:provider/repositories": ["cloud-agents:read"],
   "GET /v1/cloud-agents/status": ["cloud-agents:read"],
+  "GET /v1/cloud-files/:token": "session-only",
   "GET /v1/events": "any",
   "GET /v1/feature-flags": "any",
   "GET /v1/feature-flags/admin": ["flags:read"],

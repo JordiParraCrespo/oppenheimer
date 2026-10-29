@@ -60,6 +60,7 @@ function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session
     park: vi.fn(),
     stage: vi.fn(),
     claim: vi.fn(),
+    staged: vi.fn(),
     collect: vi.fn(),
   } satisfies ParkedFilePort;
   const links: LinkRegistryPort = {

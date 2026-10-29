@@ -8,6 +8,7 @@ import type {
 } from '../../../../links/application/link-registry.port';
 import type { ParkedFilePort, StagedFile } from '../../../../links/application/parked-file.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import type { CloudFilesPort } from '../../../application/cloud-files.port';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
@@ -58,7 +59,7 @@ function project() {
   });
 }
 
-function launches(): SessionLaunchSpecFactory {
+function launches(cloudFiles: CloudFilesPort): SessionLaunchSpecFactory {
   return new SessionLaunchSpecFactory(
     {
       slugOf: vi.fn().mockResolvedValue('jordi'),
@@ -66,7 +67,21 @@ function launches(): SessionLaunchSpecFactory {
       ownedBy: vi.fn().mockResolvedValue([]),
     },
     { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+    cloudFiles,
   );
+}
+
+/** Where a cloud session's files are kept: ids in order, a link per launch. */
+function cloudStore() {
+  let next = 0;
+  return {
+    keep: vi.fn(async (_owner, files: readonly { mediaType: StagedFile['mediaType'] }[]) =>
+      files.map((file) => ({ imageId: `kept-${++next}`, mediaType: file.mediaType })),
+    ),
+    link: vi.fn(async (_owner, file: { imageId: string }) => `https://api.test/f/${file.imageId}`),
+    linkLength: 'https://api.test/api/v1/cloud-files/'.length + 36,
+    open: vi.fn(),
+  } satisfies CloudFilesPort;
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
@@ -90,6 +105,7 @@ function imageStore(uploads: Record<string, StagedFile> = {}) {
         mediaType: image.mediaType,
       })),
     ),
+    staged: vi.fn(async (ids: readonly string[], owner) => read(ids, owner)),
     collect: vi.fn(),
   } satisfies ParkedFilePort;
 }
@@ -111,11 +127,13 @@ describe('CreateSessionCommandHandler', () => {
   let plan: SessionPlanFactory;
   let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
   let store: ReturnType<typeof imageStore>;
+  let cloudFiles: ReturnType<typeof cloudStore>;
   let links: LinkRegistryPort;
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
     store = imageStore();
+    cloudFiles = cloudStore();
     links = linksWith(['session.image', 'session.create.images']);
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
@@ -152,10 +170,10 @@ describe('CreateSessionCommandHandler', () => {
       hosts as unknown as HostAccessPort,
       dispatch,
       plan,
-      launches(),
+      launches(cloudFiles),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
-      new SessionAttachmentsResolver(store, links),
+      new SessionAttachmentsResolver(store, links, cloudFiles),
       links,
     );
   }
@@ -487,6 +505,72 @@ describe('CreateSessionCommandHandler', () => {
         'image/png',
         'application/pdf',
       ]);
+    });
+
+    describe('for a cloud session', () => {
+      const cloud = (ids: string[], prompt = 'look at this') =>
+        command({ input: { ...INPUT, cloud: true, prompt, attachmentIds: ids } });
+
+      // A runner that starts cloud sessions and takes no file at all: the
+      // cloud's agent downloads them, not the host.
+      beforeEach(() => {
+        links = linksWith(['session.cloud']);
+      });
+
+      it('keeps them under the session and links each in the task, asking no runner capability', async () => {
+        store = imageStore({
+          'a-1': upload(),
+          'a-2': { ...upload(), mediaType: 'application/pdf', data: Buffer.from('%PDF-1.7') },
+        });
+        handler = rebuild();
+
+        await handler.execute(cloud(['a-1', 'a-2']));
+
+        const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+        expect(store.claim).not.toHaveBeenCalled();
+        expect(cloudFiles.keep).toHaveBeenCalledWith(
+          { organizationId: 'org-acme', sessionId: session.id },
+          [
+            expect.objectContaining({ mediaType: 'image/png' }),
+            expect.objectContaining({ mediaType: 'application/pdf' }),
+          ],
+        );
+        // The log names the kept files, so a create sent again links them afresh.
+        expect(events.find((event) => event.kind === 'prompt.first')?.payload).toEqual({
+          text: 'look at this',
+          images: [
+            { imageId: 'kept-1', mediaType: 'image/png' },
+            { imageId: 'kept-2', mediaType: 'application/pdf' },
+          ],
+        });
+        const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+        expect(spec.images).toBeUndefined();
+        expect(spec.prompt).toMatch(/^look at this\n/);
+        expect(spec.prompt).toContain("-o /tmp/attachments/1.png 'https://api.test/f/kept-1'");
+        expect(spec.prompt).toContain("-o /tmp/attachments/2.pdf 'https://api.test/f/kept-2'");
+      });
+
+      it('refuses a task its links would take past 2 KB with SESSIONS_040, keeping and writing nothing', async () => {
+        store = imageStore({ 'a-1': upload() });
+        handler = rebuild();
+
+        await expect(handler.execute(cloud(['a-1'], 'x'.repeat(1_900)))).rejects.toMatchObject({
+          code: 'SESSIONS_040',
+        });
+        expect(cloudFiles.keep).not.toHaveBeenCalled();
+        expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      });
+
+      it('refuses an upload that is not the caller’s with SESSIONS_019, keeping nothing', async () => {
+        store = imageStore({ 'a-1': upload('someone-else') });
+        handler = rebuild();
+
+        await expect(handler.execute(cloud(['a-1']))).rejects.toMatchObject({
+          code: 'SESSIONS_019',
+        });
+        expect(cloudFiles.keep).not.toHaveBeenCalled();
+        expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      });
     });
 
     it('asks nothing of the host when nothing is attached', async () => {

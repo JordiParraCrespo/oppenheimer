@@ -109,6 +109,19 @@ describe('CacheParkedFileAdapter', () => {
       ).resolves.toHaveLength(1);
     });
 
+    it('hands a cloud session the staged bytes in order, and keeps them for a retry', async () => {
+      const store = new CacheParkedFileAdapter(memoryCache());
+      const first = (await store.stage(png(1))) as string;
+      const second = (await store.stage(png(2))) as string;
+
+      const staged = await store.staged([second, first], owner);
+
+      expect(staged?.map((file) => file.data)).toEqual([png(2).data, png(1).data]);
+      await expect(store.staged([first], owner)).resolves.toHaveLength(1);
+      await expect(store.staged([first], { ...owner, userId: 'user-2' })).resolves.toBeUndefined();
+      await expect(store.staged([first, 'missing'], owner)).resolves.toBeUndefined();
+    });
+
     it('claims nothing another person staged, and nothing that is gone', async () => {
       const store = new CacheParkedFileAdapter(memoryCache());
       const id = (await store.stage(png(1))) as string;

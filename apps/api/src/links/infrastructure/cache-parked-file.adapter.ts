@@ -113,6 +113,11 @@ export class CacheParkedFileAdapter implements ParkedFilePort {
     );
   }
 
+  async staged(ids: readonly string[], owner: StagedFileOwner): Promise<StagedFile[] | undefined> {
+    const staged = await this.read(ids, owner);
+    return staged?.map((file) => ({ ...file, data: Buffer.from(file.data, 'base64') }));
+  }
+
   async collect(imageId: string, hostId: string): Promise<ParkedFile | undefined> {
     const key = PARKED + imageId;
     const peeked = await this.cache.get<Parked>(key);

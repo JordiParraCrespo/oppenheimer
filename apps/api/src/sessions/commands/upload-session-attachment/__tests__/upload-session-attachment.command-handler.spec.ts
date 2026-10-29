@@ -10,6 +10,7 @@ function harness() {
     park: vi.fn(),
     stage: vi.fn().mockResolvedValue('staged-1'),
     claim: vi.fn(),
+    staged: vi.fn(),
     collect: vi.fn(),
   } satisfies ParkedFilePort;
   return { store, handler: new UploadSessionAttachmentCommandHandler(store) };

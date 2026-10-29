@@ -78,6 +78,9 @@ import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
+import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
+import { FindCloudFileQueryHandler } from './queries/find-cloud-file/find-cloud-file.query-handler';
 import { FindHostFoldersHttpController } from './queries/find-host-folders/find-host-folders.http.controller';
 import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-host-folders.query-handler';
 import { FindLatestSessionEventsQueryHandler } from './queries/find-latest-session-events/find-latest-session-events.query-handler';
@@ -95,6 +98,7 @@ import { FindSharedSessionHttpController } from './queries/find-shared-session/f
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
 import {
+  CLOUD_FILES,
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
@@ -140,6 +144,8 @@ const httpControllers = [
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
   FindSessionPortsHttpController,
+  // `cloud-files/:token`: what a cloud session's agent downloads, with no credential.
+  FindCloudFileHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -176,6 +182,7 @@ const queryHandlers: Provider[] = [
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
   FindSessionPortsQueryHandler,
+  FindCloudFileQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -183,6 +190,7 @@ const adapters: Provider[] = [
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
   { provide: SESSION_USAGE_READER, useClass: SessionUsageRepository },
+  { provide: CLOUD_FILES, useClass: StorageCloudFilesAdapter },
 ];
 
 /** Sessions: the row, its checkouts, its append-only log and the fold of that log. */
