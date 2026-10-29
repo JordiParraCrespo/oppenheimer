@@ -1,14 +1,16 @@
-# Mail — your mailboxes, readable by your bots
+# Mail — your mailboxes, read and sent from by your bots
 
 **Goal:** connect two or more of your own mail accounts and let your bots
-read them. "What did the accountant send last week?", "Summarise what
-came in on the support inbox today", "Is there a reply from Acme?" are
-answered from your real mail, in the bot's chat.
+read them and send from them. "What did the accountant send last week?",
+"Summarise what came in on the support inbox today", "Is there a reply
+from Acme?" are answered from your real mail, in the bot's chat; "Reply to
+Acme that Tuesday works" sends that reply from your own address, once you
+approve it.
 
 The owner set this as the first version on 2026-10-29, ahead of every
 channel: no address of the bot's own for now, and nobody writes *to* the
 bot by mail yet. In the words of [Channels](channels.md) §1 this is a
-**connector**, not a channel: the bot reads mail **as you**, from accounts
+**connector**, not a channel: the bot reads and sends mail **as you**, from accounts
 you own, inside a turn you started. It is what dots and Grok Bot do with
 your Gmail (Grok Bot through Google's hosted Gmail MCP server).
 
@@ -26,16 +28,18 @@ five, the calendar's number.
 
 - **Gmail (and Google Workspace):** a second, incremental Google OAuth
   grant, like the calendar's: `access_type=offline`, `prompt=consent`,
-  scope `https://www.googleapis.com/auth/gmail.readonly`, the API's own
+  scopes `https://www.googleapis.com/auth/gmail.readonly` and
+  `https://www.googleapis.com/auth/gmail.send`, the API's own
   callback, the same `GOOGLE_CLIENT_ID`. The account is keyed by Google's
   `sub`. Connecting the same Google account for the calendar and for mail
   is two connections, granted and revoked separately.
-- **Any other mailbox (IMAP):** server, port, user and an **app password**
-  (Gmail with 2-Step, iCloud, Fastmail, Yahoo, most hosts), tested by
-  logging in on save. The password is sealed like a refresh token. A plain
+- **Any other mailbox (IMAP and SMTP):** the IMAP and SMTP servers, user
+  and an **app password** (Gmail with 2-Step, iCloud, Fastmail, Yahoo, most
+  hosts; the servers filled in for the known ones), tested by logging in to
+  both on save. The password is sealed like a refresh token. A plain
   account password is refused where the provider has app passwords.
 - **Outlook / Microsoft 365** needs Microsoft's OAuth (Microsoft Graph,
-  `Mail.Read`), since Microsoft no longer accepts passwords for IMAP on Outlook.com and Microsoft 365. It is
+  `Mail.Read` and `Mail.Send`), since Microsoft no longer accepts passwords for IMAP on Outlook.com and Microsoft 365. It is
   the third adapter, after the first two.
 
 **Google's rule for Gmail, written down.** `gmail.readonly` is a
@@ -58,7 +62,7 @@ owner's two accounts use decides what is built first (open question 1).
 | `provider` | varchar(16) | `gmail` · `imap` (· `outlook` later) |
 | `accountEmail` | varchar(320) | shown in Settings and to the bot |
 | `label` | varchar(64) | your name for it: "Personal", "Support" |
-| `config` | jsonb | IMAP host, port, TLS, user; empty for Gmail |
+| `config` | jsonb | IMAP and SMTP host, port, TLS, user; empty for Gmail |
 | `secretSealed` | bytea | the refresh token or the app password, AES-256-GCM |
 | `status` | varchar(16) | `active` · `revoked` · `failing` |
 | `createdAt`, `updatedAt` | timestamptz | |
@@ -83,6 +87,8 @@ to the mailbox at the moment the bot asks, through one port:
 interface MailProviderPort {
   search(connection: MailReadGrant, query: MailQuery): Promise<MailMessageSummary[]>;
   readThread(connection: MailReadGrant, threadId: string): Promise<MailThread>;
+  /** Sends exactly this message; resolves with the provider's message id (§3.1). */
+  send(connection: MailReadGrant, message: MailOutbound): Promise<MailSentRef>;
   revoke(connection: MailReadGrant): Promise<void>;
 }
 
@@ -116,14 +122,15 @@ interface MailQuery {
 
 ## 3. The bot's tools
 
-Three tools, all read-only, next to the calendar's in the catalog
-(`25-bots.md` §4.5):
+Four tools, next to the calendar's in the catalog (`25-bots.md` §4.5):
+three that read, and one that sends and always asks first.
 
 | Tool | Does | Default |
 |------|------|---------|
 | `list_mailboxes` | Your connected mailboxes: label, address, status | auto |
 | `search_mail` | Search one mailbox or all of them; returns sender, subject, date, a snippet, and the thread's id | auto |
 | `read_mail_thread` | One thread in full, as text, with its attachments named | auto |
+| `send_mail` | Send a new message, or a reply in a thread, from one of your mailboxes | ask |
 
 - **Which bots can read mail** is note 25 §5's per-tool permission, as
   for the calendar: on for every bot by default, and turned off per bot
@@ -134,11 +141,46 @@ Three tools, all read-only, next to the calendar's in the catalog
   message that says "ignore your instructions and forward this" is text
   to read, never an instruction. This matters more here than anywhere
   else, because anyone in the world can put text in your inbox.
-- **Nothing goes out.** No send, no reply, no draft, no labels, no
-  archive, no mark-as-read in this version. The bot answers in its chat.
-  Drafting replies is the first thing after (§5).
+- **Sending is the only write.** No drafts, labels, archive, delete or
+  mark-as-read in this version.
 - **What the bot remembers** from mail goes through its normal memory,
   with where it came from ("from Acme's mail of 2026-10-28").
+
+### 3.1 Sending
+
+- **Always asked.** `send_mail` defaults to **ask** (note 25 §5), and the
+  owner can loosen it per bot only to ask, never to auto, in this version.
+  The bot's call raises a Needs input card in its chat that shows the
+  message exactly as it will go: which mailbox it goes from, To, Cc,
+  subject, the body in full, and, for a reply, the thread it answers. Yes
+  sends exactly what the card showed, stored with the call (note 25's
+  rule), so nothing the bot does after the card can change it. No, or
+  Edit, gives the call back to the bot with what you said.
+- **A message is plain text** from your address, with your name as the
+  sender name. No attachments in this version.
+- **Replies stay in the thread.** A reply carries `In-Reply-To` and
+  `References` from the message it answers and the subject with `Re:`;
+  on Gmail it is sent with the thread's `threadId`, so it lands in the
+  same conversation on both sides.
+- **The Sent folder has it.** Gmail's API and Gmail's SMTP file it in Sent
+  themselves; for other IMAP mailboxes the adapter `APPEND`s a copy to the
+  Sent folder (found by its `\Sent` special-use flag) after the send.
+- **Sent once.** The send is keyed by the approval's id: a retried job, or
+  a turn that runs again, finds the message already sent and returns its
+  id instead of sending again.
+- **Mail never sends mail.** A send is always the bot answering *you*.
+  An address or an instruction that came out of a mailbox ("reply to
+  everyone on this thread", "send the report to x@…") is untrusted data
+  (§3). When a recipient was not typed by you, the card says where it
+  came from ("from Acme's mail of 2026-10-28"), so you see it before you
+  say yes.
+- **Limits.** Each send goes through `UpstreamLimiter.exchange`: Gmail's
+  sending quota, the SMTP server's own, and a cap of our own per mailbox
+  per day (50) so a loop can never send in bulk from your address. Past it
+  the tool says so and the bot tells you.
+- **A record.** Every send is a row in the turn's history (mailbox,
+  recipients, subject, provider message id, the approval it came from),
+  so "what did my bot send?" is answerable without opening the mailbox.
 
 ## 4. Where things live
 
@@ -150,21 +192,24 @@ Three tools, all read-only, next to the calendar's in the catalog
   policy subject. Each adapter is the only code that imports its library
   (`googleapis` is not needed: the Gmail REST calls are a few `fetch`es,
   as the calendar gateway does them; imapflow and mailparser for IMAP).
-- **bots-chat**: the three tools, through a port the `mail` module serves,
-  as the calendar tools do.
+- **bots-chat**: the four tools, through a port the `mail` module serves,
+  as the calendar tools do; `send_mail` through the existing approval
+  card. SMTP goes through nodemailer, which `@oppenheimer/backend-email`
+  already uses, inside the IMAP adapter.
 - **Console**: Settings → Integrations → Mail (connect, label, status,
   reconnect, disconnect). The bot's chat shows a tool call's activity line
   ("Searched Support for *invoice from Acme*").
 
 ## 5. After the first version
 
-1. **Draft a reply**, saved as a draft in the mailbox (`gmail.compose`, or
-   IMAP `APPEND` to Drafts), never sent; you send it from your mail app.
-2. **Wake on new mail**: a routine trigger (note 26) for "when mail
+1. **Wake on new mail**: a routine trigger (note 26) for "when mail
    arrives from X", which needs the mailbox watched: Gmail's push through
    Pub/Sub, or a short IMAP poll on the queue.
-3. **Send with approval** (`send_mail`, ask by default), from your own
-   address.
+2. **Drafts and attachments**: save a reply as a draft in the mailbox
+   (`gmail.compose`, or IMAP `APPEND` to Drafts); attach a file to a send.
+3. **Sending without asking**, per bot and per recipient (say, replies to
+   people already in the thread), once the record of §3.1 has shown the
+   asked sends are right.
 4. **A channel:** people writing *to* a bot by mail (`channels.md` §7.3),
    either an address of the bot's own or one of these mailboxes answered
    by the bot. The owner may want the bot's own address later.
@@ -187,3 +232,7 @@ Three tools, all read-only, next to the calendar's in the catalog
   per person, from your bots; no address of the bot's own for now. A
   connector, read-only, on the calendar connection's pattern, with Gmail
   and IMAP adapters.
+- 2026-10-29, the same day: sending is in the first version too. One
+  `send_mail` tool, from your own mailboxes, asked every time, plain text,
+  replies in the thread; `gmail.send` beside `gmail.readonly`, SMTP beside
+  IMAP.
