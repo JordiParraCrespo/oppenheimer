@@ -360,6 +360,7 @@
       "askInChat": "Pedir en el chat",
       "schedule": "Horario · {{when}}",
       "github": "GitHub · {{when}}",
+      "gmail": "Gmail · {{when}}",
       "last": "Última",
       "next": "Próxima",
       "never": "Nunca",

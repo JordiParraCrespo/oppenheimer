@@ -28,6 +28,7 @@ import {
   type GmailLabel,
   type GmailLabelChange,
   type GmailMessage,
+  type GmailMessageSummary,
   type GmailNewMail,
   GmailNotFoundError,
   GmailProviderError,
@@ -399,6 +400,30 @@ export class GmailGateway implements GmailProviderPort {
       if (!pageToken && typeof page.historyId === 'string') historyId = page.historyId;
     } while (pageToken);
     return { messageIds: ids, historyId };
+  }
+
+  async readSummaries(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+  ): Promise<GmailMessageSummary[]> {
+    const session = await this.session(grant);
+    const read = await Promise.all(
+      messageIds.map(async (id) => {
+        try {
+          return messageSummaryOf(
+            await session.get(`messages/${encodeURIComponent(id)}`, {
+              format: 'full',
+              fields: SUMMARY_FIELDS,
+            }),
+          );
+        } catch (error) {
+          // A message deleted between the history and this read is no longer new mail.
+          if (error instanceof GmailNotFoundError) return null;
+          throw error;
+        }
+      }),
+    );
+    return read.filter((summary): summary is GmailMessageSummary => summary !== null);
   }
 
   async searchIds(grant: GmailCallGrant, query: string, max: number): Promise<string[]> {

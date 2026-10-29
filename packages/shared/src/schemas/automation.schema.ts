@@ -7,6 +7,7 @@ import {
   AUTOMATION_RUN_STATUSES,
   automationPlaceFits,
   GITHUB_EVENT_TYPES,
+  GMAIL_EVENT_TYPES,
   RUN_WINDOWS,
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
@@ -97,7 +98,29 @@ export type GithubTriggerInputDto = z.infer<typeof githubTriggerInputSchema>;
  * a new field on every trigger — the same shape the catalog and the
  * `automation_trigger.config` column take.
  */
-export const triggerInputSchema = z.union([scheduleTriggerInputSchema, githubTriggerInputSchema]);
+/** How long a watched Gmail query may be: Gmail's own search box is about this. */
+export const GMAIL_TRIGGER_QUERY_MAX = 500;
+
+/**
+ * A Gmail card (`next-steps/mail.md` §5): one of the owner's connected
+ * accounts, and the Gmail query a new message must match (`from:bank
+ * label:work`); without one, every new message in the inbox fires it.
+ * Bot routines only.
+ */
+export const gmailTriggerInputSchema = z.object({
+  source: z.literal('gmail'),
+  event: z.enum(GMAIL_EVENT_TYPES),
+  connectionId: z.string().uuid(),
+  query: z.string().trim().max(GMAIL_TRIGGER_QUERY_MAX).nullable().default(null),
+});
+
+export type GmailTriggerInputDto = z.infer<typeof gmailTriggerInputSchema>;
+
+export const triggerInputSchema = z.union([
+  scheduleTriggerInputSchema,
+  githubTriggerInputSchema,
+  gmailTriggerInputSchema,
+]);
 
 export type TriggerInputDto = z.infer<typeof triggerInputSchema>;
 

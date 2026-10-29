@@ -2,8 +2,11 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { SaveBotRoutineCommand } from '../../../automations/commands/save-bot-routine/save-bot-routine.command';
 import type { AutomationEntity } from '../../../automations/domain/automation.entity';
+import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';
+import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
+import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
 import { BotRoutineToolsFactory } from '../bot-routine-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -12,8 +15,9 @@ import type { BotToolContext } from '../bot-tool.factory';
  * what it asks for and what it runs as it comes. What breaks this: a pause or
  * a list raising a card the owner has to click, a save or a run the bot
  * starts going ahead without one,
- * a routine saved with a broader credential than the turn's, or another bot's
- * routine touched.
+ * a routine saved with a broader credential than the turn's, another bot's
+ * routine touched, or a mail trigger's card storing an account name that
+ * could later mean another account.
  */
 const ROUTINE = '0d9f6a4e-0000-4000-8000-000000000001';
 
@@ -25,13 +29,31 @@ const routine = {
   revision: { prompt: 'List the open pull requests.' },
 } as unknown as AutomationEntity;
 
+const ACCOUNT = GmailConnectionEntity.connect({
+  organizationId: 'org-1',
+  userId: 'owner-1',
+  googleSubject: 'sub-1',
+  accountEmail: 'ana@gmail.test',
+  label: 'Personal',
+  refreshTokenSealed: Buffer.from('sealed'),
+  scopes: [],
+});
+
 function setup() {
   const execute = vi.fn(async () => ROUTINE);
   const commandBus = { execute } as unknown as CommandBus;
   const queryBus = {
-    execute: vi.fn(async () => ({ automations: [routine], digests: new Map() })),
+    execute: vi.fn(async (query: unknown) =>
+      query instanceof FindGmailConnectionsQuery
+        ? [ACCOUNT]
+        : { automations: [routine], digests: new Map() },
+    ),
   } as unknown as QueryBus;
-  const [tool] = new BotRoutineToolsFactory(commandBus, queryBus).definitions();
+  const [tool] = new BotRoutineToolsFactory(
+    commandBus,
+    queryBus,
+    new BotMailAccountsResolver(queryBus),
+  ).definitions();
   const approvals = {
     request: vi.fn<BotApprovalRequesterPort['request']>(async () => ({
       status: 'requested',
@@ -75,6 +97,33 @@ describe('update_routine', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it('asks before saving a mail routine, storing the account by its id and naming its address', async () => {
+    const { call, execute, approvals } = setup();
+    await call({
+      ...create,
+      triggers: [{ source: 'gmail', account: 'personal', query: 'from:billing@x.test' }],
+    });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({
+          triggers: [{ source: 'gmail', account: ACCOUNT.id, query: 'from:billing@x.test' }],
+        }),
+        summary: expect.stringContaining('new mail in'),
+      }),
+    );
+    expect(approvals.request.mock.calls[0][0].summary).toContain('ana@gmail.test');
+    expect(approvals.request.mock.calls[0][0].summary).toContain('matching "from:billing@x.test"');
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses a mail routine on an account the person has not connected, before any card', async () => {
+    const { call, execute, approvals } = setup();
+    const result = await call({ ...create, triggers: [{ source: 'gmail', account: 'Work' }] });
+    expect(result.content).toContain('No connected Gmail account is "Work"');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it('pauses at once, with no card, and answers the list again', async () => {
     const { call, execute, approvals } = setup();
     const result = await call({ action: 'pause', routine_id: ROUTINE });
@@ -101,11 +150,13 @@ describe('update_routine', () => {
 
   it("saves an approved routine with the turn's zone and the turn's credential scopes", async () => {
     const { execute } = setup();
+    const queryBus = {
+      execute: vi.fn(async () => ({ automations: [], digests: new Map() })),
+    } as unknown as QueryBus;
     const [tool] = new BotRoutineToolsFactory(
       { execute } as unknown as CommandBus,
-      {
-        execute: vi.fn(async () => ({ automations: [], digests: new Map() })),
-      } as unknown as QueryBus,
+      queryBus,
+      new BotMailAccountsResolver(queryBus),
     ).definitions();
     await tool.runApproved(
       create,

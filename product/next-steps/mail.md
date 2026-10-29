@@ -292,7 +292,8 @@ message's id and a summary; the bot reads it with the tools above.
    `archive_mail`, `trash_mail`, `untrash_mail`, `create_label`) (§3.5).
 4. **Scheduled sends** (built 2026-10-29: `schedule_mail`,
    `cancel_scheduled_mail`, Settings → Mail's Scheduled list) and **waking
-   on new mail** (§3.4, §5).
+   on new mail** (built 2026-10-29: a `gmail` routine trigger through
+   `update_routine`, the minute poll, the hub's `gmail` source) (§3.4, §5).
 
 Later: Gmail's push through Pub/Sub; Google Contacts, so "email Marta"
 finds her address (its own scope); Gmail filters and vacation replies
@@ -365,3 +366,17 @@ as a channel (`channels.md` §7.3).
   mail only: an image from the chat cannot wait with it. A draft can be
   scheduled too, and goes only if unchanged. The daily cap counts a send on
   the day it goes.
+- 2026-10-29: waking on new mail built as §5 says, on the same minute job as
+  scheduled sends. A trigger watches one account, with a Gmail query or for
+  any new mail, and only a bot's routine takes one: a session automation
+  refuses it. The bot names the account in chat and the card stores its
+  connection id, as every mail tool does, and a save checks the owner still
+  holds it. An account starts from the moment a routine first watches it,
+  so no older mail wakes anything, and when Gmail no longer keeps the
+  stored history it starts again from now: mail in that gap wakes nothing.
+  A query runs as a Gmail search over the last two days, crossed with what
+  arrived, so the match is Gmail's own; a poll reads at most 50 new
+  messages an account and leaves the rest for the next minute. Who wrote a
+  mail, its subject and its snippet reach the bot as the event's untrusted
+  context (§4); what a trigger matches on is only the queries a message
+  matched.

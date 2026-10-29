@@ -33,6 +33,7 @@ export class SaveBotRoutineCommandHandler
     const { scope, changes } = command;
     if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
     const now = new Date();
+    if (changes.triggers) await this.plan.assertMailAccounts(scope, changes.triggers);
     const triggers = changes.triggers ? this.plan.triggers(changes.triggers, now) : undefined;
 
     if (command.routineId === null) {

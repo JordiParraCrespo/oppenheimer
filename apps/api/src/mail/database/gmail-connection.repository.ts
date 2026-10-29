@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
 import { GmailConnectionMapper } from '../gmail-connection.mapper';
 import { MailResource } from '../mail.resource';
@@ -45,6 +45,19 @@ export class GmailConnectionRepository
   async save(connection: GmailConnectionEntity): Promise<void> {
     const { id, organizationId, userId, ...changes } = this.mapper.toPersistence(connection);
     await this.repository.update({ id, organizationId, userId }, changes);
+  }
+
+  async markHistory(connection: GmailConnectionEntity, historyId: string): Promise<void> {
+    await this.repository.update(
+      { id: connection.id, organizationId: connection.organizationId },
+      { historyId },
+    );
+  }
+
+  async findManyForSystem(ids: readonly string[]): Promise<GmailConnectionEntity[]> {
+    if (ids.length === 0) return [];
+    const records = await this.repository.findBy({ id: In([...ids]), status: 'active' });
+    return records.map((record) => this.mapper.toDomain(record));
   }
 
   async markRevoked(connection: GmailConnectionEntity): Promise<void> {

@@ -166,6 +166,7 @@
     "AUTOMATIONS_006": "A trigger would never fire. Pick a later time.",
     "AUTOMATIONS_007": "That project can't hold automations.",
     "AUTOMATIONS_008": "That run doesn't exist.",
+    "AUTOMATIONS_009": "That Gmail account can't start a routine: it isn't yours, or it needs reconnecting in Settings → Mail.",
     "TASKS_001": "That task doesn't exist, or it was deleted.",
     "TASKS_002": "That milestone doesn't exist, or it was deleted.",
     "TASKS_003": "Choose a workspace before working with tasks.",

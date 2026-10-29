@@ -245,6 +245,11 @@ export interface GmailProviderPort {
     startHistoryId: string,
     max: number,
   ): Promise<GmailNewMail | null>;
+  /** Messages' envelopes and files, by id, never their bodies; one Gmail no longer has is left out. */
+  readSummaries(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+  ): Promise<GmailMessageSummary[]>;
   /** The ids of messages a Gmail query matches, newest first, at most `max`; nothing else is read. */
   searchIds(grant: GmailCallGrant, query: string, max: number): Promise<string[]>;
   /** Best effort: a grant Google already dropped is not an error. */

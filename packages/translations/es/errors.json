@@ -166,6 +166,7 @@
     "AUTOMATIONS_006": "Un disparador no se activaría nunca. Elige una hora posterior.",
     "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
     "AUTOMATIONS_008": "Esa ejecución no existe.",
+    "AUTOMATIONS_009": "Esa cuenta de Gmail no puede iniciar una rutina: no es tuya, o hay que volver a conectarla en Ajustes → Correo.",
     "TASKS_001": "Esa tarea no existe o se ha eliminado.",
     "TASKS_002": "Ese hito no existe o se ha eliminado.",
     "TASKS_003": "Elige un espacio de trabajo antes de trabajar con tareas.",
