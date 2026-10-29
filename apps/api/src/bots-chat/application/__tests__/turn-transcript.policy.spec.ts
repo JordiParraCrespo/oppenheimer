@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { MAIL_DRAFT_DATA_KEY } from '../../bot-mail-tool.mapper';
 import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
@@ -79,6 +80,7 @@ describe('TurnTranscript', () => {
         isError: false,
         sessionId: null,
         subagents: null,
+        mailDraft: null,
       },
       {
         callId: 'b',
@@ -88,6 +90,7 @@ describe('TurnTranscript', () => {
         isError: true,
         sessionId: null,
         subagents: null,
+        mailDraft: null,
       },
     ]);
   });
@@ -117,6 +120,54 @@ describe('TurnTranscript', () => {
       ['a', 's-1'],
       ['b', null],
     ]);
+  });
+
+  it('keeps the draft a mail call saved on its step, and none from a draft it could not read', () => {
+    const draft = {
+      saved: 'created',
+      draftId: 'd1',
+      link: 'https://mail.google.com/mail/?authuser=ana%40acme.test#drafts?compose=dm1',
+      mail: {
+        kind: 'new',
+        connectionId: '22222222-2222-4222-8222-222222222222',
+        accountEmail: 'ana@acme.test',
+        from: { email: 'ana@acme.test', name: null },
+        to: ['bo@client.test'],
+        cc: [],
+        bcc: [],
+        recipientsFromMail: false,
+        subject: 'Invoice 42',
+        body: 'Paid',
+        signature: true,
+        original: null,
+        threadId: null,
+        attachments: [],
+        draftId: null,
+        draftMessageId: null,
+      },
+    };
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'create_draft', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'create_draft', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'create_draft',
+        output: 'Draft saved',
+        isError: false,
+        data: { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(draft) },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'create_draft',
+        output: 'Draft saved',
+        isError: false,
+        data: { [MAIL_DRAFT_DATA_KEY]: JSON.stringify({ draftId: 'd2' }) },
+      },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps.map((step) => step.mailDraft)).toEqual([draft, null]);
   });
 
   it('keeps the subagents a delegate call ran on its step, and counts their tokens as the turn’s', () => {

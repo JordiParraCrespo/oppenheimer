@@ -7,7 +7,7 @@ import type {
   BotSubagentRun,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
-import type { MailPlan } from '@oppenheimer/shared/schemas/mail';
+import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -22,6 +22,8 @@ export interface BotToolStep {
   sessionId: string | null;
   /** The subagents a `delegate` call ran, as they ended; `null` for any other call, and while it runs. */
   subagents: readonly BotSubagentRun[] | null;
+  /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
+  mailDraft: BotMailDraft | null;
 }
 
 /**

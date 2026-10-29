@@ -29,7 +29,12 @@ import {
   type BotProvider,
   type BotSection,
 } from '@oppenheimer/shared/schemas/bot';
-import { type MailPlan, mailPlanSchema } from '@oppenheimer/shared/schemas/mail';
+import {
+  type BotMailDraft,
+  botMailDraftSchema,
+  type MailPlan,
+  mailPlanSchema,
+} from '@oppenheimer/shared/schemas/mail';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -155,7 +160,10 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
 }
 
 function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
-  const steps: BotToolStep[] = dto.steps.map((step) => ({ ...step }));
+  const steps: BotToolStep[] = dto.steps.map((step) => ({
+    ...step,
+    mailDraft: draftOf(step.mailDraft),
+  }));
   return new BotMessageEntity(
     dto.id,
     dto.turnId,
@@ -271,6 +279,12 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
     new Date(dto.createdAt),
     mailOf(dto.tool, dto.input),
   );
+}
+
+/** A mail call's saved draft; one that does not read as one draws no card. */
+function draftOf(raw: unknown): BotMailDraft | null {
+  const parsed = botMailDraftSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 /** The tools whose card stores the message it sends, as `input.plan`. */
