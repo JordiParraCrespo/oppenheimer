@@ -25,14 +25,15 @@ This document is channels. Connectors are tools of note 25 §4, held to its
 permissions, and come later. A channel never grants a connector: talking to
 a bot in Slack does not let it read your Slack.
 
-**MCP is the connector side, and the first version does not need it.**
+**The first version is a connector, not a channel** (2026-10-29): reading
+your own mailboxes from your bots, [Mail](mail.md). It needs no MCP:
 Grok Bot reaches your Gmail through Google's hosted Gmail MCP server, and
-Codex's connectors are one hosted MCP server, but both bots' own mail
-addresses and Slack identities are channels with no MCP in them. Our bots'
-tools are already an in-process MCP server shared by both engines (note 25
-§4), so when connectors come, a remote MCP server (Gmail, Linear, Notion)
-is one more server on the same turn, with the owner's OAuth token and the
-tool permissions of note 25 §5. That is its own note, after channels.
+Codex's connectors are one hosted MCP server, but our mail connector calls
+Gmail and IMAP directly and gives the bot its tools the way the calendar
+does. Our bots' tools are already an in-process MCP server shared by both
+engines (note 25 §4), so a remote MCP server (Linear, Notion) can join the
+same turn later, with the owner's OAuth token and the tool permissions of
+note 25 §5. That is its own note.
 
 ## 2. One interface, one implementation per channel
 
@@ -277,7 +278,9 @@ owner chose**, not by the API.
 
 ### 7.3 Email: an address of the bot's own
 
-The first channel, and the way Grok Bot does it: each bot can claim an
+Later, and not first: on 2026-10-29 the owner put reading their own
+mailboxes first ([Mail](mail.md)) and the bot's own address after it.
+The design stays as written. It is the way Grok Bot does it: each bot can claim an
 address on our mail domain, `juno@<workspace>.<mail domain>` (the domain is
 deployment config), and anything sent there reaches the bot. Nothing to
 link, no password, no host: the address works the moment it is claimed.
@@ -349,17 +352,19 @@ without touching DNS. It is the same adapter shape and the same core.
 
 ## 9. Slices
 
+Reading your own mailboxes ([Mail](mail.md)) comes before all of these.
+
 1. **The core and email.** The module, the port, intake, conversations,
    the owner-only rule, the reply; a bot claims its address, mail to it is
-   a turn, and the bot answers in the thread. The owner emails their bot
-   from their own address and gets an answer.
+   a turn, and the bot answers in the thread.
 2. **Contacts, customers and routes** (`customers-and-routes.md` slices 1
    and 2): a forwarded `support@` answered for customers.
 3. **WhatsApp**, the linked device of §7.1, on the runner.
 4. **Slack**, which is 0.4.
 5. **`send_message`**, and channels as routine triggers (note 26): a
    message to a bot's address or number can also fire a routine.
-6. **A mailbox you own** (§7.3, later).
+6. **A mailbox you own** as a channel (§7.3, later), on the same
+   connection as [Mail](mail.md).
 
 ## Open questions
 
@@ -390,3 +395,7 @@ without touching DNS. It is the same adapter shape and the same core.
   mail domain the way Grok Bot does it, received by webhook; the IMAP
   mailbox moves to later. Connectors, and MCP with them, stay out of the
   first version.
+- 2026-10-29, later the same day: the owner does not want the bot's own
+  address for now. The first version is reading two or more of their own
+  mailboxes from their bots, a connector ([`mail.md`](mail.md)); the
+  channels, email included, come after it.
