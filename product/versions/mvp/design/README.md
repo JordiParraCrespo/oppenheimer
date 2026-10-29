@@ -313,8 +313,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
 - Since the 2026-10-29 export the Inbox is a section of Plan rather than
-  a rail item of its own, where `../29-inbox.md` put it (first in
-  `RAIL_ROUTES`, at `/inbox`); the console still follows the note.
+  a rail item of its own; the console follows it since 2026-10-29
+  (`../29-inbox.md`, "As built: the Inbox in Plan"), at `/plan/inbox`.
 - The Inbox (`Brain`) is planned and built in `../29-inbox.md`, minimal
   first: its message box, model menus, suggestions and email items are
   left out. Global search, Teleport, the preview pane and Cursor Cloud

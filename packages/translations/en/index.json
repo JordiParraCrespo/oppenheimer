@@ -2395,6 +2395,7 @@
     "backToTask": "Back to task",
     "nav": {
       "label": "Plan",
+      "inbox": "Inbox",
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones"
@@ -2730,24 +2731,18 @@
   },
   "inbox": {
     "title": "Inbox",
-    "bar": {
-      "meta": "{{needs}} · {{running}}",
-      "needs_zero": "Nothing needs you",
-      "needs_one": "{{count}} needs you",
-      "needs_other": "{{count}} need you",
-      "running_one": "{{count}} session running",
-      "running_other": "{{count}} sessions running"
-    },
     "list": {
-      "head": "Needs you",
       "empty": "Nothing needs you.",
-      "noneMatching": "Nothing matching these filters needs you.",
+      "noneMatching": "Nothing matching these filters or words needs you.",
       "low": "Low",
       "snoozed": "Snoozed",
       "bringBack": "Bring back",
       "failed": "Could not load the Inbox.",
       "markFailed": "Could not save that. Try again.",
-      "back": "Back {{when}}"
+      "back": "Back {{when}}",
+      "unread": "{{count}} unread",
+      "search": "Search inbox",
+      "clearSearch": "Clear search"
     },
     "filter": {
       "label": "Filter the Inbox",
@@ -2782,7 +2777,7 @@
     },
     "from": {
       "session": "Session",
-      "approval": "{{bot}} · Bot approval",
+      "approval": "Bot approval",
       "run": "Automation"
     },
     "session": {
@@ -2823,7 +2818,6 @@
       "readyShort": "Merge #{{number}} {{title}}",
       "readyTitle": "Merge #{{number}} · {{title}}?",
       "readyBody": "Nothing is holding it: it can merge now.",
-      "by": "by {{author}}",
       "open": "Open",
       "viewOnGithub": "View on GitHub",
       "merge": "Merge",
@@ -2850,29 +2844,16 @@
       "later": "Later",
       "answerFailed": "Could not do that. Try again."
     },
-    "log": {
-      "done": "Marked done · {{title}}",
-      "approved": "Approved {{bot}} · {{tool}}",
-      "denied": "Denied {{bot}} · {{tool}}",
-      "merged": "Merged #{{number}} into {{repository}}",
-      "ranAgain": "Ran {{name}} again",
-      "answered": "Answered {{name}}: {{answer}}"
-    },
     "pane": {
-      "greeting": {
-        "morning": "Good morning.",
-        "afternoon": "Good afternoon.",
-        "evening": "Good evening."
-      },
-      "running_one": "{{count}} session is running.",
-      "running_other": "{{count}} sessions are running.",
-      "needs_one": "One thing needs you.",
-      "needs_other": "{{count}} things need you, one at a time.",
-      "nothing": "Nothing needs you right now.",
-      "clearTitle": "You're clear",
-      "clear": "The next thing that needs you comes here.",
-      "clearRunning_one": "{{count}} session is still running. The next thing that needs you comes here.",
-      "clearRunning_other": "{{count}} sessions are still running. The next thing that needs you comes here."
+      "label": "Reading pane",
+      "toolbar": "Item actions",
+      "back": "Back to the list",
+      "position": "{{n}} of {{total}}",
+      "ago": "{{age}} ago",
+      "clearTitle": "Nothing needs you",
+      "clear": "New items land here when one needs a decision.",
+      "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
+      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
     }
   },
   "settings": {
@@ -3114,8 +3095,7 @@
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Employees",
-    "inbox": "Inbox"
+    "employees": "Employees"
   },
   "language": {
     "label": "Language",

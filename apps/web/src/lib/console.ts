@@ -36,23 +36,15 @@ export const useConsoleDialog = consoleDialogs.useDialogActions;
 export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 
 /** The console's lists: what the rail switches and the sidebar shows. */
-export type ConsoleList =
-  | 'inbox'
-  | 'sessions'
-  | 'bots'
-  | 'automations'
-  | 'pulls'
-  | 'tasks'
-  | 'calendar';
+export type ConsoleList = 'sessions' | 'bots' | 'automations' | 'pulls' | 'tasks' | 'calendar';
 
 /**
- * Which of the console's lists the matched routes are under: `inbox` for
- * `/inbox`; `bots` for the
+ * Which of the console's lists the matched routes are under: `bots` for the
  * Employees section under `/bots`, a bot's settings included; `automations`
  * for everything under `/automations`, the editor included; `pulls` for the
  * queue, a pull request and analytics under `/pulls`; Plan's two,
  * `calendar` under `/plan/calendar` (Google's return included) and `tasks`
- * for the rest of `/plan`; and `sessions` for everything else. One predicate,
+ * for the rest of `/plan`, its Inbox included; and `sessions` for everything else. One predicate,
  * so the rail's current item and the sidebar beside it can never disagree.
  * It reads the matches, not the address: the address moves on while the next
  * route still loads, and a list drawn ahead of its route reads a match that
@@ -75,7 +67,6 @@ export function useConsoleList(): ConsoleList {
  * calendar comes before the rest of Plan. Everything else is `sessions`.
  */
 const LIST_BY_PREFIX: readonly (readonly [string, ConsoleList])[] = [
-  ['/_authenticated/inbox', 'inbox'],
   ['/_authenticated/bots', 'bots'],
   ['/_authenticated/automations', 'automations'],
   ['/_authenticated/pulls', 'pulls'],

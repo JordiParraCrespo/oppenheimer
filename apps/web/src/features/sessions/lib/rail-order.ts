@@ -1,21 +1,13 @@
-import {
-  Bell,
-  Bot,
-  GitPullRequest,
-  Layers,
-  Terminal,
-  Zap,
-} from '@oppenheimer/design-system-web/icons';
+import { Bot, GitPullRequest, Layers, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import type { ConsoleList } from '@/lib/console';
 import { RAIL_ROUTES, type RailItemId } from './rail-landing';
 
 /**
  * What each rail item looks like and stands for: the console lists it
- * switches to (Plan is the tasks board and the calendar), its name and its
+ * switches to (Plan is its Inbox, the tasks board and the calendar), its name and its
  * glyph. The ids, routes and order are `rail-landing.ts`'s.
  */
 const LOOK = {
-  inbox: { lists: ['inbox'], labelKey: 'nav.inbox', Icon: Bell },
   bots: { lists: ['bots'], labelKey: 'nav.employees', Icon: Bot },
   sessions: { lists: ['sessions'], labelKey: 'nav.sessions', Icon: Terminal },
   pulls: { lists: ['pulls'], labelKey: 'nav.pullRequests', Icon: GitPullRequest },

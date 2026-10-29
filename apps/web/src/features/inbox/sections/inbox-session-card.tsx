@@ -1,10 +1,10 @@
 import {
   AgentMark,
   Button,
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardFacts,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageFacts,
 } from '@oppenheimer/design-system-web';
 import { type InboxItem, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -14,7 +14,7 @@ import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { InboxPermissionAnswer } from '@/features/inbox/components/inbox-permission-answer';
 import { InboxQuestionAnswer } from '@/features/inbox/components/inbox-question-answer';
 import { useAnswerDecision } from '@/features/inbox/hooks/use-answer-decision';
-import { answerSummary, toAnswers } from '@/features/inbox/lib/inbox-answer';
+import { toAnswers } from '@/features/inbox/lib/inbox-answer';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 import { InboxSessionFailure } from '@/features/inbox/sections/inbox-session-failure';
@@ -65,13 +65,19 @@ export function InboxSessionCard({
   ) : null;
 
   return (
-    <InboxCard icon={<InboxKindIcon kind="session" />} from={from} title={copy.title} age={age}>
+    <InboxMessage
+      icon={<InboxKindIcon kind="session" />}
+      sender={copy.sender}
+      meta={from}
+      title={copy.title}
+      age={age}
+    >
       {session.lifecycle === 'failed' ? (
         <InboxSessionFailure session={session} fallback={copy.body} />
       ) : (
-        <InboxCardBody>{copy.body}</InboxCardBody>
+        <InboxMessageBody>{copy.body}</InboxMessageBody>
       )}
-      <InboxCardFacts>
+      <InboxMessageFacts>
         <span className="flex items-center gap-1.5 [&_svg]:size-3.5">
           <AgentMark agent={session.agent} />
           {sessionAgentLabel(session.agent)}
@@ -79,19 +85,17 @@ export function InboxSessionCard({
         {session.scopeLabel && !decision ? (
           <span className="font-mono">{session.scopeLabel}</span>
         ) : null}
-      </InboxCardFacts>
+      </InboxMessageFacts>
       {decision?.kind === 'permission' ? (
         <>
           <InboxPermissionAnswer
             key={decision.id}
             decision={decision}
             pending={answer.pending}
-            onChoose={(option) =>
-              answer.send({ id: decision.id, option }, decision.options[option]?.label ?? '')
-            }
+            onChoose={(option) => answer.send({ id: decision.id, option })}
           />
           {alert}
-          <InboxCardActions
+          <InboxMessageActions
             leading={
               <>
                 {later}
@@ -105,12 +109,7 @@ export function InboxSessionCard({
           key={decision.id}
           decision={decision}
           pending={answer.pending}
-          onSend={(answers) =>
-            answer.send(
-              { id: decision.id, answers: toAnswers(answers) },
-              answerSummary(decision, answers),
-            )
-          }
+          onSend={(answers) => answer.send({ id: decision.id, answers: toAnswers(answers) })}
           alert={alert}
           leading={
             <>
@@ -122,9 +121,9 @@ export function InboxSessionCard({
       ) : (
         <>
           {alert}
-          <InboxCardActions leading={later}>{open('primary')}</InboxCardActions>
+          <InboxMessageActions leading={later}>{open('primary')}</InboxMessageActions>
         </>
       )}
-    </InboxCard>
+    </InboxMessage>
   );
 }

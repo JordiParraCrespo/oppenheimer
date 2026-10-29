@@ -746,6 +746,15 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- `versions/mvp/29-inbox.md` §5 and Decided 1 made the Inbox the rail's
+  first item at `/inbox`, with its list in the console's sidebar and the
+  item in hand as a card under a greeting and a log. The 2026-10-29 export
+  moved it into Plan, and on 2026-10-29 the owner asked for it to look
+  like a mail inbox: it is Plan's first section at `/plan/inbox` (the old
+  address redirects), the rail item is gone, the console still lands on it,
+  and the pane is a list column (search, unread rows with sender, subject
+  and a line of body) beside a reading pane (a toolbar, the item as a
+  message). The log is gone with the greeting; Show done is the record.
 - `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
   notifications token and one optional token for private repositories. On
   2026-10-26 the owner asked for several organisations and, inside one, a
