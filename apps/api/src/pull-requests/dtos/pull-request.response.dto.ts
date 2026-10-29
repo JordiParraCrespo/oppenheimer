@@ -5,6 +5,7 @@ import {
   type PullRequestLane,
   type PullRequestScope,
 } from '@oppenheimer/shared';
+import { CiFindingResponseDto } from './ci-finding.response.dto';
 
 const ACTIVITY_EVENTS = [
   'review_requested',
@@ -251,6 +252,21 @@ export class PullRequestGateDto {
   state!: (typeof GATE_STATES)[number];
 }
 
+/** One check that failed on the head, as GitHub named it and summed it up. */
+export class PullRequestFailingCheckDto {
+  @ApiProperty({ description: 'The check run’s name, or the commit status’s context.' })
+  name!: string;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Where its log or details are.' })
+  url!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Its one-line result.' })
+  title!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'The start of its summary.' })
+  summary!: string | null;
+}
+
 export class PullRequestChecksDto {
   @ApiProperty({ enum: CHECK_STATES })
   state!: (typeof CHECK_STATES)[number];
@@ -266,6 +282,12 @@ export class PullRequestChecksDto {
 
   @ApiProperty()
   pending!: number;
+
+  @ApiProperty({
+    type: [PullRequestFailingCheckDto],
+    description: 'The checks that failed on the head; empty when none did or they were not read.',
+  })
+  failing!: PullRequestFailingCheckDto[];
 }
 
 export class PullRequestReviewerDto {
@@ -304,6 +326,13 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
 
   @ApiProperty({ type: PullRequestChecksDto })
   checkCounts!: PullRequestChecksDto;
+
+  @ApiProperty({
+    type: [CiFindingResponseDto],
+    description:
+      'What the failing checks on the head came to, one per check that was looked into; empty when none was.',
+  })
+  ciFindings!: CiFindingResponseDto[];
 
   @ApiProperty({ type: [PullRequestGateDto] })
   gates!: PullRequestGateDto[];

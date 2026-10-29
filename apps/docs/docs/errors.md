@@ -434,9 +434,16 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
 | `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+| `PULLS_003` <a id="pulls_003" /> | That check is not failing on the pull request | 422  |
+| `PULLS_004` <a id="pulls_004" /> | The pull request’s checks could not be read | 409  |
 
 `PULLS_002` answers a review session started on a pull request whose head
 branch is in a fork: a host fetches the base repository's branches only.
+
+`PULLS_003` and `PULLS_004` answer a record of CI findings
+(`record_ci_findings`). A finding is filed against the head GitHub shows now,
+and only for a check failing on it: `PULLS_003` names the checks that are
+failing. `PULLS_004` is GitHub refusing to show the checks at all.
 
 ## Projects
 

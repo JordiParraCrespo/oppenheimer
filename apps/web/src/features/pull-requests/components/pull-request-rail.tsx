@@ -2,13 +2,15 @@ import { CircleAlert, CircleCheck, CircleDashed } from '@oppenheimer/design-syst
 import type { PullRequestDetailEntity } from '@oppenheimer/frontend-consumer';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FailingCheck } from './failing-check';
 import { RailSection } from './rail-section';
 import { ReviewerRow } from './reviewer-row';
 
 /**
  * Beside a description, what decides whether it can go in: whether it merges
  * cleanly, who has commented, who is reviewing it and what its checks say, each a quiet section
- * under a muted label, the way the Codex app's pull request page reads.
+ * under a muted label, the way the Codex app's pull request page reads. A failing check is
+ * listed with what a bot found it to be, when one looked.
  */
 export function PullRequestRail({
   pull,
@@ -74,7 +76,19 @@ export function PullRequestRail({
                 : t('pullRequests.detail.rail.noChecks')}
           </span>
         }
-      />
+      >
+        {pull.failingChecks.length ? (
+          <div className="flex flex-col gap-4">
+            {pull.failingChecks.map((check) => (
+              <FailingCheck
+                key={check.name}
+                check={check}
+                finding={pull.ciFindings.find((finding) => finding.check === check.name)}
+              />
+            ))}
+          </div>
+        ) : null}
+      </RailSection>
     </aside>
   );
 }

@@ -113,6 +113,22 @@ export interface GithubChecks {
   passed: number;
   failed: number;
   pending: number;
+  /**
+   * The checks that failed on the head, by name, with where to read them
+   * and what they said; only the read of one pull request's checks fills it.
+   */
+  failing?: GithubFailingCheck[];
+}
+
+/** One failing check: a check run or a commit status, as GitHub named and summed it up. */
+export interface GithubFailingCheck {
+  name: string;
+  /** Where its log or details are; null when it gave none. */
+  url: string | null;
+  /** Its one-line result ("2 tests failed"); null when it gave none. */
+  title: string | null;
+  /** The start of its summary, cut short; null when it gave none. */
+  summary: string | null;
 }
 
 /**

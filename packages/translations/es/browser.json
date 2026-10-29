@@ -258,6 +258,8 @@
       "PROJECTS_009": "Sin asignar es el nombre del proyecto para las sesiones sin proyecto. Elige otro nombre.",
       "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "PULLS_002": "Este pull request viene de un fork, que una sesión todavía no puede descargar.",
+      "PULLS_003": "Ese check no está fallando en el último commit del pull request.",
+      "PULLS_004": "GitHub no ha mostrado los checks de este pull request, así que no se ha podido registrar nada sobre ellos.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
       "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
       "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",
@@ -2297,6 +2299,31 @@
         "commentCount_other": "{{count}} comentarios",
         "commentCount_many": "{{count}} comentarios",
         "commentsFailed": "No se pudieron cargar los comentarios."
+      },
+      "ci": {
+        "next": "Siguiente: {{next}}",
+        "notLookedInto": "Sin revisar todavía",
+        "relation": {
+          "this_change": "Lo causa este cambio",
+          "unrelated": "No viene de este cambio",
+          "unclear": "Causa poco clara"
+        },
+        "flake": {
+          "flake": "Intermitente",
+          "real": "Falla siempre",
+          "unsure": "Sin reintentar"
+        },
+        "action": {
+          "fix_here": "Arreglar aquí",
+          "rerun": "Volver a ejecutar",
+          "fix_elsewhere": "Arreglar en otro sitio",
+          "ask": "Decides tú"
+        },
+        "confidence": {
+          "high": "Seguro",
+          "medium": "Bastante seguro",
+          "low": "Poco seguro"
+        }
       }
     },
     "review": {

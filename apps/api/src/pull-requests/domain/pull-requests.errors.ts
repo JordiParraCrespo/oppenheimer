@@ -13,4 +13,16 @@ export const PullRequestsErrors = {
     message: 'A pull request from a fork cannot be reviewed in a session yet',
     httpStatus: 409,
   },
+  /** A CI finding for a check that is not failing on the pull request's head. */
+  CHECK_NOT_FAILING: {
+    code: 'PULLS_003',
+    message: 'That check is not failing on the pull request',
+    httpStatus: 422,
+  },
+  /** GitHub would not show the head's checks, so a finding about one cannot be filed. */
+  CHECKS_UNREADABLE: {
+    code: 'PULLS_004',
+    message: 'The pull request’s checks could not be read',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -109,6 +109,12 @@ function toDetail(dto: PullRequestDetailResponseDto): PullRequestDetailEntity {
     dto.gates,
     dto.reviewers,
     dto.viewerLogin ?? null,
+    dto.checkCounts.failing.map(({ name, url, title }) => ({ name, url, title })),
+    dto.ciFindings.map((finding) => ({
+      ...finding,
+      evidence: [...finding.evidence],
+      updatedAt: new Date(finding.updatedAt),
+    })),
   );
 }
 

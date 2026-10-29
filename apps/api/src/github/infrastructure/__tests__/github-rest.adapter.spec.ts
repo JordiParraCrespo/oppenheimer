@@ -505,6 +505,57 @@ describe('turning on auto-merge', () => {
   });
 });
 
+describe('reading a head’s checks', () => {
+  const credential = { token: 'inst-token', bucket: 'installation:1' as const };
+
+  it('names each failing check run and commit status, with its link and a cut summary', async () => {
+    const http = fakeFetch([
+      {
+        body: {
+          check_runs: [
+            { name: 'build', status: 'completed', conclusion: 'success' },
+            {
+              name: 'unit',
+              status: 'completed',
+              conclusion: 'failure',
+              details_url: 'https://ci.example/runs/9',
+              output: { title: '2 tests failed', summary: 'x'.repeat(2_000) },
+            },
+            { name: 'e2e', status: 'in_progress', conclusion: null },
+          ],
+        },
+      },
+      {
+        body: {
+          statuses: [
+            {
+              state: 'failure',
+              context: 'deploy/preview',
+              target_url: null,
+              description: 'Build broke',
+            },
+          ],
+        },
+      },
+    ]);
+    const checks = await new GithubPullsAdapter(new GithubHttp(configWith(), http.impl)).readChecks(
+      credential,
+      'acme/api',
+      'abc123',
+    );
+    expect(checks).toMatchObject({ state: 'failing', total: 4, passed: 1, failed: 2, pending: 1 });
+    expect(checks.failing).toEqual([
+      {
+        name: 'unit',
+        url: 'https://ci.example/runs/9',
+        title: '2 tests failed',
+        summary: 'x'.repeat(600),
+      },
+      { name: 'deploy/preview', url: null, title: 'Build broke', summary: null },
+    ]);
+  });
+});
+
 describe('issues', () => {
   const credential = { token: 'ghs_held', bucket: 'installation:45678901' as const };
   const ISSUE = {

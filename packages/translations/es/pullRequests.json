@@ -155,6 +155,31 @@
       "commentCount_other": "{{count}} comentarios",
       "commentCount_many": "{{count}} comentarios",
       "commentsFailed": "No se pudieron cargar los comentarios."
+    },
+    "ci": {
+      "next": "Siguiente: {{next}}",
+      "notLookedInto": "Sin revisar todavía",
+      "relation": {
+        "this_change": "Lo causa este cambio",
+        "unrelated": "No viene de este cambio",
+        "unclear": "Causa poco clara"
+      },
+      "flake": {
+        "flake": "Intermitente",
+        "real": "Falla siempre",
+        "unsure": "Sin reintentar"
+      },
+      "action": {
+        "fix_here": "Arreglar aquí",
+        "rerun": "Volver a ejecutar",
+        "fix_elsewhere": "Arreglar en otro sitio",
+        "ask": "Decides tú"
+      },
+      "confidence": {
+        "high": "Seguro",
+        "medium": "Bastante seguro",
+        "low": "Poco seguro"
+      }
     }
   },
   "review": {

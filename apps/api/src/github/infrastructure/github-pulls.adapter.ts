@@ -17,6 +17,7 @@ import {
 import type {
   GithubChecks,
   GithubCredential,
+  GithubFailingCheck,
   GithubOpenPullRequest,
   GithubPullRequestDetail,
   GithubPullRequestFile,
@@ -119,13 +120,25 @@ interface RawComment {
 }
 
 interface RawCheckRun {
+  name?: string;
   status: string;
   conclusion: string | null;
+  details_url?: string | null;
+  html_url?: string | null;
+  output?: { title?: string | null; summary?: string | null } | null;
 }
 
 interface RawCombinedStatus {
-  statuses?: { state: string }[];
+  statuses?: {
+    state: string;
+    context?: string;
+    target_url?: string | null;
+    description?: string | null;
+  }[];
 }
+
+/** How much of a failing check's summary a read keeps. */
+const FAILING_SUMMARY_MAX = 600;
 
 /**
  * GitHub's pull request endpoints on the platform `fetch`, like the App adapter
@@ -288,10 +301,33 @@ export class GithubPullsAdapter implements GithubPullsPort {
         credential,
       }),
     ]);
-    return checksOf([
-      ...(runs.check_runs ?? []).map((run) => checkRunOutcome(run.status, run.conclusion)),
-      ...(combined.statuses ?? []).map((status) => commitStatusOutcome(status.state)),
-    ]);
+    const checkRuns = runs.check_runs ?? [];
+    const statuses = combined.statuses ?? [];
+    const failing: GithubFailingCheck[] = [
+      ...checkRuns
+        .filter((run) => checkRunOutcome(run.status, run.conclusion) === 'failed')
+        .map((run) => ({
+          name: run.name ?? 'check',
+          url: run.details_url ?? run.html_url ?? null,
+          title: run.output?.title || null,
+          summary: run.output?.summary ? run.output.summary.slice(0, FAILING_SUMMARY_MAX) : null,
+        })),
+      ...statuses
+        .filter((status) => commitStatusOutcome(status.state) === 'failed')
+        .map((status) => ({
+          name: status.context ?? 'status',
+          url: status.target_url ?? null,
+          title: status.description || null,
+          summary: null,
+        })),
+    ];
+    return {
+      ...checksOf([
+        ...checkRuns.map((run) => checkRunOutcome(run.status, run.conclusion)),
+        ...statuses.map((status) => commitStatusOutcome(status.state)),
+      ]),
+      failing,
+    };
   }
 
   async createReview(

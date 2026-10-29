@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { AddPullRequestCommentCommand } from '../../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
 import { AddPullRequestConversationCommentCommand } from '../../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
+import { RecordCiFindingsCommand } from '../../../pull-requests/commands/record-ci-findings/record-ci-findings.command';
 import { StartReviewSessionCommand } from '../../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
@@ -45,7 +46,9 @@ function setup(
     execute: vi.fn(async (command: unknown) =>
       command instanceof StartReviewSessionCommand
         ? { sessionId: 'session-1', hints: [] as string[] }
-        : { htmlUrl: 'https://github.com/acme/api/pull/412#issuecomment-1' },
+        : command instanceof RecordCiFindingsCommand
+          ? HEAD
+          : { htmlUrl: 'https://github.com/acme/api/pull/412#issuecomment-1' },
     ),
   };
   const approvals = {
@@ -220,6 +223,63 @@ describe('BotPullRequestToolsFactory under Full access', () => {
     const result = await call('start_review_session', PR);
 
     expect(result).toMatchObject({ isError: true, content: expect.stringContaining('list_hosts') });
+    expect(dispatched()).toEqual([]);
+  });
+});
+
+describe('record_ci_findings', () => {
+  const finding = {
+    check: 'unit',
+    root_cause: 'The parser rejects an empty date.',
+    relation: 'this_change',
+    flake: 'real',
+    action: 'fix_here',
+    next: 'Accept an empty date in parseDate.',
+    confidence: 'high',
+    evidence: ['src/date.ts:12 throws on ""'],
+  };
+
+  it('files the findings as the owner and the bot, without a card, and says on which commit', async () => {
+    const { call, approvals, dispatched } = setup('auto');
+    const result = await call('record_ci_findings', { ...PR, findings: [finding] });
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toBe(
+      "Recorded 1 finding on #412 at a1b2c3d: unit. The person sees them with the pull request's checks; a push leaves them on the commit before.",
+    );
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(dispatched()).toEqual([
+      expect.objectContaining({
+        scope: owner,
+        botId: 'bot-1',
+        address: {
+          kind: 'installation',
+          installationId: INSTALLATION,
+          githubRepoId: 7,
+          number: 412,
+        },
+        findings: [
+          {
+            check: 'unit',
+            rootCause: 'The parser rejects an empty date.',
+            relation: 'this_change',
+            flake: 'real',
+            action: 'fix_here',
+            next: 'Accept an empty date in parseDate.',
+            confidence: 'high',
+            evidence: ['src/date.ts:12 throws on ""'],
+          },
+        ],
+      }),
+    ]);
+  });
+
+  it('answers a finding without evidence as an error the model can correct, filing nothing', async () => {
+    const { call, dispatched } = setup('auto');
+    const result = await call('record_ci_findings', {
+      ...PR,
+      findings: [{ ...finding, evidence: [] }],
+    });
+    expect(result.isError).toBe(true);
     expect(dispatched()).toEqual([]);
   });
 });

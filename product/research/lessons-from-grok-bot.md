@@ -439,4 +439,7 @@ review queue for shared learnings was left out. Row 12 landed the same day
 in `versions/mvp/25-bots.md` §3.2 as `ask_user`: up to four questions on a
 Needs input card, answered with the picker a session's questions use, and
 the answers open the bot's next turn. The sign-in and computer hand-over
-resume points were left out.
+resume points were left out. Row 14 landed the same day in
+`next-steps/0.2-pull-requests.md` ("CI findings") as `record_ci_findings`,
+a bot's tool rather than the review session's result: a session has no
+channel back yet. Row 13, rooms, is left for group chats.

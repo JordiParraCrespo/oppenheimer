@@ -154,7 +154,7 @@ export class PullRequestMapper {
     snapshot: PullRequestSnapshot,
     viewerLogin: string | null,
     now: Date,
-  ): PullRequestDetailResponseDto {
+  ): Omit<PullRequestDetailResponseDto, 'ciFindings'> {
     const { pull } = snapshot;
     const gates = mergeGates(this.factsOf(snapshot));
     return {
@@ -165,13 +165,9 @@ export class PullRequestMapper {
       state: pull.merged ? 'merged' : pull.state,
       changedFiles: pull.changedFiles,
       folders: foldersOf(snapshot.files.value ?? []),
-      checkCounts: snapshot.checks.value ?? {
-        state: 'unavailable',
-        total: 0,
-        passed: 0,
-        failed: 0,
-        pending: 0,
-      },
+      checkCounts: snapshot.checks.value
+        ? { ...snapshot.checks.value, failing: snapshot.checks.value.failing ?? [] }
+        : { state: 'unavailable', total: 0, passed: 0, failed: 0, pending: 0, failing: [] },
       gates: (['checks', 'conflicts', 'merge'] as const).map((id) => ({
         id,
         state: gates[id],

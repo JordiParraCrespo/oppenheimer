@@ -900,3 +900,9 @@ earlier note:
   §9 row 12), it was built as a Needs input card of up to four questions,
   stored as an approval that is answered rather than approved, so one card
   waits per bot whatever it holds (`versions/mvp/25-bots.md` §3.2).
+- Row 14 of `research/lessons-from-grok-bot.md` §9 placed CI findings in
+  the review session's result. On 2026-10-29 they were built as a bot's
+  tool, `record_ci_findings`, filed on the pull request's head and shown
+  with its checks (`next-steps/0.2-pull-requests.md`, "CI findings"). A
+  review session has no channel back to the control plane yet
+  (`review.report` is unbuilt).

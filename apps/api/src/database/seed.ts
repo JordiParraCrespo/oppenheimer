@@ -63,6 +63,7 @@ import { PersonalWorkspaceRepository } from '../organizations/database/personal-
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { CiFindingOrmEntity } from '../pull-requests/database/ci-finding.orm-entity';
 import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
@@ -166,6 +167,7 @@ const dataSource = new DataSource({
     BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,
+    CiFindingOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,
