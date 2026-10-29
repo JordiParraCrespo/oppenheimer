@@ -1,16 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { inboxSearchSchema } from '@/features/inbox/lib/inbox-search';
-import { InboxScreen } from '@/features/inbox/screens/inbox';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
- * `/inbox` (`product/versions/mvp/29-inbox.md`): what needs you, one thing at
- * a time. The list is the console's sidebar on this address
- * (`useConsoleList`); the pane is a page at the `narrow` measure under a bar
- * of its own, the Inbox's name and counts. The search names the item in the
- * pane and the list's facets.
+ * `/inbox`, where the Inbox lived before it moved into Plan (the 2026-10-29
+ * frame): an old link or bookmark goes on to `/plan/inbox`, its search kept
+ * for that route's schema to read.
  */
 export const Route = createFileRoute('/_authenticated/inbox')({
-  validateSearch: inboxSearchSchema,
-  staticData: { pane: 'narrow', bar: 'own' },
-  component: InboxScreen,
+  beforeLoad: () => {
+    throw redirect({ to: '/plan/inbox', search: true, replace: true });
+  },
 });
