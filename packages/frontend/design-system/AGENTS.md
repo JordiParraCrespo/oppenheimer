@@ -38,7 +38,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   A smaller or larger field is a `size` the caller asks for, never a height
   of the component's own.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
-  press a pill, read inside an 18.
+  press a pill, read inside an 18. The navigation column (every sidebar
+  and the settings nav) is all 6: its rows, group heads, search and row
+  actions, whatever their height, so the column reads as one list. A menu
+  item stays 10, concentric with its 14 popover.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
   glass carry one.
 - **Motion** is 80 / 140 / 220 / 400ms, eased, never bouncy; a 4px rise plus
