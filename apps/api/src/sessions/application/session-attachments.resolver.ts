@@ -10,6 +10,7 @@ import { cloudTaskWithFiles } from '../domain/cloud-task.policy';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { SessionErrors } from '../domain/sessions.errors';
 import { CLOUD_FILES } from '../sessions.di-tokens';
+import { WorkSessionMapper } from '../work-session.mapper';
 import type { CloudFilesPort } from './cloud-files.port';
 import { requireFileCapableHost } from './require-file-capable-host.policy';
 
@@ -80,11 +81,8 @@ export class SessionAttachmentsResolver {
         detail: 'An attached file expired or was never uploaded here; attach it again.',
       });
     }
-    const longest = 'x'.repeat(this.cloudFiles.linkLength);
-    const task = cloudTaskWithFiles(
-      prompt,
-      staged.map(({ mediaType }) => ({ url: longest, mediaType })),
-    );
+    const longest = staged.map(() => 'x'.repeat(this.cloudFiles.linkLength));
+    const task = cloudTaskWithFiles(prompt, WorkSessionMapper.toCloudTaskFiles(staged, longest));
     if (!fitsPromptBound(task)) {
       throw new AppError(SessionErrors.CLOUD_TASK_TOO_LONG, {
         detail: `Each file adds a download link to the task, and with ${staged.length} the task passes 2 KB. Shorten the task or attach fewer files.`,

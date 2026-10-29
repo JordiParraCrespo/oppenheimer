@@ -6,6 +6,7 @@ import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import { CLOUD_FILES } from '../sessions.di-tokens';
+import { WorkSessionMapper } from '../work-session.mapper';
 import type { CloudFilesPort } from './cloud-files.port';
 import type { SessionLaunchSpec } from './session-dispatch.port';
 import { SessionLaunchCredentials } from './session-launch-credentials.resolver';
@@ -59,12 +60,12 @@ export class SessionLaunchSpecFactory {
   ): Promise<{ prompt?: string; images?: SessionLaunchFile[] }> {
     if (session.place !== 'cloud' || !extra.prompt || !extra.images?.length) return extra;
     const owner = { organizationId: session.organizationId, sessionId: session.id };
-    const files = await Promise.all(
-      extra.images.map(async (file) => ({
-        url: await this.cloudFiles.link(owner, file),
-        mediaType: file.mediaType,
-      })),
-    );
-    return { prompt: cloudTaskWithFiles(extra.prompt, files) };
+    const urls = await Promise.all(extra.images.map((file) => this.cloudFiles.link(owner, file)));
+    return {
+      prompt: cloudTaskWithFiles(
+        extra.prompt,
+        WorkSessionMapper.toCloudTaskFiles(extra.images, urls),
+      ),
+    };
   }
 }

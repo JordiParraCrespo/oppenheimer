@@ -30,6 +30,7 @@ import type {
 } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { cloudRunLogEntries } from './domain/cloud-session-sync.policy';
+import type { CloudTaskFile } from './domain/cloud-task.policy';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import { type CloudRunReport, SessionCloudRunEntity } from './domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from './domain/session-launch-file.types';
@@ -422,6 +423,17 @@ export class WorkSessionMapper
       });
     }
     return events;
+  }
+
+  /**
+   * A cloud session's files as its task lists them: each file's type beside
+   * the link it is downloaded from, in order (`cloudTaskWithFiles`).
+   */
+  static toCloudTaskFiles(
+    files: readonly { mediaType: SessionFileMediaType }[],
+    urls: readonly string[],
+  ): CloudTaskFile[] {
+    return files.map((file, i) => ({ url: urls[i] ?? '', mediaType: file.mediaType }));
   }
 
   /**
