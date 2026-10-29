@@ -7,11 +7,33 @@
 /** The longest answer one tool call hands the model. */
 export const BOT_TOOL_OUTPUT_MAX = 12_000;
 
-/** `text`, cut to `BOT_TOOL_OUTPUT_MAX` with a line saying how much was left out. */
+/** Room kept for the line that says what was cut, so the fitted answer stays within the limit. */
+const CUT_LINE_MAX = 160;
+
+/** How much of a cut answer is its start; the rest of the room left is its end. */
+const BOT_TOOL_OUTPUT_HEAD = Math.floor(((BOT_TOOL_OUTPUT_MAX - CUT_LINE_MAX) * 2) / 3);
+
+/** How much of a cut answer is its end. */
+const BOT_TOOL_OUTPUT_TAIL = BOT_TOOL_OUTPUT_MAX - CUT_LINE_MAX - BOT_TOOL_OUTPUT_HEAD;
+
+/**
+ * `text` fitted within `BOT_TOOL_OUTPUT_MAX`: its start and its end, with a line
+ * between saying how much of the middle was left out. The end is kept
+ * because that is where a session's output says how it went: the error, the
+ * failing test, the last line before the prompt.
+ */
 export function fitToolOutput(text: string): string {
   if (text.length <= BOT_TOOL_OUTPUT_MAX) return text;
-  const kept = text.slice(0, BOT_TOOL_OUTPUT_MAX);
-  return `${kept}\n… ${text.length - kept.length} more characters cut. Ask for less (a filter, a smaller limit).`;
+  const head = keepWholePairs(text.slice(0, BOT_TOOL_OUTPUT_HEAD), 'end');
+  const tail = keepWholePairs(text.slice(text.length - BOT_TOOL_OUTPUT_TAIL), 'start');
+  const elided = text.length - head.length - tail.length;
+  return `${head}\n… ${elided} characters cut from the middle. Ask for less (a filter, a smaller limit) to see them.\n${tail}`;
+}
+
+/** `slice` without a surrogate half at the edge a cut made, so no character is broken in two. */
+function keepWholePairs(slice: string, edge: 'start' | 'end'): string {
+  if (edge === 'end') return slice.replace(/[\uD800-\uDBFF]$/, '');
+  return slice.replace(/^[\uDC00-\uDFFF]/, '');
 }
 
 /** "15 Oct 2026, 11:00", in `timeZone`; "never" for no time at all. */
