@@ -156,8 +156,13 @@ test('reports what it tracks to the Oppenheimer it is connected to', async ({
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
 
-  await expect.poll(() => reports.length).toBeGreaterThan(0);
-  expect(reports[0]).toEqual({
+  // The worker reports after every check, and one may run before the page has
+  // served the list: it reports none then, which is true. The report to read
+  // is the first that carries the sessions.
+  const withSessions = () =>
+    reports.find((report) => (report.body as { sessions: unknown[] }).sessions.length > 0);
+  await expect.poll(withSessions).toBeDefined();
+  expect(withSessions()).toEqual({
     authorization: 'Bearer oppenheimer_pat_test',
     body: {
       sessions: expect.arrayContaining([
