@@ -1,6 +1,6 @@
 import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotAttachment, BotTurnFailure } from '@oppenheimer/shared';
+import type { BotAttachment, BotStreamEvent, BotTurnFailure } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { toShownImages, toSubagentRuns } from '../bot-message.mapper';
 import {
@@ -190,6 +190,19 @@ export class TurnTranscript {
   }
 }
 
+/**
+ * A write that is passed on and never stored (text as it streams, a retry
+ * wait), as the bot's stream says it.
+ */
+export function passedOnEvent(
+  turnId: string,
+  write: Extract<TranscriptWrite, { kind: 'text' | 'retrying' }>,
+): BotStreamEvent {
+  return write.kind === 'text'
+    ? { type: 'text', turnId, text: write.text }
+    : { type: 'retrying', turnId, reason: write.reason };
+}
+
 /** Why a turn the time limit stopped failed, in words a person can act on. */
 export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;
 
@@ -197,6 +210,11 @@ export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000
 export function failureReasonOf(error: unknown): string {
   if (error instanceof AppError) return error.message;
   return error instanceof Error ? error.message.slice(0, 500) : 'The turn failed';
+}
+
+/** How a turn that threw ended: its failure in words, and the kind it was. */
+export function thrownFailure(error: unknown): { error: string; failure: BotTurnFailure } {
+  return { error: failureReasonOf(error), failure: failureKindOf(error) };
 }
 
 /**

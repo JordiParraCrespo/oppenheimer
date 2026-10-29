@@ -9,10 +9,10 @@ import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.p
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
 import {
-  failureKindOf,
-  failureReasonOf,
+  passedOnEvent,
   type TranscriptWrite,
   TurnTranscript,
+  thrownFailure,
 } from '../../application/turn-transcript.policy';
 import {
   BOT_ENGINE,
@@ -85,10 +85,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       }
       transcript.endTurn(new Date(), watch.interruption);
     } catch (error) {
-      turn.end('failed', new Date(), {
-        error: failureReasonOf(error),
-        failure: failureKindOf(error),
-      });
+      turn.end('failed', new Date(), thrownFailure(error));
       if (!(error instanceof AppError)) {
         const stack = error instanceof Error ? error.stack : String(error);
         this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);
@@ -100,16 +97,8 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
-    if (write.kind === 'text') {
-      await this.stream.publish(turn.botId, { type: 'text', turnId: turn.id, text: write.text });
-      return;
-    }
-    if (write.kind === 'retrying') {
-      await this.stream.publish(turn.botId, {
-        type: 'retrying',
-        turnId: turn.id,
-        reason: write.reason,
-      });
+    if (write.kind === 'text' || write.kind === 'retrying') {
+      await this.stream.publish(turn.botId, passedOnEvent(turn.id, write));
       return;
     }
     if (write.kind === 'insert') await this.messages.insert(write.message);
