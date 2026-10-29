@@ -10,6 +10,7 @@ import { SearchMailQuery } from '../../../mail/queries/search-mail/search-mail.q
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
+import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
 import { BotMailToolsFactory, MAIL_ATTACHMENTS_PER_TURN } from '../bot-mail-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -81,8 +82,10 @@ function setup(answer: (query: unknown) => unknown) {
     if (query instanceof FindGmailConnectionsQuery) return [PERSONAL, WORK];
     return answer(query);
   });
+  const queryBus = { execute } as unknown as QueryBus;
   const tools = new BotMailToolsFactory(
-    { execute } as unknown as QueryBus,
+    queryBus,
+    new BotMailAccountsResolver(queryBus),
     { insert: vi.fn() } as unknown as BotAttachmentRepositoryPort,
     { store: vi.fn(), remove: vi.fn() } as unknown as BotAttachmentFilesPort,
   ).definitions();

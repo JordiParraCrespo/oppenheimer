@@ -920,6 +920,12 @@ and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
 | `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
 | `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
 | `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+| `MAIL_010` <a id="mail_010" />   | That message cannot go to those recipients             | 400  |
+| `MAIL_011` <a id="mail_011" />   | That account has sent as much bot mail as a day allows | 429  |
+| `MAIL_012` <a id="mail_012" />   | That message is larger than Gmail takes                | 400  |
+| `MAIL_013` <a id="mail_013" />   | That address is not one this account sends from        | 400  |
+| `MAIL_014` <a id="mail_014" />   | That draft changed since it was approved               | 409  |
+| `MAIL_015` <a id="mail_015" />   | That message may already have been sent                | 409  |
 
 `MAIL_001` is no such connection of the caller's, or one Google has since
 revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
@@ -939,6 +945,23 @@ project, and is not asked again until then.
 
 `MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
 has (deleted, or an id from another account).
+
+`MAIL_010` is a recipient that is not an email address, or more than ten
+recipients on one message (to, cc and bcc together).
+
+`MAIL_011` is the account's fifty bot sends in the last 24 hours. Drafts are
+not counted.
+
+`MAIL_012` is a message whose files and text pass Gmail's 25 MB once encoded.
+
+`MAIL_013` is a `from` that is neither the account nor one of its Gmail
+send-as addresses (Gmail → Settings → Accounts).
+
+`MAIL_014` is a draft edited, sent or deleted after the card that approved
+sending it was raised: nothing was sent, and the bot asks again.
+
+`MAIL_015` is an approved send that was started and never confirmed: it may
+have gone. It is never sent a second time on its own; check Gmail's Sent.
 
 ## Cloud agents
 

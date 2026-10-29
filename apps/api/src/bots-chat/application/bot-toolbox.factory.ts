@@ -8,7 +8,9 @@ import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
+import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
+import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
@@ -46,6 +48,8 @@ export class BotToolboxFactory {
     automations: BotAutomationToolsFactory,
     routines: BotRoutineToolsFactory,
     mail: BotMailToolsFactory,
+    mailWrites: BotMailWriteToolsFactory,
+    mailOrganizing: BotMailOrganizeToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
@@ -62,6 +66,8 @@ export class BotToolboxFactory {
       automations,
       routines,
       mail,
+      mailWrites,
+      mailOrganizing,
       peers,
       web,
       subagents,

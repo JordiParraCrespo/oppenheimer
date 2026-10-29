@@ -77,6 +77,15 @@ export class BotToolStepResponseDto {
     description: 'The subagents a `delegate` call ran; null for any other call, and while it runs.',
   })
   subagents!: BotSubagentRunResponseDto[] | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description:
+      'The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.',
+  })
+  mailDraft!: Record<string, unknown> | null;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
