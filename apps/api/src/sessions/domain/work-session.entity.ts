@@ -14,6 +14,7 @@ import type {
 } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
+import { SessionTerminalMatchedDomainEvent } from './events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
@@ -333,8 +334,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   }
 
   /**
-   * The Claude Code cloud session's id (`session_…`), once the host has started
-   * it: what claude.ai/code and `claude --teleport` name it by. Null otherwise.
+   * The cloud session's id at its vendor, once the host has started it:
+   * Claude Code's (`session_…`, what claude.ai/code and `claude --teleport`
+   * name it by) or Codex's task (`task_…`, what chatgpt.com/codex/tasks and
+   * `codex apply` name it by). Null otherwise.
    */
   get cloudSessionId(): string | null {
     return this.place === 'cloud' ? this.props.agentSessionId : null;
@@ -417,7 +420,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * Whether closing it is the control plane's alone to record. A cloud session
    * keeps nothing on its host — no worktree, no branch of ours, no terminal —
    * so there is nothing for the host to push or remove, and nothing to wait for
-   * it to answer. The session stays on claude.ai/code, where it is archived.
+   * it to answer. The session stays at its vendor, where it is archived.
    */
   get closesWithoutItsHost(): boolean {
     return this.place === 'cloud';
@@ -429,7 +432,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     const noHost = this.hostRefusal;
     if (noHost) return noHost;
     // A cloud session has no terminal on its host to type into: it is
-    // answered and prompted on claude.ai.
+    // answered and prompted at its vendor (claude.ai, chatgpt.com/codex).
     if (this.place === 'cloud') return SessionErrors.CLOUD_TAKES_NO_INPUT;
     if (this.stoppedAt) return SessionErrors.NOT_RUNNING;
     return null;
@@ -537,6 +540,21 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       );
     }
 
+    if (entry.kind === SESSION_EVENT_KINDS.TERMINAL_MATCHED) {
+      const match = terminalMatchOf(entry.payload);
+      if (match) {
+        this.addEvent(
+          new SessionTerminalMatchedDomainEvent({
+            aggregateId: this.id,
+            reason: `a terminal watch on this session matched (${match.count} so far)`,
+            organizationId: this.props.organizationId,
+            watchId: match.watchId,
+            count: match.count,
+          }),
+        );
+      }
+    }
+
     if (folded.state !== before) {
       this.addEvent(
         new SessionStateChangedDomainEvent({
@@ -638,4 +656,13 @@ function checkoutIdOf(payload: unknown): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as { checkoutId?: unknown }).checkoutId;
   return typeof value === 'string' ? value : null;
+}
+
+/** A `terminal.matched` payload, narrowed once; anything else is no match. */
+function terminalMatchOf(payload: unknown): { watchId: string; count: number } | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const { watchId, count } = payload as Record<string, unknown>;
+  return typeof watchId === 'string' && Number.isInteger(count) && (count as number) > 0
+    ? { watchId, count: count as number }
+    : null;
 }

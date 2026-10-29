@@ -153,24 +153,14 @@ async function listedKeys(page: Page): Promise<string[]> {
   );
 }
 
-/** The count beside "Needs you", the bar's "N need you", and the rail's badge. */
+/** The count on the Inbox's row in Plan's sidebar: what needs you. */
 async function counts(page: Page) {
-  const head = await page
-    .locator('[data-slot="sidebar-list-head"]', { hasText: 'Needs you' })
-    .locator('.figures')
-    .textContent();
-  const bar =
+  const row =
     (await page
-      .getByText(/\d+ needs? you|Nothing needs you/)
-      .first()
+      .getByRole('navigation', { name: 'Plan' })
+      .locator('[data-slot="routine-item"]', { hasText: 'Inbox' })
       .textContent()) ?? '';
-  // The rail's count is the tip beside its Inbox item, and the item's description.
-  const rail = await page
-    .getByRole('navigation', { name: 'Main navigation' })
-    .getByRole('link', { name: 'Inbox' })
-    .locator('[data-slot="rail-tip"] .figures')
-    .textContent();
-  return { head: Number(head), bar: Number(/(\d+)/.exec(bar)?.[1] ?? 0), rail: Number(rail) };
+  return { nav: Number(/(\d+)/.exec(row)?.[1] ?? 0) };
 }
 
 function rowOf(page: Page, sessionId: string) {
@@ -183,13 +173,13 @@ async function openRow(page: Page, sessionId: string) {
   await expect(row, `the row of ${sessionId}`).toBeVisible({ timeout: 60_000 });
   await row.click();
   await expect(row).toHaveAttribute('data-active', 'true');
-  return page.locator('[data-slot="inbox-card"]');
+  return page.locator('[data-slot="inbox-message"]');
 }
 
 async function answerPermission(page: Page, plan: Planned) {
   const scenario = plan.scenario as PermissionScenario;
   const card = await openRow(page, plan.id);
-  const choices = card.locator('[data-slot="inbox-card-choices"]').getByRole('button');
+  const choices = card.locator('[data-slot="inbox-message-choices"]').getByRole('button');
   await expect(choices).toHaveText(permissionLabels(scenario));
   await choices.nth(scenario.answer).click();
 }
@@ -221,7 +211,7 @@ async function answer(page: Page, plan: Planned) {
   else await answerQuestion(page, plan);
 }
 
-/** The answer was taken: its row left the list. On a miss, says what the row, the card and the log held. */
+/** The answer was taken: its row left the list. On a miss, says what the row and the card held. */
 async function expectAnswered(page: Page, plan: Planned) {
   try {
     await expect(rowOf(page, plan.id)).toHaveCount(0, { timeout: 20_000 });
@@ -231,12 +221,11 @@ async function expectAnswered(page: Page, plan: Planned) {
       .getAttribute('href')
       .catch(() => null);
     const card = await page
-      .locator('[data-slot="inbox-card"]')
+      .locator('[data-slot="inbox-message"]')
       .innerText()
       .catch(() => '');
-    const log = await page.locator('[data-slot="inbox-log-line"]').allInnerTexts();
     throw new Error(
-      `#${plan.index} ${plan.kind} ${plan.id} did not leave the list\nrow: ${href}\ncard: ${card}\nlog: ${log.join(' | ')}`,
+      `#${plan.index} ${plan.kind} ${plan.id} did not leave the list\nrow: ${href}\ncard: ${card}`,
       { cause: error },
     );
   }
@@ -285,8 +274,10 @@ async function measureLoad(
   await reader.goto('/settings');
   await reader.waitForTimeout(3_000);
   const start = Date.now();
-  await reader.goto('/inbox');
-  await expect(reader.locator('[data-slot="inbox-card"]').getByRole('button').first()).toBeEnabled({
+  await reader.goto('/plan/inbox');
+  await expect(
+    reader.locator('[data-slot="inbox-message"]').getByRole('button').first(),
+  ).toBeEnabled({
     timeout: 30_000,
   });
   await expect.poll(async () => (await listedKeys(reader)).length).toBe(items);
@@ -476,13 +467,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       )
       .toEqual({ missing: [], extra: [] });
     note(`the Inbox lists ${expected.size} items`);
-    await expect
-      .poll(() => counts(page))
-      .toEqual({
-        head: expected.size,
-        bar: expected.size,
-        rail: expected.size,
-      });
+    await expect.poll(() => counts(page)).toEqual({ nav: expected.size });
 
     // Order: approvals and sessions, oldest wait first; then reviews; then merges.
     const listed = await listedKeys(page);
@@ -500,14 +485,14 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
         const scenario = plan.scenario as PermissionScenario;
         await expect(card.getByRole('heading', { name: scenario.title })).toBeVisible();
         await expect(
-          card.locator('[data-slot="inbox-card-choices"]').getByRole('button'),
+          card.locator('[data-slot="inbox-message-choices"]').getByRole('button'),
         ).toHaveText(permissionLabels(scenario));
       } else if (plan.kind === 'question') {
         await expect(card.locator('[data-slot="inbox-question"]')).toHaveCount(
           (plan.scenario as QuestionScenario).questions.length,
         );
       } else {
-        await expect(card.locator('[data-slot="inbox-card-choices"]')).toHaveCount(0);
+        await expect(card.locator('[data-slot="inbox-message-choices"]')).toHaveCount(0);
         await expect(card.getByRole('link', { name: 'Open session' })).toBeVisible();
         await expect(card.getByRole('heading')).toContainText(
           plan.kind === 'failed' ? 'failed' : 'is waiting on you',
@@ -522,7 +507,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     );
     let sum = 0;
     for (const project of [mobile, webProject, 'none']) {
-      await page.goto(`/inbox?project=${project}`);
+      await page.goto(`/plan/inbox?project=${project}`);
       await expect(page.locator('[data-slot="inbox-item"]').first()).toBeVisible();
       const keys = await listedKeys(page);
       sum += keys.length;
@@ -532,7 +517,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       }
     }
     expect(sum, 'every item is under exactly one project here').toBe(expected.size);
-    await page.goto('/inbox');
+    await page.goto('/plan/inbox');
   });
 
   await test.step('what loading the full Inbox costs', () =>
@@ -562,18 +547,16 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       await expectAnswered(page, plan);
     }
     page.off('request', tally);
-    // The header, the bar and the rail count what the list shows the moment
-    // an answer lands, not once each runner reports its agent moved on.
+    // Plan's sidebar counts what the list shows the moment an answer lands,
+    // not once each runner reports its agent moved on.
     const right = { ...(await counts(page)), list: (await listedKeys(page)).length };
-    note(
-      `just after the last answer: head ${right.head}, bar ${right.bar}, rail ${right.rail}, list ${right.list}`,
-    );
+    note(`just after the last answer: sidebar ${right.nav}, list ${right.list}`);
     await expect
       .poll(
         async () => {
           const now = await counts(page);
           const list = (await listedKeys(page)).length;
-          return [now.head, now.bar, now.rail].every((n) => n === list);
+          return now.nav === list;
         },
         { timeout: 5_000, intervals: [500] },
       )
@@ -585,7 +568,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
 
     // A batch from two pages at once, each page its own half.
     const batch = [...permissions.slice(4, permissions.length - 1), ...asked.slice(4)];
-    await second.goto('/inbox');
+    await second.goto('/plan/inbox');
     const halves = [batch.filter((_, i) => i % 2 === 0), batch.filter((_, i) => i % 2 === 1)];
     await Promise.all(
       [page, second].map(async (reader, i) => {
@@ -599,8 +582,8 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
   });
 
   await test.step('two pages answer the same permission at the same moment: one wins', async () => {
-    await page.goto('/inbox');
-    await second.goto('/inbox');
+    await page.goto('/plan/inbox');
+    await second.goto('/plan/inbox');
     const scenario = stale.scenario as PermissionScenario;
     const cards = await Promise.all([openRow(page, stale.id), openRow(second, stale.id)]);
     // Each page's answer is held until both have been sent, so the two reach
@@ -630,7 +613,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     await Promise.all(
       cards.map((card) =>
         card
-          .locator('[data-slot="inbox-card-choices"]')
+          .locator('[data-slot="inbox-message-choices"]')
           .getByRole('button')
           .nth(scenario.answer)
           .click(),
@@ -695,7 +678,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     followUp.round = `${followUp.id}-2`;
     startWaiting(host(followUp), followUp.id, followUp.round, next);
     await expect(async () => {
-      await page.goto('/inbox');
+      await page.goto('/plan/inbox');
       const card = await openRow(page, followUp.id);
       await expect(card.locator('[data-slot="inbox-question"]')).toContainText(
         'open a pull request?',
@@ -710,11 +693,11 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
   });
 
   await test.step('bot approvals are approved and denied from the Inbox', async () => {
-    await page.goto('/inbox');
+    await page.goto('/plan/inbox');
     for (const [i, bot] of bots.slice(0, 6).entries()) {
       const row = page.locator(`[data-slot="inbox-item"][href*="${bot.approvalId}"]`);
       await row.click();
-      const card = page.locator('[data-slot="inbox-card"]');
+      const card = page.locator('[data-slot="inbox-message"]');
       await card
         .getByRole('button', { name: i % 2 === 0 ? 'Approve' : 'Deny', exact: true })
         .click();
@@ -743,7 +726,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
         .click();
       await page.getByRole('menuitem', { name: item }).click();
     };
-    await page.goto('/inbox');
+    await page.goto('/plan/inbox');
     await menu(snoozed, 'Snooze 1 hour');
     await menu(low, 'Deprioritize');
     await menu(done, /Mark as done/);
@@ -752,7 +735,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       .toBe(3);
 
     for (const reader of [page, second]) {
-      await reader.goto('/inbox');
+      await reader.goto('/plan/inbox');
       await expect(rowOf(reader, done.id)).toHaveCount(0);
       await expect(rowOf(reader, snoozed.id)).toHaveCount(0);
       await expect(reader.locator('[data-slot="inbox-snoozed-row"]')).toHaveCount(1);
@@ -768,7 +751,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     release(host(done), done.id);
     startWaiting(host(done), done.id, done.round, scenario);
     await expect(async () => {
-      await page.goto('/inbox');
+      await page.goto('/plan/inbox');
       await expect(rowOf(page, done.id)).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 150_000, intervals: [5_000] });
     await answer(page, done);

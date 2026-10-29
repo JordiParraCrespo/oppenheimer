@@ -32,6 +32,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => ({ id: 'run', status: 'running' }),
+  useBotGoal: () => ({ data: null }),
   useBotWaitingMessages: () => [
     { turnId: 'q1', text: 'Then the tests', images: 0 },
     { turnId: 'q2', text: '', images: 2 },

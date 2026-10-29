@@ -1,6 +1,10 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+
+const STANDING = { preset: 'full' as const, permissions: NO_PERMISSIONS };
+
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { type BotToolArea, type BotToolContext, defineBotTool } from '../bot-tool.factory';
 import { BotToolboxFactory, type HeldScopes } from '../bot-toolbox.factory';
@@ -54,6 +58,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'UTC',
   permission: 'full',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   credentialScopes: null,
   approvals: { request: vi.fn() },
@@ -83,7 +88,7 @@ describe('BotToolboxFactory', () => {
 
   it('offers a token scoped to the bot alone none of the workspace’s tools', () => {
     expect(names(['bots:write'])).toEqual([]);
-    expect(toolbox.catalog(['bots:write'])).toEqual([]);
+    expect(toolbox.catalog(['bots:write'], STANDING)).toEqual([]);
   });
 
   it('runs an approved call only under the scopes of the turn that asked', async () => {
@@ -95,6 +100,7 @@ describe('BotToolboxFactory', () => {
       EVERYTHING,
       call,
       signal,
+      STANDING,
     );
     expect(ran).toEqual({ content: 'ok', isError: false });
     const refused = await toolbox.runApproved(
@@ -103,6 +109,7 @@ describe('BotToolboxFactory', () => {
       EVERYTHING,
       call,
       signal,
+      STANDING,
     );
     expect(refused.isError).toBe(true);
     expect(refused.content).toContain('Not run');
@@ -154,6 +161,7 @@ describe('BotToolboxFactory', () => {
       holding('sessions:read'),
       { tool: 'start_session', input: {} },
       new AbortController().signal,
+      STANDING,
     );
 
     expect(result.isError).toBe(true);

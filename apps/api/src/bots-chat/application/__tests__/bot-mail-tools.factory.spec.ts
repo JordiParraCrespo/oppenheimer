@@ -8,6 +8,7 @@ import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-conn
 import { ReadMailAttachmentQuery } from '../../../mail/queries/read-mail-attachment/read-mail-attachment.query';
 import { SearchMailQuery } from '../../../mail/queries/search-mail/search-mail.query';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
@@ -30,6 +31,7 @@ const context = (): BotToolContext => ({
   homeHostId: null,
   timeZone: 'UTC',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   credentialScopes: null,
   approvals: { request: vi.fn() },

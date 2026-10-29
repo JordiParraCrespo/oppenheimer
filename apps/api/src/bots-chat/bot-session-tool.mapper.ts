@@ -8,6 +8,7 @@ import {
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
 import { isLiveTurn, type SessionTurnFold } from '../sessions/domain/session-turn.policy';
+import type { SessionWaitView } from './domain/bot-session-wait.policy';
 import { cut } from './domain/bot-tool-text.policy';
 
 /**
@@ -299,4 +300,23 @@ export function groupScanOf(
 ): { state: 'resolved' } | { scan: number; group: SessionGroup } | null {
   if (group === undefined) return null;
   return group === 'resolved' ? { state: 'resolved' } : { scan, group };
+}
+
+/** A session as `wait_for_session` reads it: closed or not, and its latest task. */
+export function waitViewOf(session: {
+  isResolved: boolean;
+  latestTurn: { seq: number; state: string } | null;
+}): SessionWaitView {
+  return { resolved: session.isResolved, latestTurn: session.latestTurn };
+}
+
+/**
+ * The hint a tool that typed into a session ends with: the log entry its
+ * input was recorded as, so `read_session` after it reads only the answer.
+ * None when the command recorded none.
+ */
+export function readAfterHint(seq: number | undefined): string {
+  return seq === undefined
+    ? ''
+    : ` Its log was at entry ${seq}: read_session with after_seq ${seq} reads only what followed.`;
 }

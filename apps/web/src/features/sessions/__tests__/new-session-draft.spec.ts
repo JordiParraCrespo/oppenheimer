@@ -58,8 +58,8 @@ describe('initialDraft', () => {
    * Claude Code's cloud runs Claude Code, and the API refuses another agent
    * there. A draft that opened on it with Codex would fail only once sent.
    */
-  it('opens Claude Code’s cloud on Claude Code, whatever agent was left', () => {
-    store({ where: 'cloud', cloudProvider: null, agent: 'codex', model: 'gpt-6-astra' });
+  it('opens a host’s cloud on Claude Code when the agent left runs in no vendor’s cloud', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'grok', model: 'grok-4.6' });
 
     expect(initialDraft()).toMatchObject({
       where: 'cloud',
@@ -68,10 +68,16 @@ describe('initialDraft', () => {
     });
   });
 
-  it('lets an address naming another agent win over a remembered Claude Code cloud', () => {
+  it('reopens Codex’s cloud on Codex', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'codex', model: 'gpt-6-astra' });
+
+    expect(initialDraft()).toMatchObject({ where: 'cloud', agent: 'codex', model: 'gpt-6-astra' });
+  });
+
+  it('lets an address naming another agent win over a remembered host cloud', () => {
     store({ where: 'cloud', cloudProvider: null, agent: 'claude-code' });
 
-    expect(initialDraft({ agent: 'codex' })).toMatchObject({ where: 'worktree', agent: 'codex' });
+    expect(initialDraft({ agent: 'grok' })).toMatchObject({ where: 'worktree', agent: 'grok' });
   });
 
   it('keeps each known agent’s pick as left, and drops the old single stop', () => {

@@ -30,6 +30,7 @@ import {
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
+  repositorySubject,
 } from './bot-tool.factory';
 
 /** The two ids a repository is named by, as list_repositories gives them. */
@@ -65,6 +66,9 @@ interface IssueRead {
  */
 @Injectable()
 export class BotIssueToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'github' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
@@ -150,6 +154,9 @@ export class BotIssueToolsFactory implements BotToolArea {
       name: 'create_issue',
       scope: 'pulls:write',
       asks: true,
+      sharesOutside: true,
+      subject: async (input, context) =>
+        repositorySubject(input, await this.repositoryName(context, input).catch(() => null)),
       description:
         "Opens a GitHub issue in one of the workspace's repositories, in the person's name, with a title, a description (Markdown), and optional labels and assignees GitHub already knows. Search with list_issues first so you do not open a duplicate.",
       input: z.object({
@@ -195,6 +202,9 @@ export class BotIssueToolsFactory implements BotToolArea {
       name: 'comment_on_issue',
       scope: 'pulls:write',
       asks: true,
+      sharesOutside: true,
+      subject: async (input, context) =>
+        repositorySubject(input, await this.repositoryName(context, input).catch(() => null)),
       description:
         "Posts a comment on a GitHub issue's conversation in the person's name. For a pull request use comment_on_pull_request.",
       input: z.object({

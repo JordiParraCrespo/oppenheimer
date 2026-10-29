@@ -46,6 +46,8 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  permissions: (id: string) => [...botsKeys.detail(id), 'permissions'] as const,
+  goal: (id: string) => [...botsKeys.detail(id), 'goal'] as const,
   routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
   routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
   // Every bot's, for `/automations`: apart from any one bot's, so a write to

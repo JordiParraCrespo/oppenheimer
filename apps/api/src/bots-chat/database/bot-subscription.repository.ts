@@ -110,12 +110,37 @@ export class BotSubscriptionRepository
         lastTurn: record.lastTurn,
         lastState: record.lastState,
         wakes: record.wakes,
+        matches: record.matches,
         version: subscription.versionAtLoad + 1,
       },
     );
     const won = result.affected === 1;
     if (won) subscription.markPersisted();
     return won;
+  }
+
+  async findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null> {
+    // IDX_bot_subscription_terminal_watch: at most one subscription names a watch.
+    const record = await this.repository.findOne({ where: { terminalWatchId: watchId } });
+    return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async attachTerminalWatch(
+    subscriptionId: string,
+    watch: { id: string; pattern: string },
+  ): Promise<string | null> {
+    // One statement: the watch it replaces is read in the same row lock, so
+    // the caller removes exactly the watch nothing names any more.
+    const rows: [{ previous: string | null }[], number] = await this.repository.query(
+      `UPDATE bot_subscription AS s
+          SET "terminalWatchId" = $2, "pattern" = $3, "matches" = 0,
+              "version" = s."version" + 1, "updatedAt" = now()
+         FROM (SELECT id, "terminalWatchId" AS previous FROM bot_subscription WHERE id = $1 FOR UPDATE) AS old
+        WHERE s.id = old.id
+        RETURNING old.previous`,
+      [subscriptionId, watch.id, watch.pattern],
+    );
+    return rows[0][0]?.previous ?? null;
   }
 
   async end(subscription: BotSubscriptionEntity): Promise<boolean> {

@@ -186,6 +186,10 @@ type Publisher interface {
 	// person for, nil once nothing, to the control plane as `agent.decision`.
 	// It is called when the pending decision appears, changes or clears.
 	DecisionChanged(session domain.Session, decision *domain.Decision)
+	// TerminalMatched reports that a terminal watch counted new matching
+	// lines on the session's screen: count is every one it has counted so
+	// far. The lines themselves never leave the host.
+	TerminalMatched(sessionID, watchID string, count int)
 }
 
 // Transcripts reads what an agent's own transcript says, on this host. The
@@ -233,6 +237,9 @@ func (NopPublisher) FirstPrompt(domain.Session, string, func()) bool { return fa
 
 // DecisionChanged implements Publisher.
 func (NopPublisher) DecisionChanged(domain.Session, *domain.Decision) {}
+
+// TerminalMatched implements Publisher.
+func (NopPublisher) TerminalMatched(string, string, int) {}
 
 // LaunchGate holds an agent's launch while something is replacing that
 // agent's executable, so a session never starts a CLI halfway through its

@@ -7,16 +7,37 @@ import type {
   BotMailDraft,
   BotPermission,
   BotSubagentRun,
+  BotToolGroup,
+  BotTurnOrigin,
   Scope,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
-import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
+import {
+  ALLOWED_BY_DATA_KEY,
+  askedForApproval,
+  grantedLine,
+  waitingForApproval,
+} from '../domain/bot-approval.policy';
+import {
+  RULES_UNCHECKED_NOTE,
+  ruleAllowedLine,
+  rulePausedNote,
+  rulesToReview,
+} from '../domain/bot-rule-review.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
+import { type BotToolSubject, fitSubject } from '../domain/bot-tool-permission.entity';
+import {
+  type BotPermissions,
+  type BotToolTraits,
+  grantFor,
+  toolDecision,
+} from '../domain/bot-tool-permission.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
+import type { BotRuleReviewer } from './bot-rule-reviewer.factory';
 
 /**
  * What a tool's call acts with: the owner's scope, the bot, the turn, the
@@ -40,6 +61,8 @@ export interface BotToolCallContext {
   permission: BotPermission;
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+  /** Why the turn exists; a tool offered only to some turns reads it (`notOn`). */
+  origin?: BotTurnOrigin;
   /**
    * The scopes of the credential the turn was sent with; null for a browser
    * session. What a tool saves to act later (a routine) keeps them, so a
@@ -76,6 +99,16 @@ export interface BotSubagentRunner {
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
 export interface BotToolContext extends BotToolCallContext {
   approvals: BotApprovalRequesterPort;
+  /**
+   * What the owner set for the bot's tools (`25-bots.md` §5), read when the
+   * turn started: each tool's decision, the standing grants, the rules.
+   */
+  permissions: BotPermissions;
+  /**
+   * Reads an asking call against the owner's rules, when there are rules
+   * that could change it. Absent where no rule is read (a child's tools).
+   */
+  reviewer?: BotRuleReviewer;
 }
 
 /**
@@ -150,6 +183,29 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   readOnly?: boolean;
   /**
+   * Every call is decided on its own (merging: it cannot be undone): no
+   * Allow in Settings, and a card offers only "this call". Only with `asks`.
+   */
+  perCallOnly?: boolean;
+  /** A call sends what it carries out of Oppenheimer (a comment on GitHub); the card says so. */
+  sharesOutside?: boolean;
+  /**
+   * The turns not offered the tool, by why they exist: a goal's continuation
+   * is not offered `set_goal`, so a goal never renews itself. The prompt's
+   * list and the turn's tools read the same filter.
+   */
+  notOn?: readonly BotTurnOrigin[];
+  /**
+   * The one thing a call acts on, when there is one: the repository a
+   * comment goes to, the session a stop ends. A card offers to always allow
+   * the tool on it, and a grant for it lets the next call run. From the
+   * input as `normalize` left it; a throw or a null names none.
+   */
+  subject?(
+    input: z.output<Input>,
+    context: BotToolCallContext,
+  ): Promise<BotToolSubject | null> | BotToolSubject | null;
+  /**
    * What the card says the call will do, in words, from its input: "Start
    * Claude Code on build-02 in acme/xrp-mobile: Fix the failing test".
    * Required with `asks`. A `BotToolRefusal` refuses the call before any
@@ -188,6 +244,11 @@ export interface BotToolDefinition {
   readonly scope: Scope;
   /** Whether it only reads, so a child may be offered it. */
   readonly readOnly: boolean;
+  /** What the permission layer reads of it (`BotToolTraits`). */
+  readonly traits: BotToolTraits;
+  readonly sharesOutside: boolean;
+  /** The turns not offered the tool (`BotToolSpec.notOn`). */
+  readonly notOn: readonly BotTurnOrigin[];
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
   /**
@@ -203,6 +264,8 @@ export interface BotToolDefinition {
 
 /** What an area of the API offers bots: one class per area, each a list of tools. */
 export interface BotToolArea {
+  /** The group Settings → Permissions lists the area's tools under. */
+  readonly group: BotToolGroup;
   definitions(): readonly BotToolDefinition[];
 }
 
@@ -219,6 +282,17 @@ export function defineBotTool<Input extends z.ZodType>(
   if (spec.asks && spec.readOnly) {
     throw new Error(`${spec.name} cannot both ask first and be read-only.`);
   }
+  if (spec.perCallOnly && !spec.asks) {
+    throw new Error(`${spec.name} is per call only, so it must ask first.`);
+  }
+  // A tool that always asks is decided call by call, Full access included.
+  const always = spec.asks === 'always';
+  const traits: BotToolTraits = {
+    name: spec.name,
+    asks: spec.asks === true || always,
+    perCallOnly: spec.perCallOnly === true || always,
+    ...(always && { always }),
+  };
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
   const call = async (
     input: z.output<Input>,
@@ -246,6 +320,9 @@ export function defineBotTool<Input extends z.ZodType>(
     setupStep: spec.setupStep,
     scope: spec.scope,
     readOnly: spec.readOnly === true,
+    notOn: spec.notOn ?? [],
+    traits,
+    sharesOutside: spec.sharesOutside === true,
     bind: (context) => {
       const tool: BotEngineTool = {
         name: spec.name,
@@ -270,8 +347,14 @@ export function defineBotTool<Input extends z.ZodType>(
           return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
       };
-      const asks = spec.asks === 'always' || (spec.asks === true && context.permission !== 'full');
-      return asks ? askingFirst(tool, spec, context) : tool;
+      // Off never reaches here: the toolbox does not offer it.
+      const asks = toolDecision(context.permissions, traits, context.permission) === 'ask';
+      if (asks) return askingFirst(tool, spec, traits, context);
+      // An asking tool that would run: an ask rule may still stop the call.
+      const stops = traits.asks ? rulesToReview(context.permissions, 'allow') : [];
+      return stops.length > 0 && context.reviewer
+        ? reviewedFirst(tool, spec, { ...context, reviewer: context.reviewer })
+        : tool;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
   };
@@ -286,6 +369,7 @@ export function defineBotTool<Input extends z.ZodType>(
 function askingFirst<Input extends z.ZodType>(
   tool: BotEngineTool,
   spec: BotToolSpec<Input>,
+  traits: BotToolTraits,
   context: BotToolContext,
 ): BotEngineTool {
   return {
@@ -294,7 +378,22 @@ function askingFirst<Input extends z.ZodType>(
       const parsed = spec.input.safeParse(input ?? {});
       if (!parsed.success) return tool.run(input, options);
       try {
-        return { content: await askOwner(spec, context, parsed.data) };
+        const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
+        const subject = await subjectOf(spec, call, context);
+        // A standing grant for the very thing this call acts on: it runs.
+        const granted = grantFor(context.permissions, traits, subject);
+        if (granted) return allowedRun(tool, input, options, grantedLine(granted.label));
+        // An allow rule may let it run; an ask rule that also matches wins.
+        const rules = rulesToReview(context.permissions, 'ask');
+        let reviewNote: string | null = null;
+        if (rules.length > 0 && context.reviewer) {
+          const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
+          if (verdict.effect === 'allow') {
+            return allowedRun(tool, input, options, ruleAllowedLine(verdict.rule.text));
+          }
+          reviewNote = verdict.note;
+        }
+        return { content: await askOwner(spec, context, call, subject, reviewNote) };
       } catch (error) {
         return { content: describeToolFailure(error), isError: true };
       }
@@ -302,13 +401,92 @@ function askingFirst<Input extends z.ZodType>(
   };
 }
 
-/** The call becomes a card, its input stored as validated, and the model is told what that means. */
+/**
+ * An asking tool's call that would run (Full access, or set to Allow), when
+ * the owner has a rule that may make it ask: read against the rules first.
+ * A matching ask rule, or a review that cannot say, raises the card instead.
+ */
+function reviewedFirst<Input extends z.ZodType>(
+  tool: BotEngineTool,
+  spec: BotToolSpec<Input>,
+  context: BotToolContext & { reviewer: BotRuleReviewer },
+): BotEngineTool {
+  return {
+    ...tool,
+    run: async (input, options) => {
+      const parsed = spec.input.safeParse(input ?? {});
+      if (!parsed.success) return tool.run(input, options);
+      try {
+        const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
+        const rules = rulesToReview(context.permissions, 'allow');
+        const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
+        if (verdict.effect !== 'ask') return tool.run(input, options);
+        const subject = await subjectOf(spec, call, context);
+        return { content: await askOwner(spec, context, call, subject, verdict.note) };
+      } catch (error) {
+        return { content: describeToolFailure(error), isError: true };
+      }
+    },
+  };
+}
+
+/** Runs the call, its step saying why it ran without a card. */
+async function allowedRun(
+  tool: BotEngineTool,
+  input: unknown,
+  options: Parameters<BotEngineTool['run']>[1],
+  allowedBy: string,
+) {
+  const result = await tool.run(input, options);
+  return { ...result, data: { ...result.data, [ALLOWED_BY_DATA_KEY]: allowedBy } };
+}
+
+/**
+ * The rules' verdict on one call, failing closed: a review that throws, or
+ * cannot be read, asks, and the card says the rules could not be checked.
+ */
+async function reviewOf<Input extends z.ZodType>(
+  reviewer: BotRuleReviewer,
+  spec: BotToolSpec<Input>,
+  context: BotToolCallContext,
+  input: z.output<Input>,
+  rules: BotPermissions['rules'],
+): Promise<
+  { effect: 'allow'; rule: { text: string } } | { effect: 'ask' | 'none'; note: string | null }
+> {
+  try {
+    const summary = spec.summarize ? await spec.summarize(input, context) : spec.name;
+    const verdict = await reviewer.review({ tool: spec.name, summary, input }, rules);
+    if (verdict.effect === 'allow') return { effect: 'allow', rule: verdict.rule };
+    if (verdict.effect === 'ask') return { effect: 'ask', note: rulePausedNote(verdict.rule.text) };
+    return { effect: 'none', note: null };
+  } catch {
+    return { effect: 'ask', note: RULES_UNCHECKED_NOTE };
+  }
+}
+
+/** The tool's subject for a call, cut to fit; none when it names none or cannot say. */
+async function subjectOf<Input extends z.ZodType>(
+  spec: BotToolSpec<Input>,
+  input: z.output<Input>,
+  context: BotToolCallContext,
+): Promise<BotToolSubject | null> {
+  try {
+    const subject = await spec.subject?.(input, context);
+    return subject ? fitSubject(subject) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The call becomes a card, its input stored as normalized, and the model is told what that means. */
 async function askOwner<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
   context: BotToolContext,
-  given: z.output<Input>,
+  input: z.output<Input>,
+  subject: BotToolSubject | null,
+  reviewNote: string | null = null,
 ): Promise<string> {
-  const input = spec.normalize ? await spec.normalize(given, context) : given;
   const stored = asStoredInput(input);
   const summary = await summaryOf(spec, context, input, stored);
   const outcome = await context.approvals.request({
@@ -318,6 +496,10 @@ async function askOwner<Input extends z.ZodType>(
     tool: spec.name,
     input: stored,
     summary,
+    subject,
+    sharesOutside: spec.sharesOutside === true,
+    perCallOnly: spec.perCallOnly === true || spec.asks === 'always',
+    reviewNote,
   });
   return outcome.status === 'requested'
     ? askedForApproval(summary)
@@ -371,4 +553,19 @@ export function describeToolFailure(error: unknown): string {
   }
   if (error instanceof ExceptionBase) return `${error.code}: ${error.message}`;
   return 'The tool failed unexpectedly. Say so; do not retry it in this turn.';
+}
+
+/**
+ * A GitHub repository as a subject: keyed by the installation and the
+ * repository id the tools take, named by its owner/name when it could be read.
+ */
+export function repositorySubject(
+  input: { installation_id: string; github_repo_id: number },
+  name: string | null,
+): BotToolSubject {
+  return {
+    kind: 'repository',
+    key: `${input.installation_id}:${input.github_repo_id}`,
+    label: name ?? `repository ${input.github_repo_id}`,
+  };
 }

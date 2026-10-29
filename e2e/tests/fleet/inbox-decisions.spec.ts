@@ -48,7 +48,7 @@ async function runInSession(page: Page, screen: () => string, sessionId: string,
 
 /** The session's row in the Inbox, once the API counts it as waiting on you (30 s blocked). */
 async function openInboxItem(page: Page) {
-  await page.goto('/inbox');
+  await page.goto('/plan/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();
@@ -60,7 +60,7 @@ async function openInboxItem(page: Page) {
 
 async function photograph(page: Page, name: string) {
   if (!process.env.INBOX_SCREENS) return;
-  const card = page.locator('[data-slot="inbox-card"]');
+  const card = page.locator('[data-slot="inbox-message"]');
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: width > 600 ? 900 : 844 });
     for (const theme of ['light', 'dark'] as const) {
@@ -120,12 +120,12 @@ test('a permission dialog is answered from its Inbox card, and the session recei
   await expect(page.locator('.xterm-rows')).toContainText('Do you want to proceed?');
 
   await openInboxItem(page);
-  const card = page.locator('[data-slot="inbox-card"]');
+  const card = page.locator('[data-slot="inbox-message"]');
   await expect(card.getByRole('heading', { name: 'Do you want to proceed?' })).toBeVisible();
   await expect(card.locator('[data-slot="approval-command"]')).toContainText(
     'pnpm generate:api-client',
   );
-  const choices = card.locator('[data-slot="inbox-card-choices"]').getByRole('button');
+  const choices = card.locator('[data-slot="inbox-message-choices"]').getByRole('button');
   await expect(choices).toHaveText([
     'Yes',
     "Yes, and don't ask again for pnpm commands",
@@ -135,7 +135,6 @@ test('a permission dialog is answered from its Inbox card, and the session recei
   await photograph(page, 'inbox-permission');
 
   await choices.getByText('Yes', { exact: true }).click();
-  await expect(page.locator('[data-slot="inbox-log-line"]')).toContainText(/Answered .+: Yes\d/);
   await expect(card).toHaveCount(0);
 
   // The answer was the key "1", typed into the session.
@@ -203,7 +202,7 @@ test('an agent question is answered from its Inbox card with the keys its picker
   await expect(page.locator('.xterm-rows')).toContainText('waiting for your input');
 
   await openInboxItem(page);
-  const card = page.locator('[data-slot="inbox-card"]');
+  const card = page.locator('[data-slot="inbox-message"]');
   await expect(
     card.getByRole('heading', { name: /^2 questions before .+ continues$/ }),
   ).toBeVisible();
@@ -226,9 +225,6 @@ test('an agent question is answered from its Inbox card with the keys its picker
   await questions.nth(1).getByRole('textbox').fill('Linux');
   await expect(send).toBeEnabled();
   await send.click();
-  await expect(page.locator('[data-slot="inbox-log-line"]')).toContainText(
-    /Answered .+: Every tab · iOS, Web, Linux\d/,
-  );
   await expect(card).toHaveCount(0);
 
   // The session received exactly the picker's keys.
@@ -245,11 +241,11 @@ test('an agent question is answered from its Inbox card with the keys its picker
       },
     ]),
   ]);
-  await page.goto('/inbox');
+  await page.goto('/plan/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();
-    await expect(page.locator('[data-slot="inbox-greeting"]')).toBeVisible();
+    await expect(page.locator('[data-slot="inbox-list-head"]')).toBeVisible();
     await expect(row).toHaveCount(0);
   }).toPass({ timeout: 90_000, intervals: [5_000] });
 });

@@ -1,11 +1,13 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 
-/** What a row and the card say about an item, in the reader's language. */
+/** What a row and the message say about an item, in the reader's language. */
 export interface InboxCopy {
-  /** The row's short line. */
+  /** Who it is from: the session, the bot, the pull request's author, the automation. */
+  sender: string;
+  /** The row's subject. */
   short: string;
-  /** Where it comes from, without its projects. */
+  /** Where it comes from, without its projects or its sender. */
   source: string;
   /** The card's question. */
   title: string;
@@ -19,6 +21,7 @@ function sessionCopy(item: Extract<InboxItem, { kind: 'session' }>, t: TFunction
   const source = session.scopeLabel ?? t('inbox.from.session');
   if (session.lifecycle === 'failed') {
     return {
+      sender: name,
       short: t('inbox.session.failedShort', { name }),
       source,
       title: t('inbox.session.failedTitle', { name }),
@@ -27,6 +30,7 @@ function sessionCopy(item: Extract<InboxItem, { kind: 'session' }>, t: TFunction
   }
   if (session.lifecycle === 'starting') {
     return {
+      sender: name,
       short: t('inbox.session.startingShort', { name }),
       source,
       title: t('inbox.session.startingTitle', { name }),
@@ -34,25 +38,26 @@ function sessionCopy(item: Extract<InboxItem, { kind: 'session' }>, t: TFunction
     };
   }
   const { decision } = session;
-  // A decision is answered on the card, which names the session it answers.
-  const named = session.scopeLabel ? `${name} · ${session.scopeLabel}` : name;
   if (decision?.kind === 'permission') {
     return {
+      sender: name,
       short: t('inbox.session.blockedShort', { name }),
-      source: named,
+      source,
       title: decision.title,
       body: t('inbox.session.permissionBody'),
     };
   }
   if (decision?.kind === 'question') {
     return {
+      sender: name,
       short: t('inbox.session.blockedShort', { name }),
-      source: named,
+      source,
       title: t('inbox.session.questionTitle', { name, count: decision.questions.length }),
       body: t('inbox.session.questionBody'),
     };
   }
   return {
+    sender: name,
     short: t('inbox.session.blockedShort', { name }),
     source,
     title: t('inbox.session.blockedTitle', { name }),
@@ -78,8 +83,9 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
       const { approval } = item;
       const values = { bot: approval.botName, tool: approval.tool };
       return {
+        sender: approval.botName,
         short: t('inbox.approval.short', values),
-        source: t('inbox.from.approval', values),
+        source: t('inbox.from.approval'),
         title: t('inbox.approval.title', values),
         body: approval.summary,
       };
@@ -89,6 +95,7 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
       const values = { number: pull.number, title: pull.title, author: pull.author };
       const ready = item.reason === 'ready';
       return {
+        sender: pull.author,
         short: t(ready ? 'inbox.pull.readyShort' : 'inbox.pull.requestedShort', values),
         source: pull.repository,
         title: t(ready ? 'inbox.pull.readyTitle' : 'inbox.pull.requestedTitle', values),
@@ -99,6 +106,7 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
       const { run } = item;
       const values = { name: run.automationName };
       return {
+        sender: run.automationName,
         short: t('inbox.run.short', values),
         source: t('inbox.from.run'),
         title: t('inbox.run.title', values),
@@ -110,7 +118,17 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
   }
 }
 
-/** "XRP Mobile · acme/app": the item's projects, then its source, as the frame writes a row's second line. */
+/**
+ * Whether the list's words find an item: in its sender, subject, body or
+ * source, as the frame's search reads a row. Case is ignored.
+ */
+export function matchesQuery(copy: InboxCopy, query: string): boolean {
+  const words = query.trim().toLowerCase();
+  if (!words) return true;
+  return [copy.sender, copy.short, copy.body, copy.source].join(' ').toLowerCase().includes(words);
+}
+
+/** "XRP Mobile · acme/app": the item's projects, then its source, as the message writes it under its sender. */
 export function inboxFrom(
   item: InboxItem,
   source: string,

@@ -1,0 +1,33 @@
+#!/bin/sh
+# Stands in for the Codex CLI: prints the argv the runner built, then hands the
+# pane to an interactive shell, as the `claude` shim beside it does.
+#
+# `codex cloud exec --env <env> --branch <branch> <task>` answers as the real
+# CLI does when it creates a cloud task: it prints the task's address and
+# exits. Each task is a file in ~/codex-cloud holding its status (`pending`
+# until a test writes another), and a line in ~/codex-cloud.log — the task,
+# the environment, the branch and the task's prompt — for a test to read back.
+# `codex cloud list --json` answers those tasks, newest first, as the real
+# one's JSON does.
+if [ "$1" = "cloud" ] && [ "$2" = "exec" ]; then
+  [ "$3" = "--env" ] && [ "$5" = "--branch" ] || { echo "unexpected args: $*" >&2; exit 2; }
+  id="task_e_e2e$(date +%s)$$"
+  mkdir -p "$HOME/codex-cloud"
+  echo pending > "$HOME/codex-cloud/$id"
+  printf '%s\t%s\t%s\t%s\n' "$id" "$4" "$6" "$7" >> "$HOME/codex-cloud.log"
+  printf 'https://chatgpt.com/codex/tasks/%s\n' "$id"
+  exit 0
+fi
+if [ "$1" = "cloud" ] && [ "$2" = "list" ]; then
+  printf '{"tasks":['
+  sep=''
+  for file in $(ls -t "$HOME/codex-cloud" 2>/dev/null); do
+    printf '%s{"id":"%s","url":"https://chatgpt.com/codex/tasks/%s","title":"","status":"%s"}' \
+      "$sep" "$file" "$file" "$(cat "$HOME/codex-cloud/$file")"
+    sep=','
+  done
+  printf '],"cursor":null}\n'
+  exit 0
+fi
+printf 'CODEX-SHIM argv=%s\n' "$*"
+exec sh -i

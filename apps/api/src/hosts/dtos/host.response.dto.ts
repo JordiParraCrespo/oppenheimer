@@ -76,6 +76,14 @@ export class HostResponseDto {
 
   @ApiPropertyOptional({
     nullable: true,
+    type: Boolean,
+    description:
+      'Whether the host can start a Codex cloud task now: online, its runner takes `session.cloud.codex`, and `codex` is installed. Null when online but not known on the replica that answered.',
+  })
+  startsCodexCloudSessions!: boolean | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
     type: String,
     description:
       'The claude.ai account (email) the host’s `claude` is signed in as: the account a Claude Code cloud session started there runs on. Null when it is not signed in, or its runner does not report it.',

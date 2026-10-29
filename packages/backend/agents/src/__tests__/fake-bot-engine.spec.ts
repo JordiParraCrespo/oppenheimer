@@ -193,7 +193,7 @@ describe('FakeBotEngine', () => {
 
     expect(await collect(engine.run(request()))).toEqual([
       { type: 'text.delta', text: 'Hi' },
-      { type: 'done', reason: 'failed', error: 'upstream refused [redacted]' },
+      { type: 'done', reason: 'failed', error: 'upstream refused [redacted]', failure: 'other' },
     ]);
   });
 
@@ -237,7 +237,7 @@ describe('createBotEngine', () => {
     const events = await collect(createBotEngine().run(request({ provider: 'mistral' as never })));
 
     expect(events).toEqual([
-      { type: 'done', reason: 'failed', error: 'Unknown provider: mistral' },
+      { type: 'done', reason: 'failed', error: 'Unknown provider: mistral', failure: 'other' },
     ]);
   });
 });

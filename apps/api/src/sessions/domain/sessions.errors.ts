@@ -283,8 +283,9 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * A cloud session for a host whose live runner did not name `session.cloud`:
-   * it would open a terminal instead of starting the task in the cloud.
+   * A cloud session for a host whose live runner did not name the capability
+   * for its agent's cloud (`session.cloud`, `session.cloud.codex`): it would
+   * open a terminal, or refuse the agent, instead of starting the task.
    */
   CLOUD_UNSUPPORTED_BY_RUNNER: {
     code: 'SESSIONS_037',
@@ -293,11 +294,12 @@ export const SessionErrors = {
   },
   /**
    * A prompt, an answer or a file for a cloud session: it has no terminal on
-   * its host to type into, and takes them on claude.ai.
+   * its host to type into, and takes them at its vendor (claude.ai,
+   * chatgpt.com/codex).
    */
   CLOUD_TAKES_NO_INPUT: {
     code: 'SESSIONS_038',
-    message: 'A cloud session takes input on claude.ai, not here',
+    message: "A cloud session takes input at its vendor's site, not here",
     httpStatus: 409,
   },
   /**
@@ -329,5 +331,15 @@ export const SessionErrors = {
     code: 'SESSIONS_041',
     message: 'That file link expired or never existed',
     httpStatus: 404,
+  },
+  TERMINAL_PATTERN_INVALID: {
+    code: 'SESSIONS_042',
+    message: 'That pattern cannot be watched',
+    httpStatus: 422,
+  },
+  TERMINAL_WATCHES_FULL: {
+    code: 'SESSIONS_043',
+    message: 'The session already has as many terminal watches as it can hold',
+    httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

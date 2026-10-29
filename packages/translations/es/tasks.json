@@ -2,6 +2,7 @@
   "backToTask": "Volver a la tarea",
   "nav": {
     "label": "Plan",
+    "inbox": "Bandeja",
     "tasks": "Tareas",
     "calendar": "Calendario",
     "milestones": "Hitos"

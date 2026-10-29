@@ -8,6 +8,7 @@ import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.ent
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { PlanMailQuery } from '../../../mail/queries/plan-mail/plan-mail.query';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
@@ -72,6 +73,7 @@ function setup(permission: BotToolContext['permission']) {
     homeHostId: null,
     timeZone: 'UTC',
     permission,
+    permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: null,
     approvals: { request },

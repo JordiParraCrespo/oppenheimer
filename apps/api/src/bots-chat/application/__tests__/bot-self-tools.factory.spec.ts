@@ -14,7 +14,10 @@ import { FindBotDocumentQuery } from '../../../bots/queries/find-bot-document/fi
 import { FindBotDocumentsQuery } from '../../../bots/queries/find-bot-documents/find-bot-documents.query';
 import { FindBotMemoryQuery } from '../../../bots/queries/find-bot-memory/find-bot-memory.query';
 import { FindBotMemoryFactQuery } from '../../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
+import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import { SearchBotConversationQuery } from '../../queries/search-bot-conversation/search-bot-conversation.query';
 import { BotSelfToolsFactory } from '../bot-self-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -37,6 +40,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };
@@ -59,6 +63,7 @@ function bot(
       model: null,
       effort: null,
       permission: 'auto',
+      permissions: NO_PERMISSIONS,
       budget: new BotTurnBudget(),
       learnAutomatically: props.learnAutomatically ?? true,
       sections: props.sections ?? [],
@@ -264,6 +269,44 @@ describe('BotSelfToolsFactory', () => {
 
     expect((await call('recall', { query: 'coffee' })).content).toBe(
       'No fact contains any of those words (you hold 3).',
+    );
+  });
+
+  // What breaks this: a search reaching another bot's chat or another
+  // person's scope, or a hit shown as instructions rather than fenced data.
+  it('searches its own chat in the owner’s scope and fences what it found as data', async () => {
+    const said = (role: 'user' | 'assistant', content: string) =>
+      BotMessageEntity.createNew({
+        organizationId: 'org-1',
+        botId: BOT_ID,
+        turnId: 'turn-0',
+        role,
+        content,
+        steps: [],
+        position: 0,
+      });
+    const { queryBus, call } = setup((query) =>
+      query instanceof SearchBotConversationQuery
+        ? [
+            said('user', 'The staging host is build-02'),
+            said('assistant', 'Noted: staging is build-02'),
+          ]
+        : [],
+    );
+
+    const found = (await call('search_chat', { query: 'staging host' })).content;
+
+    const [query] = queryBus.execute.mock.calls[0] ?? [];
+    expect(query).toMatchObject({ scope: owner, botId: BOT_ID, query: 'staging host', limit: 10 });
+    expect(found).toContain('Messages matching "staging host" (2');
+    expect(found).toMatch(/<chat_search>\n- .+ the person: The staging host is build-02/);
+    expect(found).toContain('you: Noted: staging is build-02');
+  });
+
+  it('says plainly when nothing in the chat matches', async () => {
+    const { call } = setup(() => []);
+    expect((await call('search_chat', { query: 'coffee' })).content).toBe(
+      'No message in this chat matches "coffee". Try other words, or fewer.',
     );
   });
 

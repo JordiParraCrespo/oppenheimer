@@ -2,6 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { SaveBotRoutineCommand } from '../../../automations/commands/save-bot-routine/save-bot-routine.command';
 import type { AutomationEntity } from '../../../automations/domain/automation.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotRoutineToolsFactory } from '../bot-routine-tools.factory';
@@ -46,6 +47,7 @@ function setup() {
     homeHostId: null,
     timeZone: 'Europe/Madrid',
     permission: 'auto',
+    permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: ['automations:write'],
     approvals,
@@ -117,6 +119,7 @@ describe('update_routine', () => {
         homeHostId: null,
         timeZone: 'Europe/Madrid',
         permission: 'auto',
+        permissions: NO_PERMISSIONS,
         budget: new BotTurnBudget(),
         credentialScopes: ['automations:write'],
         approvalId: 'approval-1',
