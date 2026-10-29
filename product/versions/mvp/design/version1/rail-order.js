@@ -11,7 +11,6 @@
   function apply(rail) {
     if (drag) return;
     var saved = load(), list = items(rail);
-    if (saved.length && saved.indexOf('Inbox') < 0) { saved.unshift('Inbox'); save(saved); }
     list.slice().sort(function (a, b) {
       var ia = saved.indexOf(keyOf(a)), ib = saved.indexOf(keyOf(b));
       return (ia < 0 ? 999 + list.indexOf(a) : ia) - (ib < 0 ? 999 + list.indexOf(b) : ib);

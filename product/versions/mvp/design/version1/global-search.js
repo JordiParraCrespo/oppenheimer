@@ -2,7 +2,7 @@
 (function () {
   if (window.__opSearch) return; window.__opSearch = true;
   var PAGES = [
-    ['Inbox', 'Home · what needs you', './Brain.dc.html'],
+    ['Inbox', 'Plan · what needs you', './Tasks.dc.html?section=inbox'],
     ['Sessions', 'Terminal sessions', './SessionsConsole.dc.html'],
     ['Employees', 'Bots and their chats', './Bots.dc.html'],
     ['Pull requests', 'Review and merge', './PullRequests.dc.html'],
@@ -11,9 +11,9 @@
     ['Settings', 'Hosts, repositories and account', './Settings.dc.html'],
   ];
   var DATA = [
-    ['Needs you', 'Merge #121 Port to peersyst', 'Release Bot · xrp-mobile', './Brain.dc.html'],
-    ['Needs you', 'Answer 3 questions on the gateway', 'Session Bot', './Brain.dc.html'],
-    ['Needs you', 'Validator upgrade moved to Oct 28', 'Gmail · ops@ripple.com', './Brain.dc.html'],
+    ['Needs you', 'Merge #121 Port to peersyst', 'Release Bot · xrp-mobile', './Tasks.dc.html?section=inbox'],
+    ['Needs you', 'Answer 3 questions on the gateway', 'Session Bot', './Tasks.dc.html?section=inbox'],
+    ['Needs you', 'Validator upgrade moved to Oct 28', 'Gmail · ops@ripple.com', './Tasks.dc.html?section=inbox'],
     ['Sessions', 'PR #121 porting to peersyst', 'Claude Code · optimus · running', './SessionsConsole.dc.html'],
     ['Sessions', 'Sign-in screen rebuild', 'Claude Code · xrp-mobile · waiting', './SessionsConsole.dc.html'],
     ['Sessions', 'Gateway architecture research', 'Codex · oppenheimer · running', './SessionsConsole.dc.html'],
