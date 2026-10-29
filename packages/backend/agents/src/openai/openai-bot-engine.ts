@@ -138,11 +138,12 @@ export class OpenAiBotEngine extends BotEngine {
           parameters: toolParameters(tool.inputSchema),
           strict: false,
           execute: async (input, _context, details) => {
+            const callId = details?.toolCall?.callId;
             const result = await runTool(tool, input, {
               signal: request.signal,
               apiKey: request.apiKey,
+              ...(callId ? { callId } : {}),
             });
-            const callId = details?.toolCall?.callId;
             if (result.isError && callId) failedCalls.add(callId);
             made.record(callId, result.data);
             return result.content;

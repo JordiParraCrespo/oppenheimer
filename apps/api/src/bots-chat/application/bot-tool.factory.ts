@@ -78,9 +78,17 @@ export interface BotSubagentTask {
   context?: string;
 }
 
-/** Runs a turn's children, in parallel and bounded, each to an end it reports. */
+/**
+ * Runs a turn's children, in parallel and bounded, each to an end it
+ * reports. Given the `delegate` call's id, it shows the chat where each
+ * child is as it goes.
+ */
 export interface BotSubagentRunner {
-  run(tasks: readonly BotSubagentTask[], signal: AbortSignal): Promise<BotSubagentRun[]>;
+  run(
+    tasks: readonly BotSubagentTask[],
+    signal: AbortSignal,
+    callId?: string,
+  ): Promise<BotSubagentRun[]>;
 }
 
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
@@ -202,11 +210,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
   /**
    * Answers labelled text, ids inline, or a `BotToolAnswer` when the call
    * started a session; a throw becomes an error result the model reads.
-   * `context.approvalId` is set when it carries out an approval.
+   * `context.approvalId` is set when it carries out an approval;
+   * `context.callId` is the call's id in the turn, when the engine names it.
    */
   run(
     input: z.output<Input>,
-    context: BotToolCallContext & { approvalId?: string },
+    context: BotToolCallContext & { approvalId?: string; callId?: string },
     signal: AbortSignal,
   ): Promise<string | BotToolAnswer>;
 }
@@ -266,7 +275,7 @@ export function defineBotTool<Input extends z.ZodType>(
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
   const call = async (
     input: z.output<Input>,
-    context: BotToolCallContext & { approvalId?: string },
+    context: BotToolCallContext & { approvalId?: string; callId?: string },
     signal: AbortSignal,
   ): Promise<BotToolResult> => {
     try {
@@ -296,14 +305,14 @@ export function defineBotTool<Input extends z.ZodType>(
         name: spec.name,
         description: spec.description,
         inputSchema,
-        run: async (input, { signal }) => {
+        run: async (input, { signal, callId }) => {
           const parsed = spec.input.safeParse(input ?? {});
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
           const { sessionId, subagents, images, ...result } = await call(
             parsed.data,
-            context,
+            callId ? { ...context, callId } : context,
             signal,
           );
           const data = {

@@ -6,10 +6,12 @@ import {
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_WAKE_STATES,
+  BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
   type BotAttachment,
   type BotMessageEvent,
   type BotMessageRole,
+  type BotSubagentProgress,
   type BotSubagentRun,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
@@ -164,6 +166,24 @@ export function toSubagentRuns(raw: unknown): BotSubagentRun[] | null {
       },
     ];
   });
+}
+
+/**
+ * A `delegate` child as the stream first tells of it: waiting, nothing
+ * called, its task cut to the frame's limit with the mark inside it, so a
+ * long task never makes the console drop the frame as malformed.
+ */
+export function toQueuedSubagentProgress(task: string): BotSubagentProgress {
+  return {
+    task:
+      task.length > BOT_SUBAGENT_PROGRESS_TASK_MAX
+        ? `${task.slice(0, BOT_SUBAGENT_PROGRESS_TASK_MAX - 1)}…`
+        : task,
+    state: 'queued',
+    toolCalls: [],
+    startedAt: null,
+    durationMs: null,
+  };
 }
 
 /** A stored count: a whole, non-negative number, else zero. */

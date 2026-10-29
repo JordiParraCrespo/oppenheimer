@@ -22,6 +22,14 @@ import type {
   BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
 import {
+  type BotLiveSubagents,
+  type BotSubagentFrames,
+  botLiveSubagents,
+  forgetEndedBotSubagents,
+  NO_BOT_SUBAGENTS,
+  putBotSubagents,
+} from '../modules/bots/live-subagents';
+import {
   appendBotText,
   type BotLiveRetries,
   type BotLiveText,
@@ -281,36 +289,41 @@ export function useCancelBotTurn(
   });
 }
 
-export type { BotLiveRetries, BotLiveText };
+export type { BotLiveRetries, BotLiveSubagents, BotLiveText };
 
-/** What a bot's running turns are doing that the stored conversation does not show yet. */
+/** A bot's chat as it happens, beyond what is stored: by turn, and by `delegate` call. */
 export interface BotLive {
-  /** The text each turn is writing. */
+  /** The text each running turn is writing, by turn id. */
   text: BotLiveText;
   /** The turns waiting to try a refused call again, and why. */
   retrying: BotLiveRetries;
+  /** Where each child of a running `delegate` call is, by the call's id. */
+  subagents: BotLiveSubagents;
 }
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
- * writing that the stored conversation does not hold yet, and which turns
- * wait on a provider that refused a call (until they write again). The stream's text
- * is kept as it arrived ({@link BotTextBuffers}); what is drawn is derived
- * from it and the conversation in render ({@link botLiveText}), so a read
- * landing early or late never draws stored text twice or drops it.
+ * writing that the stored conversation does not hold yet, which turns wait
+ * on a provider that refused a call (until they write again), and where the
+ * children of a running `delegate` call are. The stream's text is kept as it
+ * arrived ({@link BotTextBuffers}); what is drawn is derived from it and the
+ * conversation in render ({@link botLiveText}), so a read landing early or
+ * late never draws stored text twice or drops it. A call's children are its
+ * newest frame until its stored step ends it ({@link botLiveSubagents}).
  *
  * The conversation is read again the moment a message is stored or a turn
  * moves, and each time the stream comes up (the first connect included) for
  * what the gap may have missed.
  */
-export function useBotLiveText(id: string): BotLive {
+export function useBotLive(id: string): BotLive {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const { data: conversation } = useSuspenseBotConversation(id);
-  const [streamed, setStreamed] = useState<{ id: string; buffers: BotTextBuffers }>({
-    id,
-    buffers: NO_BOT_TEXT,
-  });
+  const [streamed, setStreamed] = useState<{
+    id: string;
+    buffers: BotTextBuffers;
+    frames: BotSubagentFrames;
+  }>({ id, buffers: NO_BOT_TEXT, frames: NO_BOT_SUBAGENTS });
   const [waits, setWaits] = useState<{ id: string; retries: BotLiveRetries }>({
     id,
     retries: NO_BOT_RETRIES,
@@ -320,21 +333,35 @@ export function useBotLiveText(id: string): BotLive {
   useEffect(() => {
     const stream = app.bots.openStream(id);
     const key = botsKeys.conversation(id);
-    const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
+    const change = (
+      next: (state: { buffers: BotTextBuffers; frames: BotSubagentFrames }) => {
+        buffers: BotTextBuffers;
+        frames: BotSubagentFrames;
+      },
+    ) =>
       setStreamed((current) => {
-        const buffers = next(current.id === id ? current.buffers : NO_BOT_TEXT);
+        const mine =
+          current.id === id ? current : { buffers: NO_BOT_TEXT, frames: NO_BOT_SUBAGENTS };
+        const { buffers, frames } = next(mine);
         // Memory only: an ended turn is not drawn whether or not it is dropped here.
-        const kept = forgetEndedBotTurns(
-          buffers,
-          queryClient.getQueryData<BotConversationEntity>(key),
-        );
-        return current.id === id && kept === current.buffers ? current : { id, buffers: kept };
+        const read = queryClient.getQueryData<BotConversationEntity>(key);
+        const kept = {
+          buffers: forgetEndedBotTurns(buffers, read),
+          frames: forgetEndedBotSubagents(frames, read),
+        };
+        return current.id === id &&
+          kept.buffers === current.buffers &&
+          kept.frames === current.frames
+          ? current
+          : { id, ...kept };
       });
     const retry = (next: (retries: BotLiveRetries) => BotLiveRetries) =>
       setWaits((current) => {
         const retries = next(current.id === id ? current.retries : NO_BOT_RETRIES);
         return current.id === id && retries === current.retries ? current : { id, retries };
       });
+    const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
+      change((state) => ({ ...state, buffers: next(state.buffers) }));
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
@@ -356,6 +383,10 @@ export function useBotLiveText(id: string): BotLive {
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
         return;
       }
+      if (event.type === 'subagents') {
+        change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
+        return;
+      }
       if (event.type === 'approval') {
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
@@ -373,8 +404,10 @@ export function useBotLiveText(id: string): BotLive {
     };
   }, [app, queryClient, id]);
 
+  const mine = streamed.id === id;
   return {
-    text: botLiveText(streamed.id === id ? streamed.buffers : NO_BOT_TEXT, conversation),
+    text: botLiveText(mine ? streamed.buffers : NO_BOT_TEXT, conversation),
     retrying: botLiveRetries(waits.id === id ? waits.retries : NO_BOT_RETRIES, conversation),
+    subagents: botLiveSubagents(mine ? streamed.frames : NO_BOT_SUBAGENTS, conversation),
   };
 }

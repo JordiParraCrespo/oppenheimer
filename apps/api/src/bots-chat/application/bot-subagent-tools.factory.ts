@@ -63,7 +63,7 @@ export class BotSubagentToolsFactory implements BotToolArea {
               `Refused: this turn has already delegated ${SUBAGENT_CALLS_PER_TURN} times, the limit. Answer with what you have.`,
             );
           }
-          const subagents = await context.subagents.run(input.tasks, signal);
+          const subagents = await context.subagents.run(input.tasks, signal, context.callId);
           return { content: subagentReport(subagents), subagents };
         },
       }),

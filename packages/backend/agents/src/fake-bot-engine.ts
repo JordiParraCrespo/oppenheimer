@@ -81,6 +81,7 @@ export class FakeBotEngine extends BotEngine {
     const { content, ...rest } = await runTool(tool, call.input, {
       signal: request.signal,
       apiKey: request.apiKey,
+      callId: call.callId,
     });
     return { output: content, ...rest };
   }

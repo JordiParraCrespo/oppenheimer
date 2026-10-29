@@ -4,6 +4,7 @@ import { dateFormatter, formatTimeAway, useLocale } from '@oppenheimer/frontend-
 import {
   BOT_PROVIDER_CATALOG,
   type BotAttachment,
+  type BotSubagentProgress,
   botModelOf,
 } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
@@ -29,11 +30,12 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * bot's answer unboxed across the column: a quiet trace line per tool call,
  * each opening to what it returned, and what it said, as markdown, the
  * words it is still writing with the write head after them. While it runs,
- * a live line says what it is doing, with its clock. Once it has ended, a
+ * a live line says what it is doing, with its clock, and the subagents a
+ * running `delegate` call has at work under it. Once it has ended, a
  * trail copies the answer, offers Retry on the newest turn, and says how
  * long it worked, its model and the tokens it took (Stopped first when
- * someone pressed Stop); a
- * failure says why and what helps (`BotTurnFailure`). The images your message carried
+ * someone pressed Stop); a failure says why and what helps
+ * (`BotTurnFailure`). The images your message carried
  * sit above its bubble, and the ones the bot showed (`show_image`) in its
  * answer where it showed them, both drawn by `images`, which reads them.
  */
@@ -41,6 +43,7 @@ export function BotTurn({
   block,
   live,
   waitingOn,
+  subagents,
   images,
   onRetry,
   retrying = false,
@@ -50,6 +53,8 @@ export function BotTurn({
   live: string | undefined;
   /** Why the running turn waits to try a refused call again; none while it does not. */
   waitingOn?: 'rate_limit' | 'unavailable';
+  /** Where each running `delegate` call's children are, by the call's id. */
+  subagents: Readonly<Record<string, readonly BotSubagentProgress[]>>;
   /** The images a message carried, yours or the bot's, as the section that reads them draws them. */
   images: (attachments: readonly BotAttachment[]) => ReactNode;
   /** Sends your last message again; only the newest turn, once it has ended. */
@@ -65,6 +70,7 @@ export function BotTurn({
   const phase = turn ? turnPhase(turn, block.answer.length > 0 || Boolean(live)) : null;
   const active = turn?.isActive ?? false;
   const text = replyText(block);
+  const step = active ? runningStep(block.answer) : undefined;
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const ran = turn ? turnDurationMs(turn) : null;
   const meta = turn
@@ -116,7 +122,8 @@ export function BotTurn({
         {turn && active ? (
           <BotTurnLive
             queued={turn.status === 'queued'}
-            step={runningStep(block.answer)}
+            step={step}
+            subagents={step ? subagents[step.callId] : undefined}
             writing={Boolean(live)}
             waitingOn={waitingOn}
             provider={BOT_PROVIDER_CATALOG[turn.provider].label}

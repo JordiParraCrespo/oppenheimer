@@ -844,3 +844,8 @@ earlier note:
   asking. 2026-10-29, from Grok Bot's approvals
   (`research/lessons-from-grok-bot.md` §9 rows 6 and 7;
   `versions/mvp/25-bots.md` §5).
+- 2026-10-29 the owner asked to see a bot's subagents while they work:
+  "Running 3 subagents" now has a line per child under it (its task,
+  waiting or running with its clock or how it ended, the tools it has
+  called so far), from frames the bot's stream sends each time one moves,
+  until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).

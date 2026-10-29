@@ -566,7 +566,7 @@ one.
 ### 4.7 Work and the web
 | Tool | Does | Default |
 |------|------|---------|
-| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's). 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
+| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's), and while the call runs, the same lines hang under the turn's live line as they work (waiting, running with its clock, or how it ended, each opening to the tools it has called so far), from a frame the bot's stream sends each time one moves and never stores. 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
@@ -893,6 +893,14 @@ The decisions it produced:
   4.7 (the default), 4.6 and 4.5 beside Grok Build 0.1, each with the
   levels xAI's reasoning guide gives it (4.5 stops at high), and `high`
   as the default level, as it is xAI's, where it was `medium`.
+- 2026-10-29: **a running `delegate` call's subagents show as they work**
+  (§4.7). "Running 3 subagents" said nothing until every child ended: the
+  runner now sends the bot's stream a frame with where each child is (its
+  task, waiting or running or how it ended, the tools it has called) each
+  time one moves, under the call's id, and the chat hangs a line per child
+  under the live line until the stored step replaces them. The frames are
+  best-effort like the streamed text; a chat opened mid-call fills in at
+  the next move.
 - 2026-10-28: **a bot shows images** (`show_image`, §4.7). A bot has no
   files of its own, so what it shows is from the web, by the image's own
   address, fetched through `web_fetch`'s guard and judged by its bytes; it

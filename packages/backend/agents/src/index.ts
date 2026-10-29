@@ -6,6 +6,7 @@ export {
   type BotEngineEvent,
   type BotEngineFailure,
   type BotEngineTool,
+  type BotEngineToolCall,
   type BotEngineToolResult,
   type BotPlanLimits,
   type BotPlanWindow,

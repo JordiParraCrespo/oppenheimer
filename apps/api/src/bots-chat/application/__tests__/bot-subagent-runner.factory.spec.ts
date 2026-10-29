@@ -4,7 +4,9 @@ import type {
   BotEngineTool,
   BotTurnRequest,
 } from '@oppenheimer/backend-agents';
+import type { BotStreamEvent } from '@oppenheimer/shared';
 import { SUBAGENT_CONCURRENCY } from '../../domain/bot-subagent.policy';
+import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 
 /**
@@ -15,6 +17,7 @@ import { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
  * turn. The engine is a double that answers each task as the spec says.
  */
 const MODEL = { provider: 'anthropic', apiKey: 'sk-key', model: 'claude-x', effort: null } as const;
+const TURN = { botId: 'bot-1', turnId: 'turn-1' };
 
 type Script = (request: BotTurnRequest) => AsyncIterable<BotEngineEvent>;
 
@@ -26,7 +29,13 @@ function setup(script: Script) {
       return script(request);
     },
   } as unknown as BotEngine;
-  return { requests, factory: new BotSubagentRunnerFactory(engine) };
+  const published: BotStreamEvent[] = [];
+  const stream = {
+    publish: async (_botId: string, event: BotStreamEvent) => {
+      published.push(event);
+    },
+  } as unknown as BotStreamPort;
+  return { requests, published, factory: new BotSubagentRunnerFactory(engine, stream) };
 }
 
 /** A child that calls a tool, writes `text`, and ends as told. */
@@ -56,7 +65,7 @@ const tool: BotEngineTool = {
 describe('BotSubagentRunnerFactory', () => {
   it('runs each task as its own turn on the turn’s model, with only its task and tools, and reports it in order', async () => {
     const { requests, factory } = setup(answering((task) => `Found ${task}`));
-    const runner = factory.create(MODEL, 'Oppie', [tool]);
+    const runner = factory.create(MODEL, 'Oppie', [tool], TURN);
 
     const runs = await runner.run(
       [{ task: 'alpha' }, { task: 'beta', context: 'repo acme/api' }],
@@ -79,6 +88,41 @@ describe('BotSubagentRunnerFactory', () => {
     }
   });
 
+  it('tells the chat where each child is as it moves, under the delegate call, until all have ended', async () => {
+    const { published, factory } = setup(answering((task) => `Found ${task}`));
+
+    await factory
+      .create(MODEL, 'Oppie', [tool], TURN)
+      .run([{ task: 'alpha' }, { task: 'beta' }], new AbortController().signal, 'call-9');
+
+    const frames = published.flatMap((event) => (event.type === 'subagents' ? [event] : []));
+    expect(frames.every((frame) => frame.callId === 'call-9' && frame.turnId === 'turn-1')).toBe(
+      true,
+    );
+    expect(frames[0]?.runs.map((run) => run.state)).toEqual(['queued', 'queued']);
+    expect(
+      frames.some((frame) =>
+        frame.runs.some((run) => run.state === 'running' && run.toolCalls[0] === 'list_hosts'),
+      ),
+    ).toBe(true);
+    const last = frames.at(-1)?.runs ?? [];
+    expect(last.map((run) => [run.task, run.state, run.toolCalls])).toEqual([
+      ['alpha', 'completed', ['list_hosts']],
+      ['beta', 'completed', ['list_hosts']],
+    ]);
+    expect(last.every((run) => run.startedAt !== null && run.durationMs !== null)).toBe(true);
+  });
+
+  it('tells the chat nothing when the call has no id to show it under', async () => {
+    const { published, factory } = setup(answering(() => 'ok'));
+
+    await factory
+      .create(MODEL, 'Oppie', [], TURN)
+      .run([{ task: 'alpha' }], new AbortController().signal);
+
+    expect(published).toEqual([]);
+  });
+
   it(`never runs more than ${SUBAGENT_CONCURRENCY} children at once`, async () => {
     let running = 0;
     let most = 0;
@@ -91,7 +135,7 @@ describe('BotSubagentRunnerFactory', () => {
       yield { type: 'done', reason: 'completed' };
     });
 
-    const runs = await factory.create(MODEL, 'Oppie', []).run(
+    const runs = await factory.create(MODEL, 'Oppie', [], TURN).run(
       ['a', 'b', 'c', 'd'].map((task) => ({ task })),
       new AbortController().signal,
     );
@@ -112,7 +156,7 @@ describe('BotSubagentRunnerFactory', () => {
     });
 
     const runs = await factory
-      .create(MODEL, 'Oppie', [])
+      .create(MODEL, 'Oppie', [], TURN)
       .run([{ task: 'good' }, { task: 'bad' }], new AbortController().signal);
 
     expect(runs.map((run) => run.status)).toEqual(['completed', 'failed']);
@@ -129,7 +173,7 @@ describe('BotSubagentRunnerFactory', () => {
     });
     const turn = new AbortController();
 
-    const pending = factory.create(MODEL, 'Oppie', []).run(
+    const pending = factory.create(MODEL, 'Oppie', [], TURN).run(
       ['a', 'b', 'c', 'd'].map((task) => ({ task })),
       turn.signal,
     );

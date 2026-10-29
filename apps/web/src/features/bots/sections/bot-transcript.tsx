@@ -6,7 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
-  useBotLiveText,
+  useBotLive,
   useSendBotMessage,
   useSuspenseBotConversation,
 } from '@oppenheimer/frontend-consumer/react';
@@ -41,7 +41,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const { t } = useTranslation();
   const locale = useLocale();
   const { data: conversation, error } = useSuspenseBotConversation(botId);
-  const live = useBotLiveText(botId);
+  const live = useBotLive(botId);
   const retry = useSendBotMessage();
   const navigate = useNavigate();
   const blocks = chatTurns(conversation);
@@ -98,6 +98,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                     block={block}
                     live={live.text[block.turnId]}
                     waitingOn={live.retrying[block.turnId]}
+                    subagents={live.subagents}
                     images={(attachments) => (
                       <BotMessageImages botId={botId} attachments={attachments} />
                     )}

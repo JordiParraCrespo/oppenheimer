@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
   humaniseToolName,
+  liveLabel,
   liveWords,
   planItems,
   readableOutput,
@@ -69,6 +70,46 @@ describe('liveWords', () => {
       key: 'bots.chat.activity.using',
       values: { name: 'Get session' },
     });
+  });
+});
+
+describe('liveLabel', () => {
+  const delegate = {
+    callId: 'c1',
+    name: 'delegate',
+    input: { tasks: [{ task: 'a' }, { task: 'b' }] },
+    output: null,
+    isError: false,
+    sessionId: null,
+    subagents: null,
+    allowedBy: null,
+  };
+  const run = (state: 'running' | 'completed' | 'failed') => ({
+    task: 'x',
+    state,
+    toolCalls: [],
+    startedAt: null,
+    durationMs: null,
+  });
+
+  it('counts a delegate call’s ended children, failures included, once one has ended', () => {
+    expect(
+      liveLabel({
+        queued: false,
+        step: delegate,
+        subagents: [run('completed'), run('failed'), run('running')],
+        writing: false,
+      }),
+    ).toEqual({ key: 'bots.chat.activity.delegatingDone', values: { count: 3, done: 2 } });
+  });
+
+  it('says what the call is doing while none has ended, and Waiting before anything while queued', () => {
+    const live = { step: delegate, subagents: [run('running')], writing: false };
+    expect(liveLabel({ queued: false, ...live }).key).toBe('bots.chat.activity.delegating');
+    expect(liveLabel({ queued: true, ...live }).key).toBe('bots.chat.turn.queued');
+    expect(
+      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true }).key,
+    ).toBe('bots.chat.turn.writing');
   });
 });
 

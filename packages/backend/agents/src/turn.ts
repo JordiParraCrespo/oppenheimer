@@ -228,13 +228,14 @@ export function resetFromHeaders(
 export async function runTool(
   tool: BotEngineTool,
   input: unknown,
-  context: { signal: AbortSignal; apiKey: string },
+  context: { signal: AbortSignal; apiKey: string; callId?: string },
 ): Promise<{ content: string; isError: boolean; data?: BotToolData }> {
   let content: string;
   let isError: boolean;
   let data: BotToolData | undefined;
   try {
-    const result = await tool.run(input, { signal: context.signal });
+    const { signal, callId } = context;
+    const result = await tool.run(input, callId ? { signal, callId } : { signal });
     content = typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
     isError = result?.isError === true;
     data = toolData(result?.data);
