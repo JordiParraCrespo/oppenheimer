@@ -7,6 +7,7 @@ import type {
   BotSubagentRun,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
+import type { MailPlan } from '@oppenheimer/shared/schemas/mail';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -185,6 +186,11 @@ export class BotApprovalEntity {
     /** What the call answered when it ran; `null` before, and for a no. */
     public readonly result: string | null,
     public readonly createdAt: Date,
+    /**
+     * The message a send card sends on a yes, exactly (`product/next-steps/mail.md`
+     * §3.4); `null` for every other card.
+     */
+    public readonly mail: MailPlan | null = null,
   ) {}
 
   get isPending(): boolean {
@@ -215,6 +221,7 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
       approval.status,
       approval.result,
       approval.createdAt,
+      approval.mail,
     );
   }
 

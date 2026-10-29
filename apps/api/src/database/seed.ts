@@ -50,6 +50,7 @@ import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-del
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
+import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -136,6 +137,7 @@ const dataSource = new DataSource({
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
     GmailConnectionOrmEntity,
+    MailSendOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,

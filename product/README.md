@@ -674,6 +674,10 @@ earlier note:
   own; on 2026-10-29 email came first, as an address of the bot's own,
   and the same day reading your own mailboxes went ahead of every channel
   (`next-steps/mail.md`), narrowed to Gmail with drafts and sends.
+- `next-steps/mail.md` §3.4 planned a send's files from the bot's chat,
+  its documents and its turn as well as from mail; slice 2 (2026-10-29)
+  sends files from mail only, and a draft is answered in the chat as text
+  with its Gmail link rather than a card (mail.md, "Decided").
 - `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only

@@ -190,12 +190,14 @@ export async function routinePausedAt(routineId: string): Promise<Date | null> {
 /**
  * A bot's pending approval written straight into the tables (`25-bots.md`
  * §5): a bot raises one in a turn of a real model, so a spec about the Inbox
- * seeds the turn it stopped and the card it asks. One statement.
+ * seeds the turn it stopped and the card it asks, with the call's stored
+ * input when the card draws from it (a send card's message). One statement.
  */
 export async function insertPendingBotApproval(
   botId: string,
   tool: string,
   summary: string,
+  input: Record<string, unknown> = {},
 ): Promise<string> {
   const rows = await query<{ id: string }>(
     `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
@@ -205,10 +207,10 @@ export async function insertPendingBotApproval(
               FROM bot
             RETURNING id, "organizationId"
           )
-     INSERT INTO bot_approval ("organizationId", "botId", "turnId", tool, summary)
-     SELECT turn."organizationId", $1, turn.id, $2, $3 FROM turn
+     INSERT INTO bot_approval ("organizationId", "botId", "turnId", tool, summary, input)
+     SELECT turn."organizationId", $1, turn.id, $2, $3, $4::jsonb FROM turn
      RETURNING id`,
-    [botId, tool, summary],
+    [botId, tool, summary, JSON.stringify(input)],
   );
   return rows[0].id;
 }

@@ -130,8 +130,10 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
    * first. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
+   * `'always'` asks under every preset, Approve everything included: what
+   * the owner must see each time (mail sent from their address).
    */
-  asks?: boolean;
+  asks?: boolean | 'always';
   /**
    * The tool only reads: it starts, changes and sends nothing, so a
    * `delegate` child may be offered it. Never set beside `asks`.
@@ -256,7 +258,8 @@ export function defineBotTool<Input extends z.ZodType>(
           return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
       };
-      return spec.asks && context.permission !== 'full' ? askingFirst(tool, spec, context) : tool;
+      const asks = spec.asks === 'always' || (spec.asks === true && context.permission !== 'full');
+      return asks ? askingFirst(tool, spec, context) : tool;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
   };

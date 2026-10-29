@@ -222,4 +222,56 @@ describe('GmailGateway', () => {
       bytes: Buffer.from('%PDF-1.7'),
     });
   });
+
+  it('sends the raw message base64url in its thread, and reads back Gmail’s ids', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 'g1', threadId: 't1' }));
+    vi.stubGlobal('fetch', fetch);
+
+    const sent = await new GmailGateway(config).sendMessage(ANA, {
+      raw: Buffer.from('Subject: Hi\r\n\r\nÉ?'),
+      threadId: 't1',
+    });
+
+    const [url, init] = fetch.mock.calls[1];
+    expect(new URL(url).pathname).toBe('/gmail/v1/users/me/messages/send');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({
+      raw: Buffer.from('Subject: Hi\r\n\r\nÉ?').toString('base64url'),
+      threadId: 't1',
+    });
+    expect(sent).toEqual({ messageId: 'g1', threadId: 't1' });
+  });
+
+  it('pauses only the account when Gmail refuses a send for its sending limit', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(429, { error: { errors: [{ reason: 'rateLimitExceeded' }] } }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { labels: [] }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(
+      gateway.sendMessage(ANA, { raw: Buffer.from('x'), threadId: null }),
+    ).rejects.toMatchObject({ code: 'MAIL_008' });
+    await expect(gateway.listLabels(BEN)).resolves.toEqual([]);
+  });
+
+  it('deletes a draft, reading Gmail’s empty answer as done', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(new GmailGateway(config).deleteDraft(ANA, 'd1')).resolves.toBeUndefined();
+
+    const [url, init] = fetch.mock.calls[1];
+    expect(new URL(url).pathname).toBe('/gmail/v1/users/me/drafts/d1');
+    expect(init.method).toBe('DELETE');
+  });
 });

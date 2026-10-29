@@ -50,8 +50,41 @@ export interface GmailMessage extends GmailMessageSummary {
   replyTo: string;
   /** The `Message-ID` header, which a reply's `In-Reply-To` names. */
   messageIdHeader: string;
+  /** The `References` header, which an answer carries on. */
+  referencesHeader: string;
+  /** The `Date` header as the sender wrote it. */
+  dateHeader: string;
   /** The text the sender wrote: the plain part, or the HTML part read as text. */
   body: string;
+}
+
+/** An address the account sends from: itself, or a send-as alias set up in Gmail. */
+export interface GmailSendAs {
+  email: string;
+  displayName: string | null;
+  /** The alias's Gmail signature, as Gmail keeps it (HTML); empty when none. */
+  signatureHtml: string;
+  isDefault: boolean;
+}
+
+/** A whole RFC 2822 message, and the thread it belongs in. */
+export interface GmailRawMessage {
+  raw: Buffer;
+  threadId: string | null;
+}
+
+export interface GmailSentRef {
+  messageId: string;
+  threadId: string;
+}
+
+export interface GmailDraftRef extends GmailSentRef {
+  draftId: string;
+}
+
+export interface GmailDraftRead {
+  id: string;
+  message: GmailMessage;
 }
 
 export interface GmailThread {
@@ -138,6 +171,22 @@ export interface GmailProviderPort {
     messageId: string,
     attachment: Pick<GmailAttachmentInfo, 'attachmentId' | 'partId'>,
   ): Promise<GmailAttachmentContent>;
+  /** The addresses the account sends from, the default first. */
+  listSendAs(grant: GmailCallGrant): Promise<GmailSendAs[]>;
+  /** One message in full, for an answer or a forward to be built from. */
+  readMessage(grant: GmailCallGrant, messageId: string): Promise<GmailMessage>;
+  readDraft(grant: GmailCallGrant, draftId: string): Promise<GmailDraftRead>;
+  createDraft(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailDraftRef>;
+  /** Replaces a draft's message; Gmail gives the draft a new message id. */
+  updateDraft(
+    grant: GmailCallGrant,
+    draftId: string,
+    message: GmailRawMessage,
+  ): Promise<GmailDraftRef>;
+  deleteDraft(grant: GmailCallGrant, draftId: string): Promise<void>;
+  /** Sends a draft as it stands in Gmail. */
+  sendDraft(grant: GmailCallGrant, draftId: string): Promise<GmailSentRef>;
+  sendMessage(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailSentRef>;
   /** Best effort: a grant Google already dropped is not an error. */
   revoke(grant: GmailCallGrant): Promise<void>;
 }

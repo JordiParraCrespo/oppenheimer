@@ -284,8 +284,10 @@ message's id and a summary; the bot reads it with the tools above.
    Mail, and `list_gmail_accounts`, `search_mail`, `read_mail_thread`,
    `list_mail_labels`, `list_mail_drafts`, `read_mail_attachment`). The connection, several accounts, the read
    tools and attachments (§3.1, §3.2), the Settings page.
-2. **Drafts and sending.** §3.3 and §3.4 with the cards, aliases,
-   signatures, attachments, threading and the limits.
+2. **Drafts and sending** (built 2026-10-29: `create_draft`,
+   `update_draft`, `delete_draft`, `send_mail`, `send_draft`,
+   `list_sent_mail`, and the send card's message). §3.3 and §3.4 with the
+   cards, aliases, signatures, attachments, threading and the limits.
 3. **Organizing** (§3.5).
 4. **Scheduled sends** and **waking on new mail** (§3.4, §5).
 
@@ -324,3 +326,13 @@ as a channel (`channels.md` §7.3).
   Settings → Mail (not Integrations → Gmail), and an image attachment is
   shown to the person rather than given to the model, which tool answers
   cannot carry yet.
+- 2026-10-29: slice 2 built. What differs from §3.3–3.4: attachments come
+  from mail only (the thread forwarded, or any message by its part), not
+  yet from the bot's chat, its documents or files made in a turn; a draft
+  is answered in the chat as text with its Gmail link, not drawn as a card;
+  a recipient taken from the message answered is marked "taken from the
+  message it answers" on the card, without naming the mail's date; and
+  `list_sent_mail` answers "what did my bots send" from the record of
+  sends, which keeps no body (Gmail's Sent has it). A send that was started
+  and never confirmed is never sent again on its own (`MAIL_015`); a draft
+  edited after its card is not sent (`MAIL_014`).

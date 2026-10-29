@@ -193,7 +193,23 @@
       "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
       "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
       "cancel": "Cancelar",
-      "failed": "No se pudo responder a la solicitud."
+      "failed": "No se pudo responder a la solicitud.",
+      "mail": {
+        "label": "El mensaje, tal y como sale",
+        "from": "De",
+        "to": "Para",
+        "cc": "Cc",
+        "bcc": "Cco",
+        "subject": "Asunto",
+        "answers": "En respuesta a {{from}}",
+        "forwards": "Reenviando el mensaje de {{from}}",
+        "fromMail": "Tomado del mensaje al que responde",
+        "files_one": "{{count}} archivo",
+        "files_other": "{{count}} archivos",
+        "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
+        "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
+        "nobody": "Nadie"
+      }
     },
     "event": {
       "approved": "Aprobaste: {{summary}}",

@@ -8,6 +8,7 @@ import {
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MailSendPreview } from '@/features/bots/components/mail-send-preview';
 import { ApprovalNoteForm } from '@/features/bots/forms/approval-note-form';
 
 /**
@@ -44,6 +45,7 @@ export function BotApprovalCard({ botId, name }: { botId: string; name: string }
           <span className="font-mono text-xs text-fg-subtle">{approval.tool}</span>
         </div>
         <p className="m-0 text-sm whitespace-pre-wrap break-words text-fg">{approval.summary}</p>
+        {approval.mail ? <MailSendPreview mail={approval.mail} /> : null}
         <p className="m-0 text-xs text-fg-muted">{t('bots.chat.approval.detail', { name })}</p>
         <ErrorAlert
           error={decide.error}
