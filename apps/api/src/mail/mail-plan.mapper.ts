@@ -1,4 +1,4 @@
-import type { MailPlan, MailPlanAttachment } from '@oppenheimer/shared';
+import { MAIL_PLAN_BODY_MAX, type MailPlan, type MailPlanAttachment } from '@oppenheimer/shared';
 import type { GmailConnectionEntity } from './domain/gmail-connection.entity';
 import { addressesOf, formatAddress, type MailAddress } from './domain/mail-address.policy';
 import { forwardSubject, referencesFor, replySubject } from './domain/mail-reply.policy';
@@ -6,6 +6,9 @@ import type { MailRequest } from './domain/mail-send.policy';
 import type { OutgoingMail } from './infrastructure/gmail-mime.util';
 import type { GmailDraftRead, GmailMessage } from './infrastructure/gmail-provider.port';
 import { composeBody } from './infrastructure/mail-body.util';
+
+/** Where a draft too long for its card is cut. */
+const DRAFT_CUT_NOTE = '\n\n[…the rest of the draft is not shown here; it is sent whole]';
 
 /** What a plan is made of once the account, the answered message and the recipients are resolved. */
 export interface PlanParts {
@@ -72,7 +75,11 @@ export class MailPlanMapper {
       bcc: addressesOf(message.bcc).map(formatAddress),
       recipientsFromMail: false,
       subject: message.subject,
-      body: message.body,
+      // The card shows the draft; Gmail sends the draft it has, whole.
+      body:
+        message.body.length > MAIL_PLAN_BODY_MAX
+          ? `${message.body.slice(0, MAIL_PLAN_BODY_MAX - DRAFT_CUT_NOTE.length)}${DRAFT_CUT_NOTE}`
+          : message.body,
       signature: false,
       original: null,
       threadId: message.threadId || null,

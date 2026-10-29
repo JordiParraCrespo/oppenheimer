@@ -82,7 +82,12 @@ const sourcedAttachmentSchema = z.discriminatedUnion('source', [
   z.object({ source: z.literal('chat'), attachmentId: z.string().uuid(), ...fileFacts }),
 ]);
 
-/** A file as a plan carries it; one stored before files had a `source` was always a file of a message. */
+/**
+ * A file as a plan carries it. A plan stored before files had a `source`
+ * (before 2026-10-29, `#540`) named only files of a message, so one without
+ * it reads as `mail`; the shim can go once no approval card from before then
+ * is still waiting.
+ */
 export const mailPlanAttachmentSchema = z.preprocess(
   (value) =>
     value && typeof value === 'object' && !('source' in value)
@@ -99,6 +104,9 @@ export function mailAttachmentKey(file: MailPlanAttachment): string {
     ? `mail:${file.messageId}:${file.partId}`
     : `chat:${file.attachmentId}`;
 }
+
+/** The longest body a plan holds; a draft's longer body is cut for its card and sent whole. */
+export const MAIL_PLAN_BODY_MAX = 100_000;
 
 /**
  * A message as it will go, every default resolved: the alias it goes from,
@@ -118,7 +126,7 @@ export const mailPlanSchema = z.object({
   recipientsFromMail: z.boolean(),
   subject: z.string().max(998),
   /** What the bot wrote, in light markdown; the quoted original and the signature are added when sent. */
-  body: z.string().max(100_000),
+  body: z.string().max(MAIL_PLAN_BODY_MAX),
   /** The alias's Gmail signature goes below the body. */
   signature: z.boolean(),
   /** The message answered or forwarded, as the card names it. */

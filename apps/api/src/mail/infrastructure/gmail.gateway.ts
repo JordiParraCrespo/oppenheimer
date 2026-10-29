@@ -249,6 +249,7 @@ export class GmailGateway implements GmailProviderPort {
 
   async readMessage(grant: GmailCallGrant, messageId: string): Promise<GmailMessage> {
     const session = await this.session(grant);
+    // Whole on purpose: a forward quotes all of it. Only the model's reads are cut.
     return messageOf(
       await session.get(`messages/${encodeURIComponent(messageId)}`, { format: 'full' }),
       Number.POSITIVE_INFINITY,
@@ -258,6 +259,7 @@ export class GmailGateway implements GmailProviderPort {
   async readDraft(grant: GmailCallGrant, draftId: string): Promise<GmailDraftRead> {
     const session = await this.session(grant);
     const draft = await session.get(`drafts/${encodeURIComponent(draftId)}`, { format: 'full' });
+    // Whole on purpose, as `readMessage`: the plan cuts it for the card.
     return {
       id: typeof draft.id === 'string' ? draft.id : draftId,
       message: messageOf(draft.message, Number.POSITIVE_INFINITY),
