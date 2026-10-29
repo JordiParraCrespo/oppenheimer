@@ -11,6 +11,10 @@ import { z } from 'zod';
 export const PULL_REQUEST_SCOPES = ['mine', 'requested', 'watching'] as const;
 export type PullRequestScope = (typeof PULL_REQUEST_SCOPES)[number];
 
+/** The queues a reader can ask for: every open pull request, or one scope of them. */
+export const PULL_REQUEST_QUEUES = ['all', ...PULL_REQUEST_SCOPES] as const;
+export type PullRequestQueueName = (typeof PULL_REQUEST_QUEUES)[number];
+
 /** How much reading a change needs, decided by the lane policy. */
 export const PULL_REQUEST_LANES = ['deep', 'medium', 'quick'] as const;
 export type PullRequestLane = (typeof PULL_REQUEST_LANES)[number];
@@ -36,9 +40,9 @@ export type PullRequestAnalyticsRange = (typeof PULL_REQUEST_ANALYTICS_RANGES)[n
 
 export const REVIEW_COMMENT_MAX = 65_000;
 
-/** `GET /pulls`. */
+/** `GET /pulls`. Absent, the scope is `all`, the queue the console opens on. */
 export const pullRequestsQuerySchema = z.object({
-  scope: z.enum(PULL_REQUEST_SCOPES).default('mine'),
+  scope: z.enum(PULL_REQUEST_QUEUES).default('all'),
 });
 export type PullRequestsQueryDto = z.infer<typeof pullRequestsQuerySchema>;
 

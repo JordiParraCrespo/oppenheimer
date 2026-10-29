@@ -1,3 +1,4 @@
+import type { StartCloudSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCloudAgentStatus,
   useCreateSession,
@@ -14,9 +15,11 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useRef, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { CloudLaunchAlert } from '../components/cloud-launch-alert';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { cloudLaunchFailure } from '../lib/cloud-launch-failure';
 import { dictationVocabulary } from '../lib/dictation-vocabulary';
 import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
@@ -51,10 +54,8 @@ export function NewSessionSend({
   // Whether the reader holds a key for the vendor picked: without one, send
   // stays off, and the place chip's Cloud row says to connect it.
   const { data: cloudConnected } = useCloudAgentStatus();
-  const connected =
-    cloudConnected?.providers.some(
-      (provider) => provider.id === cloudProvider && provider.connected,
-    ) ?? false;
+  const vendor = cloudConnected?.providers.find((provider) => provider.id === cloudProvider);
+  const connected = vendor?.connected ?? false;
   // What `start` posts, not what the picker holds, so the gate and the body agree.
   const placed = useWatch({
     control,
@@ -100,24 +101,20 @@ export function NewSessionSend({
     },
   });
   const startCloud = useStartCloudSession();
+  const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
   // a file is never dropped without a word.
   const [filesRefused, setFilesRefused] = useState(false);
 
   /**
-   * A cloud session opens at its vendor, in a tab of its own, as
-   * `SessionsConsole.dc.html` draws it. The tab is opened in the press itself,
-   * so no browser blocks it, and pointed at the vendor's page once the session
-   * exists; the console goes to the session, as for any start.
+   * Launches `input` at its vendor. It is kept as the last launch, so Try
+   * again sends this very request — its task, its repository and its key —
+   * whatever the chips hold by then.
    */
-  function sendToCloud(prompt: string, files: File[]) {
-    const draft = getValues();
-    const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input = toStartCloudInput({ ...draft, projectId }, prompt);
-    setFilesRefused(files.length > 0);
-    if (!input || files.length > 0) return;
+  function launchInCloud(input: StartCloudSessionInput) {
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
+    lastCloudLaunch.current = input;
     const tab = window.open('', '_blank');
     startCloud.reset();
     startCloud.mutate(
@@ -136,6 +133,21 @@ export function NewSessionSend({
         onError: () => tab?.close(),
       },
     );
+  }
+
+  /**
+   * A cloud session opens at its vendor, in a tab of its own, as
+   * `SessionsConsole.dc.html` draws it. The tab is opened in the press itself,
+   * so no browser blocks it, and pointed at the vendor's page once the session
+   * exists; the console goes to the session, as for any start.
+   */
+  function sendToCloud(prompt: string, files: File[]) {
+    const draft = getValues();
+    const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
+    const input = toStartCloudInput({ ...draft, projectId }, prompt);
+    setFilesRefused(files.length > 0);
+    if (!input || files.length > 0) return;
+    launchInCloud(input);
   }
 
   /**
@@ -178,6 +190,13 @@ export function NewSessionSend({
     () => start('', []),
   );
 
+  const failure = lastFailure([upload, create, startCloud]);
+  // The launch at a vendor says what fixes it; any other failure keeps the generic alert.
+  const cloudFailure =
+    failure.error && failure.error === startCloud.error
+      ? cloudLaunchFailure(startCloud.error)
+      : null;
+
   return (
     <div className="flex flex-col gap-4.5">
       <NewSessionComposer
@@ -195,10 +214,18 @@ export function NewSessionSend({
         message={atVendor && filesRefused ? t('sessions.new.cloudNoFiles') : null}
         onDismiss={() => setFilesRefused(false)}
       />
-      <ErrorAlert
-        error={lastFailure([upload, create, startCloud]).error}
-        fallback={t('sessions.new.failed')}
-      />
+      {cloudFailure ? (
+        <CloudLaunchAlert
+          failure={cloudFailure}
+          vendor={vendor?.label ?? t('sessions.new.cloudFailure.vendor')}
+          // In a tab of its own: leaving New session would drop the task typed here.
+          onConnect={() => window.open('/settings/cloud-agents', '_blank', 'noopener')}
+          onRetry={() => lastCloudLaunch.current && launchInCloud(lastCloudLaunch.current)}
+          onDismiss={() => startCloud.reset()}
+        />
+      ) : (
+        <ErrorAlert error={failure.error} fallback={t('sessions.new.failed')} />
+      )}
     </div>
   );
 }

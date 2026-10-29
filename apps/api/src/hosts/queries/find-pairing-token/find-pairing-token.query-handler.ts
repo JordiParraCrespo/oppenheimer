@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { type HostOverview, HostUsageRegistry } from '../../application/host-usage.registry';
+import { type HostRead, HostReadResolver } from '../../application/host-read.resolver';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
 import type { HostPairingTokenEntity } from '../../domain/host-pairing-token.entity';
@@ -12,7 +12,7 @@ import { FindPairingTokenQuery } from './find-pairing-token.query';
 export interface PairingTokenStatus {
   token: HostPairingTokenEntity;
   /** The host the token paired, once a runner has spent it. */
-  host: HostOverview | null;
+  host: HostRead | null;
 }
 
 /**
@@ -35,7 +35,7 @@ export class FindPairingTokenQueryHandler
     private readonly tokens: HostPairingTokenRepositoryPort,
     @Inject(HOST_REPOSITORY)
     private readonly hosts: HostRepositoryPort,
-    private readonly usage: HostUsageRegistry,
+    private readonly reads: HostReadResolver,
   ) {}
 
   async execute(query: FindPairingTokenQuery): Promise<PairingTokenStatus> {
@@ -50,7 +50,7 @@ export class FindPairingTokenQueryHandler
 
     const paired = await this.hosts.findOneByIdWithPresence(query.scope, token.redeemedHostId);
     if (paired.isNone()) return { token, host: null };
-    const [host] = await this.usage.overview([paired.unwrap()]);
+    const [host] = await this.reads.read([paired.unwrap()]);
     return { token, host };
   }
 }

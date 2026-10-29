@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
@@ -7,7 +8,8 @@ import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-
 /**
  * How a turn's engine events become the chat's messages: finished text is a
  * message, a run of tool calls between two of them is one activity line whose
- * steps fill in, text as it streams is only passed on, and the outcome is the
+ * steps fill in, the images a call showed are a message of the bot's after
+ * its line, text as it streams is only passed on, and the outcome is the
  * engine's `done` with the usage summed.
  */
 const turn = () =>
@@ -163,6 +165,38 @@ describe('TurnTranscript', () => {
     ]);
     expect(inserted(writes).map((message) => message.content)).toEqual(['Half an ans']);
     expect(transcript.result).toMatchObject({ reason: 'failed', error: 'model overloaded' });
+  });
+
+  it('puts the images a show_image call stored after its line, as the bot’s, and opens a new line for the next call', () => {
+    const image = { id: randomUUID(), mimeType: 'image/png', sizeBytes: 68, name: 'Revenue' };
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'show_image', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'show_image',
+        output: 'Shown',
+        isError: false,
+        data: { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify([image, { id: 7 }]) },
+      },
+      { type: 'tool.started', callId: 'b', name: 'web_fetch', input: {} },
+      { type: 'tool.started', callId: 'c', name: 'show_image', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'c',
+        name: 'show_image',
+        output: 'Refused',
+        isError: true,
+        data: { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify([image]) },
+      },
+    ]);
+    expect(
+      inserted(writes).map((message) => [message.role, message.position, message.attachments]),
+    ).toEqual([
+      ['activity', 1, []],
+      ['assistant', 2, [image]],
+      ['activity', 3, []],
+    ]);
   });
 
   it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {

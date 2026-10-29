@@ -2,6 +2,7 @@ import type {
   MergeMethod,
   PullRequestAnalyticsRange,
   PullRequestLane,
+  PullRequestQueueName,
   PullRequestScope,
   ReviewVerdict,
 } from '@oppenheimer/shared/schemas/pull-request';
@@ -10,14 +11,27 @@ export type {
   MergeMethod,
   PullRequestAnalyticsRange,
   PullRequestLane,
+  PullRequestQueueName,
   PullRequestScope,
   ReviewVerdict,
 };
 
 /**
+ * The source of a repository read through the person's own GitHub tokens: the
+ * API answers its installation as null and takes this segment in its place
+ * (`product/next-steps/0.2-pull-requests.md` §6.2).
+ */
+const TOKENS_SOURCE = 'tokens';
+
+/** The installation a row names, or {@link TOKENS_SOURCE} for one read through a token. */
+export function sourceOf(installationId: string | null): string {
+  return installationId ?? TOKENS_SOURCE;
+}
+
+/**
  * A pull request is GitHub's: the console names one by the installation that
- * reaches it, the repository and its number, and keeps nothing of it
- * (`product/next-steps/0.2-pull-requests-api-plan.md`).
+ * reaches it (or {@link TOKENS_SOURCE}), the repository and its number, and
+ * keeps nothing of it (`product/next-steps/0.2-pull-requests-api-plan.md`).
  */
 export interface PullRequestAddress {
   installationId: string;
@@ -122,8 +136,9 @@ export interface PullRequestQueue {
   unreadable: UnreadableRepository[];
   /** Some rows still have parts nobody has read; the next read fills more (#247). */
   filling: boolean;
-  scopes: Record<PullRequestScope, number>;
-  /** Within the scope asked for. */
+  /** Every open pull request (`all`) and each scope's share of them. */
+  scopes: Record<PullRequestQueueName, number>;
+  /** Within the queue asked for. */
   lanes: Record<PullRequestLane, number>;
   readyToMerge: number;
   withConflicts: number;

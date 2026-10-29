@@ -13,6 +13,7 @@ export {
   type ChatTodoStatus,
   type ChatToolCall,
   type ChatToolKind,
+  type ChatTranscriptImage,
   type ChatTurn,
   SessionChat,
 } from './chat/session-chat';

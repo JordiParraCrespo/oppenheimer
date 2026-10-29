@@ -1,4 +1,5 @@
 import { BotList, SidebarEmptyRow, useNow } from '@oppenheimer/design-system-web';
+import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSectionBots } from '@oppenheimer/frontend-consumer/react';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -8,10 +9,20 @@ import { SectionBotRow } from './section-bot-row';
 
 /**
  * The bots placed in `section`, in the Employees order, with one minute
- * clock for their ages. Before the first, a line says how one gets here. A
- * refetch that fails keeps the rows and says so above them.
+ * clock for their ages. Before the first, a line says so and offers the
+ * heading's menu (`onAdd`), where a bot is made or placed here. A row's Hide
+ * is the heading's write (`onHide`), like the menu's checks. A refetch that
+ * fails keeps the rows and says so above them.
  */
-export function SectionBotsList({ section }: { section: BotSection }) {
+export function SectionBotsList({
+  section,
+  onAdd,
+  onHide,
+}: {
+  section: BotSection;
+  onAdd: () => void;
+  onHide: (bot: BotEntity) => void;
+}) {
   const { t } = useTranslation();
   const { data: bots, error } = useSuspenseSectionBots(section);
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
@@ -20,11 +31,22 @@ export function SectionBotsList({ section }: { section: BotSection }) {
     <>
       <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} className="mx-3 mb-2" />
       {bots.length === 0 ? (
-        <SidebarEmptyRow className="ml-3.5">{t('bots.section.empty')}</SidebarEmptyRow>
+        <SidebarEmptyRow className="ml-3.5">
+          {t('bots.section.empty')}{' '}
+          <button type="button" onClick={onAdd}>
+            {t('bots.section.add')}
+          </button>
+        </SidebarEmptyRow>
       ) : (
         <BotList className="mx-1.5">
           {bots.map((bot) => (
-            <SectionBotRow key={bot.id} bot={bot} section={section} now={now} />
+            <SectionBotRow
+              key={bot.id}
+              bot={bot}
+              section={section}
+              now={now}
+              onHide={() => onHide(bot)}
+            />
           ))}
         </BotList>
       )}

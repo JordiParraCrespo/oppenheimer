@@ -80,7 +80,25 @@
         "tree": "Tree",
         "raw": "Raw",
         "more": "Show {{count}} more"
+      },
+      "images": {
+        "open": "Open {{name}}",
+        "unavailable": "This image couldn't be loaded.",
+        "previous": "Previous image",
+        "next": "Next image",
+        "download": "Download",
+        "position": "{{position}} of {{total}}",
+        "pasted": "Pasted image"
       }
+    },
+    "search": {
+      "projects": "Search projects",
+      "milestones": "Search milestones",
+      "automations": "Search automations",
+      "repositories": "Search repositories",
+      "hosts": "Search hosts",
+      "groups": "Search groups",
+      "noMatch": "Nothing matches “{{query}}”."
     }
   },
   "validation": {
@@ -191,6 +209,12 @@
       "GITHUB_015": "GitHub asked us to slow down. Try again in a minute.",
       "GITHUB_016": "That issue was not found, or the number is a pull request.",
       "GITHUB_017": "GitHub would not let Oppenheimer read or write this repository's issues. An owner of the installation needs to accept the App's Issues permission on GitHub.",
+      "GITHUB_018": "GitHub did not accept this token. Check that it was copied whole, has not expired or been revoked, and, for an organisation, that an owner has approved it.",
+      "GITHUB_019": "That GitHub token was not found. It may have been removed.",
+      "GITHUB_020": "You already have a GitHub token with that label. Choose another label.",
+      "GITHUB_021": "GitHub tokens are not set up on this server: it has no key to keep them encrypted with.",
+      "GITHUB_022": "This repository is read through your own token, so reviewing, commenting and merging happen on GitHub.",
+      "GITHUB_023": "None of your GitHub tokens opens this repository. Add or replace a token in Settings.",
       "PROJECTS_001": "That project could not be found.",
       "PROJECTS_002": "Choose a workspace before working with projects.",
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
@@ -609,6 +633,13 @@
           "label": "Claude Code cloud",
           "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
+        "claudeCloud": {
+          "label": "Claude Code",
+          "from": "From {{host}}",
+          "noHost": "Needs a host",
+          "startFrom": "Start from",
+          "cannot": "This runner can’t start it"
+        },
         "hosts": "Hosts",
         "startIn": "Start in",
         "atVendor": "Cloud",
@@ -719,7 +750,19 @@
         "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
       "failed": "The session could not be created.",
-      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
+      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host.",
+      "cloudFailure": {
+        "vendor": "The provider",
+        "connect": "Connect {{vendor}} with your API key to start a cloud session there.",
+        "connectAction": "Connect {{vendor}}",
+        "reconnect": "{{vendor}} no longer accepts your API key. It may have been revoked, or it isn't a user API key. Reconnect it to start cloud sessions there again.",
+        "reconnectAction": "Reconnect {{vendor}}",
+        "unavailable": "{{vendor}} didn't answer. Your task is still here; try again in a moment.",
+        "limited": "{{vendor}} asked us to slow down. Wait a minute, then try again.",
+        "refused": "{{vendor}} wouldn't start this session.",
+        "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
+        "retry": "Try again"
+      }
     },
     "session": {
       "status": {
@@ -1246,7 +1289,6 @@
       "images": {
         "attach": "Add images",
         "remove": "Remove {{name}}",
-        "open": "Open {{name}}",
         "pasted": "Pasted image",
         "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
         "tooLarge": "{{name}} is larger than 5 MB.",
@@ -1255,8 +1297,7 @@
         "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
         "uploading": "Wait for the images to finish adding.",
         "failedHeld": "Remove the image that couldn't be added.",
-        "uploadFailed": "{{name}} couldn't be added.",
-        "unavailable": "This image couldn't be loaded."
+        "uploadFailed": "{{name}} couldn't be added."
       },
       "turn": {
         "queued": "Waiting",
@@ -1580,7 +1621,12 @@
     },
     "section": {
       "heading": "Bots",
-      "empty": "No bots here yet."
+      "empty": "No bots here yet.",
+      "add": "Add one",
+      "manage": "Bots in {{section}}",
+      "checkedHint": "Checked bots show in {{section}}.",
+      "manageAll": "Manage in {{employees}}",
+      "hide": "Hide from {{section}}"
     }
   },
   "automations": {
@@ -1916,14 +1962,16 @@
       "reviewNext": "Review next",
       "scopesLabel": "Whose pull requests",
       "scopes": {
+        "all": "All",
         "mine": "Mine",
         "requested": "Review requests",
         "watching": "Watching"
       },
       "scopeHint": {
+        "all": "Every open pull request you watch.",
         "mine": "Opened by you or your sessions. Check what holds each one and merge.",
         "requested": "Pull requests where someone asked for your review.",
-        "watching": "Open pull requests in repositories you watch, where nobody asked for your review."
+        "watching": "The rest, where nobody asked for your review."
       },
       "search": "Search title, repo, #number, author",
       "clearSearch": "Clear search",
@@ -2471,7 +2519,8 @@
       },
       "meta": {
         "cpus": "{{count}} vCPU",
-        "runner": "runner {{version}}"
+        "runner": "runner {{version}}",
+        "claude": "Claude: {{account}}"
       },
       "actions": "{{name}} actions",
       "rename": "Rename",

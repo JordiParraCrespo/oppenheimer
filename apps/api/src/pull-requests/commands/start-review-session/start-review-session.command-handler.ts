@@ -38,13 +38,15 @@ export class StartReviewSessionCommandHandler
 
   async execute(command: StartReviewSessionCommand): Promise<SessionCommandResult> {
     const { scope, userId, address } = command;
+    // A session clones through the App.
+    const app = this.access.requireApp(address);
     const { repository, pull } = await this.access.pullRequest(scope, address);
     if (pull.fromFork)
       throw new AppError(PullRequestsErrors.REVIEW_FROM_FORK, {
         detail: `${repository.fullName}#${pull.number} comes from a fork`,
       });
     const reviewed: ReviewedPullRequest = {
-      installationId: address.installationId,
+      installationId: app.installationId,
       githubRepoId: address.githubRepoId,
       repository: repository.fullName,
       number: pull.number,
@@ -59,7 +61,7 @@ export class StartReviewSessionCommandHandler
         userId,
         input: reviewSessionInput(reviewed, command.hostId),
         idempotencyKey: command.idempotencyKey
-          ? `review:${address.installationId}:${address.githubRepoId}:${address.number}:${command.idempotencyKey}`
+          ? `review:${app.installationId}:${address.githubRepoId}:${address.number}:${command.idempotencyKey}`
           : null,
         origin: 'review',
       }),

@@ -20,9 +20,12 @@ bots placed in it**.
   `sessions`, `automations`, `plan`, `pulls` (`BOT_SECTIONS` in
   `@oppenheimer/shared`). Empty by default, so every bot shows in Employees
   only until it is placed.
-- **Three ways to place one.** The plus on a section's Bots heading makes a
-  blank bot already placed there and opens its chat, where it sets itself
-  up (25 §1). Settings → Profile's **Shows in** is a pill per section that
+- **Three ways to place one.** The plus on a section's Bots heading opens
+  a menu (slice D): New bot makes a blank bot already placed there and
+  opens its chat, where it sets itself up (25 §1); under it every bot is
+  listed with a check for whether this section shows it, which flips the
+  moment it is clicked; the foot links to Employees. Until 2026-10-28 the
+  plus only made a new bot. Settings → Profile's **Shows in** is a pill per section that
   saves when it flips. The bot itself, through `update_profile`, which now
   takes `sections`, so its first chat can put it where its job is.
 - **Where a row opens.** Inside the section it was clicked in, beside the
@@ -67,6 +70,16 @@ says what the bot is *for*, which permissions do not.
   "Started by" or "via" the bot in its section (the session row's bot glyph
   in `SessionsConsole.dc.html`). Sessions record `origin: 'bot'` today, not
   which bot.
+- **D. Each page manages its own Bots heading**, built 2026-10-28. The
+  owner, trying slice A: a page could make a bot but not show one already
+  made, and hiding one meant leaving for its settings. The plus is now a
+  menu (New bot, Show in *section* with a check per bot, Manage in
+  Employees); a row's ellipsis has Settings and Hide from *section*, which
+  takes it off this sidebar only; the empty line reads "No bots here yet.
+  Add one" and opens the same menu. Grouping, order and delete stay in
+  Employees, so a page chooses which bots it lists and nothing else: no
+  per-page order, no per-page groups. No API change: each write is the
+  `sections` set `PATCH /v1/bots/:id` already takes.
 
 ## Not in this note
 
@@ -88,3 +101,7 @@ says what the bot is *for*, which permissions do not.
   replaces the line above: Sessions, Automations and Plan open the chat
   under their own address and sidebar, as Pull requests does, where their
   frames link Employees.
+- 2026-10-28: **a section's plus is a menu that places any bot, and a row
+  hides itself from its section** (slice D). The owner wanted to manage
+  each page's bots from that page. It replaces "the plus makes a blank bot"
+  in §1; Employees keeps groups, order and delete.

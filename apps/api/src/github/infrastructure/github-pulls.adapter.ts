@@ -389,6 +389,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       {
         bucket: credential.bucket,
         token: credential.token,
+        onUnauthorized: credential.onUnauthorized,
         onStatus: { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
         unauthorized: GithubErrors.USER_NOT_CONNECTED,
       },
@@ -410,6 +411,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
     return this.http.request<T>(url, {
       bucket: options.credential.bucket,
       token: options.credential.token,
+      onUnauthorized: options.credential.onUnauthorized,
       method: options.method,
       body: options.body,
       onStatus: options.onStatus,

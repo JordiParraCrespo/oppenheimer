@@ -10,7 +10,11 @@ import type {
 } from '../infrastructure/github-issues.port';
 import { GithubAccessResolver } from './github-access.resolver';
 import type { IssueAccessPort, IssueAddress } from './issue-access.port';
-import type { RepositoryAddress, WorkspaceRepository } from './pull-request-access.port';
+import type {
+  InstallationAddress,
+  RepositoryAddress,
+  WorkspaceRepository,
+} from './pull-request-access.port';
 
 /**
  * Issues, read live through the installation and written with the caller's
@@ -33,7 +37,7 @@ export class IssueAccessResolver implements IssueAccessPort {
     limit: number,
   ): Promise<{ repository: WorkspaceRepository; issues: GithubIssue[] }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     const issues = await this.github.listIssues(credential, repository.fullName, filter, limit);
     return { repository, issues };
   }
@@ -43,36 +47,36 @@ export class IssueAccessResolver implements IssueAccessPort {
     address: IssueAddress,
   ): Promise<{ repository: WorkspaceRepository; issue: GithubIssue }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     const issue = await this.github.readIssue(credential, repository.fullName, address.number);
     return { repository, issue };
   }
 
   async issueComments(scope: AccessScope, address: IssueAddress): Promise<GithubIssueComment[]> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     return this.github.listIssueComments(credential, repository.fullName, address.number);
   }
 
   async createIssue(
     scope: AccessScope,
     userId: string,
-    address: RepositoryAddress,
+    address: InstallationAddress,
     issue: GithubIssueInput,
   ): Promise<GithubIssue> {
     const repository = await this.access.repositoryOf(scope, address);
-    const writer = await this.access.writeCredential(userId);
+    const writer = await this.access.writeCredential(userId, address);
     return this.github.createIssue(writer, repository.fullName, issue);
   }
 
   async addComment(
     scope: AccessScope,
     userId: string,
-    address: IssueAddress,
+    address: InstallationAddress & { number: number },
     body: string,
   ): Promise<{ htmlUrl: string }> {
     const repository = await this.access.repositoryOf(scope, address);
-    const writer = await this.access.writeCredential(userId);
+    const writer = await this.access.writeCredential(userId, address);
     return this.github.createIssueComment(writer, repository.fullName, address.number, body);
   }
 }

@@ -5,6 +5,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
 import { planClosedReads } from '../domain/closed-read.policy';
 import { GithubErrors } from '../domain/github.errors';
+import { isInstallationAddress } from '../domain/repository-address.policy';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
@@ -24,6 +25,8 @@ import { GithubAccessResolver } from './github-access.resolver';
 import { GithubUserGrantResolver } from './github-user-grant.resolver';
 import {
   type ClosedPullRequestSnapshot,
+  type InstallationAddress,
+  type InstallationPullRequestAddress,
   type Part,
   type PullRequestAccessPort,
   type PullRequestAddress,
@@ -31,6 +34,7 @@ import {
   type PullRequestSnapshot,
   type ReadBudget,
   type ReadGap,
+  type RepositoryAddress,
   type RepositoryPulls,
   type ReviewSubmission,
   type WorkspaceRepository,
@@ -89,7 +93,28 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     private readonly access: GithubAccessResolver,
   ) {}
 
+  /**
+   * Every repository the workspace's usable installations cover, then the ones
+   * only the caller's own tokens open (§6.2): the App reads a repository it
+   * covers, so a token's copy of it is left out.
+   */
   async repositories(scope: AccessScope): Promise<WorkspaceRepository[]> {
+    const [installed, tokens] = await Promise.all([
+      this.installedRepositories(scope),
+      this.access.tokenRepositories(scope),
+    ]);
+    const covered = new Set(installed.map((repository) => repository.githubRepoId));
+    return [...installed, ...tokens.filter((repository) => !covered.has(repository.githubRepoId))];
+  }
+
+  requireApp<T extends RepositoryAddress>(address: T): Extract<T, InstallationAddress> {
+    if (isInstallationAddress(address)) return address;
+    throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
+      detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
+    });
+  }
+
+  private async installedRepositories(scope: AccessScope): Promise<WorkspaceRepository[]> {
     const installations = (await this.installations.findAll(scope)).filter((i) => i.isUsable);
     const lists = await Promise.all(
       installations.map(async (installation) => {
@@ -101,6 +126,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
         return repositories
           .filter((repository) => !repository.archived)
           .map((repository) => ({
+            kind: 'installation' as const,
             installationId: installation.id,
             githubRepoId: repository.githubRepoId,
             name: repository.name,
@@ -129,12 +155,12 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     const granted = await this.userGrants.loginOf(scope.userId);
     if (granted) return granted;
     const installations = await this.installations.findAll(scope);
-    return (
-      installations.find(
-        (installation) =>
-          installation.accountType === 'User' && installation.installedByUserId === scope.userId,
-      )?.accountLogin ?? null
-    );
+    const personal = installations.find(
+      (installation) =>
+        installation.accountType === 'User' && installation.installedByUserId === scope.userId,
+    )?.accountLogin;
+    // A token says whose it is just as surely: GitHub answered `GET /user` with it.
+    return personal ?? (await this.access.tokenLogin(scope));
   }
 
   /**
@@ -172,7 +198,13 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     await Promise.all(
       read.whole.map((snapshot) =>
         this.cache.set(
-          snapshotKey(repository, snapshot.pull.number, snapshot.pull.updatedAt, true),
+          snapshotKey(
+            read.credential,
+            repository,
+            snapshot.pull.number,
+            snapshot.pull.updatedAt,
+            true,
+          ),
           snapshot,
           ttlFor(
             [snapshot.files.refusal, snapshot.checks.refusal, snapshot.reviews.refusal],
@@ -185,7 +217,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
       repository,
       read.unfilled,
       budget,
-      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, true),
+      (pull) => snapshotKey(read.credential, repository, pull.number, pull.updatedAt, true),
       (entry) =>
         this.fill(
           read.credential,
@@ -226,13 +258,13 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   > {
     let credential: GithubCredential;
     try {
-      credential = await this.access.readCredential(scope, repository.installationId);
+      credential = await this.access.readCredential(scope, repository);
     } catch (error) {
       return { ok: false, refusal: refusalOf(error) };
     }
     try {
       const read = await this.cache.getOrSet(
-        `github:pulls:open-graph:${repository.installationId}:${repository.githubRepoId}`,
+        `github:pulls:open-graph:${cacheScopeOf(credential)}:${repository.githubRepoId}`,
         OPEN_TTL_SECONDS,
         () => this.pulls.listOpenPullRequests(credential, repository.fullName),
       );
@@ -334,9 +366,9 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     | { ok: false; refusal: GithubRefusal }
   > {
     try {
-      const credential = await this.access.readCredential(scope, repository.installationId);
+      const credential = await this.access.readCredential(scope, repository);
       const pulls = await this.cache.getOrSet(
-        `github:pulls:${state}:${repository.installationId}:${repository.githubRepoId}`,
+        `github:pulls:${state}:${cacheScopeOf(credential)}:${repository.githubRepoId}`,
         ttlSeconds,
         () => this.pulls.listPullRequests(credential, repository.fullName, state, 1),
       );
@@ -348,10 +380,10 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
 
   async pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     // Read live once to learn `updated_at`, so the snapshot key changes the moment GitHub's answer does.
     const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
-    const key = snapshotKey(repository, pull.number, pull.updatedAt, true);
+    const key = snapshotKey(credential, repository, pull.number, pull.updatedAt, true);
     // One pull request on its own screen draws on no budget: it is the whole
     // of what the reader asked for.
     return (
@@ -362,7 +394,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
 
   async files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     return this.pulls.listFiles(credential, repository.fullName, address.number);
   }
 
@@ -371,34 +403,34 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     address: PullRequestAddress,
   ): Promise<GithubReviewComment[]> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     return this.pulls.listReviewComments(credential, repository.fullName, address.number);
   }
 
   async activity(scope: AccessScope, address: PullRequestAddress): Promise<GithubTimelineItem[]> {
     const repository = await this.access.repositoryOf(scope, address);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const credential = await this.access.readCredential(scope, address);
     return this.pulls.listTimeline(credential, repository.fullName, address.number);
   }
 
   async submitReview(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     review: ReviewSubmission,
   ): Promise<void> {
-    const { repository, writer, head } = await this.forWrite(scope, userId, address);
+    const { repository, writer, reader, head } = await this.forWrite(scope, userId, address);
     await this.pulls.createReview(writer, repository.fullName, address.number, {
       ...review,
       commitId: head,
     });
-    await this.forget(repository);
+    await this.forget(reader, repository);
   }
 
   async addComment(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void> {
     const { repository, writer, head } = await this.forWrite(scope, userId, address);
@@ -411,43 +443,54 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   async merge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
     expectedHead?: string,
   ): Promise<void> {
-    const { repository, writer, head } = await this.forWrite(scope, userId, address);
+    const { repository, writer, reader, head } = await this.forWrite(scope, userId, address);
     if (expectedHead && expectedHead !== head) {
       throw new AppError(GithubErrors.MERGE_REFUSED, {
         detail: `New commits were pushed to ${repository.fullName}#${address.number} since it was read (${expectedHead.slice(0, 7)} is now ${head.slice(0, 7)}); nothing was merged.`,
       });
     }
     await this.pulls.merge(writer, repository.fullName, address.number, method, head);
-    await this.forget(repository);
+    await this.forget(reader, repository);
   }
 
   async enableAutoMerge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
   ): Promise<boolean> {
-    const { repository, writer, head, nodeId } = await this.forWrite(scope, userId, address);
+    const { repository, writer, reader, head, nodeId } = await this.forWrite(
+      scope,
+      userId,
+      address,
+    );
     const enabled = await this.pulls.enableAutoMerge(writer, nodeId, method, head);
-    await this.forget(repository);
+    await this.forget(reader, repository);
     return enabled;
   }
 
   /** The repository, the caller's own token and the head commit a write lands on. */
-  private async forWrite(scope: AccessScope, userId: string, address: PullRequestAddress) {
+  private async forWrite(
+    scope: AccessScope,
+    userId: string,
+    address: InstallationPullRequestAddress,
+  ) {
     const repository = await this.access.repositoryOf(scope, address);
-    const writer = await this.access.writeCredential(userId);
-    const credential = await this.access.readCredential(scope, address.installationId);
+    const writer = await this.access.writeCredential(userId, address);
+    const credential = await this.access.readCredential(scope, address);
     const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
-    return { repository, writer, head: pull.headSha, nodeId: pull.nodeId };
+    return { repository, writer, reader: credential, head: pull.headSha, nodeId: pull.nodeId };
   }
 
-  private async forget(repository: WorkspaceRepository): Promise<void> {
-    const at = `${repository.installationId}:${repository.githubRepoId}`;
+  private async forget(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+  ): Promise<void> {
+    const at = `${cacheScopeOf(credential)}:${repository.githubRepoId}`;
     await Promise.all([
       this.cache.del(`github:pulls:open-graph:${at}`),
       this.cache.del(`github:pulls:open:${at}`),
@@ -472,7 +515,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
       repository,
       pulls,
       budget,
-      (pull) => snapshotKey(repository, pull.number, pull.updatedAt, false),
+      (pull) => snapshotKey(credential, repository, pull.number, pull.updatedAt, false),
       (entry) => this.fillClosed(credential, repository, entry.pull.number, entry.key, ttlSeconds),
     );
   }
@@ -652,18 +695,30 @@ function partGaps(snapshot: PullRequestRead & { checks?: Part<GithubChecks> }): 
 }
 
 /**
- * A snapshot's cache key. `withChecks` is part of it because a read that left
+ * Whose answers a read may share: the installation, or the one token of a
+ * person's that made it (§6.2). Never another's: two tokens of one GitHub
+ * account share a budget, not what they can see.
+ */
+function cacheScopeOf(credential: GithubCredential): string {
+  return credential.cacheScope ?? credential.bucket;
+}
+
+/**
+ * A snapshot's cache key, under the credential's cache scope: what GitHub
+ * answers one installation, or one token (§6.2), is never served to a read
+ * made with another. `withChecks` is part of it because a read that left
  * the checks out must not be found by one that needs them: storing both under
  * one key meant opening a closed pull request within the six-hour window
  * reported its checks as unavailable.
  */
 function snapshotKey(
+  credential: GithubCredential,
   repository: WorkspaceRepository,
   number: number,
   updatedAt: string,
   withChecks: boolean,
 ): string {
-  const parts = `${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
+  const parts = `${cacheScopeOf(credential)}:${repository.githubRepoId}:${number}:${updatedAt}`;
   return withChecks ? `github:pulls:snapshot:${parts}` : `github:pulls:snapshot:nochecks:${parts}`;
 }
 

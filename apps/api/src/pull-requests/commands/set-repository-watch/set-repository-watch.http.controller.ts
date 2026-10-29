@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Put,
   UseGuards,
   UseInterceptors,
@@ -21,7 +20,13 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySourceParam,
+} from '../../decorators/repository-source.decorator';
 import { SetRepositoryWatchCommand } from './set-repository-watch.command';
 import { SetRepositoryWatchRequest } from './set-repository-watch.request.dto';
 
@@ -37,6 +42,7 @@ export class SetRepositoryWatchHttpController {
 
   @Put('repositories/:installationId/:githubRepoId')
   @Version('1')
+  @ApiRepositorySource()
   @HttpCode(HttpStatus.NO_CONTENT)
   @CheckPolicies({ action: 'update', subject: 'PullRequest' })
   @RequireScopes('pulls:write')
@@ -49,15 +55,14 @@ export class SetRepositoryWatchHttpController {
   @ApiResponse({ status: 204 })
   async set(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Body() body: SetRepositoryWatchRequest,
   ): Promise<void> {
     await this.commandBus.execute(
       new SetRepositoryWatchCommand({
         scope,
-        installationId,
-        githubRepoId,
+        repository: addressFrom(source, githubRepoId),
         watching: body.watching,
       }),
     );

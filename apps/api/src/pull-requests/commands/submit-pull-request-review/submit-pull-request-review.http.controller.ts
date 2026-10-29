@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -21,10 +20,16 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import {
   PullRequestProblemResponses,
   PullRequestWriteProblemResponses,
 } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySourceParam,
+} from '../../decorators/repository-source.decorator';
 import { ReviewSubmittedResponseDto } from '../../dtos/review-submitted.response.dto';
 import { SubmitPullRequestReviewCommand } from './submit-pull-request-review.command';
 import { SubmitPullRequestReviewRequest } from './submit-pull-request-review.request.dto';
@@ -41,6 +46,7 @@ export class SubmitPullRequestReviewHttpController {
 
   @Post(':installationId/:githubRepoId/:number/reviews')
   @Version('1')
+  @ApiRepositorySource()
   @HttpCode(HttpStatus.OK)
   @CheckPolicies({ action: 'update', subject: 'PullRequest' })
   @RequireScopes('pulls:write')
@@ -54,7 +60,7 @@ export class SubmitPullRequestReviewHttpController {
   @ApiResponse({ status: 200, type: ReviewSubmittedResponseDto })
   async submit(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
     @Body() body: SubmitPullRequestReviewRequest,
@@ -62,7 +68,7 @@ export class SubmitPullRequestReviewHttpController {
     return this.commandBus.execute(
       new SubmitPullRequestReviewCommand({
         scope,
-        address: { installationId, githubRepoId, number },
+        address: { ...addressFrom(source, githubRepoId), number },
         review: body,
       }),
     );

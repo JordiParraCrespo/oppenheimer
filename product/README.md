@@ -736,6 +736,13 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
+  notifications token and one optional token for private repositories. On
+  2026-10-26 the owner asked for several organisations and, inside one, a
+  token per repository if need be: a person adds any number of tokens, each
+  opens whatever repositories GitHub says it does, and each repository is
+  read with one key chosen at read time (the App, else a pinned token, else
+  the narrowest). The notifications wake-up is left for later (§6.2).
 - Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
   the owner asked for the Browser tab, through "tunnel technology like
   Cloudflare, Vercel or ngrok"; offered the runner's own link as that
@@ -778,3 +785,33 @@ earlier note:
   asked for the sidebar to list only projects that hold sessions: an empty
   project is not drawn (New session and the project filter still reach
   it), and a sidebar with projects but no session says so in one line.
+- `versions/mvp/28-bots-in-sections.md` had a section's Bots plus make a
+  blank bot placed there, and placing or hiding any other bot happen in its
+  Settings → Profile. On 2026-10-28 the owner asked to manage each page's
+  bots from the page: the plus opens a menu with New bot and a check per
+  bot for this section, and a row's ellipsis hides it from the section
+  (slice D).
+- `versions/mvp/24-session-places.md` §7 had Claude Code's cloud only as a
+  place in a host's Start in pane. It is now also the Claude Code row under
+  Cloud, which picks a host that can start it (2026-10-28).
+- `versions/mvp/24-session-places.md` §7's Claude Code row picked the host
+  for the reader. It now opens a *Start from* pane where the reader picks
+  any host that can, and the engine button offers only Claude Code's models
+  in that place (2026-10-28).
+- Grok offered sessions 4.7 and 4.6 with six effort levels, `minimal` to
+  `max`, and bots 4.7 and Grok Build 0.1 starting on `medium`. On
+  2026-10-28 the owner asked for a better Grok catalogue: sessions offer
+  4.7, 4.6 and 4.5 and bots add 4.6 and 4.5, each with the levels its own
+  menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
+  default everywhere (`versions/mvp/05-screens.md`,
+  `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for images in the chats to look and open the
+  way Claude's own chat shows them: a bot's images open in a viewer over
+  the chat instead of a new tab, and a session's chat, which only counted
+  pasted images, now shows them and the screenshots the agent reads, from
+  a preview the runner sends within the link's entry bound
+  (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for bots to send images back: `show_image`
+  fetches an image from the web by its address (the only images a bot,
+  which has no files, can reach), stores it as the chat's own and draws it
+  in the bot's answer (`versions/mvp/25-bots.md` §4.7).

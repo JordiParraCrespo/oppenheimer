@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { IssueAddress } from '../../application/issue-access.port';
+import type { InstallationAddress } from '../../application/pull-request-access.port';
 
 /**
  * No controller: a bot's `comment_on_issue` and `comment_on_pull_request`
@@ -9,7 +9,8 @@ import type { IssueAddress } from '../../application/issue-access.port';
  */
 export class AddIssueCommentCommand extends CommandBase {
   readonly scope: AccessScope;
-  readonly address: IssueAddress;
+  /** Written in the caller's name, so only where the App reaches. */
+  readonly address: InstallationAddress & { number: number };
   readonly body: string;
 
   constructor(props: CommandProps<AddIssueCommentCommand>) {

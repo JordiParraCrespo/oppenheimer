@@ -20,6 +20,14 @@
  * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
  */
 
+import {
+  CLAUDE_LEVELS,
+  CODEX_LEVELS,
+  GROK_4_5_LEVELS,
+  GROK_LEVELS,
+  levels,
+} from './effort-levels.js';
+import { OPENCODE_MODELS } from './opencode-models.js';
 import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
 /**
@@ -395,19 +403,7 @@ export interface CodingAgentDefinition {
   readonly install?: HostInstall;
 }
 
-/** A model's levels and default, frozen as the rest of the catalog is. */
-function levels(ids: readonly SessionEffort[], defaultLevel: SessionEffort): CodingAgentEffort {
-  return Object.freeze({ levels: Object.freeze([...ids]), default: defaultLevel });
-}
-
-const CLAUDE_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
-const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
-const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-// OpenCode's variants for xAI's and Google's reasoning models, off models.dev;
-// OpenAI's are Codex's own levels, so OpenCode's OpenAI rows reuse CODEX_LEVELS.
-const OPENCODE_XAI_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
-const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -654,106 +650,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // the window along with it. That is not one login per directory, so the
     // accounts slice has nothing to set here until OpenCode has a variable of
     // its own (`product/06-multi-account.md`).
-    //
-    // `provider/model`, the form `opencode --model` takes. OpenCode reaches
-    // whatever providers the host has signed in to, and its own picker is
-    // models.dev's catalog, so this seed is the coding models of the four
-    // providers it is most often signed in to, grouped by provider in that
-    // order: Anthropic (the family Claude Code offers), OpenAI (what Codex's
-    // picker lists, in its order), xAI (what Grok's lists) and Google (its
-    // newest reasoning and flash models). A row the host's OpenCode has no
-    // provider for fails in the session's own terminal, as for the others.
-    //
-    // Each model's levels are its OpenCode variants, which OpenCode derives
-    // from the model's `reasoning_options` on models.dev, and its default is
-    // what the provider runs with none: `high` for the adaptive Claude
-    // models and for Grok and Gemini, `medium` for OpenAI's. Haiku 5.5's
-    // thinking is a toggle that is off unasked, so `none` is its default and
-    // a level of its own. OpenAI's `none` variant is left off: "don't think"
-    // is not an amount of thinking anyone picks for a coding session.
-    models: Object.freeze([
-      Object.freeze({
-        id: 'anthropic/claude-opus-5-5',
-        label: 'Opus 5.5',
-        default: true as const,
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-fable-5-1',
-        label: 'Fable 5.1',
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-sonnet-5-5',
-        label: 'Sonnet 5.5',
-        effort: levels(CLAUDE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'anthropic/claude-haiku-5-5',
-        label: 'Haiku 5.5',
-        effort: levels(['none', ...CLAUDE_LEVELS], 'none'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6.1-sol',
-        label: 'GPT-6.1 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6.1-terra',
-        label: 'GPT-6.1 Terra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-astra',
-        label: 'GPT-6 Astra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-sol',
-        label: 'GPT-6 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-6-luna',
-        label: 'GPT-6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-sol',
-        label: 'GPT-5.6 Sol',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-terra',
-        label: 'GPT-5.6 Terra',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'openai/gpt-5.6-luna',
-        label: 'GPT-5.6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'xai/grok-4.7',
-        label: 'Grok 4.7',
-        effort: levels(OPENCODE_XAI_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'xai/grok-4.6',
-        label: 'Grok 4.6',
-        effort: levels(OPENCODE_XAI_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'google/gemini-4-argon',
-        label: 'Gemini 4 Argon',
-        effort: levels(OPENCODE_GOOGLE_LEVELS, 'high'),
-      }),
-      Object.freeze({
-        id: 'google/gemini-3.8-flash',
-        label: 'Gemini 3.8 Flash',
-        effort: levels(OPENCODE_GOOGLE_LEVELS, 'high'),
-      }),
-    ]),
+    models: OPENCODE_MODELS,
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
       // OpenCode keys its sessions by project, and a project is the directory
@@ -864,17 +761,18 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // "Override config directory (default: `~/.grok`)", and `auth.json` lives
     // in that directory, so it scopes the login and nothing else.
     configDirEnv: 'GROK_HOME',
-    // The two Grok generations the CLI offers, with the ids `grok --model`
-    // takes. 4.6 is the default because it is the CLI's own (`grok models`
-    // on 1.0.41 reads "grok-4.6 (default)"); 4.7 is xAI's newest, first in
-    // capability order as Codex's list is. Same seed argument as the others:
-    // whether a given account's `grok` offers 4.7 is the probe still open in
-    // `product/versions/mvp/05-screens.md`.
+    // The Grok models the CLI offers, newest first, with the ids `grok
+    // --model` takes. 4.6 is the default because it is the CLI's own (grok
+    // 1.0.70's built-in `default_models.json` reads `"default": "grok-4.6"`,
+    // with 4.5 beside it); 4.7 is xAI's newest, which the CLI lists once the
+    // account's catalog is fetched after sign-in. Same seed argument as the
+    // others: whether a given account's `grok` offers 4.7 is the probe still
+    // open in `product/versions/mvp/05-screens.md`.
     //
-    // Which effort levels a Grok model takes comes from xAI's model catalog
-    // after sign-in, which this repo has no copy of, so both rows offer the six
-    // grok's `--reasoning-effort` knows (`none` left off, as for Sol), with
-    // the models' own `high` as the default.
+    // Each row's levels are that model's own menu: grok takes the canonical
+    // `none` to `max` on `--reasoning-effort` but "a model only accepts the
+    // levels its menu advertises" (1.0.70's `--help`), and xAI's reasoning
+    // guide gives the same menus for the API, `high` the default on all three.
     models: Object.freeze([
       Object.freeze({
         id: 'grok-4.7',
@@ -886,6 +784,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         label: 'Grok 4.6',
         default: true as const,
         effort: levels(GROK_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'grok-4.5',
+        label: 'Grok 4.5',
+        effort: levels(GROK_4_5_LEVELS, 'high'),
       }),
     ]),
     launch: Object.freeze({

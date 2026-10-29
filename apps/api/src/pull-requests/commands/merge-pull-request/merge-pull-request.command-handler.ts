@@ -23,6 +23,7 @@ export class MergePullRequestCommandHandler
     method,
     expectedHeadSha,
   }: MergePullRequestCommand): Promise<void> {
-    await this.access.merge(scope, scope.userId, address, method, expectedHeadSha);
+    const app = this.access.requireApp(address);
+    await this.access.merge(scope, scope.userId, app, method, expectedHeadSha);
   }
 }

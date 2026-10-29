@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { PULL_REQUEST_SCOPES } from '@oppenheimer/shared';
+import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import type { GithubInstallationEntity } from '../../github/domain/github-installation.entity';
 import { FindInstallationsQuery } from '../../github/queries/find-installations/find-installations.query';
@@ -139,12 +139,14 @@ export class BotGithubToolsFactory implements BotToolArea {
       name: 'list_pull_requests',
       readOnly: true,
       scope: 'pulls:read',
-      description: `Lists open pull requests from the person's queue, longest wait first, each with its ids, lane, checks and what holds it. queue "mine" is theirs and their sessions', "requested" asks for their review, "watching" is the rest; all three read only the repositories they watch in the console's Pull requests screen. At most ${PULL_REQUESTS_LIMIT_MAX} per call. Use get_pull_request for one pull request's description, files and conversation.`,
+      description: `Lists open pull requests from the person's queue, longest wait first, each with its ids, lane, checks and what holds it. queue "mine" is theirs and their sessions', "requested" asks for their review, "watching" is the rest, "all" is every one of them; all four read only the repositories they watch in the console's Pull requests screen. At most ${PULL_REQUESTS_LIMIT_MAX} per call. Use get_pull_request for one pull request's description, files and conversation.`,
       input: z.object({
         queue: z
-          .enum(PULL_REQUEST_SCOPES)
+          .enum(PULL_REQUEST_QUEUES)
           .default('mine')
-          .describe('mine (default), requested (review requests), or watching (everyone else).'),
+          .describe(
+            'mine (default), requested (review requests), watching (everyone else), or all.',
+          ),
         github_repo_id: z
           .number()
           .int()
@@ -216,6 +218,7 @@ export class BotGithubToolsFactory implements BotToolArea {
         const props = {
           scope: context.owner,
           address: {
+            kind: 'installation' as const,
             installationId: input.installation_id,
             githubRepoId: input.github_repo_id,
             number: input.number,

@@ -10,13 +10,14 @@ import {
 } from '@oppenheimer/design-system-web/calendar-source';
 import { AreaChart, ChartLegend, type ChartSeries } from '@oppenheimer/design-system-web/charts';
 import { type DateRange, DateRangePicker } from '@oppenheimer/design-system-web/date-range-picker';
-import { FacetSelect } from '@oppenheimer/design-system-web/facet-select';
+import { FacetSelect, SearchableFacetSelect } from '@oppenheimer/design-system-web/facet-select';
 import { FolderIcon } from '@oppenheimer/design-system-web/icons';
 import {
   MilestoneGlyph,
   MilestoneTimeline,
   type TimelineRow,
 } from '@oppenheimer/design-system-web/milestone-timeline';
+import { SearchList } from '@oppenheimer/design-system-web/search-list';
 
 import { TODAY } from './plan-fixtures';
 
@@ -28,12 +29,15 @@ export function FacetSelectDemo() {
   const [lane, setLane] = React.useState('all');
   const [checks, setChecks] = React.useState('failing');
   const [wait, setWait] = React.useState('any');
+  const [shown, setShown] = React.useState<string[]>(['web', 'billing']);
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2">
-        <FacetSelect
+        <SearchableFacetSelect
           variant="pill"
           label="Project"
+          searchPlaceholder="Search projects"
+          emptyText={(query) => `Nothing matches “${query}”.`}
           icon={<FolderIcon />}
           value={project}
           onValueChange={setProject}
@@ -41,12 +45,16 @@ export function FacetSelectDemo() {
             { value: 'all', label: 'All projects', count: 24 },
             { value: 'web', label: 'acme-web', count: 12 },
             { value: 'billing', label: 'billing', count: 7 },
+            { value: 'xrp', label: 'xrp-mobile', count: 4 },
+            { value: 'docs', label: 'docs-portal', count: 2 },
             { value: 'none', label: 'No project', count: 5 },
           ]}
         />
-        <FacetSelect
+        <SearchableFacetSelect
           variant="pill"
           label="Milestone"
+          searchPlaceholder="Search milestones"
+          emptyText={(query) => `Nothing matches “${query}”.`}
           icon={<MilestoneGlyph />}
           value={milestone}
           onValueChange={setMilestone}
@@ -90,6 +98,25 @@ export function FacetSelectDemo() {
             { value: 'day', label: '1h – 1 day', count: 5 },
             { value: 'gt1', label: 'Over 1 day', count: 3 },
           ]}
+        />
+      </div>
+      <div className="w-68 rounded-md bg-popover shadow-popover">
+        <SearchList
+          aria-label="Show projects"
+          options={[
+            { value: 'web', label: 'acme-web' },
+            { value: 'billing', label: 'billing' },
+            { value: 'xrp', label: 'xrp-mobile' },
+            { value: 'docs', label: 'docs-portal' },
+          ]}
+          value={shown}
+          onPick={(option, selected) =>
+            setShown((current) =>
+              selected ? [...current, option.value] : current.filter((id) => id !== option.value),
+            )
+          }
+          searchPlaceholder="Search projects"
+          emptyText={(query) => `Nothing matches “${query}”.`}
         />
       </div>
     </div>

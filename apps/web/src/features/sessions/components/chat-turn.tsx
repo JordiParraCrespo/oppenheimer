@@ -10,19 +10,28 @@ import {
   elapsedOf,
   formatChatElapsed,
   modelName,
+  shownImages,
 } from '../lib/chat-blocks';
+import { ChatImages } from './chat-images';
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
-/** What a folded turn keeps: its words and its cards, what was asked and answered among them. */
-const SETTLED_KINDS = new Set<ChatBlock['kind']>(['reply', 'plan', 'question', 'changes']);
+/** What a folded turn keeps: its words, its cards and its pictures, what was asked and answered among them. */
+const SETTLED_KINDS = new Set<ChatBlock['kind']>([
+  'reply',
+  'plan',
+  'question',
+  'changes',
+  'images',
+]);
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';
 
 /**
  * One turn of the chat view: what the person sent, as a card on the right,
- * then the agent's turn under its header — working, with its clock running,
+ * the images pasted with it over the card, as tiles that open, then the
+ * agent's turn under its header — working, with its clock running,
  * or how long it worked and on which model. Its thinking and its calls are in
  * muted ink, what it said is markdown, a plan and the files it changed are
  * cards. Codex's way with settled work: the newest turn stays open, an older
@@ -43,6 +52,10 @@ export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
   const blocks = blocksOf(turn);
   const live = turn.working;
   const shown = live || open;
+  const pictures = shownImages(turn.prompt?.images ?? null);
+  // A file the host only named, an image without a preview or a document,
+  // is a count beside the pictures.
+  const named = (turn.prompt?.files ?? 0) - pictures.length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,10 +67,15 @@ export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
           attachments={
-            turn.prompt.files > 0 ? (
-              <ChatMarker icon={<Paperclip />}>
-                {t('sessions.chat.files', { count: turn.prompt.files })}
-              </ChatMarker>
+            pictures.length > 0 || named > 0 ? (
+              <>
+                {pictures.length > 0 ? <ChatImages images={pictures} align="end" /> : null}
+                {named > 0 ? (
+                  <ChatMarker icon={<Paperclip />}>
+                    {t('sessions.chat.files', { count: named })}
+                  </ChatMarker>
+                ) : null}
+              </>
             ) : undefined
           }
         >

@@ -3,7 +3,6 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
   Version,
@@ -18,7 +17,13 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { addressFrom } from '../../../github/domain/repository-address.policy';
+import type { RepositorySource } from '../../../github/domain/repository-address.types';
 import { PullRequestProblemResponses } from '../../decorators/pull-request-problem-responses.decorator';
+import {
+  ApiRepositorySource,
+  RepositorySourceParam,
+} from '../../decorators/repository-source.decorator';
 import { PullRequestDetailResponseDto } from '../../dtos/pull-request.response.dto';
 import { FindPullRequestQuery } from './find-pull-request.query';
 
@@ -34,6 +39,7 @@ export class FindPullRequestHttpController {
 
   @Get(':installationId/:githubRepoId/:number')
   @Version('1')
+  @ApiRepositorySource()
   @CheckPolicies({ action: 'read', subject: 'PullRequest' })
   @RequireScopes('pulls:read')
   @ApiOperation({
@@ -44,12 +50,15 @@ export class FindPullRequestHttpController {
   @ApiResponse({ status: 200, type: PullRequestDetailResponseDto })
   async find(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('installationId', ParseUUIDPipe) installationId: string,
+    @RepositorySourceParam() source: RepositorySource,
     @Param('githubRepoId', ParseIntPipe) githubRepoId: number,
     @Param('number', ParseIntPipe) number: number,
   ): Promise<PullRequestDetailResponseDto> {
     return this.queryBus.execute(
-      new FindPullRequestQuery({ scope, address: { installationId, githubRepoId, number } }),
+      new FindPullRequestQuery({
+        scope,
+        address: { ...addressFrom(source, githubRepoId), number },
+      }),
     );
   }
 }

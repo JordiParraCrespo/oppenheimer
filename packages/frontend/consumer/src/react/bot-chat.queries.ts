@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQueries,
+  useQuery,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import {
   type QueryClient,
@@ -220,18 +225,37 @@ export function useUploadBotImage(
   });
 }
 
+/** A message's images, as `useBotImages` reads them: each one's bytes once they are in. */
+export interface BotImageReads {
+  blobs: readonly (Blob | undefined)[];
+  /** Which could not be read, by position. */
+  failed: readonly boolean[];
+}
+
+/** Module-level, so TanStack keeps the combined value while no read changes. */
+function combineImages(results: { data: Blob | undefined; isError: boolean }[]): BotImageReads {
+  return {
+    blobs: results.map((result) => result.data),
+    failed: results.map((result) => result.isError),
+  };
+}
+
 /**
- * An image in a bot's chat, its bytes as a `Blob`, for the chat to draw.
- * They never change under an id, so they are read once; like everything
- * under `bots`, they are never written to the persisted cache.
+ * The images one message of a bot's chat carried, each its bytes as a
+ * `Blob`, in order, for the chat to draw and open. They never change under
+ * an id, so they are read once; like everything under `bots`, they are never
+ * written to the persisted cache.
  */
-export function useBotImage(id: string, attachmentId: string) {
+export function useBotImages(id: string, attachmentIds: readonly string[]) {
   const app = useConsumerApp();
-  return useQuery<Blob, Error>({
-    queryKey: botsKeys.image(id, attachmentId),
-    queryFn: () => app.bots.readImage(id, attachmentId),
-    staleTime: Number.POSITIVE_INFINITY,
-    structuralSharing: false,
+  return useQueries({
+    queries: attachmentIds.map((attachmentId) => ({
+      queryKey: botsKeys.image(id, attachmentId),
+      queryFn: () => app.bots.readImage(id, attachmentId),
+      staleTime: Number.POSITIVE_INFINITY,
+      structuralSharing: false,
+    })),
+    combine: combineImages,
   });
 }
 

@@ -21,6 +21,18 @@ export interface HostDetails {
   city: string | null;
   asnOrg: string | null;
   roundTripMillis: number | null;
+  /**
+   * Whether the host can start a Claude Code cloud session now: online, its
+   * runner takes them, and `claude` is installed. `null` when the API could
+   * not tell (online, its link held elsewhere): worth trying, not promised.
+   */
+  startsCloud: boolean | null;
+  /**
+   * The claude.ai account (email) the host's `claude` is signed in as: the
+   * one a Claude Code cloud session started there runs on. `null` when it is
+   * not signed in, or the runner does not say.
+   */
+  claudeAccount: string | null;
 }
 
 const NO_DETAILS: HostDetails = {
@@ -34,6 +46,8 @@ const NO_DETAILS: HostDetails = {
   city: null,
   asnOrg: null,
   roundTripMillis: null,
+  startsCloud: false,
+  claudeAccount: null,
 };
 
 /**

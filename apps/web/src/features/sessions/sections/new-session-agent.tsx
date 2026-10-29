@@ -10,8 +10,9 @@ import {
   CLOUD_DEFAULT_MODEL,
   defaultModelFor,
   effortChoiceFor,
-  toAgentOptions,
+  isClaudeCloud,
   toCloudAgentOption,
+  toEngineAgents,
 } from '../lib/session-options';
 
 /**
@@ -28,6 +29,10 @@ import {
  * moves it back to a new worktree on the host it left. In the cloud the
  * button names the vendor's agent and its model; the host agent waits in the
  * draft.
+ *
+ * Claude Code's cloud, started from a host, runs Claude Code and nothing
+ * else (`isClaudeCloud`), so there the button offers Claude's models alone;
+ * the place chip picks the place with its engine (`engineForPlace`).
  */
 export function NewSessionAgent() {
   const { t } = useTranslation();
@@ -35,6 +40,11 @@ export function NewSessionAgent() {
   const [agent, model, cloudProvider, cloudModel] = useWatch({
     control,
     name: ['agent', 'model', 'cloudProvider', 'cloudModel'],
+  });
+  const atClaudeCloud = useWatch({
+    control,
+    name: ['where', 'cloudProvider'],
+    compute: ([where, cloudProvider]) => isClaudeCloud({ where, cloudProvider }),
   });
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
@@ -59,7 +69,7 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={cloudAgent ? [...toAgentOptions(), cloudAgent] : toAgentOptions()}
+      agents={toEngineAgents(atClaudeCloud, cloudAgent)}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }

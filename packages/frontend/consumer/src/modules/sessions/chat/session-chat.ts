@@ -46,6 +46,16 @@ export interface ChatQuestion {
   options: { label: string; description: string | null }[];
 }
 
+/**
+ * An image in the conversation, pasted with a prompt or in a tool's result
+ * (a screenshot the agent read): the preview the host sent, as a URL an
+ * `img` takes, or none when the host only named it (no room on the link, a
+ * format it cannot read, a host from before previews).
+ */
+export interface ChatTranscriptImage {
+  src: string | null;
+}
+
 export interface ChatToolCall {
   id: string;
   /** The tool's own name (`Bash`, `Edit`, `mcp__github__get_issue`). */
@@ -71,6 +81,8 @@ export interface ChatToolCall {
    * Empty when the text could not be read; none while it waits.
    */
   answers: Record<string, string> | null;
+  /** The images its result carried, in order; none for a result of text alone. */
+  images: ChatTranscriptImage[] | null;
   /** The host cut the call's input or its output to keep the entry small. */
   truncated: boolean;
   /** When the agent made the call, and when its result landed (none while it runs). */
@@ -96,8 +108,10 @@ export type ChatStep =
 export interface ChatPrompt {
   id: string;
   text: string;
-  /** Images and documents pasted with it, named and never sent. */
+  /** Images and documents pasted with it. */
   files: number;
+  /** The images among them, each with the host's preview when it sent one. */
+  images: ChatTranscriptImage[];
   at: Date | null;
 }
 
@@ -433,6 +447,7 @@ interface ChatResult {
   toolUseId: string;
   failed: boolean;
   output: string | null;
+  images: ChatTranscriptImage[] | null;
   truncated: boolean;
 }
 
@@ -476,6 +491,9 @@ export function classify(value: unknown, index: number): Reading {
             toolUseId: String(block.tool_use_id),
             failed: block.is_error === true,
             output: text(block.content),
+            images: Array.isArray(block.images)
+              ? block.images.map((image) => imageOf(record(image)))
+              : null,
             truncated: block.truncated === true,
           },
         ]
@@ -500,7 +518,30 @@ export function classify(value: unknown, index: number): Reading {
   const files = blocks.filter(
     (block) => block?.type === 'image' || block?.type === 'document',
   ).length;
-  return { kind: 'prompt', prompt: { id, text: typed, files, at } };
+  const images = blocks.flatMap((block) => (block?.type === 'image' ? [imageOf(block)] : []));
+  return { kind: 'prompt', prompt: { id, text: typed, files, images, at } };
+}
+
+/** The media types an image's preview may come as: what an `img` shows and never runs. */
+const IMAGE_TYPES: ReadonlySet<string> = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+]);
+
+/**
+ * An image block's preview, as a `data:` URL, read off Claude's own shape
+ * (`source: { type: 'base64', media_type, data }`); none for a block the
+ * host only named, or whose source is not base64 of a known image type.
+ */
+function imageOf(block: Loose | null): ChatTranscriptImage {
+  const source = record(block?.source);
+  const type = text(source?.media_type);
+  const data = text(source?.data);
+  if (source?.type !== 'base64' || !type || !IMAGE_TYPES.has(type) || !data) return { src: null };
+  if (!/^[A-Za-z0-9+/]+=*$/.test(data)) return { src: null };
+  return { src: `data:${type};base64,${data}` };
 }
 
 function stepOf(block: Loose | null, id: string, at: Date | null): ChatStep | null {
@@ -605,6 +646,7 @@ function buildTurns(
           if (!call) continue;
           call.status = result.failed ? 'failed' : 'done';
           call.output = result.output;
+          call.images = result.images;
           if (call.questions && !result.failed) call.answers = answersOf(result.output);
           call.truncated ||= result.truncated;
           call.finishedAt = reading.at;
@@ -726,6 +768,7 @@ function toolCall(block: Loose): ChatToolCall {
     plan: kind === 'plan' ? field('plan') : null,
     questions: kind === 'question' ? questionsOf(input.questions) : null,
     answers: null,
+    images: null,
     truncated: block.truncated === true,
     startedAt: null,
     finishedAt: null,

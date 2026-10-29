@@ -28,3 +28,7 @@ export const GITHUB_ISSUES = Symbol('GITHUB_ISSUES');
  * installations and written in the caller's own name.
  */
 export const ISSUE_ACCESS = Symbol('ISSUE_ACCESS');
+/** `GithubTokenRepositoryPort`: a person's own GitHub tokens and pins. */
+export const GITHUB_TOKEN_REPOSITORY = Symbol('GITHUB_TOKEN_REPOSITORY');
+/** `GithubTokensPort`: what GitHub says about a person's own token. */
+export const GITHUB_TOKENS = Symbol('GITHUB_TOKENS');

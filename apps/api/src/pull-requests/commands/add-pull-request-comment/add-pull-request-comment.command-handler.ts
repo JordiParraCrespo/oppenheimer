@@ -15,6 +15,6 @@ export class AddPullRequestCommentCommandHandler
   ) {}
 
   async execute({ scope, address, comment }: AddPullRequestCommentCommand): Promise<void> {
-    await this.access.addComment(scope, scope.userId, address, comment);
+    await this.access.addComment(scope, scope.userId, this.access.requireApp(address), comment);
   }
 }

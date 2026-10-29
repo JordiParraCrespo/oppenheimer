@@ -43,7 +43,7 @@ test.describe('Pull requests', () => {
     await expect(page).toHaveURL(/\/settings\/repositories$/);
     await watch(page, ['acme-labs/xrp-mobile', 'acme-labs/xrp-web']);
 
-    // ── The queue: Mine is yours and your sessions' ──────────────────────────
+    // ── The queue opens on All: every open pull request it watches ───────────
     await page.goto('/sessions/new');
     await page.getByRole('link', { name: 'Pull requests' }).first().click();
     await expect(page).toHaveURL(/\/pulls$/);
@@ -51,6 +51,13 @@ test.describe('Pull requests', () => {
     await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible({
       timeout: 30_000,
     });
+    await expect(rowButton(page, 'Bump react-native to 0.80')).toBeVisible();
+    await expect(rowButton(page, 'Fix the empty state on the wallet screen')).toBeVisible();
+
+    // ── Mine narrows it to yours and your sessions' ──────────────────────────
+    await page.getByRole('button', { name: /^Mine/ }).click();
+    await expect(page).toHaveURL(/scope=mine/);
+    await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible();
     await expect(rowButton(page, 'Write down the release checklist')).toBeVisible();
     await expect(rowButton(page, 'Dark mode for the dashboard')).toBeVisible();
     // Somebody else's, asked of nobody: not here.

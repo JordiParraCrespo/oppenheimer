@@ -23,12 +23,13 @@ export {
 } from './bot-approvals.queries';
 export {
   type BotHistory,
+  type BotImageReads,
   type BotLiveText,
   type CancelBotTurnVariables,
   type ExportBotConversationVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
-  useBotImage,
+  useBotImages,
   useBotLiveText,
   useBotRoomLeft,
   useBotWaitingMessages,

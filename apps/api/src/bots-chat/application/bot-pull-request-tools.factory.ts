@@ -310,8 +310,10 @@ export class BotPullRequestToolsFactory implements BotToolArea {
   }
 }
 
+/** A bot names a repository by its installation: its tools reach only what the App does. */
 function addressOf(input: Address) {
   return {
+    kind: 'installation' as const,
     installationId: input.installation_id,
     githubRepoId: input.github_repo_id,
     number: input.number,

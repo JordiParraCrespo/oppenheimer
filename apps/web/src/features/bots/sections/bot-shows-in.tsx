@@ -7,16 +7,9 @@ import {
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { BOT_SECTIONS, type BotSection } from '@oppenheimer/shared/schemas/bot';
+import { BOT_SECTIONS } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-
-/** Each section by the name the rail gives it. */
-const SECTION_NAMES = {
-  sessions: 'nav.sessions',
-  automations: 'nav.automations',
-  plan: 'nav.plan',
-  pulls: 'nav.pullRequests',
-} as const satisfies Record<BotSection, string>;
+import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
 /**
  * Settings → Profile's Shows in: the console sections whose sidebar lists the

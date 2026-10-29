@@ -34,20 +34,22 @@ export class SubmitPullRequestReviewCommandHandler
   ) {}
 
   async execute({ scope, address, review }: SubmitPullRequestReviewCommand): Promise<Submitted> {
-    await this.access.submitReview(scope, scope.userId, address, {
+    // A review is made in the caller's name, which only the App's repositories take.
+    const app = this.access.requireApp(address);
+    await this.access.submitReview(scope, scope.userId, app, {
       event: EVENTS[review.verdict],
       body: review.body,
       comments: review.comments,
     });
     if (review.verdict !== 'approve_and_merge') return { merged: false, autoMerge: false };
     try {
-      await this.access.merge(scope, scope.userId, address, 'squash');
+      await this.access.merge(scope, scope.userId, app, 'squash');
       return { merged: true, autoMerge: false };
     } catch (error) {
       if (!(error instanceof AppError && error.code === GithubErrors.MERGE_REFUSED.code))
         throw error;
     }
-    const autoMerge = await this.access.enableAutoMerge(scope, scope.userId, address, 'squash');
+    const autoMerge = await this.access.enableAutoMerge(scope, scope.userId, app, 'squash');
     return { merged: false, autoMerge };
   }
 }

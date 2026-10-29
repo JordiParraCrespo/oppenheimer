@@ -10,6 +10,17 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
+// workDir is a folder as the store keys it, symlinks resolved: on macOS the
+// temporary directory is under /var, which is /private/var.
+func workDir(t *testing.T) string {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
 func read(t *testing.T, path string) map[string]any {
 	t.Helper()
 	raw, err := os.ReadFile(path)
@@ -28,7 +39,7 @@ func read(t *testing.T, path string) map[string]any {
 func TestTrustMarksTheFolderAndKeepsEverythingElse(t *testing.T) {
 	home := t.TempDir()
 	config := filepath.Join(home, ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 	before := `{"oauthAccount":{"email":"a@b.c"},"projects":{"/elsewhere":{"hasTrustDialogAccepted":false},"` +
 		work + `":{"allowedTools":["Bash"]}}}`
 	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
@@ -58,7 +69,7 @@ func TestTrustMarksTheFolderAndKeepsEverythingElse(t *testing.T) {
 
 func TestTrustWritesTheFileWhenClaudeHasNoneYet(t *testing.T) {
 	config := filepath.Join(t.TempDir(), ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 
 	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
 		t.Fatal(err)
@@ -87,7 +98,7 @@ func TestTrustLeavesOtherAgentsAlone(t *testing.T) {
 // race.
 func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
 	config := filepath.Join(t.TempDir(), ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 	before := `{"projects":{"` + work + `":{"hasTrustDialogAccepted": true}}, "zeta": 1, "alpha": 2}`
 	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
 		t.Fatal(err)
@@ -107,7 +118,7 @@ func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
 func TestTrustSurvivesNullWhereAMapBelongs(t *testing.T) {
 	for _, before := range []string{`null`, `{"projects":null}`, `{"projects":{"/x":null}}`} {
 		config := filepath.Join(t.TempDir(), ".claude.json")
-		work := t.TempDir()
+		work := workDir(t)
 		if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
 			t.Fatal(err)
 		}

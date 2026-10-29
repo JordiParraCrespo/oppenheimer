@@ -212,6 +212,12 @@ export const hostFactsSchema = z.object({
   timezone: z.string().max(64).optional(),
   bootedAt: z.string().datetime({ offset: true }).optional(),
   serviceManager: z.string().max(16).optional(),
+  /**
+   * The claude.ai account the host's `claude` is signed in as (its email): the
+   * account a Claude Code cloud session started there runs on. Omitted when it
+   * is not signed in, and by runners before it.
+   */
+  claudeAccount: z.string().max(320).optional(),
 });
 
 export type HostFactsDto = z.infer<typeof hostFactsSchema>;

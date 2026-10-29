@@ -127,6 +127,7 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
+		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -166,6 +167,7 @@ func New(version string) (*App, error) {
 	}
 	app.Devices = devices
 	app.Ports = ports.New()
+	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -187,7 +189,7 @@ func New(version string) (*App, error) {
 		Gate: agentGate{paths: paths},
 		// A session nobody is asked to approve starts in a folder already
 		// trusted, rather than on a question in an empty terminal.
-		Trust: agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)}),
+		Trust: trust,
 		// A session launched with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		Transcripts: transcript.New(transcript.Options{
@@ -203,7 +205,9 @@ func New(version string) (*App, error) {
 	}
 	app.Sessions = sessions
 	app.Worktrees = worktrees
-	app.Cloud = cloud.Starter{}
+	app.Cloud = cloud.Starter{
+		Trust: func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
+	}
 	app.WorkFolder = places
 	app.Terminals = terminals
 

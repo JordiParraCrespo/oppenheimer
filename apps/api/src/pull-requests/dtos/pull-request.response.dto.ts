@@ -55,8 +55,14 @@ export class PullRequestLaneReasonDto {
 
 /** One row of the queue. */
 export class PullRequestRowDto {
-  @ApiProperty({ format: 'uuid', description: 'The installation that reaches the repository.' })
-  installationId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The installation that reaches the repository; null for one read through your own GitHub tokens.',
+  })
+  installationId!: string | null;
 
   @ApiProperty()
   githubRepoId!: number;
@@ -147,6 +153,9 @@ export class PullRequestRowDto {
 }
 
 export class PullRequestScopeCountsDto {
+  @ApiProperty({ description: 'Every open pull request, whatever its scope.' })
+  all!: number;
+
   @ApiProperty()
   mine!: number;
 
@@ -399,8 +408,14 @@ export class PullRequestActivityItemDto {
 }
 
 export class WatchedRepositoryDto {
-  @ApiProperty({ format: 'uuid' })
-  installationId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The installation that reaches the repository; null for one read through your own GitHub tokens.',
+  })
+  installationId!: string | null;
 
   @ApiProperty()
   githubRepoId!: number;
