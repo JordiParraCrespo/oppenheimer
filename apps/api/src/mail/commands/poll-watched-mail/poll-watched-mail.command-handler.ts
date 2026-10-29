@@ -15,10 +15,8 @@ import {
 import { GMAIL_CONNECTION_REPOSITORY } from '../../mail.di-tokens';
 import { PollWatchedMailCommand } from './poll-watched-mail.command';
 
-/** The most new messages one account's poll reads; the rest wait for the next minute. */
-const NEW_MAIL_PER_POLL = 50;
-/** How many ids a watched query is asked for; the new mail of one minute is far fewer. */
-const QUERY_IDS = 100;
+/** Per account and poll: new messages read (the rest wait a minute), and ids a query is asked for. */
+const [NEW_MAIL_PER_POLL, QUERY_IDS] = [50, 100];
 
 /**
  * Waking on new mail (`product/next-steps/mail.md` §5), the noticing half:
@@ -52,26 +50,27 @@ export class PollWatchedMailCommandHandler
     const connections = await this.connections.findManyForSystem(
       watched.map((subject) => subject.subjectRef),
     );
-    let delivered = 0;
-    for (const connection of connections) {
-      // A trigger in one workspace never reads an account of another.
-      const subject = watched.find(
-        (candidate) =>
-          candidate.subjectRef === connection.id &&
-          candidate.organizationId === connection.organizationId,
-      );
-      if (!subject) continue;
-      try {
-        delivered += await this.poll(connection, subject.filters);
-      } catch (error) {
-        this.logger.warn({
-          message: 'A watched Gmail account could not be read',
-          connectionId: connection.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-    return delivered;
+    // Each account is its own quota and mark, read side by side; a trigger reads only its workspace's.
+    const polled = await Promise.all(
+      connections.map(async (connection) => {
+        const subject = watched.find(
+          (each) =>
+            each.subjectRef === connection.id && each.organizationId === connection.organizationId,
+        );
+        if (!subject) return 0;
+        try {
+          return await this.poll(connection, subject.filters);
+        } catch (error) {
+          this.logger.warn({
+            message: 'A watched Gmail account could not be read',
+            connectionId: connection.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return 0;
+        }
+      }),
+    );
+    return polled.reduce((sum, count) => sum + count, 0);
   }
 
   private poll(

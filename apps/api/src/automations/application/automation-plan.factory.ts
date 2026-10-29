@@ -9,6 +9,7 @@ import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
 import type { GmailConnectionEntity } from '../../mail/domain/gmail-connection.entity';
+import { MailErrors } from '../../mail/domain/mail.errors';
 import { FindGmailConnectionQuery } from '../../mail/queries/find-gmail-connection/find-gmail-connection.query';
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
@@ -105,7 +106,13 @@ export class AutomationPlanFactory {
         .execute<FindGmailConnectionQuery, GmailConnectionEntity>(
           new FindGmailConnectionQuery({ scope, id: input.connectionId }),
         )
-        .catch(() => null);
+        // Only "not yours or not there" is a refusal; any other failure surfaces as itself.
+        .catch((error: unknown) => {
+          if (error instanceof AppError && error.code === MailErrors.GMAIL_NOT_CONNECTED.code) {
+            return null;
+          }
+          throw error;
+        });
       if (!connection?.isActive) {
         throw new AppError(AutomationErrors.MAIL_ACCOUNT_UNAVAILABLE, {
           detail: `No connected Gmail account of yours has the id ${input.connectionId}`,

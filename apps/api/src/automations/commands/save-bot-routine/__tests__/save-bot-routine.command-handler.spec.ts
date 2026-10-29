@@ -102,4 +102,26 @@ describe('SaveBotRoutineCommandHandler', () => {
     ).rejects.toMatchObject({ code: 'AUTOMATIONS_009' });
     expect(save).not.toHaveBeenCalled();
   });
+
+  it('lets a failure other than a missing account surface as itself, not as AUTOMATIONS_009', async () => {
+    const { save, saveWith } = setup(async () => {
+      throw new Error('the database went away');
+    });
+    await expect(
+      saveWith(
+        {
+          triggers: [
+            {
+              source: 'gmail',
+              event: 'mail_received',
+              connectionId: '0d9f6a4e-0000-4000-8000-000000000001',
+              query: null,
+            },
+          ],
+        },
+        null,
+      ),
+    ).rejects.toThrow('the database went away');
+    expect(save).not.toHaveBeenCalled();
+  });
 });
