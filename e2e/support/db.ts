@@ -188,9 +188,9 @@ export async function insertBotMailRoutine(
   botId: string,
   name: string,
   connectionId: string,
-  query: string | null,
+  search: string | null,
 ): Promise<string> {
-  const filter = query ? { op: 'equals', value: query } : { op: 'any' };
+  const filter = search ? { op: 'equals', value: search } : { op: 'any' };
   const rows = await query<{ id: string }>(
     `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
           owner AS (SELECT "userId" FROM member m JOIN bot ON m."organizationId" = bot."organizationId" LIMIT 1),
