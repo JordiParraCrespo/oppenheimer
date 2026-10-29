@@ -1,4 +1,5 @@
 import {
+  type AutomationAgentId,
   type AutomationEntity,
   type AutomationInput,
   type HostEntity,
@@ -10,8 +11,12 @@ import {
 } from '@oppenheimer/frontend-consumer';
 import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import {
+  AUTOMATION_PLACE_RULES,
+  AUTOMATION_PLACES,
+  type AutomationPlace,
   externalEventDefinition,
   type GithubEventType,
+  isVendorPlace,
   type ScheduleFrequency,
   type TriggerFilter,
 } from '@oppenheimer/shared/automations';
@@ -29,8 +34,11 @@ export interface AutomationDraft {
   projectId: string | null;
   /** `repositoryKey`s: the installation and GitHub's id, together. */
   repositoryKeys: string[];
+  /** Where each run's session runs: on the host, in Claude Code's cloud from it, or at a vendor. */
+  place: AutomationPlace;
+  /** The host a run starts on or from; null at a vendor. */
   hostId: string | null;
-  agent: CodingAgentId;
+  agent: AutomationAgentId;
   /** `null` runs the agent's own default. */
   model: string | null;
   triggers: TriggerCard[];
@@ -82,6 +90,7 @@ export function emptyDraft(
   return {
     projectId: project?.id ?? null,
     repositoryKeys: projectRepositoryKeys(project),
+    place: 'host',
     hostId: project?.defaultHostId ?? hosts[0]?.id ?? null,
     agent,
     model: null,
@@ -99,6 +108,7 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
         githubRepoId: repository.githubRepoId,
       }),
     ),
+    place: revision.place,
     hostId: revision.hostId,
     agent: revision.agent,
     model: revision.model,
@@ -181,7 +191,78 @@ export function fitCards(triggers: TriggerCard[], repositories: number[]): Trigg
 export type DraftGap = 'name' | 'prompt' | 'trigger' | 'where' | null;
 
 export function whereGap(draft: AutomationDraft): DraftGap {
-  return draft.projectId && draft.repositoryKeys.length && draft.hostId ? null : 'where';
+  const placed = isVendorPlace(draft.place) || Boolean(draft.hostId);
+  return draft.projectId && draft.repositoryKeys.length && placed ? null : 'where';
+}
+
+/**
+ * What picking a place changes: a vendor runs its own agent with no host;
+ * Claude Code's cloud runs Claude Code from a host; a host runs the agent
+ * picked before, or the project's. A model another agent named is dropped.
+ */
+export function placePatch(
+  draft: Pick<AutomationDraft, 'agent' | 'hostId' | 'model'>,
+  place: AutomationPlace,
+  fallbackHostId: string | null,
+): Pick<AutomationDraft, 'place' | 'agent' | 'hostId' | 'model'> {
+  const rule = AUTOMATION_PLACE_RULES[place];
+  const agent: AutomationAgentId =
+    rule.agent ?? (isAutomationAgent(draft.agent) ? draft.agent : 'claude-code');
+  return {
+    place,
+    agent,
+    hostId: rule.host === null ? null : (draft.hostId ?? fallbackHostId),
+    model: agent === draft.agent ? draft.model : null,
+  };
+}
+
+/**
+ * The places as Runs in lists them, from `AUTOMATION_PLACES`: a vendor's is
+ * offered once the reader holds a key for it, and stays offered to an
+ * automation already there.
+ */
+export function placeOptions(
+  t: (key: PlaceCopyKey) => string,
+  connected: (provider: AutomationPlace) => boolean,
+  current: AutomationPlace,
+) {
+  return AUTOMATION_PLACES.map((place) => {
+    const copy = PLACE_COPY[place];
+    const ready = !isVendorPlace(place) || connected(place);
+    return {
+      value: place,
+      label: t(copy.label),
+      // Picking it with no key would save an automation that pauses on its first run.
+      disabled: !ready && place !== current,
+      description: t(ready ? copy.description : copy.connect),
+    };
+  });
+}
+
+const PLACE_COPY = {
+  host: {
+    label: 'automations.editor.placeHost',
+    description: 'automations.editor.placeHostDesc',
+    connect: 'automations.editor.placeHostDesc',
+  },
+  'claude-cloud': {
+    label: 'automations.editor.placeClaudeCloud',
+    description: 'automations.editor.placeClaudeCloudDesc',
+    connect: 'automations.editor.placeClaudeCloudDesc',
+  },
+  cursor: {
+    label: 'automations.editor.placeCursor',
+    description: 'automations.editor.placeCursorDesc',
+    connect: 'automations.editor.placeCursorConnect',
+  },
+} as const satisfies Record<AutomationPlace, Record<'label' | 'description' | 'connect', string>>;
+
+type PlaceCopyKey =
+  (typeof PLACE_COPY)[AutomationPlace][keyof (typeof PLACE_COPY)[AutomationPlace]];
+
+/** Whether a revision's agent is one a host runs: the editor's agent picker offers only these. */
+export function isAutomationAgent(agent: AutomationAgentId): agent is CodingAgentId {
+  return (AUTOMATION_AGENTS as readonly string[]).includes(agent);
 }
 
 function stripKey(card: TriggerCard): TriggerInput {
@@ -202,11 +283,13 @@ export function toCreateInput(
   draft: AutomationDraft,
   task: { name: string; prompt: string },
 ): AutomationInput | null {
-  if (!draft.projectId || !draft.hostId) return null;
+  const vendor = isVendorPlace(draft.place);
+  if (!draft.projectId || (!vendor && !draft.hostId)) return null;
   return {
     projectId: draft.projectId,
     repositories: repositoriesOf(draft),
-    hostId: draft.hostId,
+    place: draft.place,
+    hostId: vendor ? null : draft.hostId,
     name: task.name,
     prompt: task.prompt,
     agent: draft.agent,

@@ -147,7 +147,7 @@ type Session struct {
 	AccountID   string `json:"accountId,omitempty"`
 	WorkspaceID string `json:"workspaceId,omitempty"`
 	// Dir is a worktree session's own folder,
-	// `<work folder>/<account>/<workspace>/sessions/<slug>`, which holds its
+	// `<work folder>/<account>/<workspace>/sessions.noindex/<slug>`, which holds its
 	// marker and its checkout. Empty for a folder session.
 	Dir string `json:"dir,omitempty"`
 	// Folder is a folder session's folder: the person's, never written to and

@@ -4,6 +4,7 @@ import {
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
   type SessionShareResponseDto,
+  type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
@@ -155,6 +156,18 @@ function toEntity(data: SessionResponseDto): SessionEntity {
  * be the API's defaults spelled out by a client that did not know them, and the
  * one default that matters — the permission level — is the API's to state.
  */
+export function toStartCloudSessionRequest(
+  input: StartCloudSessionInput,
+): StartCloudSessionRequest {
+  return {
+    provider: input.provider,
+    checkout: input.checkout,
+    prompt: input.prompt,
+    ...(input.projectId ? { projectId: input.projectId } : {}),
+    ...(input.model ? { model: input.model } : {}),
+  };
+}
+
 export function toCreateSessionRequest(input: CreateSessionInput): CreateSessionRequest {
   const launch = input.launch
     ? {
@@ -252,13 +265,7 @@ export class SessionsRepository {
   async startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
     const data = await unwrapBody(
       heyApiSdk.startCloudSession({
-        body: {
-          provider: input.provider,
-          checkout: input.checkout,
-          prompt: input.prompt,
-          ...(input.projectId ? { projectId: input.projectId } : {}),
-          ...(input.model ? { model: input.model } : {}),
-        },
+        body: toStartCloudSessionRequest(input),
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
       SessionsErrors.START_CLOUD_FAILED,

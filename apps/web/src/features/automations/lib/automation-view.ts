@@ -15,9 +15,11 @@ import {
   AUTOMATION_PAUSED_REASONS,
   AUTOMATION_SKIP_REASONS,
   type AutomationPausedReason,
+  type AutomationPlace,
   type AutomationRunStatus,
   type AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
+import { CLOUD_AGENT_LABELS, type CloudAgentId } from '@oppenheimer/shared/schemas/cloud-agent';
 import type { TFunction } from 'i18next';
 import { clock, dayOffset } from './time';
 
@@ -139,8 +141,11 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   return automation.runCount ? String(automation.runCount) : '';
 }
 
-function agentLabel(agent: string): string {
-  return isCodingAgentId(agent) ? CODING_AGENTS[agent].label : agent;
+/** The agent's name, and Claude Code's cloud named as a place of its own. */
+function agentLabel(agent: string, place: AutomationPlace, t: TFunction): string {
+  if (place === 'claude-cloud') return t('automations.editor.placeClaudeCloud');
+  if (isCodingAgentId(agent)) return CODING_AGENTS[agent].label;
+  return CLOUD_AGENT_LABELS[agent as CloudAgentId] ?? agent;
 }
 
 /** The model's name, or the agent's default model's when none was picked. */
@@ -154,7 +159,13 @@ function modelLabel(agent: string, model: string | null): string | null {
 }
 
 /** Agent · model · project: the line under an automation's name. */
-export function automationSubline(automation: AutomationEntity, project: string | undefined) {
-  const { agent, model } = automation.revision;
-  return [agentLabel(agent), modelLabel(agent, model), project].filter(Boolean).join(' · ');
+export function automationSubline(
+  automation: AutomationEntity,
+  project: string | undefined,
+  t: TFunction,
+) {
+  const { agent, model, place } = automation.revision;
+  return [agentLabel(agent, place, t), modelLabel(agent, model), project]
+    .filter(Boolean)
+    .join(' · ');
 }

@@ -3,9 +3,11 @@ import { SCOPES, type Scope } from '@oppenheimer/shared';
 import {
   AUTOMATION_OVERLAP_POLICIES,
   AUTOMATION_PAUSED_REASONS,
+  AUTOMATION_PLACES,
   type AutomationOverlapPolicy,
   type AutomationPausedReason,
   type AutomationPermission,
+  type AutomationPlace,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
   type TriggerFilter,
@@ -148,7 +150,8 @@ export class AutomationMapper {
       revision: {
         kind: 'session',
         ...common,
-        hostId: String(revision.hostId),
+        place: oneOf<AutomationPlace>(AUTOMATION_PLACES, revision.place) ?? 'host',
+        hostId: revision.hostId,
         agent: String(revision.agent),
         model: revision.model,
         permission: revision.permission === 'full' ? 'full' : 'auto',
@@ -241,6 +244,7 @@ export class AutomationMapper {
     if (revision.kind === 'bot') {
       return {
         ...common,
+        place: 'host',
         hostId: null,
         agent: null,
         model: null,
@@ -251,6 +255,7 @@ export class AutomationMapper {
     }
     return {
       ...common,
+      place: revision.place,
       hostId: revision.hostId,
       agent: revision.agent,
       model: revision.model,
@@ -340,6 +345,7 @@ export class AutomationMapper {
     const dto = new AutomationRevisionResponseDto();
     dto.id = revision.id;
     dto.number = revision.number;
+    dto.place = revision.place;
     dto.hostId = revision.hostId;
     dto.agent = revision.agent;
     dto.model = revision.model;

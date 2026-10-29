@@ -815,7 +815,24 @@ earlier note:
   pasted images, now shows them and the screenshots the agent reads, from
   a preview the runner sends within the link's entry bound
   (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- `next-steps/cloud-agents.md` had cloud sessions start from New session
+  alone. On 2026-10-29 the owner asked for them in Plan's tasks and in the
+  automations: Start session and an automation's revision pick where the
+  session runs (on a host, Claude Code's cloud from a host, Cursor's with no
+  host), and a run with no key for its vendor pauses the automation
+  (`cloud_key_missing`; `versions/mvp/24-session-places.md`,
+  `versions/mvp/18-plan-product.md`, `versions/mvp/13-automations.md`).
 - 2026-10-28 the owner asked for bots to send images back: `show_image`
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it
   in the bot's answer (`versions/mvp/25-bots.md` §4.7).
+- `versions/mvp/24-session-places.md` §2 put a workspace's stores and
+  sessions in `repos/` and `sessions/`, and kept Spotlight out with
+  `.metadata_never_index` at the work folder's root. The MVP decision log
+  had already measured that marker as not working (2026-10-01), and the
+  hidden `.worktrees/` that did work was lost with the move to the work
+  folder: on a Mac host every session's checkout, `node_modules` included,
+  was indexed again. On 2026-10-28 the two directories became
+  `repos.noindex/` and `sessions.noindex/`, the suffix Spotlight skips (as
+  Xcode's DerivedData and Orca do), layout version 3, with no migration
+  (24 §2).

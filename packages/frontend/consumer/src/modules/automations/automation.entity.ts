@@ -3,6 +3,7 @@ import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
   AutomationPermission,
+  AutomationPlace,
   AutomationRunCause,
   AutomationRunOutcome,
   AutomationRunStatus,
@@ -13,6 +14,13 @@ import type {
   TriggerFilter,
 } from '@oppenheimer/shared/automations';
 import type { TriggerInputDto } from '@oppenheimer/shared/schemas/automation';
+import type { CloudAgentId } from '@oppenheimer/shared/schemas/cloud-agent';
+
+/**
+ * What an automation's runs run: a coding agent on a host or in Claude Code's
+ * cloud, or a vendor's own agent at the vendor.
+ */
+export type AutomationAgentId = CodingAgentId | CloudAgentId;
 
 /**
  * What an automation is doing, as its row and page header say it: listening,
@@ -59,8 +67,11 @@ export interface AutomationRepository {
 export interface AutomationRevision {
   id: string;
   number: number;
-  hostId: string;
-  agent: CodingAgentId;
+  /** Where each run's session runs: on the host, in Claude Code's cloud from it, or at a vendor. */
+  place: AutomationPlace;
+  /** The host a run starts on or from; null at a vendor. */
+  hostId: string | null;
+  agent: AutomationAgentId;
   model: string | null;
   permission: AutomationPermission;
   effort: string | null;
@@ -262,11 +273,12 @@ export type TriggerInput = TriggerInputDto;
 export interface AutomationInput {
   projectId: string;
   repositories: { installationId: string; githubRepoId: number }[];
-  hostId: string;
+  place: AutomationPlace;
+  hostId: string | null;
   name: string;
   triggers: TriggerInput[];
   prompt: string;
-  agent: CodingAgentId;
+  agent: AutomationAgentId;
   launch?: { model?: string; permission?: AutomationPermission };
 }
 

@@ -37,13 +37,16 @@ export class UpdateAutomationCommandHandler
     const now = new Date();
 
     const revision: Partial<RevisionInput> = {};
-    if (input.agent !== undefined) {
-      this.plan.assertAgent(input.agent);
-      revision.agent = input.agent;
-    }
-    if (input.hostId !== undefined) {
-      await this.plan.assertHost(scope, input.hostId);
-      revision.hostId = input.hostId;
+    if (input.place !== undefined || input.agent !== undefined || input.hostId !== undefined) {
+      // Checked as the next revision will hold them: a field not sent keeps its value.
+      const current = sessionTargetOf(automation).revision;
+      const where = {
+        place: input.place ?? current.place,
+        agent: input.agent ?? current.agent,
+        hostId: input.hostId === undefined ? current.hostId : input.hostId,
+      };
+      await this.plan.assertWhere(scope, where);
+      Object.assign(revision, where);
     }
     if (input.repositories !== undefined) {
       revision.repositories = await this.plan.resolveRepositories(scope, input.repositories);

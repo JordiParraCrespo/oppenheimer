@@ -24,17 +24,17 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the agent prompt comes first, the install command folds behind "Install manually instead", and a Connection list follows the install |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
-| [`Brain`](version1/Brain.dc.html) | Inbox — the console's new landing page and first rail item: what needs you, suggestions, and what is done |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions, employees, pull requests, automations and plan, the sidebar grouped by project, terminal, composer; since 2026-10-26 also where a session runs (worktree, folder, blank terminal, cloud), Teleport, the preview pane and Share |
 | [`NewSessionComposer`](version1/NewSessionComposer.dc.html) | New session as one composer: where it runs, up to two repositories with a branch each, permissions, agent and model, and a New environment dialog |
 | [`ShareSession`](version1/ShareSession.dc.html) | A shared session as the person it was shared with sees it — a View only or Can edit badge, and Leave; the Share dialog, the link and who has access are still in the frame |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
-| [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
+| [`Tasks`](version1/Tasks.dc.html) | Plan — tasks by status (To do, In progress, Later, Done) per project, milestones, a Stats view, a project manager chat, a calendar synced with Google Calendar, and tasks started as or linked to sessions; since 2026-10-29 it opens on the Inbox, its first section |
 | [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge, and a merge manager chat |
 | [`Bots`](version1/Bots.dc.html) | Employees — the rail's second item: bots in sidebar groups, each a chat with a model, effort and approval mode, slash commands and a collapsible trace |
 | [`BotSettings`](version1/BotSettings.dc.html) | A bot's settings — identity and photo, instructions with revisions, memory, projects and repositories, tools and connectors, limits, host, bot-to-bot messages, routines and notifications |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace, watched repositories and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
+| [`Inbox`](version1/Inbox.dc.html) | The Inbox as Plan embeds it: what needs you, snoozed and done, with no rail or sidebar of its own |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
 States inside the onboarding screens are live: the workspace address checks
@@ -203,6 +203,13 @@ into a Snoozed list and brought back. `NewSessionComposer` adds a
 project to a new session (or No project) and a branch menu that can
 create and check out a new branch.
 
+The 2026-10-29 export moves the Inbox into Plan. `Brain` is gone, and
+its content is `Inbox`, which `Tasks` embeds as a new first section
+(`Tasks.dc.html?section=inbox`, the frame's default) with a bell above
+the project list. The Inbox's rail item leaves every console frame, and
+sign-in, Ready, `Flow`, `Components` and the global search now land on
+Plan's Inbox. `rail-order.js` stops putting Inbox first in a saved order.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
@@ -299,10 +306,15 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `explore-oppenheimer-agent.dc.html` is not in that export either and
   stays as it was. The 2026-10-14 and 2026-10-25 exports still lack all
   three, and were merged the same way. The 2026-10-26 export leaves
-  `PullRequests` and `Settings` as they were, so both stay as they are.
+  `PullRequests` and `Settings` as they were, so both stay as they are. The
+  2026-10-29 export only drops the Inbox rail item from `PullRequests`,
+  which is applied over the kept edits.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
+- Since the 2026-10-29 export the Inbox is a section of Plan rather than
+  a rail item of its own, where `../29-inbox.md` put it (first in
+  `RAIL_ROUTES`, at `/inbox`); the console still follows the note.
 - The Inbox (`Brain`) is planned and built in `../29-inbox.md`, minimal
   first: its message box, model menus, suggestions and email items are
   left out. Global search, Teleport, the preview pane and Cursor Cloud

@@ -23,7 +23,7 @@ import { AutomationSettingsOrmEntity } from '../database/automation-settings.orm
 import { AutomationSettingsRepository } from '../database/automation-settings.repository';
 import { AutomationTriggerOrmEntity } from '../database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../database/automation-trigger-subject.orm-entity';
-import { AutomationEntity } from '../domain/automation.entity';
+import { AutomationEntity, type RevisionInput } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
 import { AutomationRunEntity } from '../domain/automation-run.entity';
 import { triggerFromInput } from '../domain/trigger-config.policy';
@@ -211,7 +211,12 @@ describe('automations: firing under the caps, and the runs list (integration)', 
 
   async function createAutomation(
     triggers: AutomationTriggerProps[],
-    overrides: { org?: string; project?: string; maxRunsPerHour?: number } = {},
+    overrides: {
+      org?: string;
+      project?: string;
+      maxRunsPerHour?: number;
+      where?: Partial<Pick<RevisionInput, 'place' | 'hostId' | 'agent'>>;
+    } = {},
   ): Promise<AutomationEntity> {
     const automation = AutomationEntity.createNew({
       organizationId: overrides.org ?? organizationId,
@@ -219,8 +224,10 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       ownerUserId: userId,
       name: `Automation ${randomUUID().slice(0, 6)}`,
       revision: {
+        place: 'host',
         hostId,
         agent: 'claude-code',
+        ...overrides.where,
         model: null,
         permission: 'auto',
         effort: null,
@@ -641,6 +648,60 @@ describe('automations: firing under the caps, and the runs list (integration)', 
           new FindAutomationRunQuery({ scope: scope(), runId: run.id }),
         ),
       ).resolves.toMatchObject({ status: 'running', projectId: null, agent: null, hostId: null });
+    });
+  });
+
+  describe('where runs start', () => {
+    it('stores a vendor’s automation with no host, and reads its place back', async () => {
+      const automation = await createAutomation([hourly(0)], {
+        where: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+      const read = (await automations.findOneById(scope(), automation.id)).unwrap();
+      expect(read.target).toMatchObject({
+        kind: 'session',
+        revision: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+    });
+
+    it('refuses a revision that runs on a host but names none', async () => {
+      const automation = await createAutomation([hourly(0)]);
+      await expect(
+        dataSource.query(`UPDATE "automation_revision" SET "hostId" = NULL WHERE "id" = $1`, [
+          automation.revision.id,
+        ]),
+      ).rejects.toThrow(/CHK_automation_revision_place_host/);
+    });
+
+    it('lets a host run past a live cloud run started from that host', async () => {
+      await settings.upsert(organizationId, { liveRunsPerHost: 1 });
+      const cloud = await createAutomation([hourly(0)], { where: { place: 'claude-cloud' } });
+      await run(cloud, 0, 'dispatched', { turn: 'in_progress' });
+      const onHost = await createAutomation([hourly(0)]);
+      const vendor = await createAutomation([hourly(0)], {
+        where: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+      const claim = async (automation: AutomationEntity, host: string | null) => {
+        await run(automation, 0, 'pending');
+        const [pending]: { id: string }[] = await dataSource.query(
+          `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "outcome" = 'pending'`,
+          [automation.id],
+        );
+        const now = new Date();
+        return runs.claimSlot({
+          runId: pending.id,
+          automationId: automation.id,
+          hostId: host,
+          liveRunsPerHost: 1,
+          overlap: 'skip',
+          liveSince: new Date(now.getTime() - DAY),
+          claimFloor: new Date(now.getTime() - DAY),
+          now,
+        });
+      };
+
+      expect(await claim(onHost, hostId)).toBe(true);
+      // With no host, only the automation's own runs are counted.
+      expect(await claim(vendor, null)).toBe(true);
     });
   });
 

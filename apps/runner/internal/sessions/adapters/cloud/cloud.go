@@ -61,6 +61,12 @@ var (
 	created = regexp.MustCompile(`Created cloud session: ([^\r\n]+)`)
 )
 
+// trustPrompt is the confirm label of Claude Code's "do you trust this
+// folder?" dialog: with input closed nobody can answer it. It is the CLI's
+// own wording (2.1.x), so a release that rewords it only loses the early
+// failure: the start still ends at the timeout.
+const trustPrompt = "Yes, I trust this folder"
+
 // Start creates the cloud session for prompt from the repository checked out
 // in dir. It answers once the CLI has named the session, and gives the CLI a
 // few seconds to exit on its own before it is stopped.
@@ -120,6 +126,11 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 					_ = cmd.Process.Kill()
 				}
 				return started, nil
+			}
+			if strings.Contains(clean(out.String()), trustPrompt) {
+				_ = cmd.Process.Kill()
+				return Started{}, domain.ErrCloudStart.WithDetail(
+					"claude --cloud asks whether to trust %s, and nobody is there to answer: %s", dir, lastWords(out.String()))
 			}
 		case <-ctx.Done():
 			_ = cmd.Process.Kill()

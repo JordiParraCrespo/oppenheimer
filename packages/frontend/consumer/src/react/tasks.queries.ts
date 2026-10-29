@@ -273,9 +273,7 @@ export function useDeleteTask(options?: UseMutationOptions<void, Error, string>)
   });
 }
 
-export interface StartTaskSessionVariables extends StartTaskSessionInput {
-  id: string;
-}
+export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
 
 /** Start a session for a task; the session list learns of it on its next read. */
 export function useStartTaskSession(
@@ -284,7 +282,9 @@ export function useStartTaskSession(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: StartTaskSessionVariables) => app.tasks.startSession(id, input),
+    // The input is read field by field, so the id riding along is never sent.
+    mutationFn: (variables: StartTaskSessionVariables) =>
+      app.tasks.startSession(variables.id, variables),
     ...withCacheOnSuccess(options, (started) => {
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
       return settleTask(queryClient, started.task.id, started.task);
