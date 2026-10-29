@@ -437,6 +437,6 @@ landed the same day in `versions/mvp/25-bots.md` §4.1: a fact is
 fact is read by all their bots and owned by the one that learned it. The
 review queue for shared learnings was left out. Row 12 landed the same day
 in `versions/mvp/25-bots.md` §3.2 as `ask_user`: up to four questions on a
-Needs input card, answered with the picker a session's questions use, and
+card of their own beside approvals, answered with the picker a session's questions use, and
 the answers open the bot's next turn. The sign-in and computer hand-over
 resume points were left out.

@@ -11,7 +11,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApprovalRequestDetails } from '@/features/bots/components/approval-request-details';
 import { ApprovalNoteForm } from '@/features/bots/forms/approval-note-form';
-import { BotQuestionCard } from './bot-question-card';
 
 /**
  * The Needs input card (`25-bots.md` §5; the AI Elements export's
@@ -20,8 +19,7 @@ import { BotQuestionCard } from './bot-question-card';
  * leave the yes standing for the thing it acts on, or for the tool, where the
  * card offers them (never for a merge). Deny opens a note for what to do
  * instead.
- * Either way the card goes and the bot reports back in the chat. A card of
- * questions (`ask_user`) is answered instead, in `BotQuestionCard`. It draws
+ * Either way the card goes and the bot reports back in the chat. It draws
  * nothing while there is no card, or while the card is being read: the chat
  * is whole without it.
  */
@@ -34,7 +32,6 @@ export function BotApprovalCard({ botId, name }: { botId: string; name: string }
   const voice = useVoiceDictation();
 
   if (!approval) return null;
-  if (approval.isQuestion) return <BotQuestionCard botId={botId} approval={approval} />;
   const { reaches, subjectLabel } = approval.details;
   const answer = (decision: 'approve' | 'deny', note?: string, reach?: BotApprovalReach) =>
     decide.mutate(

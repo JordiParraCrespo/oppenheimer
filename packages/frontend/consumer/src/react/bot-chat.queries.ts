@@ -395,6 +395,10 @@ export function useBotLive(id: string): BotLive {
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
       }
+      if (event.type === 'question') {
+        void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
+        return;
+      }
       retry((retries) => clearBotRetry(retries, event.turnId));
       const ended =
         event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';

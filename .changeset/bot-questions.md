@@ -9,11 +9,14 @@
 ---
 
 A bot can ask its owner questions. `ask_user` puts up to four questions,
-each with two to four likely answers, on a Needs input card and ends the
-turn. The card is a `bot_approval` row whose status ends `answered`, with
-the `answers` stored beside it; `POST /v1/bots/:id/approvals/:id/decision`
-takes `answer` with `answers`, or `deny` to dismiss it (`BOTS_035`,
-`BOTS_036`). The bot's next turn is told each answer, fenced as data, and
-the chat draws them under the line. The console answers with
-`ChatQuestionPicker`, the session question picker moved into the platform
-kit, whose keys moved to `common.chat.question`.
+each with two to four likely answers, on a card and ends the turn. The card
+is its own `bot_question` row, beside approvals rather than a kind of one:
+`GET /v1/bots/:id/question` reads the waiting card, and
+`POST /v1/bots/:id/questions/:questionId/answer` and `/dismiss` decide it
+(`BOTS_035` to `BOTS_037`). A bot has one card up at a time of either kind.
+The tool is offered only on turns a person is waiting on (`attendedOnly`).
+The bot's next turn, of origin `question`, is told each answer fenced as
+data, and the chat draws a `question` event with each answer under the
+line. The console answers with `ChatQuestionPicker`, the session question
+picker moved into the platform kit, whose keys moved to
+`common.chat.question`.

@@ -7,15 +7,6 @@ import {
   type BotApprovalStatus,
 } from '@oppenheimer/shared';
 
-/** One question's answer: the options picked, by index, and the person's own words. */
-export class BotQuestionAnswerResponseDto {
-  @ApiProperty({ type: [Number] })
-  picks!: number[];
-
-  @ApiProperty({ nullable: true, type: String })
-  other!: string | null;
-}
-
 /** A Needs input card: one call of an asking tool, waiting for the owner or decided. */
 export class BotApprovalResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -49,14 +40,6 @@ export class BotApprovalResponseDto {
 
   @ApiProperty({ nullable: true, type: String, description: 'What the person added to a no.' })
   note!: string | null;
-
-  @ApiProperty({
-    type: [BotQuestionAnswerResponseDto],
-    nullable: true,
-    description:
-      'What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.',
-  })
-  answers!: BotQuestionAnswerResponseDto[] | null;
 
   @ApiProperty({
     nullable: true,

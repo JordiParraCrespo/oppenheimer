@@ -440,8 +440,9 @@
       "BOTS_032": "Esa regla ya no existe. Recarga la página.",
       "BOTS_033": "Ese permiso ya no existe. Recarga la página.",
       "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero.",
-      "BOTS_035": "Esta tarjeta no se responde así. Recarga el chat y vuelve a intentarlo.",
-      "BOTS_036": "Esas respuestas no encajan con las preguntas. Responde cada una y vuelve a enviarlas."
+      "BOTS_035": "Esas preguntas no existen.",
+      "BOTS_036": "Esas respuestas no encajan con las preguntas. Responde cada una y vuelve a enviarlas.",
+      "BOTS_037": "Esas preguntas ya tenían respuesta."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1497,6 +1498,11 @@
       },
       "saveFailed": "No se ha podido cambiar el bot.",
       "loadFailed": "No se ha podido cargar este bot.",
+      "question": {
+        "answered": "Respondiste: {{summary}}",
+        "dismissed": "Descartaste: {{summary}}",
+        "failed": "No se pudieron enviar tus respuestas."
+      },
       "approval": {
         "needsInput": "Necesita tu respuesta",
         "title": "{{name}} quiere hacer esto",
@@ -1519,8 +1525,6 @@
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
-        "answered": "Respondiste: {{summary}}",
-        "dismissed": "Descartaste: {{summary}}",
         "routine": "Rutina · {{name}}",
         "routineSaved": "Rutina creada: “{{name}}”",
         "routineChanged": "Rutina cambiada: “{{name}}”",

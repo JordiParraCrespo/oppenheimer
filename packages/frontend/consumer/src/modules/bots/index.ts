@@ -15,11 +15,11 @@ export {
 } from './bot.entity';
 export {
   type BotApprovalDetails,
-  type BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
+  type BotQuestionCardEntity,
   type BotRoomLeft,
   type BotToolStep,
   type BotTurnContext,
