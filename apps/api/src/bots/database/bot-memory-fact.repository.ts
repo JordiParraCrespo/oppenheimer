@@ -16,11 +16,13 @@ import type { BotMemoryFactRepositoryPort } from './bot-memory-fact.repository.p
  * bots' ids, those through `IDX_bot_created_by`). A bot with no owner has no
  * siblings.
  */
-const KEPT_BY_OR_SHARED_WITH = `(fact."botId" = :botId OR (fact."scope" = 'person' AND fact."botId" IN (
-  SELECT sibling.id FROM bot sibling
+const OWNER_OF_BOT = `SELECT owner."createdByUserId" FROM bot owner WHERE owner.id = :botId`;
+/** Every bot that person made in the fact's workspace, the bot itself among them. */
+const OWNERS_BOTS = `SELECT sibling.id FROM bot sibling
    WHERE sibling."organizationId" = fact."organizationId"
-     AND sibling."createdByUserId" = (SELECT owner."createdByUserId" FROM bot owner WHERE owner.id = :botId)
-)))`;
+     AND sibling."createdByUserId" = (${OWNER_OF_BOT})`;
+/** The bot's own facts, and the facts about its owner that any bot of theirs keeps. */
+const KEPT_BY_OR_SHARED_WITH = `(fact."botId" = :botId OR (fact."scope" = 'person' AND fact."botId" IN (${OWNERS_BOTS})))`;
 
 @Injectable()
 export class BotMemoryFactRepository

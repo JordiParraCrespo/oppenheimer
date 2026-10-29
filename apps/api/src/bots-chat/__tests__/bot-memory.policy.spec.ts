@@ -5,7 +5,12 @@
  * when there are more than fit, where the newest should win; a bot not told
  * there is more to `recall`.
  */
-import { memoryInMind, type RememberedFact } from '../domain/bot-memory.policy';
+import {
+  describeKept,
+  memoryInMind,
+  memoryScopeOf,
+  type RememberedFact,
+} from '../domain/bot-memory.policy';
 
 const fact = (
   content: string,
@@ -31,5 +36,25 @@ describe('memoryInMind', () => {
   it('keeps the newest profile facts when there are more than fit, and leaves the rest to recall', () => {
     const newestFirst = [fact('c'), fact('b'), fact('a')];
     expect(memoryInMind(newestFirst, 2)).toEqual({ own: ['b', 'c'], person: [], toRecall: 1 });
+  });
+});
+
+describe('describeKept', () => {
+  it('says how a fact is kept, and which another of the person’s bots keeps', () => {
+    expect(describeKept({ tier: 'log', scope: 'bot', botId: 'b1' }, 'b1')).toBe('to look up');
+    expect(describeKept({ tier: 'profile', scope: 'person', botId: 'b1' }, 'b1')).toBe(
+      'in mind, about the person',
+    );
+    expect(describeKept({ tier: 'profile', scope: 'person', botId: 'b2' }, 'b1')).toBe(
+      'in mind, about the person, shared by another of their bots',
+    );
+  });
+
+  it('keeps a fact the bot’s own unless it was told it is about the person', () => {
+    expect([memoryScopeOf(undefined), memoryScopeOf('you'), memoryScopeOf('person')]).toEqual([
+      'bot',
+      'bot',
+      'person',
+    ]);
   });
 });
