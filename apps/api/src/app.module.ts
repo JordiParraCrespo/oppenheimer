@@ -35,7 +35,6 @@ import { AutomationsModule } from './automations/automations.module';
 import { BotsModule } from './bots/bots.module';
 import { BotsChatModule } from './bots-chat/bots-chat.module';
 import { CalendarModule } from './calendar/calendar.module';
-import { MailModule } from './mail/mail.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import { CloudAgentsModule } from './cloud-agents/cloud-agents.module';
 import {
@@ -43,7 +42,6 @@ import {
   automationsConfig,
   botsConfig,
   calendarConfig,
-  mailConfig,
   cloudAgentsConfig,
   databaseConfig,
   emailConfig,
@@ -52,6 +50,7 @@ import {
   hostsConfig,
   llmConfig,
   llmConfigFrom,
+  mailConfig,
   oauthConfig,
   redisConfig,
   relayConfig,
@@ -73,6 +72,7 @@ import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
 import { InboxModule } from './inbox/inbox.module';
+import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
