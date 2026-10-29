@@ -304,3 +304,115 @@ copy, not their rules.
 agent blocked on a permission is the commonest stall; at most one wake per
 state of a task; and the owner's live permissions as the ceiling, re-read
 at every wake, where Grok Bot has no such ceiling.
+
+## 9. Grok Bot 0.78.1: the harness, for ours (2026-10-29)
+
+A static read of the Linux `.deb` of version 0.78.1, fetched this time
+from `downloads.cursor.com` (sha256 `55d2a34c…3ded1d`) and unpacked from
+its `app.asar`. Nothing in it was run and no code is taken. §1 to §8 read
+the box, the onboarding and the wakes; this read asks what the agent
+harness does that ours (25 §2 to §5, `apps/api/src/bots-chat`) does not.
+Three sources:
+
+- **The protobuf schemas** (`proto.cjs`, `agent.v1` and `aiserver.v1`):
+  2,729 messages and 76 tool-call types. The loop runs on xAI's servers,
+  so the schemas are the best evidence there is of what it does.
+- **The renderer's copy and state shapes**: what a person sees of approvals,
+  failures, tasks and memory.
+- **The device daemon and coordinator**, which run tools on the user's
+  machine.
+
+### What changed since 0.18 (§1)
+
+- **Still true:** there is no PTY, only pipes, and a terminal is still a
+  file with an `exit_code:` footer.
+- **The listener is gone.** The exec daemon no longer serves loopback
+  `:1337`; it is an outbound client.
+- **The link is a doorbell plus a pull.** `Watch` streams only `notify`
+  and heartbeats, and `Poll`, with acks and at most 64 at a time, fetches
+  the work.
+- **Every frame carries its authority:** `approval_id`,
+  `authorized_by_standing` or `authorized_by_approval`.
+
+### The tool surface, in one paragraph
+
+**The coding tools are Cursor's agent.** There are files, grep and
+semantic search, lints and blame. There is a shell with a soft timeout
+and a hard one, and on timeout it either cancels or moves to the
+background. `Await` waits on a task, `WriteShellStdin` writes to one,
+and there are subagents of a dozen types.
+
+**Bot-specific tools sit on top:**
+- tracked tasks: a shared board, with a `version` on every update;
+- goals;
+- plans with phases and todos that the person accepts, edits or rejects;
+- PR management, where merge takes `expected_head_sha`, plus a narrated
+  "code tour";
+- `RecordCiInvestigationFindings`, one finding per check: root cause,
+  relation to the diff, flake assessment, confidence, and evidence beside
+  each judgment;
+- canvases;
+- image and video generation, screen recording, computer use;
+- X search;
+- `SearchConversations`;
+- `Reflect`, a structured self-check.
+
+Ours keeps the coding in a session on a host and none of it on the
+control plane (25 §2). That stays, so the coding half is not a list of
+things to copy.
+
+### What we could introduce, ranked
+
+The first five are small and fit what exists. The next four are the
+unbuilt items of 25 §7 and 27, and Grok Bot shows a shape for them. The
+rest is later.
+
+| # | Grok Bot does | Evidence | Ours today | Where it would land |
+|---|---|---|---|---|
+| 1 | **Head and tail with a count.** Long output keeps its start and its end, says how much it elided, and keeps the whole output in a file | `output_head`, `output_tail`, `elided_chars`, `output_location`; `TruncatedToolCall` | `fitToolOutput` keeps the first 12,000 characters, so a session's error at the end is the part lost | `bot-tool-text.policy.ts`; `read_session` above all |
+| 2 | **The model knows its room.** The harness tells it how full the context is, and nudges it at set points | `ContextWindowStatus{percentage_remaining}`, a todo reminder `EVERY_10_TURNS`, `DiscoveryBudgetReminder` | The meter is for the person only (25 §2) | one line in `<turn_context>`, which stays out of the cached prompt |
+| 3 | **A reply has to commit.** "A confirmation on its own… is not a reply": an acknowledgement says the job taken, where it stands and when it will say more. Asking again "is the same errand: say where it stands and start nothing" | renderer prompt fragments | "Started, not done" for sessions only | the prompt's "how a turn goes" (25 §2) |
+| 4 | **Typed failures that say whether a retry helps.** "Usually temporary", "Sending it again won't help". The failure names whose account hit the limit | `TurnFailed{code USAGE_LIMIT\|RATE_LIMIT\|PROVIDER_CONTENT_BLOCKED…, account OWNER\|ACTING_USER}` | `BotRateLimitError` for summaries; a failed turn's line | the turn's failure codes and the chat's failed line |
+| 5 | **Search past chats.** The bot can look up what fell out of its summary | `SearchConversations` (query, a snippet per hit) | `recall` searches facts only; old messages are reachable only through the summary | a read-only tool over `bot_message`, offered to `delegate` too |
+| 6 | **Plain-language rules and an auto-reviewer.** A model judges each call against *allow* and *always ask* rules: "Always Ask wins, whoever wrote it", and "Built-in safety checks always apply". Its verdict carries `irreversible`, `high_stakes` and the rules it applied, and the activity line says "Auto-approved by your rule". A block proposes a rule, accepted in one click | `SandAutoReviewRulesInEffect`, `GrokBotAutoReviewRuleSave` (records where a rule came from), mode `auto-review` beside `always-allow\|needs-approval\|blocked` | Allow, Ask or Off per tool; plain-language rules are 25 §7, not built | 25 §5, as a fourth choice per tool: **Review** |
+| 7 | **Approvals with a reach.** "Allow covers every {name} request for the rest of this turn… Always allow covers them from now on." A standing grant can be scoped to a subject, such as a recipient or an app. Some actions are per call only and never standing. A machine ceiling caps the person's choice | the scope kinds `global\|setting\|subject\|call`; `NEVER\|ASK\|ALWAYS` ceiling | Approve once or *Always allow* the whole tool | 25 §5: "always allow merges in acme/xrp", while `merge_pull_request` on a protected branch stays per call |
+| 8 | **Wake on what a terminal prints.** A regex over a shell's output wakes the agent. The first match goes at once, later ones are debounced (5 s or more), at most 100, and a watch that never matched is reported "silent". Inside a turn, `Await` blocks on a task with a deadline and a regex | `ShellOutputNotificationConfig{pattern, reason, debounce, notification_limit}`; `Await{task_id, block_until_ms, regex}` → `complete\|still_running`, `regex_match` | Watches wake on a task's state only: input needed, finished, failed, stopped (27 §2) | 27 §2, a `pattern` on `watch_session`, matched by the runner on the tmux pane; a bounded wait in §4.2 |
+| 9 | **Read only what followed your input.** Writing to stdin returns the output length before the input, so the agent reads only the answer | `terminal_file_length_before_input_written` | `send_to_session` and `answer_session` return nothing to read from | an offset from those two tools that `read_session` takes |
+| 10 | **Goals that keep it going.** A goal re-prompts the agent with a marked continuation turn until it is complete, paused or cleared. Each synthetic message says why it exists, out of 34 reasons | `CreateGoal`/`UpdateGoal`, `goal_continuation_action`, `simulated_msg_reason` (`GOAL_CONTINUATION`, `BACKGROUND_TASK_COMPLETION`, `COMMIT_REMINDER`…) | Event turns from routines and watches (26, 27) | 26, as a bounded routine the bot sets on itself, with the chain limits of 25 §4.6 |
+| 11 | **Memory with a scope and a tier.** A fact is `profile` (always in the prompt) or `log` (recalled), and scoped to the bot or to the user, so all of a person's bots share it. Shared learnings wait in a review queue | `UpdateMemory` scope `user`, tiers; `TeamReview*Change`; facts carry `learned_at_ms` | One table of facts per bot, all in the prompt | 25 §7's "project and user memory" |
+| 12 | **Cards beyond approval.** A turn can stop on a form, a sign-in to an MCP server, or "hand your computer over… instead of guessing", and resume after it, with a named failure for each resume point | `RequestUserForm`, `AuthenticateMcpServer`, `request_box_help`; "Bot failed to resume after …" | `ask_user` and the Needs input card | 25 §3, once there is more than one kind of card to resume from |
+| 13 | **Rooms where a bot may pass.** In a group chat each bot is offered a turn with a deadline and may answer `PASS`, and the chain is bounded by its root | `RequestGrokBotRoomMemberTurn{is_winding_down, deadline_ms}` → `SENT\|PASS\|SKIPPED\|TIMEOUT` | Group chats are 25 §7, not built | 25 §7 group chats, on `BotChainPolicy` |
+| 14 | **CI findings as a record.** For each failing check: root cause, how it relates to the diff, a flake verdict, the action, confidence, and the evidence for each | `RecordCiInvestigationFindings` | Review sessions report in prose | the review session's result (`next-steps/0.2-pull-requests.md`) |
+
+### What we leave
+
+- **Its coding tools on the bot.** A shell, files and computer use on
+  the bot's own loop are what 25 §2 turned off. Code goes to a session.
+- **A profile mined from 100 past chats.** The evidence bar is good: a
+  rule must rest on the person correcting the agent, cited in 4
+  conversations. But it writes about the person without asking. If we
+  ever do it, we propose it and the person accepts.
+- **Scrubbing the session's environment.** Grok Bot drops
+  `SSH_AUTH_SOCK`, the D-Bus and Wayland sockets for its children. Our
+  sessions are the person's own agent on their own host, and git there
+  may need the SSH agent. Revisit with VMs (02, 04).
+- **Cookie sync driven by the agent.** Grok Bot removed it itself
+  ("retired: the agent-prompted cookie sync … was removed"), and only a
+  manual import in Settings remains. Our cross-host logins research
+  reaches the same place: moving a sign-in is the person's act.
+
+### Verdict
+
+Ranked by value for cost:
+
+- **Rows 1 to 5 first.** Each is a policy, a prompt line or one
+  read-only tool, and they make every turn better.
+- **Then rows 6 to 8.** These are the real gap: our approvals are per
+  tool and our wakes are per state. Grok Bot judges each call against
+  rules the person writes, and wakes on what a terminal says. Both fit
+  the boundaries we have, since the owner's permissions stay the ceiling
+  and the runner already holds the pane.
+- **The rest when their notes are built.**
+
+Nothing here is decided. A row someone takes is written in the note in
+its last column.

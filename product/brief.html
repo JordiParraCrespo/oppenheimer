@@ -737,6 +737,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     </ul>
   </div>
 </div>
+<p>A read of version 0.78.1's harness (<code>research/lessons-from-grok-bot.md</code> §9) ranks what our bots could take. First the cheap ones: long tool output kept head and tail with the elided count, how full the context is told to the model, failures that say whether a retry helps, and a search over past chats. Then the real gap: plain-language allow and always-ask rules judged per call by a reviewer model, approvals with a reach (this turn, from now on, this repository only), and a watch that wakes a bot when a session's terminal prints a pattern. Nothing there is decided.</p>
 
 <h2 id="herdr">Lessons from herdr</h2>
 <p>herdr is the closest thing to this product that exists: a Rust terminal workspace manager for coding agents, with a background server, panes marked working, blocked or idle, and machines reachable over SSH. Its source was read in full after our runner was built (note 13, now <code>research/lessons-from-herdr.md</code>). The decomposition matches ours; the one difference that matters is where the process boundary falls.</p>
