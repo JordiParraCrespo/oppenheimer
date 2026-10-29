@@ -1,8 +1,9 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
+import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** How queuing a turn another bot asked for went. */
 export type BotPeerEnqueueOutcome =
@@ -42,6 +43,19 @@ export interface BotTurnRepositoryPort {
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   /**
+   * `enqueue` for a goal's continuation (`25-bots.md` §4.1), with the goal's
+   * count claimed in the same transaction: `lost` when the goal was stopped,
+   * ended or replaced, or another end claimed the count; `existing` when this
+   * continuation was queued already.
+   */
+  enqueueContinuation(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    goal: BotGoalEntity,
+  ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
+
+  /**
    * `enqueue` for a turn another bot's call queues: under a lock on its
    * chain's first turn, so two asks of one chain decide in turn, `decide`
    * reads what the chain holds and the turn is queued only when it allows.
@@ -66,6 +80,18 @@ export interface BotTurnRepositoryPort {
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
+  findQueuedBySourcePrefix(
+    organizationId: string,
+    botId: string,
+    prefix: string,
+  ): Promise<BotTurnEntity[]>;
+  /**
+   * What the model's context held at the end of the bot's newest turn that
+   * reported it, for the next turn to be told how full it is. Null before any
+   * turn reported one.
+   */
+  findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,

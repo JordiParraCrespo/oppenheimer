@@ -90,7 +90,10 @@ export class ClaudeBotEngine extends BotEngine {
       if (request.signal.aborted) throw error;
       // The subprocess's last words say why it exited; the SDK's error only that it did.
       const detail = stderr.trim();
-      throw new Error(detail ? `${describeError(error)}: ${detail}` : describeError(error));
+      yield* translator.thrown(
+        detail ? `${describeError(error)}: ${detail}` : describeError(error),
+        detail || undefined,
+      );
     } finally {
       ended.abort();
       await toolServer.close().catch(() => undefined);

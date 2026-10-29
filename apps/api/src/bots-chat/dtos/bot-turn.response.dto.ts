@@ -1,8 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   BOT_PROVIDERS,
+  BOT_TURN_FAILURES,
   BOT_TURN_STATUSES,
   type BotProvider,
+  type BotTurnFailure,
   type BotTurnStatus,
 } from '@oppenheimer/shared';
 
@@ -40,6 +43,13 @@ export class BotTurnResponseDto {
 
   @ApiProperty({ nullable: true, type: String, description: 'Why it failed; null otherwise.' })
   error!: string | null;
+
+  @ApiProperty({
+    ...nullableEnum(BOT_TURN_FAILURES),
+    description:
+      'What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.',
+  })
+  failure!: BotTurnFailure | null;
 
   @ApiProperty()
   inputTokens!: number;

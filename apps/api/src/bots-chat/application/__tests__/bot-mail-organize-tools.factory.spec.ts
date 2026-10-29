@@ -6,6 +6,7 @@ import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.ent
 import type { GmailLabel } from '../../../mail/infrastructure/gmail-provider.port';
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { FindMailLabelsQuery } from '../../../mail/queries/find-mail-labels/find-mail-labels.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
 import { BotMailOrganizeToolsFactory } from '../bot-mail-organize-tools.factory';
@@ -60,6 +61,7 @@ function setup(permission: BotToolContext['permission']) {
     homeHostId: null,
     timeZone: 'UTC',
     permission,
+    permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: null,
     approvals: { request },

@@ -19789,6 +19789,127 @@
         "tags": ["Bots"]
       }
     },
+    "/api/v1/bots/{id}/goal": {
+      "delete": {
+        "description": "Ends the goal the bot set itself, with a line in its chat saying you stopped it, and cancels a continuation still waiting. With no goal, nothing changes.",
+        "operationId": "clearBotGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The bot has no goal now."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop a bot's goal",
+        "tags": ["Bots"]
+      },
+      "get": {
+        "description": "The goal the bot set itself and keeps working toward, with how many continuation turns it has taken of its limit; null when it has none.",
+        "operationId": "findBotGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotGoalStateResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's goal",
+        "tags": ["Bots"]
+      }
+    },
     "/api/v1/bots/{id}/stream": {
       "get": {
         "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change: `{ type: \"text\", turnId, text }` as a turn writes, `{ type: \"message\", turnId, messageId }` when a message is stored, `{ type: \"turn\", turnId, status }` when a turn moves. The stored conversation is the record; read it again on `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
@@ -19985,7 +20106,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -20057,7 +20178,17 @@
             }
           },
           "409": {
-            "description": "BOTS_016 — The approval was already decided",
+            "description": "BOTS_034 — Too many standing grants\n\nBOTS_016 — The approval was already decided",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_030 — A reach the card does not offer",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20073,6 +20204,379 @@
           }
         ],
         "summary": "Answer a bot's Needs input card",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/permissions": {
+      "get": {
+        "description": "Every tool with where it stands for the bot (Allow, Ask or Off: its owner’s setting, else the preset’s default), the standing grants for single things, and the plain-language rules a reviewer reads before an asking call.",
+        "operationId": "findBotPermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotPermissionsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's permissions",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/permissions/tools/{tool}": {
+      "put": {
+        "description": "`allow` runs it without asking, `ask` raises a Needs input card, `off` takes it away; `default` drops the setting so the tool follows the preset. Answers the bot’s permissions as they now stand.",
+        "operationId": "setBotToolDecision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tool",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBotToolDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotPermissionsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_029 — No such tool\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_030 — This tool is decided call by call",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set what a bot may do with one tool",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/permissions/rules": {
+      "post": {
+        "description": "A sentence a reviewer reads before the bot’s asking calls: `allow` lets a matching call run without a card, `ask` makes one ask; when both match, `ask` wins. At most 20 per bot. Answers the bot’s permissions as they now stand.",
+        "operationId": "createBotPermissionRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBotPermissionRuleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotPermissionsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_031 — The bot holds as many rules as it can",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a permission rule to a bot",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/permissions/rules/{ruleId}": {
+      "delete": {
+        "operationId": "deleteBotPermissionRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ruleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_032 — Rule not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a permission rule from a bot",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/permissions/grants/{grantId}": {
+      "delete": {
+        "operationId": "deleteBotToolGrant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_033 — Grant not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a standing grant from a bot",
         "tags": ["Bots"]
       }
     },
@@ -30198,6 +30702,20 @@
         },
         "required": ["kind", "fromBotId", "fromBotName", "outcome"]
       },
+      "BotSessionMatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "The pattern the bot watches the terminal for."
+          },
+          "count": {
+            "type": "number",
+            "description": "New matching lines counted so far."
+          }
+        },
+        "required": ["pattern", "count"]
+      },
       "BotSessionEventResponseDto": {
         "type": "object",
         "properties": {
@@ -30224,11 +30742,57 @@
           },
           "state": {
             "type": "string",
-            "enum": ["requires_action", "completed", "failed", "cancelled", "expired"],
-            "description": "What became of the task."
+            "enum": ["requires_action", "completed", "failed", "cancelled", "expired", "matched"],
+            "description": "What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for."
+          },
+          "match": {
+            "nullable": true,
+            "description": "For `matched`: the pattern and how many lines matched so far; never the text.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotSessionMatchResponseDto"
+              }
+            ]
           }
         },
         "required": ["kind", "subscriptionId", "sessionId", "sessionName", "turn", "state"]
+      },
+      "BotGoalEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["goal"]
+          },
+          "activity": {
+            "type": "string",
+            "enum": ["continued", "cleared", "exhausted", "stopped"],
+            "description": "`continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`)."
+          },
+          "goalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "objective": {
+            "type": "string",
+            "description": "The goal's objective at the time."
+          },
+          "step": {
+            "type": "number",
+            "description": "For `continued`, which continuation this is; otherwise how many ran."
+          },
+          "limit": {
+            "type": "number",
+            "description": "The continuations the goal may take."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "For `stopped`: the status of the turn that ended it, or `access_lost`."
+          }
+        },
+        "required": ["kind", "activity", "goalId", "objective", "step", "limit", "reason"]
       },
       "BotSubagentRunResponseDto": {
         "type": "object",
@@ -30309,6 +30873,11 @@
               "$ref": "#/components/schemas/BotSubagentRunResponseDto"
             }
           },
+          "allowedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why an asking call ran without a card: a standing grant (\"Always allowed for acme/docs\") or the owner’s rule that let it; null otherwise."
+          },
           "mailDraft": {
             "type": "object",
             "additionalProperties": true,
@@ -30324,6 +30893,7 @@
           "isError",
           "sessionId",
           "subagents",
+          "allowedBy",
           "mailDraft"
         ]
       },
@@ -30393,6 +30963,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotSessionEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotGoalEventResponseDto"
               }
             ],
             "nullable": true,
@@ -30486,6 +31059,22 @@
             "nullable": true,
             "description": "Why it failed; null otherwise."
           },
+          "failure": {
+            "type": "string",
+            "enum": [
+              "rate_limit",
+              "usage_limit",
+              "credential",
+              "refused",
+              "unavailable",
+              "time_limit",
+              "interrupted",
+              "other",
+              null
+            ],
+            "nullable": true,
+            "description": "What kind of failure it was, so a client can say whether sending it again can help; null unless it failed."
+          },
           "inputTokens": {
             "type": "number"
           },
@@ -30537,6 +31126,7 @@
           "provider",
           "model",
           "error",
+          "failure",
           "inputTokens",
           "outputTokens",
           "contextTokens",
@@ -30596,6 +31186,47 @@
           }
         }
       },
+      "BotGoalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "objective": {
+            "type": "string",
+            "description": "What the bot keeps working toward, in its words."
+          },
+          "continuations": {
+            "type": "number",
+            "description": "The continuation turns queued so far."
+          },
+          "limit": {
+            "type": "number",
+            "description": "The continuation turns it may queue."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "objective", "continuations", "limit", "createdAt"]
+      },
+      "BotGoalStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalResponseDto"
+              }
+            ]
+          }
+        },
+        "required": ["goal"]
+      },
       "BotApprovalResponseDto": {
         "type": "object",
         "properties": {
@@ -30635,6 +31266,39 @@
             "nullable": true,
             "description": "What the person added to a no."
           },
+          "subjectKind": {
+            "type": "string",
+            "nullable": true,
+            "description": "What kind of thing the call acts on (`repository`, `session`); null when none."
+          },
+          "subjectLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The thing the call acts on, by name: what \"Always allow for …\" covers."
+          },
+          "sharesOutside": {
+            "type": "boolean",
+            "description": "The call sends data out of Oppenheimer."
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a rule paused the call, when one did."
+          },
+          "reaches": {
+            "type": "array",
+            "description": "How far a yes may reach: this call, its subject, the tool.",
+            "items": {
+              "type": "string",
+              "enum": ["once", "tool", "subject"]
+            }
+          },
+          "reach": {
+            "type": "string",
+            "enum": ["once", "tool", "subject", null],
+            "nullable": true,
+            "description": "How far the yes went."
+          },
           "decidedByUserId": {
             "type": "string",
             "nullable": true,
@@ -30659,6 +31323,12 @@
           "status",
           "result",
           "note",
+          "subjectKind",
+          "subjectLabel",
+          "sharesOutside",
+          "reviewNote",
+          "reaches",
+          "reach",
           "decidedByUserId",
           "decidedAt",
           "createdAt"
@@ -30703,6 +31373,39 @@
             "nullable": true,
             "description": "What the person added to a no."
           },
+          "subjectKind": {
+            "type": "string",
+            "nullable": true,
+            "description": "What kind of thing the call acts on (`repository`, `session`); null when none."
+          },
+          "subjectLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The thing the call acts on, by name: what \"Always allow for …\" covers."
+          },
+          "sharesOutside": {
+            "type": "boolean",
+            "description": "The call sends data out of Oppenheimer."
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a rule paused the call, when one did."
+          },
+          "reaches": {
+            "type": "array",
+            "description": "How far a yes may reach: this call, its subject, the tool.",
+            "items": {
+              "type": "string",
+              "enum": ["once", "tool", "subject"]
+            }
+          },
+          "reach": {
+            "type": "string",
+            "enum": ["once", "tool", "subject", null],
+            "nullable": true,
+            "description": "How far the yes went."
+          },
           "decidedByUserId": {
             "type": "string",
             "nullable": true,
@@ -30742,6 +31445,12 @@
           "status",
           "result",
           "note",
+          "subjectKind",
+          "subjectLabel",
+          "sharesOutside",
+          "reviewNote",
+          "reaches",
+          "reach",
           "decidedByUserId",
           "decidedAt",
           "createdAt",
@@ -30760,9 +31469,154 @@
           "note": {
             "type": "string",
             "maxLength": 1000
+          },
+          "reach": {
+            "type": "string",
+            "enum": ["once", "tool", "subject"],
+            "default": "once"
           }
         },
         "required": ["decision"]
+      },
+      "BotToolPermissionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The tool, as the bot knows it (`merge_pull_request`)."
+          },
+          "group": {
+            "type": "string",
+            "enum": ["self", "sessions", "plan", "mail", "github", "automations", "bots", "web"],
+            "description": "The group it is listed under."
+          },
+          "description": {
+            "type": "string",
+            "description": "What it does, in a sentence."
+          },
+          "asks": {
+            "type": "boolean",
+            "description": "It reaches outside Oppenheimer: asking is its default under Approve for me."
+          },
+          "perCallOnly": {
+            "type": "boolean",
+            "description": "Every call is decided on its own: Allow is not offered for it."
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["allow", "ask", "off"],
+            "description": "What it does now: the setting, or the default."
+          },
+          "set": {
+            "type": "string",
+            "enum": ["allow", "ask", "off", null],
+            "nullable": true,
+            "description": "The owner’s setting; null when the tool follows the preset."
+          }
+        },
+        "required": ["name", "group", "description", "asks", "perCallOnly", "decision", "set"]
+      },
+      "BotToolGrantDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "subjectKind": {
+            "type": "string",
+            "description": "What it covers: `repository`, `session`."
+          },
+          "subjectLabel": {
+            "type": "string",
+            "description": "How it is named: `acme/xrp-mobile`."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "tool", "subjectKind", "subjectLabel", "createdAt"]
+      },
+      "BotPermissionRuleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effect": {
+            "type": "string",
+            "enum": ["allow", "ask"]
+          },
+          "text": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "effect", "text", "createdAt"]
+      },
+      "BotPermissionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "enum": ["auto", "full"],
+            "description": "The preset every tool with no setting follows."
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotToolPermissionDto"
+            }
+          },
+          "grants": {
+            "description": "Newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotToolGrantDto"
+            }
+          },
+          "rules": {
+            "description": "Oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotPermissionRuleDto"
+            }
+          }
+        },
+        "required": ["preset", "tools", "grants", "rules"]
+      },
+      "SetBotToolDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": ["allow", "ask", "off", "default"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "CreateBotPermissionRuleRequest": {
+        "type": "object",
+        "properties": {
+          "effect": {
+            "type": "string",
+            "enum": ["allow", "ask"]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 280
+          }
+        },
+        "required": ["effect", "text"]
       },
       "VoiceTranscriptionResponseDto": {
         "type": "object",

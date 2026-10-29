@@ -1,11 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { SessionTerminalWatchRepositoryPort } from '../database/session-terminal-watch.repository.port';
 import type {
   HostSessionRow,
   WorkSessionRepositoryPort,
 } from '../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
-import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
+import {
+  SESSION_DISPATCH,
+  SESSION_TERMINAL_WATCH_REPOSITORY,
+  WORK_SESSION_REPOSITORY,
+} from '../sessions.di-tokens';
 import type { SessionDispatchPort } from './session-dispatch.port';
 import { SessionLaunchSpecFactory } from './session-launch.factory';
 import type {
@@ -31,6 +36,8 @@ import type {
  *
  * The stopped entry is keyed by the runner's `runId`, so a replayed hello writes it once.
  * A close sent twice is harmless for the same reason the runner makes it so.
+ * The terminal watches of the live sessions it holds are sent again too: a
+ * runner keeps them in memory only.
  */
 @Injectable()
 export class SessionReconciliationResolver implements SessionReconciliationPort {
@@ -42,6 +49,8 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly launches: SessionLaunchSpecFactory,
+    @Inject(SESSION_TERMINAL_WATCH_REPOSITORY)
+    private readonly watches: SessionTerminalWatchRepositoryPort,
   ) {}
 
   async reconcile(
@@ -80,6 +89,8 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
       }
     }
 
+    await this.watchAgain(rows.map((row) => row.session).filter((session) => held.has(session.id)));
+
     const known = new Set(rows.map((row) => row.session.id));
     const unknown = heldSessionIds.filter((id) => !known.has(id));
     if (unknown.length > 0) {
@@ -102,6 +113,41 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
       await this.launches.build(session, { prompt, images }),
     );
     return delivered;
+  }
+
+  /**
+   * A runner keeps terminal watches in memory, so every hello is sent the
+   * watches of the live sessions it holds again, each with the newest count
+   * it reported: a runner that still holds one keeps it, and one that
+   * restarted counts on from there, so its next report is past what the bot
+   * was told. Best effort: a watch that does not reach the runner now is
+   * sent with its next hello.
+   */
+  private async watchAgain(held: readonly WorkSessionEntity[]): Promise<void> {
+    const live = held.filter((session) => session.state === 'open' && session.stoppedAt === null);
+    const byOrganization = new Map<string, WorkSessionEntity[]>();
+    for (const session of live) {
+      byOrganization.set(session.organizationId, [
+        ...(byOrganization.get(session.organizationId) ?? []),
+        session,
+      ]);
+    }
+    for (const [organizationId, sessions] of byOrganization) {
+      const watches = await this.watches.findForSessions(
+        organizationId,
+        sessions.map((session) => session.id),
+      );
+      for (const watch of watches) {
+        const session = sessions.find((candidate) => candidate.id === watch.sessionId);
+        if (session) {
+          await this.dispatch.watchTerminal(session, {
+            watchId: watch.id,
+            pattern: watch.pattern,
+            count: watch.matches,
+          });
+        }
+      }
+    }
   }
 
   private async recordStopped(session: WorkSessionEntity, runId: string): Promise<boolean> {

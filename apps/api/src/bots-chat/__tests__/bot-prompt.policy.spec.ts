@@ -99,6 +99,17 @@ describe('composeBotSystemPrompt', () => {
     expect(bare).toContain('- Answer from what you know and what is in this chat.');
   });
 
+  // From Grok Bot (`lessons-from-grok-bot.md` §9, row 3): a bare "On it" left
+  // the person not knowing what was taken on or when to look again, and a
+  // repeated ask started a second session for the same work.
+  it('asks every reply to commit, and a repeated ask to report rather than start again', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toContain('A reply commits to something');
+    expect(prompt).toContain('"On it" or "Sure" alone is not a reply');
+    expect(prompt).toContain('is the same errand, not a new one');
+    expect(prompt).toContain('check what you started');
+  });
+
   it('forbids asking for secrets and treats tool text as data', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toContain('Never ask anyone to paste a token');

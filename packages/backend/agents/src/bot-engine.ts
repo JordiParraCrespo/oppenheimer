@@ -124,6 +124,12 @@ export type BotEngineEvent =
       /** What one of our tools said the call made; absent for the engine's own tools. */
       data?: BotToolData;
     }
+  /**
+   * The provider refused a call and the engine waits to try it again (a
+   * rate limit, or the provider overloaded or down); `delayMs` when it said
+   * how long. Nothing is lost: the turn goes on, or ends `failed`.
+   */
+  | { type: 'retrying'; reason: 'rate_limit' | 'unavailable'; delayMs: number | null }
   | {
       type: 'usage';
       /** Summed over every call the turn made. */
@@ -136,6 +142,8 @@ export type BotEngineEvent =
       type: 'done';
       reason: 'completed' | 'cancelled' | 'max_steps' | 'failed';
       error?: string;
+      /** Set on a `failed` end: what kind of failure it was, so the chat can say whether a retry helps. */
+      failure?: BotEngineFailure;
       /**
        * Set on a `failed` end the provider refused for rate or quota (a
        * `429`, or the SDK naming a rate limit): when it said it may be
@@ -143,6 +151,22 @@ export type BotEngineEvent =
        */
       rateLimit?: { resetAt: Date | null };
     };
+
+/**
+ * Why a turn failed, as far as the engine can tell from the provider's
+ * answer: a rate limit, a spent quota or credit, a refused key or sign-in,
+ * a request the provider refused (its content, the model), the provider
+ * down or unreachable, or none of those.
+ */
+export const BOT_ENGINE_FAILURES = [
+  'rate_limit',
+  'usage_limit',
+  'credential',
+  'refused',
+  'unavailable',
+  'other',
+] as const;
+export type BotEngineFailure = (typeof BOT_ENGINE_FAILURES)[number];
 
 /**
  * What `complete` throws when the provider refused for rate or quota. A

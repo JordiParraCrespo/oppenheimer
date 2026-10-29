@@ -66,6 +66,8 @@ const resolvedNames = z
  */
 @Injectable()
 export class BotMailOrganizeToolsFactory implements BotToolArea {
+  readonly group = 'mail' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,

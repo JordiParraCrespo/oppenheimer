@@ -8,9 +8,12 @@ import {
 import {
   BOT_APPROVAL_NOTE_MAX,
   BOT_APPROVAL_STATUSES,
+  type BotApprovalReach,
   type BotApprovalStatus,
   type Scope,
 } from '@oppenheimer/shared';
+import { BotToolPermissionEntity, type BotToolSubject } from './bot-tool-permission.entity';
+import { reachesFor } from './bot-tool-permission.policy';
 import { BotApprovalChangedDomainEvent } from './events/bot-approval-changed.domain-event';
 
 export interface BotApprovalProps {
@@ -24,6 +27,16 @@ export interface BotApprovalProps {
   input: Record<string, unknown>;
   /** What will happen, in words, built by the tool from its input. */
   summary: string;
+  /** The one thing the call acts on, when the tool names one: what "Always allow for …" covers. */
+  subject: BotToolSubject | null;
+  /** The call sends data out of Oppenheimer; the card says so. */
+  sharesOutside: boolean;
+  /** The tool is decided call by call: the card offers this call only. */
+  perCallOnly: boolean;
+  /** Why a rule paused the call, when one did. */
+  reviewNote: string | null;
+  /** How far the yes went; null while pending and on any other outcome. */
+  reach: BotApprovalReach | null;
   status: BotApprovalStatus;
   /** The tool's answer once it ran on a yes; null before, and for a no. */
   result: string | null;
@@ -42,6 +55,8 @@ export interface BotApprovalProps {
 export const BOT_APPROVAL_SUMMARY_MAX = 500;
 /** How much of the tool's answer an approval keeps. */
 export const BOT_APPROVAL_RESULT_MAX = 2_000;
+/** How long the line saying why a rule paused a call may be. */
+export const BOT_APPROVAL_REVIEW_NOTE_MAX = 400;
 
 /**
  * One call of an asking tool waiting for the bot's owner (`25-bots.md` §5,
@@ -70,12 +85,23 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     tool: string;
     input: Record<string, unknown>;
     summary: string;
+    subject?: BotToolSubject | null;
+    sharesOutside?: boolean;
+    perCallOnly?: boolean;
+    reviewNote?: string | null;
   }): BotApprovalEntity {
     const approval = new BotApprovalEntity({
       id: randomUUID(),
       props: {
         ...props,
         summary: cut(props.summary.trim(), BOT_APPROVAL_SUMMARY_MAX),
+        subject: props.subject ?? null,
+        sharesOutside: props.sharesOutside ?? false,
+        perCallOnly: props.perCallOnly ?? false,
+        reviewNote: props.reviewNote
+          ? cut(props.reviewNote.trim(), BOT_APPROVAL_REVIEW_NOTE_MAX)
+          : null,
+        reach: null,
         status: 'pending',
         result: null,
         sessionId: null,
@@ -120,6 +146,28 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   get sessionId(): string | null {
     return this.props.sessionId;
   }
+  get subject(): BotToolSubject | null {
+    return this.props.subject;
+  }
+  get sharesOutside(): boolean {
+    return this.props.sharesOutside;
+  }
+  get perCallOnly(): boolean {
+    return this.props.perCallOnly;
+  }
+  get reviewNote(): string | null {
+    return this.props.reviewNote;
+  }
+  get reach(): BotApprovalReach | null {
+    return this.props.reach;
+  }
+  /** How far a yes may reach for this call: this call, its subject, the tool. */
+  get reaches(): BotApprovalReach[] {
+    return reachesFor(
+      { name: this.props.tool, asks: true, perCallOnly: this.props.perCallOnly },
+      this.props.subject,
+    );
+  }
   get note(): string | null {
     return this.props.note;
   }
@@ -139,10 +187,44 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
 
   /**
    * The owner said yes, through a credential with these scopes (null for a
-   * browser session). Only a pending approval is decided; it then runs.
+   * browser session), reaching as far as `reach`: this call, every call on
+   * its subject, or every call of the tool. Only a reach the card offers.
+   * Only a pending approval is decided; it then runs.
    */
-  approve(userId: string, now: Date, scopes: readonly Scope[] | null = null): void {
+  approve(
+    userId: string,
+    now: Date,
+    scopes: readonly Scope[] | null = null,
+    reach: BotApprovalReach = 'once',
+  ): void {
+    if (!this.reaches.includes(reach)) {
+      throw new ArgumentInvalidException(`This approval cannot reach "${reach}"`);
+    }
     this.decide('approved', userId, now, scopes);
+    this.props.reach = reach;
+  }
+
+  /**
+   * What a yes past this call leaves standing (`25-bots.md` §5): "Always
+   * allow" sets the tool to Allow for the bot; "Always allow for …" grants it
+   * on the call's subject. Null for a yes to this call only, and for a no.
+   */
+  standing(): BotToolPermissionEntity | null {
+    const { organizationId, botId, tool, decidedByUserId: userId, subject } = this.props;
+    if (this.props.status !== 'approved') return null;
+    if (this.props.reach === 'tool') {
+      return BotToolPermissionEntity.decide({
+        organizationId,
+        botId,
+        tool,
+        decision: 'allow',
+        userId,
+      });
+    }
+    if (this.props.reach === 'subject' && subject) {
+      return BotToolPermissionEntity.grant({ organizationId, botId, tool, subject, userId });
+    }
+    return null;
   }
 
   /** The owner said no, with what they added. Only a pending approval is decided. */

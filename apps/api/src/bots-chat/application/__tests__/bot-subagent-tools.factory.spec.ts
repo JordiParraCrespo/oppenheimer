@@ -5,6 +5,7 @@ import {
   SUBAGENT_DATA_KEY,
   SUBAGENT_TASKS_MAX,
 } from '../../domain/bot-subagent.policy';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotSubagentToolsFactory } from '../bot-subagent-tools.factory';
 import type { BotSubagentRunner, BotToolContext } from '../bot-tool.factory';
@@ -37,6 +38,7 @@ function setup(subagents?: BotSubagentRunner) {
     homeHostId: null,
     timeZone: 'UTC',
     permission: 'auto',
+    permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: null,
     approvals: { request: vi.fn() },

@@ -541,6 +541,8 @@ are never reissued.
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
 | `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
+| `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
+| `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -594,6 +596,11 @@ receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no c
 a day long, minted again whenever the create is sent). `040` is a task whose text and those
 links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
 `041` is a link that expired or never existed.
+
+`SESSIONS_042` and `SESSIONS_043` are a terminal watch (`session_terminal_watch`): a pattern the
+session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
+so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
+(`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -727,6 +734,12 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
 | `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
 | `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
+| `BOTS_029` <a id="bots_029" />       | No such tool | 404  |
+| `BOTS_030` <a id="bots_030" />       | This tool is decided call by call | 422  |
+| `BOTS_031` <a id="bots_031" />       | The bot holds as many rules as it can | 409  |
+| `BOTS_032` <a id="bots_032" />       | Rule not found | 404  |
+| `BOTS_033` <a id="bots_033" />       | Grant not found | 404  |
+| `BOTS_034` <a id="bots_034" />       | The bot holds as many grants as it can | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -795,6 +808,15 @@ upload or a message with images to a bot on a provider whose models read no
 images (GLM); the message's words are not sent either, so nothing is lost:
 remove the images, or switch the bot's model, and send again. An upload that
 is never sent is deleted after a day.
+
+`BOTS_029` to `BOTS_034` are a bot's permissions (Settings → Permissions, and
+how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
+catalog does not have. `BOTS_030` asks to always allow a tool that is decided
+call by call (merging a pull request), whether as its Allow or as a yes that
+reaches past this call, or asks a yes to reach a thing the card did not name.
+`BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
+its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
+that is not this bot's, not in the caller's workspace, or already removed.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1083,6 +1105,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `INVALID_PATTERN` <a id="invalid_pattern" /> | The watch pattern is not a valid expression | 400 |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |

@@ -851,6 +851,20 @@ earlier note:
   `repos.noindex/` and `sessions.noindex/`, the suffix Spotlight skips (as
   Xcode's DerivedData and Orca do), layout version 3, with no migration
   (24 §2).
+- A bot's tool answer was cut to its first 12,000 characters. On
+  2026-10-29, from Grok Bot's harness (`research/lessons-from-grok-bot.md`
+  §9), it keeps its start and its end within that, since a session's
+  error is at the end; and a failed turn records a kind, so the chat no
+  longer offers Retry where the same message fails again
+  (`versions/mvp/25-bots.md` §2–§4).
+- A bot's permissions are set in Settings → Permissions, tool by tool, and a
+  yes on a card can reach past its call: *Always allow for* the repository,
+  project or session it acts on, or *Always allow* for the tool; merging
+  stays per call. Plain-language rules are read by a reviewer on the bot's
+  own model before an asking call, an ask rule winning and a failed review
+  asking. 2026-10-29, from Grok Bot's approvals
+  (`research/lessons-from-grok-bot.md` §9 rows 6 and 7;
+  `versions/mvp/25-bots.md` §5).
 - 2026-10-29 the owner asked to see a bot's subagents while they work:
   "Running 3 subagents" now has a line per child under it (its task,
   waiting or running with its clock or how it ended, the tools it has
@@ -862,3 +876,17 @@ earlier note:
   host, not the browser extension, reports its status off
   `codex cloud list --json`, since Codex's CLI answers it
   (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
+- A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
+  Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
+  9), it can also wake on a line the terminal prints that matches a
+  pattern. The runner matches it on the host and sends only a count, so
+  pane text still never reaches Postgres. A bot can also wait up to 120 s
+  inside its turn, and read a session's log from the entry its own input
+  followed (`versions/mvp/27-bot-subscriptions.md` §2,
+  `versions/mvp/25-bots.md` §4.2).
+- Row 10 of `research/lessons-from-grok-bot.md` §9 placed goals in note 26
+  as a routine the bot sets on itself. On 2026-10-29 they were built
+  instead as a goal of their own in `versions/mvp/25-bots.md` §4.1. A
+  routine's run is a schedule's slot, but a goal goes on when the bot's
+  last turn ends. So it is a bounded count of continuation turns, at most
+  10, keyed in the turn queue like a wake, with Stop above the composer.

@@ -7,14 +7,18 @@ import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-docum
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
+import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
-import { BotTurnEntity } from '../../domain/bot-turn.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
+import type { BotPermissionsResolver } from '../bot-permissions.resolver';
+import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
@@ -36,6 +40,7 @@ function setup(
   conversation: {
     summary?: BotConversationSummaryEntity;
     findHistory?: BotMessageRepositoryPort['findHistory'];
+    lastContext?: BotTurnContext;
   } = {},
 ) {
   const owner = emptyScope('owner-1', 'org-1');
@@ -66,11 +71,18 @@ function setup(
     } as unknown as BotConversationSummaryRepositoryPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
+    {
+      findLastContext: async () => conversation.lastContext ?? null,
+    } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
     { tools: () => [], readOnlyTools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
     {} as BotApprovalRequestFactory,
     { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
     { resolve: async () => ({ prompt: 'Hi', images: [] }) } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
+    { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+    {
+      create: () => ({ review: async () => ({ effect: 'none' }) }),
+    } as unknown as BotRuleReviewerFactory,
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
@@ -103,6 +115,15 @@ describe('BotTurnContextResolver', () => {
       /^<turn_context>\nIt is Thursday, 15 October 2026, 11:00 \(Europe\/Madrid/,
     );
     expect(message.endsWith('</turn_context>\n\nHi')).toBe(true);
+  });
+
+  it('tells the turn how full its context was when the last turn ended, in the message, not the prompt', async () => {
+    const { resolve } = setup(async () => [], {
+      lastContext: { tokens: 120_000, window: 200_000 },
+    });
+    const { message, systemPrompt } = await resolve(new Date('2026-10-15T09:00:00Z'), null);
+    expect(message).toContain('Your context was 60% full at the end of your last turn');
+    expect(systemPrompt).not.toContain('Your context was');
   });
 
   it('composes the same system prompt on two turns apart in time, zone and hosts', async () => {

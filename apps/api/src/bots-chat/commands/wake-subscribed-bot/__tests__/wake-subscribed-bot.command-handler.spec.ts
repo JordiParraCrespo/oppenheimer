@@ -16,6 +16,8 @@ import type { WorkSessionEntity } from '../../../../sessions/domain/work-session
 import { FindSessionQuery } from '../../../../sessions/queries/find-session/find-session.query';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
+import { BotSessionWakeResolver } from '../../../application/bot-session-wake.resolver';
+import type { BotSessionWatchResolver } from '../../../application/bot-session-watch.resolver';
 import { BotSubscriptionSubjectResolver } from '../../../application/bot-subscription-subject.resolver';
 import { BotSubscriptionMapper } from '../../../bot-subscription.mapper';
 import type { BotSubscriptionRepositoryPort } from '../../../database/bot-subscription.repository.port';
@@ -114,19 +116,25 @@ function setup(options: {
       return read;
     }),
   };
+  const watches = { release: vi.fn(async () => undefined) };
   const handler = new WakeSubscribedBotCommandHandler(
     subscriptions as unknown as BotSubscriptionRepositoryPort,
-    turns as unknown as BotTurnRepositoryPort,
-    stream,
     new BotSubscriptionSubjectResolver(
       access as unknown as BotModelAccessResolver,
       owners as unknown as BotOwnerScopeResolver,
       queries as unknown as QueryBus,
     ),
     new BotSubscriptionMapper(),
+    new BotSessionWakeResolver(
+      subscriptions as unknown as BotSubscriptionRepositoryPort,
+      turns as unknown as BotTurnRepositoryPort,
+      stream,
+      new BotSubscriptionMapper(),
+      watches as unknown as BotSessionWatchResolver,
+    ),
   );
   const run = () => handler.execute(new WakeSubscribedBotCommand({ subscriptionId: 'sub-1' }));
-  return { subscriptions, turns, stream, queries, owners, run };
+  return { subscriptions, turns, stream, queries, owners, watches, run };
 }
 
 describe('WakeSubscribedBotCommandHandler', () => {

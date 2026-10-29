@@ -53,6 +53,9 @@ import {
  */
 @Injectable()
 export class BotPeerToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'bots' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,

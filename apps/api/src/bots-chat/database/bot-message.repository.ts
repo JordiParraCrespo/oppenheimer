@@ -82,6 +82,34 @@ export class BotMessageRepository
     return records.reverse().map((record) => this.mapper.toDomain(record));
   }
 
+  async search(
+    scope: AccessScope,
+    botId: string,
+    query: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]> {
+    // IDX_bot_message_search for the words, IDX_bot_message_bot for the bot;
+    // the role predicate is the index's own, so the planner can use it.
+    const records = await this.scopedQuery(scope)
+      .andWhere('message.botId = :botId', { botId })
+      .andWhere(`message.role IN ('user', 'assistant')`)
+      .andWhere(
+        `to_tsvector('simple', message.content) @@ websearch_to_tsquery('simple', :query)`,
+        {
+          query,
+        },
+      )
+      .orderBy(
+        `ts_rank(to_tsvector('simple', message.content), websearch_to_tsquery('simple', :query))`,
+        'DESC',
+      )
+      .addOrderBy('message.createdAt', 'DESC')
+      .addOrderBy('message.id', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   async countConversation(scope: AccessScope, botId: string): Promise<number> {
     // IDX_bot_message_bot.
     return this.scopedQuery(scope)

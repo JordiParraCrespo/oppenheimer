@@ -79,6 +79,7 @@ const (
 	CapabilityPortForward         = "port.forward"
 	CapabilitySessionCloud        = "session.cloud"
 	CapabilitySessionCloudCodex   = "session.cloud.codex"
+	CapabilitySessionWatch        = "session.watch"
 )
 
 // The `type` of every message on the link.
@@ -101,6 +102,8 @@ const (
 	TypeSessionWindowOpen       = "session.window.open"
 	TypeSessionWindowClose      = "session.window.close"
 	TypeSessionClose            = "session.close"
+	TypeSessionWatch            = "session.watch"
+	TypeSessionUnwatch          = "session.unwatch"
 	TypeSessionStop             = "session.stop"
 	TypeSessionRestart          = "session.restart"
 	TypeHostPreflight           = "host.preflight"
@@ -147,6 +150,8 @@ var MessageTypes = []string{
 	TypeSessionWindowOpen,
 	TypeSessionWindowClose,
 	TypeSessionClose,
+	TypeSessionWatch,
+	TypeSessionUnwatch,
 	TypeSessionStop,
 	TypeSessionRestart,
 	TypeHostPreflight,
@@ -213,6 +218,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(SessionWindowClose), true
 	case TypeSessionClose:
 		return new(SessionClose), true
+	case TypeSessionWatch:
+		return new(SessionWatch), true
+	case TypeSessionUnwatch:
+		return new(SessionUnwatch), true
 	case TypeSessionStop:
 		return new(SessionStop), true
 	case TypeSessionRestart:
@@ -486,6 +495,24 @@ type SessionClose struct {
 	CommandID          string `json:"commandId"`
 	SessionID          string `json:"sessionId"`
 	AcceptUnpushedWork bool   `json:"acceptUnpushedWork"`
+}
+
+// SessionWatch is the `session.watch` message.
+type SessionWatch struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	WatchID   string `json:"watchId"`
+	Pattern   string `json:"pattern"`
+	Count     int    `json:"count,omitempty"`
+}
+
+// SessionUnwatch is the `session.unwatch` message.
+type SessionUnwatch struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	WatchID   string `json:"watchId"`
 }
 
 // SessionStop is the `session.stop` message.

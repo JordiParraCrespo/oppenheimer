@@ -40,6 +40,10 @@ var (
 	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
 	// old to know the command. Its detail is the CLI's own last words.
 	ErrCodexCloudStart = problem.New("SESS_009", http.StatusBadGateway, "Codex could not start the task in the cloud")
+	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
+	// long or not an RE2 expression. The code is the protocol's
+	// (`session.watch`), not a SESS_ number: the control plane names it.
+	ErrInvalidPattern = problem.New("INVALID_PATTERN", http.StatusBadRequest, "The watch pattern is not a valid expression")
 )
 
 // Sentinels a Places adapter answers with; the use case maps them onto the
