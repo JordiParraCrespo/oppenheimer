@@ -125,6 +125,22 @@ func TestStartGivesUpOnACLIThatNamesNothing(t *testing.T) {
 	}
 }
 
+// A folder Claude Code still asks about holds the CLI on a question nobody
+// can answer: the start fails at once with the question, not after the limit.
+func TestStartFailsAtOnceOnTheTrustQuestion(t *testing.T) {
+	claude := fakeClaude(t, `printf 'Yes, I trust this folder\r\nEnter to confirm\r\n'
+sleep 30
+`)
+	start := time.Now()
+	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
+	if !isCloudStart(err) || !strings.Contains(err.Error(), "asks whether to trust") {
+		t.Fatalf("err = %v, want ErrCloudStart naming the question", err)
+	}
+	if took := time.Since(start); took > 10*time.Second {
+		t.Fatalf("took %s to give up", took)
+	}
+}
+
 func isCloudStart(err error) bool {
 	var prob *problem.Error
 	return errors.As(err, &prob) && prob.Code == domain.ErrCloudStart.Code
