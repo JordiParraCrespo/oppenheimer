@@ -1,6 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { RequestContextService } from '@oppenheimer/backend-ddd';
+import { UnwatchSessionTerminalCommand } from '../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
+import {
+  WatchSessionTerminalCommand,
+  type WatchSessionTerminalResult,
+} from '../../sessions/commands/watch-session-terminal/watch-session-terminal.command';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
@@ -48,35 +53,20 @@ export class BotSessionWatchResolver {
   ) {}
 
   /**
-   * Follows a session the bot just started, from its first task, and says so
-   * in words for `start_session`'s answer. The task may already have ended
-   * by the time the watch is stored (a launch that failed at once), and its
-   * event then found nobody, so the wake is asked for once now: it reads the
-   * session and wakes the bot if there is news, and does nothing otherwise.
-   * The session exists whatever happens here, so a watch that cannot be
-   * stored is said, never thrown: the start stays a start.
+   * Follows the task a bot just set going, for the answer of the tool that
+   * did it: a session it started, from its first task (`start_session`), or
+   * the task its follow-up prompt opened, by number (`send_to_session`). The
+   * task may already have ended or blocked by the time the watch is stored
+   * (a launch that failed at once), and its event then found nobody, so the
+   * wake is asked for once now: it reads the session and wakes the bot if
+   * there is news, and does nothing otherwise. The work was set going
+   * whatever happens here, so a watch that cannot be stored is said, never
+   * thrown.
    */
-  watchStarted(context: BotToolCallContext, sessionId: string): Promise<string> {
-    return this.followHandOff(context, sessionId, 'first_task', 1);
-  }
-
-  /**
-   * Follows the task a bot's follow-up prompt opened, by its number, and
-   * says so in words for `send_to_session`'s answer. Like
-   * {@link watchStarted}, the task may already have ended or blocked by the
-   * time the watch is stored, so the wake is asked for once now; and a watch
-   * that cannot be stored is said, never thrown: the prompt was sent.
-   */
-  watchSent(context: BotToolCallContext, sessionId: string, turn: number): Promise<string> {
-    return this.followHandOff(context, sessionId, { turn }, turn);
-  }
-
-  /** Store the watch, ask for its wake once now, owe it its stall check, and say so. */
-  private async followHandOff(
+  async follow(
     context: BotToolCallContext,
     sessionId: string,
-    from: BotWatchFrom,
-    turn: number,
+    from: Extract<BotWatchFrom, 'first_task' | { turn: number }>,
   ): Promise<string> {
     try {
       const { subscription } = await this.watch(context, sessionId, {
@@ -87,7 +77,7 @@ export class BotSessionWatchResolver {
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      await this.checkLater(subscription, turn);
+      await this.checkLater(subscription, from === 'first_task' ? 1 : from.turn);
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -145,5 +135,53 @@ export class BotSessionWatchResolver {
       BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, options)),
     );
     return { subscription, session };
+  }
+
+  /**
+   * Has the session's runner watch its terminal for `pattern` on behalf of
+   * this subscription (`27-bot-subscriptions.md` §2): the sessions module
+   * makes the watch and tells the host, and the subscription names it. A
+   * pattern it replaces is removed. Answers what the host could not take
+   * just now (`host_offline`, `not_supported`), which the tool says.
+   */
+  async watchTerminal(
+    context: BotToolCallContext,
+    subscription: BotSubscriptionEntity,
+    pattern: string,
+  ): Promise<string[]> {
+    const made = await this.commands.execute<
+      WatchSessionTerminalCommand,
+      WatchSessionTerminalResult
+    >(
+      new WatchSessionTerminalCommand({
+        scope: context.owner,
+        sessionId: subscription.resourceId,
+        pattern,
+      }),
+    );
+    const previous = await this.subscriptions.attachTerminalWatch(subscription.id, {
+      id: made.watchId,
+      pattern,
+    });
+    if (previous)
+      await this.releaseWatch(subscription.organizationId, subscription.resourceId, previous);
+    return made.hints;
+  }
+
+  /**
+   * Removes the terminal watch a subscription that ended named, if it named
+   * one. Best effort: a watch left behind only stops matching anybody, and
+   * goes with its session.
+   */
+  async release(subscription: BotSubscriptionEntity): Promise<void> {
+    const watch = subscription.terminalWatch;
+    if (watch)
+      await this.releaseWatch(subscription.organizationId, subscription.resourceId, watch.id);
+  }
+
+  private async releaseWatch(organizationId: string, sessionId: string, watchId: string) {
+    await this.commands
+      .execute(new UnwatchSessionTerminalCommand({ organizationId, sessionId, watchId }))
+      .catch(() => undefined);
   }
 }

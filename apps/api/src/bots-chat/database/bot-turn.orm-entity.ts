@@ -1,4 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import type { BotTurnFailure } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -40,7 +41,14 @@ export interface BotTurnPlanLimitsRecord {
   `"status" IN ('queued', 'running', 'completed', 'cancelled', 'failed')`,
 )
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
-@Check('CHK_bot_turn_origin', `"origin" IN ('message', 'approval', 'routine', 'subscription')`)
+@Check(
+  'CHK_bot_turn_origin',
+  `"origin" IN ('message', 'approval', 'routine', 'subscription', 'goal')`,
+)
+@Check(
+  'CHK_bot_turn_failure',
+  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,
+)
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
 @Check(
   'CHK_bot_turn_context',
@@ -102,6 +110,10 @@ export class BotTurnOrmEntity {
 
   @Column({ type: 'varchar', length: BOT_TURN_ERROR_MAX, nullable: true })
   error!: string | null;
+
+  /** What kind of failure `error` is (`BOT_TURN_FAILURES`); null unless the turn failed. */
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  failure!: BotTurnFailure | null;
 
   @Column({ type: 'integer', default: 0 })
   inputTokens!: number;

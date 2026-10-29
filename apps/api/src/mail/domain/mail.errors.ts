@@ -60,4 +60,43 @@ export const MailErrors = {
     message: 'Gmail has no such message',
     httpStatus: 404,
   },
+  /** More recipients than a bot sends to at once, none at all, or an address that is not one. */
+  RECIPIENTS_REFUSED: {
+    code: 'MAIL_010',
+    message: 'That message cannot go to those recipients',
+    httpStatus: 400,
+  },
+  /** The account has sent its day's share of bot mail. */
+  DAILY_LIMIT_REACHED: {
+    code: 'MAIL_011',
+    message: 'That account has sent as much bot mail as a day allows',
+    httpStatus: 429,
+  },
+  /** The message with its files is past Gmail's 25 MB. */
+  MESSAGE_TOO_LARGE: {
+    code: 'MAIL_012',
+    message: 'That message is larger than Gmail takes',
+    httpStatus: 400,
+  },
+  /** A `from` that is not the account or one of its Gmail send-as aliases. */
+  ALIAS_NOT_FOUND: {
+    code: 'MAIL_013',
+    message: 'That address is not one this account sends from',
+    httpStatus: 400,
+  },
+  /** The draft was edited, sent or deleted after the card that approved sending it. */
+  DRAFT_CHANGED: {
+    code: 'MAIL_014',
+    message: 'That draft changed since it was approved',
+    httpStatus: 409,
+  },
+  /**
+   * An earlier attempt at this approved send was started and never confirmed:
+   * it may have gone. Never sent again on its own.
+   */
+  SEND_UNCONFIRMED: {
+    code: 'MAIL_015',
+    message: 'That message may already have been sent',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

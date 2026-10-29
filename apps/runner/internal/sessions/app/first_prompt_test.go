@@ -58,6 +58,8 @@ func (r *promptRecorder) SessionChanged(domain.Session) {}
 
 func (r *promptRecorder) DecisionChanged(domain.Session, *domain.Decision) {}
 
+func (r *promptRecorder) TerminalMatched(string, string, int) {}
+
 func (r *promptRecorder) FirstPrompt(_ domain.Session, text string, reported func()) bool {
 	time.Sleep(r.hold)
 	r.mu.Lock()

@@ -2,6 +2,7 @@
   "backToTask": "Back to task",
   "nav": {
     "label": "Plan",
+    "inbox": "Inbox",
     "tasks": "Tasks",
     "calendar": "Calendar",
     "milestones": "Milestones"

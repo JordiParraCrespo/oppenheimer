@@ -74,6 +74,40 @@ export function botLiveText(
   return live;
 }
 
+/** Why a running turn is waiting to try a call again, by turn id. */
+export type BotLiveRetries = Readonly<Record<string, 'rate_limit' | 'unavailable'>>;
+
+export const NO_BOT_RETRIES: BotLiveRetries = {};
+
+/** A `retrying` event: the turn waits on the provider until it writes again. */
+export function noteBotRetry(
+  retries: BotLiveRetries,
+  turnId: string,
+  reason: 'rate_limit' | 'unavailable',
+): BotLiveRetries {
+  return retries[turnId] === reason ? retries : { ...retries, [turnId]: reason };
+}
+
+/** The turn wrote again (text, a message): whatever it waited on is behind it. */
+export function clearBotRetry(retries: BotLiveRetries, turnId: string | null): BotLiveRetries {
+  if (turnId === null || !(turnId in retries)) return retries;
+  const next = { ...retries };
+  delete next[turnId];
+  return next;
+}
+
+/** The waits to draw: none for a turn the conversation shows ended. */
+export function botLiveRetries(
+  retries: BotLiveRetries,
+  conversation: BotConversationEntity,
+): BotLiveRetries {
+  const ended = Object.keys(retries).filter((turnId) => hasEnded(conversation, turnId));
+  if (ended.length === 0) return retries;
+  const next = { ...retries };
+  for (const turnId of ended) delete next[turnId];
+  return next;
+}
+
 function hasEnded(conversation: BotConversationEntity, turnId: string): boolean {
   const turn = conversation.turn(turnId);
   return turn !== undefined && !turn.isActive;

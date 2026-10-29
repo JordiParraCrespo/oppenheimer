@@ -9,6 +9,7 @@ import {
   BOT_TURN_LANES,
   BOT_TURN_STATUSES,
   type BotProvider,
+  type BotTurnFailure,
   type BotTurnLane,
   type BotTurnOrigin,
   type BotTurnStatus,
@@ -61,6 +62,8 @@ export interface BotTurnProps {
   answersTurnId: string | null;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
+  /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
+  failure: BotTurnFailure | null;
   inputTokens: number;
   outputTokens: number;
   /** What the model's context held at the turn's last answer; null before one. */
@@ -156,6 +159,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         credentialScopes: props.credentialScopes ?? null,
         status: 'queued',
         error: null,
+        failure: null,
         inputTokens: 0,
         outputTokens: 0,
         context: null,
@@ -296,6 +300,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get error(): string | null {
     return this.props.error;
   }
+
+  get failure(): BotTurnFailure | null {
+    return this.props.failure;
+  }
   get inputTokens(): number {
     return this.props.inputTokens;
   }
@@ -336,6 +344,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     now: Date,
     outcome: {
       error?: string | null;
+      failure?: BotTurnFailure | null;
       inputTokens?: number;
       outputTokens?: number;
       context?: BotTurnContext | null;
@@ -346,6 +355,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.status = status;
     this.props.endedAt = now;
     this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;
+    this.props.failure = status === 'failed' ? (outcome.failure ?? 'other') : null;
     this.props.inputTokens = outcome.inputTokens ?? this.props.inputTokens;
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
     this.props.context = outcome.context ?? this.props.context;
@@ -354,7 +364,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */
   abandon(now: Date): void {
-    this.end('failed', now, { error: 'The turn was interrupted. Send the message again.' });
+    this.end('failed', now, {
+      error: 'The turn was interrupted. Send the message again.',
+      failure: 'interrupted',
+    });
   }
 
   /** Who sent the message the turn answers; a turn whose sender's account is gone queues nothing more. */

@@ -7,6 +7,7 @@ import {
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
+  type BotPermissionsResponseDto,
   type BotPlanWindowDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
@@ -20,15 +21,26 @@ import {
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
   type BotApprovalDecision,
+  type BotApprovalReach,
   type BotAttachment,
   type BotDocumentName,
+  type BotGoal,
   type BotMessageEvent,
+  type BotPermissionRuleEffect,
   type BotProvider,
   type BotSection,
+  type BotToolDecision,
 } from '@oppenheimer/shared/schemas/bot';
+import {
+  type BotMailDraft,
+  botMailDraftSchema,
+  type MailPlan,
+  mailPlanSchema,
+} from '@oppenheimer/shared/schemas/mail';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -55,6 +67,7 @@ import {
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
+import { BotPermissionsEntity } from './bot-permissions.entity';
 import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
@@ -154,7 +167,10 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
 }
 
 function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
-  const steps: BotToolStep[] = dto.steps.map((step) => ({ ...step }));
+  const steps: BotToolStep[] = dto.steps.map((step) => ({
+    ...step,
+    mailDraft: draftOf(step.mailDraft),
+  }));
   return new BotMessageEntity(
     dto.id,
     dto.turnId,
@@ -229,6 +245,21 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             sessionName: dto.sessionName,
             turn: dto.turn,
             state,
+            match: dto.match ? { pattern: dto.match.pattern, count: dto.match.count } : null,
+          }
+        : null;
+    }
+    case 'goal': {
+      const activity = BOT_GOAL_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'goal',
+            activity,
+            goalId: dto.goalId,
+            objective: dto.objective,
+            step: dto.step,
+            limit: dto.limit,
+            reason: dto.reason,
           }
         : null;
     }
@@ -250,6 +281,7 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     dto.endedAt ? new Date(dto.endedAt) : null,
     dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
     dto.planLimits ? toPlanLimits(dto.planLimits) : null,
+    dto.failure,
   );
 }
 
@@ -268,7 +300,41 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
     dto.status,
     dto.result,
     new Date(dto.createdAt),
+    {
+      input: dto.input,
+      subjectLabel: dto.subjectLabel,
+      sharesOutside: dto.sharesOutside,
+      reviewNote: dto.reviewNote,
+      reaches: dto.reaches,
+      reach: dto.reach,
+    },
+    mailOf(dto.tool, dto.input),
   );
+}
+
+function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
+  return new BotPermissionsEntity(
+    dto.preset,
+    dto.tools.map((tool) => ({ ...tool })),
+    dto.grants.map((grant) => ({ ...grant, createdAt: new Date(grant.createdAt) })),
+    dto.rules.map((rule) => ({ ...rule, createdAt: new Date(rule.createdAt) })),
+  );
+}
+
+/** A mail call's saved draft; one that does not read as one draws no card. */
+function draftOf(raw: unknown): BotMailDraft | null {
+  const parsed = botMailDraftSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}
+
+/** The tools whose card stores the message it sends, as `input.plan`. */
+const SENDING_TOOLS = new Set(['send_mail', 'send_draft']);
+
+/** A send card's message; a plan that does not read as one draws the card's words alone. */
+function mailOf(tool: string, input: Record<string, unknown>): MailPlan | null {
+  if (!SENDING_TOOLS.has(tool)) return null;
+  const parsed = mailPlanSchema.safeParse(input.plan);
+  return parsed.success ? parsed.data : null;
 }
 
 function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBotApprovalEntity {
@@ -409,6 +475,22 @@ export class BotsRepository {
 
   /** The card the bot waits on, if any: at most one is pending. */
   @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
+  /** The goal the bot set itself and keeps working toward; null when it has none. */
+  @MapApiError(BotsErrors.FETCH_GOAL_FAILED)
+  async findGoal(id: string): Promise<BotGoal | null> {
+    const { goal } = await unwrapBody(
+      heyApiSdk.findBotGoal({ path: { id } }),
+      BotsErrors.FETCH_GOAL_FAILED,
+    );
+    return goal;
+  }
+
+  /** Stops the bot's goal: no more continuation turns, and one still waiting is cancelled. */
+  @MapApiError(BotsErrors.CLEAR_GOAL_FAILED)
+  async clearGoal(id: string): Promise<void> {
+    await unwrap(heyApiSdk.clearBotGoal({ path: { id } }), BotsErrors.CLEAR_GOAL_FAILED);
+  }
+
   async findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
     const data = await unwrapBody(
       heyApiSdk.findBotApprovals({ path: { id }, query: { status: 'pending' } }),
@@ -427,11 +509,12 @@ export class BotsRepository {
     approvalId: string,
     decision: BotApprovalDecision,
     note?: string,
+    reach: BotApprovalReach = 'once',
   ): Promise<BotApprovalEntity> {
     const data = await unwrapBody(
       heyApiSdk.decideBotApproval({
         path: { id, approvalId },
-        body: { decision, ...(note?.trim() ? { note: note.trim() } : {}) },
+        body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
       }),
       BotsErrors.DECIDE_APPROVAL_FAILED,
     );
@@ -644,6 +727,58 @@ export class BotsRepository {
   @MapApiError(BotsErrors.CLEAR_MEMORY_FAILED)
   async clearMemory(id: string): Promise<void> {
     await unwrap(heyApiSdk.clearBotMemory({ path: { id } }), BotsErrors.CLEAR_MEMORY_FAILED);
+  }
+
+  @MapApiError(BotsErrors.FETCH_PERMISSIONS_FAILED)
+  async findPermissions(id: string): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotPermissions({ path: { id } }),
+      BotsErrors.FETCH_PERMISSIONS_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  /** One tool's Allow, Ask or Off; `default` follows the preset again. */
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async setToolDecision(
+    id: string,
+    tool: string,
+    decision: BotToolDecision | 'default',
+  ): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.setBotToolDecision({ path: { id, tool }, body: { decision } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async addPermissionRule(
+    id: string,
+    effect: BotPermissionRuleEffect,
+    text: string,
+  ): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBotPermissionRule({ path: { id }, body: { effect, text } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async removePermissionRule(id: string, ruleId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotPermissionRule({ path: { id, ruleId } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async removeToolGrant(id: string, grantId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotToolGrant({ path: { id, grantId } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
   }
 
   @MapApiError(BotsErrors.FETCH_PROVIDERS_FAILED)

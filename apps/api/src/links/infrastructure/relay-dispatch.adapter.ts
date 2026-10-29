@@ -20,6 +20,7 @@ import type {
   SessionKeysSpec,
   SessionLaunchSpec,
   SessionPrepareSpec,
+  SessionTerminalWatchSpec,
 } from '../../sessions/application/session-dispatch.port';
 import { runnerTakesPlace } from '../../sessions/domain/runner-refusal.policy';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -63,7 +64,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // A runner that predates folder sessions would refuse a create with no
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
-      if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
+      if (!runnerTakesPlace(session, link.capabilities)) return NOT_SUPPORTED;
       // Only a host's coding agent is launched by a runner; a vendor's is not.
       const agent = session.agent;
       if (!isCodingAgentId(agent)) return NOT_SUPPORTED;
@@ -173,6 +174,38 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     // so nothing is sent and the caller is told so rather than handed a delivery
     // that did not happen: the row is ahead of the host until the launch is re-sent.
     return this.withLink(session, () => NOT_SUPPORTED);
+  }
+
+  async watchTerminal(
+    session: WorkSessionEntity,
+    spec: SessionTerminalWatchSpec,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, (link) => {
+      if (!link.capabilities.includes('session.watch')) return NOT_SUPPORTED;
+      return this.deliver(link, {
+        type: 'session.watch',
+        commandId: randomUUID(),
+        sessionId: session.id,
+        watchId: spec.watchId,
+        pattern: spec.pattern,
+        ...(spec.count ? { count: spec.count } : {}),
+      });
+    });
+  }
+
+  async unwatchTerminal(
+    session: WorkSessionEntity,
+    watchId: string,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, (link) => {
+      if (!link.capabilities.includes('session.watch')) return NOT_SUPPORTED;
+      return this.deliver(link, {
+        type: 'session.unwatch',
+        commandId: randomUUID(),
+        sessionId: session.id,
+        watchId,
+      });
+    });
   }
 
   async removeCheckout(

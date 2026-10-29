@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
-import { botDefaultModel } from '@oppenheimer/shared';
+import { BOT_TOOL_GRANTS_MAX, botDefaultModel } from '@oppenheimer/shared';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
 import { BotErrors } from '../../../bots/domain/bots.errors';
@@ -41,7 +41,8 @@ export class DecideBotApprovalCommandHandler
   ) {}
 
   async execute(command: DecideBotApprovalCommand): Promise<string> {
-    const { scope, botId, approvalId, decision, note, deciderName, credentialScopes } = command;
+    const { scope, botId, approvalId, decision, reach, note, deciderName, credentialScopes } =
+      command;
     const bot = await this.lookup.bot(scope, botId);
     const approval = requireFound(
       await this.approvals.findOne(scope, bot.id, approvalId),
@@ -51,8 +52,17 @@ export class DecideBotApprovalCommandHandler
 
     let effects: BotApprovalEffects;
     if (decision === 'approve') {
-      approval.approve(scope.userId, new Date(), credentialScopes);
-      effects = { runCall: { by: deciderName } };
+      if (!approval.reaches.includes(reach)) {
+        throw new AppError(BotErrors.TOOL_PER_CALL, {
+          detail: `This card offers ${approval.reaches.join(', ')}, not ${reach}`,
+        });
+      }
+      approval.approve(scope.userId, new Date(), credentialScopes, reach);
+      const permission = approval.standing();
+      effects = {
+        runCall: { by: deciderName },
+        ...(permission && { standing: { permission, maxGrants: BOT_TOOL_GRANTS_MAX } }),
+      };
     } else {
       approval.deny(scope.userId, new Date(), note, credentialScopes);
       const found = await this.turns.findOne(scope, bot.id, approval.turnId);

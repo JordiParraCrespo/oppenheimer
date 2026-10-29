@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
+import type { BotApprovalDecision, BotApprovalReach } from '@oppenheimer/shared/schemas/bot';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.queries';
@@ -42,6 +42,8 @@ export interface DecideBotApprovalVariables {
   approvalId: string;
   decision: BotApprovalDecision;
   note?: string;
+  /** How far a yes goes; this call only when not given. */
+  reach?: BotApprovalReach;
 }
 
 /**
@@ -54,10 +56,12 @@ export function useDecideBotApproval(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, approvalId, decision, note }: DecideBotApprovalVariables) =>
-      app.bots.decideApproval(id, approvalId, decision, note),
+    mutationFn: ({ id, approvalId, decision, note, reach }: DecideBotApprovalVariables) =>
+      app.bots.decideApproval(id, approvalId, decision, note, reach),
     ...withCacheOnSuccess(options, (_approval, { id }) =>
       Promise.all([
+        // A yes that reached past the call changed what Settings → Permissions shows.
+        queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
         queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
         queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
         // The Inbox's list across bots, which the workspace stream also announces.

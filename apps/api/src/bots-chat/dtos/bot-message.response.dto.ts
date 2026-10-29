@@ -1,12 +1,14 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
+  type BotGoalActivity,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
@@ -77,6 +79,23 @@ export class BotToolStepResponseDto {
     description: 'The subagents a `delegate` call ran; null for any other call, and while it runs.',
   })
   subagents!: BotSubagentRunResponseDto[] | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.',
+  })
+  allowedBy!: string | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description:
+      'The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.',
+  })
+  mailDraft!: Record<string, unknown> | null;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
@@ -174,6 +193,15 @@ export class BotPeerReplyEventResponseDto {
 }
 
 /** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
+/** A terminal watch's match, as a session event names it. */
+export class BotSessionMatchResponseDto {
+  @ApiProperty({ description: 'The pattern the bot watches the terminal for.' })
+  pattern!: string;
+
+  @ApiProperty({ description: 'New matching lines counted so far.' })
+  count!: number;
+}
+
 export class BotSessionEventResponseDto {
   @ApiProperty({ enum: ['session'] })
   kind!: 'session';
@@ -192,9 +220,51 @@ export class BotSessionEventResponseDto {
 
   @ApiProperty({
     enum: BOT_SESSION_EVENT_STATES,
-    description: 'What became of the task, or `stalled` when its stall check found it stuck.',
+    description:
+      'What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.',
   })
   state!: BotSessionEventState;
+
+  @ApiProperty({
+    type: BotSessionMatchResponseDto,
+    nullable: true,
+    required: false,
+    description: 'For `matched`: the pattern and how many lines matched so far; never the text.',
+  })
+  match?: BotSessionMatchResponseDto | null;
+}
+
+export class BotGoalEventResponseDto {
+  @ApiProperty({ enum: ['goal'] })
+  kind!: 'goal';
+
+  @ApiProperty({
+    enum: BOT_GOAL_ACTIVITIES,
+    description:
+      '`continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).',
+  })
+  activity!: BotGoalActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  goalId!: string;
+
+  @ApiProperty({ description: "The goal's objective at the time." })
+  objective!: string;
+
+  @ApiProperty({
+    description: 'For `continued`, which continuation this is; otherwise how many ran.',
+  })
+  step!: number;
+
+  @ApiProperty({ description: 'The continuations the goal may take.' })
+  limit!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'For `stopped`: the status of the turn that ended it, or `access_lost`.',
+  })
+  reason!: string | null;
 }
 
 export type BotMessageEventResponseDto =
@@ -202,7 +272,8 @@ export type BotMessageEventResponseDto =
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
-  | BotSessionEventResponseDto;
+  | BotSessionEventResponseDto
+  | BotGoalEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -211,6 +282,7 @@ export type BotMessageEventResponseDto =
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
+  BotGoalEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -241,6 +313,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotGoalEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

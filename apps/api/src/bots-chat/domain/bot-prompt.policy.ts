@@ -96,12 +96,14 @@ const HOW_A_TURN_GOES = `# How a turn goes
 - Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
 - Keep going until the request is done or you are blocked, then stop. A turn has a time limit of a few minutes and a limit on tool calls; do not start work you cannot finish in it.
 - Report what actually happened. Say "done" only for what a tool confirmed. When something failed, is still running or is blocked, say that, and what would unblock it.
+- A reply commits to something. When you take on work, say what you are taking on, where it stands and when the person will hear from you next (when the session finishes, when the review is in). "On it" or "Sure" alone is not a reply.
+- Asking again for something already under way is the same errand, not a new one. Say where it stands and start nothing new: check what you started (a session, a task, a review) before starting another.
 - Do not narrate each tool call; the chat shows them on their own line. Your messages are the conversation.
 - Write in the person's language, briefly, in Markdown when a list or a table helps.`;
 
 const THE_TURN_CONTEXT = `# The turn context
 
-The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
+The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not, and how full your context was when your last turn ended. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
 
 function whatYouCanDo(
   engine: readonly string[],
@@ -190,7 +192,8 @@ type EventPrompts = {
 /**
  * The prompt of a turn an event opened, one entry per kind, so a new kind
  * is a row the compiler asks for. A routine's opening already says what to
- * do (`routineOpening`), so it is read as the note it is.
+ * do (`routineOpening`), and so does a goal's continuation
+ * (`goalContinuationText`), so each is read as the note it is.
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (_event, content) => approvalPrompt(content),
@@ -198,6 +201,7 @@ const EVENT_PROMPTS: EventPrompts = {
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,
   session: sessionWakePrompt,
+  goal: (_event, content) => eventNote(content),
 };
 
 /**

@@ -1,9 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import { AppError } from '@oppenheimer/backend-core';
+import { BotErrors } from '../../../bots/domain/bots.errors';
+import { MAIL_DRAFT_DATA_KEY } from '../../bot-mail-tool.mapper';
 import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
-import { TIME_LIMIT_ERROR, type TranscriptWrite, TurnTranscript } from '../turn-transcript.policy';
+import {
+  failureKindOf,
+  TIME_LIMIT_ERROR,
+  type TranscriptWrite,
+  TurnTranscript,
+} from '../turn-transcript.policy';
 
 /**
  * How a turn's engine events become the chat's messages: finished text is a
@@ -47,6 +55,7 @@ describe('TurnTranscript', () => {
     expect(transcript.result).toEqual({
       reason: 'completed',
       error: null,
+      failure: null,
       inputTokens: 10,
       outputTokens: 2,
       context: null,
@@ -79,6 +88,8 @@ describe('TurnTranscript', () => {
         isError: false,
         sessionId: null,
         subagents: null,
+        allowedBy: null,
+        mailDraft: null,
       },
       {
         callId: 'b',
@@ -88,6 +99,8 @@ describe('TurnTranscript', () => {
         isError: true,
         sessionId: null,
         subagents: null,
+        allowedBy: null,
+        mailDraft: null,
       },
     ]);
   });
@@ -117,6 +130,54 @@ describe('TurnTranscript', () => {
       ['a', 's-1'],
       ['b', null],
     ]);
+  });
+
+  it('keeps the draft a mail call saved on its step, and none from a draft it could not read', () => {
+    const draft = {
+      saved: 'created',
+      draftId: 'd1',
+      link: 'https://mail.google.com/mail/?authuser=ana%40acme.test#drafts?compose=dm1',
+      mail: {
+        kind: 'new',
+        connectionId: '22222222-2222-4222-8222-222222222222',
+        accountEmail: 'ana@acme.test',
+        from: { email: 'ana@acme.test', name: null },
+        to: ['bo@client.test'],
+        cc: [],
+        bcc: [],
+        recipientsFromMail: false,
+        subject: 'Invoice 42',
+        body: 'Paid',
+        signature: true,
+        original: null,
+        threadId: null,
+        attachments: [],
+        draftId: null,
+        draftMessageId: null,
+      },
+    };
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'create_draft', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'create_draft', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'create_draft',
+        output: 'Draft saved',
+        isError: false,
+        data: { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(draft) },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'create_draft',
+        output: 'Draft saved',
+        isError: false,
+        data: { [MAIL_DRAFT_DATA_KEY]: JSON.stringify({ draftId: 'd2' }) },
+      },
+    ]);
+    const [activity] = inserted(writes);
+    expect(activity.steps.map((step) => step.mailDraft)).toEqual([draft, null]);
   });
 
   it('keeps the subagents a delegate call ran on its step, and counts their tokens as the turn’s', () => {
@@ -161,10 +222,41 @@ describe('TurnTranscript', () => {
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {
     const { writes, transcript } = run([
       { type: 'text.delta', text: 'Half an ans' },
-      { type: 'done', reason: 'failed', error: 'model overloaded' },
+      { type: 'done', reason: 'failed', error: 'model overloaded', failure: 'unavailable' },
     ]);
     expect(inserted(writes).map((message) => message.content)).toEqual(['Half an ans']);
-    expect(transcript.result).toMatchObject({ reason: 'failed', error: 'model overloaded' });
+    expect(transcript.result).toMatchObject({
+      reason: 'failed',
+      error: 'model overloaded',
+      failure: 'unavailable',
+    });
+  });
+
+  it('passes a retry wait on to the stream and stores nothing for it', () => {
+    const { writes, transcript } = run([
+      { type: 'retrying', reason: 'rate_limit', delayMs: 30_000 },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(writes).toEqual([{ kind: 'retrying', reason: 'rate_limit' }]);
+    expect(transcript.result.reason).toBe('completed');
+  });
+
+  // The chat says from the kind whether a retry can help; a failure the
+  // engine did not name must still read as one, never as no failure.
+  it('ends a failed turn with the kind of failure the engine named, other when it named none', () => {
+    const named = turn();
+    named.start(new Date());
+    const transcript = new TurnTranscript(named);
+    transcript.apply({ type: 'done', reason: 'failed', error: 'bad key', failure: 'credential' });
+    transcript.endTurn(new Date(), null);
+    expect(named.failure).toBe('credential');
+
+    const unnamed = turn();
+    unnamed.start(new Date());
+    const quiet = new TurnTranscript(unnamed);
+    quiet.apply({ type: 'done', reason: 'failed', error: 'odd' });
+    quiet.endTurn(new Date(), null);
+    expect(unnamed.failure).toBe('other');
   });
 
   it('puts the images a show_image call stored after its line, as the bot’s, and opens a new line for the next call', () => {
@@ -211,6 +303,7 @@ describe('TurnTranscript', () => {
     expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
     expect(subject.status).toBe('failed');
     expect(subject.error).toBe(TIME_LIMIT_ERROR);
+    expect(subject.failure).toBe('time_limit');
   });
 
   // What breaks this: the meter reading the first answer's context, not the
@@ -259,5 +352,19 @@ describe('TurnTranscript', () => {
       },
     ]);
     expect(inserted(writes)[0].steps[0].output).toHaveLength(2001);
+  });
+});
+
+/**
+ * A turn that throws before or around its engine: a provider with no key is
+ * fixed in Settings (a retry cannot help), ChatGPT refreshing its sign-in
+ * passes, anything else is not known.
+ */
+describe('failureKindOf', () => {
+  it('reads a missing key as a credential failure and a refreshing sign-in as a passing one', () => {
+    expect(failureKindOf(new AppError(BotErrors.PROVIDER_KEY_MISSING))).toBe('credential');
+    expect(failureKindOf(new AppError(BotErrors.CHATGPT_REFRESHING))).toBe('unavailable');
+    expect(failureKindOf(new AppError(BotErrors.NOT_FOUND))).toBe('other');
+    expect(failureKindOf(new Error('boom'))).toBe('other');
   });
 });

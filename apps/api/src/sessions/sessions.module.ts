@@ -15,6 +15,7 @@ import { CloudSessionSyncResolver } from './application/cloud-session-sync.resol
 import { CloudTaskFactory } from './application/cloud-task.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
+import { SessionTerminalMatchedDomainEventHandler } from './application/event-handlers/session-terminal-matched.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
@@ -69,12 +70,16 @@ import { StopSessionCommandHandler } from './commands/stop-session/stop-session.
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
 import { StopSessionShareCommandHandler } from './commands/stop-session-share/stop-session-share.command-handler';
 import { StopSessionShareHttpController } from './commands/stop-session-share/stop-session-share.http.controller';
+import { UnwatchSessionTerminalCommandHandler } from './commands/unwatch-session-terminal/unwatch-session-terminal.command-handler';
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
+import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from './database/session-share.orm-entity';
 import { SessionShareRepository } from './database/session-share.repository';
+import { SessionTerminalWatchOrmEntity } from './database/session-terminal-watch.orm-entity';
+import { SessionTerminalWatchRepository } from './database/session-terminal-watch.repository';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
@@ -99,12 +104,14 @@ import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.
 import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
+import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
   CLOUD_FILES,
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
   SESSION_SHARE_REPOSITORY,
+  SESSION_TERMINAL_WATCH_REPOSITORY,
   SESSION_USAGE_READER,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
@@ -156,6 +163,8 @@ const commandHandlers: Provider[] = [
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
+  WatchSessionTerminalCommandHandler,
+  UnwatchSessionTerminalCommandHandler,
   RecordCloudStatusCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
@@ -206,6 +215,7 @@ const adapters: Provider[] = [
       SessionTurnOrmEntity,
       SessionShareOrmEntity,
       SessionCloudRunOrmEntity,
+      SessionTerminalWatchOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
@@ -234,6 +244,7 @@ const adapters: Provider[] = [
     ...adapters,
     WorkSessionMapper,
     SessionShareMapper,
+    SessionTerminalWatchMapper,
     AttachTicketFactory,
     CloudSessionSyncResolver,
     SessionShareAccessResolver,
@@ -254,9 +265,11 @@ const adapters: Provider[] = [
     ...HostsModule.contributeUsage([SessionHostUsage]),
     ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     HostUnpairedStopsSessionsDomainEventHandler,
+    SessionTerminalMatchedDomainEventHandler,
     HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },
+    { provide: SESSION_TERMINAL_WATCH_REPOSITORY, useClass: SessionTerminalWatchRepository },
   ],
   // The three application ports and the usage read, and nothing else. The
   // repository is this module's persistence adapter: publishing it would let the

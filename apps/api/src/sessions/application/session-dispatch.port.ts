@@ -110,6 +110,14 @@ export interface SessionKeysSpec {
   gapMs: number;
 }
 
+/** A pattern the runner is to watch a session's screen for, under the watch's id. */
+export interface SessionTerminalWatchSpec {
+  watchId: string;
+  pattern: string;
+  /** The count already reported, when the watch is sent again: the runner counts on from it. */
+  count?: number;
+}
+
 /**
  * What the module that owns the runner link implements so a session's work reaches a
  * host.
@@ -147,6 +155,17 @@ export interface SessionDispatchPort {
    * `delivered` only when every key reached the link.
    */
   typeKeys(session: WorkSessionEntity, spec: SessionKeysSpec): Promise<SessionDispatchOutcome>;
+  /**
+   * Have the runner scan the session's screen for a pattern
+   * (`session.watch`); a runner whose hello did not name `session.watch` is
+   * sent nothing and answered `not_supported`.
+   */
+  watchTerminal(
+    session: WorkSessionEntity,
+    spec: SessionTerminalWatchSpec,
+  ): Promise<SessionDispatchOutcome>;
+  /** Stop a watch `watchTerminal` started. */
+  unwatchTerminal(session: WorkSessionEntity, watchId: string): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,

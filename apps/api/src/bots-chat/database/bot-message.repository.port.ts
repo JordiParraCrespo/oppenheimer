@@ -18,6 +18,18 @@ export interface BotMessageRepositoryPort {
   saveSteps(message: BotMessageEntity): Promise<void>;
   /** The bot's newest `limit` messages, oldest first. */
   findConversation(scope: AccessScope, botId: string, limit: number): Promise<BotMessageEntity[]>;
+  /**
+   * The person's and the bot's messages whose words match `query`
+   * (Postgres web-search syntax over the `simple` configuration, so no
+   * language is assumed), best matches first, then newest; up to `limit`.
+   * Activity lines and events are not searched.
+   */
+  search(
+    scope: AccessScope,
+    botId: string,
+    query: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]>;
   /** How many messages the chat holds in all: yours, the bot's and events, not activity lines. */
   countConversation(scope: AccessScope, botId: string): Promise<number>;
   /**

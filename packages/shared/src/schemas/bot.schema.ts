@@ -380,6 +380,47 @@ export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled',
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
 /**
+ * Why a failed turn failed, as a kind the chat can act on (`25-bots.md` §2):
+ * whether sending it again can help, and what to do instead when it cannot.
+ * From Grok Bot's failure lines (`research/lessons-from-grok-bot.md` §9,
+ * row 4). The words of the failure stay in the turn's `error`.
+ *
+ * - `rate_limit`: the provider said "not now"; it passes.
+ * - `usage_limit`: the account's quota or credit is spent; it passes when the
+ *   plan resets or is topped up, not on a retry.
+ * - `credential`: the key or sign-in was refused; fixed in Settings.
+ * - `refused`: the provider refused this request (its content, the model);
+ *   the same request fails the same way.
+ * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
+ * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `interrupted`: the worker running it stopped; sending it again runs it.
+ * - `other`: none of these, or not known.
+ */
+export const BOT_TURN_FAILURES = [
+  'rate_limit',
+  'usage_limit',
+  'credential',
+  'refused',
+  'unavailable',
+  'time_limit',
+  'interrupted',
+  'other',
+] as const;
+export type BotTurnFailure = (typeof BOT_TURN_FAILURES)[number];
+
+/** Whether sending the same message again can succeed, for each kind of failure. */
+export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>> = {
+  rate_limit: true,
+  usage_limit: false,
+  credential: false,
+  refused: false,
+  unavailable: true,
+  time_limit: false,
+  interrupted: true,
+  other: true,
+};
+
+/**
  * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
  * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
  * waits on. Within a lane, the oldest first.
@@ -469,11 +510,12 @@ export const BOT_SESSION_WAKE_STATES = [
 export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
 /**
- * What a session event in the chat can say: one of the wakes above, or
- * `stalled`, the silent stall check finding the task stuck before it reached
- * any of them (`27-bot-subscriptions.md` §4.1).
+ * What a session event says: a task's wake state; `matched`, its terminal
+ * printed a line matching a watch's pattern; or `stalled`, the silent stall
+ * check found the task stuck before it reached any wake state
+ * (`27-bot-subscriptions.md` §4.1).
  */
-export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'stalled'] as const;
+export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'matched', 'stalled'] as const;
 export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
 
 export interface BotSessionEvent {
@@ -485,14 +527,66 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
+  /** What became of the task; `matched`, its terminal printed what the bot watches for; or `stalled`. */
   state: BotSessionEventState;
+  /**
+   * For `matched`: the pattern the bot watches the terminal for, and how many
+   * new lines have matched it so far. Never the text: it stays on the host.
+   */
+  match?: { pattern: string; count: number } | null;
+}
+
+/**
+ * A goal a bot set itself keeps it going (`25-bots.md` §4.1; from Grok Bot's
+ * goals, `research/lessons-from-grok-bot.md` §9 row 10): after a turn ends
+ * with the goal still open, a continuation turn is queued, up to the goal's
+ * limit. One goal per bot at a time; an ended goal is deleted. This is the
+ * longest objective, in the bot's words.
+ */
+export const BOT_GOAL_OBJECTIVE_MAX = 500;
+/** The continuations a goal may queue: at most this many, and five unless the bot asks for fewer or more. */
+export const BOT_GOAL_CONTINUATIONS_MAX = 10;
+export const BOT_GOAL_CONTINUATIONS_DEFAULT = 5;
+
+/**
+ * What a goal line says: a continuation opens a turn (`continued`); the
+ * others say, outside any turn, how the goal ended when the bot did not end
+ * it itself (its `end_goal` call is the record of that): the owner stopped
+ * it (`cleared`), its continuations ran out (`exhausted`), or a turn of it
+ * failed or was stopped (`stopped`).
+ */
+export const BOT_GOAL_ACTIVITIES = ['continued', 'cleared', 'exhausted', 'stopped'] as const;
+export type BotGoalActivity = (typeof BOT_GOAL_ACTIVITIES)[number];
+
+export interface BotGoalEvent {
+  kind: 'goal';
+  activity: BotGoalActivity;
+  goalId: string;
+  /** The goal's objective at the time. */
+  objective: string;
+  /** For `continued`, which continuation this is; otherwise how many ran. */
+  step: number;
+  /** The goal's limit of continuations. */
+  limit: number;
+  /** Why, as a code, for `stopped`: the status of the turn that ended it. */
+  reason: string | null;
+}
+
+/** A bot's goal as the console reads it: `GET /bots/:id/goal`. */
+export interface BotGoal {
+  id: string;
+  objective: string;
+  continuations: number;
+  limit: number;
+  createdAt: string;
 }
 
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
- * decision, a routine's run, or a session the bot is subscribed to.
+ * decision, a routine's run, a session the bot is subscribed to, or a goal
+ * it set itself.
  */
-export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription'] as const;
+export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription', 'goal'] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
@@ -586,7 +680,8 @@ export type BotMessageEvent =
   | BotRoutineEvent
   | BotPeerMessageEvent
   | BotPeerReplyEvent
-  | BotSessionEvent;
+  | BotSessionEvent
+  | BotGoalEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -595,6 +690,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_message',
   'bot_reply',
   'session',
+  'goal',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
@@ -687,11 +783,76 @@ export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
 /** What the person may add to a decision: why they denied it, or what to do instead. */
 export const BOT_APPROVAL_NOTE_MAX = 1_000;
 
-/** `POST /bots/:id/approvals/:approvalId/decision`. */
+/**
+ * How far a yes reaches (`25-bots.md` §5): `once`, this call only; `tool`,
+ * every call of the tool from now on (the tool becomes Allow); `subject`,
+ * every call of the tool on the same thing (this repository, this session),
+ * offered only when the card names one. A tool that is per call only offers
+ * `once` alone.
+ */
+export const BOT_APPROVAL_REACHES = ['once', 'tool', 'subject'] as const;
+export type BotApprovalReach = (typeof BOT_APPROVAL_REACHES)[number];
+
+/** `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes; a no ignores it. */
 export const decideBotApprovalSchema = z.object({
   decision: z.enum(BOT_APPROVAL_DECISIONS),
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+  reach: z.enum(BOT_APPROVAL_REACHES).default('once'),
 });
+
+/**
+ * What a bot may do with one tool, set by its owner in Settings →
+ * Permissions (`25-bots.md` §5): `allow` runs without asking, `ask` raises a
+ * Needs input card, `off` takes the tool away (the model never sees it). A
+ * tool with no setting follows the bot's preset and the tool's own default.
+ */
+export const BOT_TOOL_DECISIONS = ['allow', 'ask', 'off'] as const;
+export type BotToolDecision = (typeof BOT_TOOL_DECISIONS)[number];
+
+/**
+ * The groups Settings → Permissions lists a bot's tools under, in order:
+ * `25-bots.md` §4.1 to §4.7 (itself, sessions, projects and the plan,
+ * GitHub, automations, other bots, work and the web).
+ */
+export const BOT_TOOL_GROUPS = [
+  'self',
+  'sessions',
+  'plan',
+  'mail',
+  'github',
+  'automations',
+  'bots',
+  'web',
+] as const;
+export type BotToolGroup = (typeof BOT_TOOL_GROUPS)[number];
+
+/** `PUT /bots/:id/permissions/tools/:tool`: a decision, or `default` to drop the setting. */
+export const setBotToolDecisionSchema = z.object({
+  decision: z.enum([...BOT_TOOL_DECISIONS, 'default']),
+});
+export type SetBotToolDecisionDto = z.infer<typeof setBotToolDecisionSchema>;
+
+/**
+ * A plain-language rule a reviewer reads before an asking call
+ * (`25-bots.md` §5): `allow` lets a matching call run without a card, `ask`
+ * makes one ask even where it would not. When both match, `ask` wins.
+ */
+export const BOT_PERMISSION_RULE_EFFECTS = ['allow', 'ask'] as const;
+export type BotPermissionRuleEffect = (typeof BOT_PERMISSION_RULE_EFFECTS)[number];
+
+/** One rule's words: a sentence, never a policy document. */
+export const BOT_PERMISSION_RULE_MAX = 280;
+/** Rules one bot may hold, both kinds together: the reviewer reads them all on every call. */
+export const BOT_PERMISSION_RULES_MAX = 20;
+/** Standing grants one bot may hold for single subjects (`reach: 'subject'`). */
+export const BOT_TOOL_GRANTS_MAX = 100;
+
+/** `POST /bots/:id/permissions/rules`. */
+export const createBotPermissionRuleSchema = z.object({
+  effect: z.enum(BOT_PERMISSION_RULE_EFFECTS),
+  text: z.string().trim().min(1).max(BOT_PERMISSION_RULE_MAX),
+});
+export type CreateBotPermissionRuleDto = z.infer<typeof createBotPermissionRuleSchema>;
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
 /** What the console's Deny asks for: the note alone, optional. */
@@ -721,7 +882,7 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
- * turn writes it, where a running `delegate` call's children are, a nudge to read the conversation again when a message
+ * turn writes it, that it waits on a provider that refused a call, where a running `delegate` call's children are, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is
  * raised or settled. The stored messages are the record; this is how
  * they arrive early.
@@ -729,6 +890,15 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
   z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
+  /**
+   * The provider refused a call and the turn waits to try it again: a rate
+   * limit, or the provider overloaded or down. Until the turn writes again.
+   */
+  z.object({
+    type: z.literal('retrying'),
+    turnId: z.string(),
+    reason: z.enum(['rate_limit', 'unavailable']),
+  }),
   /** `turnId` is null for a line outside any turn, such as a routine's activity. */
   z.object({ type: z.literal('message'), turnId: z.string().nullable(), messageId: z.string() }),
   z.object({

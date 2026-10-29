@@ -3,11 +3,14 @@
  * watch stored for the turn that asked, with its scopes and zone, as the
  * owner may read the session; none of them asks; unwatch and list touch
  * only the bot's own subscriptions; and a task the bot hands off owed its
- * stall check (§4.1). The upsert itself is the integration suite's.
+ * stall check (§4.1). The upsert itself is the integration
+ * suite's.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { UnwatchSessionTerminalCommand } from '../../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
+import { WatchSessionTerminalCommand } from '../../../sessions/commands/watch-session-terminal/watch-session-terminal.command';
 import { SessionErrors } from '../../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
@@ -19,9 +22,11 @@ import {
   BOT_STALL_CHECK_DELAY_MS,
   BOT_SUBSCRIPTIONS_PER_BOT,
 } from '../../domain/bot-subscription.policy';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotStallChecksPort } from '../../infrastructure/bot-stall-checks.port';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
+import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 import { BotWatchToolsFactory } from '../bot-watch-tools.factory';
@@ -62,7 +67,12 @@ function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
 }
 
 function setup(
-  options: { read?: WorkSessionEntity | Error; following?: BotSubscriptionEntity[] } = {},
+  options: {
+    read?: WorkSessionEntity | Error | (() => WorkSessionEntity);
+    following?: BotSubscriptionEntity[];
+    replacedWatch?: string;
+    hints?: string[];
+  } = {},
 ) {
   const subscriptions = {
     subscribe: vi.fn<BotSubscriptionRepositoryPort['subscribe']>(
@@ -72,20 +82,29 @@ function setup(
       async () => options.following ?? [],
     ),
     unsubscribe: vi.fn<BotSubscriptionRepositoryPort['unsubscribe']>(async () => true),
-  };
-  const stallChecks = {
-    schedule: vi.fn<BotStallChecksPort['schedule']>(async () => undefined),
+    attachTerminalWatch: vi.fn<BotSubscriptionRepositoryPort['attachTerminalWatch']>(
+      async () => options.replacedWatch ?? null,
+    ),
   };
   const queries = {
     execute: vi.fn(async (query: unknown) => {
       expect(query).toBeInstanceOf(FindSessionQuery);
       const read = options.read ?? liveSession('in_progress');
       if (read instanceof Error) throw read;
-      return read;
+      return typeof read === 'function' ? read() : read;
     }),
   };
   const repository = subscriptions as unknown as BotSubscriptionRepositoryPort;
-  const commands = { execute: vi.fn(async () => undefined) };
+  const commands = {
+    execute: vi.fn(async (command: unknown) =>
+      command instanceof WatchSessionTerminalCommand
+        ? { sessionId: SESSION, watchId: 'watch-new', hints: options.hints ?? [] }
+        : undefined,
+    ),
+  };
+  const stallChecks = {
+    schedule: vi.fn<BotStallChecksPort['schedule']>(async () => undefined),
+  };
   const resolver = new BotSessionWatchResolver(
     repository,
     stallChecks,
@@ -93,7 +112,12 @@ function setup(
     commands as unknown as CommandBus,
     new BotSubscriptionMapper(),
   );
-  const factory = new BotWatchToolsFactory(resolver, repository, new BotSubscriptionMapper());
+  const factory = new BotWatchToolsFactory(
+    resolver,
+    repository,
+    new BotSubscriptionMapper(),
+    new BotSessionWaitResolver(queries as unknown as QueryBus),
+  );
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
   const context: BotToolContext = {
     owner,
@@ -103,6 +127,7 @@ function setup(
     homeHostId: null,
     timeZone: 'Europe/Madrid',
     permission: 'auto',
+    permissions: NO_PERMISSIONS,
     approvals,
     budget: new BotTurnBudget(),
     credentialScopes: ['sessions:read', 'sessions:write'],
@@ -202,7 +227,9 @@ describe('BotWatchToolsFactory', () => {
     const { resolver, context, subscriptions, commands } = setup({
       read: liveSession('failed', 1),
     });
-    expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
+    expect(await resolver.follow(context, SESSION, 'first_task')).toContain(
+      'You are subscribed to it',
+    );
     expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
       until: 'task',
       purpose: null,
@@ -215,13 +242,32 @@ describe('BotWatchToolsFactory', () => {
     expect(wake.subscriptionId).toBe(subscriptions.subscribe.mock.calls[0][0].id);
   });
 
+  // What breaks this: a prompt whose task finished before the watch was
+  // stored, counted as the next task's or as already known, so the bot that
+  // was told to wait is never woken.
+  it('follows the task a prompt opened by its number, unknown, and reconciles it at once', async () => {
+    const { resolver, context, subscriptions, commands } = setup({
+      read: liveSession('completed', 3),
+    });
+    expect(await resolver.follow(context, SESSION, { turn: 3 })).toContain(
+      'You are subscribed to it',
+    );
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      watchedTurn: 3,
+      lastTurn: null,
+      lastState: null,
+    });
+    const [wake] = commands.execute.mock.calls[0] as unknown as [WakeSubscribedBotCommand];
+    expect(wake).toBeInstanceOf(WakeSubscribedBotCommand);
+  });
+
   // What breaks this: a session stuck at its launch (host offline, a trust
   // prompt) that the bot never hears of, since no state it waits on comes.
   it('owes the task it hands off a stall check a few minutes later', async () => {
     const { resolver, context, subscriptions, stallChecks } = setup();
     const before = Date.now();
-    await resolver.watchStarted(context, SESSION);
-    await resolver.watchSent(context, SESSION, 3);
+    await resolver.follow(context, SESSION, 'first_task');
+    await resolver.follow(context, SESSION, { turn: 3 });
 
     const [[started, firstAt], [sent]] = stallChecks.schedule.mock.calls;
     expect(started).toEqual({
@@ -237,17 +283,88 @@ describe('BotWatchToolsFactory', () => {
   it('keeps the watch it stored when its stall check cannot be staged', async () => {
     const { resolver, context, stallChecks } = setup();
     stallChecks.schedule.mockRejectedValueOnce(new Error('connection reset'));
-    expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
+    expect(await resolver.follow(context, SESSION, 'first_task')).toContain(
+      'You are subscribed to it',
+    );
   });
 
   it("says when start_session's watch could not be stored rather than throw", async () => {
     const { resolver, context, subscriptions, commands, stallChecks } = setup();
 
     subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
-    expect(await resolver.watchStarted(context, SESSION)).toBe(
+    expect(await resolver.follow(context, SESSION, 'first_task')).toBe(
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
     expect(stallChecks.schedule).not.toHaveBeenCalled();
+  });
+});
+
+describe('watch_session with a pattern', () => {
+  it('has the session watch its terminal as the owner, and the subscription name the watch', async () => {
+    const { commands, subscriptions, call } = setup();
+    const result = await call('watch_session', { session_id: SESSION, pattern: 'FAIL|Error' });
+    const made = commands.execute.mock.calls
+      .map(([command]) => command)
+      .find((command) => command instanceof WatchSessionTerminalCommand);
+    expect(made).toMatchObject({ scope: owner, sessionId: SESSION, pattern: 'FAIL|Error' });
+    expect(subscriptions.attachTerminalWatch).toHaveBeenCalledWith(expect.any(String), {
+      id: 'watch-new',
+      pattern: 'FAIL|Error',
+    });
+    expect(result.content).toContain('new line matching “FAIL|Error”');
+    expect(result.content).toContain('not the line');
+  });
+
+  it('removes the watch a new pattern replaces, and says when the host cannot watch yet', async () => {
+    const { commands, call } = setup({ replacedWatch: 'watch-old', hints: ['host_offline'] });
+    const result = await call('watch_session', { session_id: SESSION, pattern: 'PASS' });
+    const removed = commands.execute.mock.calls
+      .map(([command]) => command)
+      .find((command) => command instanceof UnwatchSessionTerminalCommand);
+    expect(removed).toMatchObject({ sessionId: SESSION, watchId: 'watch-old' });
+    expect(result.content).toContain('starts when it reconnects');
+  });
+});
+
+describe('wait_for_session', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('answers at once when the task already ended, reading the session in the owner’s scope', async () => {
+    const { call, queries } = setup({ read: liveSession('completed') });
+    const result = await call('wait_for_session', { session_id: SESSION, seconds: 30 });
+    expect(result.content).toMatch(/finished its task \(after 0s\)/);
+    expect(queries.execute).toHaveBeenCalledTimes(1);
+    expect(queries.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: SESSION });
+  });
+
+  it('waits until the task asks for input, reading again every few seconds', async () => {
+    vi.useFakeTimers();
+    let reads = 0;
+    const { call } = setup({
+      read: () => liveSession(++reads < 3 ? 'in_progress' : 'requires_action'),
+    });
+    const waiting = call('wait_for_session', { session_id: SESSION, seconds: 60 });
+    await vi.advanceTimersByTimeAsync(6_000);
+    const result = await waiting;
+    expect(reads).toBe(3);
+    expect(result.content).toMatch(/needs input \(after 6s\)/);
+  });
+
+  it('says the session is still working when its time runs out', async () => {
+    vi.useFakeTimers();
+    const { call } = setup({ read: liveSession('in_progress') });
+    const waiting = call('wait_for_session', { session_id: SESSION, seconds: 10 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect((await waiting).content).toMatch(/still working after 9s/);
+  });
+
+  it('refuses a fourth wait in one turn, reading nothing', async () => {
+    const { call, queries } = setup({ read: liveSession('completed') });
+    for (let i = 0; i < 3; i++) await call('wait_for_session', { session_id: SESSION });
+    const fourth = await call('wait_for_session', { session_id: SESSION });
+    expect(fourth.isError).toBe(true);
+    expect(fourth.content).toContain('watch_session');
+    expect(queries.execute).toHaveBeenCalledTimes(3);
   });
 });

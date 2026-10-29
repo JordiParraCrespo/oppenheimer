@@ -5,9 +5,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotTurnLive } from '../components/bot-turn-live';
 
 /**
- * The turn's live line while a `delegate` call runs. What breaks this: the
- * children hidden behind "Running 3 subagents" until all of them end, or a
- * child's tools and state read from anything but the stream's frame.
+ * The turn's live line. What breaks this: the line saying "Thinking" for
+ * the minutes a provider's backoff takes, so the person cannot tell a slow
+ * model from a rate limit; the children of a `delegate` call hidden behind
+ * "Running 3 subagents" until all of them end, or a child's tools and state
+ * read from anything but the stream's frame.
  */
 
 vi.mock('react-i18next', async (importOriginal) => ({
@@ -28,6 +30,8 @@ const delegate: BotToolStep = {
   isError: false,
   sessionId: null,
   subagents: null,
+  allowedBy: null,
+  mailDraft: null,
 };
 
 const child = (
@@ -54,6 +58,7 @@ describe('BotTurnLive', () => {
           child('Check acme/api#14', 'timed_out'),
         ]}
         writing={false}
+        provider="Anthropic"
         since={null}
       />,
     );
@@ -75,11 +80,43 @@ describe('BotTurnLive', () => {
         step={delegate}
         subagents={undefined}
         writing={false}
+        provider="Anthropic"
         since={null}
       />,
     );
 
     expect(screen.getByRole('status').textContent).toContain('bots.chat.activity.delegating');
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+  });
+
+  it('says the provider is limiting requests while the engine waits on it', () => {
+    render(
+      <BotTurnLive
+        queued={false}
+        step={undefined}
+        subagents={undefined}
+        writing={false}
+        waitingOn="rate_limit"
+        provider="Anthropic"
+        since={null}
+      />,
+    );
+    expect(screen.getByRole('status').textContent).toContain(
+      'bots.chat.turn.retrying.rate_limit {"provider":"Anthropic"}',
+    );
+  });
+
+  it('says Thinking once it no longer waits', () => {
+    render(
+      <BotTurnLive
+        queued={false}
+        step={undefined}
+        subagents={undefined}
+        writing={false}
+        provider="Anthropic"
+        since={null}
+      />,
+    );
+    expect(screen.getByRole('status').textContent).toContain('bots.chat.turn.thinking');
   });
 });

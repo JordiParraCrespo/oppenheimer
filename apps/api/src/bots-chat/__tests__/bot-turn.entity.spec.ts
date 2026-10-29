@@ -48,6 +48,22 @@ describe('BotTurnEntity.end', () => {
     turn.end('cancelled', new Date(), { error: 'ignored' });
     expect(turn.error).toBeNull();
   });
+
+  // The chat says from the kind whether sending it again helps: a turn whose
+  // worker died runs fine when sent again, and only a failed turn has a kind.
+  it('keeps the kind of failure only on a failed turn, and marks an abandoned turn interrupted', () => {
+    const failed = running();
+    failed.end('failed', new Date(), { error: 'quota', failure: 'usage_limit' });
+    expect(failed.failure).toBe('usage_limit');
+
+    const cancelled = running();
+    cancelled.end('cancelled', new Date(), { failure: 'refused' });
+    expect(cancelled.failure).toBeNull();
+
+    const abandoned = running();
+    abandoned.abandon(new Date());
+    expect(abandoned.failure).toBe('interrupted');
+  });
 });
 
 describe('BotTurnEntity, between bots', () => {

@@ -41,6 +41,8 @@ function subscription(): BotSubscriptionEntity {
       lastTurn: null,
       lastState: null,
       wakes: 0,
+      terminalWatch: null,
+      matches: 0,
       version: 1,
     },
   });

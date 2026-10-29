@@ -89,6 +89,25 @@
         "download": "Download",
         "position": "{{position}} of {{total}}",
         "pasted": "Pasted image"
+      },
+      "mail": {
+        "label": "The message, exactly as it goes",
+        "from": "From",
+        "to": "To",
+        "cc": "Cc",
+        "bcc": "Bcc",
+        "subject": "Subject",
+        "answers": "In reply to {{from}}",
+        "forwards": "Forwarding {{from}}'s message",
+        "fromMail": "Taken from the message it answers",
+        "files_one": "{{count}} file",
+        "files_other": "{{count}} files",
+        "signature": "The Gmail signature of {{email}} goes below it, then the quoted message.",
+        "draft": "The draft in {{email}}, sent as it stands now in Gmail.",
+        "nobody": "Nobody",
+        "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
+        "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
+        "openInGmail": "Open in Gmail"
       }
     },
     "search": {
@@ -342,6 +361,12 @@
       "MAIL_007": "Gmail didn't answer. Try again in a moment.",
       "MAIL_008": "Gmail asked us to slow down. Try again shortly.",
       "MAIL_009": "Gmail has no such message.",
+      "MAIL_010": "That message can't go to those recipients: each must be an email address, and ten at most.",
+      "MAIL_011": "That account has sent fifty bot messages today, the most a day allows. Try again later.",
+      "MAIL_012": "That message is larger than Gmail's 25 MB with its files.",
+      "MAIL_013": "That address isn't one this Gmail account sends from.",
+      "MAIL_014": "That draft changed after you approved sending it, so it wasn't sent.",
+      "MAIL_015": "That message may already have been sent. Check Gmail's Sent before asking again.",
       "CLOUD_AGENTS_002": "Cloud agents belong to a workspace. Open one first.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
@@ -355,6 +380,7 @@
       "SESS_001": "The host has no record of that session.",
       "SESS_002": "The host could not start a session with those settings.",
       "SESS_003": "That session is not running on its host.",
+      "INVALID_PATTERN": "That watch pattern is not a valid expression on the host.",
       "SESS_004": "The host already has a session in that worktree.",
       "SESS_005": "The host could not give that file to the session.",
       "TMUX_001": "tmux is not installed on the host. Install it, then try again.",
@@ -382,17 +408,25 @@
       "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
       "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
       "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
-      "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
+      "SESSIONS_038": "This session runs in its agent’s cloud. Answer it there, on claude.ai or chatgpt.com/codex.",
       "SESSIONS_039": "That session runs at its vendor, with no host here. Open it at the vendor to do that.",
       "SESSIONS_040": "The task is too long to also carry a download link for each attached file. Shorten it or attach fewer files.",
       "SESSIONS_041": "That file link expired. Start the session again with the file attached.",
+      "SESSIONS_042": "That pattern cannot be watched. Use a plain regular expression without lookaround or backreferences.",
+      "SESSIONS_043": "This session already has as many terminal watches as it can hold. Remove one first.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
       "VOICE_004": "That recording couldn’t be read. Try dictating again.",
       "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
       "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
-      "VOICE_007": "Too many dictations for now. Try again in a moment."
+      "VOICE_007": "Too many dictations for now. Try again in a moment.",
+      "BOTS_029": "That tool doesn't exist. Reload the page.",
+      "BOTS_030": "This tool is approved one call at a time, so it can't be always allowed.",
+      "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
+      "BOTS_032": "That rule is gone. Reload the page.",
+      "BOTS_033": "That permission is gone. Reload the page.",
+      "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -641,11 +675,20 @@
           "description": "Open an existing directory as it is · nothing is cloned"
         },
         "cloud": {
-          "label": "Claude Code cloud",
-          "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
+          "label": "Cloud",
+          "description": "Start the task in Claude Code’s or Codex’s cloud from this host · the engine says whose"
         },
         "claudeCloud": {
           "label": "Claude Code",
+          "place": "Claude Code cloud",
+          "from": "From {{host}}",
+          "noHost": "Needs a host",
+          "startFrom": "Start from",
+          "cannot": "This runner can’t start it"
+        },
+        "codexCloud": {
+          "label": "Codex",
+          "place": "Codex cloud",
           "from": "From {{host}}",
           "noHost": "Needs a host",
           "startFrom": "Start from",
@@ -1237,6 +1280,12 @@
         "failed": "The agent failed in {{vendor}}’s cloud",
         "cancelled": "Stopped in {{vendor}}",
         "expired": "The run expired in {{vendor}}’s cloud"
+      },
+      "codex": {
+        "eyebrow": "Codex cloud",
+        "statusSource": "This status comes from the host that started it, which asks Codex about its tasks once a minute while it’s online.",
+        "open": "Open in ChatGPT",
+        "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
       }
     }
   },
@@ -1291,6 +1340,16 @@
       "queuedImages_other": "{{count}} images",
       "failed": "{{provider}} could not finish this turn",
       "failedUnknown": "The turn ended without saying why.",
+      "failure": {
+        "rate_limit": "{{provider}} is limiting requests for now. This usually passes: try again in a moment.",
+        "usage_limit": "The {{provider}} account is out of quota or credit. Sending it again won't help until it is topped up or the plan resets.",
+        "credential": "{{provider}} refused the key or sign-in. Sending it again won't help: check it in Model providers.",
+        "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
+        "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
+        "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
+        "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+      },
+      "openProviders": "Open Model providers",
       "errorDetails": "Show details",
       "errorLess": "Show less",
       "retry": "Retry",
@@ -1300,6 +1359,7 @@
       "switchedModel": "Switched to <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_other": "{{tokens}} tokens",
+      "workedFor": "Worked for {{time}}",
       "images": {
         "attach": "Add images",
         "remove": "Remove {{name}}",
@@ -1315,6 +1375,10 @@
       },
       "turn": {
         "queued": "Waiting",
+        "retrying": {
+          "rate_limit": "{{provider}} is limiting requests, retrying…",
+          "unavailable": "{{provider}} is busy, retrying…"
+        },
         "thinking": "Thinking",
         "writing": "Writing",
         "stopped": "Stopped"
@@ -1428,7 +1492,12 @@
         "noteLabel": "What should {{name}} do instead?",
         "notePlaceholder": "Optional: why not, or what to do instead",
         "cancel": "Cancel",
-        "failed": "Could not answer the request."
+        "failed": "Could not answer the request.",
+        "approveOnce": "Approve once",
+        "always": "Always allow",
+        "alwaysFor": "Always allow for {{subject}}",
+        "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
+        "fullRequest": "Show the full request"
       },
       "event": {
         "approved": "You approved: {{summary}}",
@@ -1454,7 +1523,15 @@
           "failed": "Session “{{name}}” failed",
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
-          "stalled": "Session “{{name}}” looks stuck"
+          "stalled": "Session “{{name}}” looks stuck",
+          "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
+          "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
+        },
+        "goal": {
+          "continued": "Goal · continuation {{step}} of {{limit}}",
+          "cleared": "You stopped the goal “{{objective}}”",
+          "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
+          "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
         }
       },
       "routineReason": {
@@ -1467,7 +1544,13 @@
         "owner_lost_access": "its owner can no longer run it",
         "unknown": "something went wrong"
       },
-      "openSession": "Open session"
+      "openSession": "Open session",
+      "goal": {
+        "title": "Goal: {{objective}}",
+        "progress": "{{step}} of {{limit}} continuations",
+        "stop": "Stop goal",
+        "stopFailed": "Could not stop the goal. Try again."
+      }
     },
     "settings": {
       "back": "Back to the chat",
@@ -1478,6 +1561,7 @@
         "profile": "Profile",
         "instructions": "Instructions",
         "memory": "Memory",
+        "permissions": "Permissions",
         "routines": "Routines",
         "homeHost": "Home host"
       },
@@ -1631,6 +1715,55 @@
         "saved": "Saved",
         "failed": "Could not change the home host.",
         "hostsFailed": "Could not load your hosts."
+      },
+      "permissions": {
+        "title": "Permissions",
+        "subtitle": "What the bot does on its own, and what it asks you first.",
+        "loadFailed": "Could not load the bot’s permissions.",
+        "saveFailed": "Could not change the permission.",
+        "tools": "Tools",
+        "preset": {
+          "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
+          "full": "Tools you leave on their default follow Full access: they run without asking."
+        },
+        "decisions": {
+          "allow": "Allow",
+          "ask": "Ask",
+          "off": "Off"
+        },
+        "decisionFor": "What {{tool}} does",
+        "reset": "Default",
+        "perCall": "Every call asks: it is never allowed for good.",
+        "groups": {
+          "self": "Itself",
+          "sessions": "Sessions and hosts",
+          "plan": "Plan",
+          "mail": "Mail",
+          "github": "GitHub",
+          "automations": "Routines and automations",
+          "bots": "Other bots",
+          "web": "Web and helpers"
+        },
+        "grants": "Always allowed",
+        "noGrants": "Nothing yet. “Always allow for …” on a request adds it here.",
+        "removeGrant": "Stop always allowing {{tool}} for {{subject}}",
+        "rules": {
+          "empty": "No rules yet.",
+          "add": "Add",
+          "remove": "Remove the rule “{{rule}}”",
+          "ask": {
+            "title": "Ask me first when",
+            "hint": "A matching request waits for you, even where the tool would run on its own.",
+            "placeholder": "e.g. it mentions payments or customer data",
+            "new": "New ask rule"
+          },
+          "allow": {
+            "title": "Go ahead without asking when",
+            "hint": "A matching request runs without a card. An ask rule that also matches wins.",
+            "placeholder": "e.g. it comments on our docs repository",
+            "new": "New allow rule"
+          }
+        }
       }
     },
     "delete": {
@@ -2263,6 +2396,7 @@
     "backToTask": "Back to task",
     "nav": {
       "label": "Plan",
+      "inbox": "Inbox",
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones"
@@ -2598,24 +2732,18 @@
   },
   "inbox": {
     "title": "Inbox",
-    "bar": {
-      "meta": "{{needs}} · {{running}}",
-      "needs_zero": "Nothing needs you",
-      "needs_one": "{{count}} needs you",
-      "needs_other": "{{count}} need you",
-      "running_one": "{{count}} session running",
-      "running_other": "{{count}} sessions running"
-    },
     "list": {
-      "head": "Needs you",
       "empty": "Nothing needs you.",
-      "noneMatching": "Nothing matching these filters needs you.",
+      "noneMatching": "Nothing matching these filters or words needs you.",
       "low": "Low",
       "snoozed": "Snoozed",
       "bringBack": "Bring back",
       "failed": "Could not load the Inbox.",
       "markFailed": "Could not save that. Try again.",
-      "back": "Back {{when}}"
+      "back": "Back {{when}}",
+      "unread": "{{count}} unread",
+      "search": "Search inbox",
+      "clearSearch": "Clear search"
     },
     "filter": {
       "label": "Filter the Inbox",
@@ -2650,7 +2778,7 @@
     },
     "from": {
       "session": "Session",
-      "approval": "{{bot}} · Bot approval",
+      "approval": "Bot approval",
       "run": "Automation"
     },
     "session": {
@@ -2691,7 +2819,6 @@
       "readyShort": "Merge #{{number}} {{title}}",
       "readyTitle": "Merge #{{number}} · {{title}}?",
       "readyBody": "Nothing is holding it: it can merge now.",
-      "by": "by {{author}}",
       "open": "Open",
       "viewOnGithub": "View on GitHub",
       "merge": "Merge",
@@ -2718,29 +2845,16 @@
       "later": "Later",
       "answerFailed": "Could not do that. Try again."
     },
-    "log": {
-      "done": "Marked done · {{title}}",
-      "approved": "Approved {{bot}} · {{tool}}",
-      "denied": "Denied {{bot}} · {{tool}}",
-      "merged": "Merged #{{number}} into {{repository}}",
-      "ranAgain": "Ran {{name}} again",
-      "answered": "Answered {{name}}: {{answer}}"
-    },
     "pane": {
-      "greeting": {
-        "morning": "Good morning.",
-        "afternoon": "Good afternoon.",
-        "evening": "Good evening."
-      },
-      "running_one": "{{count}} session is running.",
-      "running_other": "{{count}} sessions are running.",
-      "needs_one": "One thing needs you.",
-      "needs_other": "{{count}} things need you, one at a time.",
-      "nothing": "Nothing needs you right now.",
-      "clearTitle": "You're clear",
-      "clear": "The next thing that needs you comes here.",
-      "clearRunning_one": "{{count}} session is still running. The next thing that needs you comes here.",
-      "clearRunning_other": "{{count}} sessions are still running. The next thing that needs you comes here."
+      "label": "Reading pane",
+      "toolbar": "Item actions",
+      "back": "Back to the list",
+      "position": "{{n}} of {{total}}",
+      "ago": "{{age}} ago",
+      "clearTitle": "Nothing needs you",
+      "clear": "New items land here when one needs a decision.",
+      "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
+      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
     }
   },
   "settings": {
@@ -2982,8 +3096,7 @@
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Employees",
-    "inbox": "Inbox"
+    "employees": "Employees"
   },
   "language": {
     "label": "Language",

@@ -20,6 +20,7 @@ import { fakeKernel } from './fake-kernel';
 
 const CONVERSATION = ['bots', 'detail', 'bot-1', 'conversation'];
 const APPROVALS = ['bots', 'detail', 'bot-1', 'approvals'];
+const GOAL = ['bots', 'detail', 'bot-1', 'goal'];
 const at = new Date('2026-10-01T10:00:00Z');
 
 /** The conversation as a read returns it: turn `t1` in `status`, with these stored replies. */
@@ -109,6 +110,8 @@ function delegated(status: BotTurnStatus): BotConversationEntity {
     isError: false,
     sessionId: null,
     subagents: [],
+    allowedBy: null,
+    mailDraft: null,
   };
   return new BotConversationEntity(
     [new BotMessageEntity('m0', 't1', 'activity', '', [step], at)],
@@ -127,13 +130,20 @@ describe('useBotLive', () => {
     expect(chat.stream.dispose).toHaveBeenCalled();
   });
 
-  it('reads the conversation and the card again each time the stream comes up', async () => {
+  it('reads the conversation, the goal and the card again each time the stream comes up', async () => {
     const chat = setup();
     renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
     await chat.status('live');
     await chat.status('down');
     await chat.status('live');
-    expect(chat.invalidated).toEqual([CONVERSATION, APPROVALS, CONVERSATION, APPROVALS]);
+    expect(chat.invalidated).toEqual([
+      CONVERSATION,
+      GOAL,
+      APPROVALS,
+      CONVERSATION,
+      GOAL,
+      APPROVALS,
+    ]);
   });
 
   it('reads the card again, and only the card, when one is raised or settled', async () => {
@@ -162,7 +172,7 @@ describe('useBotLive', () => {
     await chat.send(text('First.'));
     await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
     await chat.send(text(' Second'));
-    expect(chat.invalidated).toEqual([CONVERSATION]);
+    expect(chat.invalidated).toEqual([CONVERSATION, GOAL]);
     expect(result.current.text).toEqual({ t1: 'First. Second' });
     await chat.land(read('running', 'First.'));
     expect(result.current.text).toEqual({ t1: 'Second' });
@@ -177,6 +187,22 @@ describe('useBotLive', () => {
     await chat.status('down');
     await chat.status('live');
     expect(result.current.text).toEqual({ t1: 'Partial rep' });
+  });
+
+  // What breaks this: a turn that waited once still saying "retrying" after
+  // it wrote again, or after it ended.
+  it('says a turn waits on its provider until it writes again or ends', async () => {
+    const chat = setup();
+    const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+    await chat.send({ type: 'retrying', turnId: 't1', reason: 'rate_limit' });
+    expect(result.current.retrying).toEqual({ t1: 'rate_limit' });
+    expect(chat.invalidated).toEqual([]);
+    await chat.send(text('Back'));
+    expect(result.current.retrying).toEqual({});
+
+    await chat.send({ type: 'retrying', turnId: 't1', reason: 'unavailable' });
+    await chat.land(read('failed'));
+    expect(result.current.retrying).toEqual({});
   });
 
   it('draws nothing of a turn once the read shows it ended, and reads the bot list again', async () => {

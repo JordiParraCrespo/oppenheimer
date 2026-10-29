@@ -55,8 +55,8 @@ Its states are OpenAI's run states; the ones that wake are:
 `queued` and `in_progress` never wake: a session that stays open with its
 agent idle is not news. The one exception is a task the bot handed off that
 is still in one of them five minutes later without its agent ever being seen
-working: the stall check (§4.1) wakes the bot once for it. A task ending is told apart from a session merely
-stopping, because what wakes is the **turn**, not the session's lifecycle:
+working: the stall check (§4.1) wakes the bot once for it. A task ending is
+told apart from a session merely stopping, because what wakes is the **turn**, not the session's lifecycle:
 a session stopped after its task completed already woke the bot on
 `completed`, and its stop moves no live turn, so it wakes nothing more.
 
@@ -64,6 +64,33 @@ a session stopped after its task completed already woke the bot on
 `subscription:<subscriptionId>:<turnSeq>:<state>`, so a task that blocks,
 works and blocks again wakes the bot once for input; Claude Code's
 permission prompts would otherwise wake it on every tool call.
+
+**What a terminal prints** (2026-10-29, from Grok Bot's shell watches,
+`research/lessons-from-grok-bot.md` §9 row 8). `watch_session` takes a
+`pattern`, a regular expression of at most 200 characters with no
+lookaround or backreference. The runner matches it line by line on the
+session's pane, on the host. A match wakes the bot with the pattern and
+how many lines have matched so far, never the lines: pane text still never
+reaches Postgres, so the bot reads the session to see what happened. The
+runner sends `terminal.matched` with `{ watchId, count }` (the first match
+at once, then at most one every few seconds). The wake's key is
+`subscription:<id>:match:<watchId>:<count>`, so a count that comes back
+twice wakes the bot once, and a pattern that replaces another counts afresh. Each match counts against the subscription's 20 wakes. A
+session holds at most 10 watched patterns (`SESSIONS_043`), and an invalid
+pattern is `SESSIONS_042`. The sessions module owns what the runner is told
+(`session_terminal_watch`), and it sends that again on every hello, since a
+runner keeps watches in memory. It sends each watch with the newest count
+reported for it: a runner that still holds the watch keeps it as it is, and
+one that restarted counts on from that count, so no match is lost below
+what the bot was already told. The API refuses what Go's `regexp` would:
+lookaround, backreferences, unknown escapes and repeats past 1000. The subscription owns who is woken. When
+the task ends and its pattern never matched, the wake says so: "it never
+printed a line matching …".
+
+**Waiting inside a turn.** `wait_for_session` blocks, for at most 120
+seconds, until the session's task stops for something a watch wakes for,
+or the session is closed. It does this at most 3 times a turn, because a
+turn stops after 4 minutes. A longer wait is a watch.
 
 ## 3. Subscribing
 
@@ -159,7 +186,8 @@ This is that check, for one task:
   silent: a task seen working, one that moved on, ended or asks for input
   (the wakes tell those), one the bot was already woken for, a session
   closed.
-- **What it does.** A turn like a wake's, keyed
+- **What it does.** A third cause in the one wake model, beside a task's
+  state and a terminal match (`SessionWakeCause`): a turn like a wake's, keyed
   `subscription:<id>:<seq>:stalled`, so a retried job tells the bot once,
   opened by a `session` event whose state is `stalled`. The bot reads the
   session and tells the person what looks stuck and what would get it going;

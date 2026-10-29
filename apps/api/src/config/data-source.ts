@@ -24,8 +24,11 @@ import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provide
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
+import { BotToolPermissionOrmEntity } from '../bots-chat/database/bot-tool-permission.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
@@ -47,6 +50,7 @@ import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-del
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
+import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -64,6 +68,7 @@ import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.or
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
+import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
@@ -113,6 +118,7 @@ export default new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
     AutomationOrmEntity,
@@ -128,6 +134,7 @@ export default new DataSource({
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
     GmailConnectionOrmEntity,
+    MailSendOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,
@@ -144,8 +151,11 @@ export default new DataSource({
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
+    BotGoalOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,
+    BotToolPermissionOrmEntity,
+    BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,
     UserRoleOrmEntity,

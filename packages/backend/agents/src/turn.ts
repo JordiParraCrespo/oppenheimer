@@ -1,5 +1,6 @@
 import type {
   BotEngineEvent,
+  BotEngineFailure,
   BotEngineTool,
   BotToolData,
   BotTurnImage,
@@ -142,11 +143,60 @@ function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEv
   }
 }
 
-export function failed(error: string, rateLimit?: { resetAt: Date | null }): DoneEvent {
+/**
+ * A failed end. A rate limit is that kind whatever `failure` says, and
+ * carries when the provider may be called again.
+ */
+export function failed(
+  error: string,
+  failure: BotEngineFailure = 'other',
+  rateLimit?: { resetAt: Date | null },
+): DoneEvent {
   return rateLimit
-    ? { type: 'done', reason: 'failed', error, rateLimit }
-    : { type: 'done', reason: 'failed', error };
+    ? { type: 'done', reason: 'failed', error, failure: 'rate_limit', rateLimit }
+    : { type: 'done', reason: 'failed', error, failure };
 }
+
+/**
+ * The kind of failure an error thrown by a provider's client is, read from
+ * the HTTP status it carries (both SDKs' API errors have `status`) or, with
+ * none, from a network failure's name or code. A `429` that names a spent
+ * quota (`insufficient_quota`) is the account's limit, not a rate limit.
+ */
+export function failureOf(error: unknown): BotEngineFailure {
+  if (!error || typeof error !== 'object') return 'other';
+  const { status, code, name, cause } = error as {
+    status?: unknown;
+    code?: unknown;
+    name?: unknown;
+    cause?: unknown;
+  };
+  if (typeof status === 'number') {
+    if (status === 429) return code === 'insufficient_quota' ? 'usage_limit' : 'rate_limit';
+    if (status === 402) return 'usage_limit';
+    if (status === 401 || status === 403) return 'credential';
+    if (status === 400 || status === 404 || status === 413 || status === 422) return 'refused';
+    if (status >= 500) return 'unavailable';
+    return 'other';
+  }
+  if (typeof name === 'string' && /Connection|Timeout/.test(name)) return 'unavailable';
+  const network = typeof code === 'string' ? code : (cause as { code?: unknown } | null)?.code;
+  if (typeof network === 'string' && NETWORK_CODES.has(network)) return 'unavailable';
+  // Some clients only say it in words ("connect ECONNREFUSED 10.0.0.1:443").
+  const message = error instanceof Error ? error.message : '';
+  if ([...NETWORK_CODES].some((spelled) => message.includes(spelled))) return 'unavailable';
+  return 'other';
+}
+
+const NETWORK_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
 
 /**
  * When a rate-limit refusal says the provider may be called again: from
@@ -287,7 +337,10 @@ export async function* guardTurn(
   } catch (error) {
     yield signal.aborted
       ? CANCELLED
-      : failed(scrubSecret(redactPath(describeError(error), request.scratchDir), request.apiKey));
+      : failed(
+          scrubSecret(redactPath(describeError(error), request.scratchDir), request.apiKey),
+          failureOf(error),
+        );
   } finally {
     if (onAbort) signal.removeEventListener('abort', onAbort);
     // Lets the engine release what it holds; a generator still busy with a

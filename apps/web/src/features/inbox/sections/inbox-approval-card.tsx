@@ -1,14 +1,14 @@
 import {
   ApprovalCommand,
   Button,
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardFacts,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageFacts,
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { useDecideBotApproval } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ChatMailMessage, ChatMailSendNote, ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
@@ -19,9 +19,10 @@ import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
  * A bot's approval in the pane: what it wants to run (the tool, and its call's
- * input in mono, as the session card shows a command), and Approve or Deny
- * through the bot's own decision endpoint (`25-bots.md` §5). Answering logs
- * it and brings the next item; the bot's chat is a link away.
+ * input in mono, as the session card shows a command, or a send card's message
+ * as it will go), and Approve or Deny through the bot's own decision endpoint
+ * (`25-bots.md` §5). Answering brings the next item; the bot's chat is a
+ * link away.
  */
 export function InboxApprovalCard({
   item,
@@ -46,23 +47,29 @@ export function InboxApprovalCard({
       {
         onSuccess: () => {
           inboxVisit.answered(item.key);
-          inboxVisit.log(
-            t(decision === 'approve' ? 'inbox.log.approved' : 'inbox.log.denied', {
-              bot: approval.botName,
-              tool: approval.tool,
-            }),
-          );
         },
       },
     );
 
   return (
-    <InboxCard icon={<InboxKindIcon kind="approval" />} from={from} title={copy.title} age={age}>
-      <InboxCardBody>{copy.body}</InboxCardBody>
-      <InboxCardFacts>
+    <InboxMessage
+      icon={<InboxKindIcon kind="approval" />}
+      sender={copy.sender}
+      meta={from}
+      title={copy.title}
+      age={age}
+    >
+      <InboxMessageBody>{copy.body}</InboxMessageBody>
+      <InboxMessageFacts>
         <span className="font-mono">{approval.tool}</span>
-      </InboxCardFacts>
-      {call ? <ApprovalCommand>{call}</ApprovalCommand> : null}
+      </InboxMessageFacts>
+      {approval.mail ? (
+        <ChatMailMessage mail={approval.mail}>
+          <ChatMailSendNote mail={approval.mail} />
+        </ChatMailMessage>
+      ) : call ? (
+        <ApprovalCommand>{call}</ApprovalCommand>
+      ) : null}
       {decide.error ? (
         <ErrorAlert
           error={decide.error}
@@ -70,7 +77,7 @@ export function InboxApprovalCard({
           onDismiss={decide.reset}
         />
       ) : null}
-      <InboxCardActions
+      <InboxMessageActions
         leading={
           <>
             <InboxLaterButton itemKey={item.key} />
@@ -100,7 +107,7 @@ export function InboxApprovalCard({
         >
           {t('inbox.approval.approve')}
         </Button>
-      </InboxCardActions>
-    </InboxCard>
+      </InboxMessageActions>
+    </InboxMessage>
   );
 }
