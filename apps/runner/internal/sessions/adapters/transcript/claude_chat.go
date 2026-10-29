@@ -55,6 +55,7 @@ type claudeBlock struct {
 	ToolUseID string          `json:"tool_use_id"`
 	IsError   bool            `json:"is_error"`
 	Content   json.RawMessage `json:"content"`
+	Source    json.RawMessage `json:"source"`
 }
 
 // chatEntry is what the runner sends for one transcript line: the same names
@@ -89,14 +90,42 @@ type chatBlock struct {
 	IsError   bool   `json:"is_error,omitempty"`
 	Content   string `json:"content,omitempty"`
 	Truncated bool   `json:"truncated,omitempty"`
+	// Source is an image's preview (previewImage); none when it did not fit.
+	Source *chatImageSource `json:"source,omitempty"`
+	// Images are the images a tool's result carried, in order, each with
+	// its preview when it fit (a screenshot the agent read).
+	Images []chatImage `json:"images,omitempty"`
+	// sources are the transcript's own sources of the images the block
+	// carries, one per slot (slots), never sent.
+	sources []json.RawMessage
+}
+
+// slots are where the previews of the block's images go, in the order of
+// its sources: an image block's own source, or each of a tool result's.
+func (b *chatBlock) slots() []**chatImageSource {
+	if b.Type == "image" {
+		return []**chatImageSource{&b.Source}
+	}
+	slots := make([]**chatImageSource, len(b.Images))
+	for i := range b.Images {
+		slots[i] = &b.Images[i].Source
+	}
+	return slots
+}
+
+// chatImage is one image of a tool's result.
+type chatImage struct {
+	Source *chatImageSource `json:"source,omitempty"`
 }
 
 // chatEntry turns one transcript line into a chat entry, or reports none
 // for a line the chat does not show: the CLI's bookkeeping, a message with
-// nothing left in it. A pasted image is named and never sent, an empty
-// thinking block (the CLI keeps only its signature) is dropped, and long text
-// is cut at a rune boundary with the block marked truncated.
-func (claudeReader) chatEntry(line []byte) ([]byte, bool) {
+// nothing left in it. An empty thinking block (the CLI keeps only its
+// signature) is dropped, and long text is cut at a rune boundary with the
+// block marked truncated. An image, pasted or in a tool's result, is sent as
+// a preview the entry's bytes still have room for, under max, and only named
+// when none fits.
+func (claudeReader) chatEntry(line []byte, max int) ([]byte, bool) {
 	var in claudeChatLine
 	if json.Unmarshal(line, &in) != nil || in.Message == nil {
 		return nil, false
@@ -125,19 +154,49 @@ func (claudeReader) chatEntry(line []byte) ([]byte, bool) {
 			return nil, false
 		}
 		kept := make([]chatBlock, 0, len(blocks))
+		images := 0
 		for _, block := range blocks {
 			if compact, ok := compactBlock(block); ok {
 				kept = append(kept, compact)
+				images += len(compact.sources)
 			}
 		}
 		if len(kept) == 0 {
 			return nil, false
 		}
 		out.Message.Content = kept
+		encoded, err := json.Marshal(out)
+		if err != nil {
+			return nil, false
+		}
+		if images == 0 {
+			return encoded, true
+		}
+		return withPreviews(out, kept, encoded, images, max)
 	}
 	encoded, err := json.Marshal(out)
 	if err != nil {
 		return nil, false
+	}
+	return encoded, true
+}
+
+// withPreviews fills in the previews of the entry's images, the room it
+// has left under max shared between them, and encodes it again. An entry the
+// previews took over max (they cannot, by their budget) goes without them.
+func withPreviews(out chatEntry, kept []chatBlock, bare []byte, images, max int) ([]byte, bool) {
+	share := (max - len(bare) - images*previewOverhead) / images
+	if share < previewMinBytes {
+		return bare, true
+	}
+	for i := range kept {
+		for n, slot := range kept[i].slots() {
+			*slot = previewImage(kept[i].sources[n], share)
+		}
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil || len(encoded) > max {
+		return bare, true
 	}
 	return encoded, true
 }
@@ -163,9 +222,16 @@ func compactBlock(block claudeBlock) (chatBlock, bool) {
 		return chatBlock{Type: "tool_use", ID: block.ID, Name: block.Name, Input: input, Truncated: cut}, true
 	case "tool_result":
 		text, cut := truncate(resultText(block.Content), chatToolResultMax)
-		return chatBlock{Type: "tool_result", ToolUseID: block.ToolUseID, IsError: block.IsError, Content: text, Truncated: cut}, true
-	case "image", "document":
-		return chatBlock{Type: block.Type}, true
+		sources := resultImages(block.Content)
+		var images []chatImage
+		if len(sources) > 0 {
+			images = make([]chatImage, len(sources))
+		}
+		return chatBlock{Type: "tool_result", ToolUseID: block.ToolUseID, IsError: block.IsError, Content: text, Truncated: cut, Images: images, sources: sources}, true
+	case "image":
+		return chatBlock{Type: "image", sources: []json.RawMessage{block.Source}}, true
+	case "document":
+		return chatBlock{Type: "document"}, true
 	}
 	return chatBlock{}, false
 }
@@ -196,6 +262,22 @@ func resultText(raw json.RawMessage) string {
 		joined += part
 	}
 	return joined
+}
+
+// resultImages is the source of each image a tool's result carries, in
+// order: none for a result that is text.
+func resultImages(raw json.RawMessage) []json.RawMessage {
+	var blocks []claudeBlock
+	if json.Unmarshal(raw, &blocks) != nil {
+		return nil
+	}
+	var images []json.RawMessage
+	for _, block := range blocks {
+		if block.Type == "image" {
+			images = append(images, block.Source)
+		}
+	}
+	return images
 }
 
 // compactValue cuts every string in a tool's input to max bytes, which keeps

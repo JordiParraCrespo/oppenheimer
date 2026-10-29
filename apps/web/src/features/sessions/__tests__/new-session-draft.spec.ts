@@ -54,6 +54,26 @@ describe('initialDraft', () => {
     });
   });
 
+  /**
+   * Claude Code's cloud runs Claude Code, and the API refuses another agent
+   * there. A draft that opened on it with Codex would fail only once sent.
+   */
+  it('opens Claude Code’s cloud on Claude Code, whatever agent was left', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'codex', model: 'gpt-6-astra' });
+
+    expect(initialDraft()).toMatchObject({
+      where: 'cloud',
+      agent: 'claude-code',
+      model: defaultModelFor('claude-code'),
+    });
+  });
+
+  it('lets an address naming another agent win over a remembered Claude Code cloud', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'claude-code' });
+
+    expect(initialDraft({ agent: 'codex' })).toMatchObject({ where: 'worktree', agent: 'codex' });
+  });
+
   it('keeps each known agent’s pick as left, and drops the old single stop', () => {
     // Whether a pick is one of the model's levels is decided when the slider
     // is drawn, not when storage is read.

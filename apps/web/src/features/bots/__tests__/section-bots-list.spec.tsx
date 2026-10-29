@@ -8,7 +8,8 @@ import { SectionBotsList } from '../sections/section-bots-list';
  * A section's Bots heading (`28-bots-in-sections.md`): a row opens the bot's
  * chat inside that section, so the reader never leaves it, and the heading
  * says how one gets here before the first bot. A row's ellipsis hands its
- * Hide to the heading, which owns every placement write. Which bots a section lists is the product
+ * Hide to the heading, which owns every placement write, and asks before its
+ * Delete removes the bot for good. Which bots a section lists is the product
  * package's `useSuspenseSectionBots`, mocked here.
  */
 
@@ -21,6 +22,7 @@ const listed = vi.hoisted(() => ({ bots: [] as unknown[] }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSuspenseSectionBots: () => ({ data: listed.bots, error: null }),
+  useDeleteBot: () => ({ mutate: vi.fn(), isPending: false, error: null }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -92,5 +94,13 @@ describe('SectionBotsList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'bots.sidebar.rowActions' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'bots.section.hide' }));
     expect(onHide).toHaveBeenCalledWith(release);
+  });
+
+  it('asks before a row’s Delete removes the bot, from the section’s sidebar', async () => {
+    listed.bots = [bot('b4', 'Release Bot', ['sessions'])];
+    render(<SectionBotsList section="sessions" onAdd={() => {}} onHide={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'bots.sidebar.rowActions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'bots.sidebar.delete' }));
+    expect(await screen.findByText('bots.delete.title')).toBeTruthy();
   });
 });

@@ -782,6 +782,13 @@ earlier note:
   bots from the page: the plus opens a menu with New bot and a check per
   bot for this section, and a row's ellipsis hides it from the section
   (slice D).
+- `versions/mvp/24-session-places.md` §7 had Claude Code's cloud only as a
+  place in a host's Start in pane. It is now also the Claude Code row under
+  Cloud, which picks a host that can start it (2026-10-28).
+- `versions/mvp/24-session-places.md` §7's Claude Code row picked the host
+  for the reader. It now opens a *Start from* pane where the reader picks
+  any host that can, and the engine button offers only Claude Code's models
+  in that place (2026-10-28).
 - Grok offered sessions 4.7 and 4.6 with six effort levels, `minimal` to
   `max`, and bots 4.7 and Grok Build 0.1 starting on `medium`. On
   2026-10-28 the owner asked for a better Grok catalogue: sessions offer
@@ -789,6 +796,16 @@ earlier note:
   menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
   default everywhere (`versions/mvp/05-screens.md`,
   `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for images in the chats to look and open the
+  way Claude's own chat shows them: a bot's images open in a viewer over
+  the chat instead of a new tab, and a session's chat, which only counted
+  pasted images, now shows them and the screenshots the agent reads, from
+  a preview the runner sends within the link's entry bound
+  (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for bots to send images back: `show_image`
+  fetches an image from the web by its address (the only images a bot,
+  which has no files, can reach), stores it as the chat's own and draws it
+  in the bot's answer (`versions/mvp/25-bots.md` §4.7).
 - `versions/mvp/24-session-places.md` §2 put a workspace's stores and
   sessions in `repos/` and `sessions/`, and kept Spotlight out with
   `.metadata_never_index` at the work folder's root. The MVP decision log

@@ -80,7 +80,25 @@
         "tree": "Tree",
         "raw": "Raw",
         "more": "Show {{count}} more"
+      },
+      "images": {
+        "open": "Open {{name}}",
+        "unavailable": "This image couldn't be loaded.",
+        "previous": "Previous image",
+        "next": "Next image",
+        "download": "Download",
+        "position": "{{position}} of {{total}}",
+        "pasted": "Pasted image"
       }
+    },
+    "search": {
+      "projects": "Search projects",
+      "milestones": "Search milestones",
+      "automations": "Search automations",
+      "repositories": "Search repositories",
+      "hosts": "Search hosts",
+      "groups": "Search groups",
+      "noMatch": "Nothing matches “{{query}}”."
     }
   },
   "validation": {
@@ -609,6 +627,13 @@
           "label": "Claude Code cloud",
           "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
         },
+        "claudeCloud": {
+          "label": "Claude Code",
+          "from": "From {{host}}",
+          "noHost": "Needs a host",
+          "startFrom": "Start from",
+          "cannot": "This runner can’t start it"
+        },
         "hosts": "Hosts",
         "startIn": "Start in",
         "atVendor": "Cloud",
@@ -719,7 +744,19 @@
         "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
       },
       "failed": "The session could not be created.",
-      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host."
+      "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host.",
+      "cloudFailure": {
+        "vendor": "The provider",
+        "connect": "Connect {{vendor}} with your API key to start a cloud session there.",
+        "connectAction": "Connect {{vendor}}",
+        "reconnect": "{{vendor}} no longer accepts your API key. It may have been revoked, or it isn't a user API key. Reconnect it to start cloud sessions there again.",
+        "reconnectAction": "Reconnect {{vendor}}",
+        "unavailable": "{{vendor}} didn't answer. Your task is still here; try again in a moment.",
+        "limited": "{{vendor}} asked us to slow down. Wait a minute, then try again.",
+        "refused": "{{vendor}} wouldn't start this session.",
+        "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
+        "retry": "Try again"
+      }
     },
     "session": {
       "status": {
@@ -1246,7 +1283,6 @@
       "images": {
         "attach": "Add images",
         "remove": "Remove {{name}}",
-        "open": "Open {{name}}",
         "pasted": "Pasted image",
         "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
         "tooLarge": "{{name}} is larger than 5 MB.",
@@ -1255,8 +1291,7 @@
         "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
         "uploading": "Wait for the images to finish adding.",
         "failedHeld": "Remove the image that couldn't be added.",
-        "uploadFailed": "{{name}} couldn't be added.",
-        "unavailable": "This image couldn't be loaded."
+        "uploadFailed": "{{name}} couldn't be added."
       },
       "turn": {
         "queued": "Waiting",
@@ -2478,7 +2513,8 @@
       },
       "meta": {
         "cpus": "{{count}} vCPU",
-        "runner": "runner {{version}}"
+        "runner": "runner {{version}}",
+        "claude": "Claude: {{account}}"
       },
       "actions": "{{name}} actions",
       "rename": "Rename",

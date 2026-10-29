@@ -71,9 +71,14 @@ describe('BotMessageEntity with images', () => {
     expect(() => message({})).toThrow('A message says something');
   });
 
-  it('refuses images on the bot’s side, and more than four on one message', () => {
+  it('takes images the bot showed on its own message, never on an activity line, and no more than four', () => {
     const image = upload().toMessageAttachment();
-    expect(() => message({ role: 'assistant', content: 'Hi', attachments: [image] })).toThrow();
+    expect(message({ role: 'assistant', content: '', attachments: [image] }).attachments).toEqual([
+      image,
+    ]);
+    expect(() =>
+      message({ role: 'activity', content: '', steps: [], attachments: [image] }),
+    ).toThrow();
     expect(() => message({ attachments: [1, 2, 3, 4, 5].map(() => image) })).toThrow();
   });
 });

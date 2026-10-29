@@ -267,8 +267,14 @@ over the text as soon as it is picked, and a message may be images alone.
   it now. An image that cannot be read fails the turn rather than the bot
   answering without it. Retry is not offered on a message with images: an
   image is sent once, so it is picked again.
+- **The bot's images.** A bot shows images with `show_image` (§4.7): they
+  are the same `bot_attachment` rows, uploaded by no person, carried by a
+  message of the bot's and drawn as tiles in its answer where it showed
+  them, opening in the same viewer; the sweep treats them like yours.
 - **In the chat.** Your images sit above your bubble as 160px tiles that
-  open full size; the bytes come from `GET /bots/:id/attachments/:id/content`,
+  open whole in a viewer over the chat (← and → through the message's
+  others, Esc to close, a download button; 2026-10-28, before that a new
+  tab); the bytes come from `GET /bots/:id/attachments/:id/content`,
   which serves them only to whoever may read the chat. They stay in the
   history with the message.
 - **Storage and retention.** The files are in the deployment's storage
@@ -533,6 +539,7 @@ one.
 | `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's). 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
+| `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
 | `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
@@ -823,3 +830,8 @@ The decisions it produced:
   4.7 (the default), 4.6 and 4.5 beside Grok Build 0.1, each with the
   levels xAI's reasoning guide gives it (4.5 stops at high), and `high`
   as the default level, as it is xAI's, where it was `medium`.
+- 2026-10-28: **a bot shows images** (`show_image`, §4.7). A bot has no
+  files of its own, so what it shows is from the web, by the image's own
+  address, fetched through `web_fetch`'s guard and judged by its bytes; it
+  is stored as the chat's own image and drawn in the answer, opening in the
+  viewer your images open in.

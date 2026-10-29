@@ -36,7 +36,7 @@ export interface FilterOption {
 }
 
 /** The facets, in the order the menu and the chips show them. */
-export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+const FACETS = ['project', 'repository', 'agent', 'host'] as const;
 export type SessionFacet = (typeof FACETS)[number];
 
 /**

@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
+import { ChatImages } from './chat-images';
 import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
 import { ChatToolGroup } from './chat-tool-group';
@@ -25,7 +26,8 @@ const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
 
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
- * plan, what it asked and the files changed as cards, thinking as a fold that is open while
+ * plan, what it asked and the files changed as cards, the images a call
+ * read as tiles that open, thinking as a fold that is open while
  * it is what the agent is doing, calls as a group, a stop, a compaction or a
  * background task that ended as a note. `live` and `last` say whether this is the work in flight.
  */
@@ -52,6 +54,8 @@ export function ChatTurnBlock({
       return <ChatQuestionRecord call={block.call} />;
     case 'changes':
       return <ChatChanges files={block.files} />;
+    case 'images':
+      return <ChatImages images={block.images} source={block.source} />;
     case 'thinking': {
       // Open while it is what the agent is doing, folded once it moves on.
       const thinking = live && last;

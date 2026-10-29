@@ -79,6 +79,24 @@
       "tree": "Tree",
       "raw": "Raw",
       "more": "Show {{count}} more"
+    },
+    "images": {
+      "open": "Open {{name}}",
+      "unavailable": "This image couldn't be loaded.",
+      "previous": "Previous image",
+      "next": "Next image",
+      "download": "Download",
+      "position": "{{position}} of {{total}}",
+      "pasted": "Pasted image"
     }
+  },
+  "search": {
+    "projects": "Search projects",
+    "milestones": "Search milestones",
+    "automations": "Search automations",
+    "repositories": "Search repositories",
+    "hosts": "Search hosts",
+    "groups": "Search groups",
+    "noMatch": "Nothing matches “{{query}}”."
   }
 }

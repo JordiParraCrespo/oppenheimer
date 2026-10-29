@@ -80,7 +80,25 @@
         "tree": "Árbol",
         "raw": "Texto",
         "more": "Mostrar {{count}} más"
+      },
+      "images": {
+        "open": "Abrir {{name}}",
+        "unavailable": "No se ha podido cargar esta imagen.",
+        "previous": "Imagen anterior",
+        "next": "Imagen siguiente",
+        "download": "Descargar",
+        "position": "{{position}} de {{total}}",
+        "pasted": "Imagen pegada"
       }
+    },
+    "search": {
+      "projects": "Buscar proyectos",
+      "milestones": "Buscar hitos",
+      "automations": "Buscar automatizaciones",
+      "repositories": "Buscar repositorios",
+      "hosts": "Buscar hosts",
+      "groups": "Buscar grupos",
+      "noMatch": "Nada coincide con «{{query}}»."
     }
   },
   "validation": {
@@ -611,6 +629,13 @@
           "label": "Nube de Claude Code",
           "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
         },
+        "claudeCloud": {
+          "label": "Claude Code",
+          "from": "Desde {{host}}",
+          "noHost": "Necesita un host",
+          "startFrom": "Empezar desde",
+          "cannot": "Este runner no puede iniciarla"
+        },
         "hosts": "Hosts",
         "startIn": "Empezar en",
         "atVendor": "Nube",
@@ -721,7 +746,19 @@
         "placeholderOptional": "Opcional: un primer comando o una nota. Enviar abre el terminal."
       },
       "failed": "No se pudo crear la sesión.",
-      "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo."
+      "cloudNoFiles": "Una sesión en la nube no acepta archivos. Quítalos o iníciala en un equipo.",
+      "cloudFailure": {
+        "vendor": "El proveedor",
+        "connect": "Conecta {{vendor}} con tu clave de API para iniciar allí una sesión en la nube.",
+        "connectAction": "Conectar {{vendor}}",
+        "reconnect": "{{vendor}} ya no acepta tu clave de API. Puede que se haya revocado o que no sea una clave de API de usuario. Vuelve a conectarla para iniciar allí sesiones en la nube.",
+        "reconnectAction": "Volver a conectar {{vendor}}",
+        "unavailable": "{{vendor}} no respondió. Tu tarea sigue aquí; inténtalo de nuevo en un momento.",
+        "limited": "{{vendor}} nos pidió ir más despacio. Espera un minuto y vuelve a intentarlo.",
+        "refused": "{{vendor}} no quiso iniciar esta sesión.",
+        "refusedSaying": "{{vendor}} no quiso iniciar esta sesión: «{{says}}»",
+        "retry": "Reintentar"
+      }
     },
     "session": {
       "status": {
@@ -1252,7 +1289,6 @@
       "images": {
         "attach": "Añadir imágenes",
         "remove": "Quitar {{name}}",
-        "open": "Abrir {{name}}",
         "pasted": "Imagen pegada",
         "notSupported": "{{name}} no es una imagen que un bot pueda leer. Usa PNG, JPEG, GIF o WebP.",
         "tooLarge": "{{name}} ocupa más de 5 MB.",
@@ -1261,8 +1297,7 @@
         "noVisionHeld": "{{model}} no puede leer imágenes. Quítalas o cambia de modelo para enviar este mensaje.",
         "uploading": "Espera a que terminen de añadirse las imágenes.",
         "failedHeld": "Quita la imagen que no se pudo añadir.",
-        "uploadFailed": "No se pudo añadir {{name}}.",
-        "unavailable": "No se pudo cargar esta imagen."
+        "uploadFailed": "No se pudo añadir {{name}}."
       },
       "turn": {
         "queued": "Esperando",
@@ -2493,7 +2528,8 @@
       },
       "meta": {
         "cpus": "{{count}} vCPU",
-        "runner": "runner {{version}}"
+        "runner": "runner {{version}}",
+        "claude": "Claude: {{account}}"
       },
       "actions": "Acciones de {{name}}",
       "updateRunner": "Actualizar runner",

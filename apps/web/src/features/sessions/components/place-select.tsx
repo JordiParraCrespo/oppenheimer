@@ -19,8 +19,27 @@ import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/s
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { filterOptions, type PlaceCloud, type PlaceHost } from '../lib/session-options';
+import {
+  filterOptions,
+  type PlaceCloud,
+  type PlaceHost,
+  type StartFromHost,
+} from '../lib/session-options';
+import { ClaudeCloudItem } from './claude-cloud-item';
 import { PlaceIcon } from './place-icon';
+import { StartFromItem } from './start-from-item';
+
+/** The Claude Code row's value: no host id or vendor id is spelled this way. */
+const CLAUDE_CLOUD_ROW = 'claude-code-cloud';
+
+/**
+ * What the list shows: the hosts and the clouds, a host's places, or the
+ * hosts Claude Code's cloud starts from. Each kind has its rows, its pick,
+ * its row and its heading, chosen once by `pane.kind`.
+ */
+type Pane = { kind: 'root' } | { kind: 'host'; host: PlaceHost } | { kind: 'start-from' };
+
+const ROOT: Pane = { kind: 'root' };
 
 /**
  * The first chip of New session: where the session runs, read as one — a
@@ -33,13 +52,18 @@ import { PlaceIcon } from './place-icon';
  * a place there picks the host with it
  * (`product/versions/mvp/24-session-places.md` §3). Claude Code cloud is a
  * place on a host: that host starts the task in the cloud with its own
- * `claude` (`product/research/cloud-agents.md` §5B). A connected vendor is
- * picked outright, and one with no key yet goes to connect it. Add host… is
- * the foot. Props in, choices out: the section above fetches.
+ * `claude` (`product/research/cloud-agents.md` §5B). It is offered twice: in
+ * each host's pane, and as the Claude Code row first under Cloud, which names
+ * `claudeCloud`, the host the section above chose, and opens a Start from
+ * pane of `startFrom`, every host as the section above judged it, the ones
+ * that cannot start it disabled with the reason; with no host to start from
+ * it is greyed out (§7). A connected vendor is picked outright,
+ * and one with no key yet goes to connect it. Add host… is the foot. Props
+ * in, choices out: the section above fetches.
  *
- * Both panes are one list under one search: the hosts and the clouds, or the
- * host's places. The arrows move through it and Enter takes the row, as in
- * `ChipSelect`.
+ * Each pane is one list under one search: the hosts and the clouds, a host's
+ * places, or the hosts to start from. The arrows move through it and Enter
+ * takes the row, as in `ChipSelect`.
  *
  * A list that has not arrived is `loading`, not `disabled`: a greyed chip
  * reads as one this workspace may not use.
@@ -48,6 +72,8 @@ export function PlaceSelect({
   hosts,
   hostId,
   place,
+  claudeCloud,
+  startFrom,
   clouds,
   cloud,
   onHostChange,
@@ -62,6 +88,10 @@ export function PlaceSelect({
   hosts: PlaceHost[];
   hostId: string | null;
   place: SessionPlace;
+  /** The host the Claude Code row starts its cloud session from; null greys the row out. */
+  claudeCloud: PlaceHost | null;
+  /** The Claude Code row's Start from pane: every host, each saying whether it can and why not. */
+  startFrom: StartFromHost[];
   /** The vendors a cloud session can run on; none when this server keeps no keys. */
   clouds: PlaceCloud[];
   /** The vendor picked to launch the session at, with no host; null for a host's place. */
@@ -78,7 +108,7 @@ export function PlaceSelect({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [pane, setPane] = useState<PlaceHost | null>(null);
+  const [pane, setPane] = useState<Pane>(ROOT);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
@@ -87,50 +117,91 @@ export function PlaceSelect({
   const pickedCloud = atVendor
     ? (clouds.find((candidate) => candidate.value === cloud) ?? null)
     : null;
-  const places: ChipSelectOption[] = SESSION_PLACES.map((candidate) => ({
-    value: candidate,
-    label: t(`sessions.new.where.${candidate}.label`),
-    description: t(`sessions.new.where.${candidate}.description`),
-    leading: <PlaceIcon place={candidate} />,
-  }));
   const term = query.trim().toLowerCase();
-  // The root pane's rows are the hosts, then the clouds: one list, one index.
-  const hostRows = pane ? [] : filterOptions<PlaceHost>(hosts, term);
-  const cloudRows = pane ? [] : filterOptions<PlaceCloud>(clouds, term);
-  const rows: ChipSelectOption[] = pane
-    ? filterOptions<ChipSelectOption>(places, term)
-    : [...hostRows, ...cloudRows];
 
-  function show(next: { pane?: PlaceHost | null; query?: string }) {
-    if (next.pane !== undefined) setPane(next.pane);
+  // The root's rows are the hosts, then the clouds: one list, one index. A
+  // loading host list has no host to start Claude Code's cloud from yet.
+  const hostRows = pane.kind === 'root' ? filterOptions<PlaceHost>(hosts, term) : [];
+  const cloudRows =
+    pane.kind === 'root' && !loading
+      ? filterOptions<ChipSelectOption>(
+          // Searchable as the vendors are; `ClaudeCloudItem` draws it.
+          [
+            {
+              value: CLAUDE_CLOUD_ROW,
+              label: t('sessions.new.where.claudeCloud.label'),
+              description: claudeCloud?.label,
+            },
+            ...clouds,
+          ],
+          term,
+        )
+      : [];
+  const rows: ChipSelectOption[] =
+    pane.kind === 'host'
+      ? filterOptions<ChipSelectOption>(
+          SESSION_PLACES.map((candidate) => ({
+            value: candidate,
+            label: t(`sessions.new.where.${candidate}.label`),
+            description: t(`sessions.new.where.${candidate}.description`),
+            leading: <PlaceIcon place={candidate} />,
+          })),
+          term,
+        )
+      : pane.kind === 'start-from'
+        ? filterOptions(startFrom, term)
+        : [...hostRows, ...cloudRows];
+
+  function show(next: { pane?: Pane; query?: string }) {
+    if (next.pane) setPane(next.pane);
     setQuery(next.query ?? '');
     setActive(0);
   }
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) show({ pane: null });
+    if (!next) show({ pane: ROOT });
   }
 
-  function choose(row: ChipSelectOption) {
-    if (!pane) {
-      const vendor = clouds.find((candidate) => candidate.value === row.value);
-      if (vendor) {
-        if (vendor.connected) onCloudChange(vendor.value);
-        else onConnectCloud();
-        onOpenChange(false);
-        return;
-      }
-      const picked = hosts.find((candidate) => candidate.value === row.value);
-      if (picked) show({ pane: picked });
-      return;
-    }
-    const next = SESSION_PLACES.find((candidate) => candidate === row.value);
-    if (!next) return;
-    if (pane.value !== hostId) onHostChange(pane.value);
+  /** A place on a host: from its pane, or Claude Code's cloud from Start from. */
+  function pickPlace(target: string, next: SessionPlace) {
+    if (target !== hostId) onHostChange(target);
     // Also from a vendor: a host's place takes the session back to the host.
     if (next !== place || atVendor) onPlaceChange(next);
     onOpenChange(false);
+  }
+
+  function choose(row: ChipSelectOption) {
+    switch (pane.kind) {
+      case 'host': {
+        const next = SESSION_PLACES.find((candidate) => candidate === row.value);
+        if (next) pickPlace(pane.host.value, next);
+        return;
+      }
+      case 'start-from': {
+        const from = startFrom.find((candidate) => candidate.value === row.value);
+        if (from && !from.disabled) pickPlace(from.value, 'cloud');
+        return;
+      }
+      case 'root':
+        chooseAtRoot(row);
+    }
+  }
+
+  function chooseAtRoot(row: ChipSelectOption) {
+    if (row.value === CLAUDE_CLOUD_ROW) {
+      if (claudeCloud) show({ pane: { kind: 'start-from' } });
+      return;
+    }
+    const vendor = clouds.find((candidate) => candidate.value === row.value);
+    if (vendor) {
+      if (vendor.connected) onCloudChange(vendor.value);
+      else onConnectCloud();
+      onOpenChange(false);
+      return;
+    }
+    const picked = hosts.find((candidate) => candidate.value === row.value);
+    if (picked) show({ pane: { kind: 'host', host: picked } });
   }
 
   function onKeyDown(event: KeyboardEvent) {
@@ -149,20 +220,52 @@ export function PlaceSelect({
 
   /** One row of the list, at its place in the one index the arrows walk. */
   function row(option: ChipSelectOption, index: number) {
-    if (pane) {
+    const pointer = { highlighted: index === active, onMouseEnter: () => setActive(index) };
+    switch (pane.kind) {
+      case 'host':
+        return (
+          <ChipSelectItem
+            key={option.value}
+            selected={!atVendor && pane.host.value === hostId && option.value === place}
+            {...pointer}
+            aria-label={option.label}
+            leading={option.leading}
+            description={option.description}
+            onClick={() => choose(option)}
+          >
+            {option.label}
+          </ChipSelectItem>
+        );
+      case 'start-from': {
+        const from = startFrom.find((candidate) => candidate.value === option.value);
+        return from ? (
+          <StartFromItem
+            key={from.value}
+            host={from}
+            selected={!atVendor && place === 'cloud' && from.value === hostId}
+            {...pointer}
+            onClick={() => choose(from)}
+          />
+        ) : null;
+      }
+      case 'root':
+        return rootRow(option, pointer);
+    }
+  }
+
+  function rootRow(
+    option: ChipSelectOption,
+    pointer: { highlighted: boolean; onMouseEnter: () => void },
+  ) {
+    if (option.value === CLAUDE_CLOUD_ROW) {
       return (
-        <ChipSelectItem
+        <ClaudeCloudItem
           key={option.value}
-          selected={!atVendor && pane.value === hostId && option.value === place}
-          highlighted={index === active}
-          aria-label={option.label}
-          leading={option.leading}
-          description={option.description}
-          onMouseEnter={() => setActive(index)}
+          host={claudeCloud}
+          selected={!atVendor && place === 'cloud'}
+          {...pointer}
           onClick={() => choose(option)}
-        >
-          {option.label}
-        </ChipSelectItem>
+        />
       );
     }
     const vendor = clouds.find((candidate) => candidate.value === option.value);
@@ -172,7 +275,7 @@ export function PlaceSelect({
       <ChipSelectItem
         key={option.value}
         selected={chosen}
-        highlighted={index === active}
+        {...pointer}
         aria-label={option.label}
         leading={
           vendor ? (
@@ -189,12 +292,51 @@ export function PlaceSelect({
             {vendor ? null : <ChevronRight className="size-3.5 shrink-0 text-fg-subtle" />}
           </span>
         }
-        onMouseEnter={() => setActive(index)}
         onClick={() => choose(option)}
       >
         {option.label}
       </ChipSelectItem>
     );
+  }
+
+  /** The way back to the root, naming the pane, and the pane's heading. */
+  function paneHead() {
+    switch (pane.kind) {
+      case 'host':
+        return (
+          <>
+            <ChipSelectBack onClick={() => show({ pane: ROOT })}>
+              <span className="flex items-center gap-2">
+                <span className={dotVariants({ state: pane.host.online ? 'running' : 'idle' })} />
+                {pane.host.label}
+                {pane.host.description ? (
+                  <span className="truncate text-fg-muted">{pane.host.description}</span>
+                ) : null}
+              </span>
+            </ChipSelectBack>
+            <ChipSelectHeading>{t('sessions.new.where.startIn')}</ChipSelectHeading>
+          </>
+        );
+      case 'start-from':
+        return (
+          <>
+            <ChipSelectBack onClick={() => show({ pane: ROOT })}>
+              <span className="flex items-center gap-2">
+                <AgentMark agent="claude-code" />
+                {t('sessions.new.where.claudeCloud.label')}
+              </span>
+            </ChipSelectBack>
+            <ChipSelectHeading>{t('sessions.new.where.claudeCloud.startFrom')}</ChipSelectHeading>
+          </>
+        );
+      case 'root':
+        return (
+          <ChipSelectHeading>
+            {t('sessions.new.where.hosts')}
+            {loading ? null : <span className="figures ml-1.5">{hosts.length}</span>}
+          </ChipSelectHeading>
+        );
+    }
   }
 
   return (
@@ -224,38 +366,18 @@ export function PlaceSelect({
           onChange={(event) => show({ query: event.target.value })}
           onKeyDown={onKeyDown}
         />
-        {pane ? (
-          <ChipSelectBack onClick={() => show({ pane: null })}>
-            <span className="flex items-center gap-2">
-              <span className={dotVariants({ state: pane.online ? 'running' : 'idle' })} />
-              {pane.label}
-              {pane.description ? (
-                <span className="truncate text-fg-muted">{pane.description}</span>
-              ) : null}
-            </span>
-          </ChipSelectBack>
-        ) : null}
-        <ChipSelectHeading>
-          {pane ? (
-            t('sessions.new.where.startIn')
-          ) : (
-            <>
-              {t('sessions.new.where.hosts')}
-              {loading ? null : <span className="figures ml-1.5">{hosts.length}</span>}
-            </>
-          )}
-        </ChipSelectHeading>
+        {paneHead()}
         <ChipSelectList
           role="listbox"
-          aria-label={t(pane ? 'sessions.new.where.label' : 'sessions.new.host.label')}
-          loading={!pane && loading && cloudRows.length === 0}
+          aria-label={t(
+            pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
+          )}
+          loading={pane.kind === 'root' && loading && cloudRows.length === 0}
           loadingText={t('sessions.new.host.loading')}
           empty={rows.length === 0}
           emptyText={failure ?? t('sessions.new.host.empty')}
         >
-          {pane ? (
-            rows.map(row)
-          ) : (
+          {pane.kind === 'root' ? (
             <>
               {hostRows.map(row)}
               {cloudRows.length > 0 ? (
@@ -265,6 +387,8 @@ export function PlaceSelect({
                 </>
               ) : null}
             </>
+          ) : (
+            rows.map(row)
           )}
         </ChipSelectList>
         <ChipSelectActionRow

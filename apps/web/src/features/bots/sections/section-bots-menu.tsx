@@ -3,13 +3,13 @@ import {
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
+  ChipSelectSearch,
   IconButton,
-  Input,
   Link,
   Popover,
   PopoverTrigger,
 } from '@oppenheimer/design-system-web';
-import { Plus, Search } from '@oppenheimer/design-system-web/icons';
+import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useBots } from '@oppenheimer/frontend-consumer/react';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
@@ -97,24 +97,22 @@ export function SectionBotsMenu({
       >
         <Plus />
       </PopoverTrigger>
-      <ChipSelectPopup density="menu" align="end" width={272} className="p-0">
-        <div className="px-2 pt-2">
-          <Input
-            size="md"
-            quiet
-            // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
-            autoFocus
-            leading={<Search className="size-3.5" />}
-            value={query}
-            placeholder={t('bots.sidebar.search')}
-            aria-label={t('bots.sidebar.search')}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setActive(0);
-            }}
-            onKeyDown={onKeyDown}
-          />
-        </div>
+      {/* The popup's own padding is the one inset: the boxed search and the
+          footer stand on the rows' grid inside it, so they line up with the rows. */}
+      <ChipSelectPopup density="menu" align="end" width={272}>
+        <ChipSelectSearch
+          density="menu"
+          variant="boxed"
+          leadingSize="avatar"
+          value={query}
+          placeholder={t('bots.sidebar.search')}
+          aria-label={t('bots.sidebar.search')}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setActive(0);
+          }}
+          onKeyDown={onKeyDown}
+        />
         <ChipSelectList
           density="menu"
           role="listbox"
@@ -132,7 +130,6 @@ export function SectionBotsMenu({
                 ? t('bots.sidebar.noMatch', { query: query.trim() })
                 : t('bots.sidebar.emptyTitle')
           }
-          className="p-1"
         >
           {visible.map((bot, index) => (
             <ChipSelectItem
@@ -141,6 +138,7 @@ export function SectionBotsMenu({
               selected={shows(bot)}
               highlighted={index === active}
               leading={<BotAvatar option={bot} size={20} color={bot.avatarColor} />}
+              leadingSize="avatar"
               data-disabled={saving.has(bot.id) || undefined}
               aria-disabled={saving.has(bot.id) || undefined}
               onMouseEnter={() => setActive(index)}
@@ -150,9 +148,9 @@ export function SectionBotsMenu({
             </ChipSelectItem>
           ))}
         </ChipSelectList>
-        <div className="flex flex-col gap-1.5 border-t border-border-subtle px-3 py-2.5 text-xs text-fg-subtle">
+        <div className="mt-1 flex flex-col gap-2 border-t border-border-subtle px-2.5 pt-2.5 pb-1.5 text-xs text-fg-subtle">
           <p>{t('bots.section.checkedHint', { section: where })}</p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               className="inline-flex items-center gap-1 font-medium"
               render={<button type="button" />}

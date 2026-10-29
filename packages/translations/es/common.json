@@ -79,6 +79,24 @@
       "tree": "Árbol",
       "raw": "Texto",
       "more": "Mostrar {{count}} más"
+    },
+    "images": {
+      "open": "Abrir {{name}}",
+      "unavailable": "No se ha podido cargar esta imagen.",
+      "previous": "Imagen anterior",
+      "next": "Imagen siguiente",
+      "download": "Descargar",
+      "position": "{{position}} de {{total}}",
+      "pasted": "Imagen pegada"
     }
+  },
+  "search": {
+    "projects": "Buscar proyectos",
+    "milestones": "Buscar hitos",
+    "automations": "Buscar automatizaciones",
+    "repositories": "Buscar repositorios",
+    "hosts": "Buscar hosts",
+    "groups": "Buscar grupos",
+    "noMatch": "Nada coincide con «{{query}}»."
   }
 }
