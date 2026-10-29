@@ -13,10 +13,11 @@ import { SendMailCommandHandler } from '../send-mail.command-handler';
 /**
  * An approved send goes out once (`product/next-steps/mail.md` §3.4): claimed
  * under the approval before Gmail is asked, so a retry answers the same send
- * or refuses one that may have gone (`MAIL_015`); the day's cap refuses
- * before anything is claimed (`MAIL_011`); a draft edited since the card is
- * not sent (`MAIL_014`); and a send Gmail refused is recorded as failed. The
- * claim's uniqueness under a race is the integration suite's.
+ * or refuses one that may have gone (`MAIL_015`); the day's cap, counted in
+ * the claim's own locked step, refuses before Gmail is asked (`MAIL_011`); a
+ * draft edited since the card is not sent (`MAIL_014`); and a send Gmail
+ * refused is recorded as failed. The claim's uniqueness and the cap under a
+ * race are the integration suite's.
  */
 const CONNECTION = GmailConnectionEntity.connect({
   organizationId: 'org-1',
@@ -79,7 +80,12 @@ function setup(
   };
   const sends = {
     findByApproval: vi.fn(async () => (options.prior ? Some(options.prior) : None)),
-    claim: vi.fn(async () => true),
+    claim: vi.fn(),
+    claimUnderCap: vi.fn(async (_send: MailSendEntity, _since: Date, cap: number) =>
+      (options.sentToday ?? 0) >= cap
+        ? { outcome: 'over_cap' as const, sentInWindow: options.sentToday ?? 0 }
+        : { outcome: 'claimed' as const },
+    ),
     save: vi.fn(async () => undefined),
     countSince: vi.fn(async () => options.sentToday ?? 0),
     findRecentOwn: vi.fn(),
@@ -112,7 +118,7 @@ describe('SendMailCommandHandler', () => {
     const id = await send();
 
     expect(provider.sendMessage).toHaveBeenCalledOnce();
-    const [claim] = sends.claim.mock.calls[0];
+    const [claim] = sends.claimUnderCap.mock.calls[0];
     expect(claim.id).toBe(id);
     expect(sends.save).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'sent', gmailMessageId: 'g1' }),
@@ -126,7 +132,7 @@ describe('SendMailCommandHandler', () => {
     await expect(send()).resolves.toBe(prior.id);
 
     expect(provider.sendMessage).not.toHaveBeenCalled();
-    expect(sends.claim).not.toHaveBeenCalled();
+    expect(sends.claimUnderCap).not.toHaveBeenCalled();
   });
 
   it('refuses with MAIL_015 a send that was started and never confirmed, or failed', async () => {
@@ -138,18 +144,18 @@ describe('SendMailCommandHandler', () => {
     }
   });
 
-  it('refuses with MAIL_011 past fifty sends a day, claiming nothing', async () => {
+  it('refuses with MAIL_011 when the locked claim finds the day’s fifty sent', async () => {
     const { send, sends, provider } = setup({ sentToday: 50 });
 
     await expect(send()).rejects.toMatchObject({ code: 'MAIL_011' });
 
-    expect(sends.claim).not.toHaveBeenCalled();
+    expect(sends.claimUnderCap).toHaveBeenCalledWith(expect.anything(), expect.any(Date), 50);
     expect(provider.sendMessage).not.toHaveBeenCalled();
   });
 
   it('refuses with MAIL_015 when another attempt claimed the approval first', async () => {
     const { send, sends, provider } = setup();
-    sends.claim.mockResolvedValueOnce(false);
+    sends.claimUnderCap.mockResolvedValueOnce({ outcome: 'taken' });
     sends.findByApproval
       .mockResolvedValueOnce(None)
       .mockResolvedValueOnce(Some(claimed('sending')));

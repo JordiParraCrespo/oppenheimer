@@ -274,4 +274,35 @@ describe('GmailGateway', () => {
     expect(new URL(url).pathname).toBe('/gmail/v1/users/me/drafts/d1');
     expect(init.method).toBe('DELETE');
   });
+
+  it('reads a message whole for an answer or a forward, where a thread read for a bot is cut', async () => {
+    const long = 'x'.repeat(9_000);
+    const withBody = {
+      ...INVOICE,
+      payload: {
+        partId: '',
+        mimeType: 'text/plain',
+        filename: '',
+        headers: [...INVOICE.payload.headers, { name: 'Bcc', value: 'audit@acme.test' }],
+        body: { size: long.length, data: b64(long) },
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(json(200, withBody))
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(json(200, { id: 't1', messages: [withBody] })),
+    );
+    const gateway = new GmailGateway(config);
+
+    const whole = await gateway.readMessage(ANA, 'm1');
+    const thread = await gateway.readThread(ANA, 't1');
+
+    expect(whole.body).toBe(long);
+    expect(whole.bcc).toBe('audit@acme.test');
+    expect(thread.messages[0].body).toContain('was cut');
+  });
 });

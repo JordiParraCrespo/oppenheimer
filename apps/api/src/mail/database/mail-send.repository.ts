@@ -7,7 +7,7 @@ import type { MailSendEntity } from '../domain/mail-send.entity';
 import { MailResource } from '../mail.resource';
 import { MailSendMapper } from '../mail-send.mapper';
 import { MailSendOrmEntity } from './mail-send.orm-entity';
-import type { MailSendRepositoryPort } from './mail-send.repository.port';
+import type { MailSendClaimOutcome, MailSendRepositoryPort } from './mail-send.repository.port';
 
 @Injectable()
 export class MailSendRepository
@@ -40,6 +40,38 @@ export class MailSendRepository
       .returning(['id'])
       .execute();
     return Array.isArray(result.raw) && result.raw.length === 1;
+  }
+
+  async claimUnderCap(
+    send: MailSendEntity,
+    since: Date,
+    cap: number,
+  ): Promise<MailSendClaimOutcome> {
+    return this.repository.manager.transaction(async (manager) => {
+      // One account's sends queue here; other accounts never wait on it.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `mail_send:${send.connectionId}`,
+      ]);
+      const sentInWindow = await manager.getRepository(MailSendOrmEntity).count({
+        where: {
+          connectionId: send.connectionId ?? undefined,
+          status: In(['sending', 'sent']),
+          createdAt: MoreThan(since),
+        },
+      });
+      if (sentInWindow >= cap) return { outcome: 'over_cap', sentInWindow };
+      const result = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(MailSendOrmEntity)
+        .values(this.mapper.toPersistence(send))
+        .orIgnore()
+        .returning(['id'])
+        .execute();
+      return Array.isArray(result.raw) && result.raw.length === 1
+        ? { outcome: 'claimed' }
+        : { outcome: 'taken' };
+    });
   }
 
   async save(send: MailSendEntity): Promise<void> {
