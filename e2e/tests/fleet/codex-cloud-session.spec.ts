@@ -58,11 +58,12 @@ test('a Codex cloud task starts on the host, and the host reports where it stand
   // Codex has it: working, the moment it started.
   await expect.poll(async () => (await detail()).state).toBe('working');
 
-  // Codex finishes it; the host's next read says so, within its minute.
+  // Codex finishes it; the host's next read says so, within its minute: done
+  // is ready for a prompt, which the sidebar groups as idle.
   box.host.exec(`echo ready > ~/codex-cloud/${session.cloudSessionId}`);
   await expect
     .poll(async () => (await detail()).state, { timeout: 150_000, intervals: [5_000] })
-    .toBe('done');
+    .toBe('idle');
 
   const closed = await api.delete(`/api/v1/sessions/${sessionId}?acceptUnpushedWork=true`, {
     failOnStatusCode: false,
