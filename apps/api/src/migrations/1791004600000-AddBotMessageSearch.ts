@@ -18,8 +18,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * The query repeats the index's expression and predicate exactly, or the
  * planner cannot use it.
  */
-export class AddBotMessageSearch1791004400000 implements MigrationInterface {
-  name = 'AddBotMessageSearch1791004400000';
+export class AddBotMessageSearch1791004600000 implements MigrationInterface {
+  name = 'AddBotMessageSearch1791004600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
