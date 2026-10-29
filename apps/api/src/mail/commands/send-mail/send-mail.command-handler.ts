@@ -8,7 +8,12 @@ import { MailComposeResolver } from '../../application/mail-compose.resolver';
 import type { MailSendRepositoryPort } from '../../database/mail-send.repository.port';
 import { MailErrors } from '../../domain/mail.errors';
 import { MailSendEntity } from '../../domain/mail-send.entity';
-import { dailyRefusal, dayBefore, priorSendRefusal } from '../../domain/mail-send.policy';
+import {
+  dailyRefusal,
+  dayBefore,
+  type MailLocalFiles,
+  priorSendRefusal,
+} from '../../domain/mail-send.policy';
 import type {
   GmailCallGrant,
   GmailProviderPort,
@@ -34,7 +39,13 @@ export class SendMailCommandHandler implements ICommandHandler<SendMailCommand, 
     @Inject(MAIL_SEND_REPOSITORY) private readonly sends: MailSendRepositoryPort,
   ) {}
 
-  async execute({ scope, plan, approvalId, botId }: SendMailCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    plan,
+    approvalId,
+    botId,
+    localFiles,
+  }: SendMailCommand): Promise<AggregateID> {
     const connection = await this.gmail.activeConnection(scope, plan.connectionId);
     const prior = await this.sends.findByApproval(approvalId);
     if (prior.isSome()) return outcomeOf(prior.unwrap());
@@ -62,7 +73,7 @@ export class SendMailCommandHandler implements ICommandHandler<SendMailCommand, 
     }
     try {
       const sent = await this.gmail.call(connection, (provider, grant) =>
-        this.deliver(provider, grant, plan),
+        this.deliver(provider, grant, plan, localFiles),
       );
       send.sent(sent.messageId, sent.threadId, new Date());
     } catch (error) {
@@ -78,9 +89,13 @@ export class SendMailCommandHandler implements ICommandHandler<SendMailCommand, 
     provider: GmailProviderPort,
     grant: GmailCallGrant,
     plan: MailPlan,
+    localFiles: MailLocalFiles,
   ): Promise<GmailSentRef> {
     if (plan.kind !== 'draft') {
-      return provider.sendMessage(grant, await this.compose.build(provider, grant, plan));
+      return provider.sendMessage(
+        grant,
+        await this.compose.build(provider, grant, plan, localFiles),
+      );
     }
     if (!plan.draftId) throw new AppError(MailErrors.DRAFT_CHANGED);
     const draft = await provider.readDraft(grant, plan.draftId);

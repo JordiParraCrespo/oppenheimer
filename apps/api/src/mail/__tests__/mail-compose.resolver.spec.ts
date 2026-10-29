@@ -1,7 +1,7 @@
 import type { GmailCallResolver } from '../application/gmail-call.resolver';
 import { MailComposeResolver } from '../application/mail-compose.resolver';
 import { GmailConnectionEntity } from '../domain/gmail-connection.entity';
-import type { MailRequest } from '../domain/mail-send.policy';
+import type { MailLocalFiles, MailRequest } from '../domain/mail-send.policy';
 import type {
   GmailCallGrant,
   GmailMessage,
@@ -74,9 +74,9 @@ function setup() {
       run(provider as unknown as GmailProviderPort, grant),
   } as unknown as GmailCallResolver;
   const compose = new MailComposeResolver(gmail);
-  const build = async (request: Partial<MailRequest>) => {
+  const build = async (request: Partial<MailRequest>, local: MailLocalFiles = new Map()) => {
     const plan = await compose.plan(CONNECTION, { ...REQUEST, ...request });
-    const raw = await compose.build(provider as unknown as GmailProviderPort, grant, plan);
+    const raw = await compose.build(provider as unknown as GmailProviderPort, grant, plan, local);
     return { plan, raw, mime: raw.raw.toString('utf8') };
   };
   return { compose, provider, build };
@@ -93,6 +93,7 @@ const REQUEST: MailRequest = {
   from: null,
   signature: true,
   attachments: [],
+  localFiles: [],
 };
 
 /** Every base64 part of a MIME message, decoded. */
@@ -145,7 +146,7 @@ describe('MailComposeResolver', () => {
       from: { email: 'billing@acme.test', name: null },
       subject: 'Fwd: Invoice 42',
       threadId: null,
-      attachments: [{ messageId: 'm1', partId: '2', filename: 'factura.pdf' }],
+      attachments: [{ source: 'mail', messageId: 'm1', partId: '2', filename: 'factura.pdf' }],
     });
     expect(raw.threadId).toBeNull();
     expect(mime).not.toContain('In-Reply-To');
@@ -184,6 +185,29 @@ describe('MailComposeResolver', () => {
     await expect(
       compose.plan(CONNECTION, { ...REQUEST, to: ['not an address'] }),
     ).rejects.toMatchObject({ code: 'MAIL_010' });
+  });
+
+  it('attaches an image from the bot’s chat with the bytes the write carries, and refuses one it was not given', async () => {
+    const { build } = setup();
+    const image = {
+      source: 'chat' as const,
+      attachmentId: '7c2f0d2e-4c39-4d8e-9a11-0f5b2b6f1a10',
+      filename: 'receipt.png',
+      mimeType: 'image/png',
+      sizeBytes: 3,
+    };
+
+    const { plan, mime } = await build(
+      { to: ['bo@client.test'], localFiles: [image] },
+      new Map([[`chat:${image.attachmentId}`, Buffer.from('png')]]),
+    );
+
+    expect(plan.attachments).toEqual([image]);
+    expect(mime).toContain('filename="receipt.png"');
+    expect(decodedParts(mime)).toContain('png');
+    await expect(build({ to: ['bo@client.test'], localFiles: [image] })).rejects.toMatchObject({
+      code: 'MAIL_009',
+    });
   });
 
   it('plans a draft with every recipient it carries, Bcc included, and holds it to the ten-recipient limit', async () => {

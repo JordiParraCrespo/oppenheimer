@@ -15,9 +15,9 @@ import {
 } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotActivity } from '@/features/bots/components/bot-activity';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
-import { BotTrace } from '@/features/bots/components/bot-trace';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import {
@@ -103,7 +103,7 @@ export function BotTurn({
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotTrace key={message.id} steps={message.steps} />
+            <BotActivity key={message.id} steps={message.steps} />
           ) : message.attachments.length > 0 ? (
             <div key={message.id} className="flex flex-col gap-3">
               {message.content ? <BotReply content={message.content} /> : null}

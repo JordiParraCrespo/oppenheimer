@@ -214,3 +214,27 @@ export async function insertPendingBotApproval(
   );
   return rows[0].id;
 }
+
+/**
+ * A bot's turn that made tool calls, written straight into the tables
+ * (`25-bots.md` §3): a finished turn and its activity line holding `steps`,
+ * so a spec about what the chat draws under a call (a saved draft's card)
+ * needs no model. One statement.
+ */
+export async function insertBotActivity(
+  botId: string,
+  steps: Record<string, unknown>[],
+): Promise<void> {
+  await query(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          turn AS (
+            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
+            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+              FROM bot
+            RETURNING id, "organizationId"
+          )
+     INSERT INTO bot_message ("organizationId", "botId", "turnId", role, steps, position)
+     SELECT turn."organizationId", $1, turn.id, 'activity', $2::jsonb, 0 FROM turn`,
+    [botId, JSON.stringify(steps)],
+  );
+}

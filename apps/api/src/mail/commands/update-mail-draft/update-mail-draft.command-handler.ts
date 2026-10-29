@@ -14,10 +14,19 @@ export class UpdateMailDraftCommandHandler
     private readonly compose: MailComposeResolver,
   ) {}
 
-  async execute({ scope, draftId, plan }: UpdateMailDraftCommand): Promise<GmailDraftRef> {
+  async execute({
+    scope,
+    draftId,
+    plan,
+    localFiles,
+  }: UpdateMailDraftCommand): Promise<GmailDraftRef> {
     const connection = await this.gmail.activeConnection(scope, plan.connectionId);
     return this.gmail.call(connection, async (provider, grant) =>
-      provider.updateDraft(grant, draftId, await this.compose.build(provider, grant, plan)),
+      provider.updateDraft(
+        grant,
+        draftId,
+        await this.compose.build(provider, grant, plan, localFiles),
+      ),
     );
   }
 }

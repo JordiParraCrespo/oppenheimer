@@ -3717,6 +3717,12 @@ export type BotToolStepResponseDto = {
      * The subagents a `delegate` call ran; null for any other call, and while it runs.
      */
     subagents: Array<BotSubagentRunResponseDto> | null;
+    /**
+     * The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.
+     */
+    mailDraft: {
+        [key: string]: unknown;
+    } | null;
 };
 
 export type BotAttachmentResponseDto = {

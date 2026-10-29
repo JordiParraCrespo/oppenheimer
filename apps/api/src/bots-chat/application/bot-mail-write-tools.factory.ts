@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { MAIL_RECIPIENTS_MAX, type MailPlan, mailPlanSchema } from '@oppenheimer/shared';
+import {
+  type BotMailDraft,
+  MAIL_RECIPIENTS_MAX,
+  type MailPlan,
+  mailPlanSchema,
+} from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { CreateMailDraftCommand } from '../../mail/commands/create-mail-draft/create-mail-draft.command';
 import { DeleteMailDraftCommand } from '../../mail/commands/delete-mail-draft/delete-mail-draft.command';
@@ -17,13 +22,16 @@ import {
   describeAccount,
   describePlan,
   describeSend,
+  draftCardOf,
   gmailDraftLink,
   gmailMessageLink,
   sendSummary,
 } from '../bot-mail-tool.mapper';
 import { formatToolList } from '../domain/bot-tool-text.policy';
 import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
+import { BotMailChatFilesResolver } from './bot-mail-chat-files.resolver';
 import {
+  type BotToolAnswer,
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
@@ -84,11 +92,16 @@ const message = z.object({
     .describe('Send from one of the account’s Gmail send-as addresses; leave out for its default.'),
   signature: z.boolean().default(true).describe('Add the address’s Gmail signature.'),
   attachments: z
-    .array(z.object({ message_id: z.string().min(1).max(100), part_id: z.string().min(1).max(50) }))
+    .array(
+      z.union([
+        z.object({ message_id: z.string().min(1).max(100), part_id: z.string().min(1).max(50) }),
+        z.object({ chat_image: z.string().uuid() }),
+      ]),
+    )
     .max(25)
     .default([])
     .describe(
-      'Files from messages in the account, by message id and part id; a forward carries its own already.',
+      'Files to attach: a file of a message in the account by { message_id, part_id }, or an image the person sent in this chat by { chat_image } with its image id. A forward carries its own files already.',
     ),
 });
 
@@ -113,6 +126,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
     private readonly accounts: BotMailAccountsResolver,
+    private readonly chatFiles: BotMailChatFilesResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -136,9 +150,13 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       run: async (input, context) => {
         const planned = await this.plan(input, context);
         const draft = await this.commandBus.execute<CreateMailDraftCommand, GmailDraftRef>(
-          new CreateMailDraftCommand({ scope: context.owner, plan: planned }),
+          new CreateMailDraftCommand({
+            scope: context.owner,
+            plan: planned,
+            localFiles: await this.chatFiles.bytes(planned, context),
+          }),
         );
-        return draftAnswer('Draft saved', planned, draft);
+        return draftAnswer('created', planned, draft);
       },
     });
   }
@@ -157,9 +175,10 @@ export class BotMailWriteToolsFactory implements BotToolArea {
             scope: context.owner,
             draftId: input.draft_id,
             plan: planned,
+            localFiles: await this.chatFiles.bytes(planned, context),
           }),
         );
-        return draftAnswer('Draft updated', planned, draft);
+        return draftAnswer('updated', planned, draft);
       },
     });
   }
@@ -171,6 +190,11 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       scope: 'mail:write',
       description: 'Deletes a draft from the person’s Gmail, for good. Asks the person first.',
       input: z.object({ account, draft_id: z.string().trim().min(1).max(100) }),
+      // The card stores the account's id: a rename while it waits does not change what a yes deletes.
+      normalize: async (input, context) => ({
+        ...input,
+        account: (await this.accounts.one(context.owner, input.account)).id,
+      }),
       summarize: async (input, context) => {
         const planned = await this.draftPlan(input, context);
         return `Delete the draft "${planned.subject}" to ${planned.to.join(', ') || 'nobody'} from ${planned.accountEmail}`;
@@ -264,6 +288,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
         plan: planned,
         approvalId: context.approvalId,
         botId: context.botId,
+        localFiles: await this.chatFiles.bytes(planned, context),
       }),
     );
     return `Sent from ${planned.from.email} to ${[...planned.to, ...planned.cc, ...planned.bcc].join(', ')}: "${planned.subject}". It is in Gmail’s Sent.`;
@@ -278,7 +303,10 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       new PlanMailQuery({
         scope: context.owner,
         connectionId: connection.id,
-        request: requestOf(input),
+        request: {
+          ...requestOf(input),
+          localFiles: await this.chatFiles.planned(chatImagesOf(input.attachments), context),
+        },
       }),
     );
   }
@@ -298,7 +326,12 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   }
 }
 
-function requestOf(input: MessageInput): MailRequest {
+/** The chat images among a call's files, by id. */
+function chatImagesOf(attachments: MessageInput['attachments']): string[] {
+  return attachments.flatMap((file) => ('chat_image' in file ? [file.chat_image] : []));
+}
+
+function requestOf(input: MessageInput): Omit<MailRequest, 'localFiles'> {
   return {
     kind: input.kind,
     messageId: input.message_id ?? null,
@@ -309,10 +342,9 @@ function requestOf(input: MessageInput): MailRequest {
     body: input.body,
     from: input.from ?? null,
     signature: input.signature,
-    attachments: input.attachments.map((file) => ({
-      messageId: file.message_id,
-      partId: file.part_id,
-    })),
+    attachments: input.attachments.flatMap((file) =>
+      'message_id' in file ? [{ messageId: file.message_id, partId: file.part_id }] : [],
+    ),
   };
 }
 
@@ -325,11 +357,19 @@ function storedPlan(stored: unknown): MailPlan {
   return parsed.data;
 }
 
-function draftAnswer(said: string, planned: MailPlan, draft: GmailDraftRef): string {
-  return [
-    `${said} in ${planned.accountEmail} (draft id ${draft.draftId}); nothing was sent.`,
-    describePlan(planned),
-    `Open it in Gmail: ${gmailDraftLink(planned.accountEmail, draft.messageId)}`,
-    `Its thread: ${gmailMessageLink(planned.accountEmail, draft.threadId)}`,
-  ].join('\n');
+function draftAnswer(
+  saved: BotMailDraft['saved'],
+  planned: MailPlan,
+  draft: GmailDraftRef,
+): BotToolAnswer {
+  const said = saved === 'created' ? 'Draft saved' : 'Draft updated';
+  return {
+    content: [
+      `${said} in ${planned.accountEmail} (draft id ${draft.draftId}); nothing was sent.`,
+      describePlan(planned),
+      `Open it in Gmail: ${gmailDraftLink(planned.accountEmail, draft.messageId)}`,
+      `Its thread: ${gmailMessageLink(planned.accountEmail, draft.threadId)}`,
+    ].join('\n'),
+    mailDraft: draftCardOf(saved, planned, draft),
+  };
 }

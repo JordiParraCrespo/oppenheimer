@@ -2,8 +2,15 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
-import type { BotAttachment, BotPermission, BotSubagentRun, Scope } from '@oppenheimer/shared';
+import type {
+  BotAttachment,
+  BotMailDraft,
+  BotPermission,
+  BotSubagentRun,
+  Scope,
+} from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import { askedForApproval, waitingForApproval } from '../domain/bot-approval.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
@@ -91,6 +98,8 @@ export interface BotToolAnswer {
   subagents?: readonly BotSubagentRun[];
   /** The images a `show_image` call stored, for the chat to show the person. */
   images?: readonly BotAttachment[];
+  /** The draft a mail call saved in Gmail, for the chat to draw as a card. */
+  mailDraft?: BotMailDraft;
 }
 
 /** What a call ended with: the words the model reads, and the session it started, if any. */
@@ -100,6 +109,7 @@ export interface BotToolResult {
   sessionId?: string;
   subagents?: readonly BotSubagentRun[];
   images?: readonly BotAttachment[];
+  mailDraft?: BotMailDraft;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -224,6 +234,7 @@ export function defineBotTool<Input extends z.ZodType>(
         ...(answer.sessionId ? { sessionId: answer.sessionId } : {}),
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
         ...(answer.images?.length ? { images: answer.images } : {}),
+        ...(answer.mailDraft ? { mailDraft: answer.mailDraft } : {}),
       };
     } catch (error) {
       return { content: describeToolFailure(error), isError: true };
@@ -245,7 +256,7 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          const { sessionId, subagents, images, ...result } = await call(
+          const { sessionId, subagents, images, mailDraft, ...result } = await call(
             parsed.data,
             callId ? { ...context, callId } : context,
             signal,
@@ -254,6 +265,7 @@ export function defineBotTool<Input extends z.ZodType>(
             ...(sessionId ? { sessionId } : {}),
             ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
             ...(images ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
+            ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
           };
           return Object.keys(data).length > 0 ? { ...result, data } : result;
         },

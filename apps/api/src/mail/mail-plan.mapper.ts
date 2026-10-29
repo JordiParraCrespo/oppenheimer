@@ -83,8 +83,9 @@ export class MailPlanMapper {
   }
 
   /** A message's files, as a plan carries them. */
-  static attachmentsOf(message: GmailMessage): MailPlanAttachment[] {
+  static attachmentsOf(message: GmailMessage): Extract<MailPlanAttachment, { source: 'mail' }>[] {
     return message.attachments.map((file) => ({
+      source: 'mail' as const,
       messageId: message.id,
       partId: file.partId,
       filename: file.filename,

@@ -6,8 +6,11 @@ import { SendMailCommand } from '../../../mail/commands/send-mail/send-mail.comm
 import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { PlanMailQuery } from '../../../mail/queries/plan-mail/plan-mail.query';
+import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
+import { BotMailChatFilesResolver } from '../bot-mail-chat-files.resolver';
 import { BotMailWriteToolsFactory } from '../bot-mail-write-tools.factory';
 import type { ApprovedCallContext, BotToolContext } from '../bot-tool.factory';
 
@@ -50,6 +53,14 @@ const PLAN: MailPlan = {
 
 const signal = new AbortController().signal;
 
+const RECEIPT = {
+  id: '7c2f0d2e-4c39-4d8e-9a11-0f5b2b6f1a10',
+  name: 'receipt.png',
+  mimeType: 'image/png',
+  sizeBytes: 3,
+  storageKey: 'bot-attachments/org-1/bot-1/receipt.png',
+};
+
 function setup(permission: BotToolContext['permission']) {
   const request = vi.fn(async () => ({ status: 'requested' as const }));
   const context: BotToolContext = {
@@ -77,17 +88,26 @@ function setup(permission: BotToolContext['permission']) {
     }
     return 'send-1';
   });
+  const images = {
+    findManyForBot: vi.fn(async (_org: string, _bot: string, ids: readonly string[]) =>
+      ids.includes(RECEIPT.id) ? [RECEIPT] : [],
+    ),
+  } as unknown as BotAttachmentRepositoryPort;
+  const files = {
+    read: vi.fn(async () => Buffer.from('png')),
+  } as unknown as BotAttachmentFilesPort;
   const definitions = new BotMailWriteToolsFactory(
     queryBus,
     { execute: commands } as unknown as CommandBus,
     new BotMailAccountsResolver(queryBus),
+    new BotMailChatFilesResolver(images, files),
   ).definitions();
   const definition = (name: string) => {
     const found = definitions.find((tool) => tool.name === name);
     if (!found) throw new Error(`no ${name}`);
     return found;
   };
-  return { context, request, commands, definition };
+  return { context, request, commands, definition, queryBus };
 }
 
 const SEND = { account: 'Personal', to: ['bo@client.test'], subject: 'Invoice 42', body: 'Paid' };
@@ -151,5 +171,67 @@ describe('BotMailWriteToolsFactory', () => {
     expect(unplanned.isError).toBe(true);
     expect(unapproved.isError).toBe(true);
     expect(commands).not.toHaveBeenCalled();
+  });
+
+  it('answers a saved draft with a card for the chat: the message, its id and where it opens', async () => {
+    const { context, definition } = setup('auto');
+
+    const result = await definition('create_draft').bind(context).run(SEND, { signal });
+
+    expect(JSON.parse(String(result.data?.mailDraft))).toEqual({
+      saved: 'created',
+      draftId: 'd1',
+      link: expect.stringContaining('#drafts?compose=dm1'),
+      mail: PLAN,
+    });
+  });
+
+  it('attaches an image from this chat by its id, and refuses one the bot does not have', async () => {
+    const { context, commands, definition, queryBus } = setup('auto');
+
+    await definition('create_draft')
+      .bind(context)
+      .run({ ...SEND, attachments: [{ chat_image: RECEIPT.id }] }, { signal });
+    const planned = vi
+      .mocked(queryBus.execute)
+      .mock.calls.find(([query]) => query instanceof PlanMailQuery)?.[0] as PlanMailQuery;
+    expect(planned.request.localFiles).toEqual([
+      {
+        source: 'chat',
+        attachmentId: RECEIPT.id,
+        filename: 'receipt.png',
+        mimeType: 'image/png',
+        sizeBytes: 3,
+      },
+    ]);
+
+    const refused = await definition('create_draft')
+      .bind(context)
+      .run(
+        { ...SEND, attachments: [{ chat_image: '00000000-0000-4000-8000-000000000000' }] },
+        { signal },
+      );
+    expect(refused.isError).toBe(true);
+    expect(commands).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads a planned chat image’s bytes when the mail is sent', async () => {
+    const { context, commands, definition } = setup('full');
+    const image = {
+      source: 'chat' as const,
+      attachmentId: RECEIPT.id,
+      filename: 'receipt.png',
+      mimeType: 'image/png',
+      sizeBytes: 3,
+    };
+
+    await definition('send_mail').runApproved(
+      { ...SEND, plan: { ...PLAN, attachments: [image] } },
+      { ...context, approvalId: 'approval-1' },
+      signal,
+    );
+
+    const [command] = commands.mock.calls[0] as [SendMailCommand];
+    expect(command.localFiles.get(`chat:${RECEIPT.id}`)).toEqual(Buffer.from('png'));
   });
 });
