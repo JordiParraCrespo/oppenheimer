@@ -5,6 +5,7 @@ import { cloudAgentsKeys } from './cloud-agents.queries';
 import { hostsKeys } from './hosts.queries';
 import { inboxKeys } from './inbox.keys';
 import { installationsKeys } from './installations.queries';
+import { mailKeys } from './mail.queries';
 import { profileKeys } from './profile.queries';
 import { projectsKeys } from './projects.queries';
 import { pullRequestsKeys } from './pull-requests.queries';
@@ -44,6 +45,7 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   tasksKeys.all[0],
   calendarKeys.all[0],
   cloudAgentsKeys.all[0],
+  mailKeys.all[0],
   pullRequestsKeys.all[0],
   voiceKeys.all[0],
   inboxKeys.all[0],

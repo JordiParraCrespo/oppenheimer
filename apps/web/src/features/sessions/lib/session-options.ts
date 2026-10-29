@@ -525,14 +525,13 @@ export function toCreateInput(
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
   const [first, ...rest] = toCheckouts(draft.scope);
   if (!first) return null;
-  // A host's cloud takes a task and one repository, nothing else: its files
-  // would stay on the host, which the cloud never sees. It runs Claude Code or
-  // Codex, whichever the draft holds (`engineForPlace`).
+  // A host's cloud takes a task, one repository and its files: the API keeps
+  // the files and the task links them, since the cloud never sees the host. It
+  // runs Claude Code or Codex, whichever the draft holds (`engineForPlace`).
   if (draft.where === 'cloud') {
     if (!extras.prompt) return null;
-    const { attachmentIds: _files, ...task } = common;
     const { agent } = engineForPlace(draft, draft);
-    return { ...task, agent, checkouts: [first], cloud: true };
+    return { ...common, agent, checkouts: [first], cloud: true };
   }
   return { ...common, checkouts: [first, ...rest] };
 }

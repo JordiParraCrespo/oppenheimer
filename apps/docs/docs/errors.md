@@ -539,6 +539,8 @@ are never reissued.
 | `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
 | `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input at its vendor's site, not here | 409 |
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
+| `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
+| `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -585,6 +587,13 @@ terminal, or refuse the agent, instead of starting the task. As with `025`, a ho
 link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
 pasted file for a cloud session: it has no terminal on its host, and is answered at its
 vendor, on claude.ai or chatgpt.com/codex.
+
+`SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
+reach the host, which only starts the session: the API keeps them, and the task the cloud
+receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no credential,
+a day long, minted again whenever the create is sent). `040` is a task whose text and those
+links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
+`041` is a link that expired or never existed.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -896,6 +905,42 @@ since removed), or one Google has since revoked (or one sealed under a
 
 `CALENDAR_011` is a sixth Google account: a person connects five at most.
 Remove one, or reconnect one already listed, which does not count again.
+
+## Mail
+
+A person's own Gmail accounts, worked by their bots: the grant is kept sealed,
+and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
+
+| Code                             | Title                                                  | HTTP |
+| -------------------------------- | ------------------------------------------------------ | ---- |
+| `MAIL_001` <a id="mail_001" />   | That Gmail account is not connected                    | 409  |
+| `MAIL_002` <a id="mail_002" />   | Mail belongs to an organization                        | 400  |
+| `MAIL_003` <a id="mail_003" />   | That is as many Gmail accounts as mail takes           | 409  |
+| `MAIL_004` <a id="mail_004" />   | Gmail is not configured on this server                 | 503  |
+| `MAIL_005` <a id="mail_005" />   | That Gmail connection was not started here             | 400  |
+| `MAIL_006` <a id="mail_006" />   | Google did not grant access to Gmail                   | 400  |
+| `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
+| `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
+| `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+
+`MAIL_001` is no such connection of the caller's, or one Google has since
+revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
+in Settings → Mail.
+
+`MAIL_004` needs the Google sign-in client (`GOOGLE_CLIENT_ID`/`_SECRET`), the
+Gmail API enabled on its project, and `MAIL_TOKEN_KEY`.
+
+`MAIL_005` is a connect `state` that is missing, expired, used, or someone
+else's. Start again from Connect Gmail.
+
+`MAIL_006` is Google refusing the code, returning no refresh token or ID token,
+or a consent screen where the Gmail permission was left unticked.
+
+`MAIL_008` comes with `Retry-After`: Gmail counts quota per account and per
+project, and is not asked again until then.
+
+`MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
+has (deleted, or an id from another account).
 
 ## Cloud agents
 

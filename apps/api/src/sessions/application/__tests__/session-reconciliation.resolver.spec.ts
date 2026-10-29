@@ -5,6 +5,8 @@ import type {
   WorkSessionRepositoryPort,
 } from '../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { CloudFilesPort } from '../cloud-files.port';
+import { CloudTaskFactory } from '../cloud-task.factory';
 import type { SessionDispatchPort } from '../session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../session-launch.factory';
 import type { SessionLaunchCredentials } from '../session-launch-credentials.resolver';
@@ -12,7 +14,7 @@ import { SessionReconciliationResolver } from '../session-reconciliation.resolve
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
 
-function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity {
+function session(state: 'starting' | 'open', folder?: string, place?: 'cloud'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
     organizationId: 'org',
     projectId: 'project',
@@ -21,6 +23,7 @@ function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity
     slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
     ...(folder ? { place: 'folder' as const, folder } : {}),
+    ...(place ? { place } : {}),
   });
   if (state === 'open') {
     entity.recordEvent({ seq: 2, kind: 'session.started', payload: {}, occurredAt: new Date() });
@@ -41,6 +44,13 @@ function deleting(state: 'starting' | 'open', acceptUnpushedWork: boolean): Work
 }
 
 function harness(rows: HostSessionRow[]) {
+  let minted = 0;
+  const cloudFiles = {
+    keep: vi.fn(),
+    link: vi.fn(async () => `https://api.test/f/link-${++minted}`),
+    sampleLink: () => '',
+    open: vi.fn(),
+  } satisfies CloudFilesPort;
   const sessions = {
     findUnresolvedForHostForMachine: vi.fn().mockResolvedValue(rows),
     appendEvents: vi.fn().mockResolvedValue({ accepted: ['k'], rejected: [], appended: [] }),
@@ -56,6 +66,7 @@ function harness(rows: HostSessionRow[]) {
       ownedBy: vi.fn().mockResolvedValue([]),
     },
     { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+    new CloudTaskFactory(cloudFiles),
   );
   return {
     sessions,
@@ -101,6 +112,18 @@ describe('SessionReconciliationResolver', () => {
     await h.resolver.reconcile(HOST, 'run-1', []);
 
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, expect.objectContaining({ images }));
+  });
+
+  it('links a cloud session’s files afresh in its task, never sending them as images', async () => {
+    const owed = session('starting', undefined, 'cloud');
+    const images = [{ imageId: 'kept-1', mediaType: 'image/png' as const }];
+    const h = harness([{ session: owed, prompt: 'match this', images }]);
+
+    await h.resolver.reconcile(HOST, 'run-1', []);
+
+    const [, spec] = vi.mocked(h.dispatch.create).mock.calls[0];
+    expect(spec.images).toBeUndefined();
+    expect(spec.prompt).toContain("-o /tmp/attachments/1.png 'https://api.test/f/link-1'");
   });
 
   it('records stopped an open session the host no longer holds, keyed by the run', async () => {

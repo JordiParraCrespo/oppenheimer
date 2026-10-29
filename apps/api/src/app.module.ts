@@ -50,6 +50,7 @@ import {
   hostsConfig,
   llmConfig,
   llmConfigFrom,
+  mailConfig,
   oauthConfig,
   redisConfig,
   relayConfig,
@@ -71,6 +72,7 @@ import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
 import { InboxModule } from './inbox/inbox.module';
+import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -110,6 +112,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         automationsConfig,
         botsConfig,
         calendarConfig,
+        mailConfig,
         cloudAgentsConfig,
         retentionConfig,
         throttlingConfig,
@@ -265,6 +268,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     WorkspaceEventsModule,
     TasksModule,
     CalendarModule,
+    MailModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

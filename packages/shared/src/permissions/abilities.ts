@@ -71,6 +71,9 @@ export const KNOWN_SUBJECTS = [
   // the workspace's own events and a person's Google Calendar connection.
   'Task',
   'Calendar',
+  // A person's own Gmail accounts, worked by their bots (`product/next-steps/mail.md`):
+  // workspace-owned like the calendar, and every read of a connection adds its owner.
+  'Mail',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
@@ -374,6 +377,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Calendar',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Mail',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
     {

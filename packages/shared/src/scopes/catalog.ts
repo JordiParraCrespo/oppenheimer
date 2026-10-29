@@ -26,6 +26,7 @@ export const SCOPE_RESOURCES = [
   'bots',
   'tasks',
   'calendar',
+  'mail',
   'cloud-agents',
   'pulls',
   'repositories',
@@ -453,6 +454,29 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Calendar' },
           { action: 'update', subject: 'Calendar' },
           { action: 'delete', subject: 'Calendar' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'mail',
+    label: 'Mail',
+    description: 'The caller’s own Gmail accounts, as their bots work them.',
+    levels: {
+      read: {
+        scope: 'mail:read',
+        label: 'Read',
+        description: 'List the caller’s own Gmail connections.',
+        policies: [{ action: 'read', subject: 'Mail' }],
+      },
+      write: {
+        scope: 'mail:write',
+        label: 'Edit',
+        description: 'Connect, rename and disconnect the caller’s own Gmail accounts.',
+        policies: [
+          { action: 'create', subject: 'Mail' },
+          { action: 'update', subject: 'Mail' },
+          { action: 'delete', subject: 'Mail' },
         ],
       },
     },

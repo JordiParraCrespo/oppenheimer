@@ -27,12 +27,9 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 350.3KB measured (2026-10-29): main sat at 350.1KB, and Codex's cloud
-    // beside Claude Code's adds its row, its pane's words and the per-agent
-    // cloud rules to the entry and the context chunk (+0.2KB). What goes in a
-    // vendor group is the rule in `@oppenheimer/tsconfig/vite-chunks.mjs`.
-    // Each change and its reason is in git history.
-    budgetKB: 351,
+    // 351.4KB measured (2026-10-29, Settings → Mail); what goes in a vendor group is the rule in
+    // `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in git history.
+    budgetKB: 353,
   },
   // oppenheimer:end web
 ];
