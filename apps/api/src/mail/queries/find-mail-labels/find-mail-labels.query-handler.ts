@@ -4,7 +4,9 @@ import type { GmailLabel } from '../../infrastructure/gmail-provider.port';
 import { FindMailLabelsQuery } from './find-mail-labels.query';
 
 @QueryHandler(FindMailLabelsQuery)
-export class FindMailLabelsQueryHandler implements IQueryHandler<FindMailLabelsQuery, GmailLabel[]> {
+export class FindMailLabelsQueryHandler
+  implements IQueryHandler<FindMailLabelsQuery, GmailLabel[]>
+{
   constructor(private readonly gmail: GmailCallResolver) {}
 
   async execute({ scope, connectionId }: FindMailLabelsQuery): Promise<GmailLabel[]> {

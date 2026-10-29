@@ -1,7 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GmailGrantRevokedError, GmailNotFoundError } from '../infrastructure/gmail-provider.port';
 import { GmailGateway } from '../infrastructure/gmail.gateway';
+import { GmailGrantRevokedError, GmailNotFoundError } from '../infrastructure/gmail-provider.port';
 
 /**
  * Gmail is the one system the mail tools read, at the moment a bot asks.

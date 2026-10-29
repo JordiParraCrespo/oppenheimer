@@ -4,7 +4,9 @@ import type { GmailDraftPage } from '../../infrastructure/gmail-provider.port';
 import { FindMailDraftsQuery } from './find-mail-drafts.query';
 
 @QueryHandler(FindMailDraftsQuery)
-export class FindMailDraftsQueryHandler implements IQueryHandler<FindMailDraftsQuery, GmailDraftPage> {
+export class FindMailDraftsQueryHandler
+  implements IQueryHandler<FindMailDraftsQuery, GmailDraftPage>
+{
   constructor(private readonly gmail: GmailCallResolver) {}
 
   async execute({

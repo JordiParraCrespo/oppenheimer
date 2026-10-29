@@ -60,10 +60,9 @@ export class ConnectGmailHttpController {
     const id = await this.commandBus.execute<ConnectGmailCommand, AggregateID>(
       new ConnectGmailCommand({ scope, input: body }),
     );
-    const connection = await this.queryBus.execute<
-      FindGmailConnectionQuery,
-      GmailConnectionEntity
-    >(new FindGmailConnectionQuery({ scope, id }));
+    const connection = await this.queryBus.execute<FindGmailConnectionQuery, GmailConnectionEntity>(
+      new FindGmailConnectionQuery({ scope, id }),
+    );
     return this.mapper.toResponse(connection);
   }
 }

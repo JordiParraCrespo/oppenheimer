@@ -96,7 +96,11 @@ describe('ConnectGmailCommandHandler', () => {
   });
 
   it('reconnects an account already held in place, keeping its name', async () => {
-    const work = held({ googleSubject: 'sub-work', accountEmail: 'old@work.example', label: 'Work' });
+    const work = held({
+      googleSubject: 'sub-work',
+      accountEmail: 'old@work.example',
+      label: 'Work',
+    });
     work.revoke();
     const { connections, connect } = build([held(), work]);
 
@@ -104,7 +108,11 @@ describe('ConnectGmailCommandHandler', () => {
 
     expect(connections.insert).not.toHaveBeenCalled();
     expect(connections.save).toHaveBeenCalledWith(work);
-    expect(work).toMatchObject({ label: 'Work', accountEmail: 'ana@work.example', status: 'active' });
+    expect(work).toMatchObject({
+      label: 'Work',
+      accountEmail: 'ana@work.example',
+      status: 'active',
+    });
   });
 
   it('refuses a grant without the Gmail permission with MAIL_006 and stores nothing', async () => {

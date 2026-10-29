@@ -49,6 +49,7 @@ import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsCloudAgentsRouteImport } from './routes/_authenticated/settings/cloud-agents'
+import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authenticated/settings/mail'
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
@@ -60,6 +61,7 @@ import { Route as AuthenticatedPullsBotsBotIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedSessionsBotsBotIdRouteImport } from './routes/_authenticated/sessions/bots.$botId'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
+import { Route as AuthenticatedSettingsMailGoogleRouteImport } from './routes/_authenticated/settings/mail_.google'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
 import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './routes/_authenticated/bots_.$botId.settings/index'
 import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
@@ -280,6 +282,12 @@ const AuthenticatedSettingsCloudAgentsRoute =
     path: '/cloud-agents',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsMailRoute =
+  AuthenticatedSettingsMailRouteImport.update({
+    id: '/mail',
+    path: '/mail',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsModelProvidersRoute =
   AuthenticatedSettingsModelProvidersRouteImport.update({
     id: '/model-providers',
@@ -344,6 +352,12 @@ const AuthenticatedSettingsHostsNewRoute =
   AuthenticatedSettingsHostsNewRouteImport.update({
     id: '/hosts/new',
     path: '/hosts/new',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMailGoogleRoute =
+  AuthenticatedSettingsMailGoogleRouteImport.update({
+    id: '/mail_/google',
+    path: '/mail/google',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute =
@@ -432,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -449,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
@@ -486,6 +502,7 @@ export interface FileRoutesByTo {
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -502,6 +519,7 @@ export interface FileRoutesByTo {
   '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
@@ -548,6 +566,7 @@ export interface FileRoutesById {
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/_authenticated/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -565,6 +584,7 @@ export interface FileRoutesById {
   '/_authenticated/pulls_/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/_authenticated/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/_authenticated/settings/mail_/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
@@ -609,6 +629,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/cloud-agents'
+    | '/settings/mail'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
@@ -626,6 +647,7 @@ export interface FileRouteTypes {
     | '/pulls/bots/$botId'
     | '/sessions/bots/$botId'
     | '/settings/hosts/new'
+    | '/settings/mail/google'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
     | '/bots/$botId/settings/home-host'
@@ -663,6 +685,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/cloud-agents'
+    | '/settings/mail'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
@@ -679,6 +702,7 @@ export interface FileRouteTypes {
     | '/pulls/bots/$botId'
     | '/sessions/bots/$botId'
     | '/settings/hosts/new'
+    | '/settings/mail/google'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
     | '/bots/$botId/settings/home-host'
@@ -724,6 +748,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/settings/cloud-agents'
+    | '/_authenticated/settings/mail'
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
@@ -741,6 +766,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pulls_/bots/$botId'
     | '/_authenticated/sessions/bots/$botId'
     | '/_authenticated/settings/hosts/new'
+    | '/_authenticated/settings/mail_/google'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
     | '/_authenticated/bots_/$botId/settings/home-host'
@@ -1046,6 +1072,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCloudAgentsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/mail': {
+      id: '/_authenticated/settings/mail'
+      path: '/mail'
+      fullPath: '/settings/mail'
+      preLoaderRoute: typeof AuthenticatedSettingsMailRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/model-providers': {
       id: '/_authenticated/settings/model-providers'
       path: '/model-providers'
@@ -1121,6 +1154,13 @@ declare module '@tanstack/react-router' {
       path: '/hosts/new'
       fullPath: '/settings/hosts/new'
       preLoaderRoute: typeof AuthenticatedSettingsHostsNewRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/mail_/google': {
+      id: '/_authenticated/settings/mail_/google'
+      path: '/mail/google'
+      fullPath: '/settings/mail/google'
+      preLoaderRoute: typeof AuthenticatedSettingsMailGoogleRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/automations_/$automationId/sessions/$sessionId': {
@@ -1290,16 +1330,19 @@ const AuthenticatedPullsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsCloudAgentsRoute: typeof AuthenticatedSettingsCloudAgentsRoute
+  AuthenticatedSettingsMailRoute: typeof AuthenticatedSettingsMailRoute
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
+  AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsCloudAgentsRoute: AuthenticatedSettingsCloudAgentsRoute,
+  AuthenticatedSettingsMailRoute: AuthenticatedSettingsMailRoute,
   AuthenticatedSettingsModelProvidersRoute:
     AuthenticatedSettingsModelProvidersRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
@@ -1307,6 +1350,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsRepositoriesRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
+  AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
 }
 

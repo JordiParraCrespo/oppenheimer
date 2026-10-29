@@ -25,8 +25,8 @@ bot tools on top (`../versions/mvp/25-bots.md` §4.5).
 
 ## 1. Connecting Gmail
 
-Settings → Integrations → Gmail lists your connected accounts and offers
-**Connect Gmail**. A person connects up to five, the calendar's number.
+Settings → Mail lists your connected accounts and offers **Connect
+Gmail**; Google sends the browser back to `/settings/mail/google`. A person connects up to five, the calendar's number.
 
 - **The grant** is a second, incremental Google OAuth grant, like the
   calendar's: `access_type=offline`, `prompt=consent`,
@@ -120,8 +120,8 @@ Permissions, within the limits stated below.
 | `list_gmail_accounts` | Your connected accounts: label, address, status | auto |
 | `search_mail` | Search one account or all, in Gmail's query language; sender, recipients, subject, date, labels, a snippet, attachment names, the thread's id | auto |
 | `read_mail_thread` | One thread in full, as text, each message with its sender, recipients, date, labels and attachments | auto |
-| `list_labels` | The account's labels and system labels, with unread counts | auto |
-| `list_drafts` | The account's drafts, with recipients, subject and a snippet | auto |
+| `list_mail_labels` | The account's labels and system labels, with unread counts | auto |
+| `list_mail_drafts` | The account's drafts, with recipients, subject and a snippet | auto |
 
 ### 3.2 Attachments
 
@@ -129,12 +129,14 @@ Permissions, within the limits stated below.
 |------|------|---------|
 | `read_attachment` | One attachment of one message, opened for the bot | auto |
 
-- **Images** reach the bot as images (note 25 §3.1), and it can show one
-  back with `show_image`.
-- **PDFs** are read as text; a scanned PDF with no text layer goes to the
-  bot as page images, up to a page limit.
-- **Text, CSV, spreadsheets and Word documents** are read as text (a
-  sheet as CSV per tab), cut at a size limit with a note.
+- **Images** are shown to the person under the bot's reply, as `show_image`
+  shows them; a tool's answer cannot carry an image to the model yet, so the
+  bot is told it has not seen it.
+- **PDFs** are read as text, up to 50 pages; a scanned PDF with no text
+  layer is named as one and not read yet (page images are later).
+- **Text, CSV, HTML, spreadsheets, Word and PowerPoint files** are read as
+  text (a sheet as CSV per tab, a deck slide by slide), cut at a size limit
+  with a note.
 - **Anything else** is named, sized and not opened. Archives are never
   unpacked, and nothing is ever run.
 - An opened attachment is kept as a bot attachment for the turn, with the
@@ -278,7 +280,9 @@ message's id and a summary; the bot reads it with the tools above.
 
 ## 7. Slices
 
-1. **Connect and read.** The connection, several accounts, the read
+1. **Connect and read** (built 2026-10-29: the `mail` module, Settings →
+   Mail, and `list_gmail_accounts`, `search_mail`, `read_mail_thread`,
+   `list_mail_labels`, `list_mail_drafts`, `read_mail_attachment`). The connection, several accounts, the read
    tools and attachments (§3.1, §3.2), the Settings page.
 2. **Drafts and sending.** §3.3 and §3.4 with the cards, aliases,
    signatures, attachments, threading and the limits.
@@ -316,3 +320,7 @@ as a channel (`channels.md` §7.3).
   scheduled sends, every one asked; labels, read state, archive and trash
   (ask, never a permanent delete); new mail as a routine trigger. IMAP and
   Outlook move to later, behind the same port.
+- 2026-10-29: slice 1 built. Two changes from the plan above: the page is
+  Settings → Mail (not Integrations → Gmail), and an image attachment is
+  shown to the person rather than given to the model, which tool answers
+  cannot carry yet.

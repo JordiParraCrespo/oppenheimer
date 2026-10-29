@@ -2759,7 +2759,8 @@
       "hosts": "Hosts",
       "repositories": "Repositorios observados",
       "modelProviders": "Proveedores de modelos",
-      "cloudAgents": "Agentes en la nube"
+      "cloudAgents": "Agentes en la nube",
+      "mail": "Correo"
     },
     "profile": {
       "title": "Perfil",
@@ -2929,6 +2930,38 @@
         "saving": "Comprobando…",
         "failed": "No se pudo conectar."
       }
+    },
+    "mail": {
+      "title": "Correo",
+      "description": "Conecta tus propias cuentas de Gmail para que tus bots puedan buscar y leer tu correo y sus adjuntos. Solo las usan tus bots, y solo para ti.",
+      "unavailable": "Este servidor no puede conectar Gmail. Pide a quien lo administra que configure el cliente de Google y MAIL_TOKEN_KEY.",
+      "loadFailed": "No se pudieron cargar tus cuentas de Gmail.",
+      "emptyTitle": "Ninguna cuenta de Gmail conectada",
+      "emptyDescription": "Conecta una y pregunta a cualquier bot cosas como «¿qué envió la gestoría la semana pasada?» o «resume el correo sin leer de hoy». Google avisará de que la app aún no está verificada; es lo esperado.",
+      "connect": "Conectar Gmail",
+      "connectAnother": "Conectar otra cuenta",
+      "atLimit": "Puedes conectar hasta {{count}} cuentas.",
+      "startFailed": "No se pudo abrir el inicio de sesión de Google.",
+      "connected": "Conectada",
+      "needsReconnect": "Hay que volver a conectarla",
+      "rename": "Renombrar",
+      "reconnect": "Volver a conectar",
+      "disconnect": "Desconectar",
+      "disconnectLabel": "Desconectar {{email}}",
+      "disconnecting": "Desconectando…",
+      "disconnectTitle": "¿Desconectar {{email}}?",
+      "disconnectDescription": "Se revoca su acceso en Google y ningún bot podrá usarla hasta que la conectes de nuevo. No cambia nada en tu buzón.",
+      "disconnectFailed": "No se pudo desconectar.",
+      "renameTitle": "Renombrar cuenta",
+      "renameDescription": "Cómo llamáis tú y tus bots a {{email}}, por ejemplo «Personal» o «Trabajo».",
+      "labelField": "Nombre",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "renameFailed": "No se pudo renombrar la cuenta.",
+      "connecting": "Conectando Gmail…",
+      "refused": "Google no dio acceso a Gmail.",
+      "connectFailed": "No se pudo conectar Gmail.",
+      "back": "Volver a Correo"
     }
   },
   "nav": {

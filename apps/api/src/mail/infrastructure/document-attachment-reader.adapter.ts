@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { strFromU8, unzipSync } from 'fflate';
-import { htmlToText } from './gmail-message.util';
 import {
   ATTACHMENT_TEXT_MAX,
   type AttachmentReaderPort,
   type AttachmentReading,
 } from './attachment-reader.port';
+import { htmlToText } from './gmail-message.util';
 
 /** The most one file inside an Office document may unpack to: a zip bomb stops here. */
 const ZIP_ENTRY_MAX_BYTES = 20 * 1024 * 1024;

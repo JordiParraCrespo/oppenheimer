@@ -34,7 +34,9 @@ import { ConnectGmailCommand } from './connect-gmail.command';
  * address until the person renames it.
  */
 @CommandHandler(ConnectGmailCommand)
-export class ConnectGmailCommandHandler implements ICommandHandler<ConnectGmailCommand, AggregateID> {
+export class ConnectGmailCommandHandler
+  implements ICommandHandler<ConnectGmailCommand, AggregateID>
+{
   constructor(
     @Inject(GMAIL_PROVIDER)
     private readonly provider: GmailProviderPort,

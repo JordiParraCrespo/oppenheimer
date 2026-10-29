@@ -17,7 +17,11 @@ export class UpdateGmailConnectionCommandHandler
     private readonly connections: GmailConnectionRepositoryPort,
   ) {}
 
-  async execute({ scope, connectionId, input }: UpdateGmailConnectionCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    connectionId,
+    input,
+  }: UpdateGmailConnectionCommand): Promise<AggregateID> {
     const found = await this.connections.findOwnById(scope, connectionId);
     if (found.isNone()) throw new AppError(MailErrors.GMAIL_NOT_CONNECTED);
     const connection = found.unwrap();
