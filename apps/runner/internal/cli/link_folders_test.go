@@ -135,7 +135,7 @@ func TestALinkedWorktreeSessionLandsInItsWorkspace(t *testing.T) {
 	}))
 	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
 
-	dir := "/home/jordi/oppenheimer/acct/ws/sessions/bright-lark"
+	dir := "/home/jordi/oppenheimer/acct/ws/sessions.noindex/bright-lark"
 	if session.Dir != dir || session.Worktree != filepath.Join(dir, "mobile") {
 		t.Fatalf("dir %q worktree %q", session.Dir, session.Worktree)
 	}
@@ -166,7 +166,7 @@ func TestALinkedSessionOverTwoRepositoriesReportsBothCheckouts(t *testing.T) {
 	}))
 	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
 
-	dir := "/home/jordi/oppenheimer/acct/ws/sessions/bright-lark"
+	dir := "/home/jordi/oppenheimer/acct/ws/sessions.noindex/bright-lark"
 	if session.Cwd() != dir || session.Worktree != filepath.Join(dir, "api") {
 		t.Fatalf("cwd %q, first worktree %q", session.Cwd(), session.Worktree)
 	}
@@ -206,7 +206,7 @@ func TestALinkedSessionFromAnIdentityWithNoAccountLandsUnderTheHost(t *testing.T
 	}))
 	session := waitForState(t, p.svc, sessionsdomain.StateStarting)
 
-	if want := "/home/jordi/oppenheimer/host-1/ws/sessions/bright-lark"; session.Dir != want {
+	if want := "/home/jordi/oppenheimer/host-1/ws/sessions.noindex/bright-lark"; session.Dir != want {
 		t.Fatalf("dir %q, want %q", session.Dir, want)
 	}
 }
