@@ -242,7 +242,7 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      "A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.",
+      "A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.",
     nullable: true,
     type: String,
     example: 'session_014a8EH8DJs95X1iK8ZH9Y82',

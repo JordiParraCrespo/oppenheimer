@@ -24,6 +24,9 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   effortFor,
+  HOST_CLOUD_AGENT_IDS,
+  type HostCloudAgentId,
+  isHostCloudAgent,
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
@@ -70,6 +73,16 @@ export type PlaceHost = ChipSelectOption & { online: boolean };
  * says what starting from it means, and whether it can.
  */
 export type StartFromHost = PlaceHost & { disabled: boolean };
+
+/**
+ * A row of the place chip's Cloud tab for a cloud a host starts: its agent,
+ * the host it would start from (null greys it out), and its Start from pane.
+ */
+export interface HostCloudRow {
+  agent: HostCloudAgentId;
+  host: PlaceHost | null;
+  startFrom: StartFromHost[];
+}
 
 /** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
 export type PlaceCloud = ChipSelectOption & {
@@ -147,15 +160,38 @@ export function toHostOptions(
   }));
 }
 
-/** The one agent Claude Code's cloud runs, whichever host starts it. */
-const CLAUDE_CLOUD_AGENT = 'claude-code' satisfies CodingAgentId;
+/**
+ * The agent a host's cloud place falls back to when the engine picked runs in
+ * no vendor's cloud: Claude Code, the first that did.
+ */
+const DEFAULT_HOST_CLOUD_AGENT = HOST_CLOUD_AGENT_IDS[0];
+
+/** Where each host-cloud agent's copy lives under `sessions.new.where`. */
+const HOST_CLOUD_KEYS = {
+  'claude-code': 'claudeCloud',
+  codex: 'codexCloud',
+} as const satisfies Record<HostCloudAgentId, string>;
+
+export function hostCloudKey(agent: HostCloudAgentId): (typeof HOST_CLOUD_KEYS)[HostCloudAgentId] {
+  return HOST_CLOUD_KEYS[agent];
+}
 
 /**
- * Whether a draft's place is Claude Code's cloud: the cloud place started
- * from a host, not a vendor's. It runs Claude Code alone
- * (`createSessionSchema` refuses another agent there).
+ * The words for a place on the place chip: a host's cloud is named for the
+ * agent it runs ("Codex cloud"), every other place for itself.
  */
-export function isClaudeCloud(place: {
+export function placeLabelKey(place: SessionPlace, agent: CodingAgentId | null) {
+  return place === 'cloud' && isHostCloudAgent(agent)
+    ? (`sessions.new.where.${hostCloudKey(agent)}.place` as const)
+    : (`sessions.new.where.${place}.label` as const);
+}
+
+/**
+ * Whether a draft's place is a cloud a host starts — Claude Code's or Codex's
+ * — rather than a vendor's the console launches. It runs an agent of
+ * `HOST_CLOUD_AGENT_IDS` alone (`createSessionSchema` refuses another there).
+ */
+export function isHostCloud(place: {
   where: SessionPlace;
   cloudProvider: CloudAgentProviderId | null;
 }): boolean {
@@ -163,62 +199,70 @@ export function isClaudeCloud(place: {
 }
 
 /**
- * The engine a place takes: in Claude Code's cloud, Claude Code with its
- * default model unless Claude Code is already picked; anywhere else, the
- * engine as it is. The one rule the draft, the place chip and the engine
- * button all read.
+ * The engine a place takes: in a host's cloud, the engine as it is when it
+ * runs in its vendor's cloud (Claude Code, Codex), else Claude Code with its
+ * default model; anywhere else, the engine as it is. The one rule the draft,
+ * the place chip and the engine button all read.
  */
 export function engineForPlace(
   place: { where: SessionPlace; cloudProvider: CloudAgentProviderId | null },
   engine: { agent: CodingAgentId; model: string | null },
 ): { agent: CodingAgentId; model: string | null } {
-  if (!isClaudeCloud(place) || engine.agent === CLAUDE_CLOUD_AGENT) return engine;
-  return { agent: CLAUDE_CLOUD_AGENT, model: defaultModelFor(CLAUDE_CLOUD_AGENT) };
+  if (!isHostCloud(place) || isHostCloudAgent(engine.agent)) return engine;
+  return engineFor(DEFAULT_HOST_CLOUD_AGENT);
+}
+
+/** An agent with its default model. */
+export function engineFor(agent: CodingAgentId): { agent: CodingAgentId; model: string | null } {
+  return { agent, model: defaultModelFor(agent) };
 }
 
 /**
- * The Claude Code row's Start from pane: every host, the ones that cannot
- * start a cloud session disabled and saying why — offline, or a runner the
- * API says cannot — rather than hidden (`.agents/rules/frontend-ui.md`). One
- * that can names the claude.ai account it is signed in as, which is the
- * account the session runs on: two accounts are two hosts to pick between.
+ * A cloud row's Start from pane: every host, the ones that cannot start
+ * `agent`'s cloud disabled and saying why — offline, or a runner the API says
+ * cannot — rather than hidden (`.agents/rules/frontend-ui.md`). For Claude
+ * Code, one that can names the claude.ai account it is signed in as, which is
+ * the account the session runs on: two accounts are two hosts to pick between.
  */
 export function toStartFromOptions(
   hosts: readonly HostEntity[],
+  agent: HostCloudAgentId,
   labels: { offline: string; cannot: string },
 ): StartFromHost[] {
   return hosts.map((host) => {
     const reason = !host.online
       ? labels.offline
-      : host.details.startsCloud === false
+      : host.details.startsCloud[agent] === false
         ? labels.cannot
         : null;
+    const account = agent === 'claude-code' ? host.details.claudeAccount : null;
     return {
       value: host.id,
       label: host.name,
       keywords: host.hostname ?? undefined,
       online: host.online,
       disabled: reason !== null,
-      description: reason ?? host.details.claudeAccount ?? host.summary,
+      description: reason ?? account ?? host.summary,
     };
   });
 }
 
 /**
- * The host the place chip's Claude Code row starts a cloud session from
+ * The host the place chip's row for `agent`'s cloud starts a session from
  * (`product/versions/mvp/24-session-places.md` §7). Online hosts the API says
  * can start it come first, then ones it could not vouch for either way
- * (`startsCloud: null`: online, its link held by another replica), and within
- * each the picked host before the rest. Null when none qualifies, which greys
- * the row out; a host the API says cannot is never chosen.
+ * (`null`: online, its link held by another replica), and within each the
+ * picked host before the rest. Null when none qualifies, which greys the row
+ * out; a host the API says cannot is never chosen.
  */
-export function claudeCloudHost(
+export function hostCloudHost(
   hosts: readonly HostEntity[],
   pickedId: string | null,
+  agent: HostCloudAgentId,
 ): HostEntity | null {
   const picked = hosts.find((host) => host.id === pickedId);
   for (const verdict of [true, null] as const) {
-    const fits = (host: HostEntity) => host.online && host.details.startsCloud === verdict;
+    const fits = (host: HostEntity) => host.online && host.details.startsCloud[agent] === verdict;
     if (picked && fits(picked)) return picked;
     const other = hosts.find(fits);
     if (other) return other;
@@ -282,15 +326,12 @@ function toAgentOptions(): AgentOption[] {
 
 /**
  * The engine button's tabs: every agent a host runs, then the vendor's cloud
- * agent when the reader holds its key. In Claude Code's cloud, Claude Code
- * alone: it is the only agent that cloud runs.
+ * agent when the reader holds its key. In a host's cloud, the agents whose
+ * own cloud a host starts (Claude Code, Codex) alone.
  */
-export function toEngineAgents(
-  claudeCloud: boolean,
-  cloudAgent: AgentOption | null,
-): AgentOption[] {
+export function toEngineAgents(hostCloud: boolean, cloudAgent: AgentOption | null): AgentOption[] {
   const agents = toAgentOptions();
-  if (claudeCloud) return agents.filter((option) => option.id === CLAUDE_CLOUD_AGENT);
+  if (hostCloud) return agents.filter((option) => isHostCloudAgent(option.id));
   return cloudAgent ? [...agents, cloudAgent] : agents;
 }
 
@@ -458,12 +499,14 @@ export function toCreateInput(
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
   const [first, ...rest] = toCheckouts(draft.scope);
   if (!first) return null;
-  // Claude Code's cloud takes a task and one repository, nothing else: its
-  // files would stay on the host, which the cloud never sees.
+  // A host's cloud takes a task and one repository, nothing else: its files
+  // would stay on the host, which the cloud never sees. It runs Claude Code or
+  // Codex, whichever the draft holds (`engineForPlace`).
   if (draft.where === 'cloud') {
     if (!extras.prompt) return null;
     const { attachmentIds: _files, ...task } = common;
-    return { ...task, agent: 'claude-code', checkouts: [first], cloud: true };
+    const { agent } = engineForPlace(draft, draft);
+    return { ...task, agent, checkouts: [first], cloud: true };
   }
   return { ...common, checkouts: [first, ...rest] };
 }

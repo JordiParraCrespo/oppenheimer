@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
+import {
+  CODING_AGENT_IDS,
+  isHostCloudAgent,
+  SESSION_EFFORTS,
+  SESSION_PERMISSIONS,
+} from '../agents/catalog.js';
 import { PAGINATION } from '../constants/index.js';
 import {
   attachedFilesAreValid,
@@ -145,9 +150,11 @@ const createSessionFields = z.object({
    */
   folder: hostPathSchema.optional(),
   /**
-   * A cloud session: the host starts the task in Claude Code's cloud
-   * (`claude --cloud`) from the one checkout's repository and keeps nothing
-   * running; the session lives on claude.ai/code. Claude Code only, with a
+   * A cloud session: the host starts the task in its agent's cloud from the
+   * one checkout's repository and keeps nothing running — Claude Code's
+   * (`claude --cloud`; the session lives on claude.ai/code) or Codex's
+   * (`codex cloud exec`; the task lives on chatgpt.com/codex, and the host
+   * reports where it stands). An agent of `HOST_CLOUD_AGENT_IDS` only, with a
    * `prompt` (`product/research/cloud-agents.md` §5B).
    */
   cloud: z.boolean().optional(),
@@ -210,14 +217,14 @@ export const createSessionSchema = createSessionFields
     path: ['attachmentIds'],
   })
   /**
-   * A cloud session is Claude Code, started from one repository with a task
-   * and nothing else: the files of a first task stay on the host, which the
-   * cloud never sees.
+   * A cloud session is Claude Code or Codex, started from one repository with
+   * a task and nothing else: the files of a first task stay on the host, which
+   * the cloud never sees.
    */
   .refine(
     (value) =>
       !value.cloud ||
-      (value.agent === 'claude-code' &&
+      (isHostCloudAgent(value.agent) &&
         value.checkouts.length === 1 &&
         value.prompt !== undefined &&
         !value.attachmentIds?.length),

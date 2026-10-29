@@ -813,3 +813,9 @@ earlier note:
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it
   in the bot's answer (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
+  cloud works, though the research note put Codex cloud last: a Codex row
+  under Cloud starts the task from a host with `codex cloud exec`, and the
+  host, not the browser extension, reports its status off
+  `codex cloud list --json`, since Codex's CLI answers it
+  (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).

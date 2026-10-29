@@ -373,7 +373,7 @@
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
       "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
-      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de su agente. Respóndela allí, en claude.ai o chatgpt.com/codex.",
       "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
@@ -632,11 +632,20 @@
           "description": "Abre un directorio existente tal como está · no se clona nada"
         },
         "cloud": {
-          "label": "Nube de Claude Code",
-          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
+          "label": "Nube",
+          "description": "Inicia la tarea en la nube de Claude Code o de Codex desde este host · el motor dice cuál"
         },
         "claudeCloud": {
           "label": "Claude Code",
+          "place": "Nube de Claude Code",
+          "from": "Desde {{host}}",
+          "noHost": "Necesita un host",
+          "startFrom": "Empezar desde",
+          "cannot": "Este runner no puede iniciarla"
+        },
+        "codexCloud": {
+          "label": "Codex",
+          "place": "Nube de Codex",
           "from": "Desde {{host}}",
           "noHost": "Necesita un host",
           "startFrom": "Empezar desde",
@@ -1231,6 +1240,12 @@
         "failed": "El agente falló en la nube de {{vendor}}",
         "cancelled": "Detenido en {{vendor}}",
         "expired": "La ejecución caducó en la nube de {{vendor}}"
+      },
+      "codex": {
+        "eyebrow": "Nube de Codex",
+        "statusSource": "Este estado llega del host que la inició, que pregunta a Codex por sus tareas cada minuto mientras está en línea.",
+        "open": "Abrir en ChatGPT",
+        "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
       }
     }
   },

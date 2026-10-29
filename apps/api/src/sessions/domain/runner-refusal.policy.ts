@@ -1,7 +1,7 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 import type { SessionPlace } from '@oppenheimer/shared';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
-import type { RunnerCapability } from '@oppenheimer/shared/protocol';
+import { CODING_AGENTS, isCodingAgentId, isHostCloudAgent } from '@oppenheimer/shared/agents';
+import { HOST_CLOUD_CAPABILITIES, type RunnerCapability } from '@oppenheimer/shared/protocol';
 import { SessionErrors } from './sessions.errors';
 
 /** What is about to be sent: the agent to start and where it runs. */
@@ -38,18 +38,21 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
 }
 
 /**
- * Whether a runner whose hello named `capabilities` takes a session in `place`:
- * a worktree session always, a folder session only when it named
+ * Whether a runner whose hello named `capabilities` takes `launch`'s place: a
+ * worktree session always, a folder session only when it named
  * `session.folder` (it would refuse a create with no checkouts otherwise), a
- * cloud session only when it named `session.cloud` (it would open a terminal).
- * A cloud session no host starts (Cursor's) is never sent to a runner.
+ * cloud session only when it named the capability for the cloud's agent (it
+ * would open a terminal, or refuse the agent). A cloud session no host starts
+ * (Cursor's) is never sent to a runner.
  */
 export function runnerTakesPlace(
-  place: SessionPlace,
+  launch: RunnerLaunch,
   capabilities: readonly RunnerCapability[],
 ): boolean {
-  if (place === 'folder') return capabilities.includes('session.folder');
-  if (place === 'cloud') return capabilities.includes('session.cloud');
+  if (launch.place === 'folder') return capabilities.includes('session.folder');
+  if (launch.place === 'cloud') {
+    return isHostCloudAgent(launch.agent) && capabilities.includes(HOST_CLOUD_CAPABILITIES[launch.agent]);
+  }
   return true;
 }
 
@@ -72,7 +75,7 @@ export function runnerRefusal(
   if (!runnerCanStart(launch.agent, runner.probedTools)) {
     return SessionErrors.AGENT_UNSUPPORTED_BY_RUNNER;
   }
-  if (runner.capabilities !== null && !runnerTakesPlace(launch.place, runner.capabilities)) {
+  if (runner.capabilities !== null && !runnerTakesPlace(launch, runner.capabilities)) {
     return launch.place === 'cloud'
       ? SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER
       : SessionErrors.FOLDER_UNSUPPORTED_BY_RUNNER;

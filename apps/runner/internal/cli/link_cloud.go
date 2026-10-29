@@ -1,10 +1,12 @@
 package cli
 
-// A cloud session (`session.create` with `cloud`): the task starts in Claude
-// Code's cloud with this host's own `claude`, and the host keeps nothing of it
+// A cloud session (`session.create` with `cloud`): the task starts in its
+// agent's cloud with this host's own CLI, and the host keeps nothing of it
 // (product/research/cloud-agents.md §5B). No terminal, no worktree left on
-// disk, and nothing the sessions service tracks, so no poll ever reports it
-// stopped: the session lives on claude.ai/code from here.
+// disk, and nothing the sessions service tracks, so no poll of tmux ever
+// reports it stopped. Claude Code's lives on claude.ai/code from here;
+// Codex's on chatgpt.com/codex, and the host reads where it stands
+// (link_cloud_codex.go).
 
 import (
 	"context"
@@ -18,14 +20,30 @@ import (
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
+// The catalog ids a cloud session can name: the agents a host starts in
+// their vendor's cloud (`HOST_CLOUD_AGENT_IDS` in @oppenheimer/shared).
+const (
+	claudeCloudAgent = "claude-code"
+	codexCloudAgent  = "codex"
+)
+
 // CloudStarter starts a task in Claude Code's cloud from a checkout
 // (sessions/adapters/cloud).
 type CloudStarter interface {
 	Start(ctx context.Context, dir, prompt string) (cloud.Started, error)
 }
 
-// createCloud fetches the repository with the frame's own token, checks its
-// base out in a scratch directory, runs `claude --cloud` there and reports
+// CodexCloud starts tasks in Codex cloud and reads their status
+// (sessions/adapters/cloud).
+type CodexCloud interface {
+	Start(ctx context.Context, repository, branch, prompt string) (cloud.Started, error)
+	List(ctx context.Context, cursor string) (cloud.CodexPage, error)
+}
+
+// createCloud starts the session in its agent's cloud. For Codex it is
+// createCodexCloud. For Claude Code it fetches the repository with the
+// frame's own token, checks its base out in a scratch directory, runs
+// `claude --cloud` there and reports
 // the cloud session's id as `session.started`'s `agentSessionId`, then removes
 // the scratch directory. Its progress is the console's usual stepper: host,
 // clone, worktree (the scratch checkout), agent (the CLI).
@@ -53,9 +71,22 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
 		nil, time.Now,
 	)
-	if len(m.Checkouts) != 1 || m.Prompt == "" || m.Agent != "claude-code" {
+	stage := func(s sessionsdomain.Stage, download bool, run func() error) error {
+		began := time.Now()
+		steps.stage(sessionsdomain.StageEvent{Stage: s, Download: download})
+		if err := run(); err != nil {
+			return err
+		}
+		steps.stage(sessionsdomain.StageEvent{Stage: s, Done: true, Took: time.Since(began)})
+		return nil
+	}
+	if len(m.Checkouts) != 1 || m.Prompt == "" || (m.Agent != claudeCloudAgent && m.Agent != codexCloudAgent) {
 		fail(sessionsdomain.ErrInvalidInput.WithDetail(
-			"a cloud session is Claude Code with one checkout and a task"))
+			"a cloud session is Claude Code or Codex with one checkout and a task"))
+		return
+	}
+	if m.Agent == codexCloudAgent {
+		h.createCodexCloud(ctx, m, ledger, stage, fail)
 		return
 	}
 	if h.app.Worktrees == nil {
@@ -96,17 +127,7 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 	gitCtx := sessionsdomain.WithSession(ctx, id)
 
 	remote := "https://github.com/" + checkout.RepositoryFullName + ".git"
-	stage := func(s sessionsdomain.Stage, run func() error) error {
-		began := time.Now()
-		steps.stage(sessionsdomain.StageEvent{Stage: s, Download: s == sessionsdomain.StageClone && !h.app.Worktrees.Has(repo)})
-		if err := run(); err != nil {
-			return err
-		}
-		steps.stage(sessionsdomain.StageEvent{Stage: s, Done: true, Took: time.Since(began)})
-		return nil
-	}
-
-	if err := stage(sessionsdomain.StageClone, func() error {
+	if err := stage(sessionsdomain.StageClone, !h.app.Worktrees.Has(repo), func() error {
 		return h.app.Worktrees.Ensure(gitCtx, repo, remote, checkout.BaseBranch)
 	}); err != nil {
 		fail(err)
@@ -114,7 +135,7 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 	}
 
 	scratch := filepath.Join(os.TempDir(), "oppenheimer-cloud", m.SessionID)
-	if err := stage(sessionsdomain.StageWorktree, func() error {
+	if err := stage(sessionsdomain.StageWorktree, false, func() error {
 		return h.app.Worktrees.AddDetached(gitCtx, repo, scratch, checkout.BaseBranch)
 	}); err != nil {
 		fail(err)
@@ -130,7 +151,7 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 		starter = cloud.Starter{}
 	}
 	var started cloud.Started
-	if err := stage(sessionsdomain.StageAgent, func() error {
+	if err := stage(sessionsdomain.StageAgent, false, func() error {
 		started, err = starter.Start(ctx, scratch, m.Prompt)
 		return err
 	}); err != nil {
@@ -139,7 +160,7 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 	}
 	// Remembered before it is reported: a report lost with a restart is
 	// recovered from here, never by starting again.
-	if err := ledger.record(m.SessionID, started, time.Now()); err != nil {
+	if err := ledger.record(m.SessionID, m.Agent, started, time.Now()); err != nil {
 		h.logger.Warn("cloud start not remembered", "session", m.SessionID, "error", err)
 	}
 	h.reportCloudStarted(m.SessionID, started)

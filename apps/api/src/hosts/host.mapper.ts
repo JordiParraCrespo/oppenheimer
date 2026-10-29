@@ -283,11 +283,13 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.online = online;
     dto.status = hostStatusOf({ unpaired: entity.isUnpaired, online, runningSessions });
     dto.runningSessionCount = runningSessions;
-    dto.startsCloudSessions = hostStartsCloud({
+    const reach = {
       online: online && !entity.isUnpaired,
       liveCapabilities: view.liveCapabilities ?? null,
       installedTools: this.toInstalledTools(entity.capabilities),
-    });
+    };
+    dto.startsCloudSessions = hostStartsCloud(reach, 'claude-code');
+    dto.startsCodexCloudSessions = hostStartsCloud(reach, 'codex');
     dto.claudeAccount = this.toClaudeAccount(entity.capabilities);
     dto.lastSeenAt = entity.lastSeenAt;
     dto.machine = view.inventory ? this.toMachineResponse(view.inventory) : null;

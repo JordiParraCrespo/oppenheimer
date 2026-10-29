@@ -26,14 +26,23 @@ describe('runnerCanStart', () => {
 
 describe('runnerTakesPlace', () => {
   it('takes a worktree session from any runner, a folder session only from one that said so', () => {
-    expect(runnerTakesPlace('worktree', [])).toBe(true);
-    expect(runnerTakesPlace('folder', ['session.image'])).toBe(false);
-    expect(runnerTakesPlace('folder', ['session.folder'])).toBe(true);
+    const at = (place: 'worktree' | 'folder') => ({ agent: 'shell', place });
+    expect(runnerTakesPlace(at('worktree'), [])).toBe(true);
+    expect(runnerTakesPlace(at('folder'), ['session.image'])).toBe(false);
+    expect(runnerTakesPlace(at('folder'), ['session.folder'])).toBe(true);
   });
 
-  it('takes a cloud session only from a runner that named session.cloud', () => {
-    expect(runnerTakesPlace('cloud', ['session.folder'])).toBe(false);
-    expect(runnerTakesPlace('cloud', ['session.cloud'])).toBe(true);
+  it('takes a cloud session only from a runner that named the capability for its agent', () => {
+    const claude = { agent: 'claude-code', place: 'cloud' as const };
+    const codex = { agent: 'codex', place: 'cloud' as const };
+    expect(runnerTakesPlace(claude, ['session.folder'])).toBe(false);
+    expect(runnerTakesPlace(claude, ['session.cloud'])).toBe(true);
+    // A runner from before Codex cloud names session.cloud alone, and would refuse it.
+    expect(runnerTakesPlace(codex, ['session.cloud'])).toBe(false);
+    expect(runnerTakesPlace(codex, ['session.cloud', 'session.cloud.codex'])).toBe(true);
+    expect(
+      runnerTakesPlace({ agent: 'opencode', place: 'cloud' }, ['session.cloud', 'session.cloud.codex']),
+    ).toBe(false);
   });
 });
 
@@ -61,6 +70,12 @@ describe('runnerRefusal', () => {
     const launch = { agent: 'claude-code', place: 'cloud' as const };
     expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_037');
     expect(runnerRefusal(launch, online(['session.cloud']))).toBeNull();
+  });
+
+  it('refuses a Codex cloud session on a live runner that did not name session.cloud.codex', () => {
+    const launch = { agent: 'codex', place: 'cloud' as const };
+    expect(runnerRefusal(launch, online(['session.cloud']))?.code).toBe('SESSIONS_037');
+    expect(runnerRefusal(launch, online(['session.cloud', 'session.cloud.codex']))).toBeNull();
   });
 
   it('does not ask an offline host about the place: the dispatch checks again at hello', () => {

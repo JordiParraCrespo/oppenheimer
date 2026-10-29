@@ -67,9 +67,9 @@ describe('toCreateInput', () => {
     });
   });
 
-  it('sends a cloud session as Claude Code with its checkout and task, and no files', () => {
+  it('sends a cloud session with its checkout and task, and no files', () => {
     const input = toCreateInput(
-      { ...draft, where: 'cloud', agent: 'codex' },
+      { ...draft, where: 'cloud', agent: 'claude-code' },
       { prompt: 'Fix it', attachmentIds: ['file-1'] },
     );
 
@@ -155,5 +155,22 @@ describe('toStartCloudInput', () => {
     const claudeCloud: NewSessionDraft = { ...draft, where: 'cloud' };
     expect(toStartCloudInput(claudeCloud, 'Fix it')).toBeNull();
     expect(toCreateInput(claudeCloud, extras)).toMatchObject({ cloud: true });
+  });
+
+  /**
+   * A host's cloud runs the agent the draft holds: Codex picked there is a
+   * Codex cloud task, which a regression that pinned Claude Code would start
+   * with `claude --cloud` instead. Any other agent falls back to Claude Code.
+   */
+  it('sends a host’s cloud with Codex when Codex is picked, and Claude Code for any other agent', () => {
+    const cloud: NewSessionDraft = { ...draft, where: 'cloud' };
+    expect(toCreateInput({ ...cloud, agent: 'codex' }, extras)).toMatchObject({
+      agent: 'codex',
+      cloud: true,
+    });
+    expect(toCreateInput({ ...cloud, agent: 'grok' }, extras)).toMatchObject({
+      agent: 'claude-code',
+      cloud: true,
+    });
   });
 });

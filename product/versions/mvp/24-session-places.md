@@ -156,6 +156,36 @@ host and then lives on claude.ai/code:
   claude.ai/code, where it is archived. Its input (a prompt, an answer, a
   file) is refused with `SESSIONS_038`: it is answered on claude.ai.
 
+### Codex's cloud, the same place (2026-10-29)
+
+The owner asked for Codex cloud tasks the way Claude Code's cloud works:
+started from a host, run on the vendor's machines, followed here
+(`../../next-steps/cloud-agents.md`, "Codex is built"). It is the same
+place with the agent `codex`; what differs is the vendor's CLI:
+
+- **What the runner does.** `codex cloud exec --env <repository> --branch
+  <base> <task>` on the checkout's base branch, in the Codex environment
+  labelled with the repository's full name, then its bare name. Codex reads
+  the branch from GitHub, so nothing is fetched or checked out, and the
+  create's token goes unused. It reports the task's id on `session.started`
+  and the session as working. It names `session.cloud.codex` in its hello;
+  a runner that names only `session.cloud` is refused a Codex one with
+  `SESSIONS_037`.
+- **Its status comes from the host.** Codex's CLI answers it, so the
+  runner asks `codex cloud list --json` once a minute while a task it
+  started in the last week has not settled, and reports a change: pending
+  is working, ready or applied is done, an error is the session failed. A
+  failed ask doubles the wait up to a quarter of an hour. No browser
+  extension is involved; the host must be online for the state to move.
+- **What the console shows.** A **Codex** row under Cloud beside Claude
+  Code's, with its own Start from pane over the hosts that can
+  (`startsCodexCloudSessions`: its runner named `session.cloud.codex` and
+  `codex` is installed). In a host's Start in pane the place is *Cloud*,
+  and the engine says whose: in it the engine button offers Claude Code and
+  Codex alone. The chip reads "mac-studio · Codex cloud". The pane says
+  *Codex cloud*, *Open in ChatGPT*, and `codex apply <id>`, which applies
+  the task's diff to a checkout.
+
 ## Decided
 
 - 2026-10-14: two places: the runner's home `~/.oppenheimer/`, and a work
@@ -199,3 +229,8 @@ host and then lives on claude.ai/code:
   from names it on each host that can start the session. Two accounts are
   two hosts to pick between, until multi-account
   (`../../next-steps/multi-account.md`) gives one host several.
+- 2026-10-29: Codex's cloud is the same place as Claude Code's, with the
+  agent `codex`: the host starts it with `codex cloud exec` and reports its
+  status off `codex cloud list` (§7, "Codex's cloud, the same place").
+  In a host's cloud the engine button now offers Claude Code and Codex,
+  which replaces the 2026-10-28 "Claude Code alone".

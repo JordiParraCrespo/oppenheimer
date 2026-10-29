@@ -1,15 +1,18 @@
 import { useCloudAgentStatus, useHosts } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { HOST_CLOUD_AGENT_IDS, type HostCloudAgentId } from '@oppenheimer/shared/agents';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useController } from 'react-hook-form';
+import { useController, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { PlaceSelect } from '../components/place-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import {
-  claudeCloudHost,
+  engineFor,
   engineForPlace,
+  hostCloudHost,
+  hostCloudKey,
   toCloudOptions,
   toHostOptions,
   toStartFromOptions,
@@ -17,18 +20,20 @@ import {
 
 /**
  * The place chip, bound to the draft: a host and where on it — a new
- * worktree, a folder already there, or Claude Code's cloud started from it —
- * or a vendor's cloud the console launches the session at (`cloudProvider`). The Claude
- * Code row under Cloud picks a host that can start it (`claudeCloudHost`). It reads the hosts and
+ * worktree, a folder already there, or Claude Code's or Codex's cloud started
+ * from it — or a vendor's cloud the console launches the session at
+ * (`cloudProvider`). Each host-cloud row under Cloud picks a host that can
+ * start its agent's cloud (`hostCloudHost`). It reads the hosts and
  * whether the reader can run in the cloud, because it draws both. Add host…
  * asks the console for its Add a host dialog; the machine it pairs is picked
  * here the moment Use this host is pressed. A vendor with no key yet goes to
  * Settings → Cloud agents. `?host=` still names one in the address, for a
  * link that arrives with a machine.
  *
- * A place is picked with the engine it takes (`engineForPlace`): Claude
- * Code's cloud brings Claude Code, the only agent it runs. The Start from
- * pane's rows are judged here from the hosts (`toStartFromOptions`).
+ * A place is picked with the engine it takes (`engineForPlace`): a host's
+ * cloud keeps Claude Code or Codex and brings Claude Code in place of any
+ * other, and a host-cloud row brings its own agent. The Start from panes'
+ * rows are judged here from the hosts (`toStartFromOptions`).
  *
  * A cloud pick runs the vendor's own agent, so it is the agent chip's too
  * (`NewSessionAgent`): the draft keeps the host, folder and host agent as they
@@ -43,13 +48,42 @@ export function NewSessionPlace() {
   const { field: host } = useController({ control, name: 'hostId' });
   const { field: where } = useController({ control, name: 'where' });
   const { field: cloudProvider } = useController({ control, name: 'cloudProvider' });
+  // The engine names the place only while it is a host's cloud ("Codex
+  // cloud"), so an engine picked anywhere else does not redraw this chip.
+  const cloudAgent = useWatch({
+    control,
+    name: ['where', 'agent'],
+    compute: ([place, picked]) => (place === 'cloud' ? picked : null),
+  });
 
   const resolveError = useErrorMessage();
   const hosts = useHosts();
   const status = useCloudAgentStatus();
   useSearchPick(search.host, hosts.data, true, (picked) => host.onChange(picked.id));
   const hostOptions = toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') });
-  const claudeHost = claudeCloudHost(hosts.data ?? [], host.value);
+  const hostClouds = HOST_CLOUD_AGENT_IDS.map((rowAgent) => {
+    const from = hostCloudHost(hosts.data ?? [], host.value, rowAgent);
+    return {
+      agent: rowAgent,
+      host: hostOptions.find((option) => option.value === from?.id) ?? null,
+      startFrom: toStartFromOptions(hosts.data ?? [], rowAgent, {
+        offline: t('sessions.new.host.offline'),
+        cannot: t(`sessions.new.where.${hostCloudKey(rowAgent)}.cannot`),
+      }),
+    };
+  });
+
+  /** A host-cloud row's pick: the host, the cloud place, and that agent with its default model. */
+  function pickHostCloud(hostId: string, rowAgent: HostCloudAgentId) {
+    if (cloudProvider.value !== null) cloudProvider.onChange(null);
+    if (hostId !== host.value) host.onChange(hostId);
+    if (getValues('agent') !== rowAgent) {
+      const engine = engineFor(rowAgent);
+      setValue('agent', engine.agent);
+      setValue('model', engine.model);
+    }
+    where.onChange('cloud');
+  }
 
   return (
     <PlaceSelect
@@ -58,11 +92,8 @@ export function NewSessionPlace() {
       // the list answers, the way the project chip treats a project.
       hostId={hosts.data?.some((candidate) => candidate.id === host.value) ? host.value : null}
       place={where.value}
-      claudeCloud={hostOptions.find((option) => option.value === claudeHost?.id) ?? null}
-      startFrom={toStartFromOptions(hosts.data ?? [], {
-        offline: t('sessions.new.host.offline'),
-        cannot: t('sessions.new.where.claudeCloud.cannot'),
-      })}
+      cloudAgent={cloudAgent}
+      hostClouds={hostClouds}
       clouds={toCloudOptions(status.data, { connect: t('sessions.new.where.connect') })}
       cloud={cloudProvider.value}
       onHostChange={host.onChange}
@@ -77,6 +108,7 @@ export function NewSessionPlace() {
         }
         where.onChange(place);
       }}
+      onHostCloudChange={pickHostCloud}
       onCloudChange={(provider) => {
         cloudProvider.onChange(provider);
         where.onChange('cloud');
