@@ -7,6 +7,7 @@ import type {
   BotPermission,
   BotSubagentRun,
   BotToolGroup,
+  BotTurnOrigin,
   Scope,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
@@ -58,6 +59,8 @@ export interface BotToolCallContext {
   permission: BotPermission;
   /** What this turn may still spend on calls a tool limits per turn. */
   budget: BotTurnBudget;
+  /** Why the turn exists; a tool offered only to some turns reads it (`notOn`). */
+  origin?: BotTurnOrigin;
   /**
    * The scopes of the credential the turn was sent with; null for a browser
    * session. What a tool saves to act later (a routine) keeps them, so a
@@ -180,6 +183,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
   /** A call sends what it carries out of Oppenheimer (a comment on GitHub); the card says so. */
   sharesOutside?: boolean;
   /**
+   * The turns not offered the tool, by why they exist: a goal's continuation
+   * is not offered `set_goal`, so a goal never renews itself. The prompt's
+   * list and the turn's tools read the same filter.
+   */
+  notOn?: readonly BotTurnOrigin[];
+  /**
    * The one thing a call acts on, when there is one: the repository a
    * comment goes to, the session a stop ends. A card offers to always allow
    * the tool on it, and a grant for it lets the next call run. From the
@@ -231,6 +240,8 @@ export interface BotToolDefinition {
   /** What the permission layer reads of it (`BotToolTraits`). */
   readonly traits: BotToolTraits;
   readonly sharesOutside: boolean;
+  /** The turns not offered the tool (`BotToolSpec.notOn`). */
+  readonly notOn: readonly BotTurnOrigin[];
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
   /**
@@ -298,6 +309,7 @@ export function defineBotTool<Input extends z.ZodType>(
     setupStep: spec.setupStep,
     scope: spec.scope,
     readOnly: spec.readOnly === true,
+    notOn: spec.notOn ?? [],
     traits,
     sharesOutside: spec.sharesOutside === true,
     bind: (context) => {

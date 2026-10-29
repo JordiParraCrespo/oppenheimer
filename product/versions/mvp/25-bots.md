@@ -373,6 +373,43 @@ that did not cover the tool never runs.
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
+| `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+
+**Goals** (2026-10-29, from Grok Bot's goals,
+`research/lessons-from-grok-bot.md` §9 row 10). A goal is for work that
+takes several steps on the bot's own: "get the release branch green". When
+a turn of the bot ends and the goal is still open, one continuation turn is
+queued. It runs in the background lane, after your messages and other bots',
+and it is opened by a line: "Goal · continuation 2 of 5".
+
+- **Bounds.** A goal takes at most 5 continuations unless the bot asks for
+  up to 10. A bot has one goal at a time; setting another replaces it.
+- **Who it runs as.** A continuation runs as the owner, with the reach of
+  the turn that set the goal (its credential scopes and zone), as a
+  subscription keeps them.
+- **No self-renewal.** A continuation is not offered `set_goal`, so a goal
+  never renews itself.
+- **One at a time.** Only the goal's own turns move it on: the turn that
+  set it, and its continuations. A person's message, a routine or a wake
+  ending in between changes nothing. The continuation is keyed by the goal
+  and its number, so an end delivered twice queues one, and its count is
+  claimed in the same transaction that queues it. A Stop that won the race
+  leaves nothing to queue.
+- **How it ends.** The bot ends it with `end_goal`, and the call is the
+  record. The goal also ends when:
+  - the owner presses Stop on the goal above the composer, which also
+    cancels a continuation still waiting;
+  - its continuations run out;
+  - a turn of it (the one that set it, or a continuation) fails or is
+    stopped. A person's Stop is a stop, and a failure would only fail again.
+
+  Each of these is a line in the chat outside any turn. However a goal
+  ends, or is replaced by a new one, a continuation of it still waiting is
+  cancelled with it.
+- **Clearing the chat** deletes the goal, since a continuation would read a
+  history that no longer exists.
+- **No card.** Neither tool asks. The spend is bounded, every continuation
+  is a line, and Stop is one click.
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |

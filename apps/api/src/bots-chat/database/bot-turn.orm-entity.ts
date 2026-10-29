@@ -41,7 +41,10 @@ export interface BotTurnPlanLimitsRecord {
   `"status" IN ('queued', 'running', 'completed', 'cancelled', 'failed')`,
 )
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
-@Check('CHK_bot_turn_origin', `"origin" IN ('message', 'approval', 'routine', 'subscription')`)
+@Check(
+  'CHK_bot_turn_origin',
+  `"origin" IN ('message', 'approval', 'routine', 'subscription', 'goal')`,
+)
 @Check(
   'CHK_bot_turn_failure',
   `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,

@@ -872,3 +872,9 @@ earlier note:
   inside its turn, and read a session's log from the entry its own input
   followed (`versions/mvp/27-bot-subscriptions.md` §2,
   `versions/mvp/25-bots.md` §4.2).
+- Row 10 of `research/lessons-from-grok-bot.md` §9 placed goals in note 26
+  as a routine the bot sets on itself. On 2026-10-29 they were built
+  instead as a goal of their own in `versions/mvp/25-bots.md` §4.1. A
+  routine's run is a schedule's slot, but a goal goes on when the bot's
+  last turn ends. So it is a bounded count of continuation turns, at most
+  10, keyed in the turn queue like a wake, with Stop above the composer.

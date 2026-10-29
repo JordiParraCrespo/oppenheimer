@@ -3,6 +3,7 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
+import { GoalEventLine } from '@/features/bots/components/goal-event-line';
 import { PeerEventCard } from '@/features/bots/components/peer-event-card';
 import { RoutineEventLine } from '@/features/bots/components/routine-event-line';
 import { SessionEventLine } from '@/features/bots/components/session-event-line';
@@ -30,12 +31,14 @@ const EVENT_LINES: {
     <PeerEventCard event={event} messageId={message.id} content={message.content} />
   ),
   session: ({ event }) => <SessionEventLine event={event} />,
+  goal: ({ event }) => <GoalEventLine event={event} />,
 };
 
 /**
  * What Oppenheimer told the bot, in the chat, drawn by its kind
  * (`EVENT_LINES`): a decided approval, a routine's activity, another bot's
- * message or answer, a followed session that woke it. Read from the event's
+ * message or answer, a followed session that woke it, the bot's own goal
+ * going on or ending. Read from the event's
  * own fields, never its words, which are the bot's. Never a bubble from you:
  * you did not write it. An event this client cannot read is its first line.
  */

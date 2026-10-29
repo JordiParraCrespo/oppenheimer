@@ -181,4 +181,26 @@ describe('BotEventLine', () => {
     expect(screen.getByText('bots.chat.event.session.failed|Research')).toBeTruthy();
     expect(failed.container.querySelector('.text-danger')).toBeTruthy();
   });
+  it('draws a goal’s continuation and how it ended from the event, a stop in red', () => {
+    const goal = (activity: 'continued' | 'stopped') =>
+      ({
+        id: `g-${activity}`,
+        role: 'event',
+        content: 'Continue toward your goal…',
+        event: {
+          kind: 'goal',
+          activity,
+          goalId: 'goal-1',
+          objective: 'Ship it',
+          step: 2,
+          limit: 5,
+          reason: activity === 'stopped' ? 'failed' : null,
+        },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={goal('continued')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.continued/)).toBeTruthy();
+    const stopped = render(<BotEventLine message={goal('stopped')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.stopped/)).toBeTruthy();
+    expect(stopped.container.querySelector('.text-danger')).toBeTruthy();
+  });
 });

@@ -14,6 +14,7 @@ export const BOT_ATTACHMENT_REPOSITORY = Symbol('BOT_ATTACHMENT_REPOSITORY');
 export const BOT_ATTACHMENT_FILES = Symbol('BOT_ATTACHMENT_FILES');
 /** What sessions each bot follows (`27-bot-subscriptions.md`). */
 export const BOT_SUBSCRIPTION_REPOSITORY = Symbol('BOT_SUBSCRIPTION_REPOSITORY');
+export const BOT_GOAL_REPOSITORY = Symbol('BOT_GOAL_REPOSITORY');
 /** A bot's tool settings and standing grants (`25-bots.md` §5). */
 export const BOT_TOOL_PERMISSION_REPOSITORY = Symbol('BOT_TOOL_PERMISSION_REPOSITORY');
 /** A bot's plain-language permission rules (`25-bots.md` §5). */

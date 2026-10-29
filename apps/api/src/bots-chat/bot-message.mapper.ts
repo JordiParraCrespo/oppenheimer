@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
@@ -21,6 +22,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotGoalEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
@@ -237,6 +239,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'goal':
+      return Object.assign(new BotGoalEventResponseDto(), event);
   }
 }
 
@@ -297,6 +301,19 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       turn: typeof raw.turn === 'number' ? raw.turn : 0,
       state,
       ...matchOf(raw.match),
+    };
+  }
+  if (raw.kind === 'goal') {
+    const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.goalId !== 'string') return null;
+    return {
+      kind: 'goal',
+      activity,
+      goalId: raw.goalId,
+      objective: String(raw.objective ?? ''),
+      step: typeof raw.step === 'number' ? raw.step : 0,
+      limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
   return null;
