@@ -261,12 +261,13 @@ describe('mail (integration)', () => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
 
-    const raced = await Promise.all([
-      sends.claimUnderCap(claimOf(account.id), since, 3),
-      sends.claimUnderCap(claimOf(account.id), since, 3),
-    ]);
+    const racers = [claimOf(account.id), claimOf(account.id)];
+    const raced = await Promise.all(racers.map((send) => sends.claimUnderCap(send, since, 3)));
 
     expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
     await expect(sends.countSince(account.id, since)).resolves.toBe(3);
+    // The one going out asks how many went before it.
+    const winner = racers[raced.findIndex((claim) => claim.outcome === 'claimed')];
+    await expect(sends.countSince(account.id, since, winner.id)).resolves.toBe(2);
   });
 });

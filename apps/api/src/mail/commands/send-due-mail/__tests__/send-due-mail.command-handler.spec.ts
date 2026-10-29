@@ -62,12 +62,12 @@ function scheduled(subject: string): MailSendEntity {
   );
 }
 
-function setup(due: MailSendEntity[], sentToday = 1) {
+function setup(due: MailSendEntity[], othersToday = 0) {
   const sends = {
     findByApproval: vi.fn(),
     claim: vi.fn(),
     save: vi.fn(async () => undefined),
-    countSince: vi.fn(async () => sentToday),
+    countSince: vi.fn(async () => othersToday),
     findRecentOwn: vi.fn(),
     findDue: vi.fn(async () => due),
     claimDue: vi.fn(async () => true),
@@ -131,11 +131,17 @@ describe('SendDueMailCommandHandler', () => {
     );
   });
 
-  it('counts the send it is making once against the daily cap', async () => {
-    const atCap = setup([scheduled('Fiftieth')], 50);
+  it('holds the send it is making to the daily cap, counting the sends before it', async () => {
+    const fiftieth = scheduled('Fiftieth');
+    const atCap = setup([fiftieth], 49);
     await expect(atCap.tick()).resolves.toBe(1);
+    expect(atCap.sends.countSince).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Date),
+      fiftieth.id,
+    );
 
-    const over = setup([scheduled('Fifty-first')], 51);
+    const over = setup([scheduled('Fifty-first')], 50);
     await expect(over.tick()).resolves.toBe(0);
     expect(over.deliver).not.toHaveBeenCalled();
     expect(over.sends.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }));

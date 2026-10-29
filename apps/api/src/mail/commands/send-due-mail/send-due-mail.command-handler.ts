@@ -62,9 +62,9 @@ export class SendDueMailCommandHandler implements ICommandHandler<SendDueMailCom
     }
     const scope = emptyScope(send.userId, send.organizationId);
     const connection = await this.gmail.activeConnection(scope, send.connectionId);
-    // This send is counted already: it is the one past the cap only when the count is over.
+    // Claimed, it is going out already: the cap is about the sends before it.
     const daily = dailyRefusal(
-      (await this.sends.countSince(connection.id, dayBefore(new Date()))) - 1,
+      await this.sends.countSince(connection.id, dayBefore(new Date()), send.id),
     );
     if (daily) throw new AppError(MailErrors.DAILY_LIMIT_REACHED, { detail: daily });
     const sent = await this.gmail.call(connection, (provider, grant) =>

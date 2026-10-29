@@ -24,8 +24,9 @@ export interface MailSendRepositoryPort {
   /**
    * Sends from one account that went since a moment, by when they went,
    * counting those still going out; failed, waiting and cancelled ones do not count.
+   * A send already going out asks with its own id, to count only the others.
    */
-  countSince(connectionId: string, since: Date): Promise<number>;
+  countSince(connectionId: string, since: Date, excludingId?: string): Promise<number>;
   /** Scheduled sends whose time has come, oldest first, at most `limit`; every workspace's. */
   findDue(now: Date, limit: number): Promise<MailSendEntity[]>;
   /**

@@ -256,18 +256,14 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       summarize: (input, context) =>
         `At ${formatToolTime(new Date(input.send_at), context.timeZone)}: ${sendSummary(storedPlan(input.plan))}`,
       run: async (input, context) => {
-        if (!context.approvalId) {
-          throw new BotToolRefusal(
-            'Mail is scheduled only from an approved card. Call schedule_mail again to ask.',
-          );
-        }
+        const approvalId = approvedCard(context, 'scheduled', 'schedule_mail');
         const planned = storedPlan(input.plan);
         const id = await this.commandBus.execute<ScheduleMailCommand, AggregateID>(
           new ScheduleMailCommand({
             scope: context.owner,
             plan: planned,
             sendAt: new Date(input.send_at),
-            approvalId: context.approvalId,
+            approvalId,
             botId: context.botId,
           }),
         );
@@ -321,7 +317,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       input: tool.input,
       normalize: async (input, context) => ({ ...input, plan: await tool.planOf(input, context) }),
       summarize: (input) => sendSummary(storedPlan(input.plan)),
-      run: async (input, context) => this.send(storedPlan(input.plan), context),
+      run: async (input, context) => this.send(storedPlan(input.plan), context, tool.name),
     });
   }
 
@@ -346,17 +342,17 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     });
   }
 
-  private async send(planned: MailPlan, context: BotToolCallContext & { approvalId?: string }) {
-    if (!context.approvalId) {
-      throw new BotToolRefusal(
-        'Mail is sent only from an approved card. Call send_mail again to ask.',
-      );
-    }
+  private async send(
+    planned: MailPlan,
+    context: BotToolCallContext & { approvalId?: string },
+    tool: string,
+  ) {
+    const approvalId = approvedCard(context, 'sent', tool);
     await this.commandBus.execute<SendMailCommand, AggregateID>(
       new SendMailCommand({
         scope: context.owner,
         plan: planned,
-        approvalId: context.approvalId,
+        approvalId,
         botId: context.botId,
         localFiles: await this.chatFiles.bytes(planned, context),
       }),
@@ -419,6 +415,23 @@ function requestOf(input: MessageInput): Omit<MailRequest, 'localFiles'> {
 }
 
 /** The plan the card stored; a call carried out without one is refused, never planned anew. */
+/**
+ * The approval a mail write carries out: a yes on its card, or a refusal. A
+ * write that always asks runs only from its card, never on its own.
+ */
+function approvedCard(
+  context: { approvalId?: string },
+  done: 'sent' | 'scheduled',
+  tool: string,
+): string {
+  if (!context.approvalId) {
+    throw new BotToolRefusal(
+      `Mail is ${done} only from an approved card. Call ${tool} again to ask.`,
+    );
+  }
+  return context.approvalId;
+}
+
 function storedPlan(stored: unknown): MailPlan {
   const parsed = mailPlanSchema.safeParse(stored);
   if (!parsed.success) {

@@ -185,14 +185,24 @@ export function describePlan(plan: MailPlan): string {
 
 /** One sent message, as `list_sent_mail` shows it. */
 export function describeSend(send: MailSendEntity, timeZone: string): string {
-  const state = {
-    scheduled: `scheduled (id ${send.id}) for ${formatToolTime(send.scheduledFor, timeZone)}`,
-    sending: 'started, never confirmed',
-    sent: `sent ${formatToolTime(send.sentAt, timeZone)}`,
-    failed: 'failed',
-    cancelled: `cancelled before ${formatToolTime(send.scheduledFor, timeZone)}`,
-  }[send.status];
+  const state = sendState(send, timeZone);
   return `${state} from ${send.accountEmail} to ${send.recipients.join(', ')}: "${send.subject}"${send.gmailMessageId ? ` (message ${send.gmailMessageId})` : ''}`;
+}
+
+/** Where a send stands, reading only the time its status has. */
+function sendState(send: MailSendEntity, timeZone: string): string {
+  switch (send.status) {
+    case 'scheduled':
+      return `scheduled (id ${send.id}) for ${formatToolTime(send.scheduledFor, timeZone)}`;
+    case 'sending':
+      return 'started, never confirmed';
+    case 'sent':
+      return `sent ${formatToolTime(send.sentAt, timeZone)}`;
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return `cancelled before ${formatToolTime(send.scheduledFor, timeZone)}`;
+  }
 }
 
 /**

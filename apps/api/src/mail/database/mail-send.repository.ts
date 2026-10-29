@@ -77,8 +77,8 @@ export class MailSendRepository
     await this.repository.update({ id, organizationId }, changes);
   }
 
-  async countSince(connectionId: string, since: Date): Promise<number> {
-    return sentSince(this.repository, connectionId, since);
+  async countSince(connectionId: string, since: Date, excludingId?: string): Promise<number> {
+    return sentSince(this.repository, connectionId, since, excludingId);
   }
 
   async findDue(now: Date, limit: number): Promise<MailSendEntity[]> {
@@ -143,13 +143,15 @@ function sentSince(
   repository: Repository<MailSendOrmEntity>,
   connectionId: string,
   since: Date,
+  excludingId?: string,
 ): Promise<number> {
-  return repository
+  const query = repository
     .createQueryBuilder('send')
     .where('send.connectionId = :connectionId', { connectionId })
     .andWhere(
       `((send.status = 'sent' AND send.sentAt > :since) OR (send.status = 'sending' AND send.updatedAt > :since))`,
       { since },
-    )
-    .getCount();
+    );
+  if (excludingId) query.andWhere('send.id != :excludingId', { excludingId });
+  return query.getCount();
 }
