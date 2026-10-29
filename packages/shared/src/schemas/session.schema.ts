@@ -226,9 +226,7 @@ export const createSessionSchema = createSessionFields
   .refine(
     (value) =>
       !value.cloud ||
-      (isHostCloudAgent(value.agent) &&
-        value.checkouts.length === 1 &&
-        value.prompt !== undefined),
+      (isHostCloudAgent(value.agent) && value.checkouts.length === 1 && value.prompt !== undefined),
     { path: ['cloud'] },
   );
 
