@@ -11,8 +11,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * history; null until a routine first watches the account, when it starts
  * from now rather than from the account's past.
  */
-export class AddMailTriggers1791004700000 implements MigrationInterface {
-  name = 'AddMailTriggers1791004700000';
+export class AddMailTriggers1791005100000 implements MigrationInterface {
+  name = 'AddMailTriggers1791005100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await this.recheck(queryRunner, {
