@@ -25,7 +25,12 @@ export interface BotPromptInput {
   description: string;
   soul: string;
   instructions: string;
+  /** Its own facts kept in mind (`memoryInMind`), oldest first. */
   facts: readonly string[];
+  /** What it keeps in mind about the person, shared by every bot of theirs. */
+  personFacts?: readonly string[];
+  /** How many more facts it keeps to look up with `recall`. */
+  factsToRecall?: number;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
@@ -62,8 +67,18 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
+  if (input.personFacts?.length) {
+    parts.push(
+      `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
+  }
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
+  }
+  if (input.factsToRecall) {
+    parts.push(
+      `You also keep ${input.factsToRecall} fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
+    );
   }
   return parts.join('\n\n');
 }

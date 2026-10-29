@@ -86,10 +86,21 @@ function document(name: 'soul' | 'instructions', content: string, revision: numb
   });
 }
 
-function fact(id: string, content: string) {
+function fact(
+  id: string,
+  content: string,
+  kept: { tier?: 'profile' | 'log'; scope?: 'bot' | 'person'; botId?: string } = {},
+) {
   return BotMemoryFactEntity.create({
     id,
-    props: { organizationId: 'org-1', botId: BOT_ID, content, source: 'user' },
+    props: {
+      organizationId: 'org-1',
+      botId: kept.botId ?? BOT_ID,
+      content,
+      source: 'user',
+      tier: kept.tier ?? 'profile',
+      scope: kept.scope ?? 'bot',
+    },
   });
 }
 
@@ -234,7 +245,45 @@ describe('BotSelfToolsFactory', () => {
       botId: BOT_ID,
       content: 'Deploys go out on Fridays',
     });
-    expect(result.content).toContain(`Remembered ${FACT_ID}: "Deploys go out on Fridays"`);
+    expect(result.content).toContain(`Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`);
+  });
+
+  // What breaks this: a detail written into every prompt, or a fact about
+  // the person kept by this bot alone, so their other bots ask again.
+  it('keeps a fact to look up, or about the person for all their bots, when it says so', async () => {
+    const { commandBus, call } = setup(
+      (query) => {
+        if (query instanceof FindBotQuery) return bot();
+        if (query instanceof FindBotMemoryFactQuery)
+          return fact(FACT_ID, 'Ana is the release manager', { tier: 'log', scope: 'person' });
+      },
+      () => FACT_ID,
+    );
+    const result = await call('remember', {
+      fact: 'Ana is the release manager',
+      tier: 'log',
+      about: 'person',
+    });
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      tier: 'log',
+      memoryScope: 'person',
+    });
+    expect(result.content).toContain('(to look up, about the person)');
+  });
+
+  it('says which recalled facts another of the person’s bots shared', async () => {
+    const { call } = setup((query) => {
+      if (query instanceof FindBotMemoryQuery) {
+        return [
+          fact(FACT_ID, 'Ana prefers squash merges', {
+            scope: 'person',
+            botId: '99999999-9999-4999-8999-999999999999',
+          }),
+        ];
+      }
+    });
+    const result = await call('recall', { query: 'squash' });
+    expect(result.content).toContain('in mind, about the person, shared by another of their bots');
   });
 
   it('does not remember when learning is off: nothing is saved and it is told to ask first', async () => {

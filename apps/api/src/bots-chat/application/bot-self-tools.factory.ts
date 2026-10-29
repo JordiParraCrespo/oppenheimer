@@ -5,6 +5,7 @@ import {
   BOT_DOCUMENT_MAX,
   BOT_MEMORY_FACT_MAX,
   BOT_MEMORY_FACTS_MAX,
+  BOT_MEMORY_TIERS,
   BOT_NAME_MAX,
   BOT_REVISION_NOTE_MAX,
   BOT_SECTIONS,
@@ -241,7 +242,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       scope: 'bots:write',
       setupStep:
         'Save what you learned about them that will matter later (their repositories, their hosts, when they work) with `remember`, saying where you learned it.',
-      description: `Saves one fact to your memory, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation. Only when "Learn automatically" is on in your settings; when it is off nothing is saved, and you ask the person in the chat first. Keep facts durable (preferences, names, decisions), one per call; you hold at most ${BOT_MEMORY_FACTS_MAX}, so forget one that no longer holds. Check recall first to avoid duplicates.`,
+      description: `Saves one fact to your memory, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation. Only when "Learn automatically" is on in your settings; when it is off nothing is saved, and you ask the person in the chat first. Keep facts durable (preferences, names, decisions), one per call; you hold at most ${BOT_MEMORY_FACTS_MAX}, so forget one that no longer holds. Check recall first to avoid duplicates. tier "profile" (the default) keeps it in mind in every turn: who the person is, how they like to work, standing rules. tier "log" keeps it to look up with recall: a detail, a past decision, something you will want only now and then. about "person" is for a fact about the person themselves (their name, their role, their preferences), which every bot of theirs then knows too; about "you" (the default) keeps it yours.`,
       input: z.strictObject({
         fact: z
           .string()
@@ -249,6 +250,16 @@ export class BotSelfToolsFactory implements BotToolArea {
           .min(1)
           .max(BOT_MEMORY_FACT_MAX)
           .describe('The fact, as one self-contained sentence.'),
+        tier: z
+          .enum(BOT_MEMORY_TIERS)
+          .optional()
+          .describe('"profile" (default): in mind every turn. "log": looked up with recall.'),
+        about: z
+          .enum(['you', 'person'])
+          .optional()
+          .describe(
+            '"you" (default): yours alone. "person": about the person, shared by all their bots.',
+          ),
       }),
       run: async (input, context) => {
         const bot = await this.bot(context);
@@ -260,12 +271,14 @@ export class BotSelfToolsFactory implements BotToolArea {
             scope: context.owner,
             botId: context.botId,
             content: input.fact,
+            tier: input.tier,
+            memoryScope: input.about === 'person' ? 'person' : 'bot',
           }),
         );
         const saved = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
           new FindBotMemoryFactQuery({ scope: context.owner, botId: context.botId, factId }),
         );
-        return `Remembered ${saved.id}: "${saved.content}". The person can edit or delete it in Settings → Memory.`;
+        return `Remembered ${saved.id} (${describeKept(saved)}): "${saved.content}". The person can edit or delete it in Settings → Memory.`;
       },
     });
   }
@@ -275,7 +288,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'forget',
       scope: 'bots:write',
       description:
-        'Deletes one fact from your memory, by its id from recall. It cannot be undone; the person sees what was forgotten in the chat. To correct a fact, forget it and remember the new one.',
+        "Deletes one fact from your memory, by its id from recall. It cannot be undone; the person sees what was forgotten in the chat. To correct a fact, forget it and remember the new one. A fact another of the person's bots shared is that bot's to forget: tell the person instead.",
       input: z.strictObject({ fact_id: z.uuid().describe('A fact id from recall.') }),
       run: async (input, context) => {
         const fact = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
@@ -302,7 +315,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'recall',
       readOnly: true,
       scope: 'bots:read',
-      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
+      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and what the person's other bots know about the person. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
       input: z.strictObject({
         query: z
           .string()
@@ -330,7 +343,7 @@ export class BotSelfToolsFactory implements BotToolArea {
           words.length ? `Facts matching "${input.query}"` : 'Your newest facts',
           shown.map(
             (fact) =>
-              `${fact.id} "${fact.content}" [saved by ${fact.source === 'bot' ? 'you' : 'the person'}, ${formatToolTime(fact.updatedAt, context.timeZone)}]`,
+              `${fact.id} "${fact.content}" [${describeKept(fact, context.botId)}; saved by ${fact.source === 'bot' ? 'a bot' : 'the person'}, ${formatToolTime(fact.updatedAt, context.timeZone)}]`,
           ),
           facts.length === 0
             ? 'Your memory is empty.'
@@ -435,4 +448,12 @@ function describeDocument(document: BotDocumentEntity, max: number | null): stri
 function countHits(content: string, words: readonly string[]): number {
   const text = content.toLowerCase();
   return words.filter((word) => text.includes(word)).length;
+}
+
+/** How a fact is kept, in a few words: in mind or to look up, yours or about the person. */
+function describeKept(fact: BotMemoryFactEntity, botId?: string): string {
+  const tier = fact.tier === 'profile' ? 'in mind' : 'to look up';
+  if (fact.scope === 'bot') return tier;
+  const by = botId && fact.botId !== botId ? ', shared by another of their bots' : '';
+  return `${tier}, about the person${by}`;
 }

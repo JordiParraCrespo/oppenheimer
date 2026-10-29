@@ -8,7 +8,10 @@ import { userActor } from '../../domain/bot.types';
 import { BotErrors } from '../../domain/bots.errors';
 import { UpdateBotMemoryFactCommand } from './update-bot-memory-fact.command';
 
-/** Reword a fact; the person who did becomes its source. */
+/**
+ * Reword a fact, keep it in mind or for lookup, or share it with every bot of
+ * its owner; whoever rewords it becomes its source.
+ */
 @CommandHandler(UpdateBotMemoryFactCommand)
 export class UpdateBotMemoryFactCommandHandler
   implements ICommandHandler<UpdateBotMemoryFactCommand, AggregateID>
@@ -25,7 +28,7 @@ export class UpdateBotMemoryFactCommandHandler
       BotErrors.MEMORY_FACT_NOT_FOUND,
       { detail: `No memory fact with id ${factId}` },
     );
-    fact.edit(command.content, userActor(scope.userId));
+    fact.edit(command.change, userActor(scope.userId));
     if ((await this.memory.save(fact)) === 'missing') {
       throw new AppError(BotErrors.MEMORY_FACT_NOT_FOUND);
     }

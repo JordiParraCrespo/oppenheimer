@@ -9,6 +9,19 @@ import type { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 import { BotMemoryFactOrmEntity } from './bot-memory-fact.orm-entity';
 import type { BotMemoryFactRepositoryPort } from './bot-memory-fact.repository.port';
 
+/**
+ * A bot's facts, and the `person` facts its owner's other bots keep: what
+ * one bot learned about its owner, every bot of theirs reads
+ * (`IDX_bot_memory_fact_bot`, `IDX_bot_memory_fact_person` by the sibling
+ * bots' ids, those through `IDX_bot_created_by`). A bot with no owner has no
+ * siblings.
+ */
+const KEPT_BY_OR_SHARED_WITH = `(fact."botId" = :botId OR (fact."scope" = 'person' AND fact."botId" IN (
+  SELECT sibling.id FROM bot sibling
+   WHERE sibling."organizationId" = fact."organizationId"
+     AND sibling."createdByUserId" = (SELECT owner."createdByUserId" FROM bot owner WHERE owner.id = :botId)
+)))`;
+
 @Injectable()
 export class BotMemoryFactRepository
   extends ScopedRepositoryBase<BotMemoryFactOrmEntity>
@@ -27,17 +40,15 @@ export class BotMemoryFactRepository
   }
 
   async findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]> {
-    return this.newestFirst(this.scopedQuery(scope).andWhere('fact.botId = :botId', { botId }));
+    return this.newestFirst(this.scopedQuery(scope).andWhere(KEPT_BY_OR_SHARED_WITH, { botId }));
   }
 
   async findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]> {
     return this.newestFirst(
       this.repository
         .createQueryBuilder('fact')
-        .where('fact.organizationId = :organizationId AND fact.botId = :botId', {
-          organizationId,
-          botId,
-        }),
+        .where('fact.organizationId = :organizationId', { organizationId })
+        .andWhere(KEPT_BY_OR_SHARED_WITH, { botId }),
     );
   }
 
@@ -85,7 +96,7 @@ export class BotMemoryFactRepository
     const result = await this.repository
       .createQueryBuilder()
       .update(BotMemoryFactOrmEntity)
-      .set({ content: fact.content, source: fact.source })
+      .set({ content: fact.content, source: fact.source, tier: fact.tier, scope: fact.scope })
       .where('id = :id AND "organizationId" = :organizationId AND "botId" = :botId', {
         id: fact.id,
         organizationId: fact.organizationId,

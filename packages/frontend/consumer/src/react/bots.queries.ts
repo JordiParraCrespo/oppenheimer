@@ -22,6 +22,7 @@ import {
   type BotGroupEntity,
   type BotMemoryFactEntity,
   type SaveBotDocumentInput,
+  type UpdateBotFactInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
 import { useConsumerApp } from './context';
@@ -475,10 +476,9 @@ export function useAddBotFact(
   });
 }
 
-export interface UpdateBotFactVariables {
+export interface UpdateBotFactVariables extends UpdateBotFactInput {
   id: string;
   factId: string;
-  content: string;
 }
 
 export function useUpdateBotFact(
@@ -487,8 +487,8 @@ export function useUpdateBotFact(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, factId, content }: UpdateBotFactVariables) =>
-      app.bots.updateFact(id, factId, content),
+    mutationFn: ({ id, factId, ...change }: UpdateBotFactVariables) =>
+      app.bots.updateFact(id, factId, change),
     ...withCacheOnSuccess(options, (saved, { id }) =>
       settleFacts(queryClient, id, replaced(saved)),
     ),

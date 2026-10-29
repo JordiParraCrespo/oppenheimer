@@ -386,7 +386,15 @@
       "saveFailed": "No se ha podido guardar el dato.",
       "forget": "Olvidar «{{fact}}»",
       "forgetFailed": "No se ha podido olvidar el dato.",
-      "loadFailed": "No se ha podido cargar lo que recuerda el bot."
+      "loadFailed": "No se ha podido cargar lo que recuerda el bot.",
+      "aboutYou": "Sobre ti",
+      "lookedUp": "Se consulta",
+      "sharedBy": "Compartido por otro de tus bots · {{date}}",
+      "keptActions": "Dónde se guarda «{{fact}}»",
+      "toLog": "Consultarlo solo cuando haga falta",
+      "toProfile": "Tenerlo presente en cada chat",
+      "toPerson": "Compartirlo con todos tus bots",
+      "toBot": "Guardarlo solo para este bot"
     },
     "routines": {
       "title": "Rutinas",
