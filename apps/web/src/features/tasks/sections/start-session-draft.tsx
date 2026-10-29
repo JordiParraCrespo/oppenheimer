@@ -73,6 +73,33 @@ export function StartSessionDraft() {
           label: host.name,
           description: host.online ? host.summary : t('tasks.start.offlineShort'),
         }))}
+        cloudHosts={found.hosts.map((host) => {
+          // Offline is not "cannot": the session waits for the host, as on any place.
+          const cannot = host.online && host.details.startsCloud === false;
+          return {
+            value: host.id,
+            label: host.name,
+            disabled: cannot,
+            // The account a cloud session runs on is the host's, so each host says whose.
+            description: cannot
+              ? t('tasks.start.cannotStartCloud')
+              : (host.details.claudeAccount ?? t('tasks.start.accountUnknown')),
+          };
+        })}
+        account={(hostId) => {
+          const host = found.hosts.find((row) => row.id === hostId);
+          if (!host) return null;
+          return (
+            <FieldDescription>
+              {host.details.claudeAccount
+                ? t('tasks.start.cloudAccount', {
+                    account: host.details.claudeAccount,
+                    host: host.name,
+                  })
+                : t('tasks.start.cloudAccountUnknown', { host: host.name })}
+            </FieldDescription>
+          );
+        }}
         places={placeOptions(t, (provider) =>
           Boolean(cloudStatus?.providers.some((row) => row.id === provider && row.connected)),
         )}

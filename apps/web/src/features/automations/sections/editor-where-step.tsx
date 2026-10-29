@@ -179,15 +179,29 @@ export function EditorWhereStep({
                 searchPlaceholder={t('automations.editor.searchHosts')}
                 emptyText={(query) => t('automations.editor.noMatch', { query })}
                 value={draft.hostId}
-                options={hosts.map((host) => ({
-                  value: host.id,
-                  label: host.name,
-                  // In Claude Code's cloud, the account a run goes out on is the host's.
-                  description:
-                    rule.host === 'starts'
-                      ? (host.details.claudeAccount ?? host.summary)
-                      : host.summary,
-                }))}
+                // The account a cloud run goes out on is the picked host's.
+                meta={
+                  rule.host === 'starts'
+                    ? (hosts.find((host) => host.id === draft.hostId)?.details.claudeAccount ??
+                      undefined)
+                    : undefined
+                }
+                options={hosts.map((host) => {
+                  // In Claude Code's cloud, the account a run goes out on is the
+                  // host's; a host that is online and cannot start one is shown, off.
+                  const cannot =
+                    rule.host === 'starts' && host.online && host.details.startsCloud === false;
+                  return {
+                    value: host.id,
+                    label: host.name,
+                    disabled: cannot,
+                    description: cannot
+                      ? t('automations.editor.cannotStartCloud')
+                      : rule.host === 'starts'
+                        ? (host.details.claudeAccount ?? t('automations.editor.accountUnknown'))
+                        : host.summary,
+                  };
+                })}
                 onValueChange={(hostId) => onChange({ hostId })}
               />
             </FieldSelectRow>

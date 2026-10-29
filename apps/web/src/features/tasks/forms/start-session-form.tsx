@@ -29,7 +29,8 @@ import { agentFor, asAgent, asPlace, type StartSessionValues } from '../lib/star
  * defaulted from the project. Where is a host, Claude Code's cloud started
  * from a host (Claude Code only), or Cursor's cloud with no host (Cursor's
  * own agent and pick of model, offered once the reader has a key); a cloud
- * session needs a task. ⌘↩ starts. `offline` is the note for a host that is
+ * session needs a task; in Claude Code's cloud each host names the claude.ai
+ * account it would run on, and the picked one is said under the chips. ⌘↩ starts. `offline` is the note for a host that is
  * away, and the button then reads Queue session. The prompt can be dictated.
  *
  * Validated with React Hook Form's own rules: the body the API checks is built
@@ -39,8 +40,10 @@ export function StartSessionForm({
   values,
   repositories,
   hosts,
+  cloudHosts,
   places,
   offline,
+  account,
   voice,
   pending,
   error,
@@ -50,10 +53,14 @@ export function StartSessionForm({
   values: StartSessionValues;
   repositories: ChipSelectOption[];
   hosts: ChipSelectOption[];
+  /** The hosts as a place whose host only starts the session lists them: each with its claude.ai account. */
+  cloudHosts: ChipSelectOption[];
   /** Where it can run: a host, Claude Code's cloud, Cursor's; one that cannot now is disabled. */
   places: ChipSelectOption[];
   /** The note under the pickers when the picked host is offline. */
   offline: (hostId: string) => ReactNode;
+  /** The line naming the claude.ai account a session the picked host starts runs on. */
+  account: (hostId: string) => ReactNode;
   voice: VoiceInput;
   pending: boolean;
   error: ResolvedErrorMessage | null;
@@ -146,7 +153,7 @@ export function StartSessionForm({
               <ChipSelect
                 value={field.value}
                 onValueChange={field.onChange}
-                options={hosts}
+                options={rule.host === 'starts' ? cloudHosts : hosts}
                 icon={<Cpu />}
                 aria-label={t('tasks.start.host')}
                 placeholder={t('tasks.start.hostPlaceholder')}
@@ -187,6 +194,7 @@ export function StartSessionForm({
           />
         )}
       </div>
+      {hostId && rule.host === 'starts' ? account(hostId) : null}
       {needsTask ? <Callout>{t('tasks.start.cloudNeedsTask')}</Callout> : null}
       {note}
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />

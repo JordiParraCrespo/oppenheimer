@@ -179,6 +179,14 @@ automation's runs now pick **where** as New session does:
   (`CHK_automation_revision_place_host`). The editor's Runs on card leads
   with **Runs in**; Started from is the host for Claude Code's cloud, and
   Cursor has no host or agent row, its models being Cursor's.
+- **Which Claude account.** A Claude Code cloud session runs on the
+  claude.ai account the starting host's `claude` is signed in as (24 §7), so
+  picking the host picks the account. The owner asked to see it as they
+  pick: in Claude Code cloud, the task dialog's host list names each host's
+  account and a line under the chips says which one the session runs on,
+  and the automation editor's *Started from* names it beside the host. A
+  host online whose runner cannot start a cloud session is shown, off;
+  an offline one stays pickable, as the session waits for it.
 - **A run.** A host place starts the session as before. Claude Code's cloud
   is a `CreateSessionCommand` with `cloud: true` from the revision's host;
   Cursor a `StartCloudSessionCommand` as the owner, on the owner's key.

@@ -280,6 +280,8 @@
     "runsOn": "Se ejecuta en",
     "host": "Host",
     "startedFrom": "Iniciada desde",
+    "accountUnknown": "Cuenta aún no informada",
+    "cannotStartCloud": "Este runner no puede iniciarla",
     "chooseHost": "Elige un host",
     "searchHosts": "Buscar hosts",
     "agent": "Agente",

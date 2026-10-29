@@ -278,6 +278,8 @@
     "runsOn": "Runs on",
     "host": "Host",
     "startedFrom": "Started from",
+    "accountUnknown": "Account not reported yet",
+    "cannotStartCloud": "This runner can’t start it",
     "chooseHost": "Choose a host",
     "searchHosts": "Search hosts",
     "agent": "Agent",
