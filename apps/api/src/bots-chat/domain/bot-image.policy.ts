@@ -2,20 +2,30 @@ import type { HistoryMessage } from './bot-history.policy';
 
 /**
  * What a turn is told of an earlier message's images (`25-bots.md` §3.1): a
- * turn is sent only its own message's images, so an earlier message that
- * carried some says so in its text, and that the bot cannot see them now.
- * The history itself (`botHistory`) reads back whatever text it is given.
+ * turn is sent only its own message's images, so an earlier message of
+ * yours that carried some says so in its text, and that the bot cannot see
+ * them now; one of the bot's says which it showed (`show_image`, §4.7). The
+ * history itself (`botHistory`) reads back whatever text it is given.
  */
 export function withEarlierImages(
-  message: HistoryMessage & { attachments: readonly unknown[] },
+  message: HistoryMessage & { attachments: readonly { name: string }[] },
 ): HistoryMessage {
   const { role, content, event, attachments } = message;
-  if (role !== 'user' || attachments.length === 0) return { role, content, event };
-  return {
-    role,
-    content: [content.trim(), imagesNote(attachments.length)].filter(Boolean).join('\n\n'),
-    event,
-  };
+  if (attachments.length === 0) return { role, content, event };
+  const note =
+    role === 'user'
+      ? imagesNote(attachments.length)
+      : role === 'assistant'
+        ? shownNote(attachments.map((attachment) => attachment.name))
+        : null;
+  if (!note) return { role, content, event };
+  return { role, content: [content.trim(), note].filter(Boolean).join('\n\n'), event };
+}
+
+/** The sentence that stands for the images the bot showed the person here. */
+function shownNote(names: readonly string[]): string {
+  const listed = names.map((name) => `"${name}"`).join(', ');
+  return `[Oppenheimer: here you showed the person ${names.length === 1 ? 'an image' : `${names.length} images`} with show_image: ${listed}.]`;
 }
 
 /** The sentence that stands for `count` images the bot was sent before and cannot see now. */

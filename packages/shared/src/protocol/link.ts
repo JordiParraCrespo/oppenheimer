@@ -87,8 +87,8 @@ export const LINK_MAX_FRAME_BYTES = 512 * 1024;
 /**
  * The largest transcript entry `attachment.chat` carries. The runner compacts
  * each line of the agent's transcript before it sends it — a tool's output and
- * a file it wrote are cut, a pasted image is named, never sent — and drops an
- * entry still bigger than this.
+ * a file it wrote are cut, an image goes as a preview in the room the entry
+ * has left, or is only named — and drops an entry still bigger than this.
  */
 export const CHAT_ENTRY_MAX_BYTES = 64 * 1024;
 

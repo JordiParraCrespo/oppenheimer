@@ -6,6 +6,7 @@ import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
+import { claimShownWithin } from './bot-attachment.repository';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
 import type { BotMessageRepositoryPort } from './bot-message.repository.port';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
@@ -31,9 +32,11 @@ export class BotMessageRepository
   }
 
   async insert(message: BotMessageEntity): Promise<void> {
-    await this.dataSource.transaction((manager) =>
-      insertMessageWithin(manager, this.mapper, message),
-    );
+    await this.dataSource.transaction(async (manager) => {
+      await insertMessageWithin(manager, this.mapper, message);
+      // The images a bot showed; yours are claimed by the send, by its own rule.
+      if (message.role === 'assistant') await claimShownWithin(manager, message);
+    });
   }
 
   async insertOnce(message: BotMessageEntity): Promise<boolean> {
@@ -239,8 +242,10 @@ export async function insertMessageWithin(
     `INSERT INTO bot_message (${MESSAGE_COLUMNS}) VALUES (${MESSAGE_VALUES})`,
     messageParameters(mapper.toPersistence(message)),
   );
-  // The sidebar's line is a conversation's words: an activity line or an event is neither.
+  // The sidebar's line is a conversation's words: an activity line, an event
+  // or the images a bot showed are none, and leave the bot's last words there.
   if (message.role === 'activity' || message.role === 'event') return;
+  if (message.role === 'assistant' && !message.content) return;
   await manager.query(
     `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
       WHERE "organizationId" = $1 AND id = $2`,

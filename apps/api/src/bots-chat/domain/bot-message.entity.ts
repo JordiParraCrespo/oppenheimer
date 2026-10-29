@@ -49,7 +49,10 @@ export interface BotMessageProps {
   position: number;
   /** What an event says happened, for the chat; an event has one, nothing else does. */
   event?: BotMessageEvent | null;
-  /** The images a message of yours carries (`25-bots.md` §3.1); none on any other. */
+  /**
+   * The images a message carries: yours, sent with it (`25-bots.md` §3.1),
+   * or the bot's, shown with `show_image` (§4.7); none on any other.
+   */
   attachments?: readonly BotAttachment[];
 }
 
@@ -108,8 +111,8 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
       throw new ArgumentInvalidException('An event says what happened, and only an event does');
     }
     const attachments = props.attachments ?? [];
-    if (attachments.length > 0 && props.role !== 'user') {
-      throw new ArgumentInvalidException('Only a message of yours carries images');
+    if (attachments.length > 0 && props.role !== 'user' && props.role !== 'assistant') {
+      throw new ArgumentInvalidException('Only a message of yours or the bot’s carries images');
     }
     if (attachments.length > BOT_MESSAGE_IMAGES_MAX) {
       throw new ArgumentInvalidException('A message carries at most BOT_MESSAGE_IMAGES_MAX images');

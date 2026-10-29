@@ -796,3 +796,13 @@ earlier note:
   menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
   default everywhere (`versions/mvp/05-screens.md`,
   `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for images in the chats to look and open the
+  way Claude's own chat shows them: a bot's images open in a viewer over
+  the chat instead of a new tab, and a session's chat, which only counted
+  pasted images, now shows them and the screenshots the agent reads, from
+  a preview the runner sends within the link's entry bound
+  (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- 2026-10-28 the owner asked for bots to send images back: `show_image`
+  fetches an image from the web by its address (the only images a bot,
+  which has no files, can reach), stores it as the chat's own and draws it
+  in the bot's answer (`versions/mvp/25-bots.md` §4.7).
