@@ -738,3 +738,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   repositories are picked at create. A session with none
   is still refused (2026-09-27).
 - 2026-10-26: **every section opens a bot's chat in place** (28): Sessions, Automations and Plan too, under their own address and sidebar, not Employees as their frames link it.
+- 2026-10-28: **the work folder's checkouts live in `.noindex` directories**
+  (24 §2): `repos.noindex/` and `sessions.noindex/`, layout version 3.
+  2026-10-01's hidden `.worktrees/` was lost when sessions moved to the
+  work folder, leaving only `.metadata_never_index`, which that entry had
+  measured as not working; Spotlight skips a directory named `*.noindex`
+  and everything under it. No migration: a session keeps the folder its
+  state records, and a store left in `repos/` is cloned again on its next
+  create.
