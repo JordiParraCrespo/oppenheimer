@@ -1443,7 +1443,12 @@
         "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
         "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
         "cancel": "Cancelar",
-        "failed": "No se pudo responder a la solicitud."
+        "failed": "No se pudo responder a la solicitud.",
+        "approveOnce": "Aprobar una vez",
+        "always": "Permitir siempre",
+        "alwaysFor": "Permitir siempre para {{subject}}",
+        "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
+        "fullRequest": "Ver la solicitud completa"
       },
       "event": {
         "approved": "Aprobaste: {{summary}}",
@@ -1492,6 +1497,7 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
+        "permissions": "Permisos",
         "routines": "Rutinas",
         "homeHost": "Máquina principal"
       },
@@ -1646,6 +1652,54 @@
         "saved": "Guardado",
         "failed": "No se ha podido cambiar la máquina principal.",
         "hostsFailed": "No se han podido cargar tus máquinas."
+      },
+      "permissions": {
+        "title": "Permisos",
+        "subtitle": "Lo que el bot hace por su cuenta y lo que te pregunta antes.",
+        "loadFailed": "No se pudieron cargar los permisos del bot.",
+        "saveFailed": "No se pudo cambiar el permiso.",
+        "tools": "Herramientas",
+        "preset": {
+          "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
+          "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
+        },
+        "decisions": {
+          "allow": "Permitir",
+          "ask": "Preguntar",
+          "off": "Desactivar"
+        },
+        "decisionFor": "Qué hace {{tool}}",
+        "reset": "Por defecto",
+        "perCall": "Cada llamada pregunta: nunca se permite para siempre.",
+        "groups": {
+          "self": "Sí mismo",
+          "sessions": "Sesiones y máquinas",
+          "plan": "Plan",
+          "github": "GitHub",
+          "automations": "Rutinas y automatizaciones",
+          "bots": "Otros bots",
+          "web": "Web y ayudantes"
+        },
+        "grants": "Siempre permitido",
+        "noGrants": "Nada todavía. «Permitir siempre para …» en una solicitud lo añade aquí.",
+        "removeGrant": "Dejar de permitir siempre {{tool}} para {{subject}}",
+        "rules": {
+          "empty": "Aún no hay reglas.",
+          "add": "Añadir",
+          "remove": "Quitar la regla «{{rule}}»",
+          "ask": {
+            "title": "Pregúntame antes cuando",
+            "hint": "Una solicitud que coincide te espera, aunque la herramienta se ejecutaría sola.",
+            "placeholder": "p. ej. menciona pagos o datos de clientes",
+            "new": "Nueva regla para preguntar"
+          },
+          "allow": {
+            "title": "Adelante sin preguntar cuando",
+            "hint": "Una solicitud que coincide se ejecuta sin tarjeta. Si también coincide una regla para preguntar, gana esa.",
+            "placeholder": "p. ej. comenta en nuestro repositorio de documentación",
+            "new": "Nueva regla para permitir"
+          }
+        }
       }
     },
     "delete": {

@@ -52,4 +52,6 @@ export const BotsErrors = {
   DELETE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_032', message: 'Failed to delete the routine' },
   UPLOAD_IMAGE_FAILED: { code: 'BOTS_CLIENT_033', message: 'Failed to add the image' },
   READ_IMAGE_FAILED: { code: 'BOTS_CLIENT_034', message: 'Failed to load the image' },
+  FETCH_PERMISSIONS_FAILED: { code: 'BOTS_CLIENT_035', message: 'Failed to load the permissions' },
+  SAVE_PERMISSION_FAILED: { code: 'BOTS_CLIENT_036', message: 'Failed to change the permission' },
 } as const satisfies Record<string, ErrorDefinition>;

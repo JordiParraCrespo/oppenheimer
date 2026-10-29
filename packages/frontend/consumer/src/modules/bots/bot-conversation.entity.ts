@@ -1,4 +1,5 @@
 import type {
+  BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
   BotMessageEvent,
@@ -22,6 +23,8 @@ export interface BotToolStep {
   sessionId: string | null;
   /** The subagents a `delegate` call ran, as they ended; `null` for any other call, and while it runs. */
   subagents: readonly BotSubagentRun[] | null;
+  /** Why an asking call ran without a card: a standing grant, or the owner's rule; `null` otherwise. */
+  allowedBy: string | null;
 }
 
 /**
@@ -185,6 +188,33 @@ export class BotConversationEntity {
  * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call the bot
  * asked to make, waiting for you, or what you decided about it.
  */
+/**
+ * What a Needs input card shows past its line (`25-bots.md` §5): the call as
+ * it will run, the thing it acts on, whether it sends something out of
+ * Oppenheimer, why a rule paused it, and the ways a yes may reach.
+ */
+export interface BotApprovalDetails {
+  input: Readonly<Record<string, unknown>>;
+  /** The thing it acts on, named (`acme/docs`); "Always allow for …" offers it. */
+  subjectLabel: string | null;
+  sharesOutside: boolean;
+  /** Why a rule paused it, or that the rules could not be checked. */
+  reviewNote: string | null;
+  /** How far a yes may reach: this call, the call's subject, the tool. */
+  reaches: readonly BotApprovalReach[];
+  /** How far the yes went, once decided. */
+  reach: BotApprovalReach | null;
+}
+
+const NO_APPROVAL_DETAILS: BotApprovalDetails = {
+  input: {},
+  subjectLabel: null,
+  sharesOutside: false,
+  reviewNote: null,
+  reaches: ['once'],
+  reach: null,
+};
+
 export class BotApprovalEntity {
   constructor(
     public readonly id: string,
@@ -197,6 +227,8 @@ export class BotApprovalEntity {
     /** What the call answered when it ran; `null` before, and for a no. */
     public readonly result: string | null,
     public readonly createdAt: Date,
+    /** What the card shows beyond its line, and how far a yes may reach. */
+    public readonly details: BotApprovalDetails = NO_APPROVAL_DETAILS,
   ) {}
 
   get isPending(): boolean {
@@ -227,6 +259,7 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
       approval.status,
       approval.result,
       approval.createdAt,
+      approval.details,
     );
   }
 

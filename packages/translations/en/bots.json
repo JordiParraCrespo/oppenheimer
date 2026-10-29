@@ -195,7 +195,12 @@
       "noteLabel": "What should {{name}} do instead?",
       "notePlaceholder": "Optional: why not, or what to do instead",
       "cancel": "Cancel",
-      "failed": "Could not answer the request."
+      "failed": "Could not answer the request.",
+      "approveOnce": "Approve once",
+      "always": "Always allow",
+      "alwaysFor": "Always allow for {{subject}}",
+      "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
+      "fullRequest": "Show the full request"
     },
     "event": {
       "approved": "You approved: {{summary}}",
@@ -244,6 +249,7 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
+      "permissions": "Permissions",
       "routines": "Routines",
       "homeHost": "Home host"
     },
@@ -397,6 +403,54 @@
       "saved": "Saved",
       "failed": "Could not change the home host.",
       "hostsFailed": "Could not load your hosts."
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "What the bot does on its own, and what it asks you first.",
+      "loadFailed": "Could not load the bot’s permissions.",
+      "saveFailed": "Could not change the permission.",
+      "tools": "Tools",
+      "preset": {
+        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
+        "full": "Tools you leave on their default follow Full access: they run without asking."
+      },
+      "decisions": {
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off"
+      },
+      "decisionFor": "What {{tool}} does",
+      "reset": "Default",
+      "perCall": "Every call asks: it is never allowed for good.",
+      "groups": {
+        "self": "Itself",
+        "sessions": "Sessions and hosts",
+        "plan": "Plan",
+        "github": "GitHub",
+        "automations": "Routines and automations",
+        "bots": "Other bots",
+        "web": "Web and helpers"
+      },
+      "grants": "Always allowed",
+      "noGrants": "Nothing yet. “Always allow for …” on a request adds it here.",
+      "removeGrant": "Stop always allowing {{tool}} for {{subject}}",
+      "rules": {
+        "empty": "No rules yet.",
+        "add": "Add",
+        "remove": "Remove the rule “{{rule}}”",
+        "ask": {
+          "title": "Ask me first when",
+          "hint": "A matching request waits for you, even where the tool would run on its own.",
+          "placeholder": "e.g. it mentions payments or customer data",
+          "new": "New ask rule"
+        },
+        "allow": {
+          "title": "Go ahead without asking when",
+          "hint": "A matching request runs without a card. An ask rule that also matches wins.",
+          "placeholder": "e.g. it comments on our docs repository",
+          "new": "New allow rule"
+        }
+      }
     }
   },
   "delete": {

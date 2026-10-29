@@ -836,3 +836,11 @@ earlier note:
   error is at the end; and a failed turn records a kind, so the chat no
   longer offers Retry where the same message fails again
   (`versions/mvp/25-bots.md` §2–§4).
+- A bot's permissions are set in Settings → Permissions, tool by tool, and a
+  yes on a card can reach past its call: *Always allow for* the repository,
+  project or session it acts on, or *Always allow* for the tool; merging
+  stays per call. Plain-language rules are read by a reviewer on the bot's
+  own model before an asking call, an ask rule winning and a failed review
+  asking. 2026-10-29, from Grok Bot's approvals
+  (`research/lessons-from-grok-bot.md` §9 rows 6 and 7;
+  `versions/mvp/25-bots.md` §5).

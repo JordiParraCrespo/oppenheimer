@@ -632,9 +632,43 @@ How the card works (built 2026-10-15, `bot_approval`):
   denial.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
-- **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,
-  a card for a bot-to-bot or background turn (they will need a timeout
-  where yours has none), and the asking tools of the other areas.
+- **Not built yet:** a card for a bot-to-bot or background turn (they
+  will need a timeout where yours has none), the *Custom* reading of the
+  chip, and the asking tools of the other areas.
+
+Settings → Permissions and how far a yes reaches (built 2026-10-29, from
+Grok Bot's approvals, `research/lessons-from-grok-bot.md` §9 rows 6 and 7):
+
+- **Each tool's row** (`bot_tool_permission`) holds Allow, Ask or Off
+  where the owner changed it; *Default* deletes the row and the tool
+  follows the preset again (`PUT /v1/bots/:id/permissions/tools/:tool`).
+  Off takes the tool out of the catalog the model reads, and an approved
+  call of a tool set Off since is not run. The chip stays the preset;
+  the tab says which tools differ.
+- **A card offers how far the yes reaches.** *Approve once*; *Always allow
+  for …* the thing the call acts on (a repository for GitHub's tools, a
+  project for `start_session`, a session for the tools that drive one),
+  a **standing grant** that lets the next call on that thing run and
+  says so on its line ("Always allowed for acme/docs"); and *Always
+  allow*, which sets the tool to Allow. Either is written in the
+  decision's transaction; past `BOT_TOOL_GRANTS_MAX` grants the decision
+  is refused (`BOTS_034`) and the card stays. The tab lists the grants,
+  each removable.
+- **Merging is decided call by call.** `merge_pull_request` offers this
+  call only, and Settings never offers it Allow (`BOTS_030`).
+- **A card says what it sends out.** GitHub's comment, review and issue
+  tools mark their card: what it writes leaves Oppenheimer in your name.
+  The card folds the call exactly as it will run.
+- **Plain-language rules** (`bot_permission_rule`, at most
+  `BOT_PERMISSION_RULES_MAX`): *Ask me first when …* and *Go ahead without
+  asking when …*. Before an asking call that a rule could change, a
+  reviewer on the bot's own model, one completion with no tools, says
+  which rules the call matches. An ask rule wins: it pauses even a call
+  the tool would run, and the card says which rule ("Paused by your rule
+  …"). An allow rule lets a call that would ask run, and its line says
+  which rule. A review that fails or cannot be read asks, and the card
+  says the rules could not be checked. A standing grant is read before
+  the rules, and an approved call is never reviewed again.
 
 ## 6. What is built, in slices
 
@@ -670,16 +704,15 @@ limits (§2); the tools that run without asking, as the owner: itself
 (`list_automations`, `get_automation`, `run_history`), other bots
 (`list_bots`, `get_bot`), `web_fetch` and, since 2026-10-22, `delegate` (§4.7); `start_session`,
 `stop_session` and `create_bot`, which ask; and the Needs input card
-(§5): Approve, Deny with a note, the bot told either way. Next:
-Settings → Permissions and *Always allow*, then the asking tools of each
-area and `ask_bot`.
+(§5): Approve, Deny with a note, the bot told either way. Since
+2026-10-29, Settings → Permissions, a yes that reaches past its call, and
+the owner's rules (§5). Next: the asking tools of each area.
 
 ## 7. Not built yet
 
 Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
-Routines, Notifications, plain-language permission rules ("always ask
-before touching the payments repo"), daily caps, slash commands, voice,
+Routines, Notifications, daily caps, slash commands, voice,
 attachments other than images (§3.1), project and
 user memory, a bot's engine running on a host of its own with the full
 Claude Code toolset.
@@ -873,3 +906,13 @@ The decisions it produced:
   drawn in the chat (§2, §3); and `search_chat` (§4.1). With them the live
   line shows a provider's retry wait and the trail how long a turn worked
   (§3).
+- 2026-10-29: **a yes can reach past its call, to the thing it acts on.**
+  *Always allow for acme/docs* is a standing grant for one tool on one
+  repository, project or session, beside *Always allow* for the tool;
+  merging is never standing. It adds to 2026-10-15's "*Always allow* sets
+  the tool to Allow" rather than replacing it. From Grok Bot's per-path
+  grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **the owner's rules are read by a reviewer on the bot's own
+  model, and it fails closed**: an ask rule beats an allow rule, and a
+  review that cannot say asks. It moves plain-language rules out of §7.
+  From Grok Bot's reviewer (§9 row 7).

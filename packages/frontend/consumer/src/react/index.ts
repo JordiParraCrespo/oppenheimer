@@ -44,6 +44,17 @@ export {
   useUploadBotImage,
 } from './bot-chat.queries';
 export {
+  type AddBotPermissionRuleVariables,
+  type DeleteBotPermissionRuleVariables,
+  type DeleteBotToolGrantVariables,
+  type SetBotToolDecisionVariables,
+  useAddBotPermissionRule,
+  useDeleteBotPermissionRule,
+  useDeleteBotToolGrant,
+  useSetBotToolDecision,
+  useSuspenseBotPermissions,
+} from './bot-permissions.queries';
+export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,

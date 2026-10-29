@@ -3679,6 +3679,10 @@ export type BotToolStepResponseDto = {
      * The subagents a `delegate` call ran; null for any other call, and while it runs.
      */
     subagents: Array<BotSubagentRunResponseDto> | null;
+    /**
+     * Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.
+     */
+    allowedBy: string | null;
 };
 
 export type BotAttachmentResponseDto = {
@@ -3825,6 +3829,30 @@ export type BotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What kind of thing the call acts on (`repository`, `session`); null when none.
+     */
+    subjectKind: string | null;
+    /**
+     * The thing the call acts on, by name: what "Always allow for …" covers.
+     */
+    subjectLabel: string | null;
+    /**
+     * The call sends data out of Oppenheimer.
+     */
+    sharesOutside: boolean;
+    /**
+     * Why a rule paused the call, when one did.
+     */
+    reviewNote: string | null;
+    /**
+     * How far a yes may reach: this call, its subject, the tool.
+     */
+    reaches: Array<'once' | 'tool' | 'subject'>;
+    /**
+     * How far the yes went.
+     */
+    reach: 'once' | 'tool' | 'subject' | null;
     decidedByUserId: string | null;
     decidedAt: string | null;
     createdAt: string;
@@ -3859,6 +3887,30 @@ export type WorkspaceBotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What kind of thing the call acts on (`repository`, `session`); null when none.
+     */
+    subjectKind: string | null;
+    /**
+     * The thing the call acts on, by name: what "Always allow for …" covers.
+     */
+    subjectLabel: string | null;
+    /**
+     * The call sends data out of Oppenheimer.
+     */
+    sharesOutside: boolean;
+    /**
+     * Why a rule paused the call, when one did.
+     */
+    reviewNote: string | null;
+    /**
+     * How far a yes may reach: this call, its subject, the tool.
+     */
+    reaches: Array<'once' | 'tool' | 'subject'>;
+    /**
+     * How far the yes went.
+     */
+    reach: 'once' | 'tool' | 'subject' | null;
     decidedByUserId: string | null;
     decidedAt: string | null;
     createdAt: string;
@@ -3879,6 +3931,84 @@ export type WorkspaceBotApprovalResponseDto = {
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
+    reach?: 'once' | 'tool' | 'subject';
+};
+
+export type BotToolPermissionDto = {
+    /**
+     * The tool, as the bot knows it (`merge_pull_request`).
+     */
+    name: string;
+    /**
+     * The group it is listed under.
+     */
+    group: 'self' | 'sessions' | 'plan' | 'github' | 'automations' | 'bots' | 'web';
+    /**
+     * What it does, in a sentence.
+     */
+    description: string;
+    /**
+     * It reaches outside Oppenheimer: asking is its default under Approve for me.
+     */
+    asks: boolean;
+    /**
+     * Every call is decided on its own: Allow is not offered for it.
+     */
+    perCallOnly: boolean;
+    /**
+     * What it does now: the setting, or the default.
+     */
+    decision: 'allow' | 'ask' | 'off';
+    /**
+     * The owner’s setting; null when the tool follows the preset.
+     */
+    set: 'allow' | 'ask' | 'off' | null;
+};
+
+export type BotToolGrantDto = {
+    id: string;
+    tool: string;
+    /**
+     * What it covers: `repository`, `session`.
+     */
+    subjectKind: string;
+    /**
+     * How it is named: `acme/xrp-mobile`.
+     */
+    subjectLabel: string;
+    createdAt: string;
+};
+
+export type BotPermissionRuleDto = {
+    id: string;
+    effect: 'allow' | 'ask';
+    text: string;
+    createdAt: string;
+};
+
+export type BotPermissionsResponseDto = {
+    /**
+     * The preset every tool with no setting follows.
+     */
+    preset: 'auto' | 'full';
+    tools: Array<BotToolPermissionDto>;
+    /**
+     * Newest first.
+     */
+    grants: Array<BotToolGrantDto>;
+    /**
+     * Oldest first.
+     */
+    rules: Array<BotPermissionRuleDto>;
+};
+
+export type SetBotToolDecisionRequest = {
+    decision: 'allow' | 'ask' | 'off' | 'default';
+};
+
+export type CreateBotPermissionRuleRequest = {
+    effect: 'allow' | 'ask';
+    text: string;
 };
 
 export type VoiceTranscriptionResponseDto = {
@@ -13469,9 +13599,15 @@ export type DecideBotApprovalErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * BOTS_034 — Too many standing grants
+     *
      * BOTS_016 — The approval was already decided
      */
     409: ProblemDetailsDto;
+    /**
+     * BOTS_030 — A reach the card does not offer
+     */
+    422: ProblemDetailsDto;
 };
 
 export type DecideBotApprovalError = DecideBotApprovalErrors[keyof DecideBotApprovalErrors];
@@ -13481,6 +13617,183 @@ export type DecideBotApprovalResponses = {
 };
 
 export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
+
+export type FindBotPermissionsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions';
+};
+
+export type FindBotPermissionsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotPermissionsError = FindBotPermissionsErrors[keyof FindBotPermissionsErrors];
+
+export type FindBotPermissionsResponses = {
+    200: BotPermissionsResponseDto;
+};
+
+export type FindBotPermissionsResponse = FindBotPermissionsResponses[keyof FindBotPermissionsResponses];
+
+export type SetBotToolDecisionData = {
+    body: SetBotToolDecisionRequest;
+    path: {
+        id: string;
+        tool: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/tools/{tool}';
+};
+
+export type SetBotToolDecisionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_029 — No such tool
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_030 — This tool is decided call by call
+     */
+    422: ProblemDetailsDto;
+};
+
+export type SetBotToolDecisionError = SetBotToolDecisionErrors[keyof SetBotToolDecisionErrors];
+
+export type SetBotToolDecisionResponses = {
+    200: BotPermissionsResponseDto;
+};
+
+export type SetBotToolDecisionResponse = SetBotToolDecisionResponses[keyof SetBotToolDecisionResponses];
+
+export type CreateBotPermissionRuleData = {
+    body: CreateBotPermissionRuleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/rules';
+};
+
+export type CreateBotPermissionRuleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_031 — The bot holds as many rules as it can
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateBotPermissionRuleError = CreateBotPermissionRuleErrors[keyof CreateBotPermissionRuleErrors];
+
+export type CreateBotPermissionRuleResponses = {
+    201: BotPermissionsResponseDto;
+};
+
+export type CreateBotPermissionRuleResponse = CreateBotPermissionRuleResponses[keyof CreateBotPermissionRuleResponses];
+
+export type DeleteBotPermissionRuleData = {
+    body?: never;
+    path: {
+        id: string;
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/rules/{ruleId}';
+};
+
+export type DeleteBotPermissionRuleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_032 — Rule not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotPermissionRuleError = DeleteBotPermissionRuleErrors[keyof DeleteBotPermissionRuleErrors];
+
+export type DeleteBotPermissionRuleResponses = {
+    204: void;
+};
+
+export type DeleteBotPermissionRuleResponse = DeleteBotPermissionRuleResponses[keyof DeleteBotPermissionRuleResponses];
+
+export type DeleteBotToolGrantData = {
+    body?: never;
+    path: {
+        id: string;
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/grants/{grantId}';
+};
+
+export type DeleteBotToolGrantErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_033 — Grant not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotToolGrantError = DeleteBotToolGrantErrors[keyof DeleteBotToolGrantErrors];
+
+export type DeleteBotToolGrantResponses = {
+    204: void;
+};
+
+export type DeleteBotToolGrantResponse = DeleteBotToolGrantResponses[keyof DeleteBotToolGrantResponses];
 
 export type TranscribeVoiceData = {
     body: {

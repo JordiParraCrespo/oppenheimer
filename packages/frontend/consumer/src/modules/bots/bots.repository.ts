@@ -7,6 +7,7 @@ import {
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
+  type BotPermissionsResponseDto,
   type BotPlanWindowDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
@@ -23,11 +24,14 @@ import {
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_WAKE_STATES,
   type BotApprovalDecision,
+  type BotApprovalReach,
   type BotAttachment,
   type BotDocumentName,
   type BotMessageEvent,
+  type BotPermissionRuleEffect,
   type BotProvider,
   type BotSection,
+  type BotToolDecision,
 } from '@oppenheimer/shared/schemas/bot';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -55,6 +59,7 @@ import {
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
 } from './bot-conversation.entity';
+import { BotPermissionsEntity } from './bot-permissions.entity';
 import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
@@ -269,6 +274,23 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
     dto.status,
     dto.result,
     new Date(dto.createdAt),
+    {
+      input: dto.input,
+      subjectLabel: dto.subjectLabel,
+      sharesOutside: dto.sharesOutside,
+      reviewNote: dto.reviewNote,
+      reaches: dto.reaches,
+      reach: dto.reach,
+    },
+  );
+}
+
+function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
+  return new BotPermissionsEntity(
+    dto.preset,
+    dto.tools.map((tool) => ({ ...tool })),
+    dto.grants.map((grant) => ({ ...grant, createdAt: new Date(grant.createdAt) })),
+    dto.rules.map((rule) => ({ ...rule, createdAt: new Date(rule.createdAt) })),
   );
 }
 
@@ -428,11 +450,12 @@ export class BotsRepository {
     approvalId: string,
     decision: BotApprovalDecision,
     note?: string,
+    reach: BotApprovalReach = 'once',
   ): Promise<BotApprovalEntity> {
     const data = await unwrapBody(
       heyApiSdk.decideBotApproval({
         path: { id, approvalId },
-        body: { decision, ...(note?.trim() ? { note: note.trim() } : {}) },
+        body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
       }),
       BotsErrors.DECIDE_APPROVAL_FAILED,
     );
@@ -645,6 +668,58 @@ export class BotsRepository {
   @MapApiError(BotsErrors.CLEAR_MEMORY_FAILED)
   async clearMemory(id: string): Promise<void> {
     await unwrap(heyApiSdk.clearBotMemory({ path: { id } }), BotsErrors.CLEAR_MEMORY_FAILED);
+  }
+
+  @MapApiError(BotsErrors.FETCH_PERMISSIONS_FAILED)
+  async findPermissions(id: string): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotPermissions({ path: { id } }),
+      BotsErrors.FETCH_PERMISSIONS_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  /** One tool's Allow, Ask or Off; `default` follows the preset again. */
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async setToolDecision(
+    id: string,
+    tool: string,
+    decision: BotToolDecision | 'default',
+  ): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.setBotToolDecision({ path: { id, tool }, body: { decision } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async addPermissionRule(
+    id: string,
+    effect: BotPermissionRuleEffect,
+    text: string,
+  ): Promise<BotPermissionsEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBotPermissionRule({ path: { id }, body: { effect, text } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+    return toPermissions(data);
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async removePermissionRule(id: string, ruleId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotPermissionRule({ path: { id, ruleId } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
+  }
+
+  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
+  async removeToolGrant(id: string, grantId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotToolGrant({ path: { id, grantId } }),
+      BotsErrors.SAVE_PERMISSION_FAILED,
+    );
   }
 
   @MapApiError(BotsErrors.FETCH_PROVIDERS_FAILED)

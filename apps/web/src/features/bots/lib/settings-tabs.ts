@@ -1,9 +1,16 @@
-import { Bot, Database, FileText, Terminal, Zap } from '@oppenheimer/design-system-web/icons';
+import {
+  Bot,
+  Database,
+  FileText,
+  ShieldCheck,
+  Terminal,
+  Zap,
+} from '@oppenheimer/design-system-web/icons';
 
 /**
  * A bot's settings pages in the design's order, each its own route under
- * `/bots/$botId/settings/`. Access, Approvals, Teammates and Notifications
- * arrive with what they configure.
+ * `/bots/$botId/settings/`. Teammates and Notifications arrive with what
+ * they configure.
  */
 export const BOT_SETTINGS_TABS = [
   {
@@ -23,6 +30,12 @@ export const BOT_SETTINGS_TABS = [
     to: '/bots/$botId/settings/memory',
     labelKey: 'bots.settings.tabs.memory',
     Icon: Database,
+  },
+  {
+    slug: 'permissions',
+    to: '/bots/$botId/settings/permissions',
+    labelKey: 'bots.settings.tabs.permissions',
+    Icon: ShieldCheck,
   },
   {
     slug: 'routines',

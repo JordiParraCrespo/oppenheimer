@@ -420,4 +420,6 @@ its last column.
 **Landed (2026-10-29):** rows 1 to 5, written in `versions/mvp/25-bots.md`
 §2 to §4.1, with two pieces of the chat UI that go with them: the live
 line's wait while a provider's refusal is retried, and how long a turn
-worked.
+worked. Rows 6 and 7 landed the same day in `versions/mvp/25-bots.md` §5:
+grants for one thing, merging per call, and rules read by a reviewer that
+fails closed, with Settings → Permissions and the card's reach.

@@ -65,6 +65,7 @@ import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './route
 import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
+import { Route as AuthenticatedBotsBotIdSettingsPermissionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/permissions'
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
@@ -376,6 +377,12 @@ const AuthenticatedBotsBotIdSettingsMemoryRoute =
     path: '/memory',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsPermissionsRoute =
+  AuthenticatedBotsBotIdSettingsPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsProfileRoute =
   AuthenticatedBotsBotIdSettingsProfileRouteImport.update({
     id: '/profile',
@@ -454,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -507,6 +515,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -570,6 +579,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/_authenticated/bots_/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
@@ -684,6 +695,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
@@ -746,6 +758,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/home-host'
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
+    | '/_authenticated/bots_/$botId/settings/permissions'
     | '/_authenticated/bots_/$botId/settings/profile'
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
@@ -1158,6 +1171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/permissions': {
+      id: '/_authenticated/bots_/$botId/settings/permissions'
+      path: '/permissions'
+      fullPath: '/bots/$botId/settings/permissions'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/bots_/$botId/settings/profile': {
       id: '/_authenticated/bots_/$botId/settings/profile'
       path: '/profile'
@@ -1319,6 +1339,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsHomeHostRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  AuthenticatedBotsBotIdSettingsPermissionsRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -1333,6 +1354,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsInstructionsRoute,
     AuthenticatedBotsBotIdSettingsMemoryRoute:
       AuthenticatedBotsBotIdSettingsMemoryRoute,
+    AuthenticatedBotsBotIdSettingsPermissionsRoute:
+      AuthenticatedBotsBotIdSettingsPermissionsRoute,
     AuthenticatedBotsBotIdSettingsProfileRoute:
       AuthenticatedBotsBotIdSettingsProfileRoute,
     AuthenticatedBotsBotIdSettingsRoutinesRoute:
