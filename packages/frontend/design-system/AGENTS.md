@@ -70,8 +70,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   where it runs and what it may touch on the left, the engine on the right,
   each place chip a `ChipSelectTrigger` in its `tab` variant. The first chip
   is the host and where on it as one ("mac-studio · New worktree"): its pane
-  is the hosts under a `ChipSelectHeading` with their count, and a host
-  opens its Start in pane under another. The box stands as tall as a session chat's
+  is `ChipSelectTabs` under the search, Hosts and Cloud, each with its
+  count, and a host opens its Start in pane under a `ChipSelectHeading`. The box stands as tall as a session chat's
   `ChatComposer`, and the engine pane's rows are the `engine` density, 36px
   of 13.5px, beside a boxed search. That row never
   wraps: the place chips truncate and the engine keeps its width. `Composer`'s

@@ -644,6 +644,8 @@
         "startIn": "Start in",
         "atVendor": "Cloud",
         "clouds": "Cloud",
+        "searchClouds": "Search clouds…",
+        "cloudsEmpty": "No cloud matches.",
         "connect": "Connect your key"
       },
       "project": {
@@ -1213,6 +1215,7 @@
       "open": "Open in claude.ai",
       "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
       "copy": "Copy command",
+      "copyLink": "Copy link",
       "copied": "Copied",
       "delete": "Delete",
       "openAt": "Open in {{vendor}}",

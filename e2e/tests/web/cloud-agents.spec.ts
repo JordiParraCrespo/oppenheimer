@@ -7,7 +7,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * A cloud session in a browser, on the Cursor stub (`support/cursor-stub.ts`),
  * as `NewSessionComposer.dc.html` and `SessionsConsole.dc.html` draw it: the
  * key is connected in Settings → Cloud agents; New session's place chip lists
- * Cursor under Cloud beside the hosts; a session started there opens the
+ * Cursor on its Cloud tab beside the hosts; a session started there opens the
  * agent in Cursor in a tab of its own and is listed with the other sessions,
  * its row leading with Cursor's mark and opening Cursor; its page follows the
  * run to its end. The API's own spec covers the refusals; this holds the
@@ -33,9 +33,10 @@ test('starts a session in Cursor’s cloud from New session and follows it', asy
   await page.getByRole('dialog').getByRole('button', { name: 'Connect', exact: true }).click();
   await expect(page.getByText('Stub key · stub@cursor.test · ending 9f3a')).toBeVisible();
 
-  // ── Where it runs: Cursor, under Cloud ────────────────────────────────────
+  // ── Where it runs: Cursor, on Cloud ───────────────────────────────────────
   await page.goto('/sessions/new');
   await page.getByRole('button', { name: 'Host' }).click();
+  await page.getByRole('tab', { name: /Cloud/ }).click();
   await page.getByRole('option', { name: 'Cursor' }).click();
   await expect(page.getByRole('button', { name: 'Host' })).toContainText('Cursor · Cloud');
   // No permission level in the cloud: the vendor's agent runs by its rules.
