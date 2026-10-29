@@ -5,7 +5,7 @@ import {
   BOT_IMAGE_MIME_TYPES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
   type BotAttachment,
@@ -282,7 +282,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'session') {
-    const state = BOT_SESSION_WAKE_STATES.find((known) => known === raw.state);
+    const state = BOT_SESSION_EVENT_STATES.find((known) => known === raw.state);
     if (!state || typeof raw.subscriptionId !== 'string' || typeof raw.sessionId !== 'string') {
       return null;
     }

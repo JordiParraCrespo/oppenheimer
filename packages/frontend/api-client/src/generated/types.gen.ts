@@ -3665,9 +3665,9 @@ export type BotSessionEventResponseDto = {
      */
     turn: number;
     /**
-     * What became of the task.
+     * What became of the task, or `stalled` when its stall check found it stuck.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'stalled';
 };
 
 export type BotSubagentRunResponseDto = {

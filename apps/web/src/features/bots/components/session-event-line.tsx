@@ -1,5 +1,12 @@
 import { TranscriptDivider } from '@oppenheimer/design-system-web';
-import { Ban, CircleAlert, CircleCheck, Clock, Hand } from '@oppenheimer/design-system-web/icons';
+import {
+  Ban,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  Hand,
+  Hourglass,
+} from '@oppenheimer/design-system-web/icons';
 import type { BotSessionEvent } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
@@ -11,6 +18,7 @@ const SESSION_KEYS = {
   failed: 'bots.chat.event.session.failed',
   cancelled: 'bots.chat.event.session.cancelled',
   expired: 'bots.chat.event.session.expired',
+  stalled: 'bots.chat.event.session.stalled',
 } as const;
 
 const SESSION_ICONS = {
@@ -19,11 +27,13 @@ const SESSION_ICONS = {
   failed: <CircleAlert />,
   cancelled: <Ban />,
   expired: <Clock />,
+  stalled: <Hourglass />,
 } as const;
 
 /**
  * A session the bot follows that woke it (`27-bot-subscriptions.md`):
- * "Session “Research” finished" with Open session, in red when it failed.
+ * "Session “Research” finished" with Open session, in red when it failed,
+ * or "looks stuck" when its stall check found it so.
  */
 export function SessionEventLine({ event }: { event: BotSessionEvent }) {
   const { t } = useTranslation();

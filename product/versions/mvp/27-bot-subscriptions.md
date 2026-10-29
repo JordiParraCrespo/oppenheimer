@@ -53,7 +53,9 @@ Its states are OpenAI's run states; the ones that wake are:
 | `expired` | Never ran in time | Say so |
 
 `queued` and `in_progress` never wake: a session that stays open with its
-agent idle is not news. A task ending is told apart from a session merely
+agent idle is not news. The one exception is a task the bot handed off that
+is still in one of them five minutes later without its agent ever being seen
+working: the stall check (§4.1) wakes the bot once for it. A task ending is told apart from a session merely
 stopping, because what wakes is the **turn**, not the session's lifecycle:
 a session stopped after its task completed already woke the bot on
 `completed`, and its stop moves no live turn, so it wakes nothing more.
@@ -131,7 +133,39 @@ the wake, in the `background` lane, with the scopes of the turn that
 subscribed; its asking tools still ask.
 
 The chat draws the opening as one line, "Session *name* finished" (or
-*needs input*, *failed*, *was stopped*, *expired*), with Open session.
+*needs input*, *failed*, *was stopped*, *expired*, *looks stuck*), with Open session.
+
+### 4.1 The stall check
+
+The wakes above all wait on a state the session reaches. A task that never
+reaches one, because its host is offline or its agent sits at a
+folder-trust or sign-in prompt, leaves the bot silent until somebody asks
+(the owner asked "Hi?" to get news on 2026-10-29). Grok Bot, Codex and
+Claude Code send no progress updates either; what Claude Code and
+OpenClaw do have is a quiet check that speaks only when something is wrong.
+This is that check, for one task:
+
+- **When.** `start_session` and `send_to_session` stage a job on the outbox
+  (`bot-stall-checks`) for five minutes later (`BOT_STALL_CHECK_DELAY_MS`),
+  naming the subscription and the task handed off. `watch_session` stages
+  none: a session the bot did not start is not its launch to vouch for.
+- **What it reads.** The session, as the owner, as a wake does. Only
+  Oppenheimer's records decide, never silence: the runner reports on
+  change, so a quiet log is also what an agent working steadily looks like.
+- **What says stuck** (`stallFor`, pure). The task is still `queued` (it
+  never started), or it is an interactive task on a host, `in_progress`,
+  whose agent was never seen working. A headless or cloud task reports its
+  own progress, so the screen is no evidence for it. Anything else is
+  silent: a task seen working, one that moved on, ended or asks for input
+  (the wakes tell those), one the bot was already woken for, a session
+  closed.
+- **What it does.** A turn like a wake's, keyed
+  `subscription:<id>:<seq>:stalled`, so a retried job tells the bot once,
+  opened by a `session` event whose state is `stalled`. The bot reads the
+  session and tells the person what looks stuck and what would get it going;
+  it does not restart, stop or prompt the session on its own. The check
+  records nothing on the subscription, so the task's end still wakes the bot.
+- **Cost.** One read per task handed off, and a turn only when it is stuck.
 
 ## 5. Authorization
 
@@ -218,3 +252,7 @@ pass may move them onto subscriptions if a third copy appears.
   and only once per task and state.
 - 2026-10-22: **watching does not ask**, `start_session` subscribes by
   default, and a subscription stops after 20 wakes.
+- 2026-10-29: **a task the bot hands off gets one silent stall check**, five
+  minutes later, that wakes it only when the task never started or its agent
+  was never seen working (§4.1). It changes §2's "`queued` and `in_progress`
+  never wake" for that one case; there is still no progress update.

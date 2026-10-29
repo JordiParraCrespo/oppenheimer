@@ -850,3 +850,12 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- `versions/mvp/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
+  never wake a bot, so a delegated task stuck before it began (its host
+  offline, its agent at a folder-trust or sign-in prompt) left the bot
+  silent until somebody asked. On 2026-10-29 the owner asked for it to
+  "monitor a bit what it has done", and chose, over a progress update
+  (which Grok Bot, Codex and Claude Code do not send), a silent stall
+  check: five minutes after `start_session` or `send_to_session`, a job
+  reads the task and wakes the bot once, as `stalled`, only if it never
+  started or its agent was never seen working (27 §4.1).

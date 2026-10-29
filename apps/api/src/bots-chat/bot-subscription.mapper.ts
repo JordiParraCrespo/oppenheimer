@@ -11,6 +11,7 @@ import {
   type BotWatchFrom,
   knownStateOf,
   type SessionWake,
+  type StallDecision,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
@@ -140,7 +141,27 @@ export class BotSubscriptionMapper {
       purpose: subscription.purpose,
       task,
       state: decision.state,
+      stall: null,
       ends: decision.ends,
+    };
+  }
+
+  /** What a stall check tells the bot: the task as read now, still followed. */
+  toStallWake(
+    subscription: BotSubscriptionEntity,
+    session: WorkSessionEntity,
+    task: WatchedTask,
+    decision: Extract<StallDecision, { kind: 'stalled' }>,
+  ): SessionWake {
+    return {
+      subscriptionId: subscription.id,
+      sessionId: session.id,
+      sessionName: session.name,
+      purpose: subscription.purpose,
+      task,
+      state: 'stalled',
+      stall: decision.reason,
+      ends: false,
     };
   }
 

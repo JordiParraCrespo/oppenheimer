@@ -1,6 +1,7 @@
 import {
   BOT_SESSION_WAKE_STATES,
   type BotSessionEvent,
+  type BotSessionEventState,
   type BotSessionWakeState,
 } from '@oppenheimer/shared';
 import { eventNote } from './bot-history.policy';
@@ -121,9 +122,77 @@ export function wakeFor(
 export function subscriptionSourceKey(
   subscriptionId: string,
   turn: number,
-  state: BotSessionWakeState,
+  state: BotSessionEventState,
 ): string {
   return `subscription:${subscriptionId}:${turn}:${state}`;
+}
+
+/**
+ * How long after a bot hands a session a task its stall check runs (§4.1):
+ * long enough for a healthy launch to be seen working, short enough that a
+ * stuck one is told while the person still remembers asking.
+ */
+export const BOT_STALL_CHECK_DELAY_MS = 5 * 60_000;
+
+/** Why a task looks stuck: it never started, or it started and the agent was never seen working. */
+export type StallReason = 'not_started' | 'not_working';
+
+/** What the stall check reads of the task: the wake's fields and how its agent was seen. */
+export interface StallTask {
+  seq: number;
+  state: string;
+  /** Whether the agent was ever seen working on it. */
+  observedWorking: boolean;
+  /** `interactive` is read off the screen; `headless` reports its own start and end. */
+  drive: string;
+}
+
+export type StallDecision =
+  | { kind: 'skip' }
+  | { kind: 'stalled'; reason: StallReason; turn: number; key: string };
+
+/**
+ * Whether the task a bot handed off, checked a few minutes after
+ * (`BOT_STALL_CHECK_DELAY_MS`), is stuck short of every state that wakes the
+ * bot (§4.1). Silent unless it is: a task that moved on, ended, asks for
+ * input or was seen working is the wakes' to tell, or nothing to tell.
+ *
+ * Only Oppenheimer's records decide, never a guess from silence: the runner
+ * reports on change, so a quiet log is also what an agent working steadily
+ * looks like. Two records say stuck:
+ *
+ * - `not_started`: the task is still `queued`. Its host never started the
+ *   session (offline, or the launch never ran).
+ * - `not_working`: the session started on a host and the agent was never seen
+ *   working, which is where a folder-trust or sign-in prompt leaves it. Only
+ *   an interactive turn on a host: a headless or cloud turn reports its own
+ *   progress, so the screen is no evidence for it.
+ */
+export function stallFor(
+  subject: WakeSubject,
+  checkedTurn: number,
+  task: StallTask | null,
+  session: { closed: boolean; place: string },
+): StallDecision {
+  const skip: StallDecision = { kind: 'skip' };
+  if (session.closed || !task || task.seq !== checkedTurn) return skip;
+  if (subject.watchedTurn !== null && subject.watchedTurn !== checkedTurn) return skip;
+  if (subject.lastTurn !== null && subject.lastTurn >= checkedTurn) return skip;
+  const reason = stallReasonOf(task, session.place);
+  if (!reason) return skip;
+  return {
+    kind: 'stalled',
+    reason,
+    turn: task.seq,
+    key: subscriptionSourceKey(subject.id, task.seq, 'stalled'),
+  };
+}
+
+function stallReasonOf(task: StallTask, place: string): StallReason | null {
+  if (task.state === 'queued') return 'not_started';
+  const screenRead = task.drive === 'interactive' && place === 'host';
+  if (task.state === 'in_progress' && !task.observedWorking && screenRead) return 'not_working';
+  return null;
 }
 
 /**
@@ -157,6 +226,12 @@ const STATE_PHRASES: Readonly<Record<BotSessionWakeState, string>> = {
   expired: 'expired before it ran',
 };
 
+/** What the stall check found, in words. */
+const STALL_PHRASES: Readonly<Record<StallReason, string>> = {
+  not_started: `has not started ${BOT_STALL_CHECK_DELAY_MS / 60_000} minutes after it was handed off: its host may be offline, or the launch never ran`,
+  not_working: `started, but its agent has not been seen working ${BOT_STALL_CHECK_DELAY_MS / 60_000} minutes after it was handed off: it may sit at a prompt, such as trusting the folder or signing in`,
+};
+
 /** What a wake tells the bot, as the subscription and the session are now. */
 export interface SessionWake {
   subscriptionId: string;
@@ -164,7 +239,9 @@ export interface SessionWake {
   sessionName: string;
   purpose: string | null;
   task: WatchedTask;
-  state: BotSessionWakeState;
+  state: BotSessionEventState;
+  /** Why the task looks stuck, for `stalled`; null for every other state. */
+  stall: StallReason | null;
   /** Whether this is the subscription's last wake. */
   ends: boolean;
 }
@@ -175,8 +252,12 @@ export interface SessionWake {
  */
 export function sessionWakeText(wake: SessionWake): string {
   const { task } = wake;
+  const what =
+    wake.state === 'stalled'
+      ? `looks stuck: it ${STALL_PHRASES[wake.stall ?? 'not_started']}`
+      : STATE_PHRASES[wake.state];
   const lines = [
-    `The session "${oneLine(wake.sessionName)}" (${wake.sessionId}) you follow: its task #${task.seq} ${STATE_PHRASES[wake.state]}.`,
+    `The session "${oneLine(wake.sessionName)}" (${wake.sessionId}) you follow: its task #${task.seq} ${what}.`,
   ];
   if (wake.purpose) lines.push(`You followed it to: ${wake.purpose}`);
   lines.push(
@@ -208,7 +289,7 @@ export function sessionWakeText(wake: SessionWake): string {
 }
 
 /** What the turn a wake opens is asked to do, by state. */
-const WAKE_ASKS: Readonly<Record<BotSessionWakeState, string>> = {
+const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
   requires_action:
     'The agent is blocked until a person answers it in the session (a permission or a question). You cannot answer a terminal. Tell the person, in a sentence or two, that it waits on them and what it seems to need, and give the session id so they can open it.',
   completed:
@@ -218,6 +299,8 @@ const WAKE_ASKS: Readonly<Record<BotSessionWakeState, string>> = {
   cancelled:
     'Tell the person the task was stopped before it finished, and what it had done if the session says. Do not start it again on your own.',
   expired: 'Tell the person the task never ran, and why if the session says.',
+  stalled:
+    "Read the session with get_session. If it is under way after all, tell the person so in one line. Otherwise tell them, in a sentence or two, what looks stuck and what would get it going (bring the host online, answer the agent's prompt in the session), and give the session id so they can open it. Do not restart, stop or prompt the session on your own. You stay subscribed: its end still wakes you.",
 };
 
 /**

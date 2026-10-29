@@ -2,8 +2,8 @@
  * The tools a bot follows sessions with (`27-bot-subscriptions.md` §3): a
  * watch stored for the turn that asked, with its scopes and zone, as the
  * owner may read the session; none of them asks; unwatch and list touch
- * only the bot's own subscriptions. The upsert itself is the integration
- * suite's.
+ * only the bot's own subscriptions; and a task the bot hands off owed its
+ * stall check (§4.1). The upsert itself is the integration suite's.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
@@ -15,7 +15,10 @@ import { BotSubscriptionMapper } from '../../bot-subscription.mapper';
 import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../../domain/bot-subscription.entity';
-import { BOT_SUBSCRIPTIONS_PER_BOT } from '../../domain/bot-subscription.policy';
+import {
+  BOT_STALL_CHECK_DELAY_MS,
+  BOT_SUBSCRIPTIONS_PER_BOT,
+} from '../../domain/bot-subscription.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
@@ -68,6 +71,9 @@ function setup(
       async () => options.following ?? [],
     ),
     unsubscribe: vi.fn<BotSubscriptionRepositoryPort['unsubscribe']>(async () => true),
+    scheduleStallCheck: vi.fn<BotSubscriptionRepositoryPort['scheduleStallCheck']>(
+      async () => undefined,
+    ),
   };
   const queries = {
     execute: vi.fn(async (query: unknown) => {
@@ -207,6 +213,28 @@ describe('BotWatchToolsFactory', () => {
     expect(wake.subscriptionId).toBe(subscriptions.subscribe.mock.calls[0][0].id);
   });
 
+  // What breaks this: a session stuck at its launch (host offline, a trust
+  // prompt) that the bot never hears of, since no state it waits on comes.
+  it('owes the task it hands off a stall check a few minutes later', async () => {
+    const { resolver, context, subscriptions } = setup();
+    const before = Date.now();
+    await resolver.watchStarted(context, SESSION);
+    await resolver.watchSent(context, SESSION, 3);
+
+    const [[started, firstTurn, firstAt], [, sentTurn]] =
+      subscriptions.scheduleStallCheck.mock.calls;
+    expect(started.id).toBe(subscriptions.subscribe.mock.calls[0][0].id);
+    expect(firstTurn).toBe(1);
+    expect(sentTurn).toBe(3);
+    expect(firstAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
+  });
+
+  it('keeps the watch it stored when its stall check cannot be staged', async () => {
+    const { resolver, context, subscriptions } = setup();
+    subscriptions.scheduleStallCheck.mockRejectedValueOnce(new Error('connection reset'));
+    expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
+  });
+
   // What breaks this: a prompt whose task finished before the watch was
   // stored, counted as the next task's or as already known, so the bot that
   // was told to wait is never woken.
@@ -232,5 +260,6 @@ describe('BotWatchToolsFactory', () => {
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
+    expect(subscriptions.scheduleStallCheck).not.toHaveBeenCalled();
   });
 });

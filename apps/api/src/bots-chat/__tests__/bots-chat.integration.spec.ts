@@ -1699,6 +1699,7 @@ describe('bots chat (integration)', () => {
           failureDetail: null,
         },
         state: 'completed',
+        stall: null,
         ends: true,
       };
       const props = {

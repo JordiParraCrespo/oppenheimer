@@ -30219,8 +30219,8 @@
           },
           "state": {
             "type": "string",
-            "enum": ["requires_action", "completed", "failed", "cancelled", "expired"],
-            "description": "What became of the task."
+            "enum": ["requires_action", "completed", "failed", "cancelled", "expired", "stalled"],
+            "description": "What became of the task, or `stalled` when its stall check found it stuck."
           }
         },
         "required": ["kind", "subscriptionId", "sessionId", "sessionName", "turn", "state"]

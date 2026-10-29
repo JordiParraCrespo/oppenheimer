@@ -4,13 +4,13 @@ import {
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
-  type BotSessionWakeState,
+  type BotSessionEventState,
   type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
@@ -190,8 +190,11 @@ export class BotSessionEventResponseDto {
   @ApiProperty({ description: "Which of the session's tasks: its turn's number, from 1." })
   turn!: number;
 
-  @ApiProperty({ enum: BOT_SESSION_WAKE_STATES, description: 'What became of the task.' })
-  state!: BotSessionWakeState;
+  @ApiProperty({
+    enum: BOT_SESSION_EVENT_STATES,
+    description: 'What became of the task, or `stalled` when its stall check found it stuck.',
+  })
+  state!: BotSessionEventState;
 }
 
 export type BotMessageEventResponseDto =

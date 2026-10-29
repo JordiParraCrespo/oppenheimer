@@ -468,6 +468,14 @@ export const BOT_SESSION_WAKE_STATES = [
 ] as const;
 export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
+/**
+ * What a session event in the chat can say: one of the wakes above, or
+ * `stalled`, the silent stall check finding the task stuck before it reached
+ * any of them (`27-bot-subscriptions.md` §4.1).
+ */
+export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'stalled'] as const;
+export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
+
 export interface BotSessionEvent {
   kind: 'session';
   /** The subscription that woke the bot. */
@@ -477,7 +485,7 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
-  state: BotSessionWakeState;
+  state: BotSessionEventState;
 }
 
 /**

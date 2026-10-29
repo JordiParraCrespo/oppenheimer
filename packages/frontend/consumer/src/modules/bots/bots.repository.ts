@@ -21,7 +21,7 @@ import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend
 import {
   BOT_EVENT_OUTCOMES,
   BOT_REPLY_OUTCOMES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
@@ -220,7 +220,7 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
         : null;
     }
     case 'session': {
-      const state = BOT_SESSION_WAKE_STATES.find((candidate) => candidate === dto.state);
+      const state = BOT_SESSION_EVENT_STATES.find((candidate) => candidate === dto.state);
       return state
         ? {
             kind: 'session',

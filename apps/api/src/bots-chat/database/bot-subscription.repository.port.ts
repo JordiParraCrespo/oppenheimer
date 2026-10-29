@@ -32,6 +32,17 @@ export interface BotSubscriptionRepositoryPort {
    * never keeps a finished subscription alive. Whether it was still there.
    */
   end(subscription: BotSubscriptionEntity): Promise<boolean>;
+  /**
+   * Owes the subscription its stall check on `turn`, the task the bot just
+   * handed off, at `at` (`27-bot-subscriptions.md` §4.1): a delayed job on
+   * the outbox, so it survives a restart and runs once the time comes.
+   */
+  scheduleStallCheck(
+    subscription: BotSubscriptionEntity,
+    turn: number,
+    at: Date,
+    correlationId: string | null,
+  ): Promise<void>;
   /** The bot stops following the session. Whether it was following it. */
   unsubscribe(organizationId: string, botId: string, sessionId: string): Promise<boolean>;
 }

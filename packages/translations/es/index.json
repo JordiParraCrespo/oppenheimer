@@ -1465,7 +1465,8 @@
           "completed": "La sesión «{{name}}» ha terminado",
           "failed": "La sesión «{{name}}» ha fallado",
           "cancelled": "La sesión «{{name}}» se detuvo",
-          "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+          "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+          "stalled": "La sesión «{{name}}» parece atascada"
         }
       },
       "routineReason": {

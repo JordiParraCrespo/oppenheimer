@@ -211,7 +211,8 @@
         "completed": "Session “{{name}}” finished",
         "failed": "Session “{{name}}” failed",
         "cancelled": "Session “{{name}}” was stopped",
-        "expired": "Session “{{name}}” expired before it ran"
+        "expired": "Session “{{name}}” expired before it ran",
+          "stalled": "Session “{{name}}” looks stuck"
       }
     },
     "routineReason": {
