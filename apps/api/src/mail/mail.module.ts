@@ -8,12 +8,15 @@ import { MailComposeResolver } from './application/mail-compose.resolver';
 import { ConnectGmailCommandHandler } from './commands/connect-gmail/connect-gmail.command-handler';
 import { ConnectGmailHttpController } from './commands/connect-gmail/connect-gmail.http.controller';
 import { CreateMailDraftCommandHandler } from './commands/create-mail-draft/create-mail-draft.command-handler';
+import { CreateMailLabelCommandHandler } from './commands/create-mail-label/create-mail-label.command-handler';
 import { DeleteMailDraftCommandHandler } from './commands/delete-mail-draft/delete-mail-draft.command-handler';
+import { OrganizeMailCommandHandler } from './commands/organize-mail/organize-mail.command-handler';
 import { RemoveGmailConnectionCommandHandler } from './commands/remove-gmail-connection/remove-gmail-connection.command-handler';
 import { RemoveGmailConnectionHttpController } from './commands/remove-gmail-connection/remove-gmail-connection.http.controller';
 import { SendMailCommandHandler } from './commands/send-mail/send-mail.command-handler';
 import { StartGmailConnectionCommandHandler } from './commands/start-gmail-connection/start-gmail-connection.command-handler';
 import { StartGmailConnectionHttpController } from './commands/start-gmail-connection/start-gmail-connection.http.controller';
+import { TrashMailCommandHandler } from './commands/trash-mail/trash-mail.command-handler';
 import { UpdateGmailConnectionCommandHandler } from './commands/update-gmail-connection/update-gmail-connection.command-handler';
 import { UpdateGmailConnectionHttpController } from './commands/update-gmail-connection/update-gmail-connection.http.controller';
 import { UpdateMailDraftCommandHandler } from './commands/update-mail-draft/update-mail-draft.command-handler';
@@ -62,6 +65,9 @@ const commandHandlers: Provider[] = [
   CreateMailDraftCommandHandler,
   UpdateMailDraftCommandHandler,
   DeleteMailDraftCommandHandler,
+  OrganizeMailCommandHandler,
+  TrashMailCommandHandler,
+  CreateMailLabelCommandHandler,
   SendMailCommandHandler,
 ];
 

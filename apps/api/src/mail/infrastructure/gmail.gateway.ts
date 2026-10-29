@@ -18,6 +18,7 @@ import {
   GMAIL_SCOPE,
   type GmailAttachmentContent,
   type GmailAttachmentInfo,
+  type GmailBulkOutcome,
   type GmailCallGrant,
   type GmailDraftPage,
   type GmailDraftRead,
@@ -25,6 +26,7 @@ import {
   type GmailGrant,
   GmailGrantRevokedError,
   type GmailLabel,
+  type GmailLabelChange,
   type GmailMessage,
   GmailNotFoundError,
   GmailProviderError,
@@ -290,6 +292,56 @@ export class GmailGateway implements GmailProviderPort {
     return sentRefOf(await session.write('POST', 'messages/send', rawBody(message)));
   }
 
+  async modifyThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<GmailBulkOutcome> {
+    const session = await this.session(grant);
+    return eachThread(threadIds, (id) =>
+      session.write('POST', `threads/${encodeURIComponent(id)}/modify`, {
+        addLabelIds: change.add,
+        removeLabelIds: change.remove,
+      }),
+    );
+  }
+
+  async modifyMessages(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<void> {
+    const session = await this.session(grant);
+    await session.write('POST', 'messages/batchModify', {
+      ids: messageIds,
+      addLabelIds: change.add,
+      removeLabelIds: change.remove,
+    });
+  }
+
+  async trashThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    trash: boolean,
+  ): Promise<GmailBulkOutcome> {
+    const session = await this.session(grant);
+    const verb = trash ? 'trash' : 'untrash';
+    return eachThread(threadIds, (id) =>
+      session.write('POST', `threads/${encodeURIComponent(id)}/${verb}`),
+    );
+  }
+
+  async createLabel(grant: GmailCallGrant, name: string): Promise<GmailLabel> {
+    const session = await this.session(grant);
+    return labelOf(
+      await session.write('POST', 'labels', {
+        name,
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
+      }),
+    );
+  }
+
   async revoke(grant: GmailCallGrant): Promise<void> {
     const url = new URL(`${this.config('googleOauthBaseUrl')}/revoke`);
     url.searchParams.set('token', grant.refreshToken);
@@ -468,4 +520,25 @@ function record(value: unknown): Record<string, unknown> {
 
 function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+/**
+ * One write per thread, in order, so a call over many stays inside Gmail's
+ * per-second quota; a thread Gmail does not have is listed, the rest go on.
+ */
+async function eachThread(
+  threadIds: readonly string[],
+  write: (id: string) => Promise<unknown>,
+): Promise<GmailBulkOutcome> {
+  const outcome: GmailBulkOutcome = { changed: [], missing: [] };
+  for (const id of threadIds) {
+    try {
+      await write(id);
+      outcome.changed.push(id);
+    } catch (error) {
+      if (!(error instanceof GmailNotFoundError)) throw error;
+      outcome.missing.push(id);
+    }
+  }
+  return outcome;
 }
