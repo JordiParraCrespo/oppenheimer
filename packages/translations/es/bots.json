@@ -219,7 +219,7 @@
         "failed": "La sesión «{{name}}» ha fallado",
         "cancelled": "La sesión «{{name}}» se detuvo",
         "expired": "La sesión «{{name}}» caducó sin ejecutarse",
-          "stalled": "La sesión «{{name}}» parece atascada"
+        "stalled": "La sesión «{{name}}» parece atascada"
       }
     },
     "routineReason": {

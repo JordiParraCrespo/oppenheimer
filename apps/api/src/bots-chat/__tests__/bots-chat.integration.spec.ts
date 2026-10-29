@@ -194,6 +194,7 @@ describe('bots chat (integration)', () => {
     );
     subscriptions = new BotSubscriptionRepository(
       dataSource.getRepository(BotSubscriptionOrmEntity),
+      new OutboxService(dataSource),
       new BotSubscriptionMapper(),
     );
   }, 180000);
@@ -1614,6 +1615,27 @@ describe('bots chat (integration)', () => {
         ...overrides,
       });
     }
+
+    // What breaks this: a stall check delivered at once, before the agent
+    // had any time to start, or lost with a restart.
+    it('stages the stall check on the outbox, held until its time', async () => {
+      await dataSource.query(`DELETE FROM outbox_message WHERE topic = 'bot-stall-checks'`);
+      const bot = await create('Stall');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const at = new Date(Date.now() + 5 * 60_000);
+      await subscriptions.scheduleStallCheck(stored, 1, at, 'corr-1');
+      const rows: { eventName: string; payload: unknown; status: string; availableAt: Date }[] =
+        await dataSource.query(
+          `SELECT "eventName", payload, status, "availableAt" FROM outbox_message WHERE topic = 'bot-stall-checks'`,
+        );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        eventName: 'check-stalled-session',
+        payload: { subscriptionId: stored.id, turn: 1 },
+        status: 'pending',
+      });
+      expect(new Date(rows[0].availableAt).getTime()).toBe(at.getTime());
+    });
 
     it('holds one subscription per bot and session: a second subscribe keeps its id, wakes and newest state', async () => {
       const bot = await create('Watcher');
