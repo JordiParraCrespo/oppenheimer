@@ -6,8 +6,11 @@ import {
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { injectable } from 'inversify';
-import type { CreateSessionInput } from '../sessions/session.entity';
-import { toCreateSessionRequest } from '../sessions/sessions.repository';
+import type { CreateSessionInput, StartCloudSessionInput } from '../sessions/session.entity';
+import {
+  toCreateSessionRequest,
+  toStartCloudSessionRequest,
+} from '../sessions/sessions.repository';
 import {
   MilestoneEntity,
   type MilestoneInput,
@@ -56,14 +59,18 @@ function toMilestone(data: MilestoneResponseDto): MilestoneEntity {
 }
 
 /**
- * What a Start session sends: New session's input (filed under the task's project
- * by the API), and where the person saw the card.
+ * What a Start session sends: New session's input for a session a host runs or
+ * starts (Claude Code's cloud among them), or a vendor's cloud launch with no
+ * host — either filed under the task's project by the API — and where the
+ * person saw the card.
  */
-export interface StartTaskSessionInput {
-  session: CreateSessionInput & { projectId?: never };
+export type StartTaskSessionInput = (
+  | { session: CreateSessionInput & { projectId?: never }; cloud?: never }
+  | { cloud: Omit<StartCloudSessionInput, 'projectId'>; session?: never }
+) & {
   seenStatus: TaskStatus;
   idempotencyKey: string;
-}
+};
 
 export interface StartedTaskSession {
   task: Task;
@@ -118,12 +125,22 @@ export class TasksRepository {
 
   @MapApiError(TasksErrors.START_SESSION_FAILED)
   async startSession(id: string, input: StartTaskSessionInput): Promise<StartedTaskSession> {
+    const headers = { 'Idempotency-Key': input.idempotencyKey };
     const data = await unwrapBody(
-      heyApiSdk.startTaskSession({
-        path: { id },
-        body: { session: toCreateSessionRequest(input.session), seenStatus: input.seenStatus },
-        headers: { 'Idempotency-Key': input.idempotencyKey },
-      }),
+      input.cloud
+        ? heyApiSdk.startTaskCloudSession({
+            path: { id },
+            body: { cloud: toStartCloudSessionRequest(input.cloud), seenStatus: input.seenStatus },
+            headers,
+          })
+        : heyApiSdk.startTaskSession({
+            path: { id },
+            body: {
+              session: toCreateSessionRequest(input.session),
+              seenStatus: input.seenStatus,
+            },
+            headers,
+          }),
       TasksErrors.START_SESSION_FAILED,
     );
     return { task: toTask(data.task), sessionId: data.sessionId, hints: data.hints };

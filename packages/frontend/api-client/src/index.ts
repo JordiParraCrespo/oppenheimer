@@ -243,6 +243,7 @@ export type {
   StartCloudSessionRequest,
   StartGoogleCalendarConnectionRequest,
   StartReviewSessionRequest,
+  StartTaskCloudSessionRequest,
   StartTaskSessionRequest,
   StartTaskSessionResponseDto,
   SubmitPullRequestReviewRequest,

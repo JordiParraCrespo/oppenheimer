@@ -3,9 +3,11 @@ import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_PAUSED_REASONS,
   AUTOMATION_PERMISSIONS,
+  AUTOMATION_PLACES,
   AUTOMATION_RUN_STATUSES,
   type AutomationPausedReason,
   type AutomationPermission,
+  type AutomationPlace,
   type AutomationRunStatus,
   GITHUB_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
@@ -40,8 +42,20 @@ export class AutomationRevisionResponseDto {
   })
   number!: number;
 
-  @ApiProperty({ format: 'uuid' })
-  hostId!: string;
+  @ApiProperty({
+    enum: AUTOMATION_PLACES,
+    description:
+      'Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host',
+  })
+  place!: AutomationPlace;
+
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description: 'The host a run starts on or from; null at a vendor',
+  })
+  hostId!: string | null;
 
   @ApiProperty({ example: 'claude-code' })
   agent!: string;

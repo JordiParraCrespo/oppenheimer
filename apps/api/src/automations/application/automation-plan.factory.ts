@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AutomationRepositoryInputDto, TriggerInputDto } from '@oppenheimer/shared';
+import { type AutomationPlace, automationPlaceFits } from '@oppenheimer/shared/automations';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
@@ -62,11 +63,26 @@ export class AutomationPlanFactory {
     return resolved;
   }
 
-  async assertHost(scope: AccessScope, hostId: string): Promise<void> {
-    await this.hosts.assertUsable(scope, hostId);
+  /**
+   * Where a run's session runs, as the revision will hold it: the place, the
+   * agent and the host agree (a vendor runs its own agent with no host,
+   * Claude Code's cloud runs Claude Code from a host), the host is one the
+   * caller may use, and an agent on a host can run unattended.
+   */
+  async assertWhere(
+    scope: AccessScope,
+    where: { place: AutomationPlace; agent: string; hostId: string | null },
+  ): Promise<void> {
+    if (!automationPlaceFits(where)) {
+      throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
+        detail: `${where.agent} cannot run in ${where.place} ${where.hostId ? 'from a host' : 'with no host'}`,
+      });
+    }
+    if (where.place === 'host') this.assertAgent(where.agent);
+    if (where.hostId) await this.hosts.assertUsable(scope, where.hostId);
   }
 
-  assertAgent(agent: string): void {
+  private assertAgent(agent: string): void {
     if (!automationAgentSupported(agent)) {
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
         detail: `${agent} has no unattended mode`,

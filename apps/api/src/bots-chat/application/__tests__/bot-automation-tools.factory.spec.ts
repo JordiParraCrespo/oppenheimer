@@ -55,6 +55,7 @@ const automation = {
   },
   revision: {
     number: 3,
+    place: 'host',
     hostId: 'host-1',
     agent: 'claude',
     model: null,

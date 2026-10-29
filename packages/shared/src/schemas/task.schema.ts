@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createSessionSchema } from './session.schema.js';
+import { createSessionSchema, startCloudSessionSchema } from './session.schema.js';
 
 /**
  * Plan's board (`product/versions/mvp/17-plan.md`): a **task** is work a person
@@ -131,7 +131,8 @@ const seenStatusSchema = taskStatusSchema;
 
 /**
  * `POST /tasks/{id}/sessions`: start a session for the task. The session is
- * New session's body, filed under the task's project whatever `projectId` says.
+ * New session's body (a worktree, a folder, or Claude Code's cloud with
+ * `cloud: true`), filed under the task's project whatever `projectId` says.
  */
 export const startTaskSessionSchema = z.object({
   session: createSessionSchema,
@@ -139,6 +140,18 @@ export const startTaskSessionSchema = z.object({
 });
 
 export type StartTaskSessionDto = z.infer<typeof startTaskSessionSchema>;
+
+/**
+ * `POST /tasks/{id}/sessions/cloud`: start a session for the task in a
+ * vendor's cloud (Cursor's), with no host: `POST /sessions/cloud`'s body,
+ * filed under the task's project.
+ */
+export const startTaskCloudSessionSchema = z.object({
+  cloud: startCloudSessionSchema.omit({ projectId: true }),
+  seenStatus: seenStatusSchema,
+});
+
+export type StartTaskCloudSessionDto = z.infer<typeof startTaskCloudSessionSchema>;
 
 /** `PUT /tasks/{id}/sessions/{sessionId}`: link a session that already exists. */
 export const linkTaskSessionSchema = z.object({

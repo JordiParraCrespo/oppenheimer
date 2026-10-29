@@ -38,6 +38,7 @@ function automation(active = true) {
     ownerUserId: 'user-1',
     name: 'Nightly audit',
     revision: {
+      place: 'host',
       hostId: 'host-1',
       agent: 'claude-code',
       model: null,
