@@ -6,29 +6,33 @@ import { Input } from '@oppenheimer/design-system-web/input';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import {
-  Bot,
+  Check,
+  Clock,
   EllipsisIcon,
   GitPullRequest,
+  PanelLeft,
+  SlidersVertical,
   Terminal,
-  Zap,
+  TrendingDown,
+  X,
 } from '@oppenheimer/design-system-web/icons';
 import {
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardChoices,
-  InboxCardFacts,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageChoices,
+  InboxMessageFacts,
   InboxClear,
-  InboxGreeting,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
-  InboxLogLine,
+  InboxListHead,
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
   InboxQuestions,
   InboxSnoozedRow,
+  InboxToolbar,
 } from '@oppenheimer/design-system-web/inbox';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 
@@ -36,12 +40,25 @@ import { Spec, ThemePair } from './page-shell';
 
 function InboxListDemo() {
   return (
-    <div className="w-72">
+    <div className="w-90 border border-border-subtle">
+      <InboxListHead
+        title="Inbox"
+        count="2 unread"
+        leading={
+          <IconButton variant="quiet" size="sm" aria-label="Toggle sidebar">
+            <PanelLeft />
+          </IconButton>
+        }
+      >
+        <IconButton variant="quiet" size="xs" aria-label="Filter the Inbox">
+          <SlidersVertical />
+        </IconButton>
+      </InboxListHead>
       <InboxList>
         <InboxItem
-          icon={<GitPullRequest />}
+          sender="pau-g"
           title="Merge #121 Port to peersyst"
-          from="XRP Mobile · acme/xrp-mobile"
+          preview="Nothing is holding it: it can merge now."
           meta="6m"
           active
           action={
@@ -50,54 +67,91 @@ function InboxListDemo() {
             </IconButton>
           }
         />
-        <InboxItem icon={<Bot />} title="Approve Ops · start_session" from="Ops" meta="14m" />
-        <InboxItem icon={<Terminal />} title="sign-in rebuild is blocked" from="XRP Mobile · Session" meta="31m" />
-        <InboxItem icon={<Zap />} title="Nightly dependency audit failed" from="Automation" meta="Low" done />
+        <InboxItem
+          sender="Ops"
+          title="Approve Ops · start_session"
+          preview="Start a session on acme/app to fix the flaky login test."
+          meta="14m"
+          unread
+        />
+        <InboxItem
+          sender="sign-in rebuild"
+          title="sign-in rebuild is waiting on you"
+          preview="Its agent stopped to ask before it goes on."
+          meta="31m"
+          unread
+        />
+        <InboxItem
+          sender="Nightly audit"
+          title="Nightly audit failed"
+          preview="The run ended on a failure."
+          meta="1h"
+          done
+        />
         <InboxItemSkeleton />
+      </InboxList>
+      <div className="px-2.5 py-2">
         <InboxSnoozedRow
           title="Review #88 Wallet list"
-          until="in 1h"
+          until="Back Thu 09:00"
           action={
             <Button size="xs" variant="secondary">
               Bring back
             </Button>
           }
         />
-      </InboxList>
+      </div>
     </div>
   );
 }
 
 function InboxPaneDemo() {
   return (
-    <div className="flex w-full max-w-[640px] flex-col gap-4">
-      <InboxGreeting title="Good morning.">3 sessions are running. 2 things need you, one at a time.</InboxGreeting>
-      <InboxLogLine time="09:42">Merged #121 into main</InboxLogLine>
-      <InboxCard
+    <div className="flex w-full max-w-160 flex-col border border-border-subtle">
+      <InboxToolbar position="1 of 3">
+        <IconButton aria-label="Mark as done">
+          <Check />
+        </IconButton>
+        <IconButton aria-label="Snooze until tomorrow">
+          <Clock />
+        </IconButton>
+        <IconButton aria-label="Deprioritize">
+          <TrendingDown />
+        </IconButton>
+        <IconButton aria-label="Delete">
+          <X />
+        </IconButton>
+      </InboxToolbar>
+      <InboxMessage
         icon={<GitPullRequest />}
-        from="acme/xrp-mobile · Your pull request"
+        sender="pau-g"
+        meta="XRP Mobile · acme/xrp-mobile"
         title="Merge #121 · Port to peersyst?"
-        age="6m"
+        age="6m ago"
       >
-        <InboxCardBody>It can merge: nothing is holding it.</InboxCardBody>
-        <InboxCardFacts>
+        <InboxMessageBody>Nothing is holding it: it can merge now.</InboxMessageBody>
+        <InboxMessageFacts>
           <span className="flex items-center gap-1.5">
             <StatusDot state="passing" /> Checks passing
           </span>
           <span className="figures">+84 −41</span>
-        </InboxCardFacts>
-        <InboxCardActions
+        </InboxMessageFacts>
+        <InboxMessageActions
           leading={
             <>
               <Button variant="ghost">Later</Button>
-              <Button variant="secondary">Review</Button>
+              <Button variant="secondary">Open</Button>
             </>
           }
         >
           <Button>Merge</Button>
-        </InboxCardActions>
-      </InboxCard>
-      <InboxClear title="You're clear">3 sessions are still running. The next thing that needs you comes here.</InboxClear>
+        </InboxMessageActions>
+      </InboxMessage>
+      <div className="flex min-h-40 border-t border-border-subtle">
+        <InboxClear title="Nothing needs you">
+          3 sessions are still running. New items land here when one needs a decision.
+        </InboxClear>
+      </div>
     </div>
   );
 }
@@ -120,21 +174,22 @@ const QUESTIONS = [
 function InboxDecisionDemo() {
   const [picks, setPicks] = useState<number[][]>([[0], []]);
   return (
-    <div className="flex w-full max-w-160 flex-col gap-4">
-      <InboxCard
+    <div className="flex w-full max-w-160 flex-col gap-4 border border-border-subtle">
+      <InboxMessage
         icon={<Terminal />}
-        from="lively-alder · acme/app · fix-wallet"
+        sender="lively-alder"
+        meta="acme/app · fix-wallet"
         title="Do you want to proceed?"
         age="2m"
       >
-        <InboxCardBody>Claude Code stopped before it runs this.</InboxCardBody>
+        <InboxMessageBody>Claude Code stopped before it runs this.</InboxMessageBody>
         <ApprovalCommand>{'Bash command\n  pnpm generate:api-client'}</ApprovalCommand>
-        <InboxCardChoices>
+        <InboxMessageChoices>
           <Button>Yes</Button>
           <Button variant="secondary">Yes, and don’t ask again for pnpm commands</Button>
           <Button variant="ghost">No, and tell Claude what to do differently</Button>
-        </InboxCardChoices>
-        <InboxCardActions
+        </InboxMessageChoices>
+        <InboxMessageActions
           leading={
             <>
               <Button variant="ghost">Later</Button>
@@ -142,14 +197,15 @@ function InboxDecisionDemo() {
             </>
           }
         />
-      </InboxCard>
-      <InboxCard
+      </InboxMessage>
+      <InboxMessage
         icon={<Terminal />}
-        from="gateway · acme/gateway · routing"
+        sender="gateway"
+        meta="acme/gateway · routing"
         title="2 questions before gateway continues"
         age="14m"
       >
-        <InboxCardBody>Pick an answer for each, or write your own, and it goes on.</InboxCardBody>
+        <InboxMessageBody>Pick an answer for each, or write your own, and it goes on.</InboxMessageBody>
         <InboxQuestions>
           {QUESTIONS.map((q, i) => (
             <InboxQuestion key={q.question} n={i + 1} header={q.header} question={q.question}>
@@ -167,24 +223,24 @@ function InboxDecisionDemo() {
             </InboxQuestion>
           ))}
         </InboxQuestions>
-        <InboxCardActions leading={<Button variant="ghost">Later</Button>}>
+        <InboxMessageActions leading={<Button variant="ghost">Later</Button>}>
           <Button disabled={picks.some((p) => p.length === 0)}>Send answers</Button>
-        </InboxCardActions>
-      </InboxCard>
+        </InboxMessageActions>
+      </InboxMessage>
     </div>
   );
 }
 
-/** The Inbox's parts: the list's rows in the sidebar, the pane's greeting, log, card and clear state. */
+/** The Inbox's parts: the list column's head and mail rows, the reading pane's toolbar, message and clear state. */
 export function InboxSpec() {
   return (
     <Spec
       id="inbox"
       title="Inbox"
       meta="inbox.tsx"
-      desc="One place for what needs you (Brain.dc.html). InboxItem is a two-line sidebar row: the kind's glyph, a short line, where it comes from, and a mono age or Low; the item in the pane is on the selected wash, a done row (Show done) is struck through at half strength, and the ellipsis takes the age's place on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. In the pane: InboxGreeting opens it, InboxLogLine is one thing done this visit, InboxCard is the item in hand (who from, the question, the age; then InboxCardBody, InboxCardFacts and InboxCardActions with Later and a link on the left and the answers on the right), and InboxClear says nothing needs you. A session waiting on a decision answers on the card: a permission's options as InboxCardChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
-      code={`<InboxList><InboxItem icon={<GitPullRequest />} title="Merge #121" from="acme/app" meta="6m" active action={menu} /></InboxList>
-<InboxCard icon={<Bot />} from="Ops" title="Approve start_session?" age="14m"><InboxCardBody>…</InboxCardBody><InboxCardActions leading={<Button variant="ghost">Later</Button>}><Button>Approve</Button></InboxCardActions></InboxCard>`}
+      desc="One place for what needs you, laid out as a mail client inside Plan (Inbox.dc.html). The list column opens on InboxListHead (the sidebar toggle, the name, the unread count, the filter); InboxItem is a mail row: an unread dot, who it is from with a mono age or Low, the subject and a line of its body, unread rows in semibold, the one in the reading pane on the selected wash, a done row (Show done) struck through at half strength, and the ellipsis over the age on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. The reading pane opens on InboxToolbar (Mark as done, Snooze, Deprioritize, Delete and the item's place), then InboxMessage: the question as a heading, the sender on a round glyph with where it comes from and how long ago, then InboxMessageBody, InboxMessageFacts and InboxMessageActions with Later and a link on the left and the answers on the right; InboxClear says nothing needs you. A session waiting on a decision answers in the message: a permission's options as InboxMessageChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
+      code={`<InboxList><InboxItem sender="pau-g" title="Merge #121" preview="It can merge now." meta="6m" unread action={menu} /></InboxList>
+<InboxMessage icon={<Bot />} sender="Ops" meta="Bot approval" title="Approve start_session?" age="14m ago"><InboxMessageBody>…</InboxMessageBody><InboxMessageActions leading={<Button variant="ghost">Later</Button>}><Button>Approve</Button></InboxMessageActions></InboxMessage>`}
     >
       <ThemePair>
         <div className="flex flex-col gap-8 lg:flex-row">

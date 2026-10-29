@@ -1,10 +1,10 @@
 import {
   Button,
   DiffStat,
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardFacts,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageFacts,
   StatusDot,
   type StatusState,
 } from '@oppenheimer/design-system-web';
@@ -29,8 +29,7 @@ const CHECKS_GATE: Record<string, StatusState> = {
 };
 
 /**
- * A pull request in the pane: its checks and size (and, ready to merge, who
- * wrote it, as a requested review's body already names), Open (it opens in Pull
+ * A pull request in the reading pane, from its author: its checks and size, Open (it opens in Pull
  * requests), View on GitHub (a new tab) and, while nothing holds it, Merge
  * through the existing merge endpoint. A merge GitHub refuses stays on the
  * card, in its words.
@@ -51,18 +50,21 @@ export function InboxPullCard({
   const { pull } = item;
 
   return (
-    <InboxCard icon={<InboxKindIcon kind="pull" />} from={from} title={copy.title} age={age}>
-      <InboxCardBody>{copy.body}</InboxCardBody>
-      <InboxCardFacts>
+    <InboxMessage
+      icon={<InboxKindIcon kind="pull" />}
+      sender={copy.sender}
+      meta={from}
+      title={copy.title}
+      age={age}
+    >
+      <InboxMessageBody>{copy.body}</InboxMessageBody>
+      <InboxMessageFacts>
         <StatusDot state={CHECKS_GATE[pull.checks] ?? 'waiting'} density="compact">
           {t(`inbox.pull.checks.${pull.checks}`)}
         </StatusDot>
         <DiffStat additions={pull.additions} deletions={pull.deletions} />
         <span>{pull.reference}</span>
-        {item.reason === 'ready' ? (
-          <span>{t('inbox.pull.by', { author: pull.author })}</span>
-        ) : null}
-      </InboxCardFacts>
+      </InboxMessageFacts>
       {merge.error ? (
         <ErrorAlert
           error={merge.error}
@@ -70,7 +72,7 @@ export function InboxPullCard({
           onDismiss={merge.reset}
         />
       ) : null}
-      <InboxCardActions
+      <InboxMessageActions
         leading={
           <>
             <InboxLaterButton itemKey={item.key} />
@@ -108,9 +110,6 @@ export function InboxPullCard({
                 {
                   onSuccess: () => {
                     inboxVisit.answered(item.key);
-                    inboxVisit.log(
-                      t('inbox.log.merged', { number: pull.number, repository: pull.repository }),
-                    );
                   },
                 },
               )
@@ -119,7 +118,7 @@ export function InboxPullCard({
             {t('inbox.pull.merge')}
           </Button>
         ) : null}
-      </InboxCardActions>
-    </InboxCard>
+      </InboxMessageActions>
+    </InboxMessage>
   );
 }

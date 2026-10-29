@@ -3,7 +3,7 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
-import { CircleCheckIcon, ClockIcon } from 'lucide-react';
+import { ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
@@ -11,33 +11,64 @@ import { cn } from '../lib/utils';
 import { Skeleton } from './skeleton';
 
 /**
- * The Inbox (`product/versions/mvp/design/version1/Brain.dc.html`): what
- * needs you, one row each in the sidebar, and the one in hand as a card in
- * the pane with the log of what you did above it.
+ * The Inbox (`product/versions/mvp/design/version1/Inbox.dc.html`), laid out
+ * as a mail client inside Plan: a list column of what needs you, one row per
+ * item, and a reading pane with the item in hand as a message, its answers
+ * under it and a toolbar over it.
  */
 function InboxList({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="inbox-list" role="list" className={cn('flex flex-col', className)} {...props} />;
+}
+
+/**
+ * InboxListHead — the list column's 48px head: `leading` (the sidebar
+ * toggle), the Inbox's name, the unread count in mono, and `children` (the
+ * filter) on the right.
+ */
+function InboxListHead({
+  title,
+  count,
+  leading,
+  className,
+  children,
+}: {
+  title: React.ReactNode;
+  /** "3 unread"; nothing when all is read. */
+  count?: React.ReactNode;
+  leading?: React.ReactNode;
+  className?: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div
-      data-slot="inbox-list"
-      role="list"
-      className={cn('flex flex-col gap-0.5', className)}
-      {...props}
-    />
+      data-slot="inbox-list-head"
+      className={cn(
+        'flex h-12 shrink-0 items-center gap-2 border-b border-border-subtle pr-2.5 pl-3.5',
+        className,
+      )}
+    >
+      {leading}
+      <h1 className="text-[15px] font-semibold tracking-[-0.011em]">{title}</h1>
+      {count ? <span className="figures text-[12px] text-fg-subtle">{count}</span> : null}
+      <div className="ml-auto flex items-center gap-1">{children}</div>
+    </div>
   );
 }
 
 /**
- * InboxItem — one thing that needs you: the kind's glyph, a short line, where
- * it comes from under it, and on the right a mono age (or "Low"). The item in
- * the pane is `active`, on the selected wash. A `done` row (Show done) is
- * struck through at half strength. `action` is the row's ellipsis, as on a
- * `SessionItem`: shown on hover, focus or while open, hiding the age.
+ * InboxItem — one thing that needs you, as a mail row: an unread dot, who it
+ * is from with its mono age (or "Low") on the right, the subject under it and
+ * a line of its body. Unread rows set the sender and subject in semibold. The
+ * item in the reading pane is `active`, on the selected wash; a `done` row
+ * (Show done) is struck through at half strength. `action` is the row's
+ * ellipsis, shown on hover, focus or while open, over the age.
  */
 function InboxItem({
+  sender,
   title,
-  from,
+  preview,
   meta,
-  icon,
+  unread,
   active,
   done,
   action,
@@ -47,11 +78,14 @@ function InboxItem({
   nativeButton,
   ...props
 }: Omit<ButtonPrimitive.Props, 'children'> & {
+  sender: React.ReactNode;
+  /** The subject: the short line of what it asks. */
   title: string;
-  from?: React.ReactNode;
+  /** The first line of its body. */
+  preview?: React.ReactNode;
   /** The age ("6m"), or "Low" for a deprioritized item. */
   meta?: React.ReactNode;
-  icon: React.ReactNode;
+  unread?: boolean;
   active?: boolean;
   done?: boolean;
   /** The row's ellipsis: a `DropdownMenu` trigger. */
@@ -65,34 +99,41 @@ function InboxItem({
       data-slot="inbox-item"
       data-active={active || undefined}
       data-done={done || undefined}
+      data-unread={unread || undefined}
       role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/inbox flex w-full items-start gap-2.5 rounded-sm px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50 [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'group/inbox grid w-full grid-cols-[8px_minmax(0,1fr)_auto] items-baseline gap-x-2.5 gap-y-[3px] border-b border-border-subtle py-3 pr-3.5 pl-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
     >
-      <span aria-hidden className="flex shrink-0 pt-0.5 text-fg-muted">
-        {icon}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-operate tracking-[-0.009em] group-data-done/inbox:line-through">
-          {title}
-        </span>
-        {from ? <span className="truncate text-xs text-fg-subtle">{from}</span> : null}
+      <span
+        aria-hidden
+        className="col-start-1 row-start-1 size-[7px] self-center rounded-pill group-data-unread/inbox:bg-primary"
+      />
+      <span className="col-start-2 row-start-1 truncate text-[13.5px] group-data-unread/inbox:font-semibold">
+        {sender}
       </span>
       {meta ? (
         <span
           className={cn(
-            'figures shrink-0 pt-0.5 text-[11px] text-fg-subtle',
+            'figures col-start-3 row-start-1 text-[11px] text-fg-subtle',
             withAction && META_GIVES_WAY,
           )}
         >
           {meta}
+        </span>
+      ) : null}
+      <span className="col-span-2 col-start-2 row-start-2 truncate text-[13.5px] group-data-done/inbox:line-through group-data-unread/inbox:font-semibold">
+        {title}
+      </span>
+      {preview ? (
+        <span className="col-span-2 col-start-2 row-start-3 truncate text-[12.5px] text-fg-subtle">
+          {preview}
         </span>
       ) : null}
     </ButtonPrimitive>
@@ -104,7 +145,7 @@ function InboxItem({
       slot="inbox-row"
       action={action}
       menuOpen={menuOpen}
-      className="[&>span:last-child]:top-2 [&>span:last-child]:translate-y-0"
+      className="[&>span:last-child]:top-2.5 [&>span:last-child]:right-2 [&>span:last-child]:translate-y-0"
     >
       {button}
     </SidebarRow>
@@ -117,14 +158,15 @@ function InboxItemSkeleton({ className }: { className?: string }) {
     <div
       data-slot="inbox-item-skeleton"
       aria-hidden
-      className={cn('flex w-full items-start gap-2.5 px-2.5 py-2', className)}
+      className={cn(
+        'grid w-full grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 border-b border-border-subtle py-3.5 pr-3.5 pl-2.5',
+        className,
+      )}
     >
-      <Skeleton className="mt-0.5 size-3.5 rounded-xs" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
-        <Skeleton className="h-3.5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-      </span>
-      <Skeleton className="mt-0.5 h-3 w-5" />
+      <Skeleton className="col-start-2 h-3.5 w-1/3" />
+      <Skeleton className="col-start-3 h-3 w-5" />
+      <Skeleton className="col-span-2 col-start-2 h-3.5 w-3/4" />
+      <Skeleton className="col-span-2 col-start-2 h-3 w-2/3" />
     </div>
   );
 }
@@ -165,113 +207,109 @@ function InboxSnoozedRow({
   );
 }
 
-/** InboxGreeting — how the pane opens: a line in display type, and what is going on under it. */
-function InboxGreeting({
-  title,
-  children,
-  className,
-}: {
-  title: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div data-slot="inbox-greeting" className={cn('flex flex-col gap-1.5 pb-1.5', className)}>
-      <h1 className="font-display text-h2 font-semibold tracking-h2 text-balance">{title}</h1>
-      {children ? <p className="text-body text-fg-muted text-pretty">{children}</p> : null}
-    </div>
-  );
-}
-
 /**
- * InboxLogLine — one thing you did this visit, in the pane's log: a green
- * tick, what was done, and when, in mono.
+ * InboxToolbar — the reading pane's 48px head: `children` (Mark as done,
+ * Snooze, Deprioritize, Delete as quiet icon buttons, and a Back on a phone),
+ * and the item's place in the list (`position`, "1 of 5") in mono on the
+ * right.
  */
-function InboxLogLine({
-  time,
-  children,
+function InboxToolbar({
+  position,
   className,
-}: {
-  time: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /** "1 of 5". */
+  position?: React.ReactNode;
 }) {
   return (
     <div
-      data-slot="inbox-log-line"
+      role="toolbar"
+      data-slot="inbox-toolbar"
       className={cn(
-        'flex min-w-0 items-center gap-2.5 rounded-md bg-hover-surface px-3.5 py-2.5 motion-safe:animate-appear',
+        'flex h-12 shrink-0 items-center gap-0.5 border-b border-border-subtle px-4',
         className,
       )}
+      {...props}
     >
-      <CircleCheckIcon aria-hidden className="size-3.75 shrink-0 text-success" />
-      <span className="min-w-0 flex-1 truncate text-operate">{children}</span>
-      <span className="figures shrink-0 text-[11.5px] text-fg-subtle">{time}</span>
+      {children}
+      {position ? (
+        <span className="figures ml-auto text-[12px] text-fg-subtle">{position}</span>
+      ) : null}
     </div>
   );
 }
 
 /**
- * InboxCard — the item in hand: a round glyph, who it is from, the question
- * in a sentence and the age; then what the caller composes under it
- * (`InboxCardBody`, `InboxCardFacts`, `InboxCardActions`).
+ * InboxMessage — the item in hand, read as a message: its question as the
+ * heading, then who it is from on a round glyph with where it comes from
+ * under the name and how long ago on the right, over a hairline; then what
+ * the caller composes under it (`InboxMessageBody`, `InboxMessageFacts`, the
+ * answers, `InboxMessageActions`). At the reading measure, centred.
  */
-function InboxCard({
+function InboxMessage({
   icon,
-  from,
+  sender,
+  meta,
   title,
   age,
   className,
   children,
   ...props
-}: Omit<React.ComponentProps<'section'>, 'title'> & {
+}: Omit<React.ComponentProps<'article'>, 'title'> & {
   icon: React.ReactNode;
-  from: React.ReactNode;
+  sender: React.ReactNode;
+  /** Its projects and source: "XRP Mobile · acme/app". */
+  meta?: React.ReactNode;
   title: React.ReactNode;
+  /** "6m ago". */
   age?: React.ReactNode;
 }) {
   return (
-    <section
-      data-slot="inbox-card"
+    <article
+      data-slot="inbox-message"
       className={cn(
-        'flex flex-col gap-4 rounded-lg border border-border-subtle bg-card p-5 motion-safe:animate-appear',
+        'mx-auto box-border flex w-full max-w-[760px] flex-col gap-5 px-8 pt-7 pb-12 motion-safe:animate-appear max-sm:px-4',
         className,
       )}
       {...props}
     >
-      <div className="flex items-start gap-3.5">
+      <h2 className="text-[21px] leading-[1.3] font-semibold tracking-[-0.016em] text-pretty">
+        {title}
+      </h2>
+      <div className="flex items-center gap-3 border-b border-border-subtle pb-5">
         <span
           aria-hidden
           className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-control text-fg [&_svg]:size-4"
         >
           {icon}
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-[12.5px] text-fg-muted">{from}</span>
-          <h2 className="text-h4 font-semibold tracking-h4 text-pretty">{title}</h2>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-[14px] font-medium">{sender}</span>
+          {meta ? <span className="truncate text-[12.5px] text-fg-muted">{meta}</span> : null}
         </div>
-        {age ? <span className="figures shrink-0 text-[11.5px] text-fg-subtle">{age}</span> : null}
+        {age ? <span className="figures shrink-0 text-[12px] text-fg-subtle">{age}</span> : null}
       </div>
       {children}
-    </section>
+    </article>
   );
 }
 
-function InboxCardBody({ className, ...props }: React.ComponentProps<'p'>) {
+function InboxMessageBody({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
-      data-slot="inbox-card-body"
-      className={cn('text-[14.5px] leading-relaxed text-fg text-pretty', className)}
+      data-slot="inbox-message-body"
+      className={cn('text-[15px] leading-[1.6] text-fg text-pretty', className)}
       {...props}
     />
   );
 }
 
 /** The facts under the question: a pull request's checks and size, a run's failure line. */
-function InboxCardFacts({ className, ...props }: React.ComponentProps<'div'>) {
+function InboxMessageFacts({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
-      data-slot="inbox-card-facts"
+      data-slot="inbox-message-facts"
       className={cn('flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] text-fg-muted', className)}
       {...props}
     />
@@ -282,7 +320,7 @@ function InboxCardFacts({ className, ...props }: React.ComponentProps<'div'>) {
  * The answer row: `leading` (Later, a link to the thing) on the left, the
  * answers (`children`) on the right, the primary last.
  */
-function InboxCardActions({
+function InboxMessageActions({
   leading,
   children,
   className,
@@ -292,7 +330,7 @@ function InboxCardActions({
   className?: string;
 }) {
   return (
-    <div data-slot="inbox-card-actions" className={cn('flex flex-wrap items-center gap-2', className)}>
+    <div data-slot="inbox-message-actions" className={cn('flex flex-wrap items-center gap-2', className)}>
       {leading ? <div className="flex flex-wrap items-center gap-2">{leading}</div> : null}
       {/* The answers keep together, on the right, and wrap as one under the rest. */}
       <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
@@ -301,17 +339,17 @@ function InboxCardActions({
 }
 
 /**
- * InboxCardChoices — the answers a session waits on, in the card's body, in
+ * InboxMessageChoices — the answers a session waits on, in the card's body, in
  * the order the agent offers them (the frame's "A session is waiting on a
  * decision"): one `Button` each, the first the primary. The row wraps; a
  * label too long for the card is cut, with the whole of it on the button's
  * own `title`.
  */
-function InboxCardChoices({ className, ...props }: React.ComponentProps<'div'>) {
+function InboxMessageChoices({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       role="group"
-      data-slot="inbox-card-choices"
+      data-slot="inbox-message-choices"
       className={cn('flex min-w-0 flex-wrap gap-1.5 [&>*]:max-w-full', className)}
       {...props}
     />
@@ -434,7 +472,7 @@ function InboxQuestionOption({
   );
 }
 
-/** InboxClear — nothing needs you: "You're clear", and what is still going on. */
+/** InboxClear — nothing needs you: a heading, and what is still going on, in the reading pane. */
 function InboxClear({
   title,
   children,
@@ -447,29 +485,32 @@ function InboxClear({
   return (
     <div
       data-slot="inbox-clear"
-      className={cn('flex flex-col gap-1.5 rounded-lg bg-card p-5 motion-safe:animate-appear', className)}
+      className={cn(
+        'flex max-w-[420px] flex-1 flex-col justify-center gap-1.5 px-10 motion-safe:animate-appear max-sm:px-4',
+        className,
+      )}
     >
-      <span className="text-h4 font-semibold tracking-h4">{title}</span>
-      {children ? <span className="text-operate leading-normal text-fg-muted">{children}</span> : null}
+      <span className="text-[21px] font-semibold tracking-[-0.016em]">{title}</span>
+      {children ? <span className="text-[14px] leading-normal text-fg-muted">{children}</span> : null}
     </div>
   );
 }
 
 export {
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardChoices,
-  InboxCardFacts,
   InboxClear,
-  InboxGreeting,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
-  InboxLogLine,
+  InboxListHead,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageChoices,
+  InboxMessageFacts,
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
   InboxQuestions,
   InboxSnoozedRow,
+  InboxToolbar,
 };
