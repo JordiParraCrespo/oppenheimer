@@ -71,11 +71,20 @@
         "description": "Abre un directorio existente tal como está · no se clona nada"
       },
       "cloud": {
-        "label": "Nube de Claude Code",
-        "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
+        "label": "Nube",
+        "description": "Inicia la tarea en la nube de Claude Code o de Codex desde este host · el motor dice cuál"
       },
       "claudeCloud": {
         "label": "Claude Code",
+        "place": "Nube de Claude Code",
+        "from": "Desde {{host}}",
+        "noHost": "Necesita un host",
+        "startFrom": "Empezar desde",
+        "cannot": "Este runner no puede iniciarla"
+      },
+      "codexCloud": {
+        "label": "Codex",
+        "place": "Nube de Codex",
         "from": "Desde {{host}}",
         "noHost": "Necesita un host",
         "startFrom": "Empezar desde",
@@ -670,6 +679,12 @@
       "failed": "El agente falló en la nube de {{vendor}}",
       "cancelled": "Detenido en {{vendor}}",
       "expired": "La ejecución caducó en la nube de {{vendor}}"
+    },
+    "codex": {
+      "eyebrow": "Nube de Codex",
+      "statusSource": "Este estado llega del host que la inició, que pregunta a Codex por sus tareas cada minuto mientras está en línea.",
+      "open": "Abrir en ChatGPT",
+      "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
     }
   }
 }

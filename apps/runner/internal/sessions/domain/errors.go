@@ -36,6 +36,10 @@ var (
 	// repository there, or a CLI too old to know the flag. Its detail is
 	// the CLI's own last words.
 	ErrCloudStart = problem.New("SESS_008", http.StatusBadGateway, "Claude Code could not start the session in the cloud")
+	// ErrCodexCloudStart is `codex cloud` refusing or failing: not signed in
+	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
+	// old to know the command. Its detail is the CLI's own last words.
+	ErrCodexCloudStart = problem.New("SESS_009", http.StatusBadGateway, "Codex could not start the task in the cloud")
 )
 
 // Sentinels a Places adapter answers with; the use case maps them onto the

@@ -78,6 +78,7 @@ const (
 	CapabilityDeviceScreen        = "device.screen"
 	CapabilityPortForward         = "port.forward"
 	CapabilitySessionCloud        = "session.cloud"
+	CapabilitySessionCloudCodex   = "session.cloud.codex"
 )
 
 // The `type` of every message on the link.

@@ -1822,7 +1822,8 @@
       "attachment.chat",
       "device.screen",
       "port.forward",
-      "session.cloud"
+      "session.cloud",
+      "session.cloud.codex"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

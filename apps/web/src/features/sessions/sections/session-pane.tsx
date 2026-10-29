@@ -182,8 +182,9 @@ export function SessionPane({
   // group is organised by what needs you, so an `idle` session has a live PTY
   // and a `waiting-on-you` one may be a terminal or a failure. What the pane
   // turns on is whether a terminal exists to attach to.
-  // A cloud session the host has started is on claude.ai/code from then on:
-  // no terminal to attach to, so it never reaches the panes below.
+  // A cloud session the host has started is at its vendor from then on
+  // (claude.ai/code, chatgpt.com/codex): no terminal to attach to, so it never
+  // reaches the panes below.
   if (
     session.isCloud &&
     session.cloudSessionId &&

@@ -856,3 +856,9 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
+  cloud works, though the research note put Codex cloud last: a Codex row
+  under Cloud starts the task from a host with `codex cloud exec`, and the
+  host, not the browser extension, reports its status off
+  `codex cloud list --json`, since Codex's CLI answers it
+  (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).

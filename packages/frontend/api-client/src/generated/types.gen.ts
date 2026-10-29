@@ -872,6 +872,10 @@ export type HostResponseDto = {
      */
     startsCloudSessions?: boolean | null;
     /**
+     * Whether the host can start a Codex cloud task now: online, its runner takes `session.cloud.codex`, and `codex` is installed. Null when online but not known on the replica that answered.
+     */
+    startsCodexCloudSessions?: boolean | null;
+    /**
      * The claude.ai account (email) the host’s `claude` is signed in as: the account a Claude Code cloud session started there runs on. Null when it is not signed in, or its runner does not report it.
      */
     claudeAccount?: string | null;
@@ -1654,7 +1658,7 @@ export type SessionResponseDto = {
      */
     folderPath?: string | null;
     /**
-     * A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.
+     * A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.
      */
     cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;

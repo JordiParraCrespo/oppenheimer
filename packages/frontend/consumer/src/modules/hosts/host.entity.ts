@@ -1,3 +1,5 @@
+import type { HostCloudAgentId } from '@oppenheimer/shared/agents';
+
 /**
  * One word for the row, derived by the API on every read: `running` (online,
  * a session up), `idle`, `offline`, `unpaired`.
@@ -22,11 +24,12 @@ export interface HostDetails {
   asnOrg: string | null;
   roundTripMillis: number | null;
   /**
-   * Whether the host can start a Claude Code cloud session now: online, its
-   * runner takes them, and `claude` is installed. `null` when the API could
-   * not tell (online, its link held elsewhere): worth trying, not promised.
+   * Whether the host can start a cloud session of each agent now — Claude
+   * Code's, Codex's: online, its runner takes them, and the agent's CLI is
+   * installed. `null` when the API could not tell (online, its link held
+   * elsewhere): worth trying, not promised.
    */
-  startsCloud: boolean | null;
+  startsCloud: Record<HostCloudAgentId, boolean | null>;
   /**
    * The claude.ai account (email) the host's `claude` is signed in as: the
    * one a Claude Code cloud session started there runs on. `null` when it is
@@ -46,7 +49,7 @@ const NO_DETAILS: HostDetails = {
   city: null,
   asnOrg: null,
   roundTripMillis: null,
-  startsCloud: false,
+  startsCloud: { 'claude-code': false, codex: false },
   claudeAccount: null,
 };
 

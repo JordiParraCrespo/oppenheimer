@@ -268,7 +268,7 @@
     "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
     "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
     "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
-    "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+    "SESSIONS_038": "Esta sesión se ejecuta en la nube de su agente. Respóndela allí, en claude.ai o chatgpt.com/codex.",
     "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
     "SESSIONS_040": "La tarea es demasiado larga para incluir también un enlace de descarga por cada archivo adjunto. Acórtala o adjunta menos archivos.",
     "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
