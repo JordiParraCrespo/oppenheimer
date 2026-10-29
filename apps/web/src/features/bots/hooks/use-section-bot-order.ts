@@ -26,7 +26,9 @@ export function useSectionBotOrder(section: BotSection, bots: readonly BotEntity
   const drawn = ids
     ? [
         ...ids.flatMap((id) => byId.get(id) ?? []),
-        // A bot placed here since the drag began goes after the ones it placed.
+        // As in `inOrder`: the order was drawn from these same bots, so it names
+        // every one; a bot placed here while a write is pending goes after the
+        // ones it places, and an id that is no longer listed is skipped.
         ...bots.filter((bot) => !ids.includes(bot.id)),
       ]
     : bots;

@@ -29,20 +29,24 @@ export function placementInSection(
   const above = byId.get(listed[at - 1] ?? '');
   const below = byId.get(listed[at + 1] ?? '');
 
-  const anchor =
-    above?.groupId === bot.groupId
-      ? { beside: above, after: true }
-      : below?.groupId === bot.groupId
-        ? { beside: below, after: false }
-        : above
-          ? { beside: above, after: true }
-          : below
-            ? { beside: below, after: false }
-            : null;
+  const anchor = chooseAnchor(bot, above, below);
   if (!anchor) return null;
 
   const { groupId } = anchor.beside;
   const mates = all.filter((each) => each.groupId === groupId && each.id !== moved);
   const index = mates.findIndex((each) => each.id === anchor.beside.id);
   return { groupId, position: index + (anchor.after ? 1 : 0) };
+}
+
+/** The neighbour a dropped bot goes beside: its own group's first, then above, then below. */
+function chooseAnchor(
+  bot: BotEntity,
+  above: BotEntity | undefined,
+  below: BotEntity | undefined,
+): { beside: BotEntity; after: boolean } | null {
+  if (above?.groupId === bot.groupId) return { beside: above, after: true };
+  if (below?.groupId === bot.groupId) return { beside: below, after: false };
+  if (above) return { beside: above, after: true };
+  if (below) return { beside: below, after: false };
+  return null;
 }

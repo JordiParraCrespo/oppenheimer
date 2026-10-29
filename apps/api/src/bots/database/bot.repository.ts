@@ -37,7 +37,10 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
   async findAll(scope: AccessScope): Promise<BotEntity[]> {
     // The Employees order, which every list of bots draws: the groups by
     // their position, Ungrouped after them, each group's bots by position.
-    // IDX_bot_group_position, and UQ_bot_group_organization_id for the join.
+    // The groups break a tie as `BotGroupRepository.findAll` does (position,
+    // createdAt, id), so this and the groups read the console sorts by never
+    // disagree, and a group's bots stay together. IDX_bot_group_position,
+    // and UQ_bot_group_organization_id for the join.
     const records = await this.scopedQuery(scope)
       .leftJoin(
         BotGroupOrmEntity,

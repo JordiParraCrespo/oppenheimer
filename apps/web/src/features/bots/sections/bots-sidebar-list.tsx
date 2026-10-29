@@ -1,8 +1,9 @@
-import { BotItem, DragProvider, SidebarEmptyRow } from '@oppenheimer/design-system-web';
+import { DragProvider, SidebarEmptyRow } from '@oppenheimer/design-system-web';
 import { useSuspenseBotsAndGroups } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField, useDragLabels } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
 import { useBotOrder } from '@/features/bots/hooks/use-bot-order';
 import { sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotGroup } from './bot-group';
@@ -56,15 +57,9 @@ export function BotsSidebarList() {
         <DragProvider
           {...handlers}
           labels={dragLabels}
-          overlay={(active) => {
-            const bot = bots.find((candidate) => candidate.id === active.id);
-            // The lifted row, on the sidebar's ground at its width.
-            return bot ? (
-              <div className="w-60 rounded-md bg-sidebar">
-                <BotItem name={bot.name} initials={bot.initials} color={bot.avatarColor} active />
-              </div>
-            ) : null;
-          }}
+          overlay={(active) => (
+            <BotDragOverlay bot={bots.find((candidate) => candidate.id === active.id)} />
+          )}
         >
           {sections.map((section) => {
             const key = sectionKey(section);

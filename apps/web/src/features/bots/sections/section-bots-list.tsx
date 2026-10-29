@@ -1,5 +1,4 @@
 import {
-  BotItem,
   BotList,
   DragProvider,
   SidebarEmptyRow,
@@ -12,6 +11,7 @@ import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
 import { useSectionBotOrder } from '@/features/bots/hooks/use-section-bot-order';
 import { SectionBotRow } from './section-bot-row';
 
@@ -62,15 +62,9 @@ export function SectionBotsList({
         <DragProvider
           {...handlers}
           labels={dragLabels}
-          overlay={(active) => {
-            const bot = bots.find((candidate) => candidate.id === active.id);
-            // The lifted row, on the sidebar's ground at its width.
-            return bot ? (
-              <div className="w-60 rounded-md bg-sidebar">
-                <BotItem name={bot.name} initials={bot.initials} color={bot.avatarColor} active />
-              </div>
-            ) : null;
-          }}
+          overlay={(active) => (
+            <BotDragOverlay bot={bots.find((candidate) => candidate.id === active.id)} />
+          )}
         >
           <SortableGroup
             id={group}
