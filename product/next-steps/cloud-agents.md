@@ -147,6 +147,44 @@ after them. They are two kinds of the one place, not two places:
   Cursor), the host-started kind if its CLI gets a cloud mode (a runner
   adapter, as Claude). Until then Grok runs as one of Cursor's models.
 
+## Files for a cloud session (2026-10-29)
+
+Until now a Claude Code cloud session took a task and one repository and
+nothing else: a first task's files are saved on the host, which only starts
+the session, so the console dropped them. The owner asked for images to
+reach the cloud's agent through a link to storage. What was built:
+
+- **Kept in storage, not on the host.** A create with `cloud: true` may
+  name `attachmentIds` like any other. Its uploads are not parked for the
+  runner; the API keeps them in the deployment's storage (S3 in production)
+  under `cloud-files/<workspace>/<session>/<id>`, and `prompt.first` records
+  their ids as it records a host session's.
+- **Linked in the task.** `claude --cloud` takes a task and nothing else, so
+  the task carries the files: the text as typed, then one line per file the
+  agent can run as it stands,
+  `curl -fsSL --create-dirs -o /tmp/attachments/1.png '<link>'`, and
+  "open each with the Read tool", which shows Claude an image or a PDF.
+- **The link is the API's, not the bucket's.** A presigned S3 URL is often
+  600 to 1,500 characters, and a first task is capped at 2 KB on the wire, so
+  the link is `<CONTROL_PLANE_URL>/api/v1/cloud-files/<token>` (about 80
+  characters), served by the API from storage with no credential. The token
+  is a random UUID, lives a day in the cache, and is minted afresh on every
+  launch, so a create sent again after a reconnect never names an expired
+  one. It also means the cloud environment only has to allow one more host,
+  the API's, whichever storage driver the deployment uses.
+- **Measured before anything is kept.** The task and the longest links its
+  files could get must fit 2 KB together; past that the create is refused
+  with `SESSIONS_040` before a row is written or a file kept. An expired or
+  unknown link is `SESSIONS_041`.
+- **What the person sets up.** The Claude Code cloud environment's network
+  policy must allow the API's host (Network access → Allowed domains, or a
+  broader level), or `curl` fails and the agent never sees the file. Files
+  stay in the bucket after their links expire; a lifecycle rule on the
+  `cloud-files/` prefix (a week, say) is what removes them.
+
+Only the first task carries files: what follows is typed on claude.ai, where
+files are attached natively. Cursor's launch still takes none.
+
 ## Tasks and automations (2026-10-29)
 
 The owner asked for both kinds of cloud session in Plan's tasks and in the

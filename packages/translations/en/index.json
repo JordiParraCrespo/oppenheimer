@@ -375,6 +375,8 @@
       "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
       "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
       "SESSIONS_039": "That session runs at its vendor, with no host here. Open it at the vendor to do that.",
+      "SESSIONS_040": "The task is too long to also carry a download link for each attached file. Shorten it or attach fewer files.",
+      "SESSIONS_041": "That file link expired. Start the session again with the file attached.",
       "VOICE_001": "Dictation needs a workspace. Open one and try again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",

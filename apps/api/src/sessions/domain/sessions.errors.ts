@@ -311,4 +311,23 @@ export const SessionErrors = {
     message: 'That session runs at its vendor, not on a host',
     httpStatus: 409,
   },
+  /**
+   * A cloud session's task and the download links for its files do not fit
+   * the 2 KB a first task may be: the links ride in the task, since the
+   * cloud never sees the host the files would otherwise go to.
+   */
+  CLOUD_TASK_TOO_LONG: {
+    code: 'SESSIONS_040',
+    message: "The task is too long to carry its files' links",
+    httpStatus: 400,
+  },
+  /**
+   * A cloud session's file link that names nothing: it expired, or it was
+   * never minted. One answer for both, so a link cannot be probed.
+   */
+  CLOUD_FILE_NOT_FOUND: {
+    code: 'SESSIONS_041',
+    message: 'That file link expired or never existed',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -6,7 +6,7 @@ import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
-import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES } from './links.di-tokens';
+import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
 
 /**
  * Links: which host holds a live runner link, and the dispatcher that sends a
@@ -21,6 +21,8 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES } from './links.di-tokens';
     { provide: LINK_REGISTRY, useFactory: () => new InProcessLinkRegistry() },
     { provide: SESSION_DISPATCH, useClass: RelayDispatchAdapter },
     { provide: PARKED_FILES, useClass: CacheParkedFileAdapter },
+    // The same store: an upload is staged once, wherever it is for.
+    { provide: STAGED_FILE_READER, useExisting: PARKED_FILES },
     // One instance: the folder lister waits on it, the relay's gateway settles it.
     { provide: LINK_REPLIES, useClass: InProcessLinkReplies },
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
@@ -30,6 +32,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES } from './links.di-tokens';
     LINK_REGISTRY,
     SESSION_DISPATCH,
     PARKED_FILES,
+    STAGED_FILE_READER,
     LINK_REPLIES,
     HOST_FOLDERS,
     SESSION_PORTS,

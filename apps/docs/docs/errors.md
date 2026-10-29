@@ -539,6 +539,8 @@ are never reissued.
 | `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
 | `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input on claude.ai, not here | 409 |
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
+| `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
+| `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -583,6 +585,13 @@ for a host whose live runner did not announce `session.cloud`: it would open a t
 instead of starting the task in Claude Code's cloud. As with `025`, a host with no link
 right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a pasted
 file for a cloud session: it has no terminal on its host, and is answered on claude.ai.
+
+`SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
+reach the host, which only starts the session: the API keeps them, and the task the cloud
+receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no credential,
+a day long, minted again whenever the create is sent). `040` is a task whose text and those
+links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
+`041` is a link that expired or never existed.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its

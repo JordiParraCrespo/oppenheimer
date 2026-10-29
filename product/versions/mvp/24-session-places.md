@@ -142,7 +142,9 @@ host and then lives on claude.ai/code:
   session stopped. Its state is `agent.observed`, posted by the browser
   extension (`POST /sessions/cloud-status`).
 - **What the console shows.** Where: *Claude Code cloud* on a host, with a
-  repository and a task (Claude Code only, no files). It is also the
+  repository and a task (Claude Code only; no files until 2026-10-29, when
+  a first task's files became links in the task, `next-steps/cloud-agents.md`
+  "Files for a cloud session"). It is also the
   **Claude Code** row first under Cloud, beside the vendors. The row names
   the host it would start from, the one already picked when it can, else the
   first that can (online, its runner's live link named `session.cloud`,
