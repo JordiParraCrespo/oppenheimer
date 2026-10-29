@@ -1,16 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { BOT_IMAGE_MAX_BYTES } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
-import type { GmailConnectionEntity } from '../../mail/domain/gmail-connection.entity';
 import type {
   GmailDraftPage,
   GmailLabel,
   GmailSearchPage,
   GmailThread,
 } from '../../mail/infrastructure/gmail-provider.port';
-import { FindGmailConnectionsQuery } from '../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { FindMailDraftsQuery } from '../../mail/queries/find-mail-drafts/find-mail-drafts.query';
 import { FindMailLabelsQuery } from '../../mail/queries/find-mail-labels/find-mail-labels.query';
 import {
@@ -35,6 +32,7 @@ import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.rep
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { formatToolList } from '../domain/bot-tool-text.policy';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
+import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -69,6 +67,7 @@ const account = z
 export class BotMailToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
+    private readonly accounts: BotMailAccountsResolver,
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,
     @Inject(BOT_ATTACHMENT_FILES) private readonly files: BotAttachmentFilesPort,
   ) {}
@@ -93,7 +92,7 @@ export class BotMailToolsFactory implements BotToolArea {
         "Lists the person's own Gmail accounts connected to Oppenheimer: each one's name, address and account id, and whether it needs reconnecting. Every other mail tool takes one of these. An empty answer means none is connected.",
       input: z.object({}),
       run: async (_input, context) => {
-        const connections = await this.connections(context.owner);
+        const connections = await this.accounts.all(context.owner);
         return formatToolList('Gmail accounts', connections.map(describeAccount), NO_GMAIL);
       },
     });
@@ -127,7 +126,7 @@ export class BotMailToolsFactory implements BotToolArea {
             'A page_token goes with the account it came from: give account too.',
           );
         }
-        const chosen = await this.choose(context.owner, input.account);
+        const chosen = await this.accounts.choose(context.owner, input.account);
         const sections: string[] = [];
         for (const connection of chosen) {
           try {
@@ -176,7 +175,7 @@ export class BotMailToolsFactory implements BotToolArea {
         thread_id: z.string().trim().min(1).max(100).describe('A thread id from search_mail.'),
       }),
       run: async (input, context) => {
-        const connection = await this.one(context.owner, input.account);
+        const connection = await this.accounts.one(context.owner, input.account);
         const thread = await this.queryBus.execute<ReadMailThreadQuery, GmailThread>(
           new ReadMailThreadQuery({
             scope: context.owner,
@@ -204,7 +203,7 @@ export class BotMailToolsFactory implements BotToolArea {
         "Lists a Gmail account's labels: Gmail's own (INBOX, SENT, STARRED, IMPORTANT, CATEGORY_*) and the person's, with unread counts for the inbox and the person's labels. Use a label's name in search_mail as label:name.",
       input: z.object({ account }),
       run: async (input, context) => {
-        const connection = await this.one(context.owner, input.account);
+        const connection = await this.accounts.one(context.owner, input.account);
         const labels = await this.queryBus.execute<FindMailLabelsQuery, GmailLabel[]>(
           new FindMailLabelsQuery({ scope: context.owner, connectionId: connection.id }),
         );
@@ -232,7 +231,7 @@ export class BotMailToolsFactory implements BotToolArea {
         page_token: z.string().max(500).optional(),
       }),
       run: async (input, context) => {
-        const connection = await this.one(context.owner, input.account);
+        const connection = await this.accounts.one(context.owner, input.account);
         const page = await this.queryBus.execute<FindMailDraftsQuery, GmailDraftPage>(
           new FindMailDraftsQuery({
             scope: context.owner,
@@ -267,7 +266,7 @@ export class BotMailToolsFactory implements BotToolArea {
         if (!context.budget.take('read_mail_attachment', MAIL_ATTACHMENTS_PER_TURN)) {
           return `Refused: this turn has already opened ${MAIL_ATTACHMENTS_PER_TURN} attachments, the limit. Answer with what you have.`;
         }
-        const connection = await this.one(context.owner, input.account);
+        const connection = await this.accounts.one(context.owner, input.account);
         const file = await this.queryBus.execute<ReadMailAttachmentQuery, MailAttachmentRead>(
           new ReadMailAttachmentQuery({
             scope: context.owner,
@@ -320,45 +319,5 @@ export class BotMailToolsFactory implements BotToolArea {
       content: `"${file.filename}" is an image; it is shown to the person under your reply. You do not see it: describe it from the message, or ask them.`,
       images: [attachment.toMessageAttachment()],
     };
-  }
-
-  private async connections(owner: AccessScope): Promise<GmailConnectionEntity[]> {
-    return this.queryBus.execute<FindGmailConnectionsQuery, GmailConnectionEntity[]>(
-      new FindGmailConnectionsQuery({ scope: owner }),
-    );
-  }
-
-  /** The accounts a call names, or every active one when it names none. */
-  private async choose(
-    owner: AccessScope,
-    wanted: string | undefined,
-  ): Promise<GmailConnectionEntity[]> {
-    if (wanted) return [await this.one(owner, wanted)];
-    const connections = await this.connections(owner);
-    if (connections.length === 0) throw new BotToolRefusal(NO_GMAIL);
-    const active = connections.filter((connection) => connection.isActive);
-    if (active.length === 0) {
-      throw new BotToolRefusal(
-        `Every connected Gmail account needs reconnecting in Settings → Mail: ${connections.map(describeAccount).join('; ')}.`,
-      );
-    }
-    return active;
-  }
-
-  /** One account by its id, its address or its name, ignoring case. */
-  private async one(owner: AccessScope, wanted: string): Promise<GmailConnectionEntity> {
-    const connections = await this.connections(owner);
-    if (connections.length === 0) throw new BotToolRefusal(NO_GMAIL);
-    const needle = wanted.trim().toLowerCase();
-    const found =
-      connections.find((connection) => connection.id === wanted.trim()) ??
-      connections.find((connection) => connection.accountEmail.toLowerCase() === needle) ??
-      connections.find((connection) => connection.label.toLowerCase() === needle);
-    if (!found) {
-      throw new BotToolRefusal(
-        `No connected Gmail account is "${wanted}". The accounts are: ${connections.map(describeAccount).join('; ')}.`,
-      );
-    }
-    return found;
   }
 }

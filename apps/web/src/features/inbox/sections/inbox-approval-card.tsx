@@ -8,7 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { useDecideBotApproval } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ChatMailMessage, ChatMailSendNote, ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
@@ -19,9 +19,10 @@ import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
  * A bot's approval in the pane: what it wants to run (the tool, and its call's
- * input in mono, as the session card shows a command), and Approve or Deny
- * through the bot's own decision endpoint (`25-bots.md` §5). Answering brings
- * the next item; the bot's chat is a link away.
+ * input in mono, as the session card shows a command, or a send card's message
+ * as it will go), and Approve or Deny through the bot's own decision endpoint
+ * (`25-bots.md` §5). Answering brings the next item; the bot's chat is a
+ * link away.
  */
 export function InboxApprovalCard({
   item,
@@ -62,7 +63,13 @@ export function InboxApprovalCard({
       <InboxMessageFacts>
         <span className="font-mono">{approval.tool}</span>
       </InboxMessageFacts>
-      {call ? <ApprovalCommand>{call}</ApprovalCommand> : null}
+      {approval.mail ? (
+        <ChatMailMessage mail={approval.mail}>
+          <ChatMailSendNote mail={approval.mail} />
+        </ChatMailMessage>
+      ) : call ? (
+        <ApprovalCommand>{call}</ApprovalCommand>
+      ) : null}
       {decide.error ? (
         <ErrorAlert
           error={decide.error}

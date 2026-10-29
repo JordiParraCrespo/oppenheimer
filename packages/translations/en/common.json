@@ -88,6 +88,25 @@
       "download": "Download",
       "position": "{{position}} of {{total}}",
       "pasted": "Pasted image"
+    },
+    "mail": {
+      "label": "The message, exactly as it goes",
+      "from": "From",
+      "to": "To",
+      "cc": "Cc",
+      "bcc": "Bcc",
+      "subject": "Subject",
+      "answers": "In reply to {{from}}",
+      "forwards": "Forwarding {{from}}'s message",
+      "fromMail": "Taken from the message it answers",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} files",
+      "signature": "The Gmail signature of {{email}} goes below it, then the quoted message.",
+      "draft": "The draft in {{email}}, sent as it stands now in Gmail.",
+      "nobody": "Nobody",
+      "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
+      "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
+      "openInGmail": "Open in Gmail"
     }
   },
   "search": {

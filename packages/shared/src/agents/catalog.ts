@@ -861,6 +861,24 @@ export function isCodingAgentId(value: unknown): value is CodingAgentId {
 }
 
 /**
+ * The agents a host can start in their vendor's cloud with the host's own CLI
+ * and sign-in, a session in the place `cloud` with a host
+ * (`product/next-steps/cloud-agents.md`): Claude Code with `claude --cloud`,
+ * Codex with `codex cloud exec`. The task runs on the vendor's machines; the
+ * host only starts it, and for Codex reads where it stands.
+ */
+export const HOST_CLOUD_AGENT_IDS = [
+  'claude-code',
+  'codex',
+] as const satisfies readonly CodingAgentId[];
+
+export type HostCloudAgentId = (typeof HOST_CLOUD_AGENT_IDS)[number];
+
+export function isHostCloudAgent(value: unknown): value is HostCloudAgentId {
+  return HOST_CLOUD_AGENT_IDS.some((agent) => agent === value);
+}
+
+/**
  * The effort levels a session of `agent` on `model` offers, or `undefined` when
  * it has none — the blank terminal, Haiku under Claude Code, or a model id the
  * catalog does not list (an alias such as `opus`), whose levels nobody here

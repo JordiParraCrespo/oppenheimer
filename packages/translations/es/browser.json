@@ -89,6 +89,25 @@
         "download": "Descargar",
         "position": "{{position}} de {{total}}",
         "pasted": "Imagen pegada"
+      },
+      "mail": {
+        "label": "El mensaje, tal y como sale",
+        "from": "De",
+        "to": "Para",
+        "cc": "Cc",
+        "bcc": "Cco",
+        "subject": "Asunto",
+        "answers": "En respuesta a {{from}}",
+        "forwards": "Reenviando el mensaje de {{from}}",
+        "fromMail": "Tomado del mensaje al que responde",
+        "files_one": "{{count}} archivo",
+        "files_other": "{{count}} archivos",
+        "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
+        "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
+        "nobody": "Nadie",
+        "draftSaved": "Guardado como borrador en {{email}}. No se envió nada.",
+        "draftUpdated": "El borrador de {{email}}, reescrito. No se envió nada.",
+        "openInGmail": "Abrir en Gmail"
       }
     },
     "search": {
@@ -342,6 +361,12 @@
       "MAIL_007": "Gmail no respondió. Vuelve a intentarlo en un momento.",
       "MAIL_008": "Gmail pidió que vayamos más despacio. Vuelve a intentarlo en breve.",
       "MAIL_009": "Gmail no tiene ese mensaje.",
+      "MAIL_010": "Ese mensaje no puede ir a esos destinatarios: cada uno debe ser una dirección de correo, y diez como máximo.",
+      "MAIL_011": "Esa cuenta ya envió cincuenta mensajes de bots hoy, el máximo diario. Vuelve a intentarlo más tarde.",
+      "MAIL_012": "Ese mensaje supera los 25 MB que admite Gmail con sus archivos.",
+      "MAIL_013": "Esa dirección no es una desde la que envíe esta cuenta de Gmail.",
+      "MAIL_014": "Ese borrador cambió después de que aprobaras enviarlo, así que no se envió.",
+      "MAIL_015": "Puede que ese mensaje ya se haya enviado. Revisa Enviados en Gmail antes de pedirlo otra vez.",
       "CLOUD_AGENTS_002": "Los agentes en la nube pertenecen a un espacio de trabajo. Abre uno primero.",
       "CLOUD_AGENTS_003": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Conecta primero el proveedor con tu clave de API.",
@@ -382,7 +407,7 @@
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
       "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
-      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de su agente. Respóndela allí, en claude.ai o chatgpt.com/codex.",
       "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
       "SESSIONS_040": "La tarea es demasiado larga para incluir también un enlace de descarga por cada archivo adjunto. Acórtala o adjunta menos archivos.",
       "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
@@ -643,11 +668,20 @@
           "description": "Abre un directorio existente tal como está · no se clona nada"
         },
         "cloud": {
-          "label": "Nube de Claude Code",
-          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
+          "label": "Nube",
+          "description": "Inicia la tarea en la nube de Claude Code o de Codex desde este host · el motor dice cuál"
         },
         "claudeCloud": {
           "label": "Claude Code",
+          "place": "Nube de Claude Code",
+          "from": "Desde {{host}}",
+          "noHost": "Necesita un host",
+          "startFrom": "Empezar desde",
+          "cannot": "Este runner no puede iniciarla"
+        },
+        "codexCloud": {
+          "label": "Codex",
+          "place": "Nube de Codex",
           "from": "Desde {{host}}",
           "noHost": "Necesita un host",
           "startFrom": "Empezar desde",
@@ -1242,6 +1276,12 @@
         "failed": "El agente falló en la nube de {{vendor}}",
         "cancelled": "Detenido en {{vendor}}",
         "expired": "La ejecución caducó en la nube de {{vendor}}"
+      },
+      "codex": {
+        "eyebrow": "Nube de Codex",
+        "statusSource": "Este estado llega del host que la inició, que pregunta a Codex por sus tareas cada minuto mientras está en línea.",
+        "open": "Abrir en ChatGPT",
+        "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
       }
     }
   },

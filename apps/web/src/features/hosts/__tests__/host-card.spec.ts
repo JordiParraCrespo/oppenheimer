@@ -27,7 +27,7 @@ function host(
       city: null,
       asnOrg: null,
       roundTripMillis: null,
-      startsCloud: false,
+      startsCloud: { 'claude-code': false, codex: false },
       claudeAccount: null,
       ...details,
     },

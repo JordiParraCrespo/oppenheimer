@@ -192,7 +192,7 @@ function InboxSnoozedRow({
       role="listitem"
       data-slot="inbox-snoozed-row"
       className={cn(
-        'flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-fg-muted [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'flex items-center gap-2.5 rounded-nav px-2.5 py-2 text-fg-muted [&_svg]:size-3.5 [&_svg]:shrink-0',
         className,
       )}
       {...props}

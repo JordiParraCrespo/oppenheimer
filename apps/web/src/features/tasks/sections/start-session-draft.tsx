@@ -75,7 +75,7 @@ export function StartSessionDraft() {
         }))}
         cloudHosts={found.hosts.map((host) => {
           // Offline is not "cannot": the session waits for the host, as on any place.
-          const cannot = host.online && host.details.startsCloud === false;
+          const cannot = host.online && host.details.startsCloud['claude-code'] === false;
           return {
             value: host.id,
             label: host.name,

@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
 import {
   deviceAttachSchema,
   deviceDetachSchema,
@@ -98,8 +99,26 @@ export const RUNNER_CAPABILITIES = [
    * (`product/research/cloud-agents.md` §5B).
    */
   'session.cloud',
+  /**
+   * Takes a `session.create` with `cloud` for Codex: the runner starts the task
+   * in Codex cloud (`codex cloud exec`) on the checkout's base branch, reports
+   * the task's id, and from then on reads the task's status off
+   * `codex cloud list --json` and reports it as the session's
+   * (`product/next-steps/cloud-agents.md`).
+   */
+  'session.cloud.codex',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
+/**
+ * The capability a runner names to take a cloud session of each agent a host
+ * starts in its vendor's cloud. A runner that named only `session.cloud`
+ * predates Codex cloud and would refuse a Codex one.
+ */
+export const HOST_CLOUD_CAPABILITIES = {
+  'claude-code': 'session.cloud',
+  codex: 'session.cloud.codex',
+} as const satisfies Record<HostCloudAgentId, RunnerCapability>;
 
 /**
  * The capabilities a hello named that this side knows, in order. The hello
@@ -359,16 +378,19 @@ export const sessionCreateSchema = z
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
     /**
-     * A cloud session: the runner does not open a terminal. It fetches the one
-     * checkout's repository with this token (minted for that repository alone
-     * and sealed to the host, as `repository.prepare`'s is: a credential ask
-     * names a live checkout, and a cloud session leaves none on the host),
-     * checks out its base in a scratch directory, runs `claude --cloud` there
-     * with `prompt`, reports the cloud session's id on `session.started`
-     * (`agentSessionId`) and removes the scratch directory.
+     * A cloud session: the runner does not open a terminal. For Claude Code it
+     * fetches the one checkout's repository with this token (minted for that
+     * repository alone and sealed to the host, as `repository.prepare`'s is: a
+     * credential ask names a live checkout, and a cloud session leaves none on
+     * the host), checks out its base in a scratch directory, runs
+     * `claude --cloud` there with `prompt` and removes the scratch directory.
+     * For Codex it runs `codex cloud exec` on the checkout's base branch and
+     * needs no checkout, so the token goes unused. Either way it reports the
+     * cloud session's id on `session.started` (`agentSessionId`).
      *
-     * Only with `claude-code`, one checkout and a prompt, and sent only to a
-     * runner whose `hello` named `session.cloud`.
+     * Only with an agent of `HOST_CLOUD_AGENT_IDS`, one checkout and a prompt,
+     * and sent only to a runner whose `hello` named `session.cloud` (Claude
+     * Code) or `session.cloud.codex` (Codex).
      */
     cloud: z
       .object({
@@ -385,11 +407,11 @@ export const sessionCreateSchema = z
   .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
-  /** A cloud session starts Claude Code from one repository with a task. */
+  /** A cloud session starts Claude Code or Codex from one repository with a task. */
   .refine(
     (message) =>
       message.cloud === undefined ||
-      (message.agent === 'claude-code' &&
+      (isHostCloudAgent(message.agent) &&
         message.checkouts.length === 1 &&
         message.prompt !== undefined),
     { path: ['cloud'] },

@@ -674,6 +674,12 @@ earlier note:
   own; on 2026-10-29 email came first, as an address of the bot's own,
   and the same day reading your own mailboxes went ahead of every channel
   (`next-steps/mail.md`), narrowed to Gmail with drafts and sends.
+- `next-steps/mail.md` §3.4 planned a send's files from the bot's chat,
+  its documents and its turn as well as from mail; slice 2 (2026-10-29)
+  sends files from mail only, and a draft is answered in the chat as text
+  with its Gmail link rather than a card (mail.md, "Decided"). The same day
+  the chat's images became attachable and the draft got its card; the
+  bot's documents and a turn's files stay out (mail.md, "Decided").
 - `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only
@@ -859,3 +865,9 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
+  cloud works, though the research note put Codex cloud last: a Codex row
+  under Cloud starts the task from a host with `codex cloud exec`, and the
+  host, not the browser extension, reports its status off
+  `codex cloud list --json`, since Codex's CLI answers it
+  (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).

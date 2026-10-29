@@ -163,7 +163,7 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
-  it('takes a cloud session as Claude Code with one checkout and a task, and nothing else', () => {
+  it('takes a cloud session as Claude Code or Codex with one checkout and a task, and nothing else', () => {
     const cloud = {
       hostId: uuid,
       agent: 'claude-code',
@@ -173,7 +173,8 @@ describe('createSessionSchema', () => {
     };
     expect(createSessionSchema.safeParse(cloud).success).toBe(true);
     expect(createSessionSchema.safeParse({ ...cloud, prompt: undefined }).success).toBe(false);
-    expect(createSessionSchema.safeParse({ ...cloud, agent: 'codex' }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ ...cloud, agent: 'codex' }).success).toBe(true);
+    expect(createSessionSchema.safeParse({ ...cloud, agent: 'opencode' }).success).toBe(false);
     expect(
       createSessionSchema.safeParse({ ...cloud, checkouts: [], folder: '/home/jordi' }).success,
     ).toBe(false);

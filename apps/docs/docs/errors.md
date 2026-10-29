@@ -537,7 +537,7 @@ are never reissued.
 | `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
 | `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
 | `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
-| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input on claude.ai, not here | 409 |
+| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input at its vendor's site, not here | 409 |
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
 | `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
@@ -581,10 +581,12 @@ pending decision (an option it lacks, several picks for one choice). `034` is a 
 with no link: nothing was typed, and nothing is kept for when it comes back.
 
 `SESSIONS_037` is a cloud session (`place: cloud`, `product/research/cloud-agents.md` §5B)
-for a host whose live runner did not announce `session.cloud`: it would open a terminal
-instead of starting the task in Claude Code's cloud. As with `025`, a host with no link
-right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a pasted
-file for a cloud session: it has no terminal on its host, and is answered on claude.ai.
+for a host whose live runner did not announce the capability for its agent's cloud
+(`session.cloud` for Claude Code, `session.cloud.codex` for Codex): it would open a
+terminal, or refuse the agent, instead of starting the task. As with `025`, a host with no
+link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
+pasted file for a cloud session: it has no terminal on its host, and is answered at its
+vendor, on claude.ai or chatgpt.com/codex.
 
 `SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
 reach the host, which only starts the session: the API keeps them, and the task the cloud
@@ -920,6 +922,12 @@ and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
 | `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
 | `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
 | `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+| `MAIL_010` <a id="mail_010" />   | That message cannot go to those recipients             | 400  |
+| `MAIL_011` <a id="mail_011" />   | That account has sent as much bot mail as a day allows | 429  |
+| `MAIL_012` <a id="mail_012" />   | That message is larger than Gmail takes                | 400  |
+| `MAIL_013` <a id="mail_013" />   | That address is not one this account sends from        | 400  |
+| `MAIL_014` <a id="mail_014" />   | That draft changed since it was approved               | 409  |
+| `MAIL_015` <a id="mail_015" />   | That message may already have been sent                | 409  |
 
 `MAIL_001` is no such connection of the caller's, or one Google has since
 revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
@@ -939,6 +947,23 @@ project, and is not asked again until then.
 
 `MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
 has (deleted, or an id from another account).
+
+`MAIL_010` is a recipient that is not an email address, or more than ten
+recipients on one message (to, cc and bcc together).
+
+`MAIL_011` is the account's fifty bot sends in the last 24 hours. Drafts are
+not counted.
+
+`MAIL_012` is a message whose files and text pass Gmail's 25 MB once encoded.
+
+`MAIL_013` is a `from` that is neither the account nor one of its Gmail
+send-as addresses (Gmail → Settings → Accounts).
+
+`MAIL_014` is a draft edited, sent or deleted after the card that approved
+sending it was raised: nothing was sent, and the bot asks again.
+
+`MAIL_015` is an approved send that was started and never confirmed: it may
+have gone. It is never sent a second time on its own; check Gmail's Sent.
 
 ## Cloud agents
 
@@ -1063,6 +1088,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
+| `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
