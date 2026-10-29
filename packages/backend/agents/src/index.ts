@@ -4,6 +4,7 @@ export {
   BotEngine,
   type BotEngineEvent,
   type BotEngineTool,
+  type BotEngineToolCall,
   type BotEngineToolResult,
   type BotPlanLimits,
   type BotPlanWindow,

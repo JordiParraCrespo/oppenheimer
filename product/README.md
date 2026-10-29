@@ -830,6 +830,11 @@ earlier note:
   `repos.noindex/` and `sessions.noindex/`, the suffix Spotlight skips (as
   Xcode's DerivedData and Orca do), layout version 3, with no migration
   (24 §2).
+- 2026-10-29 the owner asked to see a bot's subagents while they work:
+  "Running 3 subagents" now has a line per child under it (its task,
+  waiting or running with its clock or how it ended, the tools it has
+  called so far), from frames the bot's stream sends each time one moves,
+  until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the
