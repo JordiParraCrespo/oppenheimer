@@ -9,7 +9,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Access patterns:
  * - the sends due now, read once a minute: `IDX_mail_send_due`, partial on
  *   `status = 'scheduled'`, so it holds only what waits;
- * - a person's scheduled sends: `IDX_mail_send_user_created`, already there.
+ * - a person's sends, newest change first, and their scheduled ones:
+ *   `IDX_mail_send_user_updated`, which replaces `IDX_mail_send_user_created`:
+ *   a send scheduled weeks ago lists by when it went, not when it was asked for.
  */
 export class AddScheduledMailSends1791004600000 implements MigrationInterface {
   name = 'AddScheduledMailSends1791004600000';
@@ -32,9 +34,17 @@ export class AddScheduledMailSends1791004600000 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "IDX_mail_send_due" ON mail_send ("scheduledFor") WHERE status = 'scheduled'`,
     );
+    await queryRunner.query('DROP INDEX "IDX_mail_send_user_created"');
+    await queryRunner.query(
+      `CREATE INDEX "IDX_mail_send_user_updated" ON mail_send ("organizationId", "userId", "updatedAt")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query('DROP INDEX "IDX_mail_send_user_updated"');
+    await queryRunner.query(
+      `CREATE INDEX "IDX_mail_send_user_created" ON mail_send ("organizationId", "userId", "createdAt")`,
+    );
     await queryRunner.query('DROP INDEX "IDX_mail_send_due"');
     await queryRunner.query('ALTER TABLE mail_send DROP CONSTRAINT "CHK_mail_send_scheduled"');
     await queryRunner.query('ALTER TABLE mail_send DROP CONSTRAINT "CHK_mail_send_status"');

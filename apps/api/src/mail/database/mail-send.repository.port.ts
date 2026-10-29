@@ -24,16 +24,17 @@ export interface MailSendRepositoryPort {
   /**
    * Sends from one account that went since a moment, by when they went,
    * counting those still going out; failed, waiting and cancelled ones do not count.
-   * A send already going out asks with its own id, to count only the others.
    */
-  countSince(connectionId: string, since: Date, excludingId?: string): Promise<number>;
+  countSince(connectionId: string, since: Date): Promise<number>;
   /** Scheduled sends whose time has come, oldest first, at most `limit`; every workspace's. */
   findDue(now: Date, limit: number): Promise<MailSendEntity[]>;
   /**
-   * Moves a due send from waiting to going, only if it still waits: whether
-   * this claim won. A cancel or another replica's claim makes it lose.
+   * Takes one due send for sending, under the same per-account lock as
+   * `claimUnderCap`: `claimed` when it is now `sending`, `over_cap` when the
+   * account already sent its day's share (the send is then `failed`, so it
+   * is not tried again), `taken` when a cancel or another worker moved it first.
    */
-  claimDue(send: MailSendEntity): Promise<boolean>;
+  claimDueUnderCap(send: MailSendEntity, since: Date, cap: number): Promise<MailSendClaimOutcome>;
   /** Stops one of the caller's scheduled sends, only while it still waits: whether it did. */
   cancelOwn(scope: AccessScope, id: string): Promise<boolean>;
   /** The caller's scheduled sends still waiting, soonest first, at most `limit`. */

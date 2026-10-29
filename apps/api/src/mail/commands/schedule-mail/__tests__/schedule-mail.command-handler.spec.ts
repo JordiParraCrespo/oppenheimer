@@ -51,7 +51,7 @@ function setup(prior?: MailSendEntity) {
     countSince: vi.fn(),
     findRecentOwn: vi.fn(),
     findDue: vi.fn(),
-    claimDue: vi.fn(),
+    claimDueUnderCap: vi.fn(),
     cancelOwn: vi.fn(async () => false),
     findScheduledOwn: vi.fn(),
   } satisfies MailSendRepositoryPort;

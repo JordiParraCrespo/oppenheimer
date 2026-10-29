@@ -19,7 +19,7 @@ import {
 @Entity('mail_send')
 @Index('UQ_mail_send_approval', ['approvalId'], { unique: true })
 @Index('IDX_mail_send_connection_created', ['connectionId', 'createdAt'])
-@Index('IDX_mail_send_user_created', ['organizationId', 'userId', 'createdAt'])
+@Index('IDX_mail_send_user_updated', ['organizationId', 'userId', 'updatedAt'])
 @Index('IDX_mail_send_due', ['scheduledFor'], { where: `"status" = 'scheduled'` })
 @Check(
   'CHK_mail_send_status',
