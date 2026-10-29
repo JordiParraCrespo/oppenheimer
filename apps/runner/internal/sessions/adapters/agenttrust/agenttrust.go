@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -44,7 +45,13 @@ func New(opts Options) *Store {
 
 // Trust records dir as accepted. Claude Code keeps the answer per folder, as
 // `projects[<dir>].hasTrustDialogAccepted`; every other key in the file, and
-// in that folder's entry, is Claude Code's and is written back untouched. The
+// in that folder's entry, is Claude Code's and is written back untouched.
+//
+// When dir is a linked worktree, the repository it belongs to is marked too:
+// Claude Code reads a worktree's own entry for the question itself, but the
+// repository's entry before it lets the repository's `.claude/settings.json`
+// pre-approve tools, and without it asks again, in a trusted folder, whether
+// to "continue without these permissions". The
 // write is a temporary file renamed over the old one, so a CLI starting at the
 // same moment reads the old file or the new one, never half of either.
 //
@@ -64,8 +71,9 @@ func (s *Store) Trust(agent domain.Agent, dir string) error {
 }
 
 func (s *Store) trustClaude(dir string) error {
-	if real, err := filepath.EvalSymlinks(dir); err == nil {
-		dir = real
+	dirs := []string{realPath(dir)}
+	if root := repositoryRoot(dirs[0]); root != "" && root != dirs[0] {
+		dirs = append(dirs, root)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -99,16 +107,23 @@ func (s *Store) trustClaude(dir string) error {
 	if projects == nil {
 		projects = map[string]map[string]json.RawMessage{}
 	}
-	project := projects[dir]
-	if project == nil {
-		project = map[string]json.RawMessage{}
+	changed := false
+	for _, dir := range dirs {
+		project := projects[dir]
+		if project == nil {
+			project = map[string]json.RawMessage{}
+		}
+		var accepted bool
+		if json.Unmarshal(project["hasTrustDialogAccepted"], &accepted) == nil && accepted {
+			continue
+		}
+		project["hasTrustDialogAccepted"] = json.RawMessage("true")
+		projects[dir] = project
+		changed = true
 	}
-	var accepted bool
-	if json.Unmarshal(project["hasTrustDialogAccepted"], &accepted) == nil && accepted {
+	if !changed {
 		return nil
 	}
-	project["hasTrustDialogAccepted"] = json.RawMessage("true")
-	projects[dir] = project
 	encoded, err := json.Marshal(projects)
 	if err != nil {
 		return err
@@ -119,6 +134,46 @@ func (s *Store) trustClaude(dir string) error {
 		return err
 	}
 	return writeAtomic(s.claudeConfig, out, mode)
+}
+
+func realPath(dir string) string {
+	if real, err := filepath.EvalSymlinks(dir); err == nil {
+		return real
+	}
+	return dir
+}
+
+// repositoryRoot is the folder Claude Code files a linked worktree's settings
+// under: the main checkout, or the repository itself when it is bare. It is
+// "" when dir is not a linked worktree. Claude Code resolves it the same way,
+// from the `gitdir:` line of the worktree's `.git` file and the `commondir`
+// beside it.
+func repositoryRoot(dir string) string {
+	raw, err := os.ReadFile(filepath.Join(dir, ".git")) //nolint:gosec // the session folder the runner made
+	if err != nil {
+		return ""
+	}
+	line := strings.TrimSpace(string(raw))
+	if !strings.HasPrefix(line, "gitdir:") {
+		return ""
+	}
+	gitDir := resolve(dir, strings.TrimSpace(strings.TrimPrefix(line, "gitdir:")))
+	common, err := os.ReadFile(filepath.Join(gitDir, "commondir")) //nolint:gosec // inside the git dir that folder names
+	if err != nil {
+		return ""
+	}
+	commonDir := resolve(gitDir, strings.TrimSpace(string(common)))
+	if filepath.Base(commonDir) == ".git" {
+		return realPath(filepath.Dir(commonDir))
+	}
+	return realPath(commonDir)
+}
+
+func resolve(base, path string) string {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	return filepath.Join(base, path)
 }
 
 func writeAtomic(path string, data []byte, mode fs.FileMode) error {
