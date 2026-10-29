@@ -13,11 +13,15 @@ describe('hostStartsCloud', () => {
   });
 
   it('refuses a runner that predates cloud sessions, which would open a terminal instead', () => {
-    expect(hostStartsCloud({ ...ready, liveCapabilities: ['session.folder'] }, 'claude-code')).toBe(false);
+    expect(hostStartsCloud({ ...ready, liveCapabilities: ['session.folder'] }, 'claude-code')).toBe(
+      false,
+    );
   });
 
   it('refuses a host without claude, whatever its runner takes', () => {
-    expect(hostStartsCloud({ ...ready, installedTools: ['git', 'tmux'] }, 'claude-code')).toBe(false);
+    expect(hostStartsCloud({ ...ready, installedTools: ['git', 'tmux'] }, 'claude-code')).toBe(
+      false,
+    );
   });
 
   it('refuses an offline host, whose link is gone', () => {
@@ -39,7 +43,9 @@ describe('hostStartsCloud', () => {
     expect(hostStartsCloud({ ...codexReady, liveCapabilities: ['session.cloud'] }, 'codex')).toBe(
       false,
     );
-    expect(hostStartsCloud({ ...codexReady, installedTools: ['git', 'claude'] }, 'codex')).toBe(false);
+    expect(hostStartsCloud({ ...codexReady, installedTools: ['git', 'claude'] }, 'codex')).toBe(
+      false,
+    );
     // Claude Code's cloud asks for claude, which this host lacks.
     expect(hostStartsCloud(codexReady, 'claude-code')).toBe(false);
   });

@@ -51,7 +51,9 @@ export function runnerTakesPlace(
 ): boolean {
   if (launch.place === 'folder') return capabilities.includes('session.folder');
   if (launch.place === 'cloud') {
-    return isHostCloudAgent(launch.agent) && capabilities.includes(HOST_CLOUD_CAPABILITIES[launch.agent]);
+    return (
+      isHostCloudAgent(launch.agent) && capabilities.includes(HOST_CLOUD_CAPABILITIES[launch.agent])
+    );
   }
   return true;
 }

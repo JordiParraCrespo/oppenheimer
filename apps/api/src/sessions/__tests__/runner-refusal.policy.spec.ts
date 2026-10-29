@@ -41,7 +41,10 @@ describe('runnerTakesPlace', () => {
     expect(runnerTakesPlace(codex, ['session.cloud'])).toBe(false);
     expect(runnerTakesPlace(codex, ['session.cloud', 'session.cloud.codex'])).toBe(true);
     expect(
-      runnerTakesPlace({ agent: 'opencode', place: 'cloud' }, ['session.cloud', 'session.cloud.codex']),
+      runnerTakesPlace({ agent: 'opencode', place: 'cloud' }, [
+        'session.cloud',
+        'session.cloud.codex',
+      ]),
     ).toBe(false);
   });
 });
