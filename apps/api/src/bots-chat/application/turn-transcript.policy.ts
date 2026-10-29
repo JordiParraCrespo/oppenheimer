@@ -22,7 +22,9 @@ import type { TurnInterruption } from './turn-cancel-watch.factory';
 export type TranscriptWrite =
   | { kind: 'insert'; message: BotMessageEntity }
   | { kind: 'steps'; message: BotMessageEntity }
-  | { kind: 'text'; text: string };
+  | { kind: 'text'; text: string }
+  /** The engine waits to try a refused call again; passed on, never stored. */
+  | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' };
 
 /** How the engine said the turn ended, and what it cost. */
 export interface TranscriptOutcome {
@@ -76,6 +78,8 @@ export class TurnTranscript {
         return this.started(event.callId, event.name, event.input);
       case 'tool.finished':
         return this.finished(event);
+      case 'retrying':
+        return [{ kind: 'retrying', reason: event.reason }];
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;

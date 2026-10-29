@@ -104,6 +104,14 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       await this.stream.publish(turn.botId, { type: 'text', turnId: turn.id, text: write.text });
       return;
     }
+    if (write.kind === 'retrying') {
+      await this.stream.publish(turn.botId, {
+        type: 'retrying',
+        turnId: turn.id,
+        reason: write.reason,
+      });
+      return;
+    }
     if (write.kind === 'insert') await this.messages.insert(write.message);
     else await this.messages.saveSteps(write.message);
     await this.stream.publish(turn.botId, {

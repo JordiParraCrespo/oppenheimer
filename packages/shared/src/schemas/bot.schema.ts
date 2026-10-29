@@ -723,7 +723,7 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
- * turn writes it, a nudge to read the conversation again when a message
+ * turn writes it, that it waits on a provider that refused a call, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is
  * raised or settled. The stored messages are the record; this is how
  * they arrive early.
@@ -731,6 +731,15 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
   z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
+  /**
+   * The provider refused a call and the turn waits to try it again: a rate
+   * limit, or the provider overloaded or down. Until the turn writes again.
+   */
+  z.object({
+    type: z.literal('retrying'),
+    turnId: z.string(),
+    reason: z.enum(['rate_limit', 'unavailable']),
+  }),
   /** `turnId` is null for a line outside any turn, such as a routine's activity. */
   z.object({ type: z.literal('message'), turnId: z.string().nullable(), messageId: z.string() }),
   z.object({

@@ -85,7 +85,7 @@ export class ClaudeEventTranslator {
         this.result = message;
         return [];
       case 'system':
-        this.fromSystem(
+        return this.fromSystem(
           message as {
             subtype?: string;
             error?: unknown;
@@ -93,7 +93,6 @@ export class ClaudeEventTranslator {
             retry_delay_ms?: unknown;
           },
         );
-        return [];
       case 'rate_limit_event':
         this.fromRateLimit(message.rate_limit_info);
         return [];
@@ -171,19 +170,28 @@ export class ClaudeEventTranslator {
       : failed(error, this.lastFailure);
   }
 
-  /** Claude Code retrying a refused call: a rate limit's says how long it was told to wait. */
+  /**
+   * Claude Code retrying a refused call, said as `retrying` so the chat can
+   * show the wait rather than "thinking". A rate limit's also says how long
+   * it was told to wait, kept for a failure that follows.
+   */
   private fromSystem(message: {
     subtype?: string;
     error?: unknown;
     error_status?: unknown;
     retry_delay_ms?: unknown;
-  }): void {
-    if (message.subtype !== 'api_retry') return;
-    if (message.error !== 'rate_limit' && message.error_status !== 429) return;
-    this.rateLimited = true;
-    if (typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0) {
-      this.resetAt = new Date(Date.now() + message.retry_delay_ms);
+  }): BotEngineEvent[] {
+    if (message.subtype !== 'api_retry') return [];
+    const delayMs =
+      typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0
+        ? message.retry_delay_ms
+        : null;
+    if (message.error !== 'rate_limit' && message.error_status !== 429) {
+      return [{ type: 'retrying', reason: 'unavailable', delayMs }];
     }
+    this.rateLimited = true;
+    if (delayMs !== null) this.resetAt = new Date(Date.now() + delayMs);
+    return [{ type: 'retrying', reason: 'rate_limit', delayMs }];
   }
 
   /** A limit the provider says is exhausted, with when it resets (epoch seconds). */

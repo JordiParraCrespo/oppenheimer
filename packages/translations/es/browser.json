@@ -1302,6 +1302,7 @@
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
       "tokens_other": "{{tokens}} tokens",
+      "workedFor": "Trabajó {{time}}",
       "images": {
         "attach": "Añadir imágenes",
         "remove": "Quitar {{name}}",
@@ -1317,6 +1318,10 @@
       },
       "turn": {
         "queued": "Esperando",
+        "retrying": {
+          "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
+          "unavailable": "{{provider}} está saturado, reintentando…"
+        },
         "thinking": "Pensando",
         "writing": "Escribiendo",
         "stopped": "Detenido"

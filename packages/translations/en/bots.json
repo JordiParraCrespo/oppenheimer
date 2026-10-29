@@ -68,6 +68,7 @@
     "switchedModel": "Switched to <model>{{model}}</model>",
     "tokens_one": "{{tokens}} token",
     "tokens_other": "{{tokens}} tokens",
+    "workedFor": "Worked for {{time}}",
     "images": {
       "attach": "Add images",
       "remove": "Remove {{name}}",
@@ -83,6 +84,10 @@
     },
     "turn": {
       "queued": "Waiting",
+      "retrying": {
+        "rate_limit": "{{provider}} is limiting requests, retrying…",
+        "unavailable": "{{provider}} is busy, retrying…"
+      },
       "thinking": "Thinking",
       "writing": "Writing",
       "stopped": "Stopped"

@@ -23,12 +23,17 @@ import type {
 } from '../modules/bots/bot-conversation.entity';
 import {
   appendBotText,
+  type BotLiveRetries,
   type BotLiveText,
   type BotTextBuffers,
+  botLiveRetries,
   botLiveText,
+  clearBotRetry,
   forgetEndedBotTurns,
   markBotStreamGap,
+  NO_BOT_RETRIES,
   NO_BOT_TEXT,
+  noteBotRetry,
 } from '../modules/bots/live-text';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
@@ -276,11 +281,20 @@ export function useCancelBotTurn(
   });
 }
 
-export type { BotLiveText };
+export type { BotLiveRetries, BotLiveText };
+
+/** What a bot's running turns are doing that the stored conversation does not show yet. */
+export interface BotLive {
+  /** The text each turn is writing. */
+  text: BotLiveText;
+  /** The turns waiting to try a refused call again, and why. */
+  retrying: BotLiveRetries;
+}
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
- * writing that the stored conversation does not hold yet. The stream's text
+ * writing that the stored conversation does not hold yet, and which turns
+ * wait on a provider that refused a call (until they write again). The stream's text
  * is kept as it arrived ({@link BotTextBuffers}); what is drawn is derived
  * from it and the conversation in render ({@link botLiveText}), so a read
  * landing early or late never draws stored text twice or drops it.
@@ -289,13 +303,17 @@ export type { BotLiveText };
  * moves, and each time the stream comes up (the first connect included) for
  * what the gap may have missed.
  */
-export function useBotLiveText(id: string): BotLiveText {
+export function useBotLiveText(id: string): BotLive {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const { data: conversation } = useSuspenseBotConversation(id);
   const [streamed, setStreamed] = useState<{ id: string; buffers: BotTextBuffers }>({
     id,
     buffers: NO_BOT_TEXT,
+  });
+  const [waits, setWaits] = useState<{ id: string; retries: BotLiveRetries }>({
+    id,
+    retries: NO_BOT_RETRIES,
   });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
@@ -312,6 +330,11 @@ export function useBotLiveText(id: string): BotLiveText {
         );
         return current.id === id && kept === current.buffers ? current : { id, buffers: kept };
       });
+    const retry = (next: (retries: BotLiveRetries) => BotLiveRetries) =>
+      setWaits((current) => {
+        const retries = next(current.id === id ? current.retries : NO_BOT_RETRIES);
+        return current.id === id && retries === current.retries ? current : { id, retries };
+      });
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
@@ -324,7 +347,12 @@ export function useBotLiveText(id: string): BotLiveText {
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
+      if (event.type === 'retrying') {
+        retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
+        return;
+      }
       if (event.type === 'text') {
+        retry((retries) => clearBotRetry(retries, event.turnId));
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
         return;
       }
@@ -332,6 +360,7 @@ export function useBotLiveText(id: string): BotLiveText {
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
       }
+      retry((retries) => clearBotRetry(retries, event.turnId));
       const ended =
         event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
       void refetchChat(queryClient, id, ended);
@@ -344,5 +373,8 @@ export function useBotLiveText(id: string): BotLiveText {
     };
   }, [app, queryClient, id]);
 
-  return botLiveText(streamed.id === id ? streamed.buffers : NO_BOT_TEXT, conversation);
+  return {
+    text: botLiveText(streamed.id === id ? streamed.buffers : NO_BOT_TEXT, conversation),
+    retrying: botLiveRetries(waits.id === id ? waits.retries : NO_BOT_RETRIES, conversation),
+  };
 }

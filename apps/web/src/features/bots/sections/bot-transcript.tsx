@@ -96,7 +96,8 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                 ) : (
                   <BotTurn
                     block={block}
-                    live={live[block.turnId]}
+                    live={live.text[block.turnId]}
+                    waitingOn={live.retrying[block.turnId]}
                     images={(attachments) => (
                       <BotMessageImages botId={botId} attachments={attachments} />
                     )}

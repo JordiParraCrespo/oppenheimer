@@ -118,7 +118,7 @@ describe('useBotLiveText', () => {
     const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
     await chat.send(text('Hel'));
     await chat.send(text('lo'));
-    expect(result.current).toEqual({ t1: 'Hello' });
+    expect(result.current.text).toEqual({ t1: 'Hello' });
   });
 
   /**
@@ -133,9 +133,9 @@ describe('useBotLiveText', () => {
     await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
     await chat.send(text(' Second'));
     expect(chat.invalidated).toEqual([CONVERSATION]);
-    expect(result.current).toEqual({ t1: 'First. Second' });
+    expect(result.current.text).toEqual({ t1: 'First. Second' });
     await chat.land(read('running', 'First.'));
-    expect(result.current).toEqual({ t1: 'Second' });
+    expect(result.current.text).toEqual({ t1: 'Second' });
   });
 
   /** Codex's finding: clearing on `ready` dropped a reply that had no stored message yet. */
@@ -146,7 +146,23 @@ describe('useBotLiveText', () => {
     await chat.send(text('Partial rep'));
     await chat.status('down');
     await chat.status('live');
-    expect(result.current).toEqual({ t1: 'Partial rep' });
+    expect(result.current.text).toEqual({ t1: 'Partial rep' });
+  });
+
+  // What breaks this: a turn that waited once still saying "retrying" after
+  // it wrote again, or after it ended.
+  it('says a turn waits on its provider until it writes again or ends', async () => {
+    const chat = setup();
+    const { result } = renderHook(() => useBotLiveText('bot-1'), { wrapper: chat.wrapper });
+    await chat.send({ type: 'retrying', turnId: 't1', reason: 'rate_limit' });
+    expect(result.current.retrying).toEqual({ t1: 'rate_limit' });
+    expect(chat.invalidated).toEqual([]);
+    await chat.send(text('Back'));
+    expect(result.current.retrying).toEqual({});
+
+    await chat.send({ type: 'retrying', turnId: 't1', reason: 'unavailable' });
+    await chat.land(read('failed'));
+    expect(result.current.retrying).toEqual({});
   });
 
   it('draws nothing of a turn once the read shows it ended, and reads the bot list again', async () => {
@@ -156,8 +172,8 @@ describe('useBotLiveText', () => {
     await chat.send({ type: 'turn', turnId: 't1', status: 'completed' });
     expect(chat.invalidated).toContainEqual(['bots', 'list']);
     expect(chat.invalidated).toContainEqual(APPROVALS);
-    expect(result.current).toEqual({ t1: 'Done' });
+    expect(result.current.text).toEqual({ t1: 'Done' });
     await chat.land(read('completed', 'Done'));
-    expect(result.current).toEqual({});
+    expect(result.current.text).toEqual({});
   });
 });

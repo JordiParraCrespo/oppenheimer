@@ -179,6 +179,15 @@ describe('TurnTranscript', () => {
     });
   });
 
+  it('passes a retry wait on to the stream and stores nothing for it', () => {
+    const { writes, transcript } = run([
+      { type: 'retrying', reason: 'rate_limit', delayMs: 30_000 },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(writes).toEqual([{ kind: 'retrying', reason: 'rate_limit' }]);
+    expect(transcript.result.reason).toBe('completed');
+  });
+
   // The chat says from the kind whether a retry can help; a failure the
   // engine did not name must still read as one, never as no failure.
   it('ends a failed turn with the kind of failure the engine named, other when it named none', () => {

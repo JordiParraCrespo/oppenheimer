@@ -24,6 +24,8 @@ export {
 export {
   type BotHistory,
   type BotImageReads,
+  type BotLive,
+  type BotLiveRetries,
   type BotLiveText,
   type CancelBotTurnVariables,
   type ExportBotConversationVariables,

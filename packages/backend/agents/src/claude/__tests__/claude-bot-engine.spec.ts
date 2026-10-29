@@ -608,6 +608,34 @@ describe('ClaudeBotEngine', () => {
     expect(done).not.toHaveProperty('rateLimit');
   });
 
+  // The chat shows the wait while Claude Code retries, rather than "thinking"
+  // for the minutes a backoff can take.
+  it('says it is retrying when Claude Code retries a refused call, and why', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        retry_delay_ms: 30_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        error_status: 529,
+        error: 'overloaded',
+      } as unknown as SDKMessage,
+      success({ result: 'ok' }),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(events.filter((event) => event.type === 'retrying')).toEqual([
+      { type: 'retrying', reason: 'rate_limit', delayMs: 30_000 },
+      { type: 'retrying', reason: 'unavailable', delayMs: null },
+    ]);
+  });
+
   it('marks a rate limit as that kind of failure', async () => {
     scripted(() => [
       assistant([{ type: 'text', text: 'API Error: 429' }], { error: 'rate_limit' }),

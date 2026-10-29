@@ -117,6 +117,12 @@ export type BotEngineEvent =
       /** What one of our tools said the call made; absent for the engine's own tools. */
       data?: BotToolData;
     }
+  /**
+   * The provider refused a call and the engine waits to try it again (a
+   * rate limit, or the provider overloaded or down); `delayMs` when it said
+   * how long. Nothing is lost: the turn goes on, or ends `failed`.
+   */
+  | { type: 'retrying'; reason: 'rate_limit' | 'unavailable'; delayMs: number | null }
   | {
       type: 'usage';
       /** Summed over every call the turn made. */
