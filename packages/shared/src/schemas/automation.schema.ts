@@ -3,13 +3,16 @@ import { SESSION_EFFORTS } from '../agents/catalog.js';
 import {
   AUTOMATION_OVERLAP_POLICIES,
   AUTOMATION_PERMISSIONS,
+  AUTOMATION_PLACES,
   AUTOMATION_RUN_STATUSES,
+  automationPlaceFits,
   GITHUB_EVENT_TYPES,
   RUN_WINDOWS,
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
 } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
+import { CLOUD_AGENT_IDS } from './cloud-agent.schema.js';
 import {
   codingAgentSchema,
   displayNameSchema,
@@ -135,7 +138,14 @@ const automationFields = z.object({
   /** Where it runs: the project it is listed under, its repositories and host. */
   projectId: z.string().uuid(),
   repositories: repositoriesSchema,
-  hostId: z.string().uuid(),
+  /**
+   * Where each run's session runs: on the host (the default), in Claude Code's
+   * cloud started from the host, or at a vendor with no host
+   * (`AUTOMATION_PLACES`).
+   */
+  place: z.enum(AUTOMATION_PLACES).default('host'),
+  /** The host a run starts on, or starts the cloud session from; null at a vendor. */
+  hostId: z.string().uuid().nullable(),
   /** Task. */
   name: displayNameSchema,
   /** Trigger: any trigger starts a run. */
@@ -146,7 +156,7 @@ const automationFields = z.object({
    * not drawn by the frames; they default (`auto`, the agent's own effort) and
    * the API takes them for callers that set them.
    */
-  agent: codingAgentSchema,
+  agent: z.union([codingAgentSchema, z.enum(CLOUD_AGENT_IDS)]),
   launch: automationLaunchSchema.default({ permission: 'auto' }),
   /** Absent is active: an automation starts listening as soon as it is saved. */
   active: z.boolean().default(true),
@@ -177,9 +187,10 @@ function triggersWithinRepositories(value: {
 }
 
 /** `POST /automations`. */
-export const createAutomationSchema = automationFields.refine(triggersWithinRepositories, {
-  path: ['triggers'],
-});
+export const createAutomationSchema = automationFields
+  .refine(triggersWithinRepositories, { path: ['triggers'] })
+  /** The place, the agent and the host agree: a vendor runs its own agent with no host. */
+  .refine(automationPlaceFits, { path: ['place'] });
 
 export type CreateAutomationDto = z.infer<typeof createAutomationSchema>;
 

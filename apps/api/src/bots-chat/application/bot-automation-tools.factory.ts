@@ -109,7 +109,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
           `Automation ${automation.id} "${automation.name}"`,
           `- state: ${describeState(automation)}`,
           `- project: ${target.projectId}`,
-          `- runs on: host ${revision.hostId}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
+          `- runs ${describePlace(revision)}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
           `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : 'none (it runs in no checkout)'}`,
           `- revision: ${revision.number}, saved ${formatToolTime(revision.createdAt, context.timeZone)}`,
           `- when another run is still live: ${automation.overlap ?? 'the workspace default'}`,
@@ -264,4 +264,13 @@ function describeRun(run: RunReadModel, context: BotToolCallContext): string {
     parts.push(`agent exited ${run.turn.exitCode}`);
   }
   return `run ${run.id} of ${run.automationId} "${run.automationName}"${run.automationDeleted ? ' (deleted)' : ''} [${parts.join('; ')}]`;
+}
+
+/** Where an automation's runs go, as a bot reads it. */
+function describePlace(revision: { place: string; hostId: string | null }): string {
+  if (revision.place === 'host') return `on: host ${revision.hostId}`;
+  if (revision.place === 'claude-cloud') {
+    return `in: Claude Code's cloud, started from host ${revision.hostId}`;
+  }
+  return `in: ${revision.place}'s cloud, on the owner's key`;
 }

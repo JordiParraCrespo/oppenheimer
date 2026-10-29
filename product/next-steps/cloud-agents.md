@@ -182,6 +182,63 @@ after them. They are two kinds of the one place, not two places:
   Cursor), the host-started kind if its CLI gets a cloud mode (a runner
   adapter, as Claude). Until then Grok runs as one of Cursor's models.
 
+## Tasks and automations (2026-10-29)
+
+The owner asked for both kinds of cloud session in Plan's tasks and in the
+automations, not only in New session. A task's Start session and an
+automation's runs now pick **where** as New session does:
+
+- **The three places.** *On a host* (a worktree, as before), *Claude Code
+  cloud* (started from a host's runner, Claude Code only) and *Cursor*
+  (launched at Cursor on the person's own key, no host). One vocabulary,
+  `AUTOMATION_PLACES` (`host`, `claude-cloud`, `cursor`), names them for
+  both; a vendor's place is its provider id, so the next vendor is a value
+  there too.
+- **The table.** `AUTOMATION_PLACE_RULES` says, per place, what its host
+  does (`runs` the session, only `starts` it, or none) and which agent it
+  runs (one, or any a host can). The API's checks, a run's guards and
+  launch, and the console's chips all read that row, so a new place is a
+  row, not a branch in each of them.
+- **A task.** As New session has two doors, so does a task:
+  `POST /tasks/{id}/sessions` takes New session's body (Claude Code's cloud
+  is that body with `cloud: true`), and `POST /tasks/{id}/sessions/cloud`
+  takes `POST /sessions/cloud`'s under `cloud`. Each dispatches the command
+  New session would; the session is linked to the task as `started` either
+  way. The dialog's Where chip offers Cursor once the
+  reader has a key, hides the host for it, and offers Claude Code alone in
+  Claude Code's cloud. A cloud session starts on a task, so Start waits for
+  one.
+- **An automation.** The place is part of what a run executes, so it is a
+  column of the revision (`automation_revision.place`, default `host`), and
+  changing it is the next revision. A vendor's revision names no host
+  (`CHK_automation_revision_place_host`). The editor's Runs on card leads
+  with **Runs in**; Started from is the host for Claude Code's cloud, and
+  Cursor has no host or agent row, its models being Cursor's.
+- **Which Claude account.** A Claude Code cloud session runs on the
+  claude.ai account the starting host's `claude` is signed in as (24 §7), so
+  picking the host picks the account. The owner asked to see it as they
+  pick: in Claude Code cloud, the task dialog's host list names each host's
+  account and a line under the chips says which one the session runs on,
+  and the automation editor's *Started from* names it beside the host. A
+  host online whose runner cannot start a cloud session is shown, off;
+  an offline one stays pickable, as the session waits for it.
+- **A run.** A host place starts the session as before. Claude Code's cloud
+  is a `CreateSessionCommand` with `cloud: true` from the revision's host;
+  Cursor a `StartCloudSessionCommand` as the owner, on the owner's key.
+  Neither holds a place on a host, so only the automation's own overlap
+  holds a run back: the host's capacity and disk guards are a host place's,
+  and a live cloud run does not count against the host that started it.
+- **A refusal.** No key for the vendor, or a key it refused
+  (`CLOUD_AGENTS_004`, `005`), pauses the automation as
+  `cloud_key_missing` rather than failing every run; a launch the vendor
+  refused (`010`) is skipped; a vendor that did not answer is retried. A
+  host whose runner cannot start Claude Code's cloud (`SESSIONS_037`) skips
+  the run as `agent_unavailable`.
+- **Not done.** The run limit stops a run's session; a cloud session cannot
+  be stopped from here, so a cloud run past the limit is left to finish at
+  the vendor (the sweep logs it). A Cursor run's state is synced when its
+  session is read, as any Cursor session's.
+
 ## Questions to answer first
 
 1. ~~Does the control plane holding a person's Cursor API key need F23

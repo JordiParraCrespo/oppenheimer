@@ -1,8 +1,9 @@
-import type { Scope } from '@oppenheimer/shared';
+import type { CreateSessionDto, Scope, StartCloudSessionDto } from '@oppenheimer/shared';
 import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
   AutomationPermission,
+  AutomationPlace,
   RunCheckoutRule,
   ScheduleRule,
   TriggerFilter,
@@ -26,6 +27,15 @@ export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[numbe
 export type RunDispatchRef =
   | { kind: 'session'; sessionId: string }
   | { kind: 'bot_turn'; turnId: string };
+
+/**
+ * The session a run starts, in the words of the command that starts it: one
+ * a host runs or starts (`CreateSessionCommand`, Claude Code's cloud among
+ * them), or one a vendor runs with no host (`StartCloudSessionCommand`).
+ */
+export type RunSessionLaunch =
+  | { kind: 'host'; input: CreateSessionDto }
+  | { kind: 'vendor'; input: StartCloudSessionDto };
 
 /** One repository an automation works in, as the revision snapshots it. */
 export interface AutomationRepository {
@@ -56,7 +66,10 @@ export interface BotRevisionProps extends RevisionCommon {
 /** What a session automation's run executes: the prompt and where and how it runs. */
 export interface SessionRevisionProps extends RevisionCommon {
   kind: 'session';
-  hostId: string;
+  /** Where a run's session runs: on the host, in Claude Code's cloud from it, or at a vendor. */
+  place: AutomationPlace;
+  /** The host a run starts on or starts from; null only at a vendor, which needs none. */
+  hostId: string | null;
   agent: string;
   model: string | null;
   permission: AutomationPermission;

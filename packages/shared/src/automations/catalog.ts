@@ -341,8 +341,74 @@ export const AUTOMATION_PAUSED_REASONS = [
   'host_unpaired',
   'owner_lost_access',
   'bot_provider_missing',
+  'cloud_key_missing',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
+
+/**
+ * Where a session runs, from New session, a task's Start session or an
+ * automation's runs (`product/versions/mvp/24-session-places.md` §7,
+ * `product/next-steps/cloud-agents.md`): a worktree on its `host`; Claude
+ * Code's cloud, which the host's runner starts (`claude-cloud`); or a
+ * vendor's cloud the control plane launches on the owner's key, with no host
+ * (`cursor`). A vendor's place is its provider id in `CLOUD_AGENT_PROVIDERS`.
+ */
+export const AUTOMATION_PLACES = ['host', 'claude-cloud', 'cursor'] as const;
+export type AutomationPlace = (typeof AUTOMATION_PLACES)[number];
+
+/**
+ * What each place asks of a host and of an agent, the one table every reader
+ * of a place decides from:
+ * - `host`: `runs` the session (it holds a place on the host while it lives),
+ *   only `starts` it (a cloud session, gone from the host once it has
+ *   started), or `null`, none at all (a vendor's);
+ * - `agent`: the one agent the place runs, or `null` for any agent a host can.
+ * A new place is a row here; nothing that reads a place names one.
+ */
+export const AUTOMATION_PLACE_RULES = Object.freeze({
+  host: { host: 'runs', agent: null },
+  'claude-cloud': { host: 'starts', agent: 'claude-code' },
+  cursor: { host: null, agent: 'cursor' },
+} as const satisfies Record<
+  AutomationPlace,
+  { host: 'runs' | 'starts' | null; agent: string | null }
+>);
+
+/** The places whose sessions a vendor runs with no host: each is a cloud provider's id. */
+export type AutomationVendorPlace = {
+  [P in AutomationPlace]: (typeof AUTOMATION_PLACE_RULES)[P]['host'] extends null ? P : never;
+}[AutomationPlace];
+
+export function isVendorPlace(place: AutomationPlace): place is AutomationVendorPlace {
+  return AUTOMATION_PLACE_RULES[place].host === null;
+}
+
+const VENDOR_PLACES = AUTOMATION_PLACES.filter(isVendorPlace);
+
+/** The host whose slots and disk a session in `place` takes: none once it only starts there. */
+export function hostHeldBy(where: {
+  place: AutomationPlace;
+  hostId: string | null;
+}): string | null {
+  return AUTOMATION_PLACE_RULES[where.place].host === 'runs' ? where.hostId : null;
+}
+
+/**
+ * Whether a place, an agent and a host agree, by the place's row: a host
+ * exactly when the place has one, and the place's own agent, or, where it
+ * takes any, one that is not a vendor's.
+ */
+export function automationPlaceFits(value: {
+  place: AutomationPlace;
+  agent: string;
+  hostId: string | null | undefined;
+}): boolean {
+  const rule = AUTOMATION_PLACE_RULES[value.place];
+  if (Boolean(value.hostId) !== (rule.host !== null)) return false;
+  if (rule.agent !== null) return value.agent === rule.agent;
+  // Any agent a host runs, never a vendor's own, which shares its place's id.
+  return !VENDOR_PLACES.some((place) => place === value.agent);
+}
 
 /** The permission levels an unattended run may take (§Q11). `ask` has nobody to ask. */
 export const AUTOMATION_PERMISSIONS = ['auto', 'full'] as const;
