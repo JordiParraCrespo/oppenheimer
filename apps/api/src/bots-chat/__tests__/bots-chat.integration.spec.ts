@@ -62,7 +62,7 @@ import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
-import { goalEndLine } from '../domain/bot-goal.policy';
+import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import {
   routineActivityLine,
@@ -1926,7 +1926,25 @@ describe('bots chat (integration)', () => {
       });
     });
 
-    it('stores a continuation once when two ends race on the same count', async () => {
+    function continuation(bot: BotEntity, goal: BotGoalEntity) {
+      return goalContinuationTurn(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          requestedByUserId: userId,
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: null,
+        },
+        goal,
+        goal.advance(),
+      );
+    }
+
+    // What breaks this: a count stored apart from its turn, so a process that
+    // dies between the two leaves a goal counted with nothing queued, or two
+    // ends racing both queue a continuation.
+    it('queues a continuation and claims its count together, once when two ends race', async () => {
       const bot = await create('Racer');
       const turn = await runningTurn(bot);
       await goals.set(goalFor(bot, turn.id));
@@ -1934,11 +1952,38 @@ describe('bots chat (integration)', () => {
         goals.findForBot(bot.organizationId, bot.id),
         goals.findForBot(bot.organizationId, bot.id),
       ]);
-      a?.advance();
-      b?.advance();
-      expect(await goals.advance(a as BotGoalEntity)).toBe(true);
-      expect(await goals.advance(b as BotGoalEntity)).toBe(false);
+      const first = continuation(bot, a as BotGoalEntity);
+      const second = continuation(bot, b as BotGoalEntity);
+      const outcomes = await Promise.all([
+        turns.enqueueContinuation(first.turn, first.opening, null, a as BotGoalEntity),
+        turns.enqueueContinuation(second.turn, second.opening, null, b as BotGoalEntity),
+      ]);
+      // Both carry the key of continuation 1: one queues it, the other finds it.
+      expect(outcomes.sort()).toEqual(['existing', 'waiting']);
       expect((await goals.findForBot(bot.organizationId, bot.id))?.continuations).toBe(1);
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toHaveLength(1);
+    });
+
+    // What breaks this: a Stop deleting the goal while its continuation is
+    // being queued, and the continuation queued after the Stop returned.
+    it('queues nothing for a goal stopped before its continuation was claimed', async () => {
+      const bot = await create('Stopped');
+      const turn = await runningTurn(bot);
+      const goal = goalFor(bot, turn.id);
+      await goals.set(goal);
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      await goals.end(goal, null);
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('lost');
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toEqual([]);
     });
 
     it('ends once, with its line outside any turn, and a second end writes nothing', async () => {
@@ -1956,7 +2001,7 @@ describe('bots chat (integration)', () => {
       expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
     });
 
-    it('stages the goal’s job when a turn of a bot with a goal ends, and none without one', async () => {
+    it('stages the goal’s job when one of its turns ends, and none for any other turn', async () => {
       await dataSource.query(`DELETE FROM outbox_message`);
       const withGoal = await create('Driven');
       const without = await create('Idle');
@@ -1968,6 +2013,10 @@ describe('bots chat (integration)', () => {
         turn.end('completed', new Date());
         expect(await turns.finish(turn, null)).toBe(true);
       }
+      // A later turn of the same bot that is not the goal's owes it nothing.
+      const other = await runningTurn(withGoal);
+      other.end('completed', new Date());
+      expect(await turns.finish(other, null)).toBe(true);
       const jobs: { payload: { turnId: string } }[] = await dataSource.query(
         `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
       );

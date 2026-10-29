@@ -41,6 +41,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { botDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
+import { type ComposerTop, composerTopOf } from '@/features/bots/lib/composer-top';
 import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
 
 /**
@@ -143,6 +144,42 @@ export function BotComposer({
     if (pasted.length > 0) images.hold(pasted);
   }
 
+  const top = composerTopOf({
+    waiting: waiting.length,
+    noKey: Boolean(noKey),
+    goal: Boolean(goal),
+  });
+  const tops: Record<ComposerTop, () => ReactNode> = {
+    queue: () => (
+      <ComposerStack>
+        {noKey ? (
+          <ComposerStackRow icon={<KeyRound />} actions={addKey}>
+            {noKey}
+          </ComposerStackRow>
+        ) : null}
+        {waiting.map((message, index) => (
+          <ChatQueuedRow
+            key={message.turnId}
+            text={message.text || t('bots.chat.queuedImages', { count: message.images })}
+            onSendNow={
+              index === 0 && active?.status === 'running'
+                ? () => cancel.mutate({ id: botId, turnId: active.id })
+                : undefined
+            }
+            onEdit={message.images === 0 ? () => takeBack(message) : undefined}
+            onRemove={() => cancel.mutate({ id: botId, turnId: message.turnId })}
+          />
+        ))}
+      </ComposerStack>
+    ),
+    noKey: () => (
+      <ComposerNotice icon={<KeyRound />} action={addKey}>
+        {noKey}
+      </ComposerNotice>
+    ),
+    goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
+  };
+
   return (
     <>
       <input
@@ -202,36 +239,7 @@ export function BotComposer({
         placeholder={t('bots.chat.placeholder', { name })}
         tools={tools}
         engine={engine}
-        above={
-          waiting.length > 0 ? (
-            <ComposerStack>
-              {noKey ? (
-                <ComposerStackRow icon={<KeyRound />} actions={addKey}>
-                  {noKey}
-                </ComposerStackRow>
-              ) : null}
-              {waiting.map((message, index) => (
-                <ChatQueuedRow
-                  key={message.turnId}
-                  text={message.text || t('bots.chat.queuedImages', { count: message.images })}
-                  onSendNow={
-                    index === 0 && active?.status === 'running'
-                      ? () => cancel.mutate({ id: botId, turnId: active.id })
-                      : undefined
-                  }
-                  onEdit={message.images === 0 ? () => takeBack(message) : undefined}
-                  onRemove={() => cancel.mutate({ id: botId, turnId: message.turnId })}
-                />
-              ))}
-            </ComposerStack>
-          ) : noKey ? (
-            <ComposerNotice icon={<KeyRound />} action={addKey}>
-              {noKey}
-            </ComposerNotice>
-          ) : goal ? (
-            <BotGoalNotice botId={botId} goal={goal} />
-          ) : undefined
-        }
+        above={top ? tops[top]() : undefined}
         dictation={dictationSlots(dictation)}
         labels={{
           send: t('bots.chat.send'),

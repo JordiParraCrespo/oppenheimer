@@ -1,6 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
+import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 
@@ -40,6 +41,19 @@ export interface BotTurnRepositoryPort {
     correlationId: string | null,
     busyPrefix: string | null,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
+
+  /**
+   * `enqueue` for a goal's continuation (`25-bots.md` §4.1), with the goal's
+   * count claimed in the same transaction: `lost` when the goal was stopped,
+   * ended or replaced, or another end claimed the count; `existing` when this
+   * continuation was queued already.
+   */
+  enqueueContinuation(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    goal: BotGoalEntity,
+  ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**
    * `enqueue` for a turn another bot's call queues: under a lock on its

@@ -6,16 +6,11 @@ import {
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { BotGoalMapper } from '../bot-goal.mapper';
-import { BOT_GOAL_REPOSITORY, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
+import { BOT_GOAL_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotGoalRepositoryPort } from '../database/bot-goal.repository.port';
-import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
-import {
-  type BotToolArea,
-  type BotToolDefinition,
-  BotToolRefusal,
-  defineBotTool,
-} from './bot-tool.factory';
+import { BotGoalResolver } from './bot-goal.resolver';
+import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
  * A goal the bot sets itself (`25-bots.md` §4.1; from Grok Bot's goals): it
@@ -32,7 +27,7 @@ export class BotGoalToolsFactory implements BotToolArea {
 
   constructor(
     @Inject(BOT_GOAL_REPOSITORY) private readonly goals: BotGoalRepositoryPort,
-    @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
+    private readonly goalsOf: BotGoalResolver,
     private readonly mapper: BotGoalMapper,
   ) {}
 
@@ -61,13 +56,9 @@ export class BotGoalToolsFactory implements BotToolArea {
             `How many continuation turns it may take (default ${BOT_GOAL_CONTINUATIONS_DEFAULT}).`,
           ),
       }),
+      // A continuation is not offered it, so a goal never renews itself.
+      notOn: ['goal'],
       run: async (input, context) => {
-        const turn = await this.turns.findForRun(context.turnId);
-        if (turn.isSome() && turn.unwrap().origin === 'goal') {
-          throw new BotToolRefusal(
-            'A continuation cannot set a goal. Keep working on the one you have, or end it with end_goal.',
-          );
-        }
         const goal = BotGoalEntity.set({
           organizationId: context.organizationId,
           botId: context.botId,
@@ -78,6 +69,8 @@ export class BotGoalToolsFactory implements BotToolArea {
           timeZone: context.timeZone,
         });
         const replaced = await this.goals.set(goal);
+        // The goal it replaces goes with its waiting continuation.
+        if (replaced) await this.goalsOf.cancelWaiting(replaced, null);
         return this.mapper.toSetAnswer(goal, replaced);
       },
     });
@@ -94,7 +87,7 @@ export class BotGoalToolsFactory implements BotToolArea {
         const goal = await this.goals.findForBot(context.organizationId, context.botId);
         if (!goal) return 'You have no goal to end.';
         // No line: the call is the record, in this turn's activity.
-        await this.goals.end(goal, null);
+        await this.goalsOf.end(goal, null, null);
         return `Goal ended after ${goal.continuations} of ${goal.limit} continuations: ${goal.objective}`;
       },
     });

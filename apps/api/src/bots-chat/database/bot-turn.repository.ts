@@ -10,10 +10,12 @@ import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
+import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
+import { claimContinuationWithin, owesGoalWithin } from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type { BotPeerEnqueueOutcome, BotTurnRepositoryPort } from './bot-turn.repository.port';
@@ -142,6 +144,34 @@ export class BotTurnRepository
         correlationId,
       );
       return { outcome, turnId: turn.id };
+    });
+  }
+
+  enqueueContinuation(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    goal: BotGoalEntity,
+  ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'> {
+    return this.outbox.transaction(async (manager) => {
+      if (!(await lockBot(manager, turn))) return 'missing';
+      // UQ_bot_turn_source: this continuation was queued, and counted, already.
+      const [existing]: unknown[] = await manager.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND "sourceKey" = $2`,
+        [turn.botId, turn.sourceKey],
+      );
+      if (existing) return 'existing';
+      // The goal's count and its turn commit together, or neither does.
+      if (!(await claimContinuationWithin(manager, goal))) return 'lost';
+      return enqueueLocked(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
     });
   }
 
@@ -313,13 +343,8 @@ export class BotTurnRepository
           correlationId,
         });
       }
-      // UQ_bot_goal_bot. Read in the end's transaction, so a goal set in this
-      // turn is seen, and the job is owed exactly when this end commits.
-      const goals: unknown[] = await manager.query(
-        `SELECT 1 FROM bot_goal WHERE "organizationId" = $1 AND "botId" = $2`,
-        [turn.organizationId, turn.botId],
-      );
-      if (goals.length > 0) {
+      // A goal's own turn owes it a decision, staged with the end that owes it.
+      if (await owesGoalWithin(manager, turn)) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
           jobName: CONTINUE_BOT_GOAL_JOB,

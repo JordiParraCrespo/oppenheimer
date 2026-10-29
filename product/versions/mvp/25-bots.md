@@ -387,11 +387,14 @@ and it is opened by a line: "Goal · continuation 2 of 5".
 - **Who it runs as.** A continuation runs as the owner, with the reach of
   the turn that set the goal (its credential scopes and zone), as a
   subscription keeps them.
-- **No self-renewal.** A continuation cannot set a goal, so a goal never
-  renews itself.
-- **One at a time.** The continuation is keyed by the goal and its number,
-  so an end delivered twice queues one. A turn that ends while a
-  continuation already waits queues nothing.
+- **No self-renewal.** A continuation is not offered `set_goal`, so a goal
+  never renews itself.
+- **One at a time.** Only the goal's own turns move it on: the turn that
+  set it, and its continuations. A person's message, a routine or a wake
+  ending in between changes nothing. The continuation is keyed by the goal
+  and its number, so an end delivered twice queues one, and its count is
+  claimed in the same transaction that queues it. A Stop that won the race
+  leaves nothing to queue.
 - **How it ends.** The bot ends it with `end_goal`, and the call is the
   record. The goal also ends when:
   - the owner presses Stop on the goal above the composer, which also
@@ -400,7 +403,9 @@ and it is opened by a line: "Goal · continuation 2 of 5".
   - a turn of it (the one that set it, or a continuation) fails or is
     stopped. A person's Stop is a stop, and a failure would only fail again.
 
-  Each of these is a line in the chat outside any turn.
+  Each of these is a line in the chat outside any turn. However a goal
+  ends, or is replaced by a new one, a continuation of it still waiting is
+  cancelled with it.
 - **Clearing the chat** deletes the goal, since a continuation would read a
   history that no longer exists.
 - **No card.** Neither tool asks. The spend is bounded, every continuation

@@ -11,6 +11,7 @@ import { BotApprovedCallResolver } from './application/bot-approved-call.resolve
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
+import { BotGoalResolver } from './application/bot-goal.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
@@ -265,6 +266,7 @@ const queryHandlers: Provider[] = [
     BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,
     BotGoalToolsFactory,
+    BotGoalResolver,
     BotSelfToolsFactory,
     BotPlanToolsFactory,
     BotGithubToolsFactory,

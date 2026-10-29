@@ -9,7 +9,7 @@ import { BotTurnEntity } from './bot-turn.entity';
  * ends and the goal is still open, one continuation turn is queued, keyed by
  * the goal and its number, so an end delivered twice queues one. A person's
  * message, a routine or a wake may run in between: the continuation waits
- * its lane, and a turn that ends while one is already queued queues nothing.
+ * its lane, and only the goal's own turns move it on.
  */
 
 /** The key of a goal's `step`th continuation turn. */
@@ -17,9 +17,12 @@ export function goalSourceKey(goalId: string, step: number): string {
   return `${goalKeyPrefix(goalId)}${step}`;
 }
 
+/** What every goal continuation's key begins with. */
+export const GOAL_KEY_PREFIX = 'goal:';
+
 /** What every continuation key of a goal begins with: one queued blocks the next. */
 export function goalKeyPrefix(goalId: string): string {
-  return `goal:${goalId}:`;
+  return `${GOAL_KEY_PREFIX}${goalId}:`;
 }
 
 /** The turn that ended, as the decision reads it. */
@@ -39,15 +42,28 @@ export type GoalDecision =
     };
 
 /**
- * What a turn's end means for the goal. A turn of the goal (the one that set
- * it, or a continuation) that failed or was stopped stops it: a person's
- * Stop is a stop, and a failure would only fail again. Any other turn that
- * did not complete leaves it for the next end. Past its limit, it ends.
+ * Whether a turn is one of the goal's: the turn that set it, or one of its
+ * continuations. Only their ends move a goal: a goal always has exactly one
+ * of them queued, running or just ended, so another turn's end has nothing
+ * to add.
+ */
+export function isGoalTurn(
+  goal: Pick<BotGoalEntity, 'id' | 'originTurnId'>,
+  turn: Pick<EndedTurn, 'id' | 'sourceKey'>,
+): boolean {
+  return (
+    turn.id === goal.originTurnId || Boolean(turn.sourceKey?.startsWith(goalKeyPrefix(goal.id)))
+  );
+}
+
+/**
+ * What the end of one of the goal's turns means for it. One that failed or
+ * was stopped stops it: a person's Stop is a stop, and a failure would only
+ * fail again. Past its limit, it ends. Another turn's end changes nothing.
  */
 export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
-  const ownTurn =
-    ended.id === goal.originTurnId || Boolean(ended.sourceKey?.startsWith(goalKeyPrefix(goal.id)));
-  if (ownTurn && (ended.status === 'failed' || ended.status === 'cancelled')) {
+  if (!isGoalTurn(goal, ended)) return { kind: 'skip' };
+  if (ended.status === 'failed' || ended.status === 'cancelled') {
     return { kind: 'end', activity: 'stopped', reason: ended.status };
   }
   if (ended.status !== 'completed') return { kind: 'skip' };

@@ -32,18 +32,31 @@ function goal(continuations = 0, limit = 3): BotGoalEntity {
 }
 
 describe('goalDecision', () => {
-  it('goes on after a completed turn, whoever started it', () => {
+  const own = (status: 'completed' | 'failed' | 'cancelled', step = 1) => ({
+    id: `turn-${step}`,
+    sourceKey: goalSourceKey('goal-1', step),
+    status,
+  });
+
+  it('goes on after the turn that set it, or one of its continuations, completed', () => {
     expect(goalDecision(goal(), { id: 'turn-0', sourceKey: null, status: 'completed' })).toEqual({
       kind: 'continue',
     });
-    expect(goalDecision(goal(1), { id: 'other', sourceKey: null, status: 'completed' })).toEqual({
-      kind: 'continue',
-    });
+    expect(goalDecision(goal(1), own('completed'))).toEqual({ kind: 'continue' });
+  });
+
+  // What breaks this: a person's message, a routine or a wake ending while a
+  // continuation waits, queuing a second one beside it.
+  it('changes nothing when a turn that is not the goal’s ends, however it ended', () => {
+    for (const status of ['completed', 'failed', 'cancelled'] as const) {
+      expect(goalDecision(goal(1), { id: 'other', sourceKey: 'routine:a:b', status })).toEqual({
+        kind: 'skip',
+      });
+    }
   });
 
   it('stops when a turn of the goal failed or was stopped, saying which', () => {
-    const continuation = { id: 'turn-2', sourceKey: goalSourceKey('goal-1', 1) };
-    expect(goalDecision(goal(1), { ...continuation, status: 'cancelled' })).toEqual({
+    expect(goalDecision(goal(1), own('cancelled'))).toEqual({
       kind: 'end',
       activity: 'stopped',
       reason: 'cancelled',
@@ -55,14 +68,8 @@ describe('goalDecision', () => {
     });
   });
 
-  it('leaves the goal alone when a turn that is not its own failed', () => {
-    expect(
-      goalDecision(goal(1), { id: 'other', sourceKey: 'routine:a:b', status: 'failed' }),
-    ).toEqual({ kind: 'skip' });
-  });
-
   it('ends exhausted once every continuation has been queued', () => {
-    expect(goalDecision(goal(3, 3), { id: 'x', sourceKey: null, status: 'completed' })).toEqual({
+    expect(goalDecision(goal(3, 3), own('completed', 3))).toEqual({
       kind: 'end',
       activity: 'exhausted',
       reason: null,

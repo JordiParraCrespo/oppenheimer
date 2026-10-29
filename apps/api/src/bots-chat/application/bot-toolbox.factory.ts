@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
-import { type BotPermission, expandScopes, type Scope } from '@oppenheimer/shared';
+import {
+  type BotPermission,
+  type BotTurnOrigin,
+  expandScopes,
+  type Scope,
+} from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
@@ -184,9 +189,11 @@ export class BotToolboxFactory {
 
   /** The tools a turn may be offered: its credential's, less the ones the owner turned Off. */
   private offered(granted: readonly Scope[] | null, standing: BotStanding): BotToolDefinition[] {
+    const { origin } = standing;
     return this.definitions(granted).filter(
       (definition) =>
-        toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off',
+        toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
+        !(origin && definition.notOn.includes(origin)),
     );
   }
 
@@ -202,10 +209,12 @@ export class BotToolboxFactory {
 export interface BotStanding {
   preset: BotPermission;
   permissions: BotPermissions;
+  /** Why the turn exists, for the tools offered only to some turns (`notOn`). */
+  origin?: BotTurnOrigin;
 }
 
 function standingOf(context: BotToolContext): BotStanding {
-  return { preset: context.permission, permissions: context.permissions };
+  return { preset: context.permission, permissions: context.permissions, origin: context.origin };
 }
 
 /** Reads the owner's scopes as their roles stand at the moment of the call. */
