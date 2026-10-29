@@ -35,6 +35,7 @@ import { AutomationsModule } from './automations/automations.module';
 import { BotsModule } from './bots/bots.module';
 import { BotsChatModule } from './bots-chat/bots-chat.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { MailModule } from './mail/mail.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import { CloudAgentsModule } from './cloud-agents/cloud-agents.module';
 import {
@@ -42,6 +43,7 @@ import {
   automationsConfig,
   botsConfig,
   calendarConfig,
+  mailConfig,
   cloudAgentsConfig,
   databaseConfig,
   emailConfig,
@@ -110,6 +112,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         automationsConfig,
         botsConfig,
         calendarConfig,
+        mailConfig,
         cloudAgentsConfig,
         retentionConfig,
         throttlingConfig,
@@ -265,6 +268,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     WorkspaceEventsModule,
     TasksModule,
     CalendarModule,
+    MailModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

@@ -895,6 +895,42 @@ since removed), or one Google has since revoked (or one sealed under a
 `CALENDAR_011` is a sixth Google account: a person connects five at most.
 Remove one, or reconnect one already listed, which does not count again.
 
+## Mail
+
+A person's own Gmail accounts, worked by their bots: the grant is kept sealed,
+and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
+
+| Code                             | Title                                                  | HTTP |
+| -------------------------------- | ------------------------------------------------------ | ---- |
+| `MAIL_001` <a id="mail_001" />   | That Gmail account is not connected                    | 409  |
+| `MAIL_002` <a id="mail_002" />   | Mail belongs to an organization                        | 400  |
+| `MAIL_003` <a id="mail_003" />   | That is as many Gmail accounts as mail takes           | 409  |
+| `MAIL_004` <a id="mail_004" />   | Gmail is not configured on this server                 | 503  |
+| `MAIL_005` <a id="mail_005" />   | That Gmail connection was not started here             | 400  |
+| `MAIL_006` <a id="mail_006" />   | Google did not grant access to Gmail                   | 400  |
+| `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
+| `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
+| `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+
+`MAIL_001` is no such connection of the caller's, or one Google has since
+revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
+in Settings → Mail.
+
+`MAIL_004` needs the Google sign-in client (`GOOGLE_CLIENT_ID`/`_SECRET`), the
+Gmail API enabled on its project, and `MAIL_TOKEN_KEY`.
+
+`MAIL_005` is a connect `state` that is missing, expired, used, or someone
+else's. Start again from Connect Gmail.
+
+`MAIL_006` is Google refusing the code, returning no refresh token or ID token,
+or a consent screen where the Gmail permission was left unticked.
+
+`MAIL_008` comes with `Retry-After`: Gmail counts quota per account and per
+project, and is not asked again until then.
+
+`MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
+has (deleted, or an id from another account).
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each

@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -2901,6 +2901,44 @@ export type GoogleCalendarEventsResponseDto = {
     accounts: Array<GoogleCalendarAccountReadResponseDto>;
 };
 
+export type GmailConnectionResponseDto = {
+    id: string;
+    accountEmail: string;
+    /**
+     * What the person and their bots call the account.
+     */
+    label: string;
+    /**
+     * `revoked` when Google dropped the grant: the account offers Reconnect.
+     */
+    status: 'active' | 'revoked';
+    /**
+     * When it was first connected.
+     */
+    connectedAt: string;
+};
+
+export type StartGmailConnectionRequest = {
+    connectionId?: string;
+};
+
+export type GmailConnectStartResponseDto = {
+    /**
+     * Google’s consent page, carrying the single-use state.
+     */
+    url: string;
+    expiresAt: string;
+};
+
+export type ConnectGmailRequest = {
+    code: string;
+    state: string;
+};
+
+export type UpdateGmailConnectionRequest = {
+    label: string;
+};
+
 export type PullRequestLaneReasonDto = {
     code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change' | 'files_unread';
     /**
@@ -3952,6 +3990,10 @@ export type CapabilitiesResponseDto = {
      * Plan’s calendar can connect a Google Calendar.
      */
     google_calendar: boolean;
+    /**
+     * A person can connect their Gmail for their bots.
+     */
+    gmail: boolean;
     /**
      * Host pairing is configured (the runner release settings).
      */
@@ -11480,6 +11522,176 @@ export type FindGoogleCalendarEventsResponses = {
 };
 
 export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];
+
+export type FindGmailConnectionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mail/gmail/connections';
+};
+
+export type FindGmailConnectionsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindGmailConnectionsError = FindGmailConnectionsErrors[keyof FindGmailConnectionsErrors];
+
+export type FindGmailConnectionsResponses = {
+    200: Array<GmailConnectionResponseDto>;
+};
+
+export type FindGmailConnectionsResponse = FindGmailConnectionsResponses[keyof FindGmailConnectionsResponses];
+
+export type StartGmailConnectionData = {
+    body: StartGmailConnectionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mail/gmail/connections';
+};
+
+export type StartGmailConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * MAIL_003 / MAIL_001 — Five accounts already connected, or no such connection of the caller’s to reconnect
+     */
+    409: ProblemDetailsDto;
+    /**
+     * MAIL_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartGmailConnectionError = StartGmailConnectionErrors[keyof StartGmailConnectionErrors];
+
+export type StartGmailConnectionResponses = {
+    200: GmailConnectStartResponseDto;
+};
+
+export type StartGmailConnectionResponse = StartGmailConnectionResponses[keyof StartGmailConnectionResponses];
+
+export type ConnectGmailData = {
+    body: ConnectGmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mail/gmail/connection';
+};
+
+export type ConnectGmailErrors = {
+    /**
+     * MAIL_006 — Google refused
+     *
+     * MAIL_005 — State rejected
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * MAIL_003 — Five accounts already connected
+     */
+    409: ProblemDetailsDto;
+    /**
+     * MAIL_008 — Gmail's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * MAIL_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectGmailError = ConnectGmailErrors[keyof ConnectGmailErrors];
+
+export type ConnectGmailResponses = {
+    201: GmailConnectionResponseDto;
+};
+
+export type ConnectGmailResponse = ConnectGmailResponses[keyof ConnectGmailResponses];
+
+export type RemoveGmailConnectionData = {
+    body?: never;
+    path: {
+        /**
+         * The connection.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/mail/gmail/connections/{id}';
+};
+
+export type RemoveGmailConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveGmailConnectionError = RemoveGmailConnectionErrors[keyof RemoveGmailConnectionErrors];
+
+export type RemoveGmailConnectionResponses = {
+    204: void;
+};
+
+export type RemoveGmailConnectionResponse = RemoveGmailConnectionResponses[keyof RemoveGmailConnectionResponses];
+
+export type UpdateGmailConnectionData = {
+    body: UpdateGmailConnectionRequest;
+    path: {
+        /**
+         * The connection.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/mail/gmail/connections/{id}';
+};
+
+export type UpdateGmailConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * MAIL_001 — No such connection of the caller’s
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateGmailConnectionError = UpdateGmailConnectionErrors[keyof UpdateGmailConnectionErrors];
+
+export type UpdateGmailConnectionResponses = {
+    200: GmailConnectionResponseDto;
+};
+
+export type UpdateGmailConnectionResponse = UpdateGmailConnectionResponses[keyof UpdateGmailConnectionResponses];
 
 export type FindPullRequestsData = {
     body?: never;
