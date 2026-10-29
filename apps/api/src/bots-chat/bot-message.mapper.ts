@@ -296,17 +296,17 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       sessionName: String(raw.sessionName ?? ''),
       turn: typeof raw.turn === 'number' ? raw.turn : 0,
       state,
-      match: matchOf(raw.match),
+      ...matchOf(raw.match),
     };
   }
   return null;
 }
 
-/** A stored match, narrowed once: a pattern and a positive count, or none. */
-function matchOf(raw: unknown): { pattern: string; count: number } | null {
-  if (typeof raw !== 'object' || raw === null) return null;
+/** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */
+function matchOf(raw: unknown): { match?: { pattern: string; count: number } } {
+  if (typeof raw !== 'object' || raw === null) return {};
   const { pattern, count } = raw as Record<string, unknown>;
   return typeof pattern === 'string' && typeof count === 'number' && count > 0
-    ? { pattern, count }
-    : null;
+    ? { match: { pattern, count } }
+    : {};
 }
