@@ -16,6 +16,7 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
+import { BotMailDraftCard } from '@/features/bots/components/bot-mail-draft-card';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotTrace } from '@/features/bots/components/bot-trace';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
@@ -103,7 +104,14 @@ export function BotTurn({
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotTrace key={message.id} steps={message.steps} />
+            <div key={message.id} className="flex flex-col gap-3">
+              <BotTrace steps={message.steps} />
+              {message.steps.map((step) =>
+                step.mailDraft ? (
+                  <BotMailDraftCard key={step.callId} draft={step.mailDraft} />
+                ) : null,
+              )}
+            </div>
           ) : message.attachments.length > 0 ? (
             <div key={message.id} className="flex flex-col gap-3">
               {message.content ? <BotReply content={message.content} /> : null}

@@ -288,7 +288,8 @@ message's id and a summary; the bot reads it with the tools above.
    `update_draft`, `delete_draft`, `send_mail`, `send_draft`,
    `list_sent_mail`, and the send card's message). §3.3 and §3.4 with the
    cards, aliases, signatures, attachments, threading and the limits.
-3. **Organizing** (§3.5).
+3. **Organizing** (built 2026-10-29: `mark_mail`, `label_mail`,
+   `archive_mail`, `trash_mail`, `untrash_mail`, `create_label`) (§3.5).
 4. **Scheduled sends** and **waking on new mail** (§3.4, §5).
 
 Later: Gmail's push through Pub/Sub; Google Contacts, so "email Marta"
@@ -336,3 +337,18 @@ as a channel (`channels.md` §7.3).
   sends, which keeps no body (Gmail's Sent has it). A send that was started
   and never confirmed is never sent again on its own (`MAIL_015`); a draft
   edited after its card is not sent (`MAIL_014`).
+- 2026-10-29: slice 2's gaps closed. A send or a draft attaches the images
+  the person sent in the bot's chat as well as files from mail; the turn is
+  told each image's id, and the image's bytes are read when the draft is
+  written or the mail sent. A saved draft is drawn under its call as a card
+  (the message, "nothing was sent", Open in Gmail), and the Inbox's approval
+  card shows a send's message as the chat's does. The bot's documents and
+  files made in a turn are not attachable: a bot's documents are its own
+  instructions, not mail, and no tool makes files yet.
+- 2026-10-29: slice 3 built as §3.5 says. Marking, labelling and archiving
+  are label changes (read state, stars, importance and the inbox are
+  Gmail's system labels); a thread is changed with its own call, one after
+  another, so 100 stay inside Gmail's per-second quota, and messages in one
+  batch. A thread Gmail does not have is named in the answer and the rest
+  are still changed. A label card stores the labels' ids, so a rename while
+  it waits does not change what a yes does.

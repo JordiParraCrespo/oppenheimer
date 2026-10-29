@@ -1,5 +1,5 @@
 import { botHistory } from '../domain/bot-history.policy';
-import { imagesNote, withEarlierImages } from '../domain/bot-image.policy';
+import { attachedImagesNote, imagesNote, withEarlierImages } from '../domain/bot-image.policy';
 
 /**
  * Earlier images in the history a turn is sent: never the images, but a
@@ -15,11 +15,11 @@ describe('withEarlierImages', () => {
       { role: 'user' as const, content: '', attachments: [{ name: 'b.png' }, { name: 'c.png' }] },
     ];
     expect(botHistory(messages.map(withEarlierImages), null)).toEqual([
-      { role: 'user', text: `What is this?\n\n${imagesNote(1)}` },
+      { role: 'user', text: `What is this?\n\n${imagesNote([{ name: 'a.png' }])}` },
       { role: 'assistant', text: 'A cat.' },
-      { role: 'user', text: imagesNote(2) },
+      { role: 'user', text: imagesNote([{ name: 'b.png' }, { name: 'c.png' }]) },
     ]);
-    expect(imagesNote(2)).toContain('2 images');
+    expect(imagesNote([{ name: 'b.png' }, { name: 'c.png' }])).toContain('2 images');
   });
 
   it('names the images the bot showed, an image-only message of its own included', () => {
@@ -42,5 +42,15 @@ describe('withEarlierImages', () => {
       content: 'Hi',
       event: undefined,
     });
+  });
+
+  it('gives the ids of the images a message carried, which a mail tool can still attach', () => {
+    const image = { id: '7c2f0d2e-4c39-4d8e-9a11-0f5b2b6f1a10', name: 'receipt.png' };
+    const earlier = withEarlierImages({ role: 'user', content: 'Send this', attachments: [image] });
+
+    expect(earlier.content).toContain(`"receipt.png" (image id ${image.id})`);
+    expect(attachedImagesNote([image])).toContain(`image id ${image.id}`);
+    expect(attachedImagesNote([image])).toContain('chat_image');
+    expect(attachedImagesNote([])).toBe('');
   });
 });

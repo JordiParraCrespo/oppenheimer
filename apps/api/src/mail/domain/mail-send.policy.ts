@@ -2,6 +2,7 @@ import {
   MAIL_MESSAGE_MAX_BYTES,
   MAIL_RECIPIENTS_MAX,
   MAIL_SENDS_PER_DAY,
+  type MailPlanAttachment,
 } from '@oppenheimer/shared';
 
 /**
@@ -52,4 +53,12 @@ export interface MailRequest {
   signature: boolean;
   /** Files from messages in the account, beside a forward's own. */
   attachments: { messageId: string; partId: string }[];
+  /**
+   * Files from outside the account (an image from the bot's chat), already
+   * named and measured by whoever holds them; their bytes come with the write.
+   */
+  localFiles: Extract<MailPlanAttachment, { source: 'chat' }>[];
 }
+
+/** The bytes of a plan's files held outside Gmail, by `mailAttachmentKey`. */
+export type MailLocalFiles = ReadonlyMap<string, Buffer>;

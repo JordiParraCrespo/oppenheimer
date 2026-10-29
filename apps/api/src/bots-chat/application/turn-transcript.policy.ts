@@ -1,7 +1,8 @@
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import type { BotAttachment } from '@oppenheimer/shared';
-import { toShownImages, toSubagentRuns } from '../bot-message.mapper';
+import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
+import { toMailDraft, toShownImages, toSubagentRuns } from '../bot-message.mapper';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
@@ -126,6 +127,7 @@ export class TurnTranscript {
       isError: false,
       sessionId: null,
       subagents: null,
+      mailDraft: null,
     };
     if (this.activity) {
       this.activity.steps.push(step);
@@ -138,7 +140,8 @@ export class TurnTranscript {
   /**
    * A call's end: its words, cut, and what the tool said it made: the
    * session it started, the children it ran, whose tokens are the turn's
-   * cost too, or the images it showed, which follow the line as a message.
+   * cost too, the draft it saved, or the images it showed, which follow the
+   * line as a message.
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
     const { callId, output, isError, data } = event;
@@ -149,6 +152,7 @@ export class TurnTranscript {
     step.isError = isError;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
+    step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;

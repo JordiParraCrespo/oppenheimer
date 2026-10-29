@@ -100,6 +100,7 @@ function setup(
         plan,
         approvalId: 'approval-1',
         botId: 'bot-1',
+        localFiles: new Map(),
       }),
     );
   return { send, sends, provider };

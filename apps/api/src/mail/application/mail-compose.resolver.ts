@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import type { MailPlan, MailPlanAttachment } from '@oppenheimer/shared';
+import { type MailPlan, type MailPlanAttachment, mailAttachmentKey } from '@oppenheimer/shared';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
 import { MailErrors } from '../domain/mail.errors';
 import {
@@ -15,7 +15,12 @@ import {
   replyRecipients,
   replySubject,
 } from '../domain/mail-reply.policy';
-import { type MailRequest, recipientsRefusal, sizeRefusal } from '../domain/mail-send.policy';
+import {
+  type MailLocalFiles,
+  type MailRequest,
+  recipientsRefusal,
+  sizeRefusal,
+} from '../domain/mail-send.policy';
 import { buildMime } from '../infrastructure/gmail-mime.util';
 import type {
   GmailCallGrant,
@@ -67,6 +72,7 @@ export class MailComposeResolver {
       const attachments = [
         ...(original && request.kind === 'forward' ? attachmentsOf(original) : []),
         ...(await this.namedAttachments(provider, grant, request.attachments)),
+        ...request.localFiles,
       ];
       const tooLarge = sizeRefusal(
         attachments.reduce((sum, file) => sum + file.sizeBytes, 0),
@@ -144,6 +150,7 @@ export class MailComposeResolver {
     provider: GmailProviderPort,
     grant: GmailCallGrant,
     plan: MailPlan,
+    local: MailLocalFiles,
   ): Promise<GmailRawMessage> {
     const original = plan.original
       ? await provider.readMessage(grant, plan.original.messageId)
@@ -167,13 +174,11 @@ export class MailComposeResolver {
         : null;
     const answering = original && (plan.kind === 'reply' || plan.kind === 'reply_all');
     const files = await Promise.all(
-      plan.attachments.map(async (file) => {
-        const content = await provider.readAttachment(grant, file.messageId, {
-          attachmentId: null,
-          partId: file.partId,
-        });
-        return { filename: file.filename, mimeType: file.mimeType, bytes: content.bytes };
-      }),
+      plan.attachments.map(async (file) => ({
+        filename: file.filename,
+        mimeType: file.mimeType,
+        bytes: await bytesOf(provider, grant, file, local),
+      })),
     );
     const raw = buildMime({
       from: plan.from,
@@ -194,9 +199,9 @@ export class MailComposeResolver {
     provider: GmailProviderPort,
     grant: GmailCallGrant,
     named: MailRequest['attachments'],
-  ): Promise<MailPlanAttachment[]> {
+  ): Promise<MailFile[]> {
     const messages = new Map<string, GmailMessage>();
-    const found: MailPlanAttachment[] = [];
+    const found: MailFile[] = [];
     for (const { messageId, partId } of named) {
       let message = messages.get(messageId);
       if (!message) {
@@ -247,8 +252,35 @@ function parsedRecipients(given: readonly string[]): MailAddress[] {
   });
 }
 
-function attachmentsOf(message: GmailMessage): MailPlanAttachment[] {
+/** A file of a message in the account. */
+type MailFile = Extract<MailPlanAttachment, { source: 'mail' }>;
+
+/** A planned file's bytes: Gmail's for a file of a message, the write's own for one from outside. */
+async function bytesOf(
+  provider: GmailProviderPort,
+  grant: GmailCallGrant,
+  file: MailPlanAttachment,
+  local: MailLocalFiles,
+): Promise<Buffer> {
+  if (file.source === 'mail') {
+    const content = await provider.readAttachment(grant, file.messageId, {
+      attachmentId: null,
+      partId: file.partId,
+    });
+    return content.bytes;
+  }
+  const bytes = local.get(mailAttachmentKey(file));
+  if (!bytes) {
+    throw new AppError(MailErrors.GMAIL_ITEM_NOT_FOUND, {
+      detail: `The file "${file.filename}" could not be read`,
+    });
+  }
+  return bytes;
+}
+
+function attachmentsOf(message: GmailMessage): MailFile[] {
   return message.attachments.map((file) => ({
+    source: 'mail' as const,
     messageId: message.id,
     partId: file.partId,
     filename: file.filename,

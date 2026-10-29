@@ -189,6 +189,7 @@ describe('BotsRepository', () => {
                 isError: false,
                 sessionId: null,
                 subagents: null,
+                mailDraft: null,
               },
             ],
             createdAt: '2026-10-15T09:00:01.000Z',

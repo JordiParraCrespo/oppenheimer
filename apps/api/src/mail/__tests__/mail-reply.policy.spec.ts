@@ -1,4 +1,5 @@
 import { addressesOf, formatAddress } from '../domain/mail-address.policy';
+import { markChange } from '../domain/mail-organize.policy';
 import {
   type AnsweredMessage,
   forwardSubject,
@@ -13,7 +14,8 @@ import { dailyRefusal, recipientsRefusal, sizeRefusal } from '../domain/mail-sen
  * (`product/next-steps/mail.md` §3.4): headers read into addresses with
  * quoted commas kept, a reply to the Reply-To or sender, a reply-all to
  * everyone but the person's own aliases, the References chain carried on,
- * and the recipient, daily and size limits at their edges.
+ * the recipient, daily and size limits at their edges, and marks as the
+ * label changes Gmail makes them.
  */
 const message = (overrides: Partial<AnsweredMessage> = {}): AnsweredMessage => ({
   from: 'Bo Ruiz <bo@client.test>',
@@ -89,5 +91,19 @@ describe('send limits', () => {
     expect(dailyRefusal(50)).not.toBeNull();
     expect(sizeRefusal(18 * 1024 * 1024, 0)).toBeNull();
     expect(sizeRefusal(19 * 1024 * 1024, 0)).not.toBeNull();
+  });
+});
+
+describe('organizing', () => {
+  it('turns marks into label changes, and leaves a mark not asked for alone', () => {
+    expect(markChange({ read: true, starred: true })).toEqual({
+      add: ['STARRED'],
+      remove: ['UNREAD'],
+    });
+    expect(markChange({ read: false, important: false })).toEqual({
+      add: ['UNREAD'],
+      remove: ['IMPORTANT'],
+    });
+    expect(markChange({})).toEqual({ add: [], remove: [] });
   });
 });
