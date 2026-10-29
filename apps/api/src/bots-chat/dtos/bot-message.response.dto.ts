@@ -3,6 +3,7 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
+  BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
@@ -10,6 +11,7 @@ import {
   type BotEventOutcome,
   type BotGoalActivity,
   type BotMessageRole,
+  type BotQuestionOutcome,
   type BotReplyOutcome,
   type BotRoutineActivity,
   type BotSessionEventState,
@@ -128,13 +130,24 @@ export class BotApprovalEventResponseDto {
     description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
+}
+
+/** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
+export class BotQuestionEventResponseDto {
+  @ApiProperty({ enum: ['question'] })
+  kind!: 'question';
+
+  @ApiProperty({ enum: BOT_QUESTION_OUTCOMES })
+  outcome!: BotQuestionOutcome;
+
+  @ApiProperty({ description: "The card's line: its first question, and how many follow." })
+  summary!: string;
 
   @ApiProperty({
     type: [BotAnsweredQuestionResponseDto],
-    required: false,
-    description: 'For answered questions (`ask_user`): each question and its answer, in words.',
+    description: 'Each question and its answer, in words; empty when dismissed.',
   })
-  answers?: BotAnsweredQuestionResponseDto[];
+  answers!: BotAnsweredQuestionResponseDto[];
 }
 
 /** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
@@ -285,6 +298,7 @@ export class BotGoalEventResponseDto {
 
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
+  | BotQuestionEventResponseDto
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
@@ -294,6 +308,7 @@ export type BotMessageEventResponseDto =
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
   BotApprovalEventResponseDto,
+  BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
@@ -325,6 +340,7 @@ export class BotMessageResponseDto {
   @ApiProperty({
     oneOf: [
       { $ref: getSchemaPath(BotApprovalEventResponseDto) },
+      { $ref: getSchemaPath(BotQuestionEventResponseDto) },
       { $ref: getSchemaPath(BotRoutineEventResponseDto) },
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },

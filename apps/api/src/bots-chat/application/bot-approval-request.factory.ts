@@ -12,8 +12,9 @@ import type {
 /**
  * Raises Needs input cards (`25-bots.md` §5): an asking tool's call, stored
  * as a pending approval and announced on the bot's stream so an open chat
- * shows it at once. A bot has one card waiting at most: while one waits, a
- * second call is told to wait, and the database holds that if two race.
+ * shows it at once. A bot has one card waiting at most, an approval or
+ * questions: while one waits, a second call is told to wait, and the
+ * repository holds that if two race.
  */
 @Injectable()
 export class BotApprovalRequestFactory implements BotApprovalRequesterPort {
@@ -23,13 +24,9 @@ export class BotApprovalRequestFactory implements BotApprovalRequesterPort {
   ) {}
 
   async request(call: BotApprovalCall): Promise<BotApprovalRequestOutcome> {
-    const waiting = await this.approvals.findPending(call.organizationId, call.botId);
-    if (waiting.isSome()) return { status: 'waiting', summary: waiting.unwrap().summary };
     const approval = BotApprovalEntity.request(call);
-    if ((await this.approvals.insertPending(approval)) === 'pending_exists') {
-      const raced = await this.approvals.findPending(call.organizationId, call.botId);
-      return { status: 'waiting', summary: raced.isSome() ? raced.unwrap().summary : call.summary };
-    }
+    const stored = await this.approvals.insertPending(approval);
+    if (stored !== 'inserted') return { status: 'waiting', summary: stored.waiting };
     await this.stream.publish(call.botId, {
       type: 'approval',
       approvalId: approval.id,

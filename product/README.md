@@ -897,9 +897,9 @@ earlier note:
   table (`versions/mvp/25-bots.md` §4.1). Project memory stays in §7.
 - Note 25 §4.7 listed `ask_user` as a question card with no design. On
   2026-10-29, from Grok Bot's form cards (`research/lessons-from-grok-bot.md`
-  §9 row 12), it was built as a Needs input card of up to four questions,
-  stored as an approval that is answered rather than approved, so one card
-  waits per bot whatever it holds (`versions/mvp/25-bots.md` §3.2).
+  §9 row 12), it was built as a card of up to four questions, a card of its
+  own beside approvals that is answered or dismissed and never approved,
+  with one card of either kind up per bot (`versions/mvp/25-bots.md` §3.2).
 - Row 14 of `research/lessons-from-grok-bot.md` §9 placed CI findings in
   the review session's result. On 2026-10-29 they were built as a bot's
   tool, `record_ci_findings`, filed on the pull request's head and shown

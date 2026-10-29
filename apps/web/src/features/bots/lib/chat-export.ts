@@ -1,6 +1,6 @@
 import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
-import { approvalEventKey, approvalEventText } from './approval-event';
+import { questionEventText } from './question-event';
 import { routineEventText } from './routine-event';
 import { toolAction } from './tool-activity';
 
@@ -58,9 +58,9 @@ function body(message: BotMessageEntity, t: TFunction): string {
   const { event } = message;
   if (message.role === 'event' && event?.kind === 'routine') return routineEventText(event, t);
   if (message.role === 'event' && event?.kind === 'approval') {
-    const line = t(`bots.chat.event.${approvalEventKey(event)}`, { summary: event.summary });
-    return approvalEventText(event, line);
+    return t(`bots.chat.event.${event.outcome}`, { summary: event.summary });
   }
+  if (message.role === 'event' && event?.kind === 'question') return questionEventText(event, t);
   return message.content.trim();
 }
 

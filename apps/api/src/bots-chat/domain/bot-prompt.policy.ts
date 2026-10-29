@@ -197,6 +197,9 @@ function approvalPrompt(content: string): string {
 const APPROVAL_ASK =
   'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
 
+const QUESTION_ASK =
+  'This is what came of the questions you asked. If they answered, carry on with what you were doing, as their answers say, without asking the same thing again. If they dismissed them, do what you can without the answer, or say what you need and stop.';
+
 type EventPrompts = {
   [Kind in BotMessageEvent['kind']]: (
     event: Extract<BotMessageEvent, { kind: Kind }>,
@@ -212,6 +215,7 @@ type EventPrompts = {
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (_event, content) => approvalPrompt(content),
+  question: (_event, content) => `${eventNote(content)}\n\n${QUESTION_ASK}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,

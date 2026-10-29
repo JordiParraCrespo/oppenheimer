@@ -19986,7 +19986,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["pending", "approved", "denied", "expired", "failed", "answered"],
+              "enum": ["pending", "approved", "denied", "expired", "failed"],
               "type": "string"
             }
           }
@@ -20055,7 +20055,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["pending", "approved", "denied", "expired", "failed", "answered"],
+              "enum": ["pending", "approved", "denied", "expired", "failed"],
               "type": "string"
             }
           }
@@ -20106,7 +20106,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. A card of questions (`ask_user`) takes `answer` with `answers`, one per question, or `deny` to dismiss it. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -20188,7 +20188,7 @@
             }
           },
           "422": {
-            "description": "BOTS_036 — Answers that do not fit\n\nBOTS_035 — Not decided that way\n\nBOTS_030 — A reach the card does not offer",
+            "description": "BOTS_030 — A reach the card does not offer",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20204,6 +20204,267 @@
           }
         ],
         "summary": "Answer a bot's Needs input card",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/question": {
+      "get": {
+        "description": "The card of questions the bot asked with `ask_user` and is waiting on; null when none waits. A bot has one card up at a time, questions or an approval.",
+        "operationId": "findPendingBotQuestion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotPendingQuestionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's waiting questions",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/questions/{questionId}/answer": {
+      "post": {
+        "description": "One answer per question, in order: the options picked, by index, and the person's own words. The bot gets a turn that reads the answers, under the scopes both the asking turn and your credential cover. Nothing else runs.",
+        "operationId": "answerBotQuestion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerBotQuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotQuestionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_035 — Questions not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_037 — Already answered",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_036 — Answers that do not fit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer a bot's questions",
+        "tags": ["Bots"]
+      }
+    },
+    "/api/v1/bots/{id}/questions/{questionId}/dismiss": {
+      "post": {
+        "description": "Declines to answer, with a note if you like. The bot gets a turn that is told so, under the scopes both the asking turn and your credential cover, and is asked not to ask again unless you bring it up.",
+        "operationId": "dismissBotQuestion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissBotQuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotQuestionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_035 — Questions not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_037 — Already answered",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dismiss a bot's questions",
         "tags": ["Bots"]
       }
     },
@@ -30735,19 +30996,6 @@
         },
         "required": ["status"]
       },
-      "BotAnsweredQuestionResponseDto": {
-        "type": "object",
-        "properties": {
-          "question": {
-            "type": "string"
-          },
-          "answer": {
-            "type": "string",
-            "description": "The picked options and the person’s own words, joined."
-          }
-        },
-        "required": ["question", "answer"]
-      },
       "BotApprovalEventResponseDto": {
         "type": "object",
         "properties": {
@@ -30757,7 +31005,7 @@
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed", "answered"]
+            "enum": ["approved", "denied", "failed"]
           },
           "tool": {
             "type": "string",
@@ -30772,16 +31020,47 @@
             "format": "uuid",
             "nullable": true,
             "description": "The session the approved call started; null when it started none."
+          }
+        },
+        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
+      },
+      "BotAnsweredQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string",
+            "description": "The picked options and the person’s own words, joined."
+          }
+        },
+        "required": ["question", "answer"]
+      },
+      "BotQuestionEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["question"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["answered", "dismissed"]
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card's line: its first question, and how many follow."
           },
           "answers": {
-            "description": "For answered questions (`ask_user`): each question and its answer, in words.",
+            "description": "Each question and its answer, in words; empty when dismissed.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BotAnsweredQuestionResponseDto"
             }
           }
         },
-        "required": ["kind", "outcome", "tool", "summary", "sessionId"]
+        "required": ["kind", "outcome", "summary", "answers"]
       },
       "BotRoutineEventResponseDto": {
         "type": "object",
@@ -31116,6 +31395,9 @@
                 "$ref": "#/components/schemas/BotApprovalEventResponseDto"
               },
               {
+                "$ref": "#/components/schemas/BotQuestionEventResponseDto"
+              },
+              {
                 "$ref": "#/components/schemas/BotRoutineEventResponseDto"
               },
               {
@@ -31390,22 +31672,6 @@
         },
         "required": ["goal"]
       },
-      "BotQuestionAnswerResponseDto": {
-        "type": "object",
-        "properties": {
-          "picks": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "other": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": ["picks", "other"]
-      },
       "BotApprovalResponseDto": {
         "type": "object",
         "properties": {
@@ -31433,7 +31699,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "denied", "expired", "failed", "answered"]
+            "enum": ["pending", "approved", "denied", "expired", "failed"]
           },
           "result": {
             "type": "string",
@@ -31444,14 +31710,6 @@
             "type": "string",
             "nullable": true,
             "description": "What the person added to a no."
-          },
-          "answers": {
-            "nullable": true,
-            "description": "What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BotQuestionAnswerResponseDto"
-            }
           },
           "subjectKind": {
             "type": "string",
@@ -31510,7 +31768,6 @@
           "status",
           "result",
           "note",
-          "answers",
           "subjectKind",
           "subjectLabel",
           "sharesOutside",
@@ -31549,7 +31806,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "denied", "expired", "failed", "answered"]
+            "enum": ["pending", "approved", "denied", "expired", "failed"]
           },
           "result": {
             "type": "string",
@@ -31560,14 +31817,6 @@
             "type": "string",
             "nullable": true,
             "description": "What the person added to a no."
-          },
-          "answers": {
-            "nullable": true,
-            "description": "What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BotQuestionAnswerResponseDto"
-            }
           },
           "subjectKind": {
             "type": "string",
@@ -31641,7 +31890,6 @@
           "status",
           "result",
           "note",
-          "answers",
           "subjectKind",
           "subjectLabel",
           "sharesOutside",
@@ -31661,7 +31909,7 @@
         "properties": {
           "decision": {
             "type": "string",
-            "enum": ["approve", "deny", "answer"]
+            "enum": ["approve", "deny"]
           },
           "note": {
             "type": "string",
@@ -31671,9 +31919,146 @@
             "type": "string",
             "enum": ["once", "tool", "subject"],
             "default": "once"
+          }
+        },
+        "required": ["decision"]
+      },
+      "BotQuestionOptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "What picking it means."
+          }
+        },
+        "required": ["label", "description"]
+      },
+      "BotQuestionItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "type": "string",
+            "nullable": true,
+            "description": "A tag over it (\"Repo\")."
+          },
+          "question": {
+            "type": "string"
+          },
+          "multiSelect": {
+            "type": "boolean",
+            "description": "Several options may be picked."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotQuestionOptionResponseDto"
+            }
+          }
+        },
+        "required": ["header", "question", "multiSelect", "options"]
+      },
+      "BotQuestionAnswerResponseDto": {
+        "type": "object",
+        "properties": {
+          "picks": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "other": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["picks", "other"]
+      },
+      "BotQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The turn whose call asked."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotQuestionItemResponseDto"
+            }
+          },
+          "summary": {
+            "type": "string",
+            "description": "The card’s line: the first question, and how many follow."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "answered", "dismissed", "expired"]
           },
           "answers": {
+            "nullable": true,
+            "description": "One per question, once answered.",
             "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotQuestionAnswerResponseDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the person added to a dismissal."
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "turnId",
+          "questions",
+          "summary",
+          "status",
+          "answers",
+          "note",
+          "decidedAt",
+          "createdAt"
+        ]
+      },
+      "BotPendingQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotQuestionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": ["question"]
+      },
+      "AnswerBotQuestionRequest": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "minItems": 1,
             "maxItems": 4,
             "items": {
               "type": "object",
@@ -31700,7 +32085,16 @@
             }
           }
         },
-        "required": ["decision"]
+        "required": ["answers"]
+      },
+      "DismissBotQuestionRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
       },
       "BotToolPermissionDto": {
         "type": "object",

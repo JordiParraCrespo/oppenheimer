@@ -17,6 +17,10 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       params,
     );
     await manager.query(
+      `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
+      params,
+    );
+    await manager.query(
       `DELETE FROM bot_message WHERE "organizationId" = $1 AND "botId" = $2`,
       params,
     );

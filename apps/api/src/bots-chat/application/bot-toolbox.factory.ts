@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import {
+  BOT_ATTENDED_ORIGINS,
   type BotPermission,
   type BotTurnOrigin,
   expandScopes,
@@ -20,6 +21,7 @@ import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
+import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
@@ -61,10 +63,12 @@ export class BotToolboxFactory {
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
+    questions: BotQuestionToolsFactory,
   ) {
     this.areas = [
       self,
       goals,
+      questions,
       hosts,
       sessions,
       watches,
@@ -199,7 +203,8 @@ export class BotToolboxFactory {
     return this.definitions(granted).filter(
       (definition) =>
         toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
-        !(origin && definition.notOn.includes(origin)),
+        !(origin && definition.notOn.includes(origin)) &&
+        !(origin && definition.attendedOnly && !isAttended(origin)),
     );
   }
 
@@ -215,12 +220,17 @@ export class BotToolboxFactory {
 export interface BotStanding {
   preset: BotPermission;
   permissions: BotPermissions;
-  /** Why the turn exists, for the tools offered only to some turns (`notOn`). */
+  /** Why the turn exists, for the tools offered only to some turns (`notOn`, `attendedOnly`). */
   origin?: BotTurnOrigin;
 }
 
 function standingOf(context: BotToolContext): BotStanding {
   return { preset: context.permission, permissions: context.permissions, origin: context.origin };
+}
+
+/** Whether a person is waiting on a turn of this origin (`BOT_ATTENDED_ORIGINS`). */
+function isAttended(origin: BotTurnOrigin): boolean {
+  return (BOT_ATTENDED_ORIGINS as readonly BotTurnOrigin[]).includes(origin);
 }
 
 /** Reads the owner's scopes as their roles stand at the moment of the call. */

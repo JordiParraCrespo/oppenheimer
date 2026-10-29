@@ -9,6 +9,7 @@ import {
   type BotMessageResponseDto,
   type BotPermissionsResponseDto,
   type BotPlanWindowDto,
+  type BotQuestionResponseDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
   type BotTurnPlanLimitsDto,
@@ -20,9 +21,9 @@ import {
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
-  BOT_ASK_USER_TOOL,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
   type BotApprovalDecision,
@@ -33,11 +34,9 @@ import {
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
-  type BotQuestion,
   type BotQuestionAnswer,
   type BotSection,
   type BotToolDecision,
-  botQuestionsSchema,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -68,6 +67,7 @@ import {
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
+  BotQuestionCardEntity,
   type BotToolStep,
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
@@ -213,7 +213,17 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             tool: dto.tool,
             summary: dto.summary,
             sessionId: dto.sessionId ?? null,
-            ...(dto.answers && { answers: dto.answers.map((answer) => ({ ...answer })) }),
+          }
+        : null;
+    }
+    case 'question': {
+      const outcome = BOT_QUESTION_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'question',
+            outcome,
+            summary: dto.summary,
+            answers: dto.answers.map((answer) => ({ ...answer })),
           }
         : null;
     }
@@ -318,16 +328,21 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
       reach: dto.reach,
     },
     mailOf(dto.tool, dto.input),
-    questionsOf(dto.tool, dto.input),
-    dto.answers ? dto.answers.map((answer) => ({ ...answer, picks: [...answer.picks] })) : null,
   );
 }
 
-/** An `ask_user` card's questions; a card whose input does not read as them has none. */
-function questionsOf(tool: string, input: Record<string, unknown>): BotQuestion[] {
-  if (tool !== BOT_ASK_USER_TOOL) return [];
-  const parsed = botQuestionsSchema.safeParse(input);
-  return parsed.success ? parsed.data.questions : [];
+function toQuestionCard(dto: BotQuestionResponseDto): BotQuestionCardEntity {
+  return new BotQuestionCardEntity(
+    dto.id,
+    dto.turnId,
+    dto.questions.map((question) => ({
+      ...question,
+      options: question.options.map((option) => ({ ...option })),
+    })),
+    dto.summary,
+    dto.status,
+    new Date(dto.createdAt),
+  );
 }
 
 function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
@@ -528,23 +543,52 @@ export class BotsRepository {
     decision: BotApprovalDecision,
     note?: string,
     reach: BotApprovalReach = 'once',
-    answers?: readonly BotQuestionAnswer[],
   ): Promise<BotApprovalEntity> {
     const data = await unwrapBody(
       heyApiSdk.decideBotApproval({
         path: { id, approvalId },
-        body: {
-          decision,
-          reach,
-          ...(note?.trim() ? { note: note.trim() } : {}),
-          ...(answers && {
-            answers: answers.map((answer) => ({ ...answer, picks: [...answer.picks] })),
-          }),
-        },
+        body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
       }),
       BotsErrors.DECIDE_APPROVAL_FAILED,
     );
     return toApproval(data);
+  }
+
+  /** The card of questions the bot waits on (`ask_user`); `null` when none does. */
+  @MapApiError(BotsErrors.FETCH_QUESTION_FAILED)
+  async findPendingQuestion(id: string): Promise<BotQuestionCardEntity | null> {
+    const data = await unwrapBody(
+      heyApiSdk.findPendingBotQuestion({ path: { id } }),
+      BotsErrors.FETCH_QUESTION_FAILED,
+    );
+    return data.question ? toQuestionCard(data.question) : null;
+  }
+
+  /** Answers a card of questions, one answer per question; the bot carries on with them. */
+  @MapApiError(BotsErrors.ANSWER_QUESTION_FAILED)
+  async answerQuestion(
+    id: string,
+    questionId: string,
+    answers: readonly BotQuestionAnswer[],
+  ): Promise<BotQuestionCardEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.answerBotQuestion({
+        path: { id, questionId },
+        body: { answers: answers.map((answer) => ({ ...answer, picks: [...answer.picks] })) },
+      }),
+      BotsErrors.ANSWER_QUESTION_FAILED,
+    );
+    return toQuestionCard(data);
+  }
+
+  /** Declines a card of questions; the bot is told, and not to ask again. */
+  @MapApiError(BotsErrors.ANSWER_QUESTION_FAILED)
+  async dismissQuestion(id: string, questionId: string): Promise<BotQuestionCardEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.dismissBotQuestion({ path: { id, questionId }, body: {} }),
+      BotsErrors.ANSWER_QUESTION_FAILED,
+    );
+    return toQuestionCard(data);
   }
 
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
