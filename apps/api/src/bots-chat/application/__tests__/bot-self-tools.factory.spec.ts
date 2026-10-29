@@ -245,7 +245,9 @@ describe('BotSelfToolsFactory', () => {
       botId: BOT_ID,
       content: 'Deploys go out on Fridays',
     });
-    expect(result.content).toContain(`Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`);
+    expect(result.content).toContain(
+      `Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`,
+    );
   });
 
   // What breaks this: a detail written into every prompt, or a fact about
