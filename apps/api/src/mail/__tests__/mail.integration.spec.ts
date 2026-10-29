@@ -236,8 +236,9 @@ describe('mail (integration)', () => {
     expect(found[0].plan).toMatchObject({ subject: 'Invoice 42' });
     await expect(sends.findScheduledOwn(scopeOf(ana), 10)).resolves.toHaveLength(1);
 
+    const day = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [claimed, cancelled] = await Promise.all([
-      sends.claimDue(due),
+      sends.claimDueUnderCap(due, day, 50).then((claim) => claim.outcome === 'claimed'),
       sends.cancelOwn(scopeOf(ana), due.id),
     ]);
     expect([claimed, cancelled].filter(Boolean)).toHaveLength(1);
@@ -266,8 +267,40 @@ describe('mail (integration)', () => {
 
     expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
     await expect(sends.countSince(account.id, since)).resolves.toBe(3);
-    // The one going out asks how many went before it.
-    const winner = racers[raced.findIndex((claim) => claim.outcome === 'claimed')];
-    await expect(sends.countSince(account.id, since, winner.id)).resolves.toBe(2);
+  });
+
+  it('lets only one of a send approved now and a scheduled one falling due take the last place', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
+    const due = MailSendEntity.schedule(
+      {
+        organizationId,
+        userId: ana,
+        connectionId: account.id,
+        botId: null,
+        approvalId: randomUUID(),
+        kind: 'new',
+        accountEmail: 'ana@gmail.test',
+        recipients: ['bo@client.test'],
+        subject: 'Invoice 43',
+      },
+      PLAN(account.id),
+      new Date(Date.now() - 60_000),
+    );
+    await sends.claim(due);
+
+    const raced = await Promise.all([
+      sends.claimUnderCap(claimOf(account.id), since, 3),
+      sends.claimDueUnderCap(due, since, 3),
+    ]);
+
+    expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
+    await expect(sends.countSince(account.id, since)).resolves.toBe(3);
+    // A due send past the cap is failed by its claim, so no tick tries it again.
+    await expect(sends.findDue(new Date(), 50)).resolves.not.toContainEqual(
+      expect.objectContaining({ id: due.id }),
+    );
   });
 });

@@ -90,7 +90,7 @@ function setup(
     countSince: vi.fn(async () => options.sentToday ?? 0),
     findRecentOwn: vi.fn(),
     findDue: vi.fn(),
-    claimDue: vi.fn(),
+    claimDueUnderCap: vi.fn(),
     cancelOwn: vi.fn(),
     findScheduledOwn: vi.fn(),
   } satisfies MailSendRepositoryPort;

@@ -77,8 +77,8 @@ export class MailSendRepository
     await this.repository.update({ id, organizationId }, changes);
   }
 
-  async countSince(connectionId: string, since: Date, excludingId?: string): Promise<number> {
-    return sentSince(this.repository, connectionId, since, excludingId);
+  async countSince(connectionId: string, since: Date): Promise<number> {
+    return sentSince(this.repository, connectionId, since);
   }
 
   async findDue(now: Date, limit: number): Promise<MailSendEntity[]> {
@@ -90,12 +90,26 @@ export class MailSendRepository
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  async claimDue(send: MailSendEntity): Promise<boolean> {
-    const result = await this.repository.update(
-      { id: send.id, status: 'scheduled' },
-      { status: 'sending' },
-    );
-    return result.affected === 1;
+  async claimDueUnderCap(
+    send: MailSendEntity,
+    since: Date,
+    cap: number,
+  ): Promise<MailSendClaimOutcome> {
+    return this.repository.manager.transaction(async (manager) => {
+      // The same queue as an immediate send's: the two never both pass at the cap.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `mail_send:${send.connectionId}`,
+      ]);
+      const repository = manager.getRepository(MailSendOrmEntity);
+      const sentInWindow = await sentSince(repository, send.connectionId ?? '', since, send.id);
+      const overCap = sentInWindow >= cap;
+      const result = await repository.update(
+        { id: send.id, status: 'scheduled' },
+        overCap ? { status: 'failed', plan: null } : { status: 'sending' },
+      );
+      if (result.affected !== 1) return { outcome: 'taken' };
+      return overCap ? { outcome: 'over_cap', sentInWindow } : { outcome: 'claimed' };
+    });
   }
 
   async cancelOwn(scope: AccessScope, id: string): Promise<boolean> {
@@ -126,7 +140,8 @@ export class MailSendRepository
   async findRecentOwn(scope: AccessScope, limit: number): Promise<MailSendEntity[]> {
     const records = await this.scopedQuery(scope)
       .andWhere('send.userId = :userId', { userId: scope.userId })
-      .orderBy('send.createdAt', 'DESC')
+      // Every change of state moves `updatedAt`: a send scheduled weeks ago lists when it goes.
+      .orderBy('send.updatedAt', 'DESC')
       .addOrderBy('send.id', 'DESC')
       .take(limit)
       .getMany();

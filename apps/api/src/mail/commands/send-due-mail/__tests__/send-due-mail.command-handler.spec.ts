@@ -12,8 +12,10 @@ import { SendDueMailCommandHandler } from '../send-due-mail.command-handler';
  * The minute job's sends (`product/next-steps/mail.md` §3.4): each due send is
  * claimed before Gmail is asked, one another writer claimed or cancelled first
  * is skipped, the stored plan is what goes, a failure is recorded and the rest
- * still go, and the daily cap counts the send being made once. The claim's
- * race against a cancel is the integration suite's.
+ * still go, one past the account's daily cap is not sent, and a backlog of
+ * more than one batch goes in the same tick. The claim's races, against a
+ * cancel and against an immediate send at the cap, are the integration
+ * suite's.
  */
 const CONNECTION = GmailConnectionEntity.connect({
   organizationId: 'org-1',
@@ -62,18 +64,21 @@ function scheduled(subject: string): MailSendEntity {
   );
 }
 
-function setup(due: MailSendEntity[], othersToday = 0) {
+function setup(due: MailSendEntity[]) {
   const sends = {
     findByApproval: vi.fn(),
     claim: vi.fn(),
     save: vi.fn(async () => undefined),
-    countSince: vi.fn(async () => othersToday),
+    countSince: vi.fn(),
     findRecentOwn: vi.fn(),
-    findDue: vi.fn(async () => due),
-    claimDue: vi.fn(async () => true),
+    findDue: vi.fn<MailSendRepositoryPort['findDue']>(async () => []),
+    claimDueUnderCap: vi.fn<MailSendRepositoryPort['claimDueUnderCap']>(async () => ({
+      outcome: 'claimed',
+    })),
     cancelOwn: vi.fn(),
     findScheduledOwn: vi.fn(),
   } satisfies MailSendRepositoryPort;
+  sends.findDue.mockResolvedValueOnce(due);
   const deliver = vi.fn(async (_p: unknown, _g: unknown, plan: MailPlan) => ({
     messageId: `g-${plan.subject}`,
     threadId: 't1',
@@ -99,7 +104,7 @@ describe('SendDueMailCommandHandler', () => {
 
     await expect(tick()).resolves.toBe(1);
 
-    expect(sends.claimDue).toHaveBeenCalledWith(send);
+    expect(sends.claimDueUnderCap).toHaveBeenCalledWith(send, expect.any(Date), 50);
     expect(deliver.mock.calls[0][2]).toMatchObject({ subject: 'Invoice 42' });
     expect(sends.save).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'sent', gmailMessageId: 'g-Invoice 42', plan: null }),
@@ -108,7 +113,7 @@ describe('SendDueMailCommandHandler', () => {
 
   it('skips a send another writer claimed or cancelled first', async () => {
     const { tick, sends, deliver } = setup([scheduled('Invoice 42')]);
-    sends.claimDue.mockResolvedValueOnce(false);
+    sends.claimDueUnderCap.mockResolvedValueOnce({ outcome: 'taken' });
 
     await expect(tick()).resolves.toBe(0);
 
@@ -131,19 +136,22 @@ describe('SendDueMailCommandHandler', () => {
     );
   });
 
-  it('holds the send it is making to the daily cap, counting the sends before it', async () => {
-    const fiftieth = scheduled('Fiftieth');
-    const atCap = setup([fiftieth], 49);
-    await expect(atCap.tick()).resolves.toBe(1);
-    expect(atCap.sends.countSince).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Date),
-      fiftieth.id,
-    );
+  it('does not send one past the daily cap, which the claim has recorded as failed', async () => {
+    const { tick, sends, deliver } = setup([scheduled('Fifty-first')]);
+    sends.claimDueUnderCap.mockResolvedValueOnce({ outcome: 'over_cap', sentInWindow: 50 });
 
-    const over = setup([scheduled('Fifty-first')], 50);
-    await expect(over.tick()).resolves.toBe(0);
-    expect(over.deliver).not.toHaveBeenCalled();
-    expect(over.sends.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }));
+    await expect(tick()).resolves.toBe(0);
+
+    expect(deliver).not.toHaveBeenCalled();
+    expect(sends.save).not.toHaveBeenCalled();
+  });
+
+  it('takes another batch in the same tick while a full one came back', async () => {
+    const batch = Array.from({ length: 50 }, (_, i) => scheduled(`Batch ${i}`));
+    const { tick, sends } = setup(batch);
+    sends.findDue.mockResolvedValueOnce([scheduled('Fifty-first')]);
+
+    await expect(tick()).resolves.toBe(51);
+    expect(sends.findDue).toHaveBeenCalledTimes(2);
   });
 });
