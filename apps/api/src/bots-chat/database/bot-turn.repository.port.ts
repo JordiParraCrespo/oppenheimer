@@ -2,7 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** How queuing a turn another bot asked for went. */
 export type BotPeerEnqueueOutcome =
@@ -66,6 +66,12 @@ export interface BotTurnRepositoryPort {
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
+  /**
+   * What the model's context held at the end of the bot's newest turn that
+   * reported it, for the next turn to be told how full it is. Null before any
+   * turn reported one.
+   */
+  findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,

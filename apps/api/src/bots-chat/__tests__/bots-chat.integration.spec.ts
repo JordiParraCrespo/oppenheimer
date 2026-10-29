@@ -440,6 +440,13 @@ describe('bots chat (integration)', () => {
     const stored = (await turns.findForRun(turn.id)).unwrap();
     expect(stored.context).toEqual({ tokens: 41_000, window: 1_000_000 });
     expect(stored.planLimits).toEqual({ fiveHour, sevenDay: { usedPercent: 3, resetsAt: null } });
+    // The next turn is told how full the context was; another bot reads none of it.
+    expect(await turns.findLastContext(bot.organizationId, bot.id)).toEqual({
+      tokens: 41_000,
+      window: 1_000_000,
+    });
+    const other = await create('Unmetered');
+    expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
   });
 
   it('makes the end of a turn wait for the bot row a send holds', async () => {
@@ -557,6 +564,7 @@ describe('bots chat (integration)', () => {
       summaries,
       owners,
       hosts,
+      turns,
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,

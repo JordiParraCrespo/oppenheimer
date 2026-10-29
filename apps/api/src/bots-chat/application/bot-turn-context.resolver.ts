@@ -12,10 +12,12 @@ import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
+  BOT_TURN_REPOSITORY,
   OWNER_HOSTS,
 } from '../bots-chat.di-tokens';
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
@@ -51,7 +53,8 @@ export const BOT_TURN_MAX_STEPS = 20;
  * credential the turn's provider runs on (a key, or a refreshed sign-in),
  * and this turn's message with its images, its words opened by the moment
  * it runs in: the sender's time, the bot's home host and the owner's hosts,
- * read in the owner's scope. The bot's own rows are read by the turn's
+ * read in the owner's scope, and how full its context was when its last
+ * turn ended. The bot's own rows are read by the turn's
  * workspace; what the owner can reach is read as the owner, so the bot sees
  * no more than they do.
  */
@@ -66,6 +69,7 @@ export class BotTurnContextResolver {
     private readonly summaries: BotConversationSummaryRepositoryPort,
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
+    @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
@@ -82,7 +86,7 @@ export class BotTurnContextResolver {
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, earlier, hosts] = await Promise.all([
+    const [documents, facts, earlier, hosts, lastContext] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
       this.messages.findHistory(
@@ -93,6 +97,7 @@ export class BotTurnContextResolver {
         BOT_HISTORY_READ_MAX,
       ),
       this.hostsOf(owner, turn.id),
+      this.turns.findLastContext(turn.organizationId, bot.id),
     ]);
     const model = {
       provider: turn.provider,
@@ -142,6 +147,7 @@ export class BotTurnContextResolver {
           timeZone: turn.timeZone,
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
+          lastContext,
         }),
         prompt,
       ),

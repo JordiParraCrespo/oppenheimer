@@ -11,7 +11,7 @@ import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
@@ -206,6 +206,21 @@ export class BotTurnRepository
   async findForRun(turnId: string): Promise<Option<BotTurnEntity>> {
     const record = await this.repository.findOne({ where: { id: turnId } });
     return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null> {
+    // IDX_bot_turn_bot, read backwards from the newest turn.
+    const record = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere('turn.contextTokens IS NOT NULL')
+      .orderBy('turn.createdAt', 'DESC')
+      .addOrderBy('turn.id', 'DESC')
+      .getOne();
+    return record ? this.mapper.toDomain(record).context : null;
   }
 
   async findForConversation(
