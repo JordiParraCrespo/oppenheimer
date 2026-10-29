@@ -284,6 +284,60 @@ function ChipSelectHeading({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
+/**
+ * The tab row under the search of a pane that holds several lists (Where it
+ * runs: Hosts, Cloud): the labels in a row with a 2px bar under the one on
+ * and a hairline under them all. The search filters the tab that is on.
+ */
+function ChipSelectTabs({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      role="tablist"
+      data-slot="chip-select-tabs"
+      className={cn(
+        '-mt-1 mb-1 flex shrink-0 gap-4 border-b border-border-subtle px-2.5',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** One tab of `ChipSelectTabs`, with how many rows it holds in mono. */
+function ChipSelectTab({
+  selected = false,
+  count,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & { selected?: boolean; count?: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      data-slot="chip-select-tab"
+      className={cn(
+        'relative flex h-9 items-center gap-1.5 text-[13px] text-fg-muted outline-none transition-colors duration-fast hover:text-fg focus-visible:text-fg aria-selected:text-fg',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      {count === undefined ? null : (
+        <span className="figures font-mono text-[11px] text-fg-subtle">{count}</span>
+      )}
+      <span
+        aria-hidden
+        className={cn(
+          'absolute inset-x-0 -bottom-px h-0.5 rounded-pill',
+          selected ? 'bg-fg' : 'bg-transparent',
+        )}
+      />
+    </button>
+  );
+}
+
 const ITEM_CLASSES =
   'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
@@ -806,6 +860,8 @@ export {
   ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
+  ChipSelectTab,
+  ChipSelectTabs,
   ChipSelectTrigger,
 };
 export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption, ChipSelectTriggerVariant };
