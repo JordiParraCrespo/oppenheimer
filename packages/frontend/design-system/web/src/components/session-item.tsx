@@ -120,7 +120,7 @@ function SessionItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-selected:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'group/session flex h-[30px] w-full items-center gap-[9px] rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-selected:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -241,7 +241,7 @@ function SortableSessionItem({
     <SessionItem
       {...props}
       {...control}
-      rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-sm') }}
+      rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-nav') }}
     />
   );
 }
