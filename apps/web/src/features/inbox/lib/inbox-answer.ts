@@ -1,5 +1,3 @@
-import type { SessionQuestionDecision } from '@oppenheimer/shared/schemas/session-decision';
-
 /** What the reader chose for one question on the card: options by index, and words of their own. */
 export interface InboxAnswer {
   picks: number[];
@@ -19,21 +17,4 @@ export function toAnswers(answers: readonly InboxAnswer[]) {
     picks: answer.picks,
     other: answer.other.trim() || null,
   }));
-}
-
-/** "Keep both · Gateway, Redis": what was answered, for the log line. */
-export function answerSummary(
-  decision: SessionQuestionDecision,
-  answers: readonly InboxAnswer[],
-): string {
-  return decision.questions
-    .map((question, index) => {
-      const answer = answers[index] ?? UNANSWERED;
-      const words = [
-        ...answer.picks.flatMap((pick) => question.options[pick]?.label ?? []),
-        answer.other.trim(),
-      ].filter(Boolean);
-      return words.join(', ');
-    })
-    .join(' · ');
 }

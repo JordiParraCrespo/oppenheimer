@@ -46,21 +46,21 @@ export function facetCounts(items: readonly InboxItem[], filter: InboxFilter) {
 }
 
 /**
- * What the list shows, and the pane takes its item from: the open items in
- * this visit's order under the filter, then — with Show done — those marked
- * done on this visit.
+ * What the list shows, and the reading pane takes its item from: the open
+ * items in this visit's order under the filter and the search (`found`), then
+ * — with Show done — those marked done on this visit.
  */
 export function listedItems(
   view: { open: readonly InboxItem[]; done: readonly InboxItem[] },
   visit: InboxVisit,
   filter: InboxFilter,
   showDone: boolean,
+  found: (item: InboxItem) => boolean = () => true,
 ): { open: InboxItem[]; done: InboxItem[] } {
   const doneThisVisit = new Set(visit.done);
+  const shown = (item: InboxItem) => matchesFilter(item, filter) && found(item);
   return {
-    open: visitOrder(view.open, visit).filter((item) => matchesFilter(item, filter)),
-    done: showDone
-      ? view.done.filter((item) => doneThisVisit.has(item.key) && matchesFilter(item, filter))
-      : [],
+    open: visitOrder(view.open, visit).filter(shown),
+    done: showDone ? view.done.filter((item) => doneThisVisit.has(item.key) && shown(item)) : [],
   };
 }

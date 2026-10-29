@@ -1,4 +1,4 @@
-import { Button, InboxCardActions, InboxQuestions } from '@oppenheimer/design-system-web';
+import { Button, InboxMessageActions, InboxQuestions } from '@oppenheimer/design-system-web';
 import type { SessionQuestionDecision } from '@oppenheimer/shared/schemas/session-decision';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -49,7 +49,7 @@ export function InboxQuestionAnswer({
         ))}
       </InboxQuestions>
       {alert}
-      <InboxCardActions leading={leading}>
+      <InboxMessageActions leading={leading}>
         <Button
           disabled={!ready}
           pending={pending}
@@ -58,7 +58,7 @@ export function InboxQuestionAnswer({
         >
           {t('inbox.session.send')}
         </Button>
-      </InboxCardActions>
+      </InboxMessageActions>
     </>
   );
 }
