@@ -72,7 +72,7 @@ function SettingsNavItem({
       {
         type: 'button',
         className: cn(
-          'flex h-8 w-auto shrink-0 items-center gap-2.5 rounded-xs px-2.5 md:w-full md:shrink text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
+          'flex h-8 w-auto shrink-0 items-center gap-2.5 rounded-nav px-2.5 md:w-full md:shrink text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
           className,
         ),
         children: (

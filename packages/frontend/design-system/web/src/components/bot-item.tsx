@@ -80,7 +80,7 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex w-full items-center gap-3 rounded-xs px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
+        'group/bot flex w-full items-center gap-3 rounded-nav px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -147,7 +147,7 @@ function SortableBotItem({
   hidden?: boolean;
 }) {
   const { node, control } = useSortableControl({ id, data: { type: 'bot', label: props.name }, disabled });
-  return <BotItem {...props} {...control} rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-xs') }} />;
+  return <BotItem {...props} {...control} rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-nav') }} />;
 }
 
 export { BotItem, BotList, SortableBotItem };

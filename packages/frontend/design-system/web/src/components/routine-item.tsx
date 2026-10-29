@@ -63,7 +63,7 @@ function RoutineItem({
       role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'group/routine flex h-[30px] w-full items-center gap-[9px] rounded-xs px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'group/routine flex h-[30px] w-full items-center gap-[9px] rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -160,7 +160,7 @@ function RoutineRun({
       data-active={active || undefined}
       role="listitem"
       className={cn(
-        'flex h-7 w-full items-center gap-2 rounded-xs pr-2.5 pl-8 text-left text-[12.5px] text-fg-muted outline-none transition-colors duration-fast hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:text-fg',
+        'flex h-7 w-full items-center gap-2 rounded-nav pr-2.5 pl-8 text-left text-[12.5px] text-fg-muted outline-none transition-colors duration-fast hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:text-fg',
         // A run with no session has nothing to open. Left to itself the row
         // looked exactly like one that does and answered a click with
         // nothing, so the disabled state has to be visible: it stops

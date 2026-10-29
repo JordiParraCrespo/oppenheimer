@@ -11,7 +11,7 @@ type SessionState = NonNullable<ComponentProps<typeof SessionItem>['state']>;
 export function SidebarDragCopy({ item }: { item: DragItem }) {
   const name = item.data.label ?? item.id;
   return (
-    <div className="w-60 rounded-xs bg-sidebar">
+    <div className="w-60 rounded-nav bg-sidebar">
       {item.data.type === 'project' ? (
         <SidebarProjectHeader name={name} open={false} />
       ) : (
