@@ -45,6 +45,7 @@ const ORIGINAL: GmailMessage = {
       sizeBytes: 3,
     },
   ],
+  bcc: '',
   replyTo: '',
   messageIdHeader: '<m1@client.test>',
   referencesHeader: '<m0@client.test>',
@@ -207,5 +208,27 @@ describe('MailComposeResolver', () => {
     await expect(build({ to: ['bo@client.test'], localFiles: [image] })).rejects.toMatchObject({
       code: 'MAIL_009',
     });
+  });
+
+  it('plans a draft with every recipient it carries, Bcc included, and holds it to the ten-recipient limit', async () => {
+    const { compose, provider } = setup();
+    const draft = (to: string, bcc: string) => ({
+      id: 'd1',
+      message: { ...ORIGINAL, id: 'dm1', from: 'Ana <ana@gmail.test>', to, cc: '', bcc },
+    });
+    const withDraft = (read: ReturnType<typeof draft>) =>
+      Object.assign(provider, { readDraft: vi.fn(async () => read) });
+
+    withDraft(draft('bo@client.test', 'audit@acme.test'));
+    await expect(compose.planDraft(CONNECTION, 'd1')).resolves.toMatchObject({
+      kind: 'draft',
+      to: ['bo@client.test'],
+      bcc: ['audit@acme.test'],
+      draftMessageId: 'dm1',
+    });
+
+    const many = Array.from({ length: 6 }, (_, i) => `p${i}@client.test`).join(', ');
+    withDraft(draft(many, many));
+    await expect(compose.planDraft(CONNECTION, 'd1')).rejects.toMatchObject({ code: 'MAIL_010' });
   });
 });

@@ -7,7 +7,7 @@ import type { MailSendEntity } from '../domain/mail-send.entity';
 import { MailResource } from '../mail.resource';
 import { MailSendMapper } from '../mail-send.mapper';
 import { MailSendOrmEntity } from './mail-send.orm-entity';
-import type { MailSendRepositoryPort } from './mail-send.repository.port';
+import type { MailSendClaimOutcome, MailSendRepositoryPort } from './mail-send.repository.port';
 
 @Injectable()
 export class MailSendRepository
@@ -42,22 +42,43 @@ export class MailSendRepository
     return Array.isArray(result.raw) && result.raw.length === 1;
   }
 
+  async claimUnderCap(
+    send: MailSendEntity,
+    since: Date,
+    cap: number,
+  ): Promise<MailSendClaimOutcome> {
+    return this.repository.manager.transaction(async (manager) => {
+      // One account's sends queue here; other accounts never wait on it.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `mail_send:${send.connectionId}`,
+      ]);
+      const sentInWindow = await sentSince(
+        manager.getRepository(MailSendOrmEntity),
+        send.connectionId ?? '',
+        since,
+      );
+      if (sentInWindow >= cap) return { outcome: 'over_cap', sentInWindow };
+      const result = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(MailSendOrmEntity)
+        .values(this.mapper.toPersistence(send))
+        .orIgnore()
+        .returning(['id'])
+        .execute();
+      return Array.isArray(result.raw) && result.raw.length === 1
+        ? { outcome: 'claimed' }
+        : { outcome: 'taken' };
+    });
+  }
+
   async save(send: MailSendEntity): Promise<void> {
     const { id, organizationId, ...changes } = this.mapper.toPersistence(send);
     await this.repository.update({ id, organizationId }, changes);
   }
 
   async countSince(connectionId: string, since: Date): Promise<number> {
-    // By when each went: a sent one by its `sentAt`, one still going by its claim
-    // (`updatedAt`), so a send scheduled days ago counts on the day it goes.
-    return this.repository
-      .createQueryBuilder('send')
-      .where('send.connectionId = :connectionId', { connectionId })
-      .andWhere(
-        `((send.status = 'sent' AND send.sentAt > :since) OR (send.status = 'sending' AND send.updatedAt > :since))`,
-        { since },
-      )
-      .getCount();
+    return sentSince(this.repository, connectionId, since);
   }
 
   async findDue(now: Date, limit: number): Promise<MailSendEntity[]> {
@@ -111,4 +132,24 @@ export class MailSendRepository
       .getMany();
     return records.map((record) => this.mapper.toDomain(record));
   }
+}
+
+/**
+ * Sends from one account that went since a moment, by when each went: a sent
+ * one by its `sentAt`, one still going by its claim (`updatedAt`), so a send
+ * scheduled days ago counts on the day it goes.
+ */
+function sentSince(
+  repository: Repository<MailSendOrmEntity>,
+  connectionId: string,
+  since: Date,
+): Promise<number> {
+  return repository
+    .createQueryBuilder('send')
+    .where('send.connectionId = :connectionId', { connectionId })
+    .andWhere(
+      `((send.status = 'sent' AND send.sentAt > :since) OR (send.status = 'sending' AND send.updatedAt > :since))`,
+      { since },
+    )
+    .getCount();
 }
