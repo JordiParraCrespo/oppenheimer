@@ -23,6 +23,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/github/webhook', group: 'webhooks' },
     { templatePrefix: '/v1/sessions', group: 'sessions' },
     { templatePrefix: '/v1/shared-sessions', group: 'sessions' },
+    { templatePrefix: '/v1/cloud-files', group: 'sessions' },
     { templatePrefix: '/v1/hosts', group: 'hosts' },
     { templatePrefix: '/v1/projects', group: 'projects' },
     { templatePrefix: '/v1/automations', group: 'automations' },
