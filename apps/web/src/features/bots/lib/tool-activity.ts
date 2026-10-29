@@ -1,4 +1,5 @@
 import type { BotMessageEntity, BotToolStep } from '@oppenheimer/frontend-consumer';
+import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -126,6 +127,39 @@ export function liveWords(action: ToolAction) {
     case 'tool':
       return { key: 'bots.chat.activity.using', values: { name: action.label } } as const;
   }
+}
+
+/**
+ * What the turn's live line says, as a translation key and what its words
+ * take: Waiting while it queues; a running `delegate` call whose children
+ * have started ending, with how many are done; what the running call is
+ * doing; Writing while its words stream; Thinking otherwise.
+ */
+export function liveLabel({
+  queued,
+  step,
+  subagents,
+  writing,
+}: {
+  queued: boolean;
+  step: BotToolStep | undefined;
+  subagents: readonly BotSubagentProgress[] | undefined;
+  writing: boolean;
+}) {
+  if (queued) return { key: 'bots.chat.turn.queued', values: {} } as const;
+  const done = (subagents ?? []).filter(
+    (run) => run.state !== 'queued' && run.state !== 'running',
+  ).length;
+  if (subagents && done > 0) {
+    return {
+      key: 'bots.chat.activity.delegatingDone',
+      values: { count: subagents.length, done },
+    } as const;
+  }
+  if (step) return liveWords(toolAction(step));
+  return writing
+    ? ({ key: 'bots.chat.turn.writing', values: {} } as const)
+    : ({ key: 'bots.chat.turn.thinking', values: {} } as const);
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */

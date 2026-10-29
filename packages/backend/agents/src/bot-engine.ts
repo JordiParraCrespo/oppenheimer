@@ -21,6 +21,13 @@ export interface BotEngineToolResult {
   data?: BotToolData;
 }
 
+/** What one call of a tool runs with. */
+export interface BotEngineToolCall {
+  signal: AbortSignal;
+  /** The id `tool.started` and `tool.finished` carry for this call, when the SDK names it. */
+  callId?: string;
+}
+
 /** One tool the model may call during a turn, described by JSON Schema. */
 export interface BotEngineTool {
   /** snake_case; the name the model sees and every event carries. */
@@ -29,7 +36,7 @@ export interface BotEngineTool {
   /** JSON Schema of an object: the tool's input. */
   inputSchema: Record<string, unknown>;
   /** A throw is reported to the model as an error result; it never ends the turn. */
-  run(input: unknown, context: { signal: AbortSignal }): Promise<BotEngineToolResult>;
+  run(input: unknown, context: BotEngineToolCall): Promise<BotEngineToolResult>;
 }
 
 /** An image the turn's message carries, as the person sent it. */

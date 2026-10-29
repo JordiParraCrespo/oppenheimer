@@ -22,6 +22,14 @@ import type {
   BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
 import {
+  type BotLiveSubagents,
+  type BotSubagentFrames,
+  botLiveSubagents,
+  forgetEndedBotSubagents,
+  NO_BOT_SUBAGENTS,
+  putBotSubagents,
+} from '../modules/bots/live-subagents';
+import {
   appendBotText,
   type BotLiveText,
   type BotTextBuffers,
@@ -276,42 +284,67 @@ export function useCancelBotTurn(
   });
 }
 
-export type { BotLiveText };
+export type { BotLiveSubagents, BotLiveText };
+
+/** A bot's chat as it happens, beyond what is stored: by turn, and by `delegate` call. */
+export interface BotLive {
+  /** The text each running turn is writing, by turn id. */
+  text: BotLiveText;
+  /** Where each child of a running `delegate` call is, by the call's id. */
+  subagents: BotLiveSubagents;
+}
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
- * writing that the stored conversation does not hold yet. The stream's text
- * is kept as it arrived ({@link BotTextBuffers}); what is drawn is derived
- * from it and the conversation in render ({@link botLiveText}), so a read
- * landing early or late never draws stored text twice or drops it.
+ * writing that the stored conversation does not hold yet, and where the
+ * children of a running `delegate` call are. The stream's text is kept as it
+ * arrived ({@link BotTextBuffers}); what is drawn is derived from it and the
+ * conversation in render ({@link botLiveText}), so a read landing early or
+ * late never draws stored text twice or drops it. A call's children are its
+ * newest frame until its stored step ends it ({@link botLiveSubagents}).
  *
  * The conversation is read again the moment a message is stored or a turn
  * moves, and each time the stream comes up (the first connect included) for
  * what the gap may have missed.
  */
-export function useBotLiveText(id: string): BotLiveText {
+export function useBotLive(id: string): BotLive {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const { data: conversation } = useSuspenseBotConversation(id);
-  const [streamed, setStreamed] = useState<{ id: string; buffers: BotTextBuffers }>({
-    id,
-    buffers: NO_BOT_TEXT,
-  });
+  const [streamed, setStreamed] = useState<{
+    id: string;
+    buffers: BotTextBuffers;
+    frames: BotSubagentFrames;
+  }>({ id, buffers: NO_BOT_TEXT, frames: NO_BOT_SUBAGENTS });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
   useEffect(() => {
     const stream = app.bots.openStream(id);
     const key = botsKeys.conversation(id);
-    const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
+    const change = (
+      next: (state: { buffers: BotTextBuffers; frames: BotSubagentFrames }) => {
+        buffers: BotTextBuffers;
+        frames: BotSubagentFrames;
+      },
+    ) =>
       setStreamed((current) => {
-        const buffers = next(current.id === id ? current.buffers : NO_BOT_TEXT);
+        const mine =
+          current.id === id ? current : { buffers: NO_BOT_TEXT, frames: NO_BOT_SUBAGENTS };
+        const { buffers, frames } = next(mine);
         // Memory only: an ended turn is not drawn whether or not it is dropped here.
-        const kept = forgetEndedBotTurns(
-          buffers,
-          queryClient.getQueryData<BotConversationEntity>(key),
-        );
-        return current.id === id && kept === current.buffers ? current : { id, buffers: kept };
+        const read = queryClient.getQueryData<BotConversationEntity>(key);
+        const kept = {
+          buffers: forgetEndedBotTurns(buffers, read),
+          frames: forgetEndedBotSubagents(frames, read),
+        };
+        return current.id === id &&
+          kept.buffers === current.buffers &&
+          kept.frames === current.frames
+          ? current
+          : { id, ...kept };
       });
+    const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
+      change((state) => ({ ...state, buffers: next(state.buffers) }));
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
@@ -326,6 +359,10 @@ export function useBotLiveText(id: string): BotLiveText {
     const offEvent = stream.onEvent((event) => {
       if (event.type === 'text') {
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
+        return;
+      }
+      if (event.type === 'subagents') {
+        change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
         return;
       }
       if (event.type === 'approval') {
@@ -344,5 +381,9 @@ export function useBotLiveText(id: string): BotLiveText {
     };
   }, [app, queryClient, id]);
 
-  return botLiveText(streamed.id === id ? streamed.buffers : NO_BOT_TEXT, conversation);
+  const mine = streamed.id === id;
+  return {
+    text: botLiveText(mine ? streamed.buffers : NO_BOT_TEXT, conversation),
+    subagents: botLiveSubagents(mine ? streamed.frames : NO_BOT_SUBAGENTS, conversation),
+  };
 }
