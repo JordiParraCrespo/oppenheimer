@@ -266,6 +266,24 @@ function settleFacts(
   );
 }
 
+/**
+ * A fact about the person is read by every bot of theirs (`25-bots.md`
+ * §4.1), so a change to one, or a move in or out of that scope, refreshes
+ * every bot's memory that was read, not only the bot that keeps it.
+ */
+function refreshSharedMemory(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({
+    queryKey: botsKeys.details(),
+    predicate: (query) => query.queryKey[3] === 'memory',
+  });
+}
+
+/** Whether a fact this bot's list holds is about the person, so its siblings read it too. */
+function isSharedFact(queryClient: QueryClient, id: string, factId: string): boolean {
+  const rows = queryClient.getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id));
+  return rows?.find((row) => row.id === factId)?.scope === 'person';
+}
+
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
 export function useCreateBot(
@@ -489,9 +507,10 @@ export function useUpdateBotFact(
   return useMutation({
     mutationFn: ({ id, factId, ...change }: UpdateBotFactVariables) =>
       app.bots.updateFact(id, factId, change),
-    ...withCacheOnSuccess(options, (saved, { id }) =>
-      settleFacts(queryClient, id, replaced(saved)),
-    ),
+    ...withCacheOnSuccess(options, (saved, { id, scope }) => {
+      settleFacts(queryClient, id, replaced(saved));
+      return saved.scope === 'person' || scope ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }
 
@@ -507,9 +526,11 @@ export function useDeleteBotFact(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, factId }: DeleteBotFactVariables) => app.bots.removeFact(id, factId),
-    ...withCacheOnSuccess(options, (_data, { id, factId }) =>
-      settleFacts(queryClient, id, without(factId)),
-    ),
+    ...withCacheOnSuccess(options, (_data, { id, factId }) => {
+      const shared = isSharedFact(queryClient, id, factId);
+      settleFacts(queryClient, id, without(factId));
+      return shared ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }
 
@@ -519,8 +540,12 @@ export function useClearBotMemory(options?: UseMutationOptions<void, Error, stri
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.bots.clearMemory(id),
-    ...withCacheOnSuccess(options, (_data, id) =>
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []),
-    ),
+    ...withCacheOnSuccess(options, (_data, id) => {
+      const shared = queryClient
+        .getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id))
+        ?.some((row) => row.scope === 'person' && row.botId === id);
+      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []);
+      return shared ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }

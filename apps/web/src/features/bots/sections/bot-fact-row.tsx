@@ -7,6 +7,7 @@ import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FactKeptMenu } from '@/features/bots/components/fact-kept-menu';
+import { factRowModel } from '@/features/bots/lib/fact-row';
 
 /**
  * One fact the bot remembers: the sentence, who wrote it and when, a tag when
@@ -21,21 +22,11 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
   const [draft, setDraft] = useState<string | null>(null);
   const update = useUpdateBotFact({ onSuccess: () => setDraft(null) });
   const remove = useDeleteBotFact();
-  const when = formatMediumDate(fact.updatedAt, locale);
-  const shared = fact.isSharedWith(botId);
-  const kind =
-    fact.scope === 'person'
-      ? t('bots.settings.memory.aboutYou')
-      : fact.tier === 'log'
-        ? t('bots.settings.memory.lookedUp')
-        : null;
-  const meta = shared
-    ? t('bots.settings.memory.sharedBy', { date: when })
-    : fact.source === 'bot'
-      ? t('bots.settings.memory.learned', { date: when })
-      : fact.isEdited
-        ? t('bots.settings.memory.editedByYou', { date: when })
-        : t('bots.settings.memory.addedByYou', { date: when });
+  const row = factRowModel(fact, botId);
+  const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
+  const meta = t(`bots.settings.memory.${row.meta}`, {
+    date: formatMediumDate(fact.updatedAt, locale),
+  });
 
   function save() {
     const content = draft?.trim();
@@ -91,7 +82,7 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
     );
   }
 
-  if (shared) {
+  if (row.shared) {
     return (
       <SettingsListRow muted meta={meta} kind={kind}>
         {fact.content}
