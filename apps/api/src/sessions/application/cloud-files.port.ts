@@ -28,8 +28,12 @@ export interface CloudFilesPort {
   keep(owner: CloudFileOwner, files: readonly CloudFile[]): Promise<SessionLaunchFile[]>;
   /** A fresh link to one kept file. */
   link(owner: CloudFileOwner, file: SessionLaunchFile): Promise<string>;
-  /** As long as every link `link` answers: what a task is measured with before anything is kept. */
-  readonly linkLength: number;
+  /**
+   * The link `link` would answer, with a token of zeros: the same origin, path
+   * and length, so a task is measured with what it will carry before anything
+   * is kept or linked. It names no file.
+   */
+  sampleLink(): string;
   /** The file a live link names; `undefined` for one that expired or never was. */
   open(token: string): Promise<CloudFile | undefined>;
 }

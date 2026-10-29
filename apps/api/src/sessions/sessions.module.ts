@@ -10,7 +10,9 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
+import { CloudAttachmentsResolver } from './application/cloud-attachments.resolver';
 import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
+import { CloudTaskFactory } from './application/cloud-task.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
@@ -242,6 +244,8 @@ const adapters: Provider[] = [
     SessionNamingResolver,
     SessionLoaderResolver,
     SessionAttachmentsResolver,
+    CloudAttachmentsResolver,
+    CloudTaskFactory,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while
     // `projects/` reaches across only for the registry.

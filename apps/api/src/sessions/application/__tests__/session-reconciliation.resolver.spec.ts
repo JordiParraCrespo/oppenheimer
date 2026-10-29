@@ -6,6 +6,7 @@ import type {
 } from '../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { CloudFilesPort } from '../cloud-files.port';
+import { CloudTaskFactory } from '../cloud-task.factory';
 import type { SessionDispatchPort } from '../session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../session-launch.factory';
 import type { SessionLaunchCredentials } from '../session-launch-credentials.resolver';
@@ -47,7 +48,7 @@ function harness(rows: HostSessionRow[]) {
   const cloudFiles = {
     keep: vi.fn(),
     link: vi.fn(async () => `https://api.test/f/link-${++minted}`),
-    linkLength: 0,
+    sampleLink: () => '',
     open: vi.fn(),
   } satisfies CloudFilesPort;
   const sessions = {
@@ -65,7 +66,7 @@ function harness(rows: HostSessionRow[]) {
       ownedBy: vi.fn().mockResolvedValue([]),
     },
     { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
-    cloudFiles,
+    new CloudTaskFactory(cloudFiles),
   );
   return {
     sessions,

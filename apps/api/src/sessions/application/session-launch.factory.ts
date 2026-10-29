@@ -1,13 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
-import { cloudTaskWithFiles } from '../domain/cloud-task.policy';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import { CLOUD_FILES } from '../sessions.di-tokens';
-import { WorkSessionMapper } from '../work-session.mapper';
-import type { CloudFilesPort } from './cloud-files.port';
+import { CloudTaskFactory } from './cloud-task.factory';
 import type { SessionLaunchSpec } from './session-dispatch.port';
 import { SessionLaunchCredentials } from './session-launch-credentials.resolver';
 
@@ -29,8 +26,7 @@ export class SessionLaunchSpecFactory {
     @Inject(WORKSPACE_LOOKUP)
     private readonly workspaces: WorkspaceLookupPort,
     private readonly credentials: SessionLaunchCredentials,
-    @Inject(CLOUD_FILES)
-    private readonly cloudFiles: CloudFilesPort,
+    private readonly tasks: CloudTaskFactory,
   ) {}
 
   async build(
@@ -41,7 +37,7 @@ export class SessionLaunchSpecFactory {
     // The session row was written in this workspace; a missing slug is a broken
     // invariant, not a request error.
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
-    const task = await this.taskFor(session, extra);
+    const task = await this.tasks.forLaunch(session, extra);
     return {
       organizationSlug,
       workspaceId: session.organizationId,
@@ -51,21 +47,6 @@ export class SessionLaunchSpecFactory {
       ...(task.prompt ? { prompt: task.prompt } : {}),
       ...(task.images?.length ? { images: task.images } : {}),
       ...(await this.credentials.for(session)),
-    };
-  }
-
-  private async taskFor(
-    session: WorkSessionEntity,
-    extra: { prompt?: string; images?: SessionLaunchFile[] },
-  ): Promise<{ prompt?: string; images?: SessionLaunchFile[] }> {
-    if (session.place !== 'cloud' || !extra.prompt || !extra.images?.length) return extra;
-    const owner = { organizationId: session.organizationId, sessionId: session.id };
-    const urls = await Promise.all(extra.images.map((file) => this.cloudFiles.link(owner, file)));
-    return {
-      prompt: cloudTaskWithFiles(
-        extra.prompt,
-        WorkSessionMapper.toCloudTaskFiles(extra.images, urls),
-      ),
     };
   }
 }

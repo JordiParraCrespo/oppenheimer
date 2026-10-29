@@ -7,8 +7,11 @@ import type {
   RunnerLink,
 } from '../../../../links/application/link-registry.port';
 import type { ParkedFilePort, StagedFile } from '../../../../links/application/parked-file.port';
+import type { StagedFileReaderPort } from '../../../../links/application/staged-file-reader.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { CloudAttachmentsResolver } from '../../../application/cloud-attachments.resolver';
 import type { CloudFilesPort } from '../../../application/cloud-files.port';
+import { CloudTaskFactory } from '../../../application/cloud-task.factory';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
@@ -67,7 +70,7 @@ function launches(cloudFiles: CloudFilesPort): SessionLaunchSpecFactory {
       ownedBy: vi.fn().mockResolvedValue([]),
     },
     { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
-    cloudFiles,
+    new CloudTaskFactory(cloudFiles),
   );
 }
 
@@ -79,7 +82,7 @@ function cloudStore() {
       files.map((file) => ({ imageId: `kept-${++next}`, mediaType: file.mediaType })),
     ),
     link: vi.fn(async (_owner, file: { imageId: string }) => `https://api.test/f/${file.imageId}`),
-    linkLength: 'https://api.test/api/v1/cloud-files/'.length + 36,
+    sampleLink: () => 'https://api.test/api/v1/cloud-files/00000000-0000-0000-0000-000000000000',
     open: vi.fn(),
   } satisfies CloudFilesPort;
 }
@@ -105,9 +108,9 @@ function imageStore(uploads: Record<string, StagedFile> = {}) {
         mediaType: image.mediaType,
       })),
     ),
-    staged: vi.fn(async (ids: readonly string[], owner) => read(ids, owner)),
+    readStaged: vi.fn(async (ids: readonly string[], owner) => read(ids, owner)),
     collect: vi.fn(),
-  } satisfies ParkedFilePort;
+  } satisfies ParkedFilePort & StagedFileReaderPort;
 }
 
 /** The link registry: the host linked with these capabilities, or not linked at all. */
@@ -173,7 +176,8 @@ describe('CreateSessionCommandHandler', () => {
       launches(cloudFiles),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
-      new SessionAttachmentsResolver(store, links, cloudFiles),
+      new SessionAttachmentsResolver(store, links),
+      new CloudAttachmentsResolver(store, cloudFiles, new CloudTaskFactory(cloudFiles)),
       links,
     );
   }

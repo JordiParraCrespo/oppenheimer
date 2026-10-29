@@ -15,7 +15,6 @@ describe('CollectSessionImageCommandHandler', () => {
       park: vi.fn(),
       stage: vi.fn(),
       claim: vi.fn(),
-      staged: vi.fn(),
       collect: vi.fn().mockResolvedValue(image),
     } satisfies ParkedFilePort;
 
@@ -32,7 +31,6 @@ describe('CollectSessionImageCommandHandler', () => {
       park: vi.fn(),
       stage: vi.fn(),
       claim: vi.fn(),
-      staged: vi.fn(),
       collect: vi.fn().mockResolvedValue(undefined),
     } satisfies ParkedFilePort;
 

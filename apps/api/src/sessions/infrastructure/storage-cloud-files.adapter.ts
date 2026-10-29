@@ -16,8 +16,8 @@ const LINK = 'cloud-file:';
  */
 export const CLOUD_FILE_LINK_TTL_SECONDS = 24 * 60 * 60;
 
-/** A link's token is a UUID: unguessable, and always this long. */
-const TOKEN_LENGTH = 36;
+/** A token that is never minted: a sample link's, the shape of every other. */
+const SAMPLE_TOKEN = '00000000-0000-0000-0000-000000000000';
 
 interface Linked {
   key: string;
@@ -62,8 +62,8 @@ export class StorageCloudFilesAdapter implements CloudFilesPort {
     return this.urlOf(token);
   }
 
-  get linkLength(): number {
-    return this.urlOf('').length + TOKEN_LENGTH;
+  sampleLink(): string {
+    return this.urlOf(SAMPLE_TOKEN);
   }
 
   async open(token: string): Promise<CloudFile | undefined> {

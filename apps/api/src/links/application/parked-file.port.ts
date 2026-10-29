@@ -62,12 +62,6 @@ export interface ParkedFilePort {
     target: { hostId: string; sessionId: string },
   ): Promise<ClaimedFile[] | undefined>;
   /**
-   * The staged files themselves, in order, for a session whose files never
-   * go to a host (a cloud session's, kept elsewhere). They stay staged until
-   * they expire, as after a claim. `undefined` when one is no longer staged.
-   */
-  staged(ids: readonly string[], owner: StagedFileOwner): Promise<StagedFile[] | undefined>;
-  /**
    * Hand a file over **once**, and only to the host it was parked for. A
    * host asking for another host's file gets nothing, and the file stays
    * for its own.

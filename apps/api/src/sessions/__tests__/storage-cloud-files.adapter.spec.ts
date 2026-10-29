@@ -6,9 +6,8 @@ import { StorageCloudFilesAdapter } from '../infrastructure/storage-cloud-files.
 
 /**
  * What a cloud session's agent can download: a file kept under its session,
- * through a link that names it until the link expires. The link's length is
- * what the create measures a task with, so it is pinned to what `link`
- * answers. The route and the task's wording are the handler specs'.
+ * through a link that names it until the link expires. The sample link a
+ * create measures a task with is pinned to the shape `link` answers. The route and the task's wording are the handler specs'.
  */
 
 function memoryCache(): CacheService {
@@ -58,7 +57,8 @@ describe('StorageCloudFilesAdapter', () => {
 
     const url = await files.link(owner, kept as NonNullable<typeof kept>);
     expect(url).toMatch(/^https:\/\/api\.example\.com\/api\/v1\/cloud-files\/[0-9a-f-]{36}$/);
-    expect(url).toHaveLength(files.linkLength);
+    // The sample a task is measured with has the shape of every real link.
+    expect(url).toHaveLength(files.sampleLink().length);
 
     const token = url.split('/').pop() as string;
     await expect(files.open(token)).resolves.toEqual(png);
