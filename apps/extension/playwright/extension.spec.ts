@@ -156,21 +156,19 @@ test('reports what it tracks to the Oppenheimer it is connected to', async ({
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
 
-  // The connection being saved can report before the page has read the
-  // list, so an empty report may come first; the one that carries the
-  // sessions is the one this checks.
-  const tracked = () =>
-    reports.find((report) => ((report.body as { sessions?: unknown[] }).sessions ?? []).length > 0);
-  await expect.poll(tracked).toBeDefined();
-  expect(tracked()).toEqual({
-    authorization: 'Bearer oppenheimer_pat_test',
-    body: {
-      sessions: expect.arrayContaining([
-        { cloudSessionId: 'session_01FixLogin00', state: 'needs-input' },
-        { cloudSessionId: 'session_01PortExt000', state: 'running' },
-      ]),
-    },
-  });
+  // It reports after every check, and a check that ran before the page was
+  // read tracked nothing yet: wait for the report that carries the sessions.
+  await expect
+    .poll(() => reports.at(-1))
+    .toEqual({
+      authorization: 'Bearer oppenheimer_pat_test',
+      body: {
+        sessions: expect.arrayContaining([
+          { cloudSessionId: 'session_01FixLogin00', state: 'needs-input' },
+          { cloudSessionId: 'session_01PortExt000', state: 'running' },
+        ]),
+      },
+    });
 
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);

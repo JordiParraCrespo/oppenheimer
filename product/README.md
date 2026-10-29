@@ -668,6 +668,12 @@ earlier note:
   Slack and email behind one interface, with WhatsApp first as a linked
   device of a number the owner has. Slack as a way to reach a bot is now
   that note's Slack channel; 0.4 keeps its questions about sessions.
+- `next-steps/channels.md` bound each channel account to one bot; on
+  2026-10-24 routes replaced that (`next-steps/customers-and-routes.md`).
+- `next-steps/channels.md` put WhatsApp first and email as a mailbox you
+  own; on 2026-10-29 email came first, as an address of the bot's own,
+  and the same day reading your own mailboxes went ahead of every channel
+  (`next-steps/mail.md`), narrowed to Gmail with drafts and sends.
 - `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only
@@ -816,6 +822,15 @@ earlier note:
   host), and a run with no key for its vendor pauses the automation
   (`cloud_key_missing`; `versions/mvp/24-session-places.md`,
   `versions/mvp/18-plan-product.md`, `versions/mvp/13-automations.md`).
+- `next-steps/cloud-agents.md` had a Claude Code cloud session take a task
+  and nothing else: a first task's files are saved on the host, which the
+  cloud never sees, so the console dropped them. On 2026-10-29 the owner
+  asked for them to reach the cloud's agent. The API keeps them in its
+  storage under the session, and the task ends with a `curl` line per file
+  on a short, day-long link served by the API
+  (`GET /v1/cloud-files/{token}`), minted again on every launch; the
+  environment's network policy has to allow the API's host
+  (`next-steps/cloud-agents.md`, "Files for a cloud session").
 - 2026-10-28 the owner asked for bots to send images back: `show_image`
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it

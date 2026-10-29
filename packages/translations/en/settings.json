@@ -7,7 +7,8 @@
     "hosts": "Hosts",
     "repositories": "Watched repositories",
     "modelProviders": "Model providers",
-    "cloudAgents": "Cloud agents"
+    "cloudAgents": "Cloud agents",
+    "mail": "Mail"
   },
   "profile": {
     "title": "Profile",
@@ -177,5 +178,37 @@
       "saving": "Checking…",
       "failed": "Couldn’t connect."
     }
+  },
+  "mail": {
+    "title": "Mail",
+    "description": "Connect your own Gmail accounts so your bots can search and read your mail and its attachments. Only your bots use them, and only for you.",
+    "unavailable": "This server can’t connect Gmail. Ask whoever runs it to set the Google client and MAIL_TOKEN_KEY.",
+    "loadFailed": "Couldn’t load your Gmail accounts.",
+    "emptyTitle": "No Gmail account connected",
+    "emptyDescription": "Connect one and ask any bot things like “what did the accountant send last week?” or “summarise today’s unread mail”. Google will warn that the app isn’t verified yet; that is expected.",
+    "connect": "Connect Gmail",
+    "connectAnother": "Connect another account",
+    "atLimit": "You can connect up to {{count}} accounts.",
+    "startFailed": "Couldn’t open Google’s sign-in.",
+    "connected": "Connected",
+    "needsReconnect": "Needs reconnecting",
+    "rename": "Rename",
+    "reconnect": "Reconnect",
+    "disconnect": "Disconnect",
+    "disconnectLabel": "Disconnect {{email}}",
+    "disconnecting": "Disconnecting…",
+    "disconnectTitle": "Disconnect {{email}}?",
+    "disconnectDescription": "Its access is revoked at Google and no bot can reach it again until you connect it anew. Nothing in your mailbox changes.",
+    "disconnectFailed": "Couldn’t disconnect.",
+    "renameTitle": "Rename account",
+    "renameDescription": "What you and your bots call {{email}}, like “Personal” or “Work”.",
+    "labelField": "Name",
+    "save": "Save",
+    "saving": "Saving…",
+    "renameFailed": "Couldn’t rename the account.",
+    "connecting": "Connecting Gmail…",
+    "refused": "Google didn’t grant access to Gmail.",
+    "connectFailed": "Couldn’t connect Gmail.",
+    "back": "Back to Mail"
   }
 }

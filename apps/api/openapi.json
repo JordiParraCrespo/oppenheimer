@@ -15442,6 +15442,350 @@
         "tags": ["Calendar"]
       }
     },
+    "/api/v1/mail/gmail/connections": {
+      "get": {
+        "description": "Every Gmail account the caller connected for their bots, oldest first (five at most): its address, its name, and whether Google still honours it.",
+        "operationId": "findGmailConnections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GmailConnectionResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s own Gmail accounts",
+        "tags": ["Mail"]
+      },
+      "post": {
+        "description": "Google’s consent page for Gmail, with its account chooser, carrying a single-use state for this caller in this workspace. With `connectionId`, a reconnect of that account: the chooser opens on its address. Google redirects to the console’s `/settings/mail/google`, which posts the code back.",
+        "operationId": "startGmailConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartGmailConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailConnectStartResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MAIL_003 / MAIL_001 — Five accounts already connected, or no such connection of the caller’s to reconnect",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MAIL_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start connecting a Gmail account",
+        "tags": ["Mail"]
+      }
+    },
+    "/api/v1/mail/gmail/connection": {
+      "post": {
+        "description": "The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. An account the caller already connected is reconnected in place, keeping its label; another is added, up to five.",
+        "operationId": "connectGmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectGmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "MAIL_006 — Google refused\n\nMAIL_005 — State rejected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MAIL_003 — Five accounts already connected",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "MAIL_008 — Gmail's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MAIL_004 — Not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Finish connecting a Gmail account",
+        "tags": ["Mail"]
+      }
+    },
+    "/api/v1/mail/gmail/connections/{id}": {
+      "patch": {
+        "description": "What the caller and their bots call the account (\"Personal\", \"Work\"). A blank name falls back to its address.",
+        "operationId": "updateGmailConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connection.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGmailConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "MAIL_001 — No such connection of the caller’s",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a Gmail account",
+        "tags": ["Mail"]
+      },
+      "delete": {
+        "description": "Revokes that account’s grant at Google and forgets it; no bot can reach it after. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeGmailConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connection.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a Gmail account",
+        "tags": ["Mail"]
+      }
+    },
     "/api/v1/pulls": {
       "get": {
         "description": "Open pull requests read live through the workspace’s installations: all of them (`all`), or yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
@@ -21302,6 +21646,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -21353,6 +21699,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -21443,6 +21791,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -21557,6 +21907,8 @@
               "tasks:write",
               "calendar:read",
               "calendar:write",
+              "mail:read",
+              "mail:write",
               "cloud-agents:read",
               "cloud-agents:write",
               "pulls:read",
@@ -21622,6 +21974,7 @@
               "bots",
               "tasks",
               "calendar",
+              "mail",
               "cloud-agents",
               "pulls",
               "repositories",
@@ -21697,6 +22050,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -21759,6 +22114,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -21853,6 +22210,8 @@
                 "tasks:write",
                 "calendar:read",
                 "calendar:write",
+                "mail:read",
+                "mail:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -28485,6 +28844,84 @@
         },
         "required": ["events", "accounts"]
       },
+      "GmailConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountEmail": {
+            "type": "string",
+            "example": "ana@gmail.com"
+          },
+          "label": {
+            "type": "string",
+            "example": "Personal",
+            "description": "What the person and their bots call the account."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "revoked"],
+            "description": "`revoked` when Google dropped the grant: the account offers Reconnect."
+          },
+          "connectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first connected."
+          }
+        },
+        "required": ["id", "accountEmail", "label", "status", "connectedAt"]
+      },
+      "StartGmailConnectionRequest": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "GmailConnectStartResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Google’s consent page, carrying the single-use state."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["url", "expiresAt"]
+      },
+      "ConnectGmailRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": ["code", "state"]
+      },
+      "UpdateGmailConnectionRequest": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": ["label"]
+      },
       "PullRequestLaneReasonDto": {
         "type": "object",
         "properties": {
@@ -30813,7 +31250,7 @@
           },
           "group": {
             "type": "string",
-            "enum": ["self", "sessions", "plan", "github", "automations", "bots", "web"],
+            "enum": ["self", "sessions", "plan", "mail", "github", "automations", "bots", "web"],
             "description": "The group it is listed under."
           },
           "description": {
@@ -31054,6 +31491,10 @@
             "type": "boolean",
             "description": "Plan’s calendar can connect a Google Calendar."
           },
+          "gmail": {
+            "type": "boolean",
+            "description": "A person can connect their Gmail for their bots."
+          },
           "hosts": {
             "type": "boolean",
             "description": "Host pairing is configured (the runner release settings)."
@@ -31078,6 +31519,7 @@
           "github_oauth",
           "github_app",
           "google_calendar",
+          "gmail",
           "hosts",
           "bot_providers",
           "session_previews",

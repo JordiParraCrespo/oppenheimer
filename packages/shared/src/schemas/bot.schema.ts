@@ -755,6 +755,7 @@ export const BOT_TOOL_GROUPS = [
   'self',
   'sessions',
   'plan',
+  'mail',
   'github',
   'automations',
   'bots',

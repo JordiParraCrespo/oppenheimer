@@ -67,7 +67,7 @@ describe('toCreateInput', () => {
     });
   });
 
-  it('sends a cloud session as Claude Code with its checkout and task, and no files', () => {
+  it('sends a cloud session as Claude Code with its checkout, task and files', () => {
     const input = toCreateInput(
       { ...draft, where: 'cloud', agent: 'codex' },
       { prompt: 'Fix it', attachmentIds: ['file-1'] },
@@ -79,8 +79,8 @@ describe('toCreateInput', () => {
       cloud: true,
       checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
       prompt: 'Fix it',
+      attachmentIds: ['file-1'],
     });
-    expect(input).not.toHaveProperty('attachmentIds');
     expect(input).not.toHaveProperty('folder');
   });
 
