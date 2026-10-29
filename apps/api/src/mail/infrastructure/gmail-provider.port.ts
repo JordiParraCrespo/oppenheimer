@@ -1,3 +1,4 @@
+import type { MailLabelChange } from '../domain/mail-organize.policy';
 /** The account a grant is for, from the ID token on Google's token response. */
 export interface GmailAccount {
   /** Google's `sub`: stable for the account, whatever its address becomes. */
@@ -85,6 +86,15 @@ export interface GmailDraftRef extends GmailSentRef {
 export interface GmailDraftRead {
   id: string;
   message: GmailMessage;
+}
+
+/** Labels to add and to take off, by Gmail's label ids. */
+export type GmailLabelChange = MailLabelChange;
+
+/** What a change over several threads did: the ones changed, and the ones Gmail has not. */
+export interface GmailBulkOutcome {
+  changed: string[];
+  missing: string[];
 }
 
 export interface GmailThread {
@@ -187,6 +197,29 @@ export interface GmailProviderPort {
   /** Sends a draft as it stands in Gmail. */
   sendDraft(grant: GmailCallGrant, draftId: string): Promise<GmailSentRef>;
   sendMessage(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailSentRef>;
+  /**
+   * Adds and removes labels on whole threads (read state, stars, importance
+   * and the inbox are labels too), one thread at a time: what Gmail has no
+   * thread of is answered as missing, never as a failure of the rest.
+   */
+  modifyThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<GmailBulkOutcome>;
+  /** The same on single messages, in one call (`messages.batchModify`). */
+  modifyMessages(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<void>;
+  /** Moves threads to Trash, or back out of it; Gmail empties Trash after 30 days. */
+  trashThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    trash: boolean,
+  ): Promise<GmailBulkOutcome>;
+  createLabel(grant: GmailCallGrant, name: string): Promise<GmailLabel>;
   /** Best effort: a grant Google already dropped is not an error. */
   revoke(grant: GmailCallGrant): Promise<void>;
 }

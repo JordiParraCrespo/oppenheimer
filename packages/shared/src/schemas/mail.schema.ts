@@ -145,3 +145,6 @@ export const botMailDraftSchema = z.object({
 });
 
 export type BotMailDraft = z.infer<typeof botMailDraftSchema>;
+
+/** The most threads or messages one organizing call touches (`mail.md` §3.5); more is several calls, each on its card. */
+export const MAIL_ORGANIZE_MAX = 100;

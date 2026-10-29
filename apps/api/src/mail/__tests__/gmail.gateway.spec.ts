@@ -274,4 +274,55 @@ describe('GmailGateway', () => {
     expect(new URL(url).pathname).toBe('/gmail/v1/users/me/drafts/d1');
     expect(init.method).toBe('DELETE');
   });
+
+  it('changes threads one by one, says which Gmail does not have, and batches messages', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }))
+      .mockResolvedValueOnce(json(404, { error: { code: 404 } }))
+      .mockResolvedValueOnce(json(200, { id: 't3' }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+    const change = { add: ['STARRED'], remove: ['UNREAD'] };
+
+    await expect(gateway.modifyThreads(ANA, ['t1', 'gone', 't3'], change)).resolves.toEqual({
+      changed: ['t1', 't3'],
+      missing: ['gone'],
+    });
+    await gateway.modifyMessages(ANA, ['m1', 'm2'], change);
+
+    expect(new URL(fetch.mock.calls[1][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/modify');
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
+      addLabelIds: ['STARRED'],
+      removeLabelIds: ['UNREAD'],
+    });
+    expect(new URL(fetch.mock.calls[5][0]).pathname).toBe(
+      '/gmail/v1/users/me/messages/batchModify',
+    );
+    expect(JSON.parse(fetch.mock.calls[5][1].body)).toEqual({
+      ids: ['m1', 'm2'],
+      addLabelIds: ['STARRED'],
+      removeLabelIds: ['UNREAD'],
+    });
+  });
+
+  it('moves threads to Trash and back by their own endpoints', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await gateway.trashThreads(ANA, ['t1'], true);
+    await gateway.trashThreads(ANA, ['t1'], false);
+
+    expect(new URL(fetch.mock.calls[1][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/trash');
+    expect(new URL(fetch.mock.calls[3][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/untrash');
+  });
 });
