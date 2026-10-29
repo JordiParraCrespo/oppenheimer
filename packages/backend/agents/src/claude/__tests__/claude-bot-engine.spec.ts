@@ -664,6 +664,30 @@ describe('ClaudeBotEngine', () => {
     expect(other).not.toHaveProperty('rateLimit');
   });
 
+  // Seen on the local stack: a bad key ended as a generic failure with Retry,
+  // because the SDK throws after Claude Code's error result and the throw,
+  // not the result, decided how the turn ended.
+  it('ends a run the SDK throws on after an error result as that result says, kind included', async () => {
+    scripted(() => ({
+      async *[Symbol.asyncIterator]() {
+        yield assistant([{ type: 'text', text: 'Invalid API key · Fix external API key' }], {
+          error: 'authentication_failed',
+        });
+        yield success({ is_error: true, result: 'Invalid API key · Fix external API key' });
+        throw new Error('Claude Code returned an error result: Invalid API key');
+      },
+    }));
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({
+      type: 'done',
+      reason: 'failed',
+      failure: 'credential',
+      error: 'Invalid API key · Fix external API key',
+    });
+  });
+
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {
     scripted((options) => ({
       [Symbol.asyncIterator]: () => ({

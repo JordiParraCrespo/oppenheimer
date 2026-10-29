@@ -101,6 +101,17 @@ export class ClaudeEventTranslator {
     }
   }
 
+  /**
+   * The run threw: Claude Code ends a failed run with an error result and
+   * then the SDK throws, so a result seen already says how it went, its
+   * kind of failure included. Without one, the throw is a failure of the
+   * kind the last error said, in the throw's words.
+   */
+  thrown(error: string, diagnostics?: string): BotEngineEvent[] {
+    if (this.result) return this.finish(diagnostics);
+    return [this.failed(error)];
+  }
+
   /** `usage` when the run reported it, then the one `done`. */
   finish(diagnostics?: string): BotEngineEvent[] {
     const result = this.result;
