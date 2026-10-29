@@ -25,6 +25,15 @@ This document is channels. Connectors are tools of note 25 §4, held to its
 permissions, and come later. A channel never grants a connector: talking to
 a bot in Slack does not let it read your Slack.
 
+**MCP is the connector side, and the first version does not need it.**
+Grok Bot reaches your Gmail through Google's hosted Gmail MCP server, and
+Codex's connectors are one hosted MCP server, but both bots' own mail
+addresses and Slack identities are channels with no MCP in them. Our bots'
+tools are already an in-process MCP server shared by both engines (note 25
+§4), so when connectors come, a remote MCP server (Gmail, Linear, Notion)
+is one more server on the same turn, with the owner's OAuth token and the
+tool permissions of note 25 §5. That is its own note, after channels.
+
 ## 2. One interface, one implementation per channel
 
 The `channels` module in `apps/api` owns everything that is the same for
@@ -52,8 +61,8 @@ interface ChannelBase<TConfig, TSecret> {
 }
 
 /**
- * Messages are handed to us: Slack's signed events, or the frames a host's
- * runner sends over its link (WhatsApp, §7.1).
+ * Messages are handed to us: Slack's and the mail provider's signed webhooks,
+ * or the frames a host's runner sends over its link (WhatsApp, §7.1).
  */
 export interface PushedChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
   readonly transport: 'pushed';
@@ -61,7 +70,7 @@ export interface PushedChannel<TConfig, TSecret> extends ChannelBase<TConfig, TS
   receive(delivery: ChannelDelivery): Promise<ChannelInbound[]>;
 }
 
-/** We fetch, in short calls from a repeating job (IMAP, §7.3). */
+/** We fetch, in short calls from a repeating job (a mailbox you own, §7.3, later). */
 export interface PolledChannel<TConfig, TSecret> extends ChannelBase<TConfig, TSecret> {
   readonly transport: 'polled';
   /** One short session: what arrived after the cursor, and the new cursor. */
@@ -118,7 +127,7 @@ bot's turn queue stay the record.
 
 ```
  WhatsApp (runner)┐                       ┌─ owner or allowed? ─ no ─► held for the owner (§5)
- IMAP poll ───────┼─► channel_inbound ────┤
+ Email webhook ───┼─► channel_inbound ────┤
  Slack webhook ───┘   (unique per account │  yes
                        and externalId)    ▼
                                     conversation (§4) ─► bot_turn (origin 'channel', delayed)
@@ -266,25 +275,54 @@ owner chose**, not by the API.
   time an unknown Slack user who is a member of the workspace writes, if
   they are the bot's owner in Oppenheimer.
 
-### 7.3 Email: a mailbox you own
+### 7.3 Email: an address of the bot's own
 
-The same shape as WhatsApp: you connect an account you own, the bot reads
-and answers from it.
+The first channel, and the way Grok Bot does it: each bot can claim an
+address on our mail domain, `juno@<workspace>.<mail domain>` (the domain is
+deployment config), and anything sent there reaches the bot. Nothing to
+link, no password, no host: the address works the moment it is claimed.
 
-- **Link:** host, port, user and password (an app password) for IMAP and
-  SMTP, tested on save. Stored encrypted.
-- **Libraries:** imapflow, in short sessions: a repeating job per account
-  (every minute) logs in, fetches what arrived after the stored UID, and
-  logs out. No IDLE connection is held. Then mailparser, mailauth (DMARC,
-  SPF, DKIM) and nodemailer, which `@oppenheimer/backend-email` already
-  uses.
-- **Inbound** starts at the end of the mailbox, never on old mail. Plain
-  text only; HTML is reduced to text, links are not followed.
-- **Trust:** a sender counts as the owner or a contact only with a passing
-  DMARC for their address. Anything else is held (§5).
+- **Claim:** Settings → Channels → Email on a bot claims its address; the
+  local part defaults to the bot's name, the workspace part is the
+  workspace's slug. The address never changes and is never reused, so a
+  reply to an old thread cannot reach another bot.
+- **Your own address in front of it:** forward `support@yourco.com` to the
+  bot's address in your mail provider, and the bot answers what arrives
+  there. Customers keep writing to the address they know; the reply comes
+  from the bot's address, with `Reply-To` back to it. Sending from your
+  own domain needs its SPF and DKIM records and comes after.
+- **Inbound is pushed.** The mail provider receives for the domain and
+  posts each message to `POST /v1/channels/email/inbound`, verified by the
+  provider's signature and stored through the inbound-events hub, so email
+  is a `pushed` channel and nothing polls. The provider is a list behind
+  one interface (`/integrate-provider`): **Resend** first, since
+  `@oppenheimer/backend-email` already sends through it and it receives
+  for a domain with an `email.received` webhook (to verify against its
+  docs when the slice starts); Amazon SES and Postmark are the next lines.
+- **Parsing:** mailparser on the raw message, plain text only; HTML is
+  reduced to text, links are not followed, the quoted history below the
+  reply is cut and passed as untrusted context (§5). Attachments: images to
+  the bot as images, the rest named but not opened.
+- **Trust:** mailauth checks DMARC, SPF and DKIM. A sender counts as the
+  owner, a contact or a customer only with a passing DMARC for their
+  address; anything else follows the account's audience
+  (`customers-and-routes.md` §1).
 - **Threads:** a conversation is the `References` chain; a reply carries
   `In-Reply-To` and `References`, and the subject with `Re:`.
-- **Replies** are plain text with the bot's name as the sender name.
+- **Replies** go out through `@oppenheimer/backend-email` from the bot's
+  address with its name as the sender name, plain text, through
+  `UpstreamLimiter.exchange` with the provider's own limits plus a cap on
+  new recipients a day, as Grok Bot keeps on its SES sending. Bounces and
+  complaints come back on the same webhook and mark the address.
+- **Mail the bot did not answer** (held senders, mail to an unclaimed
+  address in the workspace's domain) is kept for the owner, never bounced
+  to the sender: a bounce tells a stranger the address exists.
+
+**Later: a mailbox you own.** The design this note had first: IMAP and SMTP
+with an app password, imapflow in short sessions from a repeating job
+(`transport: 'polled'`), starting at the end of the mailbox. For someone
+who wants the bot to answer as their own Gmail or Fastmail address
+without touching DNS. It is the same adapter shape and the same core.
 
 ## 8. Where things live
 
@@ -296,8 +334,8 @@ and answers from it.
   `channels:write`, the `Channel` policy subject.
 - **Each channel** is `channels/infrastructure/<kind>/`, the only code that
   imports its library.
-- **No new process.** Slack is a webhook, email a repeating job on the
-  existing queue, WhatsApp a lane of the runner's link. The API runs as it
+- **No new process.** Slack and email are webhooks, WhatsApp a lane of the
+  runner's link. The API runs as it
   does today.
 - **Runner:** `internal/channels/whatsapp` holds the socket, the keys and
   the outbox; the link gains a `channels` lane (`../versions/mvp/01-protocol.md`
@@ -311,16 +349,17 @@ and answers from it.
 
 ## 9. Slices
 
-1. **The core and WhatsApp.** The module, the port, intake, conversations,
-   the owner-only rule, the reply; the runner's WhatsApp package and the
-   link's `channels` lane, with QR linking from the console: the owner's
-   number, held on their host, reaches one bot.
-2. **Contacts and groups.** Allowed contacts, held senders, groups with a
-   mention.
-3. **Email.**
+1. **The core and email.** The module, the port, intake, conversations,
+   the owner-only rule, the reply; a bot claims its address, mail to it is
+   a turn, and the bot answers in the thread. The owner emails their bot
+   from their own address and gets an answer.
+2. **Contacts, customers and routes** (`customers-and-routes.md` slices 1
+   and 2): a forwarded `support@` answered for customers.
+3. **WhatsApp**, the linked device of §7.1, on the runner.
 4. **Slack**, which is 0.4.
 5. **`send_message`**, and channels as routine triggers (note 26): a
-   message to a bot's number can also fire a routine.
+   message to a bot's address or number can also fire a routine.
+6. **A mailbox you own** (§7.3, later).
 
 ## Open questions
 
@@ -347,3 +386,7 @@ and answers from it.
   methods and no capability flags. The console chat is a conversation like
   the others, and a channel's work is the bot's turn, with no queue of its
   own.
+- 2026-10-29: email comes first, as an address of the bot's own on our
+  mail domain the way Grok Bot does it, received by webhook; the IMAP
+  mailbox moves to later. Connectors, and MCP with them, stay out of the
+  first version.

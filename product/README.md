@@ -670,6 +670,8 @@ earlier note:
   that note's Slack channel; 0.4 keeps its questions about sessions.
 - `next-steps/channels.md` bound each channel account to one bot; on
   2026-10-24 routes replaced that (`next-steps/customers-and-routes.md`).
+- `next-steps/channels.md` put WhatsApp first and email as a mailbox you
+  own; on 2026-10-29 email came first, as an address of the bot's own.
 - `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only

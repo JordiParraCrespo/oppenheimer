@@ -19,7 +19,7 @@ there.
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
 | 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
-| — | [Channels](channels.md) | Bots on WhatsApp, Slack and email: one interface per channel, WhatsApp first on a number the owner links; version not set |
+| — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
@@ -100,6 +100,7 @@ where these land is the first open question below.
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
 - 2026-10-24: customers and routes added after channels.
+- 2026-10-29: channels start with email, an address of the bot's own.
 - 2026-10-26: Cursor's cloud agents landed ahead of a version, as a rail
   item of their own on the person's Cursor key ([Cloud agents](cloud-agents.md),
   "What landed"); Claude and Codex cloud keep their place in its order.

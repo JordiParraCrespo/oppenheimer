@@ -219,6 +219,7 @@ OpenClaw tells people to use a spare one.
 | WhatsApp as a linked device of a number you own, QR in the console | OpenClaw | `channels.md` §7.1 |
 | One Slack app, a bot's own name and icon per message | dots | `channels.md` §7.2 |
 | DMARC before trusting a sender; mail threads by `Message-ID` | OpenClaw, Grok Bot | `channels.md` §7.3 |
+| An address of the bot's own on our mail domain, first (2026-10-29) | Grok Bot | `channels.md` §7.3 |
 
 ## 8. What we do not take
 

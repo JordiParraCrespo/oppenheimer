@@ -240,9 +240,10 @@ The three channels keep their design; what changes is who writes in.
   identity is the team or the channel (§2). The one-app design and its
   per-message bot name and icon (channels.md §7.2) already cover a bot per
   customer.
-- **Email.** A support mailbox, connected as channels.md §7.3 has it. The
-  customer is found by address or domain, with DMARC. `support@` and
-  `billing@` are two accounts, so they can route differently.
+- **Email.** A bot's own address (channels.md §7.3), with the business's
+  `support@` forwarded to it. The customer is found by address or domain,
+  with DMARC. `support@` and `billing@` forwarded to two addresses are two
+  accounts, so they can route differently.
 
 ## 9. Where things live
 
@@ -262,7 +263,7 @@ The three channels keep their design; what changes is who writes in.
 
 ## 10. Slices
 
-These come after channels.md slice 1 (the core and WhatsApp to one bot).
+These come after channels.md slice 1 (the core and email to one bot).
 
 1. **Routes.** `channel_route` as one priority list, the account's `botId` moved
    to a route, the route resolved when a conversation opens. Customers
@@ -271,7 +272,7 @@ These come after channels.md slice 1 (the core and WhatsApp to one bot).
    instructions per route.
 3. **Hand-off and the inbox.**
 4. **WhatsApp Business Platform** as the second WhatsApp channel.
-5. Email and Slack as in channels.md, with customers.
+5. Slack as in channels.md, with customers.
 
 ## Open questions
 
