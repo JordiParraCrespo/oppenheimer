@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import type { Scope } from '@oppenheimer/shared';
+import type { BotQuestionAnswer, Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
@@ -23,7 +23,9 @@ import { DecideBotApprovalCommandHandler } from '../decide-bot-approval.command-
  * an event saying it was denied, with the note, under what both the asking
  * turn's and the decider's scopes cover. A decision that loses the
  * conditional write, or arrives on a card already decided, is `BOTS_016` and
- * announces nothing. The race is the integration suite's.
+ * announces nothing. A card of questions is answered (or dismissed) instead:
+ * its turn is told the answers, and a yes or answers that do not fit are
+ * refused. The race is the integration suite's.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -39,6 +41,8 @@ function setup(
     loses?: boolean;
     askedWith?: readonly Scope[] | null;
     perCallOnly?: boolean;
+    /** The card is `ask_user`'s questions rather than a call. */
+    questions?: boolean;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -61,16 +65,38 @@ function setup(
     timeZone: 'Europe/Madrid',
     credentialScopes: options.askedWith ?? null,
   });
-  const approval = BotApprovalEntity.request({
-    organizationId: bot.organizationId,
-    botId: bot.id,
-    turnId: asked.id,
-    tool: 'start_session',
-    input: { task: 'Fix the test', project_id: 'p-1' },
-    summary: 'Start Claude Code on build-02 in acme/xrp: Fix the test',
-    subject: { kind: 'project', key: 'p-1', label: 'XRP' },
-    perCallOnly: options.perCallOnly,
-  });
+  const approval = options.questions
+    ? BotApprovalEntity.request({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: asked.id,
+        tool: 'ask_user',
+        input: {
+          questions: [
+            {
+              header: null,
+              question: 'Which repository?',
+              multiSelect: false,
+              options: [
+                { label: 'acme/web', description: null },
+                { label: 'acme/api', description: null },
+              ],
+            },
+          ],
+        },
+        summary: 'Which repository?',
+        perCallOnly: true,
+      })
+    : BotApprovalEntity.request({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: asked.id,
+        tool: 'start_session',
+        input: { task: 'Fix the test', project_id: 'p-1' },
+        summary: 'Start Claude Code on build-02 in acme/xrp: Fix the test',
+        subject: { kind: 'project', key: 'p-1', label: 'XRP' },
+        perCallOnly: options.perCallOnly,
+      });
   if (options.decided) approval.expire(new Date());
   const approvals = {
     findOne: vi.fn(async () => Some(approval)),
@@ -89,10 +115,11 @@ function setup(
     stream,
   );
   const decide = (
-    decision: 'approve' | 'deny',
+    decision: 'approve' | 'deny' | 'answer',
     note: string | null = null,
     credentialScopes: readonly Scope[] | null = null,
     reach: 'once' | 'tool' | 'subject' = 'once',
+    answers: BotQuestionAnswer[] = [],
   ) =>
     handler.execute(
       new DecideBotApprovalCommand({
@@ -102,6 +129,7 @@ function setup(
         decision,
         reach,
         note,
+        answers,
         deciderName: 'Ana',
         credentialScopes,
       }),
@@ -205,6 +233,43 @@ describe('DecideBotApprovalCommandHandler', () => {
     await expect(decide('approve', null, null, 'tool')).rejects.toMatchObject({
       code: 'BOTS_030',
     });
+    expect(approval.status).toBe('pending');
+    expect(approvals.saveTransition).not.toHaveBeenCalled();
+  });
+
+  it('answers a card of questions and queues in the same write a turn told the answers', async () => {
+    const { approval, decide, effects } = setup({ questions: true });
+    await decide('answer', null, null, 'once', [{ picks: [1], other: null }]);
+    expect(approval).toMatchObject({ status: 'answered', answers: [{ picks: [1], other: null }] });
+    const { runCall, continuation } = effects();
+    expect(runCall).toBeUndefined();
+    expect(continuation?.opening).toMatchObject({
+      role: 'event',
+      event: {
+        kind: 'approval',
+        outcome: 'answered',
+        tool: 'ask_user',
+        answers: [{ question: 'Which repository?', answer: 'acme/api' }],
+      },
+    });
+  });
+
+  it('refuses a yes to questions, and answers to a call, with BOTS_035, writing nothing', async () => {
+    const questions = setup({ questions: true });
+    await expect(questions.decide('approve')).rejects.toMatchObject({ code: 'BOTS_035' });
+    const call = setup();
+    await expect(
+      call.decide('answer', null, null, 'once', [{ picks: [0], other: null }]),
+    ).rejects.toMatchObject({ code: 'BOTS_035' });
+    expect(questions.approvals.saveTransition).not.toHaveBeenCalled();
+    expect(call.approvals.saveTransition).not.toHaveBeenCalled();
+  });
+
+  it('refuses answers that do not fit the questions with BOTS_036, and the card stays', async () => {
+    const { approval, approvals, decide } = setup({ questions: true });
+    await expect(
+      decide('answer', null, null, 'once', [{ picks: [3], other: null }]),
+    ).rejects.toMatchObject({ code: 'BOTS_036', detail: 'Question 1 has 2 options' });
     expect(approval.status).toBe('pending');
     expect(approvals.saveTransition).not.toHaveBeenCalled();
   });

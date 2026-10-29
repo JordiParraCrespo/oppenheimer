@@ -8,8 +8,12 @@ import {
 import {
   BOT_APPROVAL_NOTE_MAX,
   BOT_APPROVAL_STATUSES,
+  BOT_ASK_USER_TOOL,
   type BotApprovalReach,
   type BotApprovalStatus,
+  type BotQuestion,
+  type BotQuestionAnswer,
+  botQuestionsSchema,
   type Scope,
 } from '@oppenheimer/shared';
 import { BotToolPermissionEntity, type BotToolSubject } from './bot-tool-permission.entity';
@@ -44,6 +48,8 @@ export interface BotApprovalProps {
   sessionId: string | null;
   /** The person's note with a no. */
   note: string | null;
+  /** What a card of questions was answered with, one per question; null until it is. */
+  answers: BotQuestionAnswer[] | null;
   /** Who decided; null while pending, once expired, or once that account is gone. */
   decidedByUserId: string | null;
   /** The deciding credential's scopes; null for a browser session (or while pending). */
@@ -106,6 +112,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
         result: null,
         sessionId: null,
         note: null,
+        answers: null,
         decidedByUserId: null,
         decidedWithScopes: null,
         decidedAt: null,
@@ -161,8 +168,22 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   get reach(): BotApprovalReach | null {
     return this.props.reach;
   }
-  /** How far a yes may reach for this call: this call, its subject, the tool. */
+  /** A card of questions (`ask_user`): answered or dismissed, never approved, and nothing runs. */
+  get isQuestion(): boolean {
+    return this.props.tool === BOT_ASK_USER_TOOL;
+  }
+  /** The questions of a card of them, as stored; empty for any other card. */
+  get questions(): BotQuestion[] {
+    if (!this.isQuestion) return [];
+    const parsed = botQuestionsSchema.safeParse(this.props.input);
+    return parsed.success ? parsed.data.questions : [];
+  }
+  get answers(): BotQuestionAnswer[] | null {
+    return this.props.answers;
+  }
+  /** How far a yes may reach for this call: this call, its subject, the tool. None for questions. */
   get reaches(): BotApprovalReach[] {
+    if (this.isQuestion) return [];
     return reachesFor(
       { name: this.props.tool, asks: true, perCallOnly: this.props.perCallOnly },
       this.props.subject,
@@ -197,6 +218,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     scopes: readonly Scope[] | null = null,
     reach: BotApprovalReach = 'once',
   ): void {
+    if (this.isQuestion) throw new ArgumentInvalidException('A card of questions is answered');
     if (!this.reaches.includes(reach)) {
       throw new ArgumentInvalidException(`This approval cannot reach "${reach}"`);
     }
@@ -239,6 +261,32 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
     this.props.note = trimmed ? cut(trimmed, BOT_APPROVAL_NOTE_MAX) : null;
   }
 
+  /**
+   * The owner answered a card of questions: one answer per question, each
+   * picking options it has (one at most where only one may be picked) or
+   * saying something in their own words. Only a pending card of questions.
+   */
+  answer(
+    userId: string,
+    now: Date,
+    answers: readonly BotQuestionAnswer[],
+    scopes: readonly Scope[] | null = null,
+  ): void {
+    const problem = this.answersProblem(answers);
+    if (problem) throw new ArgumentInvalidException(problem);
+    this.decide('answered', userId, now, scopes);
+    this.props.answers = answers.map((answer) => ({
+      picks: [...new Set(answer.picks)].sort((a, b) => a - b),
+      other: answer.other?.trim() || null,
+    }));
+  }
+
+  /** Why these answers cannot answer this card, in words; null when they can. */
+  answersProblem(answers: readonly BotQuestionAnswer[]): string | null {
+    if (!this.isQuestion) return 'Only a card of questions is answered';
+    return answersProblem(this.questions, answers);
+  }
+
   /** The owner wrote to the bot instead of answering: the card is gone, nobody decided. */
   expire(now: Date): void {
     this.requirePending();
@@ -267,7 +315,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   }
 
   private decide(
-    status: 'approved' | 'denied',
+    status: 'approved' | 'denied' | 'answered',
     userId: string,
     now: Date,
     scopes: readonly Scope[] | null,
@@ -311,6 +359,29 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
       throw new ArgumentInvalidException(`${props.status} is not an approval status`);
     }
   }
+}
+
+/** Why these answers do not fit these questions, or null when they do. */
+function answersProblem(
+  questions: readonly BotQuestion[],
+  answers: readonly BotQuestionAnswer[],
+): string | null {
+  if (questions.length === 0) return 'The card holds no questions to answer';
+  if (answers.length !== questions.length) {
+    return `${questions.length} question(s) take ${questions.length} answer(s), not ${answers.length}`;
+  }
+  for (const [index, question] of questions.entries()) {
+    const { picks, other } = answers[index] as BotQuestionAnswer;
+    const n = index + 1;
+    if (picks.some((pick) => pick < 0 || pick >= question.options.length)) {
+      return `Question ${n} has ${question.options.length} options`;
+    }
+    if (!question.multiSelect && new Set(picks).size > 1) {
+      return `Question ${n} takes one option`;
+    }
+    if (picks.length === 0 && !other?.trim()) return `Question ${n} is not answered`;
+  }
+  return null;
 }
 
 /** `text` cut to `max` characters, an ellipsis marking the cut, never half a pair. */

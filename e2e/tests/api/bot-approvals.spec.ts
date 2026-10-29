@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
+import { query } from '../../support/db';
 
 /**
  * A bot's Needs input cards through the deployed API
  * (`product/versions/mvp/25-bots.md` §5): a bot with none lists none, and a
- * decision on a card that is not the bot's is `BOTS_015`. With a GLM key
+ * decision on a card that is not the bot's is `BOTS_015`. A card of
+ * questions (`ask_user`, seeded) is answered, never approved, and its
+ * answers reach the bot's next turn and the chat. With a GLM key
  * (`GLM_API_KEY`, a real one), a bot on Approve for me asked to start a
  * session raises a card instead of starting it; denying it with a note runs
  * nothing and gives the bot a turn opened by an event that says so, and a
@@ -51,6 +54,72 @@ test('a bot with no card lists none, and a decision on a card that is not its ow
     }),
     { status: 404, code: 'BOTS_015' },
   );
+  await api.dispose();
+});
+
+test('a card of questions is answered, never approved, and the bot is told the answers', async () => {
+  const { api, userId } = await signedUpContext('botquestions');
+  const bot = (await (await api.post('/api/v1/bots', { data: { provider: 'glm' } })).json()) as {
+    id: string;
+  };
+  const [{ organizationId }] = await query<{ organizationId: string }>(
+    'SELECT "organizationId" FROM bot WHERE id = $1',
+    [bot.id],
+  );
+  const [{ id: turnId }] = await query<{ id: string }>(
+    `INSERT INTO bot_turn ("organizationId","botId","requestedByUserId",provider,model,status,"startedAt","endedAt")
+     VALUES ($1,$2,$3,'glm','glm-5.3','completed',now(),now()) RETURNING id`,
+    [organizationId, bot.id, userId],
+  );
+  const questions = [
+    {
+      header: 'Repo',
+      question: 'Which repository should I release?',
+      multiSelect: false,
+      options: [
+        { label: 'acme/web', description: null },
+        { label: 'acme/api', description: null },
+      ],
+    },
+  ];
+  const [{ id: cardId }] = await query<{ id: string }>(
+    `INSERT INTO bot_approval ("organizationId","botId","turnId",tool,input,summary,"perCallOnly")
+     VALUES ($1,$2,$3,'ask_user',$4,'Which repository should I release?',true) RETURNING id`,
+    [organizationId, bot.id, turnId, JSON.stringify({ questions })],
+  );
+  const decide = (data: Record<string, unknown>) =>
+    api.post(`/api/v1/bots/${bot.id}/approvals/${cardId}/decision`, { data });
+
+  await expectProblemDocument(await decide({ decision: 'approve' }), {
+    status: 422,
+    code: 'BOTS_035',
+  });
+  await expectProblemDocument(
+    await decide({ decision: 'answer', answers: [{ picks: [2], other: null }] }),
+    { status: 422, code: 'BOTS_036' },
+  );
+  const answered = await decide({
+    decision: 'answer',
+    answers: [{ picks: [1], other: 'and tag it' }],
+  });
+  expect(answered.status(), await answered.text()).toBe(201);
+  expect(await answered.json()).toMatchObject({
+    status: 'answered',
+    reaches: [],
+    answers: [{ picks: [1], other: 'and tag it' }],
+  });
+
+  const conversation = (await (
+    await api.get(`/api/v1/bots/${bot.id}/conversation`)
+  ).json()) as Conversation;
+  const told = conversation.messages.find((message) => message.role === 'event');
+  expect(told?.event).toMatchObject({
+    kind: 'approval',
+    outcome: 'answered',
+    tool: 'ask_user',
+    answers: [{ question: 'Which repository should I release?', answer: 'acme/api; “and tag it”' }],
+  });
+  expect(told?.content).toContain('<answers>');
   await api.dispose();
 });
 

@@ -219,6 +219,8 @@
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",
       "failed": "Aprobaste y falló: {{summary}}",
+      "answered": "Respondiste: {{summary}}",
+      "dismissed": "Descartaste: {{summary}}",
       "routine": "Rutina · {{name}}",
       "routineSaved": "Rutina creada: “{{name}}”",
       "routineChanged": "Rutina cambiada: “{{name}}”",

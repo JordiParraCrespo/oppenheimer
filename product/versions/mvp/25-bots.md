@@ -314,6 +314,36 @@ over the text as soon as it is picked, and a message may be images alone.
   An upload can be sent for 23 hours, an hour short of the sweep, so a
   send never claims an image whose file the sweep is deleting.
 
+### 3.2 Questions
+
+A bot that cannot go on without a choice only you can make asks rather
+than guesses (2026-10-29, from Grok Bot's form cards,
+`research/lessons-from-grok-bot.md` §9 row 12). `ask_user` puts up to four
+questions on a card, each with two to four likely answers and a tag
+("Repo"), the shape of Claude Code's `AskUserQuestion`, and its turn ends.
+
+- **It is a Needs input card** (§5): one `bot_approval` row, whose tool is
+  `ask_user` and whose input is the questions. So it is the bot's one card
+  at a time, writing to the bot instead expires it, and the Inbox lists it.
+  It offers no reach and is never approved: nothing runs on it.
+- **Answering** is the same picker a session's questions use, where the
+  composer was: one question at a time, an option by its number or row,
+  several where the bot allows, or your own words instead. Submit sends
+  every answer at once (`decision: 'answer'`); Dismiss is a no
+  (`decision: 'deny'`). Answers that do not fit the questions are refused
+  (`BOTS_036`), and a yes to questions or answers to a call are `BOTS_035`.
+- **The bot is told** in the turn the decision queues, like an approval's:
+  each question with its answer, between markers, as data rather than
+  instructions; a dismissal says not to ask again unless you bring it up.
+  The chat draws the line ("You answered: Which repository?") with each
+  question over its answer.
+- **Only where someone answers.** It is offered on turns from your
+  messages and from a decided card, not on a routine's, a wake's or a
+  goal's, which nobody is waiting on.
+- **Not built:** Grok Bot's other resume points, a sign-in to a connector
+  and handing a computer over; they need a connector or a host to resume
+  from.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
@@ -631,7 +661,7 @@ one.
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
-| `ask_user` | A question card with options | auto |
+| `ask_user` | Up to 4 questions on a card, each with 2 to 4 likely answers; the turn ends and the answers open the next (§3.2, built 2026-10-29) | auto |
 
 ### 4.8 Never given to a bot
 Pairing, unpairing or uninstalling hosts; connecting or disconnecting
@@ -980,6 +1010,10 @@ The decisions it produced:
   merging is never standing. It adds to 2026-10-15's "*Always allow* sets
   the tool to Allow" rather than replacing it. From Grok Bot's per-path
   grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **a bot asks questions on a card** (`ask_user`, §3.2): a
+  Needs input card that is answered rather than approved, on the same
+  `bot_approval` row, so one card waits at a time whatever it holds. From
+  Grok Bot's form cards (§9 row 12).
 - 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
   the bot's or about the person and read by all their bots, still one row
   owned by the bot that learned it (§4.1). It moves user memory out of §7.

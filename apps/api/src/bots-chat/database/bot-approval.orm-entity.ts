@@ -18,7 +18,8 @@ import {
 /**
  * One call of an asking tool waiting for the bot's owner
  * (`1791002200000-AddBotApprovals`, `1791002900000-AddBotApprovalSession`,
- * `1791003600000-AddBotApprovalWorkspaceIndex`, `1791004700000-AddBotPermissions`).
+ * `1791003600000-AddBotApprovalWorkspaceIndex`, `1791004700000-AddBotPermissions`,
+ * `1791005100000-AddBotQuestions`).
  */
 @Entity('bot_approval')
 @Index('IDX_bot_approval_bot', ['organizationId', 'botId', 'createdAt', 'id'])
@@ -33,8 +34,9 @@ import {
 })
 @Check(
   'CHK_bot_approval_status',
-  `"status" IN ('pending', 'approved', 'denied', 'expired', 'failed')`,
+  `"status" IN ('pending', 'approved', 'denied', 'expired', 'failed', 'answered')`,
 )
+@Check('CHK_bot_approval_answers', `("status" = 'answered') = ("answers" IS NOT NULL)`)
 @Check('CHK_bot_approval_tool', `char_length("tool") > 0`)
 @Check('CHK_bot_approval_summary', `char_length("summary") > 0`)
 @Check('CHK_bot_approval_decided', `("status" = 'pending') = ("decidedAt" IS NULL)`)
@@ -78,6 +80,10 @@ export class BotApprovalOrmEntity {
 
   @Column({ type: 'varchar', length: BOT_APPROVAL_NOTE_MAX, nullable: true })
   note!: string | null;
+
+  /** What an `ask_user` card was answered with, one per question; null until it is. */
+  @Column({ type: 'jsonb', nullable: true })
+  answers!: { picks: number[]; other: string | null }[] | null;
 
   /** What the call acts on, when its tool names one: the three set together or none. */
   @Column({ type: 'varchar', length: 32, nullable: true })

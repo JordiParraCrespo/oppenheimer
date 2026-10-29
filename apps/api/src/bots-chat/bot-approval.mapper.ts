@@ -4,6 +4,8 @@ import {
   BOT_APPROVAL_REACHES,
   type BotApprovalReach,
   type BotApprovalStatus,
+  type BotQuestionAnswer,
+  botQuestionAnswerSchema,
   SCOPES,
   type Scope,
 } from '@oppenheimer/shared';
@@ -29,6 +31,9 @@ export class BotApprovalMapper
     record.result = entity.result;
     record.sessionId = entity.sessionId;
     record.note = entity.note;
+    record.answers = entity.answers
+      ? entity.answers.map((answer) => ({ ...answer, picks: [...answer.picks] }))
+      : null;
     record.subjectKind = entity.subject?.kind ?? null;
     record.subjectKey = entity.subject?.key ?? null;
     record.subjectLabel = entity.subject?.label ?? null;
@@ -58,6 +63,7 @@ export class BotApprovalMapper
         result: record.result,
         sessionId: record.sessionId,
         note: record.note,
+        answers: asAnswers(record.answers),
         subject:
           record.subjectKind && record.subjectKey && record.subjectLabel
             ? { kind: record.subjectKind, key: record.subjectKey, label: record.subjectLabel }
@@ -83,6 +89,9 @@ export class BotApprovalMapper
     dto.status = entity.status;
     dto.result = entity.result;
     dto.note = entity.note;
+    dto.answers = entity.answers
+      ? entity.answers.map((answer) => ({ picks: [...answer.picks], other: answer.other }))
+      : null;
     dto.subjectKind = entity.subject?.kind ?? null;
     dto.subjectLabel = entity.subject?.label ?? null;
     dto.sharesOutside = entity.sharesOutside;
@@ -110,6 +119,15 @@ function asInput(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw)
     ? (raw as Record<string, unknown>)
     : {};
+}
+
+/** The stored answers, narrowed once; an answer that does not read as one is dropped. */
+function asAnswers(raw: unknown): BotQuestionAnswer[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw.flatMap((answer) => {
+    const parsed = botQuestionAnswerSchema.safeParse(answer);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 /** The stored reach, narrowed once; anything else reads as none. */

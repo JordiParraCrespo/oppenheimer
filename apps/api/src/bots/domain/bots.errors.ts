@@ -201,4 +201,16 @@ export const BotErrors = {
     message: 'The bot holds as many grants as it can',
     httpStatus: 409,
   },
+  /** Approving a card of questions, or answering a card that asks to run a call. */
+  APPROVAL_DECISION_MISMATCH: {
+    code: 'BOTS_035',
+    message: 'This card is not decided that way',
+    httpStatus: 422,
+  },
+  /** Answers that are not one per question, pick no option it has, or leave one unanswered. */
+  ANSWERS_INVALID: {
+    code: 'BOTS_036',
+    message: 'The answers do not fit the questions',
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

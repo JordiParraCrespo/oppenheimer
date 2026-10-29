@@ -19986,7 +19986,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["pending", "approved", "denied", "expired", "failed"],
+              "enum": ["pending", "approved", "denied", "expired", "failed", "answered"],
               "type": "string"
             }
           }
@@ -20055,7 +20055,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["pending", "approved", "denied", "expired", "failed"],
+              "enum": ["pending", "approved", "denied", "expired", "failed", "answered"],
               "type": "string"
             }
           }
@@ -20106,7 +20106,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. A card of questions (`ask_user`) takes `answer` with `answers`, one per question, or `deny` to dismiss it. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -20188,7 +20188,7 @@
             }
           },
           "422": {
-            "description": "BOTS_030 — A reach the card does not offer",
+            "description": "BOTS_036 — Answers that do not fit\n\nBOTS_035 — Not decided that way\n\nBOTS_030 — A reach the card does not offer",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -30622,6 +30622,19 @@
         },
         "required": ["status"]
       },
+      "BotAnsweredQuestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string",
+            "description": "The picked options and the person’s own words, joined."
+          }
+        },
+        "required": ["question", "answer"]
+      },
       "BotApprovalEventResponseDto": {
         "type": "object",
         "properties": {
@@ -30631,7 +30644,7 @@
           },
           "outcome": {
             "type": "string",
-            "enum": ["approved", "denied", "failed"]
+            "enum": ["approved", "denied", "failed", "answered"]
           },
           "tool": {
             "type": "string",
@@ -30646,6 +30659,13 @@
             "format": "uuid",
             "nullable": true,
             "description": "The session the approved call started; null when it started none."
+          },
+          "answers": {
+            "description": "For answered questions (`ask_user`): each question and its answer, in words.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotAnsweredQuestionResponseDto"
+            }
           }
         },
         "required": ["kind", "outcome", "tool", "summary", "sessionId"]
@@ -31257,6 +31277,22 @@
         },
         "required": ["goal"]
       },
+      "BotQuestionAnswerResponseDto": {
+        "type": "object",
+        "properties": {
+          "picks": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "other": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["picks", "other"]
+      },
       "BotApprovalResponseDto": {
         "type": "object",
         "properties": {
@@ -31284,7 +31320,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "denied", "expired", "failed"]
+            "enum": ["pending", "approved", "denied", "expired", "failed", "answered"]
           },
           "result": {
             "type": "string",
@@ -31295,6 +31331,14 @@
             "type": "string",
             "nullable": true,
             "description": "What the person added to a no."
+          },
+          "answers": {
+            "nullable": true,
+            "description": "What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotQuestionAnswerResponseDto"
+            }
           },
           "subjectKind": {
             "type": "string",
@@ -31353,6 +31397,7 @@
           "status",
           "result",
           "note",
+          "answers",
           "subjectKind",
           "subjectLabel",
           "sharesOutside",
@@ -31391,7 +31436,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "denied", "expired", "failed"]
+            "enum": ["pending", "approved", "denied", "expired", "failed", "answered"]
           },
           "result": {
             "type": "string",
@@ -31402,6 +31447,14 @@
             "type": "string",
             "nullable": true,
             "description": "What the person added to a no."
+          },
+          "answers": {
+            "nullable": true,
+            "description": "What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotQuestionAnswerResponseDto"
+            }
           },
           "subjectKind": {
             "type": "string",
@@ -31475,6 +31528,7 @@
           "status",
           "result",
           "note",
+          "answers",
           "subjectKind",
           "subjectLabel",
           "sharesOutside",
@@ -31494,7 +31548,7 @@
         "properties": {
           "decision": {
             "type": "string",
-            "enum": ["approve", "deny"]
+            "enum": ["approve", "deny", "answer"]
           },
           "note": {
             "type": "string",
@@ -31504,6 +31558,33 @@
             "type": "string",
             "enum": ["once", "tool", "subject"],
             "default": "once"
+          },
+          "answers": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "properties": {
+                "picks": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": false,
+                    "maximum": 3,
+                    "exclusiveMaximum": false
+                  }
+                },
+                "other": {
+                  "type": "string",
+                  "maxLength": 1000,
+                  "nullable": true,
+                  "default": null
+                }
+              },
+              "required": ["picks"]
+            }
           }
         },
         "required": ["decision"]

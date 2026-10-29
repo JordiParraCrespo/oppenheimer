@@ -27,7 +27,8 @@ import { DecideBotApprovalCommand } from './decide-bot-approval.command';
  * a crash leaves a job to retry, never a card stuck approved); a no queues
  * the bot's turn that is told so. The deciding credential's scopes are kept
  * on the approval: the call, and the turn that reports it, get only what
- * both they and the asking turn's cover.
+ * both they and the asking turn's cover. A card of questions (`ask_user`) is
+ * answered or dismissed instead, and either queues the turn that tells the bot.
  */
 @CommandHandler(DecideBotApprovalCommand)
 export class DecideBotApprovalCommandHandler
@@ -50,6 +51,12 @@ export class DecideBotApprovalCommandHandler
     );
     if (approval.status !== 'pending') throw new AppError(BotErrors.APPROVAL_DECIDED);
 
+    // Questions are answered, a call approved; either may be denied.
+    if (decision !== 'deny' && (decision === 'answer') !== approval.isQuestion) {
+      throw new AppError(BotErrors.APPROVAL_DECISION_MISMATCH);
+    }
+    const problem = decision === 'answer' ? approval.answersProblem(command.answers) : null;
+    if (problem) throw new AppError(BotErrors.ANSWERS_INVALID, { detail: problem });
     let effects: BotApprovalEffects;
     if (decision === 'approve') {
       if (!approval.reaches.includes(reach)) {
@@ -64,7 +71,8 @@ export class DecideBotApprovalCommandHandler
         ...(permission && { standing: { permission, maxGrants: BOT_TOOL_GRANTS_MAX } }),
       };
     } else {
-      approval.deny(scope.userId, new Date(), note, credentialScopes);
+      if (decision === 'deny') approval.deny(scope.userId, new Date(), note, credentialScopes);
+      else approval.answer(scope.userId, new Date(), command.answers, credentialScopes);
       const found = await this.turns.findOne(scope, bot.id, approval.turnId);
       const asked = found.isSome() ? found.unwrap() : null;
       effects = {

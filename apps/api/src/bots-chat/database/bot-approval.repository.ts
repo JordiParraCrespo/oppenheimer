@@ -140,6 +140,9 @@ export class BotApprovalRepository
           result: approval.result,
           sessionId: approval.sessionId,
           note: approval.note,
+          answers: approval.answers
+            ? approval.answers.map((answer) => ({ ...answer, picks: [...answer.picks] }))
+            : null,
           decidedByUserId: approval.decidedByUserId,
           decidedWithScopes: approval.decidedWithScopes ? [...approval.decidedWithScopes] : null,
           decidedAt: approval.decidedAt,

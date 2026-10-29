@@ -740,6 +740,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_032` <a id="bots_032" />       | Rule not found | 404  |
 | `BOTS_033` <a id="bots_033" />       | Grant not found | 404  |
 | `BOTS_034` <a id="bots_034" />       | The bot holds as many grants as it can | 409  |
+| `BOTS_035` <a id="bots_035" />       | This card is not decided that way | 422  |
+| `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -817,6 +819,13 @@ reaches past this call, or asks a yes to reach a thing the card did not name.
 `BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
 its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
 that is not this bot's, not in the caller's workspace, or already removed.
+
+`BOTS_035` and `BOTS_036` are a card of questions (`ask_user`). A card of
+questions is answered (`answer`) or dismissed (`deny`), never approved, and a
+card that asks to run a call is never answered: `BOTS_035`. `BOTS_036` is
+answers that do not fit: not one per question, an option the question does
+not have, two picks where one is taken, or a question left unanswered; its
+`detail` names which.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

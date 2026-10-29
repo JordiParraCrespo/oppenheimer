@@ -751,6 +751,45 @@ describe('bots chat (integration)', () => {
     expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap().reach).toBe('subject');
   });
 
+  it('stores a card of questions answered, and refuses an answered card without its answers', async () => {
+    const bot = await create('Questioner');
+    const { turn, message } = sent(bot, 'Release it');
+    await turns.enqueue(turn, message, null);
+    const card = BotApprovalEntity.request({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      tool: 'ask_user',
+      input: {
+        questions: [
+          {
+            header: null,
+            question: 'Which repository?',
+            multiSelect: false,
+            options: [
+              { label: 'acme/web', description: null },
+              { label: 'acme/api', description: null },
+            ],
+          },
+        ],
+      },
+      summary: 'Which repository?',
+      perCallOnly: true,
+    });
+    expect(await approvals.insertPending(card)).toBe('inserted');
+    const stored = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    expect(stored.questions.map((question) => question.question)).toEqual(['Which repository?']);
+    stored.answer(userId, new Date(), [{ picks: [1], other: 'and tag it' }]);
+    expect(await approvals.saveTransition(stored)).toBe(true);
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap()).toMatchObject({
+      status: 'answered',
+      answers: [{ picks: [1], other: 'and tag it' }],
+    });
+    await expect(
+      dataSource.query(`UPDATE bot_approval SET answers = NULL WHERE id = $1`, [card.id]),
+    ).rejects.toThrow(/CHK_bot_approval_answers/);
+  });
+
   it('keeps one card waiting per bot: a second is refused until the first is decided', async () => {
     const bot = await create('Asker');
     const first = await asked(bot, 'First');

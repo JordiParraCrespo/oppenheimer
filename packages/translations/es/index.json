@@ -108,6 +108,19 @@
         "draftSaved": "Guardado como borrador en {{email}}. No se envió nada.",
         "draftUpdated": "El borrador de {{email}}, reescrito. No se envió nada.",
         "openInGmail": "Abrir en Gmail"
+      },
+      "question": {
+        "ownAnswer": "O escribe tu propia respuesta…",
+        "ownAnswerLabel": "Tu respuesta",
+        "several": "Marca con 1–{{last}} todas las que apliquen",
+        "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+        "next": "Siguiente",
+        "submit": "Enviar respuestas",
+        "dismiss": "Descartar",
+        "sending": "Enviando tus respuestas…",
+        "previous": "Pregunta anterior",
+        "nextQuestion": "Pregunta siguiente",
+        "of": "{{n}} de {{total}}"
       }
     },
     "search": {
@@ -426,7 +439,9 @@
       "BOTS_031": "Este bot ya tiene tantas reglas como admite. Quita una primero.",
       "BOTS_032": "Esa regla ya no existe. Recarga la página.",
       "BOTS_033": "Ese permiso ya no existe. Recarga la página.",
-      "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero."
+      "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero.",
+      "BOTS_035": "Esta tarjeta no se responde así. Recarga el chat y vuelve a intentarlo.",
+      "BOTS_036": "Esas respuestas no encajan con las preguntas. Responde cada una y vuelve a enviarlas."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1220,18 +1235,7 @@
       "question": {
         "waiting": "Esperando tu respuesta",
         "dismissed": "Descartaste las preguntas",
-        "noAnswer": "No se pudo leer la respuesta",
-        "ownAnswer": "O escribe tu propia respuesta…",
-        "ownAnswerLabel": "Tu respuesta",
-        "several": "Marca con 1–{{last}} todas las que apliquen",
-        "one": "Elige una con 1–{{last}}, o responde con tus palabras",
-        "next": "Siguiente",
-        "submit": "Enviar respuestas",
-        "dismiss": "Descartar",
-        "sending": "Enviando tus respuestas…",
-        "previous": "Pregunta anterior",
-        "nextQuestion": "Pregunta siguiente",
-        "of": "{{n}} de {{total}}"
+        "noAnswer": "No se pudo leer la respuesta"
       }
     },
     "preview": {
@@ -1515,6 +1519,8 @@
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
+        "answered": "Respondiste: {{summary}}",
+        "dismissed": "Descartaste: {{summary}}",
         "routine": "Rutina · {{name}}",
         "routineSaved": "Rutina creada: “{{name}}”",
         "routineChanged": "Rutina cambiada: “{{name}}”",

@@ -20,6 +20,7 @@ import {
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import {
+  BOT_ASK_USER_TOOL,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_REPLY_OUTCOMES,
@@ -32,8 +33,11 @@ import {
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
+  type BotQuestion,
+  type BotQuestionAnswer,
   type BotSection,
   type BotToolDecision,
+  botQuestionsSchema,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -209,6 +213,7 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             tool: dto.tool,
             summary: dto.summary,
             sessionId: dto.sessionId ?? null,
+            ...(dto.answers && { answers: dto.answers.map((answer) => ({ ...answer })) }),
           }
         : null;
     }
@@ -313,7 +318,16 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
       reach: dto.reach,
     },
     mailOf(dto.tool, dto.input),
+    questionsOf(dto.tool, dto.input),
+    dto.answers ? dto.answers.map((answer) => ({ ...answer, picks: [...answer.picks] })) : null,
   );
+}
+
+/** An `ask_user` card's questions; a card whose input does not read as them has none. */
+function questionsOf(tool: string, input: Record<string, unknown>): BotQuestion[] {
+  if (tool !== BOT_ASK_USER_TOOL) return [];
+  const parsed = botQuestionsSchema.safeParse(input);
+  return parsed.success ? parsed.data.questions : [];
 }
 
 function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
@@ -514,11 +528,19 @@ export class BotsRepository {
     decision: BotApprovalDecision,
     note?: string,
     reach: BotApprovalReach = 'once',
+    answers?: readonly BotQuestionAnswer[],
   ): Promise<BotApprovalEntity> {
     const data = await unwrapBody(
       heyApiSdk.decideBotApproval({
         path: { id, approvalId },
-        body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
+        body: {
+          decision,
+          reach,
+          ...(note?.trim() ? { note: note.trim() } : {}),
+          ...(answers && {
+            answers: answers.map((answer) => ({ ...answer, picks: [...answer.picks] })),
+          }),
+        },
       }),
       BotsErrors.DECIDE_APPROVAL_FAILED,
     );

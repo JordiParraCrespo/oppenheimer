@@ -10,15 +10,18 @@ import type {
   WebPagePort,
   WebPageResult,
 } from '../../infrastructure/web-page.port';
+import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
+import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import type { BotToolContext } from '../bot-tool.factory';
 import { BotWebToolsFactory, WEB_FETCHES_PER_TURN } from '../bot-web-tools.factory';
 
 /**
- * `web_fetch` and `show_image` as the model sees them: a page comes back
+ * `web_fetch`, `show_image` and `ask_user` as the model sees them: a page comes back
  * fenced as data, a refusal in words, and a turn stops fetching at its
  * limit; an image is known by its bytes, stored as the bot's own (no person
- * uploaded it) and handed to the chat, never one that is not an image. The
- * address checks are the adapter's and the policy's specs.
+ * uploaded it) and handed to the chat, never one that is not an image;
+ * questions become a card and end the turn. The address checks are the
+ * adapter's and the policy's specs.
  */
 const context = (): BotToolContext => ({
   owner: emptyScope('owner-1', 'org-1'),
@@ -45,12 +48,19 @@ function setup(result: WebPageResult, image?: (url: string) => WebImageResult) {
     store: vi.fn<BotAttachmentFilesPort['store']>(async () => {}),
     remove: vi.fn<BotAttachmentFilesPort['remove']>(async () => {}),
   };
-  const [definition, showImage] = new BotWebToolsFactory(
+  const approvals = {
+    request: vi.fn<BotApprovalRequesterPort['request']>(async () => ({
+      status: 'requested',
+      approvalId: 'approval-1',
+    })),
+  };
+  const [definition, showImage, askUser] = new BotWebToolsFactory(
     web,
     attachments as unknown as BotAttachmentRepositoryPort,
     files as unknown as BotAttachmentFilesPort,
+    approvals as unknown as BotApprovalRequestFactory,
   ).definitions();
-  return { web, attachments, files, definition, showImage };
+  return { web, attachments, files, approvals, definition, showImage, askUser };
 }
 
 /** The first bytes of a PNG: what makes a body an image, whatever its server says. */
@@ -178,5 +188,58 @@ describe('BotWebToolsFactory', () => {
     const over = await turn.run({ images: four.slice(0, 1) }, { signal });
     expect(over.content).toContain('the limit');
     expect(web.fetchImage).toHaveBeenCalledTimes(SHOWN_IMAGES_PER_TURN);
+  });
+
+  const questions = [
+    {
+      header: 'Repo',
+      question: 'Which repository should I release?',
+      options: [{ label: 'acme/web' }, { label: 'acme/api', description: 'The API only' }],
+    },
+    {
+      question: 'What should go in the notes?',
+      multiSelect: true,
+      options: [{ label: 'Fixes' }, { label: 'Features' }, { label: 'Thanks' }],
+    },
+  ];
+
+  it('puts its questions on a card, with defaults filled, and tells the model to end its turn', async () => {
+    const { askUser, approvals } = setup({ kind: 'failed', reason: 'unused' });
+    const result = await askUser.bind(context()).run({ questions }, { signal });
+    expect(result.content).toContain('2 questions are now on a card');
+    expect(result.content).toContain('End your turn now');
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'ask_user',
+        summary: 'Which repository should I release? (+1 more)',
+        perCallOnly: true,
+        input: {
+          questions: [
+            expect.objectContaining({
+              header: 'Repo',
+              multiSelect: false,
+              options: [
+                { label: 'acme/web', description: null },
+                { label: 'acme/api', description: 'The API only' },
+              ],
+            }),
+            expect.objectContaining({ header: null, multiSelect: true }),
+          ],
+        },
+      }),
+    );
+  });
+
+  it('says to wait when an earlier card still waits, and refuses a question with one option', async () => {
+    const { askUser, approvals } = setup({ kind: 'failed', reason: 'unused' });
+    approvals.request.mockResolvedValueOnce({ status: 'waiting', summary: 'Merge #12?' });
+    const waiting = await askUser.bind(context()).run({ questions }, { signal });
+    expect(waiting.content).toContain('"Merge #12?"');
+    approvals.request.mockClear();
+    const lone = await askUser
+      .bind(context())
+      .run({ questions: [{ question: 'Sure?', options: [{ label: 'Yes' }] }] }, { signal });
+    expect(lone.isError).toBe(true);
+    expect(approvals.request).not.toHaveBeenCalled();
   });
 });

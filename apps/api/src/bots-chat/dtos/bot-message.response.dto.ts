@@ -98,6 +98,15 @@ export class BotToolStepResponseDto {
   mailDraft!: Record<string, unknown> | null;
 }
 
+/** One answered question, as the chat shows it. */
+export class BotAnsweredQuestionResponseDto {
+  @ApiProperty()
+  question!: string;
+
+  @ApiProperty({ description: 'The picked options and the person’s own words, joined.' })
+  answer!: string;
+}
+
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
 export class BotApprovalEventResponseDto {
   @ApiProperty({ enum: ['approval'] })
@@ -119,6 +128,13 @@ export class BotApprovalEventResponseDto {
     description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
+
+  @ApiProperty({
+    type: [BotAnsweredQuestionResponseDto],
+    required: false,
+    description: 'For answered questions (`ask_user`): each question and its answer, in words.',
+  })
+  answers?: BotAnsweredQuestionResponseDto[];
 }
 
 /** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */

@@ -30,6 +30,8 @@ const state = vi.hoisted(() => ({
     tool: string;
     summary: string;
     details: BotApprovalDetails;
+    isQuestion?: boolean;
+    questions?: unknown[];
   },
   mutate: vi.fn(),
 }));
@@ -47,6 +49,28 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 
 vi.mock('@oppenheimer/frontend-web', () => ({
   ErrorAlert: () => null,
+  // The picker is the kit's, with its own spec; this one is how the card wires it.
+  ChatQuestionPicker: ({
+    questions,
+    onAnswer,
+    onDismiss,
+  }: {
+    questions: { question: string }[];
+    onAnswer: (answers: { picks: number[]; other: string | null }[]) => boolean;
+    onDismiss: () => void;
+  }) => (
+    <div>
+      {questions.map((question) => (
+        <p key={question.question}>{question.question}</p>
+      ))}
+      <button type="button" onClick={() => onAnswer([{ picks: [1], other: 'and tag it' }])}>
+        answer
+      </button>
+      <button type="button" onClick={onDismiss}>
+        dismiss
+      </button>
+    </div>
+  ),
   useZodResolver: () => undefined,
   DictationField: ({ children }: { children: ReactNode }) => children,
   dictateIntoField: () => () => {},
@@ -129,5 +153,33 @@ describe('BotApprovalCard', () => {
     expect(screen.queryByRole('button', { name: 'bots.chat.approval.alwaysFor' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'bots.chat.approval.always' })).toBeNull();
     expect(screen.getByRole('button', { name: 'bots.chat.approval.approve' })).toBeTruthy();
+  });
+
+  it('puts a card of questions in a picker: no Approve, and the answers or a dismissal go to this card', () => {
+    state.approval = {
+      id: 'a-2',
+      tool: 'ask_user',
+      summary: 'Which repository?',
+      details: details({ reaches: [] }),
+      isQuestion: true,
+      questions: [{ question: 'Which repository?' }],
+    };
+    render(<BotApprovalCard botId="bot-1" name="Scout" />);
+    expect(screen.getByText('Which repository?')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'bots.chat.approval.approve' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'answer' }));
+    expect(state.mutate).toHaveBeenLastCalledWith({
+      id: 'bot-1',
+      approvalId: 'a-2',
+      decision: 'answer',
+      answers: [{ picks: [1], other: 'and tag it' }],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
+    expect(state.mutate).toHaveBeenLastCalledWith({
+      id: 'bot-1',
+      approvalId: 'a-2',
+      decision: 'deny',
+      answers: undefined,
+    });
   });
 });

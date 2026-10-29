@@ -3602,9 +3602,17 @@ export type ChatgptLoginStatusResponseDto = {
     status: 'pending' | 'connected';
 };
 
+export type BotAnsweredQuestionResponseDto = {
+    question: string;
+    /**
+     * The picked options and the person’s own words, joined.
+     */
+    answer: string;
+};
+
 export type BotApprovalEventResponseDto = {
     kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    outcome: 'approved' | 'denied' | 'failed' | 'answered';
     /**
      * The tool the decided call was for.
      */
@@ -3617,6 +3625,10 @@ export type BotApprovalEventResponseDto = {
      * The session the approved call started; null when it started none.
      */
     sessionId: string | null;
+    /**
+     * For answered questions (`ask_user`): each question and its answer, in words.
+     */
+    answers?: Array<BotAnsweredQuestionResponseDto>;
 };
 
 export type BotRoutineEventResponseDto = {
@@ -3925,6 +3937,11 @@ export type BotGoalStateResponseDto = {
     goal: BotGoalResponseDto | null;
 };
 
+export type BotQuestionAnswerResponseDto = {
+    picks: Array<number>;
+    other: string | null;
+};
+
 export type BotApprovalResponseDto = {
     id: string;
     /**
@@ -3945,7 +3962,7 @@ export type BotApprovalResponseDto = {
      * What will happen, in words.
      */
     summary: string;
-    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed' | 'answered';
     /**
      * What the call answered when it ran on a yes; null before, and for a no.
      */
@@ -3954,6 +3971,10 @@ export type BotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.
+     */
+    answers: Array<BotQuestionAnswerResponseDto> | null;
     /**
      * What kind of thing the call acts on (`repository`, `session`); null when none.
      */
@@ -4003,7 +4024,7 @@ export type WorkspaceBotApprovalResponseDto = {
      * What will happen, in words.
      */
     summary: string;
-    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+    status: 'pending' | 'approved' | 'denied' | 'expired' | 'failed' | 'answered';
     /**
      * What the call answered when it ran on a yes; null before, and for a no.
      */
@@ -4012,6 +4033,10 @@ export type WorkspaceBotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What a card of questions (`ask_user`, its questions in `input`) was answered with, one per question; null until it is, and for any other card.
+     */
+    answers: Array<BotQuestionAnswerResponseDto> | null;
     /**
      * What kind of thing the call acts on (`repository`, `session`); null when none.
      */
@@ -4054,9 +4079,13 @@ export type WorkspaceBotApprovalResponseDto = {
 };
 
 export type DecideBotApprovalRequest = {
-    decision: 'approve' | 'deny';
+    decision: 'approve' | 'deny' | 'answer';
     note?: string;
     reach?: 'once' | 'tool' | 'subject';
+    answers?: Array<{
+        picks: Array<number>;
+        other?: string | null;
+    }>;
 };
 
 export type BotToolPermissionDto = {
@@ -13883,7 +13912,7 @@ export type FindBotApprovalsData = {
         id: string;
     };
     query?: {
-        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed' | 'answered';
     };
     url: '/api/v1/bots/{id}/approvals';
 };
@@ -13915,7 +13944,7 @@ export type FindWorkspaceBotApprovalsData = {
     body?: never;
     path?: never;
     query?: {
-        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed';
+        status?: 'pending' | 'approved' | 'denied' | 'expired' | 'failed' | 'answered';
     };
     url: '/api/v1/bot-approvals';
 };
@@ -13971,6 +14000,10 @@ export type DecideBotApprovalErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * BOTS_036 — Answers that do not fit
+     *
+     * BOTS_035 — Not decided that way
+     *
      * BOTS_030 — A reach the card does not offer
      */
     422: ProblemDetailsDto;

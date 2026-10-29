@@ -9,6 +9,7 @@ import {
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
+  type BotAnsweredQuestion,
   type BotAttachment,
   type BotMailDraft,
   type BotMessageEvent,
@@ -266,6 +267,15 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
   }
 }
 
+/** An answered card's questions and answers in words, narrowed once; anything else is dropped. */
+function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { question, answer } = item as Record<string, unknown>;
+    return typeof question === 'string' && typeof answer === 'string' ? [{ question, answer }] : [];
+  });
+}
+
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (!raw) return null;
@@ -278,6 +288,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+      ...(Array.isArray(raw.answers) && { answers: toAnsweredQuestions(raw.answers) }),
     };
   }
   if (raw.kind === 'routine') {

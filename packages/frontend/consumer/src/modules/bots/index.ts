@@ -15,6 +15,7 @@ export {
 } from './bot.entity';
 export {
   type BotApprovalDetails,
+  type BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
   type BotPlanLimits,

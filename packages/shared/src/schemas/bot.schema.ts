@@ -488,7 +488,7 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
  * (`25-bots.md` §4.6); or a session the bot follows that needs it
  * (`27-bot-subscriptions.md`). The words stay in the message for the bot.
  */
-export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
+export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed', 'answered'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
 export interface BotApprovalEvent {
@@ -500,6 +500,15 @@ export interface BotApprovalEvent {
   summary: string;
   /** The session the approved call started, for the chat to link to; null when it started none. */
   sessionId: string | null;
+  /** For answered questions (`ask_user`): each question and its answer, in words. */
+  answers?: BotAnsweredQuestion[];
+}
+
+/** One answered question of an `ask_user` card, as the chat shows it. */
+export interface BotAnsweredQuestion {
+  question: string;
+  /** The picked options' labels and the person's own words, joined. */
+  answer: string;
 }
 
 /**
@@ -794,9 +803,11 @@ export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**
  * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call of an
- * asking tool, waiting for the owner. `pending` until they decide; `approved`
- * once the call ran on their yes, `failed` when it ran and failed; `denied`;
- * `expired` when they wrote to the bot instead of answering.
+ * asking tool, or one `ask_user` call's questions, waiting for the owner.
+ * `pending` until they decide; `approved` once the call ran on their yes,
+ * `failed` when it ran and failed; `denied` (for questions: dismissed);
+ * `answered` once they answered its questions; `expired` when they wrote to
+ * the bot instead.
  */
 export const BOT_APPROVAL_STATUSES = [
   'pending',
@@ -804,10 +815,12 @@ export const BOT_APPROVAL_STATUSES = [
   'denied',
   'expired',
   'failed',
+  'answered',
 ] as const;
 export type BotApprovalStatus = (typeof BOT_APPROVAL_STATUSES)[number];
 
-export const BOT_APPROVAL_DECISIONS = ['approve', 'deny'] as const;
+/** `answer` is for a card of questions (`ask_user`) alone; `approve` for any other. */
+export const BOT_APPROVAL_DECISIONS = ['approve', 'deny', 'answer'] as const;
 export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
 
 /** What the person may add to a decision: why they denied it, or what to do instead. */
@@ -823,11 +836,80 @@ export const BOT_APPROVAL_NOTE_MAX = 1_000;
 export const BOT_APPROVAL_REACHES = ['once', 'tool', 'subject'] as const;
 export type BotApprovalReach = (typeof BOT_APPROVAL_REACHES)[number];
 
-/** `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes; a no ignores it. */
+/**
+ * The tool that asks the owner questions instead of acting (`25-bots.md`
+ * §3.2): its card is answered, not approved, and nothing runs on it.
+ */
+export const BOT_ASK_USER_TOOL = 'ask_user';
+/** How many questions one `ask_user` card holds. */
+export const BOT_QUESTIONS_MAX = 4;
+/** How many options one question offers, at least and at most. */
+export const BOT_QUESTION_OPTIONS_MIN = 2;
+export const BOT_QUESTION_OPTIONS_MAX = 4;
+export const BOT_QUESTION_TEXT_MAX = 300;
+/** The short tag over a question ("Scope"). */
+export const BOT_QUESTION_HEADER_MAX = 16;
+export const BOT_QUESTION_OPTION_LABEL_MAX = 80;
+export const BOT_QUESTION_OPTION_DESCRIPTION_MAX = 200;
+/** How long an answer in the person's own words may be. */
+export const BOT_QUESTION_ANSWER_MAX = 1_000;
+
+/**
+ * One question of an `ask_user` card, the shape Claude Code's
+ * `AskUserQuestion` has: a tag, the question, two to four options, and
+ * whether several may be picked. The person may always answer in their own
+ * words instead.
+ */
+export const botQuestionSchema = z.object({
+  header: z.string().trim().max(BOT_QUESTION_HEADER_MAX).nullable().default(null),
+  question: z.string().trim().min(1).max(BOT_QUESTION_TEXT_MAX),
+  multiSelect: z.boolean().default(false),
+  options: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(BOT_QUESTION_OPTION_LABEL_MAX),
+        description: z
+          .string()
+          .trim()
+          .max(BOT_QUESTION_OPTION_DESCRIPTION_MAX)
+          .nullable()
+          .default(null),
+      }),
+    )
+    .min(BOT_QUESTION_OPTIONS_MIN)
+    .max(BOT_QUESTION_OPTIONS_MAX),
+});
+export type BotQuestion = z.output<typeof botQuestionSchema>;
+
+/** An `ask_user` card's stored input: its questions. */
+export const botQuestionsSchema = z.object({
+  questions: z.array(botQuestionSchema).min(1).max(BOT_QUESTIONS_MAX),
+});
+
+/** One question's answer: the options picked, by index, and the person's own words. */
+export const botQuestionAnswerSchema = z.object({
+  picks: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(BOT_QUESTION_OPTIONS_MAX - 1),
+    )
+    .max(BOT_QUESTION_OPTIONS_MAX),
+  other: z.string().trim().max(BOT_QUESTION_ANSWER_MAX).nullable().default(null),
+});
+export type BotQuestionAnswer = z.output<typeof botQuestionAnswerSchema>;
+
+/**
+ * `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes;
+ * a no ignores it. `answers`, one per question in order, go with `answer`.
+ */
 export const decideBotApprovalSchema = z.object({
   decision: z.enum(BOT_APPROVAL_DECISIONS),
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
   reach: z.enum(BOT_APPROVAL_REACHES).default('once'),
+  answers: z.array(botQuestionAnswerSchema).max(BOT_QUESTIONS_MAX).optional(),
 });
 
 /**

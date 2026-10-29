@@ -5,6 +5,8 @@ import type {
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
+  BotQuestion,
+  BotQuestionAnswer,
   BotSubagentRun,
   BotTurnFailure,
   BotTurnStatus,
@@ -237,10 +239,19 @@ export class BotApprovalEntity {
      * §3.4); `null` for every other card.
      */
     public readonly mail: MailPlan | null = null,
+    /** The questions of an `ask_user` card, to be answered rather than approved; empty for a call. */
+    public readonly questions: readonly BotQuestion[] = [],
+    /** What its questions were answered with, once they were. */
+    public readonly answers: readonly BotQuestionAnswer[] | null = null,
   ) {}
 
   get isPending(): boolean {
     return this.status === 'pending';
+  }
+
+  /** A card of questions: answered or dismissed, never approved. */
+  get isQuestion(): boolean {
+    return this.questions.length > 0;
   }
 }
 
@@ -269,6 +280,8 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
       approval.createdAt,
       approval.details,
       approval.mail,
+      approval.questions,
+      approval.answers,
     );
   }
 

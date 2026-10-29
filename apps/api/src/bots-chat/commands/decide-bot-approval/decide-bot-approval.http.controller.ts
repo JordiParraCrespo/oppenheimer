@@ -48,7 +48,7 @@ export class DecideBotApprovalHttpController {
   @ApiOperation({
     summary: "Answer a bot's Needs input card",
     description:
-      "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+      "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. A card of questions (`ask_user`) takes `answer` with `answers`, one per question, or `deny` to dismiss it. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
   })
   @ApiResponse({ status: 201, type: BotApprovalResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -64,6 +64,8 @@ export class DecideBotApprovalHttpController {
     code: 'BOTS_030',
   })
   @ApiProblemResponse({ status: 409, description: 'Too many standing grants', code: 'BOTS_034' })
+  @ApiProblemResponse({ status: 422, description: 'Not decided that way', code: 'BOTS_035' })
+  @ApiProblemResponse({ status: 422, description: 'Answers that do not fit', code: 'BOTS_036' })
   async decide(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('name') name: string | undefined,
@@ -80,6 +82,7 @@ export class DecideBotApprovalHttpController {
         decision: body.decision,
         reach: body.reach,
         note: body.note ?? null,
+        answers: body.answers ?? [],
         deciderName: name ?? '',
         credentialScopes: credential ? credential.scopes : null,
       }),

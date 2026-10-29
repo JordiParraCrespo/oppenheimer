@@ -15,6 +15,7 @@ const sdk = vi.hoisted(() => ({
   findBotDocumentRevisions: vi.fn(),
   findBotConversation: vi.fn(),
   exportBotConversation: vi.fn(),
+  decideBotApproval: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: sdk }));
@@ -292,6 +293,60 @@ describe('BotsRepository', () => {
     );
     const conversation = await repository.findConversation('bot-1');
     expect(conversation.messages[0]?.event).toMatchObject({ kind: 'approval', sessionId: 's-1' });
+  });
+
+  it('reads an ask_user card as questions to answer, and sends the answers with the decision', async () => {
+    sdk.decideBotApproval.mockResolvedValue(
+      ok({
+        id: 'a-1',
+        turnId: 't1',
+        tool: 'ask_user',
+        input: {
+          questions: [
+            {
+              header: 'Repo',
+              question: 'Which repository?',
+              multiSelect: false,
+              options: [{ label: 'acme/web' }, { label: 'acme/api', description: 'The API' }],
+            },
+          ],
+        },
+        summary: 'Which repository?',
+        status: 'answered',
+        result: null,
+        note: null,
+        answers: [{ picks: [1], other: null }],
+        subjectKind: null,
+        subjectLabel: null,
+        sharesOutside: false,
+        reviewNote: null,
+        reaches: [],
+        reach: null,
+        decidedByUserId: 'u-1',
+        decidedAt: '2026-10-15T09:00:01.000Z',
+        createdAt: '2026-10-15T09:00:00.000Z',
+      }),
+    );
+    const card = await repository.decideApproval('bot-1', 'a-1', 'answer', undefined, 'once', [
+      { picks: [1], other: null },
+    ]);
+    expect(sdk.decideBotApproval).toHaveBeenCalledWith({
+      path: { id: 'bot-1', approvalId: 'a-1' },
+      body: { decision: 'answer', reach: 'once', answers: [{ picks: [1], other: null }] },
+    });
+    expect(card.isQuestion).toBe(true);
+    expect(card.questions).toEqual([
+      {
+        header: 'Repo',
+        question: 'Which repository?',
+        multiSelect: false,
+        options: [
+          { label: 'acme/web', description: null },
+          { label: 'acme/api', description: 'The API' },
+        ],
+      },
+    ]);
+    expect(card.answers).toEqual([{ picks: [1], other: null }]);
   });
 
   describe('exportConversation', () => {

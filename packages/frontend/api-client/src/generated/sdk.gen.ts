@@ -3025,7 +3025,7 @@ export const findWorkspaceBotApprovals = <ThrowOnError extends boolean = false>(
 /**
  * Answer a bot's Needs input card
  *
- * `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.
+ * `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. A card of questions (`ask_user`) takes `answer` with `answers`, one per question, or `deny` to dismiss it. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.
  */
 export const decideBotApproval = <ThrowOnError extends boolean = false>(options: Options<DecideBotApprovalData, ThrowOnError>): RequestResult<DecideBotApprovalResponses, DecideBotApprovalErrors, ThrowOnError> => (options.client ?? client).post<DecideBotApprovalResponses, DecideBotApprovalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

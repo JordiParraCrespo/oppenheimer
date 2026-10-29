@@ -47,6 +47,36 @@ describe('BotEventLine', () => {
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
   });
 
+  it('draws answered questions with each answer under the line, and a dismissal as dismissed', () => {
+    const asked = (
+      outcome: 'answered' | 'denied',
+      answers?: { question: string; answer: string }[],
+    ) =>
+      ({
+        id: `e-${outcome}`,
+        role: 'event',
+        content: 'Ana answered your questions.',
+        event: {
+          kind: 'approval',
+          outcome,
+          tool: 'ask_user',
+          summary: 'Which repository?',
+          sessionId: null,
+          ...(answers && { answers }),
+        },
+      }) as unknown as BotMessageEntity;
+    render(
+      <BotEventLine
+        message={asked('answered', [{ question: 'Which repository?', answer: 'acme/api' }])}
+      />,
+    );
+    expect(screen.getByText('bots.chat.event.answered|Which repository?')).toBeTruthy();
+    expect(screen.getByText('acme/api')).toBeTruthy();
+    cleanup();
+    render(<BotEventLine message={asked('denied')} />);
+    expect(screen.getByText('bots.chat.event.dismissed|Which repository?')).toBeTruthy();
+  });
+
   it('names the routine that woke the bot, not the words it was told', () => {
     const message = {
       id: 'e2',

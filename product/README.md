@@ -895,3 +895,8 @@ earlier note:
   gained a tier (in the prompt, or looked up with `recall`) and a scope
   (the bot's, or about the person and read by all their bots), on the same
   table (`versions/mvp/25-bots.md` §4.1). Project memory stays in §7.
+- Note 25 §4.7 listed `ask_user` as a question card with no design. On
+  2026-10-29, from Grok Bot's form cards (`research/lessons-from-grok-bot.md`
+  §9 row 12), it was built as a Needs input card of up to four questions,
+  stored as an approval that is answered rather than approved, so one card
+  waits per bot whatever it holds (`versions/mvp/25-bots.md` §3.2).
