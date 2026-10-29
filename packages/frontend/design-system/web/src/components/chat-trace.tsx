@@ -62,7 +62,8 @@ function TraceGlyph({ children }: { children: React.ReactNode }) {
 
 /**
  * A line's words and its mono meta ("1 failed", "14 results", the clock),
- * on one baseline: centred, the 12px mono rides above the 15px words.
+ * on one baseline and at one size: mono at 14px reads as tall as the 15px
+ * words.
  */
 function TraceWords({
   meta,
@@ -76,7 +77,7 @@ function TraceWords({
   return (
     <span className="flex min-w-0 items-baseline gap-2.5">
       <span className="min-w-0 truncate">{children}</span>
-      {meta ? <span className={cn('figures shrink-0 font-mono text-[12px]', metaClassName)}>{meta}</span> : null}
+      {meta ? <span className={cn('figures shrink-0 font-mono text-[14px]', metaClassName)}>{meta}</span> : null}
     </span>
   );
 }
