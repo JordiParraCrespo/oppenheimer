@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { insertBotActivity, insertPendingBotApproval } from '../../support/db';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -7,7 +8,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * none sees what connecting gives their bots. The stack has no Google account
  * behind it, so the connected case answers the list, the rename and the
  * disconnect here, in the shapes the API serves; what the API does with them
- * is its own specs' (`apps/api/src/mail`).
+ * is its own specs' (`apps/api/src/mail`). A bot's send card draws the message
+ * it would send from what the card stored, in the chat and in the Inbox, and a
+ * draft it saved shows as a card under the call.
  */
 
 test('a reader with no Gmail account is told what connecting gives their bots', async ({
@@ -86,5 +89,108 @@ test('a connected account is renamed and disconnected, and one Google dropped of
     .click();
   await expect(accounts).toHaveCount(1);
   await expect(accounts).toContainText('ana@gmail.test');
+  await owner.api.dispose();
+});
+
+/** A reply as a send card stores it: the message exactly as it will go. */
+const REPLY = {
+  kind: 'reply',
+  connectionId: '22222222-2222-4222-8222-222222222222',
+  accountEmail: 'ana@acme.test',
+  from: { email: 'ana@acme.test', name: 'Ana Díaz' },
+  to: ['Bo Ruiz <bo@client.test>'],
+  cc: ['Cy <cy@client.test>'],
+  bcc: [],
+  recipientsFromMail: true,
+  subject: 'Re: Invoice 42',
+  body: 'Hi Bo,\n\nPaid today; the receipt is attached.\n\nAna',
+  signature: true,
+  original: {
+    messageId: 'm1',
+    from: 'Bo Ruiz <bo@client.test>',
+    subject: 'Invoice 42',
+    date: 'Tue, 28 Oct 2026 09:00:00 +0000',
+  },
+  threadId: 't1',
+  attachments: [
+    {
+      source: 'mail',
+      messageId: 'm2',
+      partId: '2',
+      filename: 'receipt-42.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 52000,
+    },
+  ],
+  draftId: null,
+  draftMessageId: null,
+};
+
+test('a send card shows the message exactly as it will go, in the chat and in the Inbox', async ({
+  page,
+}) => {
+  const owner = await provisionedUser('mailsend');
+  await signInAs(page, owner.user);
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Ops', provider: 'glm' } })
+  ).json()) as { id: string };
+  await insertPendingBotApproval(
+    bot.id,
+    'send_mail',
+    'Reply from ana@acme.test to Bo Ruiz <bo@client.test>: "Re: Invoice 42", with 1 file(s)',
+    { account: 'Work', kind: 'reply', body: REPLY.body, plan: REPLY },
+  );
+
+  await page.goto(`/bots/${bot.id}`);
+
+  const message = page.getByRole('region', { name: 'The message, exactly as it goes' });
+  await expect(message).toBeVisible();
+  await expect(message.getByText('Ana Díaz <ana@acme.test>', { exact: true })).toBeVisible();
+  await expect(message.getByText('Bo Ruiz <bo@client.test>', { exact: true })).toBeVisible();
+  await expect(message.getByText('Cy <cy@client.test>', { exact: true })).toBeVisible();
+  await expect(message.getByText('Re: Invoice 42', { exact: true })).toBeVisible();
+  await expect(message.getByText('Paid today; the receipt is attached.')).toBeVisible();
+  await expect(message.getByText('receipt-42.pdf')).toBeVisible();
+  await expect(message.getByText('Taken from the message it answers')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Approve', exact: true })).toBeVisible();
+
+  // The Inbox draws the same message where it would otherwise show the call's input.
+  await page.goto('/');
+  const inInbox = page.getByRole('region', { name: 'The message, exactly as it goes' });
+  await expect(inInbox).toBeVisible();
+  await expect(inInbox.getByText('Re: Invoice 42', { exact: true })).toBeVisible();
+  await expect(inInbox.getByText('receipt-42.pdf')).toBeVisible();
+  await owner.api.dispose();
+});
+
+test('a draft the bot saved shows under its call, with Open in Gmail', async ({ page }) => {
+  const owner = await provisionedUser('maildraft');
+  await signInAs(page, owner.user);
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Ops', provider: 'glm' } })
+  ).json()) as { id: string };
+  const link = 'https://mail.google.com/mail/?authuser=ana%40acme.test#drafts?compose=r-123';
+  await insertBotActivity(bot.id, [
+    {
+      callId: 'call-1',
+      name: 'create_draft',
+      input: { account: 'Work', kind: 'reply', message_id: 'm1' },
+      output: 'Draft saved in ana@acme.test (draft id r-9); nothing was sent.',
+      isError: false,
+      sessionId: null,
+      subagents: null,
+      mailDraft: { saved: 'created', draftId: 'r-9', link, mail: REPLY },
+    },
+  ]);
+
+  await page.goto(`/bots/${bot.id}`);
+
+  const draft = page.getByRole('region', { name: 'The message, exactly as it goes' });
+  await expect(draft).toBeVisible();
+  await expect(draft.getByText('Re: Invoice 42', { exact: true })).toBeVisible();
+  await expect(
+    draft.getByText('Saved as a draft in ana@acme.test. Nothing was sent.'),
+  ).toBeVisible();
+  await expect(draft.getByRole('link', { name: 'Open in Gmail' })).toHaveAttribute('href', link);
   await owner.api.dispose();
 });

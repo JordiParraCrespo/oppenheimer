@@ -10,10 +10,12 @@ import {
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
   type BotAttachment,
+  type BotMailDraft,
   type BotMessageEvent,
   type BotMessageRole,
   type BotSubagentProgress,
   type BotSubagentRun,
+  botMailDraftSchema,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
@@ -52,6 +54,7 @@ export class BotMessageMapper
       sessionId: step.sessionId,
       subagents: step.subagents,
       allowedBy: step.allowedBy,
+      mailDraft: step.mailDraft,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -93,6 +96,7 @@ export class BotMessageMapper
       sessionId: step.sessionId,
       subagents: step.subagents,
       allowedBy: step.allowedBy,
+      mailDraft: step.mailDraft,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -130,7 +134,25 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
+    mailDraft: toMailDraft(raw.mailDraft),
   };
+}
+
+/**
+ * The draft a mail step holds, narrowed once: from the step's stored column,
+ * or from the JSON its call's data carried. Anything else reads as none.
+ */
+export function toMailDraft(raw: unknown): BotMailDraft | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  const parsed = botMailDraftSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**

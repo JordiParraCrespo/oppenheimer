@@ -23578,6 +23578,11 @@
             "nullable": true,
             "description": "Whether the host can start a Claude Code cloud session now: online, its runner takes `session.cloud`, and `claude` is installed. Null when online but not known on the replica that answered."
           },
+          "startsCodexCloudSessions": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the host can start a Codex cloud task now: online, its runner takes `session.cloud.codex`, and `codex` is installed. Null when online but not known on the replica that answered."
+          },
           "claudeAccount": {
             "type": "string",
             "nullable": true,
@@ -25584,7 +25589,7 @@
           },
           "cloudSessionId": {
             "type": "string",
-            "description": "A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.",
+            "description": "A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.",
             "nullable": true,
             "example": "session_014a8EH8DJs95X1iK8ZH9Y82"
           },
@@ -30902,6 +30907,12 @@
             "type": "string",
             "nullable": true,
             "description": "Why an asking call ran without a card: a standing grant (\"Always allowed for acme/docs\") or the owner’s rule that let it; null otherwise."
+          },
+          "mailDraft": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call."
           }
         },
         "required": [
@@ -30912,7 +30923,8 @@
           "isError",
           "sessionId",
           "subagents",
-          "allowedBy"
+          "allowedBy",
+          "mailDraft"
         ]
       },
       "BotAttachmentResponseDto": {

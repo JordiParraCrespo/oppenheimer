@@ -9,6 +9,7 @@ import type {
   BotTurnFailure,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
+import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -25,6 +26,8 @@ export interface BotToolStep {
   subagents: readonly BotSubagentRun[] | null;
   /** Why an asking call ran without a card: a standing grant, or the owner's rule; `null` otherwise. */
   allowedBy: string | null;
+  /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
+  mailDraft: BotMailDraft | null;
 }
 
 /**
@@ -229,6 +232,11 @@ export class BotApprovalEntity {
     public readonly createdAt: Date,
     /** What the card shows beyond its line, and how far a yes may reach. */
     public readonly details: BotApprovalDetails = NO_APPROVAL_DETAILS,
+    /**
+     * The message a send card sends on a yes, exactly (`product/next-steps/mail.md`
+     * §3.4); `null` for every other card.
+     */
+    public readonly mail: MailPlan | null = null,
   ) {}
 
   get isPending(): boolean {
@@ -260,6 +268,7 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
       approval.result,
       approval.createdAt,
       approval.details,
+      approval.mail,
     );
   }
 

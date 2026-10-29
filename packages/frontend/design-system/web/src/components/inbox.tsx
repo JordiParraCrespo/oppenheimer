@@ -70,7 +70,7 @@ function InboxItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/inbox flex w-full items-start gap-2.5 rounded-sm px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50 [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'group/inbox flex w-full items-start gap-2.5 rounded-nav px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50 [&_svg]:size-3.5 [&_svg]:shrink-0',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -150,7 +150,7 @@ function InboxSnoozedRow({
       role="listitem"
       data-slot="inbox-snoozed-row"
       className={cn(
-        'flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-fg-muted [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'flex items-center gap-2.5 rounded-nav px-2.5 py-2 text-fg-muted [&_svg]:size-3.5 [&_svg]:shrink-0',
         className,
       )}
       {...props}

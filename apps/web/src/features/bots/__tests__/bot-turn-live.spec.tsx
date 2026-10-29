@@ -31,6 +31,7 @@ const delegate: BotToolStep = {
   sessionId: null,
   subagents: null,
   allowedBy: null,
+  mailDraft: null,
 };
 
 const child = (

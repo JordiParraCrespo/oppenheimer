@@ -89,6 +89,25 @@
         "download": "Download",
         "position": "{{position}} of {{total}}",
         "pasted": "Pasted image"
+      },
+      "mail": {
+        "label": "The message, exactly as it goes",
+        "from": "From",
+        "to": "To",
+        "cc": "Cc",
+        "bcc": "Bcc",
+        "subject": "Subject",
+        "answers": "In reply to {{from}}",
+        "forwards": "Forwarding {{from}}'s message",
+        "fromMail": "Taken from the message it answers",
+        "files_one": "{{count}} file",
+        "files_other": "{{count}} files",
+        "signature": "The Gmail signature of {{email}} goes below it, then the quoted message.",
+        "draft": "The draft in {{email}}, sent as it stands now in Gmail.",
+        "nobody": "Nobody",
+        "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
+        "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
+        "openInGmail": "Open in Gmail"
       }
     },
     "search": {
@@ -342,6 +361,12 @@
       "MAIL_007": "Gmail didn't answer. Try again in a moment.",
       "MAIL_008": "Gmail asked us to slow down. Try again shortly.",
       "MAIL_009": "Gmail has no such message.",
+      "MAIL_010": "That message can't go to those recipients: each must be an email address, and ten at most.",
+      "MAIL_011": "That account has sent fifty bot messages today, the most a day allows. Try again later.",
+      "MAIL_012": "That message is larger than Gmail's 25 MB with its files.",
+      "MAIL_013": "That address isn't one this Gmail account sends from.",
+      "MAIL_014": "That draft changed after you approved sending it, so it wasn't sent.",
+      "MAIL_015": "That message may already have been sent. Check Gmail's Sent before asking again.",
       "CLOUD_AGENTS_002": "Cloud agents belong to a workspace. Open one first.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
@@ -383,7 +408,7 @@
       "SESSIONS_035": "This server doesn’t serve previews. Set PREVIEW_BASE_URL to turn them on.",
       "SESSIONS_036": "The agent is busy or waiting on a question, so it can’t take a prompt right now.",
       "SESSIONS_037": "This host’s runner can’t start a session in the cloud yet. Update it and try again.",
-      "SESSIONS_038": "This session runs in Claude Code’s cloud. Answer it on claude.ai.",
+      "SESSIONS_038": "This session runs in its agent’s cloud. Answer it there, on claude.ai or chatgpt.com/codex.",
       "SESSIONS_039": "That session runs at its vendor, with no host here. Open it at the vendor to do that.",
       "SESSIONS_040": "The task is too long to also carry a download link for each attached file. Shorten it or attach fewer files.",
       "SESSIONS_041": "That file link expired. Start the session again with the file attached.",
@@ -650,11 +675,20 @@
           "description": "Open an existing directory as it is · nothing is cloned"
         },
         "cloud": {
-          "label": "Claude Code cloud",
-          "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
+          "label": "Cloud",
+          "description": "Start the task in Claude Code’s or Codex’s cloud from this host · the engine says whose"
         },
         "claudeCloud": {
           "label": "Claude Code",
+          "place": "Claude Code cloud",
+          "from": "From {{host}}",
+          "noHost": "Needs a host",
+          "startFrom": "Start from",
+          "cannot": "This runner can’t start it"
+        },
+        "codexCloud": {
+          "label": "Codex",
+          "place": "Codex cloud",
           "from": "From {{host}}",
           "noHost": "Needs a host",
           "startFrom": "Start from",
@@ -1246,6 +1280,12 @@
         "failed": "The agent failed in {{vendor}}’s cloud",
         "cancelled": "Stopped in {{vendor}}",
         "expired": "The run expired in {{vendor}}’s cloud"
+      },
+      "codex": {
+        "eyebrow": "Codex cloud",
+        "statusSource": "This status comes from the host that started it, which asks Codex about its tasks once a minute while it’s online.",
+        "open": "Open in ChatGPT",
+        "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
       }
     }
   },

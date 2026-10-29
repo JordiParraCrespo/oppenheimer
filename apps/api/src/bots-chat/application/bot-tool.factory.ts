@@ -4,6 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
 import type {
   BotAttachment,
+  BotMailDraft,
   BotPermission,
   BotSubagentRun,
   BotToolGroup,
@@ -11,6 +12,7 @@ import type {
   Scope,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import {
   ALLOWED_BY_DATA_KEY,
   askedForApproval,
@@ -129,6 +131,8 @@ export interface BotToolAnswer {
   subagents?: readonly BotSubagentRun[];
   /** The images a `show_image` call stored, for the chat to show the person. */
   images?: readonly BotAttachment[];
+  /** The draft a mail call saved in Gmail, for the chat to draw as a card. */
+  mailDraft?: BotMailDraft;
 }
 
 /** What a call ended with: the words the model reads, and the session it started, if any. */
@@ -138,6 +142,7 @@ export interface BotToolResult {
   sessionId?: string;
   subagents?: readonly BotSubagentRun[];
   images?: readonly BotAttachment[];
+  mailDraft?: BotMailDraft;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -168,8 +173,10 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
    * first. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
+   * `'always'` asks under every preset, Approve everything included: what
+   * the owner must see each time (mail sent from their address).
    */
-  asks?: boolean;
+  asks?: boolean | 'always';
   /**
    * The tool only reads: it starts, changes and sends nothing, so a
    * `delegate` child may be offered it. Never set beside `asks`.
@@ -278,10 +285,13 @@ export function defineBotTool<Input extends z.ZodType>(
   if (spec.perCallOnly && !spec.asks) {
     throw new Error(`${spec.name} is per call only, so it must ask first.`);
   }
+  // A tool that always asks is decided call by call, Full access included.
+  const always = spec.asks === 'always';
   const traits: BotToolTraits = {
     name: spec.name,
-    asks: spec.asks === true,
-    perCallOnly: spec.perCallOnly === true,
+    asks: spec.asks === true || always,
+    perCallOnly: spec.perCallOnly === true || always,
+    ...(always && { always }),
   };
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
   const call = async (
@@ -298,6 +308,7 @@ export function defineBotTool<Input extends z.ZodType>(
         ...(answer.sessionId ? { sessionId: answer.sessionId } : {}),
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
         ...(answer.images?.length ? { images: answer.images } : {}),
+        ...(answer.mailDraft ? { mailDraft: answer.mailDraft } : {}),
       };
     } catch (error) {
       return { content: describeToolFailure(error), isError: true };
@@ -322,7 +333,7 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          const { sessionId, subagents, images, ...result } = await call(
+          const { sessionId, subagents, images, mailDraft, ...result } = await call(
             parsed.data,
             callId ? { ...context, callId } : context,
             signal,
@@ -331,6 +342,7 @@ export function defineBotTool<Input extends z.ZodType>(
             ...(sessionId ? { sessionId } : {}),
             ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
             ...(images ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
+            ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
           };
           return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
@@ -486,7 +498,7 @@ async function askOwner<Input extends z.ZodType>(
     summary,
     subject,
     sharesOutside: spec.sharesOutside === true,
-    perCallOnly: spec.perCallOnly === true,
+    perCallOnly: spec.perCallOnly === true || spec.asks === 'always',
     reviewNote,
   });
   return outcome.status === 'requested'

@@ -41,16 +41,29 @@ const CLOUDS = [
   },
 ];
 
+// Codex's cloud starts from none of them: no host has a runner that takes it.
+const CODEX_START_FROM = HOSTS.map((host) => ({
+  ...host,
+  disabled: true,
+  description: 'This runner can’t start it',
+}));
+
 function renderChip(
   clouds = CLOUDS,
-  picked: { place: 'worktree' | 'folder' | 'cloud'; cloud: 'cursor' | null } = {
+  picked: {
+    place: 'worktree' | 'folder' | 'cloud';
+    cloud: 'cursor' | null;
+    cloudAgent?: 'claude-code' | 'codex';
+  } = {
     place: 'worktree',
     cloud: null,
   },
   claudeCloud: (typeof HOSTS)[number] | null = HOSTS[0],
+  codexCloud: (typeof HOSTS)[number] | null = null,
 ) {
   const onHostChange = vi.fn();
   const onPlaceChange = vi.fn();
+  const onHostCloudChange = vi.fn();
   const onCloudChange = vi.fn();
   const onConnectCloud = vi.fn();
   render(
@@ -58,19 +71,29 @@ function renderChip(
       hosts={HOSTS}
       hostId="host-1"
       place={picked.place}
-      claudeCloud={claudeCloud}
-      startFrom={START_FROM}
+      cloudAgent={picked.place === 'cloud' ? (picked.cloudAgent ?? 'claude-code') : null}
+      hostClouds={[
+        { agent: 'claude-code', host: claudeCloud, startFrom: START_FROM },
+        {
+          agent: 'codex',
+          host: codexCloud,
+          startFrom: codexCloud
+            ? START_FROM.map((from) => ({ ...from, description: 'mac' }))
+            : CODEX_START_FROM,
+        },
+      ]}
       clouds={clouds}
       cloud={picked.cloud}
       onHostChange={onHostChange}
       onPlaceChange={onPlaceChange}
+      onHostCloudChange={onHostCloudChange}
       onCloudChange={onCloudChange}
       onConnectCloud={onConnectCloud}
       onAddHost={vi.fn()}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'sessions.new.host.label' }));
-  return { onHostChange, onPlaceChange, onCloudChange, onConnectCloud };
+  return { onHostChange, onPlaceChange, onHostCloudChange, onCloudChange, onConnectCloud };
 }
 
 describe('PlaceSelect', () => {
@@ -129,11 +152,11 @@ describe('PlaceSelect', () => {
   });
 
   /**
-   * Claude Code cloud is a host's place, Cursor a vendor with no host: both
-   * are the place `cloud`, so going from Cursor to a host's Claude Code cloud
-   * changes no place, and still has to say the host takes the session back.
+   * A host's cloud is a place on it, Cursor a vendor with no host: both are
+   * the place `cloud`, so going from Cursor to a host's cloud changes no
+   * place, and still has to say the host takes the session back.
    */
-  it('takes a host’s Claude Code cloud from Cursor, though the place stays the cloud', () => {
+  it('takes a host’s cloud from Cursor, though the place stays the cloud', () => {
     const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
 
     openTab('hosts');
@@ -145,29 +168,31 @@ describe('PlaceSelect', () => {
 
   /**
    * Claude Code under Cloud opens a Start from pane of every host: the one
-   * picked there comes with the place, and one that cannot start it (offline,
-   * or a runner that cannot) is disabled rather than sent a session it would
-   * refuse. With no host that can, the row itself is greyed out.
+   * picked there comes with the place and the agent, and one that cannot
+   * start it (offline, or a runner that cannot) is disabled rather than sent a
+   * session it would refuse. With no host that can, the row itself is greyed
+   * out.
    */
   it('starts Claude Code’s cloud from the host picked in its pane, and from none that cannot', () => {
     const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0]);
     openTab('clouds');
     fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
-    expect(picked.onPlaceChange).not.toHaveBeenCalled();
+    expect(picked.onHostCloudChange).not.toHaveBeenCalled();
 
     for (const cannot of ['optimus', 'old-box']) {
       const row = screen.getByRole('option', { name: cannot });
       expect(row).toHaveProperty('disabled', true);
       fireEvent.click(row);
     }
-    expect(picked.onHostChange).not.toHaveBeenCalled();
+    expect(picked.onHostCloudChange).not.toHaveBeenCalled();
 
     // The host names the account the session would run on.
     expect(screen.getByRole('option', { name: 'mac-studio' }).textContent).toContain(
       'ana@example.com',
     );
     fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
-    expect(picked.onPlaceChange).toHaveBeenCalledWith('cloud');
+    expect(picked.onHostCloudChange).toHaveBeenCalledWith('host-1', 'claude-code');
+    expect(picked.onPlaceChange).not.toHaveBeenCalled();
     cleanup();
 
     const none = renderChip(CLOUDS, { place: 'worktree', cloud: null }, null);
@@ -175,17 +200,51 @@ describe('PlaceSelect', () => {
     const row = screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' });
     expect(row).toHaveProperty('disabled', true);
     fireEvent.click(row);
-    expect(none.onHostChange).not.toHaveBeenCalled();
-    expect(none.onPlaceChange).not.toHaveBeenCalled();
+    expect(none.onHostCloudChange).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Codex's cloud is its own row beside Claude Code's: its pick names Codex,
+   * so the session starts with `codex cloud exec` and not `claude --cloud`.
+   * With no host whose runner takes it, it is greyed out on its own while
+   * Claude Code's stays open.
+   */
+  it('starts Codex’s cloud from its own row, and greys it out alone when no host can', () => {
+    const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], HOSTS[2]);
+    openTab('clouds');
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }));
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+    expect(picked.onHostCloudChange).toHaveBeenCalledWith('host-1', 'codex');
+    cleanup();
+
+    renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], null);
+    openTab('clouds');
+    expect(
+      screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }),
+    ).toHaveProperty('disabled', true);
+    expect(
+      screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }),
+    ).toHaveProperty('disabled', false);
+  });
+
+  /** The chip names whose cloud the place is, so a Codex task never reads as Claude Code's. */
+  it('names the place for the agent whose cloud it is', () => {
+    renderChip(CLOUDS, { place: 'cloud', cloud: null, cloudAgent: 'codex' });
+    expect(screen.getByRole('button', { name: 'sessions.new.host.label' }).textContent).toContain(
+      'sessions.new.where.codexCloud.place',
+    );
+    expect(
+      screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }),
+    ).toHaveProperty('ariaSelected', 'true');
   });
 
   it('takes Claude Code’s cloud back from Cursor, though the place stays the cloud', () => {
-    const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
+    const { onHostCloudChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
 
     fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
     fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
 
-    expect(onPlaceChange).toHaveBeenCalledWith('cloud');
+    expect(onHostCloudChange).toHaveBeenCalledWith('host-1', 'claude-code');
   });
 
   /**
@@ -198,6 +257,8 @@ describe('PlaceSelect', () => {
     const search = screen.getByRole('textbox', { name: 'sessions.new.where.searchClouds' });
     expect(screen.queryByRole('option', { name: 'mac-studio' })).toBeNull();
 
+    // Past Claude Code's cloud and Codex's, to Cursor.
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
 
@@ -206,7 +267,7 @@ describe('PlaceSelect', () => {
 
   /**
    * Only the hosts wait on their read: the Cloud tab lists the vendors while
-   * the hosts load, and holds back only Claude Code, which needs a host.
+   * the hosts load, and holds back only the hosts' clouds, which need a host.
    */
   it('lists the vendors on Cloud while the hosts load', () => {
     render(
@@ -214,12 +275,16 @@ describe('PlaceSelect', () => {
         hosts={[]}
         hostId={null}
         place="worktree"
-        claudeCloud={null}
-        startFrom={[]}
+        cloudAgent={null}
+        hostClouds={[
+          { agent: 'claude-code', host: null, startFrom: [] },
+          { agent: 'codex', host: null, startFrom: [] },
+        ]}
         clouds={CLOUDS}
         cloud={null}
         onHostChange={vi.fn()}
         onPlaceChange={vi.fn()}
+        onHostCloudChange={vi.fn()}
         onCloudChange={vi.fn()}
         onConnectCloud={vi.fn()}
         onAddHost={vi.fn()}
@@ -245,8 +310,9 @@ describe('PlaceSelect', () => {
     expect(screen.getByRole('tab', { name: /sessions.new.where.hosts/ }).textContent).toContain(
       '3',
     );
+    // Claude Code's cloud, Codex's and Cursor.
     expect(screen.getByRole('tab', { name: /sessions.new.where.clouds/ }).textContent).toContain(
-      '2',
+      '3',
     );
   });
 });

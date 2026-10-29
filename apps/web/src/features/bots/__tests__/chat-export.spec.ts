@@ -79,6 +79,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             sessionId: null,
             subagents: null,
             allowedBy: null,
+            mailDraft: null,
           },
           {
             callId: 'b',
@@ -89,6 +90,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             sessionId: null,
             subagents: null,
             allowedBy: null,
+            mailDraft: null,
           },
           {
             callId: 'c',
@@ -99,6 +101,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             sessionId: null,
             subagents: null,
             allowedBy: null,
+            mailDraft: null,
           },
         ],
       }),
@@ -139,6 +142,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             sessionId: null,
             subagents: [run('Check #12', 'completed'), run('Check #13', 'timed_out')],
             allowedBy: null,
+            mailDraft: null,
           },
         ],
       }),

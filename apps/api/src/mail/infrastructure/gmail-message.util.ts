@@ -5,6 +5,7 @@ import type {
   GmailLabel,
   GmailMessage,
   GmailMessageSummary,
+  GmailSendAs,
 } from './gmail-provider.port';
 
 /**
@@ -61,6 +62,8 @@ export function messageOf(input: unknown): GmailMessage {
     ...messageSummaryOf(message),
     replyTo: headers.get('reply-to') ?? '',
     messageIdHeader: headers.get('message-id') ?? '',
+    referencesHeader: headers.get('references') ?? '',
+    dateHeader: headers.get('date') ?? '',
     body: bodyOf(payload),
   };
 }
@@ -75,6 +78,22 @@ export function labelOf(input: unknown): GmailLabel {
     messagesUnread: count(label.messagesUnread),
     threadsUnread: count(label.threadsUnread),
   };
+}
+
+export function sendAsOf(input: unknown): GmailSendAs {
+  const alias = record(input);
+  return {
+    email: text(alias.sendAsEmail),
+    displayName: text(alias.displayName) || null,
+    signatureHtml: text(alias.signature),
+    isDefault: alias.isDefault === true,
+  };
+}
+
+/** What Gmail answers a send or a draft write with: the message, its thread, and the draft. */
+export function sentRefOf(input: unknown): { messageId: string; threadId: string } {
+  const message = record(input);
+  return { messageId: text(message.id), threadId: text(message.threadId) };
 }
 
 export function draftOf(input: unknown): GmailDraft {

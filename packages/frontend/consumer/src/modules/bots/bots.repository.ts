@@ -35,6 +35,12 @@ import {
   type BotSection,
   type BotToolDecision,
 } from '@oppenheimer/shared/schemas/bot';
+import {
+  type BotMailDraft,
+  botMailDraftSchema,
+  type MailPlan,
+  mailPlanSchema,
+} from '@oppenheimer/shared/schemas/mail';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -165,7 +171,10 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
 }
 
 function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
-  const steps: BotToolStep[] = dto.steps.map((step) => ({ ...step }));
+  const steps: BotToolStep[] = dto.steps.map((step) => ({
+    ...step,
+    mailDraft: draftOf(step.mailDraft),
+  }));
   return new BotMessageEntity(
     dto.id,
     dto.turnId,
@@ -303,6 +312,7 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
       reaches: dto.reaches,
       reach: dto.reach,
     },
+    mailOf(dto.tool, dto.input),
   );
 }
 
@@ -313,6 +323,22 @@ function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
     dto.grants.map((grant) => ({ ...grant, createdAt: new Date(grant.createdAt) })),
     dto.rules.map((rule) => ({ ...rule, createdAt: new Date(rule.createdAt) })),
   );
+}
+
+/** A mail call's saved draft; one that does not read as one draws no card. */
+function draftOf(raw: unknown): BotMailDraft | null {
+  const parsed = botMailDraftSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}
+
+/** The tools whose card stores the message it sends, as `input.plan`. */
+const SENDING_TOOLS = new Set(['send_mail', 'send_draft']);
+
+/** A send card's message; a plan that does not read as one draws the card's words alone. */
+function mailOf(tool: string, input: Record<string, unknown>): MailPlan | null {
+  if (!SENDING_TOOLS.has(tool)) return null;
+  const parsed = mailPlanSchema.safeParse(input.plan);
+  return parsed.success ? parsed.data : null;
 }
 
 function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBotApprovalEntity {

@@ -3,6 +3,7 @@ import { BotAttachmentMapper } from '../../bot-attachment.mapper';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import { BotAttachmentEntity } from '../../domain/bot-attachment.entity';
+import { attachedImagesNote } from '../../domain/bot-image.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
@@ -75,13 +76,13 @@ function setup(message: BotMessageEntity, stored: BotAttachmentEntity[], unreada
 }
 
 describe('BotTurnOpeningResolver', () => {
-  it('sends the images your message carries in the order you attached them, as base64', async () => {
+  it('sends the images your message carries in the order you attached them, as base64, and names their ids', async () => {
     const [first, second] = [image('first.jpg', 'image/jpeg'), image('second.png', 'image/png')];
     const message = opening('What is this?', [first, second]);
     const { resolver, attachments } = setup(message, [second, first]);
 
     await expect(resolver.resolve(turn)).resolves.toEqual({
-      prompt: 'What is this?',
+      prompt: `What is this?\n\n${attachedImagesNote([first, second])}`,
       images: [
         { mimeType: 'image/jpeg', data: Buffer.from(first.storageKey).toString('base64') },
         { mimeType: 'image/png', data: Buffer.from(second.storageKey).toString('base64') },

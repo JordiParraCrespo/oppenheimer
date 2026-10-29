@@ -87,6 +87,15 @@ export class BotToolStepResponseDto {
       'Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.',
   })
   allowedBy!: string | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description:
+      'The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.',
+  })
+  mailDraft!: Record<string, unknown> | null;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */

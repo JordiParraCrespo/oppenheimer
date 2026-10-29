@@ -32,6 +32,46 @@ whether it lands, and in which version. In short, the remote features for
 host sessions come first, then a Cloud place: Cursor first, then Claude,
 then Codex.
 
+## Codex is built (2026-10-29)
+
+The owner asked for Codex cloud tasks "more or less as Claude Code": started
+from a host, finished on OpenAI's machines, not ours, with their status
+followed here and a way to bring the work back. It is the host-started kind
+of the `cloud` place with the agent `codex`
+(`../versions/mvp/24-session-places.md` §7):
+
+- **The dispatching host's runner starts it** with
+  `codex cloud exec --env <repository> --branch <base> <task>` and the
+  host's own ChatGPT sign-in. Codex reads the branch from GitHub, so
+  nothing is fetched or checked out. The environment is named by its label:
+  the repository's full name, then its bare name; one named neither is the
+  CLI's refusal, in its words (`SESS_009`).
+- **Status comes from the host, not the browser.** Unlike `claude`, the
+  Codex CLI answers it: the runner reads `codex cloud list --json` once a
+  minute while a task it started in the last week has not settled, and
+  reports pending as working, ready or applied as done, and an error as the
+  session failed. OpenAI publishes no limit for these reads; the runner
+  asks only while something is unsettled, at most five pages a time, and
+  backs off on failure (`link_cloud_codex.go`). The host must be online for
+  the state to move.
+- **Files ride the task as links**, as for Claude Code's cloud ("Files for
+  a cloud session"): the API keeps them and the task ends with a download
+  line per file. A Codex environment whose internet access is off cannot
+  fetch them: give the environment access to the API's host for files to
+  reach the task.
+- **Bring it here** is `codex apply <id>` on the session's pane, which
+  applies the task's diff to a checkout. A button that opens a worktree
+  session with it applied is not built, as for Claude's teleport.
+- **No pull request of ours.** A Codex task's result is a diff; the pull
+  request is ChatGPT's Create PR. Opening it ourselves (apply, push and
+  open with the workspace's GitHub App, as OpenClaw's Gateway publishes a
+  cloud worker's changes) is the next step if the owner wants one.
+- **How OpenClaw does it, for the record.** Its "Codex cloud sessions" are
+  not OpenAI's: they run `codex exec-server` on a machine it leases through
+  Crabbox, while the Gateway keeps the app-server, the ChatGPT login and
+  the transcript. That is our VM slice, not this one, and keeping a ChatGPT
+  login in our control plane is what F23 rules out.
+
 ## What landed (2026-10-26)
 
 The owner asked for Cursor's cloud first, end to end and thin, ahead of a
@@ -249,7 +289,8 @@ automation's runs now pick **where** as New session does:
    carries a dated line saying so (`../04-security-review.md`).
 2. Which version takes it, and does the first step (remote features for
    host sessions) go into 0.7 with the chat? Cursor and Claude landed
-   ahead of any version; Codex and Grok still wait on this.
+   ahead of any version; Codex and Grok still wait on this. Codex landed
+   ahead of a version too (2026-10-29); Grok still waits.
 3. ~~Do cloud sessions started elsewhere show up in our list?~~ Answered
    2026-10-26: only the ones we launched.
 4. ~~Does Cloud as a third place hold?~~ Answered 2026-10-26 for now: a
