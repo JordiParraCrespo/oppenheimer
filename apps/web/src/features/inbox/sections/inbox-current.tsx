@@ -48,11 +48,20 @@ export function InboxCurrent() {
   const { open } = listedItems(inbox, visit, search.filter, search.showDone, found);
   const item = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
   const copy = item ? inboxCopy(item, t) : null;
-  useMarkRead(item?.key ?? null);
+  useMarkRead(item?.key ?? null, search.item !== null);
   useInboxKeys(
     item ? { onDone: () => marks.done(item), onLow: () => marks.toggleLow(item) } : null,
   );
 
+  const back = (
+    <IconButton
+      className="md:hidden"
+      aria-label={t('inbox.pane.back')}
+      render={<Link to="/plan/inbox" search={(previous) => ({ ...previous, item: undefined })} />}
+    >
+      <ChevronLeft />
+    </IconButton>
+  );
   const projectName = (id: string) => inbox.projects.find((project) => project.id === id)?.name;
   const errors = (
     <>
@@ -73,6 +82,13 @@ export function InboxCurrent() {
   if (!item || !copy) {
     return (
       <>
+        {/* On a phone the list stays hidden while the address names an item,
+            so the way back to it outlives the last item leaving. */}
+        {search.item !== null ? (
+          <InboxToolbar aria-label={t('inbox.pane.toolbar')} className="md:hidden">
+            {back}
+          </InboxToolbar>
+        ) : null}
         {errors}
         <InboxClear title={t('inbox.pane.clearTitle')}>
           {running ? t('inbox.pane.clearRunning', { count: running }) : t('inbox.pane.clear')}
@@ -116,15 +132,7 @@ export function InboxCurrent() {
         aria-label={t('inbox.pane.toolbar')}
         position={t('inbox.pane.position', { n: open.indexOf(item) + 1, total: open.length })}
       >
-        <IconButton
-          className="md:hidden"
-          aria-label={t('inbox.pane.back')}
-          render={
-            <Link to="/plan/inbox" search={(previous) => ({ ...previous, item: undefined })} />
-          }
-        >
-          <ChevronLeft />
-        </IconButton>
+        {back}
         <IconButton aria-label={t('inbox.menu.done')} onClick={() => marks.done(item)}>
           <Check />
         </IconButton>

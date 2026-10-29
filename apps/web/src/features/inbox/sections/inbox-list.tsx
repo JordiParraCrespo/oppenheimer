@@ -5,6 +5,7 @@ import {
   InboxSnoozedRow,
   SidebarEmptyRow,
   SidebarListHead,
+  useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
 import { useSuspenseInbox } from '@oppenheimer/frontend-consumer/react';
@@ -45,11 +46,16 @@ export function InboxList() {
   const read = useInboxRead();
   const search = useInboxSearch();
   const marks = useInboxMarks();
+  // On a phone nothing is in the reading pane until an item is opened.
+  const phone = useIsMobile();
 
   const found = (item: (typeof inbox.open)[number]) =>
     matchesQuery(inboxCopy(item, t), search.query);
   const { open, done } = listedItems(inbox, visit, search.filter, search.showDone, found);
-  const current = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
+  const current =
+    phone && search.item === null
+      ? null
+      : currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
   const unread = inbox.open.filter((item) => !read.has(item.key) && item.key !== current?.key);
   const projectName = (id: string) => inbox.projects.find((project) => project.id === id)?.name;
   const counts = facetCounts(inbox.open, search.filter);
