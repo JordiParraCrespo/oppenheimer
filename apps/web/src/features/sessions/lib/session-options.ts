@@ -177,6 +177,32 @@ export function hostCloudKey(agent: HostCloudAgentId): (typeof HOST_CLOUD_KEYS)[
 }
 
 /**
+ * The words a host cloud's session pane says, per agent: whose cloud it is,
+ * where its status comes from, where it opens, and how its work comes back
+ * to a terminal. The link and the command themselves are the session's
+ * (`cloudUrl`, `teleportCommand`).
+ */
+const CLOUD_PANE_KEYS = {
+  'claude-code': {
+    eyebrow: 'sessions.cloud.eyebrow',
+    statusSource: 'sessions.cloud.statusSource',
+    open: 'sessions.cloud.open',
+    teleport: 'sessions.cloud.teleport',
+  },
+  codex: {
+    eyebrow: 'sessions.cloud.codex.eyebrow',
+    statusSource: 'sessions.cloud.codex.statusSource',
+    open: 'sessions.cloud.codex.open',
+    teleport: 'sessions.cloud.codex.teleport',
+  },
+} as const satisfies Record<HostCloudAgentId, Record<string, string>>;
+
+/** A host cloud session's pane copy; a session of any other agent reads as Claude Code's, the first. */
+export function cloudPaneKeys(agent: string) {
+  return CLOUD_PANE_KEYS[isHostCloudAgent(agent) ? agent : DEFAULT_HOST_CLOUD_AGENT];
+}
+
+/**
  * The words for a place on the place chip: a host's cloud is named for the
  * agent it runs ("Codex cloud"), every other place for itself.
  */

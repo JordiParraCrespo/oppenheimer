@@ -46,7 +46,7 @@ func (h *linkHandler) createCodexCloud(
 	ctx context.Context,
 	m link.SessionCreate,
 	ledger cloudLedger,
-	stage func(sessionsdomain.Stage, bool, func() error) error,
+	stage stageFunc,
 	fail func(error),
 ) {
 	checkout := m.Checkouts[0]
@@ -94,13 +94,13 @@ func (h *linkHandler) watchCodexCloud(ctx context.Context) {
 // last reported. With nothing to watch, Codex is not asked.
 func (h *linkHandler) pollCodexCloud(ctx context.Context) error {
 	ledger := newCloudLedger(h.app.Paths.State())
-	watched := ledger.codexUnsettled(time.Now().Add(-codexCloudWatchFor))
+	watched := ledger.unsettled(codexCloudAgent, cloud.CodexSettled, time.Now().Add(-codexCloudWatchFor))
 	if len(watched) == 0 {
 		return nil
 	}
-	want := make(map[string]codexWatch, len(watched))
+	want := make(map[string]cloudWatch, len(watched))
 	for _, w := range watched {
-		want[w.TaskID] = w
+		want[w.ID] = w
 	}
 	cursor := ""
 	for range codexCloudPages {

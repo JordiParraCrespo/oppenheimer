@@ -33,19 +33,20 @@ type cloudStart struct {
 	Title string    `json:"title,omitempty"`
 	At    time.Time `json:"at"`
 	// Agent is the catalog id that started it; empty is Claude Code, from
-	// before Codex could be started.
+	// before another agent could be started.
 	Agent string `json:"agent,omitempty"`
-	// Status is a Codex task's status as last reported to the control plane
-	// (cloud.CodexPending and the rest); empty until the first report. Claude
-	// Code's cloud gives the host none.
+	// Status is the vendor's own word for where it stands, as last reported
+	// to the control plane, for an agent whose CLI the host follows it with;
+	// empty until the first report, and always for one it does not follow
+	// (Claude Code's, which the browser extension follows).
 	Status string `json:"status,omitempty"`
 }
 
-// codexWatch is a Codex task whose status is still owed to the control
-// plane, by the Oppenheimer session it was started for.
-type codexWatch struct {
+// cloudWatch is a start whose status is still owed to the control plane, by
+// the Oppenheimer session it was made for.
+type cloudWatch struct {
 	SessionID string
-	TaskID    string
+	ID        string
 	Status    string
 }
 
@@ -91,18 +92,19 @@ func (l cloudLedger) record(sessionID, agent string, started cloud.Started, at t
 	return l.write(entries)
 }
 
-// codexUnsettled is the Codex tasks started since `since` whose last
-// reported status could still change: the ones the status poll asks about.
-func (l cloudLedger) codexUnsettled(since time.Time) []codexWatch {
+// unsettled is agent's starts since `since` whose last reported status
+// could still change, by its own vendor's `settled`: the ones a status poll
+// asks about.
+func (l cloudLedger) unsettled(agent string, settled func(string) bool, since time.Time) []cloudWatch {
 	cloudLedgerMu.Lock()
 	defer cloudLedgerMu.Unlock()
 	entries, _ := l.read()
-	var out []codexWatch
+	var out []cloudWatch
 	for sessionID, entry := range entries {
-		if entry.Agent != codexCloudAgent || cloud.CodexSettled(entry.Status) || entry.At.Before(since) {
+		if entry.Agent != agent || settled(entry.Status) || entry.At.Before(since) {
 			continue
 		}
-		out = append(out, codexWatch{SessionID: sessionID, TaskID: entry.ID, Status: entry.Status})
+		out = append(out, cloudWatch{SessionID: sessionID, ID: entry.ID, Status: entry.Status})
 	}
 	sort.Slice(out, func(a, b int) bool { return out[a].SessionID < out[b].SessionID })
 	return out

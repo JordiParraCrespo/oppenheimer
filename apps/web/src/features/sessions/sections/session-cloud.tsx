@@ -5,6 +5,7 @@ import { PageFrame } from '@oppenheimer/frontend-web';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
+import { cloudPaneKeys } from '../lib/session-options';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
 
 const DeleteSessionDialog = lazy(() =>
@@ -27,14 +28,12 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
   const [deleting, setDeleting] = useState(false);
-  const codex = session.agent === 'codex';
+  const copy = cloudPaneKeys(session.agent);
 
   return (
     <PageFrame size="status">
       <div>
-        <p className="figures text-micro text-fg-muted uppercase">
-          {t(codex ? 'sessions.cloud.codex.eyebrow' : 'sessions.cloud.eyebrow')}
-        </p>
+        <p className="figures text-micro text-fg-muted uppercase">{t(copy.eyebrow)}</p>
         <h1 className="mt-2 font-display text-h2 font-semibold text-fg">{session.name}</h1>
         <p className="mt-1.5 text-operate text-fg-muted">{session.scopeLabel}</p>
         {session.cloudUrl ? <CloudLink url={session.cloudUrl} /> : null}
@@ -42,14 +41,12 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
         <StatusDot state={dot} className="mt-6.5">
           {t(`sessions.session.state.${stateWordFor(session)}`)}
         </StatusDot>
-        <p className="mt-1.5 text-sm text-fg-subtle">
-          {t(codex ? 'sessions.cloud.codex.statusSource' : 'sessions.cloud.statusSource')}
-        </p>
+        <p className="mt-1.5 text-sm text-fg-subtle">{t(copy.statusSource)}</p>
 
         <div className="mt-6.5 flex items-center gap-2">
           {session.cloudUrl ? (
             <Button render={<a href={session.cloudUrl} target="_blank" rel="noreferrer" />}>
-              {t(codex ? 'sessions.cloud.codex.open' : 'sessions.cloud.open')}
+              {t(copy.open)}
               <ExternalLink />
             </Button>
           ) : null}
@@ -61,7 +58,7 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
         {session.teleportCommand ? (
           <CommandRow
             className="mt-6.5 max-w-140"
-            lead={t(codex ? 'sessions.cloud.codex.teleport' : 'sessions.cloud.teleport')}
+            lead={t(copy.teleport)}
             command={session.teleportCommand}
             copyLabel={t('sessions.cloud.copy')}
             copiedLabel={t('sessions.cloud.copied')}

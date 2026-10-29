@@ -40,13 +40,26 @@ type CodexCloud interface {
 	List(ctx context.Context, cursor string) (cloud.CodexPage, error)
 }
 
-// createCloud starts the session in its agent's cloud. For Codex it is
-// createCodexCloud. For Claude Code it fetches the repository with the
-// frame's own token, checks its base out in a scratch directory, runs
-// `claude --cloud` there and reports
-// the cloud session's id as `session.started`'s `agentSessionId`, then removes
-// the scratch directory. Its progress is the console's usual stepper: host,
-// clone, worktree (the scratch checkout), agent (the CLI).
+// stageFunc runs one step of a start between its stepper events: began, and
+// done with how long it took. download says the step fetches a repository
+// this host has not had before.
+type stageFunc func(stage sessionsdomain.Stage, download bool, run func() error) error
+
+// cloudStartFunc is one agent's own start of a cloud session, given what
+// createCloud shares: the ledger it records in, the stepper and the failure.
+type cloudStartFunc func(h *linkHandler, ctx context.Context, m link.SessionCreate, ledger cloudLedger, stage stageFunc, fail func(error))
+
+// cloudStarters is the agents a host starts in their vendor's cloud, each
+// with its own start. A new one is a start and its line here.
+var cloudStarters = map[string]cloudStartFunc{
+	claudeCloudAgent: (*linkHandler).createClaudeCloud,
+	codexCloudAgent:  (*linkHandler).createCodexCloud,
+}
+
+// createCloud starts the session in its agent's cloud: what every agent
+// shares is here (the create sent again, the ledger, the steps, the failure),
+// and what differs is the agent's own start in cloudStarters, which reports
+// the cloud session's id as `session.started`'s `agentSessionId`.
 //
 // A create sent again while one runs does nothing; one sent again after it
 // made the session — even across a restart that lost the report — reports the
@@ -71,7 +84,7 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
 		nil, time.Now,
 	)
-	stage := func(s sessionsdomain.Stage, download bool, run func() error) error {
+	stage := stageFunc(func(s sessionsdomain.Stage, download bool, run func() error) error {
 		began := time.Now()
 		steps.stage(sessionsdomain.StageEvent{Stage: s, Download: download})
 		if err := run(); err != nil {
@@ -79,16 +92,28 @@ func (h *linkHandler) createCloud(ctx context.Context, m link.SessionCreate) {
 		}
 		steps.stage(sessionsdomain.StageEvent{Stage: s, Done: true, Took: time.Since(began)})
 		return nil
-	}
-	if len(m.Checkouts) != 1 || m.Prompt == "" || (m.Agent != claudeCloudAgent && m.Agent != codexCloudAgent) {
+	})
+	start, known := cloudStarters[m.Agent]
+	if len(m.Checkouts) != 1 || m.Prompt == "" || !known {
 		fail(sessionsdomain.ErrInvalidInput.WithDetail(
 			"a cloud session is Claude Code or Codex with one checkout and a task"))
 		return
 	}
-	if m.Agent == codexCloudAgent {
-		h.createCodexCloud(ctx, m, ledger, stage, fail)
-		return
-	}
+	start(h, ctx, m, ledger, stage, fail)
+}
+
+// createClaudeCloud fetches the repository with the frame's own token, checks
+// its base out in a scratch directory, runs `claude --cloud` there, reports
+// the cloud session it made and removes the scratch directory. Its progress
+// is the console's usual stepper: clone, worktree (the scratch checkout),
+// agent (the CLI).
+func (h *linkHandler) createClaudeCloud(
+	ctx context.Context,
+	m link.SessionCreate,
+	ledger cloudLedger,
+	stage stageFunc,
+	fail func(error),
+) {
 	if h.app.Worktrees == nil {
 		fail(sessionsdomain.ErrInvalidInput.WithDetail("this host has no git to start a cloud session with"))
 		return
