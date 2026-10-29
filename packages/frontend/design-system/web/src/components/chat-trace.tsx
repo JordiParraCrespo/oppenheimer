@@ -278,8 +278,12 @@ function TraceLive({
       className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
     >
       <LoaderIcon aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
-      <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
-      {elapsed ? <span className="figures shrink-0 font-mono text-[12px] text-fg-subtle">{elapsed}</span> : null}
+      <span className="flex min-w-0 items-baseline gap-2">
+        <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
+        {elapsed ? (
+          <span className="figures shrink-0 font-mono text-[12px] text-fg-subtle">{elapsed}</span>
+        ) : null}
+      </span>
     </div>
   );
 }
