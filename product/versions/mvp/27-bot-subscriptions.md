@@ -63,6 +63,29 @@ a session stopped after its task completed already woke the bot on
 works and blocks again wakes the bot once for input; Claude Code's
 permission prompts would otherwise wake it on every tool call.
 
+**What a terminal prints** (2026-10-29, from Grok Bot's shell watches,
+`research/lessons-from-grok-bot.md` §9 row 8). `watch_session` takes a
+`pattern`, a regular expression of at most 200 characters with no
+lookaround or backreference. The runner matches it line by line on the
+session's pane, on the host. A match wakes the bot with the pattern and
+how many lines have matched so far, never the lines: pane text still never
+reaches Postgres, so the bot reads the session to see what happened. The
+runner sends `terminal.matched` with `{ watchId, count }` (the first match
+at once, then at most one every few seconds). The wake's key is
+`subscription:<id>:match:<count>`, so a count that comes back twice wakes
+the bot once. Each match counts against the subscription's 20 wakes. A
+session holds at most 10 watched patterns (`SESSIONS_043`), and an invalid
+pattern is `SESSIONS_042`. The sessions module owns what the runner is told
+(`session_terminal_watch`), and it sends that again on every hello, since a
+runner keeps watches in memory. The subscription owns who is woken. When
+the task ends and its pattern never matched, the wake says so: "it never
+printed a line matching …".
+
+**Waiting inside a turn.** `wait_for_session` blocks, for at most 120
+seconds, until the session's task stops for something a watch wakes for,
+or the session is closed. It does this at most 3 times a turn, because a
+turn stops after 4 minutes. A longer wait is a watch.
+
 ## 3. Subscribing
 
 | How | Watches | Ends |

@@ -4,13 +4,13 @@ import {
   BOT_MESSAGE_ROLES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotEventOutcome,
   type BotMessageRole,
   type BotReplyOutcome,
   type BotRoutineActivity,
-  type BotSessionWakeState,
+  type BotSessionEventState,
   type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
@@ -182,6 +182,15 @@ export class BotPeerReplyEventResponseDto {
 }
 
 /** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
+/** A terminal watch's match, as a session event names it. */
+export class BotSessionMatchResponseDto {
+  @ApiProperty({ description: 'The pattern the bot watches the terminal for.' })
+  pattern!: string;
+
+  @ApiProperty({ description: 'New matching lines counted so far.' })
+  count!: number;
+}
+
 export class BotSessionEventResponseDto {
   @ApiProperty({ enum: ['session'] })
   kind!: 'session';
@@ -198,8 +207,20 @@ export class BotSessionEventResponseDto {
   @ApiProperty({ description: "Which of the session's tasks: its turn's number, from 1." })
   turn!: number;
 
-  @ApiProperty({ enum: BOT_SESSION_WAKE_STATES, description: 'What became of the task.' })
-  state!: BotSessionWakeState;
+  @ApiProperty({
+    enum: BOT_SESSION_EVENT_STATES,
+    description:
+      'What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for.',
+  })
+  state!: BotSessionEventState;
+
+  @ApiProperty({
+    type: BotSessionMatchResponseDto,
+    nullable: true,
+    required: false,
+    description: 'For `matched`: the pattern and how many lines matched so far; never the text.',
+  })
+  match?: BotSessionMatchResponseDto | null;
 }
 
 export type BotMessageEventResponseDto =

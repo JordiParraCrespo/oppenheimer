@@ -197,6 +197,18 @@ describe('sessionWakeText', () => {
   });
 });
 
+describe('a watched pattern that never matched', () => {
+  it('says so once the task is over, and not while it waits on a person', () => {
+    expect(sessionWakeText(wake({ silentPattern: 'FAIL' }))).toContain(
+      'never printed a line matching the pattern you watched for (“FAIL”)',
+    );
+    expect(sessionWakeText(wake({ silentPattern: null }))).not.toContain('never printed');
+    expect(
+      sessionWakeText(wake({ state: 'requires_action', silentPattern: 'FAIL' })),
+    ).not.toContain('never printed');
+  });
+});
+
 describe('sessionWakePrompt', () => {
   const event = (state: BotSessionEvent['state']): BotSessionEvent => ({
     kind: 'session',

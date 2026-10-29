@@ -788,6 +788,64 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "session.watch"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "watchId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "watchId",
+        "pattern"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.unwatch"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "watchId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "watchId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "session.stop"
         },
         "commandId": {
@@ -1822,7 +1880,8 @@
       "attachment.chat",
       "device.screen",
       "port.forward",
-      "session.cloud"
+      "session.cloud",
+      "session.watch"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

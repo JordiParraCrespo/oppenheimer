@@ -3649,6 +3649,17 @@ export type BotPeerReplyEventResponseDto = {
     outcome: 'answered' | 'failed' | 'cancelled';
 };
 
+export type BotSessionMatchResponseDto = {
+    /**
+     * The pattern the bot watches the terminal for.
+     */
+    pattern: string;
+    /**
+     * New matching lines counted so far.
+     */
+    count: number;
+};
+
 export type BotSessionEventResponseDto = {
     kind: 'session';
     /**
@@ -3665,9 +3676,13 @@ export type BotSessionEventResponseDto = {
      */
     turn: number;
     /**
-     * What became of the task.
+     * What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched';
+    /**
+     * For `matched`: the pattern and how many lines matched so far; never the text.
+     */
+    match?: BotSessionMatchResponseDto | null;
 };
 
 export type BotSubagentRunResponseDto = {

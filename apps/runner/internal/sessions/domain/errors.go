@@ -36,6 +36,10 @@ var (
 	// repository there, or a CLI too old to know the flag. Its detail is
 	// the CLI's own last words.
 	ErrCloudStart = problem.New("SESS_008", http.StatusBadGateway, "Claude Code could not start the session in the cloud")
+	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
+	// long or not an RE2 expression. The code is the protocol's
+	// (`session.watch`), not a SESS_ number: the control plane names it.
+	ErrInvalidPattern = problem.New("INVALID_PATTERN", http.StatusBadRequest, "The watch pattern is not a valid expression")
 )
 
 // Sentinels a Places adapter answers with; the use case maps them onto the

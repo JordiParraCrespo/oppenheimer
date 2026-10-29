@@ -292,7 +292,7 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat, link.CapabilitySessionCloud,
+		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionWatch,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect)
@@ -476,6 +476,18 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.SessionDetach
 		if msg.Decode(&m) == nil {
 			h.lanes.run(m.SessionID, func() { h.detach(m.AttachmentID) })
+		}
+	case link.TypeSessionWatch:
+		var m link.SessionWatch
+		if msg.Decode(&m) == nil {
+			// On the session's lane, so a watch sent right after its create
+			// finds the session the create made.
+			h.lanes.run(m.SessionID, func() { h.watch(m) })
+		}
+	case link.TypeSessionUnwatch:
+		var m link.SessionUnwatch
+		if msg.Decode(&m) == nil {
+			h.lanes.run(m.SessionID, func() { h.app.Sessions.Unwatch(m.SessionID, m.WatchID) })
 		}
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		if m, ok := decodeLifecycle(msg); ok {
@@ -667,6 +679,24 @@ func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *
 		return
 	}
 	h.reporter.Append(session.ID, sessionsdomain.AgentDecisionKind, sessionsdomain.AgentDecisionPayload{Decision: fitDecision(decision)})
+}
+
+// TerminalMatched is the session service's publisher for a terminal watch's
+// report: `terminal.matched` with the watch and how many lines it has counted.
+// The matched text is never in it, nor in the log: it does not leave the host.
+func (h *linkHandler) TerminalMatched(sessionID, watchID string, count int) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(sessionID, sessionsdomain.TerminalMatchedKind, map[string]any{"watchId": watchID, "count": count})
+}
+
+// watch starts a terminal watch; a refusal (an invalid pattern, a session
+// this host does not know) answers command.failed.
+func (h *linkHandler) watch(m link.SessionWatch) {
+	if err := h.app.Sessions.Watch(m.SessionID, m.WatchID, m.Pattern); err != nil {
+		h.fail(m.CommandID, err)
+	}
 }
 
 // fitDecision is decision cut until its payload fits an event, or nil.

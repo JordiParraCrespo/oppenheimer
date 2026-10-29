@@ -85,6 +85,7 @@ import { SetBotToolDecisionHttpController } from './commands/set-bot-tool-decisi
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
+import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
@@ -162,6 +163,7 @@ const commandHandlers: Provider[] = [
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
   WakeSubscribedBotCommandHandler,
+  WakeOnTerminalMatchCommandHandler,
   SetBotToolDecisionCommandHandler,
   CreateBotPermissionRuleCommandHandler,
   DeleteBotPermissionRuleCommandHandler,

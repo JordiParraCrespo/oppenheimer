@@ -98,6 +98,13 @@ export const RUNNER_CAPABILITIES = [
    * (`product/research/cloud-agents.md` §5B).
    */
   'session.cloud',
+  /**
+   * Takes `session.watch` and `session.unwatch`: it scans a live session's
+   * screen for a pattern on every pass it already makes, and reports a match
+   * as a `terminal.matched` log entry carrying a count, never the text
+   * (`product/versions/mvp/27-bot-subscriptions.md`).
+   */
+  'session.watch',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -538,6 +545,40 @@ export const sessionCloseSchema = z.object({
 
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
 
+/** How long a terminal watch's pattern may be. */
+export const TERMINAL_WATCH_PATTERN_MAX = 200;
+
+/**
+ * Watch a live session's screen for a pattern (an RE2 regular expression,
+ * matched line by line), replacing any watch with this `watchId`. The runner
+ * scans the screen it already reads on each pass, and appends
+ * `terminal.matched` (`{ watchId, count }`) to the session's log when lines it
+ * had not matched before match: the first at once, then at most one entry per
+ * 5 seconds, and at most 100 entries before it drops the watch. The matched
+ * text never leaves the host. Kept in memory: the control plane sends its
+ * watches again on every hello. An invalid pattern is `command.failed`
+ * `INVALID_PATTERN`.
+ */
+export const sessionWatchSchema = z.object({
+  type: z.literal('session.watch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+  pattern: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX),
+});
+
+export type SessionWatchMessage = z.infer<typeof sessionWatchSchema>;
+
+/** Stop a watch `session.watch` started; one the runner does not hold is no error. */
+export const sessionUnwatchSchema = z.object({
+  type: z.literal('session.unwatch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+});
+
+export type SessionUnwatchMessage = z.infer<typeof sessionUnwatchSchema>;
+
 /**
  * End the agent and the tmux session and leave every checkout on disk, which
  * is what makes Restart possible afterwards (02 §5: "Stop is not close").
@@ -904,6 +945,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
   sessionCloseSchema,
+  sessionWatchSchema,
+  sessionUnwatchSchema,
   sessionStopSchema,
   sessionRestartSchema,
   hostPreflightSchema,

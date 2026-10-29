@@ -30576,6 +30576,20 @@
         },
         "required": ["kind", "fromBotId", "fromBotName", "outcome"]
       },
+      "BotSessionMatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "The pattern the bot watches the terminal for."
+          },
+          "count": {
+            "type": "number",
+            "description": "New matching lines counted so far."
+          }
+        },
+        "required": ["pattern", "count"]
+      },
       "BotSessionEventResponseDto": {
         "type": "object",
         "properties": {
@@ -30602,8 +30616,18 @@
           },
           "state": {
             "type": "string",
-            "enum": ["requires_action", "completed", "failed", "cancelled", "expired"],
-            "description": "What became of the task."
+            "enum": ["requires_action", "completed", "failed", "cancelled", "expired", "matched"],
+            "description": "What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for."
+          },
+          "match": {
+            "nullable": true,
+            "description": "For `matched`: the pattern and how many lines matched so far; never the text.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotSessionMatchResponseDto"
+              }
+            ]
           }
         },
         "required": ["kind", "subscriptionId", "sessionId", "sessionName", "turn", "state"]

@@ -1,5 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { UnwatchSessionTerminalCommand } from '../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
+import {
+  WatchSessionTerminalCommand,
+  type WatchSessionTerminalResult,
+} from '../../sessions/commands/watch-session-terminal/watch-session-terminal.command';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
@@ -112,5 +117,53 @@ export class BotSessionWatchResolver {
       BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, options)),
     );
     return { subscription, session };
+  }
+
+  /**
+   * Has the session's runner watch its terminal for `pattern` on behalf of
+   * this subscription (`27-bot-subscriptions.md` §2): the sessions module
+   * makes the watch and tells the host, and the subscription names it. A
+   * pattern it replaces is removed. Answers what the host could not take
+   * just now (`host_offline`, `not_supported`), which the tool says.
+   */
+  async watchTerminal(
+    context: BotToolCallContext,
+    subscription: BotSubscriptionEntity,
+    pattern: string,
+  ): Promise<string[]> {
+    const made = await this.commands.execute<
+      WatchSessionTerminalCommand,
+      WatchSessionTerminalResult
+    >(
+      new WatchSessionTerminalCommand({
+        scope: context.owner,
+        sessionId: subscription.resourceId,
+        pattern,
+      }),
+    );
+    const previous = await this.subscriptions.attachTerminalWatch(subscription.id, {
+      id: made.watchId,
+      pattern,
+    });
+    if (previous)
+      await this.releaseWatch(subscription.organizationId, subscription.resourceId, previous);
+    return made.hints;
+  }
+
+  /**
+   * Removes the terminal watch a subscription that ended named, if it named
+   * one. Best effort: a watch left behind only stops matching anybody, and
+   * goes with its session.
+   */
+  async release(subscription: BotSubscriptionEntity): Promise<void> {
+    const watch = subscription.terminalWatch;
+    if (watch)
+      await this.releaseWatch(subscription.organizationId, subscription.resourceId, watch.id);
+  }
+
+  private async releaseWatch(organizationId: string, sessionId: string, watchId: string) {
+    await this.commands
+      .execute(new UnwatchSessionTerminalCommand({ organizationId, sessionId, watchId }))
+      .catch(() => undefined);
   }
 }

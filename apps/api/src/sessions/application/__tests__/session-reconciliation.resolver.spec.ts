@@ -1,9 +1,11 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
+import type { SessionTerminalWatchRepositoryPort } from '../../database/session-terminal-watch.repository.port';
 import type {
   HostSessionRow,
   WorkSessionRepositoryPort,
 } from '../../database/work-session.repository.port';
+import { SessionTerminalWatchEntity } from '../../domain/session-terminal-watch.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { CloudFilesPort } from '../cloud-files.port';
 import { CloudTaskFactory } from '../cloud-task.factory';
@@ -43,7 +45,7 @@ function deleting(state: 'starting' | 'open', acceptUnpushedWork: boolean): Work
   return entity;
 }
 
-function harness(rows: HostSessionRow[]) {
+function harness(rows: HostSessionRow[], watches: SessionTerminalWatchEntity[] = []) {
   let minted = 0;
   const cloudFiles = {
     keep: vi.fn(),
@@ -58,7 +60,11 @@ function harness(rows: HostSessionRow[]) {
   const dispatch = {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
     close: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
+    watchTerminal: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
+  const terminalWatches = {
+    findForSessions: vi.fn(async () => watches),
+  } as unknown as SessionTerminalWatchRepositoryPort;
   const launches = new SessionLaunchSpecFactory(
     {
       slugOf: vi.fn().mockResolvedValue('jordi'),
@@ -71,7 +77,8 @@ function harness(rows: HostSessionRow[]) {
   return {
     sessions,
     dispatch,
-    resolver: new SessionReconciliationResolver(sessions, dispatch, launches),
+    resolver: new SessionReconciliationResolver(sessions, dispatch, launches, terminalWatches),
+    terminalWatches,
   };
 }
 
@@ -227,5 +234,25 @@ describe('SessionReconciliationResolver', () => {
     const outcome = await h.resolver.reconcile(HOST, 'run-1', [owed.id]);
 
     expect(outcome.reclosed).toEqual([]);
+  });
+
+  it('sends the watches of the live sessions a host holds again, since a runner keeps them in memory', async () => {
+    const held = session('open');
+    const gone = session('open');
+    const watch = SessionTerminalWatchEntity.watch({
+      organizationId: 'org',
+      sessionId: held.id,
+      pattern: 'FAIL',
+    });
+    const h = harness([{ session: held }, { session: gone }], [watch]);
+
+    await h.resolver.reconcile(HOST, 'run-1', [held.id]);
+
+    // Only the sessions the host holds: one it lost is recorded stopped, not watched.
+    expect(h.terminalWatches.findForSessions).toHaveBeenCalledWith('org', [held.id]);
+    expect(h.dispatch.watchTerminal).toHaveBeenCalledWith(held, {
+      watchId: watch.id,
+      pattern: 'FAIL',
+    });
   });
 });

@@ -1772,6 +1772,39 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 
+    it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {
+      const bot = await create('Pattern watcher');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const first = randomUUID();
+      const second = randomUUID();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: first, pattern: 'FAIL' }),
+      ).toBeNull();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: second, pattern: 'PASS' }),
+      ).toBe(first);
+      expect(await subscriptions.findForTerminalWatch(first)).toBeNull();
+
+      const found = (await subscriptions.findForTerminalWatch(second)) as BotSubscriptionEntity;
+      expect(found).toMatchObject({
+        id: stored.id,
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 0,
+      });
+      found.recordMatch(4);
+      expect(await subscriptions.recordWake(found)).toBe(true);
+      // A second subscribe keeps the watch and what it counted.
+      await subscriptions.subscribe(watching(bot, { until: 'closed', watchedTurn: null }));
+      expect(await subscriptions.findForWake(stored.id)).toMatchObject({
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 4,
+        wakes: 1,
+      });
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET pattern = NULL WHERE id = $1`, [stored.id]),
+      ).rejects.toThrow(/CHK_bot_subscription_pattern/);
+    });
+
     it('refuses what the table does not hold, goes with its bot, and outlives a cleared chat', async () => {
       const bot = await create('Cascade');
       await expect(

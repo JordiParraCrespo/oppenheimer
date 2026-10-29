@@ -330,4 +330,14 @@ export const SessionErrors = {
     message: 'That file link expired or never existed',
     httpStatus: 404,
   },
+  TERMINAL_PATTERN_INVALID: {
+    code: 'SESSIONS_042',
+    message: 'That pattern cannot be watched',
+    httpStatus: 422,
+  },
+  TERMINAL_WATCHES_FULL: {
+    code: 'SESSIONS_043',
+    message: 'The session already has as many terminal watches as it can hold',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

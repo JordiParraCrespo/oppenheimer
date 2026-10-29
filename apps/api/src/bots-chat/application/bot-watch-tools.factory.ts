@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { TERMINAL_WATCH_PATTERN_MAX } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
@@ -56,7 +57,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_session',
       scope: 'sessions:read',
-      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. Sessions you start with start_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions.`,
+      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. Sessions you start with start_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions.`,
       input: z.object({
         session_id: z.uuid().describe('The session to follow (from list_sessions).'),
         until: z
@@ -69,6 +70,14 @@ export class BotWatchToolsFactory implements BotToolArea {
           .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
           .optional()
           .describe('Why you follow it, in a line; you are reminded of it when it wakes you.'),
+        pattern: z
+          .string()
+          .min(1)
+          .max(TERMINAL_WATCH_PATTERN_MAX)
+          .optional()
+          .describe(
+            'A regular expression (RE2: no lookaround or backreferences) to be woken by when a new line of the terminal matches it.',
+          ),
       }),
       run: async (input, context) => {
         const { subscription, session } = await this.watches.watch(context, input.session_id, {
@@ -76,7 +85,10 @@ export class BotWatchToolsFactory implements BotToolArea {
           purpose: input.purpose ?? null,
           from: 'now',
         });
-        return this.mapper.toWatchAnswer(subscription, session);
+        const answer = this.mapper.toWatchAnswer(subscription, session);
+        if (!input.pattern) return answer;
+        const hints = await this.watches.watchTerminal(context, subscription, input.pattern);
+        return `${answer} ${this.mapper.toPatternAnswer(input.pattern, hints)}`;
       },
     });
   }
@@ -91,6 +103,15 @@ export class BotWatchToolsFactory implements BotToolArea {
         session_id: z.uuid().describe('A session you watch (from list_watches).'),
       }),
       run: async (input, context) => {
+        // Its terminal watch goes too, if it had one: nobody else is woken by it.
+        const followed = (
+          await this.subscriptions.findForBot(
+            context.organizationId,
+            context.botId,
+            BOT_SUBSCRIPTIONS_PER_BOT,
+          )
+        ).find((subscription) => subscription.resourceId === input.session_id);
+        if (followed) await this.watches.release(followed);
         const removed = await this.subscriptions.unsubscribe(
           context.organizationId,
           context.botId,

@@ -238,7 +238,9 @@
         "completed": "La sesión «{{name}}» ha terminado",
         "failed": "La sesión «{{name}}» ha fallado",
         "cancelled": "La sesión «{{name}}» se detuvo",
-        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+        "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
+        "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
       }
     },
     "routineReason": {

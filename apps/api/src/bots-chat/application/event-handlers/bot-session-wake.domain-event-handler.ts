@@ -2,8 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SessionStateChangedDomainEvent } from '../../../sessions/domain/events/session-state-changed.domain-event';
+import { SessionTerminalMatchedDomainEvent } from '../../../sessions/domain/events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from '../../../sessions/domain/events/session-turn-changed.domain-event';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
+import { WakeOnTerminalMatchCommand } from '../../commands/wake-on-terminal-match/wake-on-terminal-match.command';
 import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { wakeStateOf } from '../../domain/bot-subscription.policy';
@@ -41,6 +43,24 @@ export class BotSessionWakeDomainEventHandler {
   ): Promise<void> {
     if (event.to !== 'resolved') return;
     await this.wake(event.organizationId, event.aggregateId);
+  }
+
+  /** A terminal watch matched: the bot that asked for it is woken, once per reported count. */
+  @OnEvent(SessionTerminalMatchedDomainEvent.name, { suppressErrors: false })
+  async onMatch(
+    event: Pick<
+      SessionTerminalMatchedDomainEvent,
+      'aggregateId' | 'organizationId' | 'watchId' | 'count'
+    >,
+  ): Promise<void> {
+    await this.commands.execute(
+      new WakeOnTerminalMatchCommand({
+        organizationId: event.organizationId,
+        sessionId: event.aggregateId,
+        watchId: event.watchId,
+        count: event.count,
+      }),
+    );
   }
 
   /**

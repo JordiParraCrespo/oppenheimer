@@ -864,3 +864,11 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
+  Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
+  9), it can also wake on a line the terminal prints that matches a
+  pattern. The runner matches it on the host and sends only a count, so
+  pane text still never reaches Postgres. A bot can also wait up to 120 s
+  inside its turn, and read a session's log from the entry its own input
+  followed (`versions/mvp/27-bot-subscriptions.md` §2,
+  `versions/mvp/25-bots.md` §4.2).

@@ -8,6 +8,8 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { UnwatchSessionTerminalCommand } from '../../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
+import { WatchSessionTerminalCommand } from '../../../sessions/commands/watch-session-terminal/watch-session-terminal.command';
 import { SessionErrors } from '../../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
@@ -62,6 +64,8 @@ function setup(
   options: {
     read?: WorkSessionEntity | Error | (() => WorkSessionEntity);
     following?: BotSubscriptionEntity[];
+    replacedWatch?: string;
+    hints?: string[];
   } = {},
 ) {
   const subscriptions = {
@@ -72,6 +76,9 @@ function setup(
       async () => options.following ?? [],
     ),
     unsubscribe: vi.fn<BotSubscriptionRepositoryPort['unsubscribe']>(async () => true),
+    attachTerminalWatch: vi.fn<BotSubscriptionRepositoryPort['attachTerminalWatch']>(
+      async () => options.replacedWatch ?? null,
+    ),
   };
   const queries = {
     execute: vi.fn(async (query: unknown) => {
@@ -82,7 +89,13 @@ function setup(
     }),
   };
   const repository = subscriptions as unknown as BotSubscriptionRepositoryPort;
-  const commands = { execute: vi.fn(async () => undefined) };
+  const commands = {
+    execute: vi.fn(async (command: unknown) =>
+      command instanceof WatchSessionTerminalCommand
+        ? { sessionId: SESSION, watchId: 'watch-new', hints: options.hints ?? [] }
+        : undefined,
+    ),
+  };
   const resolver = new BotSessionWatchResolver(
     repository,
     queries as unknown as QueryBus,
@@ -242,6 +255,33 @@ describe('BotWatchToolsFactory', () => {
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
+  });
+});
+
+describe('watch_session with a pattern', () => {
+  it('has the session watch its terminal as the owner, and the subscription name the watch', async () => {
+    const { commands, subscriptions, call } = setup();
+    const result = await call('watch_session', { session_id: SESSION, pattern: 'FAIL|Error' });
+    const made = commands.execute.mock.calls
+      .map(([command]) => command)
+      .find((command) => command instanceof WatchSessionTerminalCommand);
+    expect(made).toMatchObject({ scope: owner, sessionId: SESSION, pattern: 'FAIL|Error' });
+    expect(subscriptions.attachTerminalWatch).toHaveBeenCalledWith(expect.any(String), {
+      id: 'watch-new',
+      pattern: 'FAIL|Error',
+    });
+    expect(result.content).toContain('new line matching “FAIL|Error”');
+    expect(result.content).toContain('not the line');
+  });
+
+  it('removes the watch a new pattern replaces, and says when the host cannot watch yet', async () => {
+    const { commands, call } = setup({ replacedWatch: 'watch-old', hints: ['host_offline'] });
+    const result = await call('watch_session', { session_id: SESSION, pattern: 'PASS' });
+    const removed = commands.execute.mock.calls
+      .map(([command]) => command)
+      .find((command) => command instanceof UnwatchSessionTerminalCommand);
+    expect(removed).toMatchObject({ sessionId: SESSION, watchId: 'watch-old' });
+    expect(result.content).toContain('starts when it reconnects');
   });
 });
 

@@ -75,6 +75,7 @@ import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
+import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
@@ -123,6 +124,7 @@ const dataSource = new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
     AutomationOrmEntity,

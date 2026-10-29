@@ -1,5 +1,6 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { BotSessionWatchResolver } from '../../application/bot-session-watch.resolver';
 import { BotSubscriptionSubjectResolver } from '../../application/bot-subscription-subject.resolver';
 import { BotSubscriptionMapper } from '../../bot-subscription.mapper';
 import {
@@ -36,6 +37,7 @@ export class WakeSubscribedBotCommandHandler
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
     private readonly subjects: BotSubscriptionSubjectResolver,
     private readonly mapper: BotSubscriptionMapper,
+    private readonly watches: BotSessionWatchResolver,
   ) {}
 
   async execute({ subscriptionId, metadata }: WakeSubscribedBotCommand): Promise<void> {
@@ -67,6 +69,8 @@ export class WakeSubscribedBotCommandHandler
 
   private async end(subscription: BotSubscriptionEntity, reason: string): Promise<void> {
     if (!(await this.subscriptions.end(subscription))) return;
+    // Its terminal watch goes with it: nobody would be woken by it any more.
+    await this.watches.release(subscription);
     this.logger.log({
       message: 'A bot subscription ended',
       subscriptionId: subscription.id,

@@ -509,6 +509,10 @@ export const BOT_SESSION_WAKE_STATES = [
 ] as const;
 export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
+/** What a session event says: a task's wake state, or that the terminal matched a watch's pattern. */
+export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'matched'] as const;
+export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
+
 export interface BotSessionEvent {
   kind: 'session';
   /** The subscription that woke the bot. */
@@ -518,7 +522,13 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
-  state: BotSessionWakeState;
+  /** What became of the task, or `matched`: its terminal printed what the bot watches for. */
+  state: BotSessionEventState;
+  /**
+   * For `matched`: the pattern the bot watches the terminal for, and how many
+   * new lines have matched it so far. Never the text: it stays on the host.
+   */
+  match?: { pattern: string; count: number } | null;
 }
 
 /**
