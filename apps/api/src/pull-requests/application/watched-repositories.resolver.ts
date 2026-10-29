@@ -5,13 +5,11 @@ import type {
   PullRequestAccessPort,
   WorkspaceRepository,
 } from '../../github/application/pull-request-access.port';
+import { addressKeyOf } from '../../github/domain/repository-address.policy';
 import { PULL_REQUEST_ACCESS } from '../../github/github.di-tokens';
 import type { WatchedRepositoryRepositoryPort } from '../database/watched-repository.repository.port';
 import { PullRequestsErrors } from '../domain/pull-requests.errors';
 import { WATCHED_REPOSITORY_REPOSITORY } from '../pull-requests.di-tokens';
-
-const keyOf = (r: { installationId: string; githubRepoId: number }) =>
-  `${r.installationId}:${r.githubRepoId}`;
 
 /**
  * Which of the workspace's repositories the caller watches: the ones they
@@ -34,10 +32,14 @@ export class WatchedRepositoriesResolver {
       this.access.repositories(scope),
       this.watches.findOwn(scope),
     ]);
-    const watched = new Set(watches.map(keyOf));
+    const watched = new Set(watches.map(addressKeyOf));
+    // A repository watched through a token stays watched once an installation
+    // covers it: the App reads it first (§6.2), and the watch is still the person's.
     return repositories.map((repository) => ({
       repository,
-      watching: watched.has(keyOf(repository)),
+      watching:
+        watched.has(addressKeyOf(repository)) ||
+        watched.has(addressKeyOf({ kind: 'tokens', githubRepoId: repository.githubRepoId })),
     }));
   }
 

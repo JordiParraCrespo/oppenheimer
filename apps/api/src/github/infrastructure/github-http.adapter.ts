@@ -51,6 +51,8 @@ export interface GithubRequest {
    */
   onStatus?: StatusMap;
   unauthorized: ErrorDefinition;
+  /** Told when GitHub answers `401`, before the refusal is thrown; its own failure is only logged. */
+  onUnauthorized?: () => Promise<void>;
 }
 
 /**
@@ -100,7 +102,10 @@ export class GithubHttp {
    * travels in the `Authorization` header and never in the URL, which is what
    * lets the log line and the problem document name the request at all.
    */
-  async request<T>(url: string, options: GithubRequest): Promise<{ body: T; link: string | null }> {
+  async request<T>(
+    url: string,
+    options: GithubRequest,
+  ): Promise<{ body: T; link: string | null; headers: Headers }> {
     let exchanged: Awaited<ReturnType<typeof this.limiter.exchange<Response>>>;
     try {
       exchanged = await this.limiter.exchange(
@@ -141,6 +146,16 @@ export class GithubHttp {
         url: pathOf(url),
         status: response.status,
       });
+      if (response.status === 401 && options.onUnauthorized) {
+        await options
+          .onUnauthorized()
+          .catch((error: unknown) =>
+            this.logger.warn(
+              { message: 'A refused GitHub credential could not be marked', url: pathOf(url) },
+              error instanceof Error ? error.stack : String(error),
+            ),
+          );
+      }
       const named =
         options.onStatus?.[response.status] ??
         (response.status === 401 ? options.unauthorized : GithubErrors.UPSTREAM_FAILED);
@@ -151,7 +166,11 @@ export class GithubHttp {
     }
 
     const text = await response.text();
-    return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
+    return {
+      body: (text ? JSON.parse(text) : {}) as T,
+      link: response.headers.get('link'),
+      headers: response.headers,
+    };
   }
 
   /**

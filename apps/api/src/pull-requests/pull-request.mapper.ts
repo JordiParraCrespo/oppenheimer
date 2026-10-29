@@ -11,6 +11,7 @@ import type {
   RepositoryPulls,
   WorkspaceRepository,
 } from '../github/application/pull-request-access.port';
+import { addressKeyOf, installationIdOf } from '../github/domain/repository-address.policy';
 import type {
   GithubPullRequestFile,
   GithubPullRequestSummary,
@@ -63,7 +64,7 @@ export class PullRequestMapper {
     const { pull, repository } = snapshot;
     const decision = decideLane(snapshot.files.value, pull.additions, pull.deletions);
     return {
-      installationId: repository.installationId,
+      installationId: installationIdOf(repository),
       githubRepoId: repository.githubRepoId,
       repository: repository.fullName,
       number: pull.number,
@@ -234,7 +235,7 @@ export class PullRequestMapper {
 
   toWatch(repository: WorkspaceRepository, watching: boolean): WatchedRepositoryDto {
     return {
-      installationId: repository.installationId,
+      installationId: installationIdOf(repository),
       githubRepoId: repository.githubRepoId,
       fullName: repository.fullName,
       private: repository.private,
@@ -422,8 +423,7 @@ function foldersOf(paths: readonly string[]): string[] {
 
 function dedupe<T extends PullRequestRead>(snapshots: T[]): T[] {
   const seen = new Map<string, T>();
-  for (const s of snapshots)
-    seen.set(`${s.repository.installationId}:${s.repository.githubRepoId}:${s.pull.number}`, s);
+  for (const s of snapshots) seen.set(`${addressKeyOf(s.repository)}:${s.pull.number}`, s);
   return [...seen.values()];
 }
 

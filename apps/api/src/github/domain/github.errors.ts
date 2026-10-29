@@ -148,4 +148,55 @@ export const GithubErrors = {
     message: "GitHub refused access to this repository's issues",
     httpStatus: 403,
   },
+  /**
+   * GitHub did not accept a token a person added or checked again: mistyped,
+   * revoked, expired, or awaiting an organisation owner's approval. Nothing is
+   * stored from a token GitHub refused.
+   */
+  TOKEN_REFUSED: {
+    code: 'GITHUB_018',
+    message: 'GitHub did not accept this token',
+    httpStatus: 422,
+  },
+  /** Also one that belongs to somebody else: the id is not confirmed. */
+  TOKEN_NOT_FOUND: {
+    code: 'GITHUB_019',
+    message: 'GitHub token not found',
+    httpStatus: 404,
+  },
+  /** A person's token labels are unique, so the picker can tell them apart. */
+  TOKEN_LABEL_TAKEN: {
+    code: 'GITHUB_020',
+    message: 'You already have a token with that label',
+    httpStatus: 409,
+  },
+  /**
+   * Tokens are sealed under `GITHUB_USER_TOKEN_KEY`; without it nothing can be
+   * kept, so the routes that would keep or open one answer this.
+   */
+  TOKENS_NOT_CONFIGURED: {
+    code: 'GITHUB_021',
+    message: 'GitHub tokens are not configured on this server',
+    httpStatus: 503,
+  },
+  /**
+   * Reviewing, commenting, merging and review sessions on a repository read
+   * through the person's own tokens are done on GitHub (§6.2): the tokens are
+   * for reading, and sessions clone through the App.
+   */
+  READ_ONLY_REPOSITORY: {
+    code: 'GITHUB_022',
+    message: 'This repository is read through your token; act on it on GitHub',
+    httpStatus: 409,
+  },
+  /**
+   * No token of the person's that GitHub still accepts opens this repository:
+   * none ever did, the one that did was removed, refused or expired, or a pin
+   * names a token that does not open it.
+   */
+  NO_TOKEN_FOR_REPOSITORY: {
+    code: 'GITHUB_023',
+    message: 'None of your GitHub tokens opens this repository',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

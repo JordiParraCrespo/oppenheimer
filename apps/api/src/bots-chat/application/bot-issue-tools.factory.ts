@@ -264,8 +264,13 @@ export class BotIssueToolsFactory implements BotToolArea {
   }
 }
 
+/** A bot names a repository by its installation: its tools reach only what the App does. */
 function repositoryOf(input: RepositoryInput) {
-  return { installationId: input.installation_id, githubRepoId: input.github_repo_id };
+  return {
+    kind: 'installation' as const,
+    installationId: input.installation_id,
+    githubRepoId: input.github_repo_id,
+  };
 }
 
 function issueAddressOf(input: RepositoryInput & { number: number }) {

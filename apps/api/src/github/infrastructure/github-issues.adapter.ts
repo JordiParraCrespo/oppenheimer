@@ -87,6 +87,7 @@ export class GithubIssuesAdapter implements GithubIssuesPort {
       {
         bucket: credential.bucket,
         token: credential.token,
+        onUnauthorized: credential.onUnauthorized,
         onStatus: ISSUE_STATUS,
         unauthorized: GithubErrors.USER_NOT_CONNECTED,
       },
@@ -178,6 +179,7 @@ export class GithubIssuesAdapter implements GithubIssuesPort {
       {
         bucket: credential.bucket,
         token: credential.token,
+        onUnauthorized: credential.onUnauthorized,
         onStatus: ISSUE_STATUS,
         unauthorized: GithubErrors.USER_NOT_CONNECTED,
       },
@@ -198,6 +200,7 @@ export class GithubIssuesAdapter implements GithubIssuesPort {
     return this.http.request<T>(url, {
       bucket: options.credential.bucket,
       token: options.credential.token,
+      onUnauthorized: options.credential.onUnauthorized,
       method: options.method,
       body: options.body,
       onStatus: options.onStatus,

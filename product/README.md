@@ -734,6 +734,13 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
+  notifications token and one optional token for private repositories. On
+  2026-10-26 the owner asked for several organisations and, inside one, a
+  token per repository if need be: a person adds any number of tokens, each
+  opens whatever repositories GitHub says it does, and each repository is
+  read with one key chosen at read time (the App, else a pinned token, else
+  the narrowest). The notifications wake-up is left for later (§6.2).
 - Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
   the owner asked for the Browser tab, through "tunnel technology like
   Cloudflare, Vercel or ngrok"; offered the runner's own link as that

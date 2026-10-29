@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { RepositoryAddress } from '../../application/pull-request-access.port';
+import type { InstallationAddress } from '../../application/pull-request-access.port';
 import type { GithubIssueInput } from '../../infrastructure/github-issues.port';
 
 /** The new issue's number and link: GitHub's id for it, and where to read it. */
@@ -12,7 +12,8 @@ export interface CreatedIssue {
 /** No controller: a bot's `create_issue` tool dispatches it (`25-bots.md` §4.4). */
 export class CreateIssueCommand extends CommandBase {
   readonly scope: AccessScope;
-  readonly repository: RepositoryAddress;
+  /** Opened in the caller's name, so only where the App reaches. */
+  readonly repository: InstallationAddress;
   readonly issue: GithubIssueInput;
 
   constructor(props: CommandProps<CreateIssueCommand>) {

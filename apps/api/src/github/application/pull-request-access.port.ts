@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { InstallationAddress, RepositoryAddress } from '../domain/repository-address.types';
 import type {
   GithubChecks,
   GithubPullRequestDetail,
@@ -10,27 +11,32 @@ import type {
   GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 
-/** One repository a workspace's installations cover, named by the installation that reaches it. */
-export interface WorkspaceRepository {
-  /** The control-plane installation row's uuid. */
-  installationId: string;
-  githubRepoId: number;
+export type {
+  InstallationAddress,
+  RepositoryAddress,
+  RepositorySource,
+  TokensAddress,
+} from '../domain/repository-address.types';
+
+/** What the caller can read of one repository, besides where it is. */
+export interface RepositoryFacts {
   name: string;
   fullName: string;
   defaultBranch: string;
   private: boolean;
 }
 
-/** The address of one repository: the installation that reaches it, and GitHub's id for it. */
-export interface RepositoryAddress {
-  installationId: string;
-  githubRepoId: number;
-}
+/**
+ * One repository the caller can read: one a workspace's installation covers,
+ * or one only their own GitHub tokens open (§6.2), whichever token reads it.
+ */
+export type WorkspaceRepository = RepositoryAddress & RepositoryFacts;
 
 /** The address of one pull request. */
-export interface PullRequestAddress extends RepositoryAddress {
-  number: number;
-}
+export type PullRequestAddress = RepositoryAddress & { number: number };
+
+/** A pull request the App reaches: what a write in the caller's name takes. */
+export type InstallationPullRequestAddress = InstallationAddress & { number: number };
 
 /**
  * One part of a pull request as GitHub answered it: the value, or the refusal
@@ -131,8 +137,14 @@ export interface ReviewSubmission {
  * person did. With no user token a write is `GITHUB_012`, never somebody else's.
  */
 export interface PullRequestAccessPort {
-  /** Every repository the workspace's usable installations cover. */
+  /** Every repository the workspace's usable installations cover, then the ones only the caller's tokens open. */
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
+  /**
+   * The address narrowed to the App, for what only the App can do (writes in
+   * the caller's name, a session that clones); `GITHUB_022` for one read
+   * through a token.
+   */
+  requireApp<T extends RepositoryAddress>(address: T): Extract<T, InstallationAddress>;
   /** The caller's GitHub login: their stored grant's, or the account of a personal installation they connected. */
   viewerLogin(scope: AccessScope): Promise<string | null>;
   /**
@@ -172,13 +184,13 @@ export interface PullRequestAccessPort {
   submitReview(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     review: ReviewSubmission,
   ): Promise<void>;
   addComment(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void>;
   /**
@@ -189,7 +201,7 @@ export interface PullRequestAccessPort {
   merge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
     expectedHead?: string,
   ): Promise<void>;
@@ -197,7 +209,7 @@ export interface PullRequestAccessPort {
   enableAutoMerge(
     scope: AccessScope,
     userId: string,
-    address: PullRequestAddress,
+    address: InstallationPullRequestAddress,
     method: 'squash' | 'merge' | 'rebase',
   ): Promise<boolean>;
 }

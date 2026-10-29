@@ -24,6 +24,7 @@ import {
   type ReviewInput,
   type ReviewOutcome,
   type ReviewSession,
+  sourceOf,
   type WatchedRepository,
 } from './pull-request.entity';
 import { PullRequestsErrors } from './pull-requests.errors';
@@ -49,7 +50,7 @@ function laneReasonOf(dto: PullRequestRowDto['laneReason']): LaneReason {
 
 function toEntity(dto: PullRequestRowDto): PullRequestEntity {
   return new PullRequestEntity(
-    dto.installationId,
+    sourceOf(dto.installationId),
     dto.githubRepoId,
     dto.repository,
     dto.number,
@@ -293,7 +294,7 @@ export class PullRequestsRepository {
       PullRequestsErrors.FETCH_REPOSITORIES_FAILED,
     );
     return data.map((repository) => ({
-      installationId: repository.installationId,
+      installationId: sourceOf(repository.installationId),
       githubRepoId: repository.githubRepoId,
       fullName: repository.fullName,
       isPrivate: repository.private,
