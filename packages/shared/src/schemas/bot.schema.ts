@@ -380,6 +380,47 @@ export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled',
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
 /**
+ * Why a failed turn failed, as a kind the chat can act on (`25-bots.md` §2):
+ * whether sending it again can help, and what to do instead when it cannot.
+ * From Grok Bot's failure lines (`research/lessons-from-grok-bot.md` §9,
+ * row 4). The words of the failure stay in the turn's `error`.
+ *
+ * - `rate_limit`: the provider said "not now"; it passes.
+ * - `usage_limit`: the account's quota or credit is spent; it passes when the
+ *   plan resets or is topped up, not on a retry.
+ * - `credential`: the key or sign-in was refused; fixed in Settings.
+ * - `refused`: the provider refused this request (its content, the model);
+ *   the same request fails the same way.
+ * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
+ * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `interrupted`: the worker running it stopped; sending it again runs it.
+ * - `other`: none of these, or not known.
+ */
+export const BOT_TURN_FAILURES = [
+  'rate_limit',
+  'usage_limit',
+  'credential',
+  'refused',
+  'unavailable',
+  'time_limit',
+  'interrupted',
+  'other',
+] as const;
+export type BotTurnFailure = (typeof BOT_TURN_FAILURES)[number];
+
+/** Whether sending the same message again can succeed, for each kind of failure. */
+export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>> = {
+  rate_limit: true,
+  usage_limit: false,
+  credential: false,
+  refused: false,
+  unavailable: true,
+  time_limit: false,
+  interrupted: true,
+  other: true,
+};
+
+/**
  * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
  * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
  * waits on. Within a lane, the oldest first.

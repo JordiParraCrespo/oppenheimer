@@ -49,6 +49,16 @@
     "queuedImages_other": "{{count}} images",
     "failed": "{{provider}} could not finish this turn",
     "failedUnknown": "The turn ended without saying why.",
+    "failure": {
+      "rate_limit": "{{provider}} is limiting requests for now. This usually passes: try again in a moment.",
+      "usage_limit": "The {{provider}} account is out of quota or credit. Sending it again won't help until it is topped up or the plan resets.",
+      "credential": "{{provider}} refused the key or sign-in. Sending it again won't help: check it in Model providers.",
+      "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
+      "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
+      "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+    },
+    "openProviders": "Open Model providers",
     "errorDetails": "Show details",
     "errorLess": "Show less",
     "retry": "Retry",

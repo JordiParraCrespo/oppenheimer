@@ -3724,6 +3724,10 @@ export type BotTurnResponseDto = {
      * Why it failed; null otherwise.
      */
     error: string | null;
+    /**
+     * What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.
+     */
+    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'interrupted' | 'other' | null;
     inputTokens: number;
     outputTokens: number;
     /**

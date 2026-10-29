@@ -129,6 +129,8 @@ export type BotEngineEvent =
       type: 'done';
       reason: 'completed' | 'cancelled' | 'max_steps' | 'failed';
       error?: string;
+      /** Set on a `failed` end: what kind of failure it was, so the chat can say whether a retry helps. */
+      failure?: BotEngineFailure;
       /**
        * Set on a `failed` end the provider refused for rate or quota (a
        * `429`, or the SDK naming a rate limit): when it said it may be
@@ -136,6 +138,22 @@ export type BotEngineEvent =
        */
       rateLimit?: { resetAt: Date | null };
     };
+
+/**
+ * Why a turn failed, as far as the engine can tell from the provider's
+ * answer: a rate limit, a spent quota or credit, a refused key or sign-in,
+ * a request the provider refused (its content, the model), the provider
+ * down or unreachable, or none of those.
+ */
+export const BOT_ENGINE_FAILURES = [
+  'rate_limit',
+  'usage_limit',
+  'credential',
+  'refused',
+  'unavailable',
+  'other',
+] as const;
+export type BotEngineFailure = (typeof BOT_ENGINE_FAILURES)[number];
 
 /**
  * What `complete` throws when the provider refused for rate or quota. A

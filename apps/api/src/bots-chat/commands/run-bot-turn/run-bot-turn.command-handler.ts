@@ -9,6 +9,7 @@ import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.p
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
 import {
+  failureKindOf,
   failureReasonOf,
   type TranscriptWrite,
   TurnTranscript,
@@ -84,7 +85,10 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       }
       transcript.endTurn(new Date(), watch.interruption);
     } catch (error) {
-      turn.end('failed', new Date(), { error: failureReasonOf(error) });
+      turn.end('failed', new Date(), {
+        error: failureReasonOf(error),
+        failure: failureKindOf(error),
+      });
       if (!(error instanceof AppError)) {
         const stack = error instanceof Error ? error.stack : String(error);
         this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);

@@ -1,8 +1,10 @@
 export {
+  BOT_ENGINE_FAILURES,
   type BotCompletionRequest,
   type BotEffort,
   BotEngine,
   type BotEngineEvent,
+  type BotEngineFailure,
   type BotEngineTool,
   type BotEngineToolResult,
   type BotPlanLimits,

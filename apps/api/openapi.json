@@ -29804,6 +29804,22 @@
             "nullable": true,
             "description": "Why it failed; null otherwise."
           },
+          "failure": {
+            "type": "string",
+            "enum": [
+              "rate_limit",
+              "usage_limit",
+              "credential",
+              "refused",
+              "unavailable",
+              "time_limit",
+              "interrupted",
+              "other",
+              null
+            ],
+            "nullable": true,
+            "description": "What kind of failure it was, so a client can say whether sending it again can help; null unless it failed."
+          },
           "inputTokens": {
             "type": "number"
           },
@@ -29855,6 +29871,7 @@
           "provider",
           "model",
           "error",
+          "failure",
           "inputTokens",
           "outputTokens",
           "contextTokens",

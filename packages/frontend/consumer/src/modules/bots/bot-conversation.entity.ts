@@ -5,6 +5,7 @@ import type {
   BotMessageRole,
   BotProvider,
   BotSubagentRun,
+  BotTurnFailure,
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 
@@ -98,11 +99,22 @@ export class BotTurnEntity {
     public readonly context: BotTurnContext | null = null,
     /** A subscription's windows as that answer said them; `null` on an API key. */
     public readonly planLimits: BotPlanLimits | null = null,
+    /** What kind of failure it was, as the API recorded it; `null` unless it failed. */
+    private readonly recordedFailure: BotTurnFailure | null = null,
   ) {}
 
   /** Queued or running: the chat shows it working, and Stop applies to it. */
   get isActive(): boolean {
     return this.status === 'queued' || this.status === 'running';
+  }
+
+  /**
+   * What kind of failure it was; `null` unless it failed. A turn that failed
+   * before the API recorded kinds reads as `other`.
+   */
+  get failure(): BotTurnFailure | null {
+    if (this.status !== 'failed') return null;
+    return this.recordedFailure ?? 'other';
   }
 }
 

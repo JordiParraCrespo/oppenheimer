@@ -271,6 +271,7 @@ export class BotTurnRepository
         .set({
           status: turn.status,
           error: turn.error,
+          failure: turn.failure,
           inputTokens: turn.inputTokens,
           outputTokens: turn.outputTokens,
           contextTokens: record.contextTokens,

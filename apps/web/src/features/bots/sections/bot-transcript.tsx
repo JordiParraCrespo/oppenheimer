@@ -12,7 +12,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { dateFormatter, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { botModelOf } from '@oppenheimer/shared/schemas/bot';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
@@ -43,6 +43,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const { data: conversation, error } = useSuspenseBotConversation(botId);
   const live = useBotLiveText(botId);
   const retry = useSendBotMessage();
+  const navigate = useNavigate();
   const blocks = chatTurns(conversation);
   const again = retryContent(blocks);
   const newest = newestTurn(blocks)?.turnId;
@@ -105,6 +106,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                         : undefined
                     }
                     retrying={retry.isPending}
+                    onOpenProviders={() => navigate({ to: '/settings/model-providers' })}
                   />
                 )}
               </Fragment>

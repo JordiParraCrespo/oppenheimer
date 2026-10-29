@@ -250,6 +250,7 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     dto.endedAt ? new Date(dto.endedAt) : null,
     dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
     dto.planLimits ? toPlanLimits(dto.planLimits) : null,
+    dto.failure,
   );
 }
 

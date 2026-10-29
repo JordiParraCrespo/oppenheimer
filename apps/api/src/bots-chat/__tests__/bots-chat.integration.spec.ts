@@ -415,9 +415,13 @@ describe('bots chat (integration)', () => {
     const running = (await turns.findForRun(turn.id)).unwrap();
     running.start(new Date());
     await turns.claim(running);
-    running.end('failed', new Date(), { error: 'e'.repeat(2_001) });
+    running.end('failed', new Date(), { error: 'e'.repeat(2_001), failure: 'usage_limit' });
     expect(await turns.finish(running, null)).toBe(true);
-    expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({ status: 'failed' });
+    // The kind passes CHK_bot_turn_failure and comes back: the chat reads it.
+    expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({
+      status: 'failed',
+      failure: 'usage_limit',
+    });
   });
 
   // What breaks this: a column the finish leaves out of its UPDATE, a CHECK

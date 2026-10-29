@@ -588,6 +588,37 @@ describe('ClaudeBotEngine', () => {
     expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 45_000);
   });
 
+  // The SDK names each failed model call (`SDKAssistantMessageError`); the
+  // chat says from it whether a retry can help.
+  it.each([
+    ['authentication_failed', 'credential'],
+    ['billing_error', 'usage_limit'],
+    ['invalid_request', 'refused'],
+    ['overloaded', 'unavailable'],
+    ['max_output_tokens', 'other'],
+  ])('reads the SDK’s %s as a %s failure', async (code, failure) => {
+    scripted(() => [
+      assistant([{ type: 'text', text: `API Error: ${code}` }], { error: code }),
+      success({ is_error: true, result: 'API Error' }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
+  it('marks a rate limit as that kind of failure', async () => {
+    scripted(() => [
+      assistant([{ type: 'text', text: 'API Error: 429' }], { error: 'rate_limit' }),
+      success({ is_error: true, result: 'API Error', api_error_status: 429 }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'rate_limit' });
+  });
+
   it('takes the reset of a rejected limit, and says nothing of one on any other failure', async () => {
     scripted(() => [
       {

@@ -1,6 +1,7 @@
-import type { BotEngineEvent } from '@oppenheimer/backend-agents';
+import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotAttachment } from '@oppenheimer/shared';
+import type { BotAttachment, BotTurnFailure } from '@oppenheimer/shared';
+import { BotErrors } from '../../bots/domain/bots.errors';
 import { toShownImages, toSubagentRuns } from '../bot-message.mapper';
 import {
   BOT_TOOL_OUTPUT_MAX,
@@ -27,6 +28,8 @@ export type TranscriptWrite =
 export interface TranscriptOutcome {
   reason: 'completed' | 'cancelled' | 'max_steps' | 'failed';
   error: string | null;
+  /** What kind of failure the engine said it was; null unless it failed. */
+  failure: BotEngineFailure | null;
   inputTokens: number;
   outputTokens: number;
   /** What the context held at the last answer that reported it. */
@@ -51,6 +54,7 @@ export class TurnTranscript {
   private outcome: TranscriptOutcome = {
     reason: 'failed',
     error: 'The turn ended without saying how',
+    failure: 'other',
     inputTokens: 0,
     outputTokens: 0,
     context: null,
@@ -81,6 +85,7 @@ export class TurnTranscript {
       case 'done': {
         this.outcome.reason = event.reason;
         this.outcome.error = event.reason === 'failed' ? (event.error ?? null) : null;
+        this.outcome.failure = event.reason === 'failed' ? (event.failure ?? 'other') : null;
         const unsaid = this.pending;
         this.pending = '';
         return this.say(unsaid);
@@ -99,15 +104,15 @@ export class TurnTranscript {
    * steps still completes it.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
-    const { reason, error, inputTokens, outputTokens, context, planLimits } = this.outcome;
+    const { reason, error, failure, inputTokens, outputTokens, context, planLimits } = this.outcome;
     const usage = { inputTokens, outputTokens, context, planLimits };
     if (interruption === 'time_limit') {
-      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, ...usage });
+      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
     } else if (interruption === 'stop') {
       this.turn.end('cancelled', now, usage);
     } else {
       const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
-      this.turn.end(status, now, { error, ...usage });
+      this.turn.end(status, now, { error, failure, ...usage });
     }
   }
 
@@ -188,4 +193,17 @@ export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000
 export function failureReasonOf(error: unknown): string {
   if (error instanceof AppError) return error.message;
   return error instanceof Error ? error.message.slice(0, 500) : 'The turn failed';
+}
+
+/**
+ * The kind of failure a turn that threw before or around its engine is. A
+ * provider with no key or sign-in for the turn is fixed in Settings, so it
+ * is a credential failure; ChatGPT refreshing its sign-in passes, so it is
+ * the provider being unavailable for a moment. Anything else is not known.
+ */
+export function failureKindOf(error: unknown): BotTurnFailure {
+  if (!(error instanceof AppError)) return 'other';
+  if (error.code === BotErrors.PROVIDER_KEY_MISSING.code) return 'credential';
+  if (error.code === BotErrors.CHATGPT_REFRESHING.code) return 'unavailable';
+  return 'other';
 }

@@ -1,22 +1,13 @@
-import {
-  ChatErrorAction,
-  ChatErrorBanner,
-  ChatUserMessage,
-  IconButton,
-  MessageTrail,
-} from '@oppenheimer/design-system-web';
+import { ChatUserMessage, IconButton, MessageTrail } from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
-import {
-  BOT_PROVIDER_CATALOG,
-  type BotAttachment,
-  botModelOf,
-} from '@oppenheimer/shared/schemas/bot';
+import { type BotAttachment, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotTrace } from '@/features/bots/components/bot-trace';
+import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import {
@@ -36,7 +27,7 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * a live line says what it is doing, with its clock. Once it has ended, a
  * trail copies the answer, offers Retry on the newest turn, and says its
  * model and the tokens it took (Stopped first when someone pressed Stop); a
- * failure says why, with Retry beside it. The images your message carried
+ * failure says why and what helps (`BotTurnFailure`). The images your message carried
  * sit above its bubble, and the ones the bot showed (`show_image`) in its
  * answer where it showed them, both drawn by `images`, which reads them.
  */
@@ -46,6 +37,7 @@ export function BotTurn({
   images,
   onRetry,
   retrying = false,
+  onOpenProviders,
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
@@ -54,6 +46,8 @@ export function BotTurn({
   /** Sends your last message again; only the newest turn, once it has ended. */
   onRetry?: () => void;
   retrying?: boolean;
+  /** Opens Settings → Model providers, where a refused key or sign-in is fixed. */
+  onOpenProviders?: () => void;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -117,20 +111,12 @@ export function BotTurn({
           />
         ) : null}
         {turn && phase === 'failed' ? (
-          <ChatErrorBanner
-            title={t('bots.chat.failed', { provider: BOT_PROVIDER_CATALOG[turn.provider].label })}
-            actions={
-              onRetry ? (
-                <ChatErrorAction onClick={onRetry} disabled={retrying}>
-                  <RotateCcw aria-hidden />
-                  {t('bots.chat.retry')}
-                </ChatErrorAction>
-              ) : undefined
-            }
-            labels={{ details: t('bots.chat.errorDetails'), less: t('bots.chat.errorLess') }}
-          >
-            {turn.error ?? t('bots.chat.failedUnknown')}
-          </ChatErrorBanner>
+          <BotTurnFailure
+            turn={turn}
+            onRetry={onRetry}
+            retrying={retrying}
+            onOpenProviders={onOpenProviders}
+          />
         ) : null}
         {turn && !active ? (
           <MessageTrail

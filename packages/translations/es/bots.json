@@ -49,6 +49,16 @@
     "queuedImages_other": "{{count}} imágenes",
     "failed": "{{provider}} no pudo terminar este turno",
     "failedUnknown": "El turno terminó sin decir por qué.",
+    "failure": {
+      "rate_limit": "{{provider}} está limitando las peticiones por ahora. Suele pasar: vuelve a intentarlo en un momento.",
+      "usage_limit": "La cuenta de {{provider}} se ha quedado sin cuota o crédito. Volver a enviarlo no servirá hasta que se recargue o se renueve el plan.",
+      "credential": "{{provider}} ha rechazado la clave o el inicio de sesión. Volver a enviarlo no servirá: revísalo en Proveedores de modelos.",
+      "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
+      "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
+      "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
+      "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
+    },
+    "openProviders": "Abrir Proveedores de modelos",
     "errorDetails": "Mostrar detalles",
     "errorLess": "Mostrar menos",
     "retry": "Reintentar",

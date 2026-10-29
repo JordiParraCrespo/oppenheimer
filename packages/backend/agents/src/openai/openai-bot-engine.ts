@@ -83,11 +83,17 @@ export interface ResponsesEndpoint {
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
     const endpoint = this.endpoint(request);
-    if (typeof endpoint === 'string') return guardTurn(request, () => [failed(endpoint)]);
+    if (typeof endpoint === 'string') {
+      return guardTurn(request, () => [failed(endpoint, 'credential')]);
+    }
     return guardTurn(request, () => this.stream(request, endpoint));
   }
 
-  /** OpenAI's API, or the request's `baseUrl`; a string refuses the turn with that reason. */
+  /**
+   * OpenAI's API, or the request's `baseUrl`; a string refuses the turn with
+   * that reason, as a credential failure: what refuses is a sign-in that
+   * lacks what it needs (ChatGPT's account).
+   */
   protected endpoint(request: BotTurnRequest): ResponsesEndpoint | string {
     return { baseUrl: request.baseUrl, modelSettings: {} };
   }
