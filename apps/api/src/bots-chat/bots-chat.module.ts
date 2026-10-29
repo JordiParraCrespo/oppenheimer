@@ -106,6 +106,7 @@ import { FindWorkspaceBotApprovalsHttpController } from './queries/find-workspac
 import { FindWorkspaceBotApprovalsQueryHandler } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.query-handler';
 import { ReadBotAttachmentHttpController } from './queries/read-bot-attachment/read-bot-attachment.http.controller';
 import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/read-bot-attachment.query-handler';
+import { SearchBotConversationQueryHandler } from './queries/search-bot-conversation/search-bot-conversation.query-handler';
 import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.controller';
 import { StreamBotQueryHandler } from './queries/stream-bot/stream-bot.query-handler';
 
@@ -139,6 +140,7 @@ const commandHandlers: Provider[] = [
 
 const queryHandlers: Provider[] = [
   FindBotTurnQueryHandler,
+  SearchBotConversationQueryHandler,
   FindBotConversationQueryHandler,
   ExportBotConversationQueryHandler,
   StreamBotQueryHandler,

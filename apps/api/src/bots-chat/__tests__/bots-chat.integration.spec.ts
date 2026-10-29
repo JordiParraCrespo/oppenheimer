@@ -525,6 +525,40 @@ describe('bots chat (integration)', () => {
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
   });
 
+  // What breaks this: another bot's or another workspace's chat matching, or
+  // web-search syntax passed through as a raw tsquery and failing on a stray
+  // quote.
+  it('searches one bot’s own words in its own workspace, with web-search syntax', async () => {
+    const bot = await create('Searcher');
+    const neighbour = await create('Neighbour');
+    const asked = sent(bot, 'Where does the staging host live?');
+    await turns.enqueue(asked.turn, asked.message, null);
+    await messages.insert(
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: asked.turn.id,
+        role: 'assistant',
+        content: 'The staging host is build-02, behind the VPN.',
+        steps: [],
+        position: 1,
+      }),
+    );
+    const elsewhere = sent(neighbour, 'staging host for the neighbour');
+    await turns.enqueue(elsewhere.turn, elsewhere.message, null);
+
+    const hits = await messages.search(scope(), bot.id, 'staging host', 10);
+    expect(hits.map((message) => message.content).sort()).toEqual([
+      'The staging host is build-02, behind the VPN.',
+      'Where does the staging host live?',
+    ]);
+    expect(await messages.search(scope(), bot.id, '"staging host is" -vpn', 10)).toEqual([]);
+    expect(await messages.search(scope(), bot.id, 'build-02 "unclosed', 10)).toHaveLength(1);
+    expect(await messages.search(scopeOf(await insertOrganization()), bot.id, 'staging', 10)).toEqual(
+      [],
+    );
+  });
+
   it('cancels a queued turn and a running one only through its conditional writes', async () => {
     const bot = await create('Glm Bot');
     const { turn, message } = sent(bot, 'Wait');
