@@ -209,7 +209,11 @@ export interface GmailProviderPort {
     threadIds: readonly string[],
     change: GmailLabelChange,
   ): Promise<GmailBulkOutcome>;
-  /** The same on single messages, in one call (`messages.batchModify`). */
+  /**
+   * The same on single messages, in one call (`messages.batchModify`). Gmail
+   * answers the batch as a whole, so there is no per-message missing list:
+   * it changes them all or fails.
+   */
   modifyMessages(
     grant: GmailCallGrant,
     messageIds: readonly string[],

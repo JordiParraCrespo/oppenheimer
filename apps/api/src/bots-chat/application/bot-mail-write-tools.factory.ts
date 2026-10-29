@@ -190,6 +190,11 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       scope: 'mail:write',
       description: 'Deletes a draft from the person’s Gmail, for good. Asks the person first.',
       input: z.object({ account, draft_id: z.string().trim().min(1).max(100) }),
+      // The card stores the account's id: a rename while it waits does not change what a yes deletes.
+      normalize: async (input, context) => ({
+        ...input,
+        account: (await this.accounts.one(context.owner, input.account)).id,
+      }),
       summarize: async (input, context) => {
         const planned = await this.draftPlan(input, context);
         return `Delete the draft "${planned.subject}" to ${planned.to.join(', ') || 'nobody'} from ${planned.accountEmail}`;

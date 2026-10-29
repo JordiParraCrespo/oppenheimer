@@ -158,4 +158,34 @@ describe('BotMailOrganizeToolsFactory', () => {
     expect(request).not.toHaveBeenCalled();
     expect(commands).not.toHaveBeenCalled();
   });
+
+  it('refuses putting Trash on mail, so trashing always goes through trash_mail’s card', async () => {
+    const { request, commands, tool } = setup('full');
+
+    const result = await tool('label_mail').run(
+      { account: 'Personal', thread_ids: ['t1'], add: ['TRASH'] },
+      { signal },
+    );
+
+    expect(result.content).toContain('Use trash_mail');
+    expect(request).not.toHaveBeenCalled();
+    expect(commands).not.toHaveBeenCalled();
+  });
+
+  it('refuses a call over the limit before a card is raised, and stores the account by its id', async () => {
+    const { request, tool } = setup('auto');
+    const many = (prefix: string) => Array.from({ length: 60 }, (_, i) => `${prefix}${i}`);
+
+    const tooMany = await tool('mark_mail').run(
+      { account: 'Personal', thread_ids: many('t'), message_ids: many('m'), read: true },
+      { signal },
+    );
+    expect(tooMany.isError).toBe(true);
+    expect(request).not.toHaveBeenCalled();
+
+    await tool('archive_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ input: expect.objectContaining({ account: ACCOUNT.id }) }),
+    );
+  });
 });
