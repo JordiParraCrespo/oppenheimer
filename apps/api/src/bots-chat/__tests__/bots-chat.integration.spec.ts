@@ -553,10 +553,11 @@ describe('bots chat (integration)', () => {
       'Where does the staging host live?',
     ]);
     expect(await messages.search(scope(), bot.id, '"staging host is" -vpn', 10)).toEqual([]);
-    expect(await messages.search(scope(), bot.id, 'build-02 "unclosed', 10)).toHaveLength(1);
-    expect(await messages.search(scopeOf(await insertOrganization()), bot.id, 'staging', 10)).toEqual(
-      [],
-    );
+    // A stray quote is not an error: the syntax never refuses, and OR joins.
+    expect(await messages.search(scope(), bot.id, 'build-02 OR "unclosed', 10)).toHaveLength(1);
+    expect(
+      await messages.search(scopeOf(await insertOrganization()), bot.id, 'staging', 10),
+    ).toEqual([]);
   });
 
   it('cancels a queued turn and a running one only through its conditional writes', async () => {
