@@ -1,5 +1,12 @@
 import { TranscriptDivider } from '@oppenheimer/design-system-web';
-import { Ban, CircleAlert, CircleCheck, Clock, Hand } from '@oppenheimer/design-system-web/icons';
+import {
+  Ban,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  Hand,
+  TextSearch,
+} from '@oppenheimer/design-system-web/icons';
 import type { BotSessionEvent } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
@@ -11,6 +18,7 @@ const SESSION_KEYS = {
   failed: 'bots.chat.event.session.failed',
   cancelled: 'bots.chat.event.session.cancelled',
   expired: 'bots.chat.event.session.expired',
+  matched: 'bots.chat.event.session.matched',
 } as const;
 
 const SESSION_ICONS = {
@@ -19,11 +27,14 @@ const SESSION_ICONS = {
   failed: <CircleAlert />,
   cancelled: <Ban />,
   expired: <Clock />,
+  matched: <TextSearch />,
 } as const;
 
 /**
  * A session the bot follows that woke it (`27-bot-subscriptions.md`):
- * "Session “Research” finished" with Open session, in red when it failed.
+ * "Session “Research” finished" with Open session, in red when it failed;
+ * or its terminal printed what the bot watches for: the pattern and how
+ * many lines matched, never the lines.
  */
 export function SessionEventLine({ event }: { event: BotSessionEvent }) {
   const { t } = useTranslation();
@@ -34,7 +45,13 @@ export function SessionEventLine({ event }: { event: BotSessionEvent }) {
       action={<OpenSessionButton sessionId={event.sessionId} />}
     >
       <span className="max-w-xl truncate" title={event.sessionName}>
-        {t(SESSION_KEYS[event.state], { name: event.sessionName })}
+        {event.match
+          ? t(SESSION_KEYS.matched, {
+              name: event.sessionName,
+              pattern: event.match.pattern,
+              count: event.match.count,
+            })
+          : t(SESSION_KEYS[event.state], { name: event.sessionName })}
       </span>
     </TranscriptDivider>
   );

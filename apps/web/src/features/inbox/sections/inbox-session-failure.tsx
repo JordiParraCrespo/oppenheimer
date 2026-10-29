@@ -1,4 +1,4 @@
-import { InboxCardBody } from '@oppenheimer/design-system-web';
+import { InboxMessageBody } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
 import { StartFailureDetail, useStartFailure } from '@oppenheimer/frontend-web';
@@ -22,7 +22,7 @@ export function InboxSessionFailure({
 
   return (
     <>
-      <InboxCardBody>{failure?.reason ?? fallback}</InboxCardBody>
+      <InboxMessageBody>{failure?.reason ?? fallback}</InboxMessageBody>
       {failure?.detail ? <StartFailureDetail detail={failure.detail} className="-mt-2" /> : null}
     </>
   );

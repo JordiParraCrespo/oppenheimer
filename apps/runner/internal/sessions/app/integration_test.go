@@ -29,6 +29,17 @@ import (
 type recorder struct {
 	states    []domain.State
 	decisions []*domain.Decision
+	matches   []terminalMatch
+}
+
+// terminalMatch is one TerminalMatched report.
+type terminalMatch struct {
+	session, watch string
+	count          int
+}
+
+func (r *recorder) TerminalMatched(sessionID, watchID string, count int) {
+	r.matches = append(r.matches, terminalMatch{session: sessionID, watch: watchID, count: count})
 }
 
 func (r *recorder) SessionChanged(s domain.Session) { r.states = append(r.states, s.State) }

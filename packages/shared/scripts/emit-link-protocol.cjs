@@ -74,6 +74,7 @@ const INTEGER_TYPES = {
   'sessionSnapshot.stateSeconds': 'int',
   'port.listing.ports[].port': 'int',
   'port.open.port': 'int',
+  'session.watch.count': 'int',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */

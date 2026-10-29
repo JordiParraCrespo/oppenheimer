@@ -390,6 +390,9 @@
     --radius-lg: 18px; /* cards */
     --radius-xl: 28px; /* modals, hero surfaces, large media */
     --radius-pill: 980px; /* every button, chip, badge, avatar, tab */
+    /* The navigation column (every sidebar, the settings nav): its rows, heads,
+       search and row actions, whatever their height, so it reads as one list. */
+    --radius-nav: var(--radius-xs);
     --radius: var(--radius-sm);
 
     /* =====================================================================
@@ -495,7 +498,6 @@
     --text-13: var(--text-sm);
     --text-14: 14px;
     --text-24: 24px;
-    --radius-nav: var(--radius-sm);
     --radius-tile: var(--radius-md);
     --radius-card: var(--radius-lg);
 
@@ -744,6 +746,7 @@
   --radius-3xl: var(--radius-xl);
   --radius-4xl: var(--radius-xl);
   --radius-pill: var(--radius-pill);
+  --radius-nav: var(--radius-nav);
 
   /* ---- Elevation — surfaces are flat; only floating layers detach -------- */
   --shadow-2xs: none;

@@ -190,7 +190,9 @@ export function EditorWhereStep({
                   // In Claude Code's cloud, the account a run goes out on is the
                   // host's; a host that is online and cannot start one is shown, off.
                   const cannot =
-                    rule.host === 'starts' && host.online && host.details.startsCloud === false;
+                    rule.host === 'starts' &&
+                    host.online &&
+                    host.details.startsCloud['claude-code'] === false;
                   return {
                     value: host.id,
                     label: host.name,

@@ -31,6 +31,13 @@ export interface BotSubscriptionProps {
   lastTurn: number | null;
   lastState: BotSessionWakeState | null;
   wakes: number;
+  /**
+   * The pattern the bot watches the session's terminal for, and the
+   * sessions module's watch behind it; null when it follows the task alone.
+   */
+  terminalWatch: { id: string; pattern: string } | null;
+  /** The newest count of matching lines a wake reported; 0 while it never matched. */
+  matches: number;
   /** How many writes the row has had; 0 for one not stored yet. */
   version: number;
 }
@@ -86,6 +93,8 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
         lastTurn: props.known?.lastTurn ?? null,
         lastState: props.known?.lastState ?? null,
         wakes: 0,
+        terminalWatch: null,
+        matches: 0,
         version: 0,
       },
     });
@@ -132,6 +141,12 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   get wakes(): number {
     return this.props.wakes;
   }
+  get terminalWatch(): { id: string; pattern: string } | null {
+    return this.props.terminalWatch;
+  }
+  get matches(): number {
+    return this.props.matches;
+  }
   /** The version its next write is conditioned on. */
   get versionAtLoad(): number {
     return this.loadedVersion;
@@ -147,6 +162,16 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   recordWake(turn: number, state: BotSessionWakeState): void {
     this.props.lastTurn = turn;
     this.props.lastState = state;
+    this.props.wakes += 1;
+    this.validate();
+  }
+
+  /**
+   * A wake was queued for a match of its pattern: `count` is the runner's
+   * cumulative count, so a late or repeated report never moves it back.
+   */
+  recordMatch(count: number): void {
+    this.props.matches = Math.max(this.props.matches, count);
     this.props.wakes += 1;
     this.validate();
   }
@@ -180,5 +205,6 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
       throw new ArgumentInvalidException('The last wake names its task and its state');
     }
     if (props.wakes < 0) throw new ArgumentInvalidException('Wakes are never negative');
+    if (props.matches < 0) throw new ArgumentInvalidException('Matches are never negative');
   }
 }

@@ -114,6 +114,9 @@ type RoutineCall = z.output<typeof input>;
  */
 @Injectable()
 export class BotRoutineToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'automations' as const;
+
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,

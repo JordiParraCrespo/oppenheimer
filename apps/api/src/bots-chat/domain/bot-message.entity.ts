@@ -28,6 +28,12 @@ export interface BotToolStep {
   sessionId: string | null;
   /** The children a `delegate` call ran, as they ended; null for any other call, and while it runs. */
   subagents: BotSubagentRun[] | null;
+  /**
+   * Why an asking call ran without a card, as the chat says it: "Always
+   * allowed for acme/docs" (a standing grant) or the owner's rule that let it
+   * (`25-bots.md` §5); null when it asked, or never had to.
+   */
+  allowedBy: string | null;
   /** The draft a mail call saved, for the chat's card; null for any other call. */
   mailDraft: BotMailDraft | null;
 }

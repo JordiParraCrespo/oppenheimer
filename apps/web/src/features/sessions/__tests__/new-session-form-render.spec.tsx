@@ -106,7 +106,10 @@ vi.mock('../sections/new-session-folder-browser', () => ({
 const reads = vi.hoisted(() => {
   const listeners = new Set<() => void>();
   let state = {
-    hosts: [] as { id: string; details?: { startsCloud: boolean | null } }[],
+    hosts: [] as {
+      id: string;
+      details?: { startsCloud: { 'claude-code': boolean | null; codex: boolean | null } };
+    }[],
     projects: [] as unknown[],
   };
   return {
@@ -135,7 +138,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // Applies `select` inside the subscription, as a query observer does, so a
   // reader that selects a boolean re-renders only when the boolean flips.
   useHosts: (options?: {
-    select?: (hosts: { id: string; details?: { startsCloud: boolean | null } }[]) => unknown;
+    select?: (
+      hosts: {
+        id: string;
+        details?: { startsCloud: { 'claude-code': boolean | null; codex: boolean | null } };
+      }[],
+    ) => unknown;
   }) => {
     const data = useSyncExternalStore(reads.subscribe, () =>
       options?.select ? options.select(reads.get().hosts) : reads.get().hosts,
@@ -295,7 +303,10 @@ describe('NewSessionForm', () => {
   /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */
   it('renders only the place chip when the host list settles', () => {
     act(() =>
-      reads.set({ ...reads.get(), hosts: [{ id: 'host-1', details: { startsCloud: null } }] }),
+      reads.set({
+        ...reads.get(),
+        hosts: [{ id: 'host-1', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+      }),
     );
     expect(rendered()).toEqual(['place']);
   });
@@ -324,7 +335,10 @@ describe('NewSessionForm', () => {
 
     beforeEach(() => {
       act(() =>
-        reads.set({ ...reads.get(), hosts: [{ id: 'host-2', details: { startsCloud: null } }] }),
+        reads.set({
+          ...reads.get(),
+          hosts: [{ id: 'host-2', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+        }),
       );
       fireEvent.click(screen.getByRole('button', { name: 'host' }));
       fireEvent.change(composer().field, { target: { value: 'Fix the build' } });
@@ -365,7 +379,10 @@ describe('NewSessionForm', () => {
   describe('a folder on the host', () => {
     beforeEach(() => {
       act(() =>
-        reads.set({ ...reads.get(), hosts: [{ id: 'host-2', details: { startsCloud: null } }] }),
+        reads.set({
+          ...reads.get(),
+          hosts: [{ id: 'host-2', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+        }),
       );
       rendered();
     });

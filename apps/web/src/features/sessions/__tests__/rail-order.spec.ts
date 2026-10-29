@@ -13,9 +13,9 @@ import {
  * The rail's order a reader dragged comes back on the next visit; anything
  * else in storage — an unknown item, a repeat, a broken or non-list value —
  * never drops or duplicates an item, and one this build added since takes
- * its default place — except the Inbox, which a stored order that lacks it
- * gets at the front (`29-inbox.md`, Decided 1). The console opens on
- * whichever item leads that order.
+ * its default place. The Inbox is Plan's first section now, not a rail item
+ * (the 2026-10-29 frame): an order stored while it was one loses it, and the
+ * console still opens on it unless the reader put another item first.
  */
 
 const DEFAULT = RAIL_ROUTES.map((item) => item.id);
@@ -29,40 +29,13 @@ describe('storedRailOrder', () => {
   });
 
   it('restores the order a drop remembered', () => {
-    rememberRailOrder(['plan', 'sessions', 'inbox', 'automations', 'bots', 'pulls']);
-    expect(storedRailOrder()).toEqual([
-      'plan',
-      'sessions',
-      'inbox',
-      'automations',
-      'bots',
-      'pulls',
-    ]);
+    rememberRailOrder(['plan', 'sessions', 'automations', 'bots', 'pulls']);
+    expect(storedRailOrder()).toEqual(['plan', 'sessions', 'automations', 'bots', 'pulls']);
   });
 
-  it('drops unknown and repeated ids and appends items the stored order lacks', () => {
+  it('drops unknown and repeated ids, the former Inbox among them, and appends the rest', () => {
     store(JSON.stringify(['inbox', 'automations', 'gone', 'automations', 'plan']));
-    expect(storedRailOrder()).toEqual([
-      'inbox',
-      'automations',
-      'plan',
-      'bots',
-      'sessions',
-      'pulls',
-    ]);
-  });
-
-  it('puts the Inbox first in an order stored before it existed', () => {
-    store(JSON.stringify(['plan', 'sessions', 'automations', 'bots', 'pulls']));
-    expect(storedRailOrder()).toEqual([
-      'inbox',
-      'plan',
-      'sessions',
-      'automations',
-      'bots',
-      'pulls',
-    ]);
-    expect(railLanding()).toBe('/inbox');
+    expect(storedRailOrder()).toEqual(['automations', 'plan', 'bots', 'sessions', 'pulls']);
   });
 
   it.each(['{not json', '{}', '"plan"'])('falls back to the default order on %s', (raw) => {
@@ -72,13 +45,18 @@ describe('storedRailOrder', () => {
 });
 
 describe('railLanding', () => {
-  it('opens on the Inbox for a reader who never dragged', () => {
-    expect(railLanding()).toBe('/inbox');
+  it("opens on Plan's Inbox for a reader who never dragged", () => {
+    expect(railLanding()).toBe('/plan/inbox');
+  });
+
+  it('still opens on the Inbox for an order that led with its former rail item', () => {
+    store(JSON.stringify(['inbox', 'bots', 'sessions', 'pulls', 'automations', 'plan']));
+    expect(railLanding()).toBe('/plan/inbox');
   });
 
   it('opens on the item the reader dragged to the top', () => {
-    rememberRailOrder(['plan', 'inbox', 'bots', 'sessions', 'pulls', 'automations']);
-    expect(railLanding()).toBe('/plan');
+    rememberRailOrder(['pulls', 'bots', 'sessions', 'automations', 'plan']);
+    expect(railLanding()).toBe('/pulls');
   });
 });
 
@@ -90,22 +68,8 @@ describe('useRailOrder', () => {
     act(() => result.current.handlers.onDragStart(item('plan')));
     act(() => result.current.handlers.onDragEnd({ active: item('plan'), over: item('sessions') }));
 
-    expect(result.current.order).toEqual([
-      'inbox',
-      'bots',
-      'plan',
-      'sessions',
-      'pulls',
-      'automations',
-    ]);
-    expect(storedRailOrder()).toEqual([
-      'inbox',
-      'bots',
-      'plan',
-      'sessions',
-      'pulls',
-      'automations',
-    ]);
+    expect(result.current.order).toEqual(['bots', 'plan', 'sessions', 'pulls', 'automations']);
+    expect(storedRailOrder()).toEqual(['bots', 'plan', 'sessions', 'pulls', 'automations']);
   });
 
   it('keeps the order when a drag is cancelled', () => {

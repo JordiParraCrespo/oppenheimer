@@ -23,6 +23,5 @@
   "logOutFailed": "Could not log you out. Try again.",
   "plan": "Plan",
   "pullRequests": "Pull requests",
-  "employees": "Employees",
-  "inbox": "Inbox"
+  "employees": "Employees"
 }

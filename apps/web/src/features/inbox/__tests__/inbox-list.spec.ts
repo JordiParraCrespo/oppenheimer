@@ -15,7 +15,6 @@ const item = (key: string, kind: InboxItem['kind'], projectIds: string[] = []) =
   ({ key, kind, projectIds, since: new Date(0), low: false }) as unknown as InboxItem;
 
 const visit = (patch: Partial<InboxVisit> = {}): InboxVisit => ({
-  log: [],
   later: [],
   done: [],
   ...patch,

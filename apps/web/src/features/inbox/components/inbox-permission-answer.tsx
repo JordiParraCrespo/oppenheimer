@@ -1,4 +1,4 @@
-import { ApprovalCommand, Button, InboxCardChoices } from '@oppenheimer/design-system-web';
+import { ApprovalCommand, Button, InboxMessageChoices } from '@oppenheimer/design-system-web';
 import type { SessionPermissionDecision } from '@oppenheimer/shared/schemas/session-decision';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +30,7 @@ export function InboxPermissionAnswer({
   return (
     <>
       {decision.detail ? <ApprovalCommand>{decision.detail}</ApprovalCommand> : null}
-      <InboxCardChoices>
+      <InboxMessageChoices>
         {decision.options.map((option, index) => (
           <Button
             // biome-ignore lint/suspicious/noArrayIndexKey: an option is answered by its place.
@@ -48,7 +48,7 @@ export function InboxPermissionAnswer({
             <span className="truncate">{option.label}</span>
           </Button>
         ))}
-      </InboxCardChoices>
+      </InboxMessageChoices>
     </>
   );
 }

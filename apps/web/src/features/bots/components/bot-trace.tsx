@@ -142,7 +142,8 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
  * fold into one line ("Used 5 tools"), under their kind's glyph when they
  * share one, that opens to those same lines.
- * A call still running is not drawn here: the turn's live line says
+ * A call that would have asked and ran says why on its line. A call
+ * still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
  */
@@ -164,7 +165,10 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
         key={step.callId}
         icon={view.icon}
         {...view.title(t, action)}
-        meta={step.isError ? t('bots.chat.activity.stepFailed') : meta}
+        // A call that ran without its card says why: a standing grant, or your rule.
+        meta={
+          step.isError ? t('bots.chat.activity.stepFailed') : (meta ?? step.allowedBy ?? undefined)
+        }
         tone={step.isError ? 'danger' : 'default'}
         action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
       >

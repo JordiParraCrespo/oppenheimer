@@ -23,6 +23,5 @@
   "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
   "plan": "Plan",
   "pullRequests": "Pull requests",
-  "employees": "Empleados",
-  "inbox": "Bandeja"
+  "employees": "Empleados"
 }

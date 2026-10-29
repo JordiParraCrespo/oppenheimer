@@ -872,6 +872,10 @@ export type HostResponseDto = {
      */
     startsCloudSessions?: boolean | null;
     /**
+     * Whether the host can start a Codex cloud task now: online, its runner takes `session.cloud.codex`, and `codex` is installed. Null when online but not known on the replica that answered.
+     */
+    startsCodexCloudSessions?: boolean | null;
+    /**
      * The claude.ai account (email) the host’s `claude` is signed in as: the account a Claude Code cloud session started there runs on. Null when it is not signed in, or its runner does not report it.
      */
     claudeAccount?: string | null;
@@ -1654,7 +1658,7 @@ export type SessionResponseDto = {
      */
     folderPath?: string | null;
     /**
-     * A cloud session's Claude Code id, once its host has started it: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. Null for every other place, and before the start.
+     * A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.
      */
     cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
@@ -3688,6 +3692,17 @@ export type BotPeerReplyEventResponseDto = {
     outcome: 'answered' | 'failed' | 'cancelled';
 };
 
+export type BotSessionMatchResponseDto = {
+    /**
+     * The pattern the bot watches the terminal for.
+     */
+    pattern: string;
+    /**
+     * New matching lines counted so far.
+     */
+    count: number;
+};
+
 export type BotSessionEventResponseDto = {
     kind: 'session';
     /**
@@ -3704,9 +3719,38 @@ export type BotSessionEventResponseDto = {
      */
     turn: number;
     /**
-     * What became of the task.
+     * What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched';
+    /**
+     * For `matched`: the pattern and how many lines matched so far; never the text.
+     */
+    match?: BotSessionMatchResponseDto | null;
+};
+
+export type BotGoalEventResponseDto = {
+    kind: 'goal';
+    /**
+     * `continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
+     */
+    activity: 'continued' | 'cleared' | 'exhausted' | 'stopped';
+    goalId: string;
+    /**
+     * The goal's objective at the time.
+     */
+    objective: string;
+    /**
+     * For `continued`, which continuation this is; otherwise how many ran.
+     */
+    step: number;
+    /**
+     * The continuations the goal may take.
+     */
+    limit: number;
+    /**
+     * For `stopped`: the status of the turn that ended it, or `access_lost`.
+     */
+    reason: string | null;
 };
 
 export type BotSubagentRunResponseDto = {
@@ -3757,6 +3801,10 @@ export type BotToolStepResponseDto = {
      */
     subagents: Array<BotSubagentRunResponseDto> | null;
     /**
+     * Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.
+     */
+    allowedBy: string | null;
+    /**
      * The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.
      */
     mailDraft: {
@@ -3792,7 +3840,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -3831,6 +3879,10 @@ export type BotTurnResponseDto = {
      * Why it failed; null otherwise.
      */
     error: string | null;
+    /**
+     * What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.
+     */
+    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'interrupted' | 'other' | null;
     inputTokens: number;
     outputTokens: number;
     /**
@@ -3875,6 +3927,27 @@ export type SendBotMessageRequest = {
     timeZone?: string;
 };
 
+export type BotGoalResponseDto = {
+    id: string;
+    /**
+     * What the bot keeps working toward, in its words.
+     */
+    objective: string;
+    /**
+     * The continuation turns queued so far.
+     */
+    continuations: number;
+    /**
+     * The continuation turns it may queue.
+     */
+    limit: number;
+    createdAt: string;
+};
+
+export type BotGoalStateResponseDto = {
+    goal: BotGoalResponseDto | null;
+};
+
 export type BotApprovalResponseDto = {
     id: string;
     /**
@@ -3904,6 +3977,30 @@ export type BotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What kind of thing the call acts on (`repository`, `session`); null when none.
+     */
+    subjectKind: string | null;
+    /**
+     * The thing the call acts on, by name: what "Always allow for …" covers.
+     */
+    subjectLabel: string | null;
+    /**
+     * The call sends data out of Oppenheimer.
+     */
+    sharesOutside: boolean;
+    /**
+     * Why a rule paused the call, when one did.
+     */
+    reviewNote: string | null;
+    /**
+     * How far a yes may reach: this call, its subject, the tool.
+     */
+    reaches: Array<'once' | 'tool' | 'subject'>;
+    /**
+     * How far the yes went.
+     */
+    reach: 'once' | 'tool' | 'subject' | null;
     decidedByUserId: string | null;
     decidedAt: string | null;
     createdAt: string;
@@ -3938,6 +4035,30 @@ export type WorkspaceBotApprovalResponseDto = {
      * What the person added to a no.
      */
     note: string | null;
+    /**
+     * What kind of thing the call acts on (`repository`, `session`); null when none.
+     */
+    subjectKind: string | null;
+    /**
+     * The thing the call acts on, by name: what "Always allow for …" covers.
+     */
+    subjectLabel: string | null;
+    /**
+     * The call sends data out of Oppenheimer.
+     */
+    sharesOutside: boolean;
+    /**
+     * Why a rule paused the call, when one did.
+     */
+    reviewNote: string | null;
+    /**
+     * How far a yes may reach: this call, its subject, the tool.
+     */
+    reaches: Array<'once' | 'tool' | 'subject'>;
+    /**
+     * How far the yes went.
+     */
+    reach: 'once' | 'tool' | 'subject' | null;
     decidedByUserId: string | null;
     decidedAt: string | null;
     createdAt: string;
@@ -3958,6 +4079,84 @@ export type WorkspaceBotApprovalResponseDto = {
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
+    reach?: 'once' | 'tool' | 'subject';
+};
+
+export type BotToolPermissionDto = {
+    /**
+     * The tool, as the bot knows it (`merge_pull_request`).
+     */
+    name: string;
+    /**
+     * The group it is listed under.
+     */
+    group: 'self' | 'sessions' | 'plan' | 'mail' | 'github' | 'automations' | 'bots' | 'web';
+    /**
+     * What it does, in a sentence.
+     */
+    description: string;
+    /**
+     * It reaches outside Oppenheimer: asking is its default under Approve for me.
+     */
+    asks: boolean;
+    /**
+     * Every call is decided on its own: Allow is not offered for it.
+     */
+    perCallOnly: boolean;
+    /**
+     * What it does now: the setting, or the default.
+     */
+    decision: 'allow' | 'ask' | 'off';
+    /**
+     * The owner’s setting; null when the tool follows the preset.
+     */
+    set: 'allow' | 'ask' | 'off' | null;
+};
+
+export type BotToolGrantDto = {
+    id: string;
+    tool: string;
+    /**
+     * What it covers: `repository`, `session`.
+     */
+    subjectKind: string;
+    /**
+     * How it is named: `acme/xrp-mobile`.
+     */
+    subjectLabel: string;
+    createdAt: string;
+};
+
+export type BotPermissionRuleDto = {
+    id: string;
+    effect: 'allow' | 'ask';
+    text: string;
+    createdAt: string;
+};
+
+export type BotPermissionsResponseDto = {
+    /**
+     * The preset every tool with no setting follows.
+     */
+    preset: 'auto' | 'full';
+    tools: Array<BotToolPermissionDto>;
+    /**
+     * Newest first.
+     */
+    grants: Array<BotToolGrantDto>;
+    /**
+     * Oldest first.
+     */
+    rules: Array<BotPermissionRuleDto>;
+};
+
+export type SetBotToolDecisionRequest = {
+    decision: 'allow' | 'ask' | 'off' | 'default';
+};
+
+export type CreateBotPermissionRuleRequest = {
+    effect: 'allow' | 'ask';
+    text: string;
 };
 
 export type VoiceTranscriptionResponseDto = {
@@ -13662,6 +13861,73 @@ export type CancelBotTurnResponses = {
 
 export type CancelBotTurnResponse = CancelBotTurnResponses[keyof CancelBotTurnResponses];
 
+export type ClearBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal';
+};
+
+export type ClearBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ClearBotGoalError = ClearBotGoalErrors[keyof ClearBotGoalErrors];
+
+export type ClearBotGoalResponses = {
+    /**
+     * The bot has no goal now.
+     */
+    204: void;
+};
+
+export type ClearBotGoalResponse = ClearBotGoalResponses[keyof ClearBotGoalResponses];
+
+export type FindBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal';
+};
+
+export type FindBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotGoalError = FindBotGoalErrors[keyof FindBotGoalErrors];
+
+export type FindBotGoalResponses = {
+    200: BotGoalStateResponseDto;
+};
+
+export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
+
 export type StreamBotData = {
     body?: never;
     path: {
@@ -13783,9 +14049,15 @@ export type DecideBotApprovalErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * BOTS_034 — Too many standing grants
+     *
      * BOTS_016 — The approval was already decided
      */
     409: ProblemDetailsDto;
+    /**
+     * BOTS_030 — A reach the card does not offer
+     */
+    422: ProblemDetailsDto;
 };
 
 export type DecideBotApprovalError = DecideBotApprovalErrors[keyof DecideBotApprovalErrors];
@@ -13795,6 +14067,183 @@ export type DecideBotApprovalResponses = {
 };
 
 export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
+
+export type FindBotPermissionsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions';
+};
+
+export type FindBotPermissionsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotPermissionsError = FindBotPermissionsErrors[keyof FindBotPermissionsErrors];
+
+export type FindBotPermissionsResponses = {
+    200: BotPermissionsResponseDto;
+};
+
+export type FindBotPermissionsResponse = FindBotPermissionsResponses[keyof FindBotPermissionsResponses];
+
+export type SetBotToolDecisionData = {
+    body: SetBotToolDecisionRequest;
+    path: {
+        id: string;
+        tool: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/tools/{tool}';
+};
+
+export type SetBotToolDecisionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_029 — No such tool
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_030 — This tool is decided call by call
+     */
+    422: ProblemDetailsDto;
+};
+
+export type SetBotToolDecisionError = SetBotToolDecisionErrors[keyof SetBotToolDecisionErrors];
+
+export type SetBotToolDecisionResponses = {
+    200: BotPermissionsResponseDto;
+};
+
+export type SetBotToolDecisionResponse = SetBotToolDecisionResponses[keyof SetBotToolDecisionResponses];
+
+export type CreateBotPermissionRuleData = {
+    body: CreateBotPermissionRuleRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/rules';
+};
+
+export type CreateBotPermissionRuleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_031 — The bot holds as many rules as it can
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateBotPermissionRuleError = CreateBotPermissionRuleErrors[keyof CreateBotPermissionRuleErrors];
+
+export type CreateBotPermissionRuleResponses = {
+    201: BotPermissionsResponseDto;
+};
+
+export type CreateBotPermissionRuleResponse = CreateBotPermissionRuleResponses[keyof CreateBotPermissionRuleResponses];
+
+export type DeleteBotPermissionRuleData = {
+    body?: never;
+    path: {
+        id: string;
+        ruleId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/rules/{ruleId}';
+};
+
+export type DeleteBotPermissionRuleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_032 — Rule not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotPermissionRuleError = DeleteBotPermissionRuleErrors[keyof DeleteBotPermissionRuleErrors];
+
+export type DeleteBotPermissionRuleResponses = {
+    204: void;
+};
+
+export type DeleteBotPermissionRuleResponse = DeleteBotPermissionRuleResponses[keyof DeleteBotPermissionRuleResponses];
+
+export type DeleteBotToolGrantData = {
+    body?: never;
+    path: {
+        id: string;
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/permissions/grants/{grantId}';
+};
+
+export type DeleteBotToolGrantErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_033 — Grant not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotToolGrantError = DeleteBotToolGrantErrors[keyof DeleteBotToolGrantErrors];
+
+export type DeleteBotToolGrantResponses = {
+    204: void;
+};
+
+export type DeleteBotToolGrantResponse = DeleteBotToolGrantResponses[keyof DeleteBotToolGrantResponses];
 
 export type TranscribeVoiceData = {
     body: {

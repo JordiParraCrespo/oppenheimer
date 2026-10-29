@@ -53,7 +53,7 @@ test('a session waiting on an answer shows in the Inbox and opens from it', asyn
   await expect(page.locator('.xterm-rows')).toContainText('Do you want to proceed?');
 
   // Blocked for 30 s before it counts as waiting on you.
-  await page.goto('/inbox');
+  await page.goto('/plan/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();

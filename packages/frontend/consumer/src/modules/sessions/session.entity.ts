@@ -231,8 +231,9 @@ export class SessionEntity {
     /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
     public readonly cloud: SessionCloudRun | null = null,
     /**
-     * A Claude Code cloud session's id (`session_…`), once its host has
-     * started it; null before, and for every other session.
+     * A cloud session's id at its vendor, once its host has started it:
+     * Claude Code's session (`session_…`) or Codex's task (`task_…`); null
+     * before, and for every other session.
      */
     public readonly cloudSessionId: string | null = null,
   ) {}
@@ -258,16 +259,28 @@ export class SessionEntity {
     return this.cloud ? `cloud:${this.cloud.provider}` : (this.hostId ?? '');
   }
 
-  /** The cloud session's page on claude.ai, once it has one. */
+  /**
+   * The cloud session's page at its vendor, once it has one: claude.ai/code
+   * for Claude Code's, chatgpt.com/codex for a Codex task.
+   */
   get cloudUrl(): string | null {
-    return this.cloudSessionId
-      ? `https://claude.ai/code/${encodeURIComponent(this.cloudSessionId)}`
-      : null;
+    if (!this.cloudSessionId) return null;
+    const id = encodeURIComponent(this.cloudSessionId);
+    return this.agent === 'codex'
+      ? `https://chatgpt.com/codex/tasks/${id}`
+      : `https://claude.ai/code/${id}`;
   }
 
-  /** The command that brings the cloud session's branch and conversation into a terminal. */
+  /**
+   * The command that brings the cloud session's work into a terminal: Claude
+   * Code's branch and conversation (`claude --teleport`), or a Codex task's
+   * diff, applied to the checkout it runs in (`codex apply`).
+   */
   get teleportCommand(): string | null {
-    return this.cloudSessionId ? `claude --teleport ${this.cloudSessionId}` : null;
+    if (!this.cloudSessionId) return null;
+    return this.agent === 'codex'
+      ? `codex apply ${this.cloudSessionId}`
+      : `claude --teleport ${this.cloudSessionId}`;
   }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
