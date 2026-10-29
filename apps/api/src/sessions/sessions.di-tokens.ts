@@ -20,3 +20,5 @@ export const SESSION_SHARE_REPOSITORY = Symbol('SESSION_SHARE_REPOSITORY');
 export const SESSION_USAGE_READER = Symbol('SESSION_USAGE_READER');
 /** Where a cloud session's first-task files are kept and linked from (`CloudFilesPort`). */
 export const CLOUD_FILES = Symbol('CLOUD_FILES');
+/** A session's terminal watches (`session_terminal_watch`). */
+export const SESSION_TERMINAL_WATCH_REPOSITORY = Symbol('SESSION_TERMINAL_WATCH_REPOSITORY');

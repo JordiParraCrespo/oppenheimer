@@ -12,6 +12,7 @@ import { FindPullRequestQuery } from '../../pull-requests/queries/find-pull-requ
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import { describeTarget, type PullRequestDetailView } from '../bot-github-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
+import type { BotToolSubject } from '../domain/bot-tool-permission.entity';
 import { cut } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
@@ -19,6 +20,7 @@ import {
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
+  repositorySubject,
 } from './bot-tool.factory';
 
 /** The three ids every pull request tool takes, as list_pull_requests gives them. */
@@ -55,6 +57,9 @@ type Address = { installation_id: string; github_repo_id: number; number: number
  */
 @Injectable()
 export class BotPullRequestToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'github' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
@@ -74,6 +79,8 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       name: 'comment_on_pull_request',
       scope: 'pulls:write',
       asks: true,
+      sharesOutside: true,
+      subject: (input, context) => this.repositorySubject(context, input),
       description:
         "Posts a comment on a pull request in the person's name: on its conversation, or on one line of its diff when path and line are given. Use review_pull_request to approve or ask for changes instead.",
       input: z
@@ -140,6 +147,8 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       name: 'review_pull_request',
       scope: 'pulls:write',
       asks: true,
+      sharesOutside: true,
+      subject: (input, context) => this.repositorySubject(context, input),
       description:
         "Submits a review in the person's name: approve, request changes, or comment, with an optional summary and up to 50 line comments. Approving does not merge; use merge_pull_request for that. Requesting changes or commenting needs a body or a line comment.",
       input: z
@@ -185,6 +194,8 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       name: 'merge_pull_request',
       scope: 'pulls:write',
       asks: true,
+      // Every merge is its own decision: no Allow, no standing grant.
+      perCallOnly: true,
       description:
         "Merges an open pull request in the person's name, squash by default, at the head commit get_pull_request showed: if anything was pushed since, nothing merges and you should read it again. GitHub's branch rules decide; when they hold it (checks, a required review, a conflict), the answer says so and nothing is forced.",
       input: z.object({
@@ -297,6 +308,15 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return pull
       ? describeTarget(pull.repository, pull.number, pull.title)
       : `pull request #${input.number} (repo ${input.github_repo_id})`;
+  }
+
+  /** The repository a call acts on, as a card offers to always allow the tool there. */
+  private async repositorySubject(
+    context: BotToolCallContext,
+    input: Address,
+  ): Promise<BotToolSubject> {
+    const pull = await this.pull(context, input).catch(() => null);
+    return repositorySubject(input, pull?.repository ?? null);
   }
 
   /** The host's name as the owner sees it; its id when they cannot read it. */

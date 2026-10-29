@@ -3,6 +3,7 @@ import type { BotApprovalStatus } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { BotToolPermissionEntity } from '../domain/bot-tool-permission.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** What a decision owes, written in the same transaction as the move itself. */
@@ -11,6 +12,12 @@ export interface BotApprovalEffects {
   continuation?: { turn: BotTurnEntity; opening: BotMessageEntity };
   /** A yes: the `run-approved-call` job, with who decided, by name, for the event. */
   runCall?: { by: string };
+  /**
+   * A yes that reaches past this call: the tool's Allow or a standing grant
+   * (`BotApprovalEntity.standing`), written with the decision. A grant past
+   * `maxGrants` is `BOTS_034`, and the decision is not written either.
+   */
+  standing?: { permission: BotToolPermissionEntity; maxGrants: number };
 }
 
 export interface BotApprovalRepositoryPort {

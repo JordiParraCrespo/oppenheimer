@@ -122,6 +122,8 @@ const plan = z
  */
 @Injectable()
 export class BotMailWriteToolsFactory implements BotToolArea {
+  readonly group = 'mail' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,

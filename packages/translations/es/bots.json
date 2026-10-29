@@ -49,6 +49,16 @@
     "queuedImages_other": "{{count}} imágenes",
     "failed": "{{provider}} no pudo terminar este turno",
     "failedUnknown": "El turno terminó sin decir por qué.",
+    "failure": {
+      "rate_limit": "{{provider}} está limitando las peticiones por ahora. Suele pasar: vuelve a intentarlo en un momento.",
+      "usage_limit": "La cuenta de {{provider}} se ha quedado sin cuota o crédito. Volver a enviarlo no servirá hasta que se recargue o se renueve el plan.",
+      "credential": "{{provider}} ha rechazado la clave o el inicio de sesión. Volver a enviarlo no servirá: revísalo en Proveedores de modelos.",
+      "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
+      "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
+      "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
+      "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
+    },
+    "openProviders": "Abrir Proveedores de modelos",
     "errorDetails": "Mostrar detalles",
     "errorLess": "Mostrar menos",
     "retry": "Reintentar",
@@ -59,6 +69,7 @@
     "tokens_one": "{{tokens}} token",
     "tokens_many": "{{tokens}} tokens",
     "tokens_other": "{{tokens}} tokens",
+    "workedFor": "Trabajó {{time}}",
     "images": {
       "attach": "Añadir imágenes",
       "remove": "Quitar {{name}}",
@@ -74,6 +85,10 @@
     },
     "turn": {
       "queued": "Esperando",
+      "retrying": {
+        "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
+        "unavailable": "{{provider}} está saturado, reintentando…"
+      },
       "thinking": "Pensando",
       "writing": "Escribiendo",
       "stopped": "Detenido"
@@ -193,7 +208,12 @@
       "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
       "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
       "cancel": "Cancelar",
-      "failed": "No se pudo responder a la solicitud."
+      "failed": "No se pudo responder a la solicitud.",
+      "approveOnce": "Aprobar una vez",
+      "always": "Permitir siempre",
+      "alwaysFor": "Permitir siempre para {{subject}}",
+      "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
+      "fullRequest": "Ver la solicitud completa"
     },
     "event": {
       "approved": "Aprobaste: {{summary}}",
@@ -218,7 +238,15 @@
         "completed": "La sesión «{{name}}» ha terminado",
         "failed": "La sesión «{{name}}» ha fallado",
         "cancelled": "La sesión «{{name}}» se detuvo",
-        "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+        "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+        "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
+        "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+      },
+      "goal": {
+        "continued": "Objetivo · continuación {{step}} de {{limit}}",
+        "cleared": "Has detenido el objetivo «{{objective}}»",
+        "exhausted": "El objetivo «{{objective}}» usó sus {{limit}} continuaciones",
+        "stopped": "El objetivo «{{objective}}» se detuvo: uno de sus turnos falló o se detuvo"
       }
     },
     "routineReason": {
@@ -231,7 +259,13 @@
       "owner_lost_access": "su propietario ya no puede ejecutarla",
       "unknown": "algo salió mal"
     },
-    "openSession": "Abrir sesión"
+    "openSession": "Abrir sesión",
+    "goal": {
+      "title": "Objetivo: {{objective}}",
+      "progress": "{{step}} de {{limit}} continuaciones",
+      "stop": "Detener objetivo",
+      "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo."
+    }
   },
   "settings": {
     "back": "Volver al chat",
@@ -242,6 +276,7 @@
       "profile": "Perfil",
       "instructions": "Instrucciones",
       "memory": "Memoria",
+      "permissions": "Permisos",
       "routines": "Rutinas",
       "homeHost": "Máquina principal"
     },
@@ -396,6 +431,55 @@
       "saved": "Guardado",
       "failed": "No se ha podido cambiar la máquina principal.",
       "hostsFailed": "No se han podido cargar tus máquinas."
+    },
+    "permissions": {
+      "title": "Permisos",
+      "subtitle": "Lo que el bot hace por su cuenta y lo que te pregunta antes.",
+      "loadFailed": "No se pudieron cargar los permisos del bot.",
+      "saveFailed": "No se pudo cambiar el permiso.",
+      "tools": "Herramientas",
+      "preset": {
+        "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
+        "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
+      },
+      "decisions": {
+        "allow": "Permitir",
+        "ask": "Preguntar",
+        "off": "Desactivar"
+      },
+      "decisionFor": "Qué hace {{tool}}",
+      "reset": "Por defecto",
+      "perCall": "Cada llamada pregunta: nunca se permite para siempre.",
+      "groups": {
+        "self": "Sí mismo",
+        "sessions": "Sesiones y máquinas",
+        "plan": "Plan",
+        "mail": "Correo",
+        "github": "GitHub",
+        "automations": "Rutinas y automatizaciones",
+        "bots": "Otros bots",
+        "web": "Web y ayudantes"
+      },
+      "grants": "Siempre permitido",
+      "noGrants": "Nada todavía. «Permitir siempre para …» en una solicitud lo añade aquí.",
+      "removeGrant": "Dejar de permitir siempre {{tool}} para {{subject}}",
+      "rules": {
+        "empty": "Aún no hay reglas.",
+        "add": "Añadir",
+        "remove": "Quitar la regla «{{rule}}»",
+        "ask": {
+          "title": "Pregúntame antes cuando",
+          "hint": "Una solicitud que coincide te espera, aunque la herramienta se ejecutaría sola.",
+          "placeholder": "p. ej. menciona pagos o datos de clientes",
+          "new": "Nueva regla para preguntar"
+        },
+        "allow": {
+          "title": "Adelante sin preguntar cuando",
+          "hint": "Una solicitud que coincide se ejecuta sin tarjeta. Si también coincide una regla para preguntar, gana esa.",
+          "placeholder": "p. ej. comenta en nuestro repositorio de documentación",
+          "new": "Nueva regla para permitir"
+        }
+      }
     }
   },
   "delete": {

@@ -293,7 +293,12 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     }
 
     expect(events).toEqual([
-      { type: 'done', reason: 'failed', error: 'A ChatGPT turn needs the account it acts for' },
+      {
+        type: 'done',
+        reason: 'failed',
+        error: 'A ChatGPT turn needs the account it acts for',
+        failure: 'credential',
+      },
     ]);
     expect(requests).toHaveLength(0);
   });

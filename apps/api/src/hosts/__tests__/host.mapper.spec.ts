@@ -59,6 +59,23 @@ describe('HostMapper.toResponse', () => {
     ).toBe(true);
   });
 
+  it('offers Codex cloud from a host whose live runner takes it and has codex', () => {
+    const view = {
+      online: true,
+      liveCapabilities: ['session.cloud', 'session.cloud.codex'] as const,
+    };
+    const withCodex = host(null, {
+      tools: [
+        { name: 'codex', path: '/usr/local/bin/codex', required: false },
+        { name: 'claude', required: false },
+      ],
+    });
+
+    const dto = mapper.toResponse(withCodex, view);
+    expect(dto.startsCodexCloudSessions).toBe(true);
+    expect(dto.startsCloudSessions).toBe(false);
+  });
+
   it('names the claude.ai account the host’s claude is signed in as, and none without one', () => {
     expect(mapper.toResponse(host(null, { claudeAccount: 'ana@example.com' })).claudeAccount).toBe(
       'ana@example.com',

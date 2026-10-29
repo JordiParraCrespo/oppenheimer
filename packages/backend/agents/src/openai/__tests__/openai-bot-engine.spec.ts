@@ -395,6 +395,30 @@ describe('OpenAiBotEngine', () => {
     expect(done).not.toHaveProperty('rateLimit');
   });
 
+  // The chat says whether sending it again can help (`lessons-from-grok-bot.md`
+  // §9, row 4): a spent quota or a refused key never passes on a retry, and a
+  // spent quota must not be waited out as a rate limit either.
+  it.each([
+    [401, undefined, 'credential'],
+    [403, undefined, 'credential'],
+    [402, undefined, 'usage_limit'],
+    [429, 'insufficient_quota', 'usage_limit'],
+    [400, undefined, 'refused'],
+    [404, 'model_not_found', 'refused'],
+    [503, undefined, 'unavailable'],
+    [418, undefined, 'other'],
+  ])('reads a %i (%s) as a %s failure', async (status, code, failure) => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error(`${status} refused`), { status, code });
+    });
+
+    const done = (await collect(new OpenAiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
   it('fails when the run cannot start', async () => {
     sdk.state.run = () => {
       throw new Error('connect ECONNREFUSED');
@@ -402,7 +426,9 @@ describe('OpenAiBotEngine', () => {
 
     const events = await collect(new OpenAiBotEngine().run(request()));
 
-    expect(events).toEqual([{ type: 'done', reason: 'failed', error: 'connect ECONNREFUSED' }]);
+    expect(events).toEqual([
+      { type: 'done', reason: 'failed', error: 'connect ECONNREFUSED', failure: 'unavailable' },
+    ]);
   });
 
   it('cancels promptly on abort and passes the signal to the SDK', async () => {

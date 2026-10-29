@@ -84,7 +84,7 @@ export class SendSessionPromptCommandHandler
         detail: 'The prompt was not sent: send it again once the host is online.',
       });
     }
-    return { sessionId: session.id, hints: [] };
+    return { sessionId: session.id, hints: [], seq: claimed.appended.at(-1)?.seq };
   }
 
   private entry(command: SendSessionPromptCommand, kind: string, payload: unknown) {

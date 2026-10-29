@@ -380,6 +380,7 @@
       "SESS_001": "El host no tiene constancia de esa sesión.",
       "SESS_002": "El host no ha podido iniciar una sesión con esos ajustes.",
       "SESS_003": "Esa sesión no se está ejecutando en su host.",
+      "INVALID_PATTERN": "Ese patrón de vigilancia no es una expresión válida en la máquina.",
       "SESS_004": "El host ya tiene una sesión en ese worktree.",
       "SESS_005": "El host no ha podido pasar ese archivo a la sesión.",
       "TMUX_001": "tmux no está instalado en el host. Instálalo y vuelve a intentarlo.",
@@ -407,17 +408,25 @@
       "SESSIONS_035": "Este servidor no ofrece vistas previas. Configura PREVIEW_BASE_URL para activarlas.",
       "SESSIONS_036": "El agente está ocupado o esperando una respuesta, así que ahora no puede recibir una instrucción.",
       "SESSIONS_037": "El runner de este host aún no puede iniciar una sesión en la nube. Actualízalo e inténtalo de nuevo.",
-      "SESSIONS_038": "Esta sesión se ejecuta en la nube de Claude Code. Respóndela en claude.ai.",
+      "SESSIONS_038": "Esta sesión se ejecuta en la nube de su agente. Respóndela allí, en claude.ai o chatgpt.com/codex.",
       "SESSIONS_039": "Esa sesión se ejecuta en su proveedor, sin un host aquí. Ábrela en el proveedor para hacerlo.",
       "SESSIONS_040": "La tarea es demasiado larga para incluir también un enlace de descarga por cada archivo adjunto. Acórtala o adjunta menos archivos.",
       "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
+      "SESSIONS_042": "Ese patrón no se puede vigilar. Usa una expresión regular simple, sin lookaround ni referencias hacia atrás.",
+      "SESSIONS_043": "Esta sesión ya tiene tantas vigilancias de terminal como admite. Quita una primero.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
       "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
       "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
       "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
-      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
+      "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento.",
+      "BOTS_029": "Esa herramienta no existe. Recarga la página.",
+      "BOTS_030": "Esta herramienta se aprueba llamada a llamada, así que no se puede permitir siempre.",
+      "BOTS_031": "Este bot ya tiene tantas reglas como admite. Quita una primero.",
+      "BOTS_032": "Esa regla ya no existe. Recarga la página.",
+      "BOTS_033": "Ese permiso ya no existe. Recarga la página.",
+      "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -668,11 +677,20 @@
           "description": "Abre un directorio existente tal como está · no se clona nada"
         },
         "cloud": {
-          "label": "Nube de Claude Code",
-          "description": "Inicia la tarea en la nube de Claude Code desde este host · síguela en claude.ai"
+          "label": "Nube",
+          "description": "Inicia la tarea en la nube de Claude Code o de Codex desde este host · el motor dice cuál"
         },
         "claudeCloud": {
           "label": "Claude Code",
+          "place": "Nube de Claude Code",
+          "from": "Desde {{host}}",
+          "noHost": "Necesita un host",
+          "startFrom": "Empezar desde",
+          "cannot": "Este runner no puede iniciarla"
+        },
+        "codexCloud": {
+          "label": "Codex",
+          "place": "Nube de Codex",
           "from": "Desde {{host}}",
           "noHost": "Necesita un host",
           "startFrom": "Empezar desde",
@@ -1267,6 +1285,12 @@
         "failed": "El agente falló en la nube de {{vendor}}",
         "cancelled": "Detenido en {{vendor}}",
         "expired": "La ejecución caducó en la nube de {{vendor}}"
+      },
+      "codex": {
+        "eyebrow": "Nube de Codex",
+        "statusSource": "Este estado llega del host que la inició, que pregunta a Codex por sus tareas cada minuto mientras está en línea.",
+        "open": "Abrir en ChatGPT",
+        "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
       }
     }
   },
@@ -1321,6 +1345,16 @@
       "queuedImages_other": "{{count}} imágenes",
       "failed": "{{provider}} no pudo terminar este turno",
       "failedUnknown": "El turno terminó sin decir por qué.",
+      "failure": {
+        "rate_limit": "{{provider}} está limitando las peticiones por ahora. Suele pasar: vuelve a intentarlo en un momento.",
+        "usage_limit": "La cuenta de {{provider}} se ha quedado sin cuota o crédito. Volver a enviarlo no servirá hasta que se recargue o se renueve el plan.",
+        "credential": "{{provider}} ha rechazado la clave o el inicio de sesión. Volver a enviarlo no servirá: revísalo en Proveedores de modelos.",
+        "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
+        "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
+        "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
+        "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
+      },
+      "openProviders": "Abrir Proveedores de modelos",
       "errorDetails": "Mostrar detalles",
       "errorLess": "Mostrar menos",
       "retry": "Reintentar",
@@ -1331,6 +1365,7 @@
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
       "tokens_other": "{{tokens}} tokens",
+      "workedFor": "Trabajó {{time}}",
       "images": {
         "attach": "Añadir imágenes",
         "remove": "Quitar {{name}}",
@@ -1346,6 +1381,10 @@
       },
       "turn": {
         "queued": "Esperando",
+        "retrying": {
+          "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
+          "unavailable": "{{provider}} está saturado, reintentando…"
+        },
         "thinking": "Pensando",
         "writing": "Escribiendo",
         "stopped": "Detenido"
@@ -1465,7 +1504,12 @@
         "noteLabel": "¿Qué debería hacer {{name}} en su lugar?",
         "notePlaceholder": "Opcional: por qué no, o qué hacer en su lugar",
         "cancel": "Cancelar",
-        "failed": "No se pudo responder a la solicitud."
+        "failed": "No se pudo responder a la solicitud.",
+        "approveOnce": "Aprobar una vez",
+        "always": "Permitir siempre",
+        "alwaysFor": "Permitir siempre para {{subject}}",
+        "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
+        "fullRequest": "Ver la solicitud completa"
       },
       "event": {
         "approved": "Aprobaste: {{summary}}",
@@ -1490,7 +1534,15 @@
           "completed": "La sesión «{{name}}» ha terminado",
           "failed": "La sesión «{{name}}» ha fallado",
           "cancelled": "La sesión «{{name}}» se detuvo",
-          "expired": "La sesión «{{name}}» caducó sin ejecutarse"
+          "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+          "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
+          "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+        },
+        "goal": {
+          "continued": "Objetivo · continuación {{step}} de {{limit}}",
+          "cleared": "Has detenido el objetivo «{{objective}}»",
+          "exhausted": "El objetivo «{{objective}}» usó sus {{limit}} continuaciones",
+          "stopped": "El objetivo «{{objective}}» se detuvo: uno de sus turnos falló o se detuvo"
         }
       },
       "routineReason": {
@@ -1503,7 +1555,13 @@
         "owner_lost_access": "su propietario ya no puede ejecutarla",
         "unknown": "algo salió mal"
       },
-      "openSession": "Abrir sesión"
+      "openSession": "Abrir sesión",
+      "goal": {
+        "title": "Objetivo: {{objective}}",
+        "progress": "{{step}} de {{limit}} continuaciones",
+        "stop": "Detener objetivo",
+        "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo."
+      }
     },
     "settings": {
       "back": "Volver al chat",
@@ -1514,6 +1572,7 @@
         "profile": "Perfil",
         "instructions": "Instrucciones",
         "memory": "Memoria",
+        "permissions": "Permisos",
         "routines": "Rutinas",
         "homeHost": "Máquina principal"
       },
@@ -1668,6 +1727,55 @@
         "saved": "Guardado",
         "failed": "No se ha podido cambiar la máquina principal.",
         "hostsFailed": "No se han podido cargar tus máquinas."
+      },
+      "permissions": {
+        "title": "Permisos",
+        "subtitle": "Lo que el bot hace por su cuenta y lo que te pregunta antes.",
+        "loadFailed": "No se pudieron cargar los permisos del bot.",
+        "saveFailed": "No se pudo cambiar el permiso.",
+        "tools": "Herramientas",
+        "preset": {
+          "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
+          "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
+        },
+        "decisions": {
+          "allow": "Permitir",
+          "ask": "Preguntar",
+          "off": "Desactivar"
+        },
+        "decisionFor": "Qué hace {{tool}}",
+        "reset": "Por defecto",
+        "perCall": "Cada llamada pregunta: nunca se permite para siempre.",
+        "groups": {
+          "self": "Sí mismo",
+          "sessions": "Sesiones y máquinas",
+          "plan": "Plan",
+          "mail": "Correo",
+          "github": "GitHub",
+          "automations": "Rutinas y automatizaciones",
+          "bots": "Otros bots",
+          "web": "Web y ayudantes"
+        },
+        "grants": "Siempre permitido",
+        "noGrants": "Nada todavía. «Permitir siempre para …» en una solicitud lo añade aquí.",
+        "removeGrant": "Dejar de permitir siempre {{tool}} para {{subject}}",
+        "rules": {
+          "empty": "Aún no hay reglas.",
+          "add": "Añadir",
+          "remove": "Quitar la regla «{{rule}}»",
+          "ask": {
+            "title": "Pregúntame antes cuando",
+            "hint": "Una solicitud que coincide te espera, aunque la herramienta se ejecutaría sola.",
+            "placeholder": "p. ej. menciona pagos o datos de clientes",
+            "new": "Nueva regla para preguntar"
+          },
+          "allow": {
+            "title": "Adelante sin preguntar cuando",
+            "hint": "Una solicitud que coincide se ejecuta sin tarjeta. Si también coincide una regla para preguntar, gana esa.",
+            "placeholder": "p. ej. comenta en nuestro repositorio de documentación",
+            "new": "Nueva regla para permitir"
+          }
+        }
       }
     },
     "delete": {
@@ -2302,6 +2410,7 @@
     "backToTask": "Volver a la tarea",
     "nav": {
       "label": "Plan",
+      "inbox": "Bandeja",
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos"
@@ -2639,24 +2748,18 @@
   },
   "inbox": {
     "title": "Bandeja",
-    "bar": {
-      "meta": "{{needs}} · {{running}}",
-      "needs_zero": "Nada te necesita",
-      "needs_one": "{{count}} te necesita",
-      "needs_other": "{{count}} te necesitan",
-      "running_one": "{{count}} sesión en marcha",
-      "running_other": "{{count}} sesiones en marcha"
-    },
     "list": {
-      "head": "Te necesita",
       "empty": "Nada te necesita.",
-      "noneMatching": "Nada con estos filtros te necesita.",
+      "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",
       "bringBack": "Recuperar",
       "failed": "No se pudo cargar la bandeja.",
       "markFailed": "No se pudo guardar. Inténtalo de nuevo.",
-      "back": "Vuelve {{when}}"
+      "back": "Vuelve {{when}}",
+      "unread": "{{count}} sin leer",
+      "search": "Buscar en la bandeja",
+      "clearSearch": "Borrar búsqueda"
     },
     "filter": {
       "label": "Filtrar la bandeja",
@@ -2691,7 +2794,7 @@
     },
     "from": {
       "session": "Sesión",
-      "approval": "{{bot}} · Aprobación de bot",
+      "approval": "Aprobación de bot",
       "run": "Automatización"
     },
     "session": {
@@ -2732,7 +2835,6 @@
       "readyShort": "Fusionar #{{number}} {{title}}",
       "readyTitle": "¿Fusionar #{{number}} · {{title}}?",
       "readyBody": "Nada lo bloquea: se puede fusionar ya.",
-      "by": "de {{author}}",
       "open": "Abrir",
       "viewOnGithub": "Ver en GitHub",
       "merge": "Fusionar",
@@ -2759,29 +2861,16 @@
       "later": "Más tarde",
       "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
     },
-    "log": {
-      "done": "Marcado como hecho · {{title}}",
-      "approved": "Aprobado {{bot}} · {{tool}}",
-      "denied": "Denegado {{bot}} · {{tool}}",
-      "merged": "Fusionado #{{number}} en {{repository}}",
-      "ranAgain": "{{name}} ejecutado de nuevo",
-      "answered": "Respondido a {{name}}: {{answer}}"
-    },
     "pane": {
-      "greeting": {
-        "morning": "Buenos días.",
-        "afternoon": "Buenas tardes.",
-        "evening": "Buenas noches."
-      },
-      "running_one": "{{count}} sesión está en marcha.",
-      "running_other": "{{count}} sesiones están en marcha.",
-      "needs_one": "Una cosa te necesita.",
-      "needs_other": "{{count}} cosas te necesitan, de una en una.",
-      "nothing": "Ahora mismo nada te necesita.",
-      "clearTitle": "Todo al día",
-      "clear": "Lo próximo que te necesite aparecerá aquí.",
-      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo próximo que te necesite aparecerá aquí.",
-      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo próximo que te necesite aparecerá aquí."
+      "label": "Panel de lectura",
+      "toolbar": "Acciones del elemento",
+      "back": "Volver a la lista",
+      "position": "{{n}} de {{total}}",
+      "ago": "hace {{age}}",
+      "clearTitle": "Nada te necesita",
+      "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
     }
   },
   "settings": {
@@ -3023,8 +3112,7 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados",
-    "inbox": "Bandeja"
+    "employees": "Empleados"
   },
   "language": {
     "label": "Idioma",

@@ -746,6 +746,15 @@ earlier note:
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
+- `versions/mvp/29-inbox.md` §5 and Decided 1 made the Inbox the rail's
+  first item at `/inbox`, with its list in the console's sidebar and the
+  item in hand as a card under a greeting and a log. The 2026-10-29 export
+  moved it into Plan, and on 2026-10-29 the owner asked for it to look
+  like a mail inbox: it is Plan's first section at `/plan/inbox` (the old
+  address redirects), the rail item is gone, the console still lands on it,
+  and the pane is a list column (search, unread rows with sender, subject
+  and a line of body) beside a reading pane (a toolbar, the item as a
+  message). The log is gone with the greeting; Show done is the record.
 - `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
   notifications token and one optional token for private repositories. On
   2026-10-26 the owner asked for several organisations and, inside one, a
@@ -851,8 +860,42 @@ earlier note:
   `repos.noindex/` and `sessions.noindex/`, the suffix Spotlight skips (as
   Xcode's DerivedData and Orca do), layout version 3, with no migration
   (24 §2).
+- A bot's tool answer was cut to its first 12,000 characters. On
+  2026-10-29, from Grok Bot's harness (`research/lessons-from-grok-bot.md`
+  §9), it keeps its start and its end within that, since a session's
+  error is at the end; and a failed turn records a kind, so the chat no
+  longer offers Retry where the same message fails again
+  (`versions/mvp/25-bots.md` §2–§4).
+- A bot's permissions are set in Settings → Permissions, tool by tool, and a
+  yes on a card can reach past its call: *Always allow for* the repository,
+  project or session it acts on, or *Always allow* for the tool; merging
+  stays per call. Plain-language rules are read by a reviewer on the bot's
+  own model before an asking call, an ask rule winning and a failed review
+  asking. 2026-10-29, from Grok Bot's approvals
+  (`research/lessons-from-grok-bot.md` §9 rows 6 and 7;
+  `versions/mvp/25-bots.md` §5).
 - 2026-10-29 the owner asked to see a bot's subagents while they work:
   "Running 3 subagents" now has a line per child under it (its task,
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
+  cloud works, though the research note put Codex cloud last: a Codex row
+  under Cloud starts the task from a host with `codex cloud exec`, and the
+  host, not the browser extension, reports its status off
+  `codex cloud list --json`, since Codex's CLI answers it
+  (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
+- A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
+  Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
+  9), it can also wake on a line the terminal prints that matches a
+  pattern. The runner matches it on the host and sends only a count, so
+  pane text still never reaches Postgres. A bot can also wait up to 120 s
+  inside its turn, and read a session's log from the entry its own input
+  followed (`versions/mvp/27-bot-subscriptions.md` §2,
+  `versions/mvp/25-bots.md` §4.2).
+- Row 10 of `research/lessons-from-grok-bot.md` §9 placed goals in note 26
+  as a routine the bot sets on itself. On 2026-10-29 they were built
+  instead as a goal of their own in `versions/mvp/25-bots.md` §4.1. A
+  routine's run is a schedule's slot, but a goal goes on when the bot's
+  last turn ends. So it is a bounded count of continuation turns, at most
+  10, keyed in the turn queue like a wake, with Stop above the composer.

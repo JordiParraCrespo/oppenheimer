@@ -11,7 +11,7 @@ import (
 func TestCloudLedgerRemembersAStartAcrossProcesses(t *testing.T) {
 	dir := t.TempDir()
 	started := cloud.Started{ID: "session_01abcdefgh", URL: "https://claude.ai/code/session_01abcdefgh", Title: "Fix it"}
-	if err := newCloudLedger(dir).record("s-1", started, time.Now()); err != nil {
+	if err := newCloudLedger(dir).record("s-1", claudeCloudAgent, started, time.Now()); err != nil {
 		t.Fatalf("record: %v", err)
 	}
 
@@ -30,7 +30,7 @@ func TestCloudLedgerKeepsTheNewest(t *testing.T) {
 	base := time.Now()
 	for i := range cloudLedgerCap + 5 {
 		id := fmt.Sprintf("s-%d", i)
-		if err := ledger.record(id, cloud.Started{ID: "session_0" + id}, base.Add(time.Duration(i)*time.Second)); err != nil {
+		if err := ledger.record(id, claudeCloudAgent, cloud.Started{ID: "session_0" + id}, base.Add(time.Duration(i)*time.Second)); err != nil {
 			t.Fatalf("record %s: %v", id, err)
 		}
 	}

@@ -1,9 +1,9 @@
 import {
   Button,
-  InboxCard,
-  InboxCardActions,
-  InboxCardBody,
-  InboxCardFacts,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageFacts,
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { usePutInboxMark, useRunAutomation } from '@oppenheimer/frontend-consumer/react';
@@ -41,15 +41,21 @@ export function InboxRunCard({
   const exitCode = run.turn?.exitCode ?? null;
 
   return (
-    <InboxCard icon={<InboxKindIcon kind="run" />} from={from} title={copy.title} age={age}>
-      <InboxCardBody>{copy.body}</InboxCardBody>
-      <InboxCardFacts>
+    <InboxMessage
+      icon={<InboxKindIcon kind="run" />}
+      sender={copy.sender}
+      meta={from}
+      title={copy.title}
+      age={age}
+    >
+      <InboxMessageBody>{copy.body}</InboxMessageBody>
+      <InboxMessageFacts>
         <span>{run.title}</span>
         <span>{run.causeSummary.text}</span>
         {exitCode !== null ? (
           <span className="font-mono">{t('inbox.run.exit', { code: exitCode })}</span>
         ) : null}
-      </InboxCardFacts>
+      </InboxMessageFacts>
       {run.automationDeleted ? (
         <p className="text-xs text-fg-subtle">{t('inbox.run.deletedHint')}</p>
       ) : null}
@@ -60,7 +66,7 @@ export function InboxRunCard({
           onDismiss={runAgain.reset}
         />
       ) : null}
-      <InboxCardActions
+      <InboxMessageActions
         leading={
           <>
             <InboxLaterButton itemKey={item.key} />
@@ -98,7 +104,6 @@ export function InboxRunCard({
                   onSuccess: () => {
                     mark.mutate({ itemKey: item.key, mark: 'done' });
                     inboxVisit.answered(item.key);
-                    inboxVisit.log(t('inbox.log.ranAgain', { name: run.automationName }));
                   },
                 },
               )
@@ -107,7 +112,7 @@ export function InboxRunCard({
             {t('inbox.run.again')}
           </Button>
         ) : null}
-      </InboxCardActions>
-    </InboxCard>
+      </InboxMessageActions>
+    </InboxMessage>
   );
 }

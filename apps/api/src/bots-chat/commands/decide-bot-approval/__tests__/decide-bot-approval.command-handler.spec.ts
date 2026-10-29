@@ -34,7 +34,12 @@ const scope: AccessScope = {
 };
 
 function setup(
-  options: { decided?: boolean; loses?: boolean; askedWith?: readonly Scope[] | null } = {},
+  options: {
+    decided?: boolean;
+    loses?: boolean;
+    askedWith?: readonly Scope[] | null;
+    perCallOnly?: boolean;
+  } = {},
 ) {
   const bot = BotEntity.createNew({
     organizationId: scope.organizationId as string,
@@ -63,6 +68,8 @@ function setup(
     tool: 'start_session',
     input: { task: 'Fix the test', project_id: 'p-1' },
     summary: 'Start Claude Code on build-02 in acme/xrp: Fix the test',
+    subject: { kind: 'project', key: 'p-1', label: 'XRP' },
+    perCallOnly: options.perCallOnly,
   });
   if (options.decided) approval.expire(new Date());
   const approvals = {
@@ -85,6 +92,7 @@ function setup(
     decision: 'approve' | 'deny',
     note: string | null = null,
     credentialScopes: readonly Scope[] | null = null,
+    reach: 'once' | 'tool' | 'subject' = 'once',
   ) =>
     handler.execute(
       new DecideBotApprovalCommand({
@@ -92,6 +100,7 @@ function setup(
         botId: bot.id,
         approvalId: approval.id,
         decision,
+        reach,
         note,
         deciderName: 'Ana',
         credentialScopes,
@@ -158,5 +167,45 @@ describe('DecideBotApprovalCommandHandler', () => {
     const { approvals, decide } = setup();
     approvals.findOne.mockResolvedValueOnce(None);
     await expect(decide('approve')).rejects.toMatchObject({ code: 'BOTS_015' });
+  });
+
+  it('leaves nothing standing for a yes to this call only', async () => {
+    const { decide, effects } = setup();
+    await decide('approve');
+    expect(effects().standing).toBeUndefined();
+  });
+
+  it('sets the tool to Allow with an “Always allow”, written with the decision', async () => {
+    const { approval, decide, effects } = setup();
+    await decide('approve', null, null, 'tool');
+    expect(approval.reach).toBe('tool');
+    const { permission, maxGrants } = effects().standing ?? {};
+    expect(maxGrants).toBe(100);
+    expect(permission?.getProps()).toMatchObject({
+      botId: approval.botId,
+      tool: 'start_session',
+      decision: 'allow',
+      subject: null,
+      createdByUserId: scope.userId,
+    });
+  });
+
+  it('grants the tool on the card’s subject with an “Always allow for …”', async () => {
+    const { decide, effects } = setup();
+    await decide('approve', null, null, 'subject');
+    expect(effects().standing?.permission.getProps()).toMatchObject({
+      tool: 'start_session',
+      decision: 'allow',
+      subject: { kind: 'project', key: 'p-1', label: 'XRP' },
+    });
+  });
+
+  it('refuses a reach the card does not offer with BOTS_030, deciding nothing', async () => {
+    const { approval, approvals, decide } = setup({ perCallOnly: true });
+    await expect(decide('approve', null, null, 'tool')).rejects.toMatchObject({
+      code: 'BOTS_030',
+    });
+    expect(approval.status).toBe('pending');
+    expect(approvals.saveTransition).not.toHaveBeenCalled();
   });
 });

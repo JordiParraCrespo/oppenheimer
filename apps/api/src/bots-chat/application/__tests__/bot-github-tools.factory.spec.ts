@@ -8,6 +8,7 @@ import { FindPullRequestActivityQuery } from '../../../pull-requests/queries/fin
 import { FindPullRequestCommentsQuery } from '../../../pull-requests/queries/find-pull-request-comments/find-pull-request-comments.query';
 import { FindPullRequestFilesQuery } from '../../../pull-requests/queries/find-pull-request-files/find-pull-request-files.query';
 import { FindPullRequestsQuery } from '../../../pull-requests/queries/find-pull-requests/find-pull-requests.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotGithubToolsFactory } from '../bot-github-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -28,6 +29,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };

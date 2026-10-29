@@ -77,7 +77,9 @@ type Service struct {
 	confirmed map[string]bool
 	// decisions, under mu, is the id of the decision last reported for each
 	// session whose agent waits on one (reportDecision).
-	decisions   map[string]string
+	decisions map[string]string
+	// watches is each session's terminal watches (watches.go).
+	watches     *watchBook
 	terminals   Terminals
 	worktrees   Worktrees
 	classifier  Classifier
@@ -111,6 +113,7 @@ func New(opts Options) (*Service, error) {
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
 		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
@@ -356,6 +359,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if err != nil {
 		return session, err
 	}
+	s.scanWatches(session.ID, screen.Body)
 	state, loginURL := s.classifier.Classify(screen, session.Agent)
 	next := s.observe(session, rev, state, loginURL)
 	s.reportDecision(next, screen.Body)
@@ -381,6 +385,9 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		}
 	}
 	s.mu.Unlock()
+	// A session that stopped, closed or went since the last pass takes its
+	// watches with it.
+	s.pruneWatches()
 	if len(live) == 0 {
 		return s.List(), nil
 	}
@@ -412,6 +419,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 			errs = append(errs, err)
 			continue
 		}
+		s.scanWatches(session.ID, body)
 		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
 		s.reportDecision(s.observe(session, item.rev, state, loginURL), body)
 	}
@@ -772,6 +780,9 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	if ended {
 		s.discardFiles(next.ID)
 	}
+	if !state.Live() && state != domain.StateCreating {
+		s.watches.drop(next.ID)
+	}
 	if announce {
 		publisher.SessionChanged(next)
 	}
@@ -825,6 +836,7 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 	// the moment it ended.
 	if !state.Live() {
 		s.discardFiles(next.ID)
+		s.watches.drop(next.ID)
 	}
 	publisher.SessionChanged(next)
 	return next

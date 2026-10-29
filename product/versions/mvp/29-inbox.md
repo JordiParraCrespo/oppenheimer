@@ -108,6 +108,9 @@ items. Three of the reads exist. Three things are missing:
 
 ## 5. The console
 
+*Superseded on 2026-10-29 for the rail, the list's place and the pane's
+shape: see "As built: the Inbox in Plan" at the end.*
+
 - **Rail.** `inbox` becomes the first id in `RAIL_ROUTES`
   (`apps/web/src/features/sessions/lib/rail-landing.ts`) with a bell icon
   and a count of open items, at `/inbox`. A person who never reordered
@@ -395,3 +398,36 @@ same route as the Automations page), merging a pull request from the Inbox
 Code itself (the shim prints what the real CLI draws; the dialog shapes are
 2.x's), and a host going offline mid-answer (local hosts cannot lose their
 network alone; the handler test covers the decision being put back).
+
+## As built: the Inbox in Plan (2026-10-29)
+
+The 2026-10-29 export (`design/version1/Inbox.dc.html`, embedded by
+`Tasks.dc.html?section=inbox`) moves the Inbox into Plan, and the owner asked
+for it to look like a mail inbox. What changed from §5 and Decided 1:
+
+- **Where it is.** Plan's first section, at `/plan/inbox`, first in Plan's
+  sidebar with the count of what needs you. The rail has no Inbox item; its
+  Plan item opens on the Inbox. `/inbox` redirects there, its search kept.
+- **Where the console lands.** Still the Inbox: a reader who never dragged
+  the rail, or whose stored order led with the former Inbox item, lands on
+  `/plan/inbox`; one who dragged another item first lands there.
+- **The shape.** The pane is two columns, as a mail client: the list column
+  (its head with the sidebar toggle, "Inbox", the unread count and the
+  filter; a search, `?q=`, over sender, subject, body and source; a row per
+  item with an unread dot, the sender and its age, the subject and a line of
+  its body) beside the reading pane (a toolbar with Mark as done, Snooze
+  until tomorrow, Deprioritize and Delete and "1 of 5"; under it the item as
+  a message: the question as its heading, the sender on a round glyph with
+  its projects and source and how long ago, the body, the facts and the
+  answers). On a phone the list takes the width until an item is opened,
+  and the toolbar leads with Back.
+- **Who it is from.** A session's name, a bot's name, a pull request's
+  author, an automation's name; a ready pull request's "by" fact is the
+  sender now.
+- **Unread.** An item is unread until it is shown in the reading pane, kept
+  per occurrence on this device (local storage, the last 500 keys): a new
+  wait on the same session comes back unread. Not stored on the server.
+- **No greeting and no log.** The frame draws neither; what was done on this
+  visit stays under Show done, struck through.
+- **Nothing needs you** replaces "You're clear", with the sessions still
+  running.

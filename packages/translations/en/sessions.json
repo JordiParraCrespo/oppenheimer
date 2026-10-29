@@ -71,11 +71,20 @@
         "description": "Open an existing directory as it is · nothing is cloned"
       },
       "cloud": {
-        "label": "Claude Code cloud",
-        "description": "Start the task in Claude Code’s cloud from this host · follow it on claude.ai"
+        "label": "Cloud",
+        "description": "Start the task in Claude Code’s or Codex’s cloud from this host · the engine says whose"
       },
       "claudeCloud": {
         "label": "Claude Code",
+        "place": "Claude Code cloud",
+        "from": "From {{host}}",
+        "noHost": "Needs a host",
+        "startFrom": "Start from",
+        "cannot": "This runner can’t start it"
+      },
+      "codexCloud": {
+        "label": "Codex",
+        "place": "Codex cloud",
         "from": "From {{host}}",
         "noHost": "Needs a host",
         "startFrom": "Start from",
@@ -667,6 +676,12 @@
       "failed": "The agent failed in {{vendor}}’s cloud",
       "cancelled": "Stopped in {{vendor}}",
       "expired": "The run expired in {{vendor}}’s cloud"
+    },
+    "codex": {
+      "eyebrow": "Codex cloud",
+      "statusSource": "This status comes from the host that started it, which asks Codex about its tasks once a minute while it’s online.",
+      "open": "Open in ChatGPT",
+      "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
     }
   }
 }

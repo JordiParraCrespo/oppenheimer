@@ -588,6 +588,65 @@ describe('ClaudeBotEngine', () => {
     expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 45_000);
   });
 
+  // The SDK names each failed model call (`SDKAssistantMessageError`); the
+  // chat says from it whether a retry can help.
+  it.each([
+    ['authentication_failed', 'credential'],
+    ['billing_error', 'usage_limit'],
+    ['invalid_request', 'refused'],
+    ['overloaded', 'unavailable'],
+    ['max_output_tokens', 'other'],
+  ])('reads the SDK’s %s as a %s failure', async (code, failure) => {
+    scripted(() => [
+      assistant([{ type: 'text', text: `API Error: ${code}` }], { error: code }),
+      success({ is_error: true, result: 'API Error' }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
+  // The chat shows the wait while Claude Code retries, rather than "thinking"
+  // for the minutes a backoff can take.
+  it('says it is retrying when Claude Code retries a refused call, and why', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        retry_delay_ms: 30_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        error_status: 529,
+        error: 'overloaded',
+      } as unknown as SDKMessage,
+      success({ result: 'ok' }),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(events.filter((event) => event.type === 'retrying')).toEqual([
+      { type: 'retrying', reason: 'rate_limit', delayMs: 30_000 },
+      { type: 'retrying', reason: 'unavailable', delayMs: null },
+    ]);
+  });
+
+  it('marks a rate limit as that kind of failure', async () => {
+    scripted(() => [
+      assistant([{ type: 'text', text: 'API Error: 429' }], { error: 'rate_limit' }),
+      success({ is_error: true, result: 'API Error', api_error_status: 429 }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'rate_limit' });
+  });
+
   it('takes the reset of a rejected limit, and says nothing of one on any other failure', async () => {
     scripted(() => [
       {
@@ -603,6 +662,30 @@ describe('ClaudeBotEngine', () => {
     const other = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
     expect(other).toMatchObject({ type: 'done', reason: 'failed' });
     expect(other).not.toHaveProperty('rateLimit');
+  });
+
+  // Seen on the local stack: a bad key ended as a generic failure with Retry,
+  // because the SDK throws after Claude Code's error result and the throw,
+  // not the result, decided how the turn ended.
+  it('ends a run the SDK throws on after an error result as that result says, kind included', async () => {
+    scripted(() => ({
+      async *[Symbol.asyncIterator]() {
+        yield assistant([{ type: 'text', text: 'Invalid API key · Fix external API key' }], {
+          error: 'authentication_failed',
+        });
+        yield success({ is_error: true, result: 'Invalid API key · Fix external API key' });
+        throw new Error('Claude Code returned an error result: Invalid API key');
+      },
+    }));
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({
+      type: 'done',
+      reason: 'failed',
+      failure: 'credential',
+      error: 'Invalid API key · Fix external API key',
+    });
   });
 
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {

@@ -25,13 +25,29 @@ const cloudLedgerCap = 500
 // handler's lanes.
 var cloudLedgerMu sync.Mutex
 
-// cloudStart is one remembered start: the cloud session `claude --cloud` made
-// for an Oppenheimer session, and when.
+// cloudStart is one remembered start: the cloud session `claude --cloud` or
+// the task `codex cloud exec` made for an Oppenheimer session, and when.
 type cloudStart struct {
 	ID    string    `json:"id"`
 	URL   string    `json:"url"`
 	Title string    `json:"title,omitempty"`
 	At    time.Time `json:"at"`
+	// Agent is the catalog id that started it; empty is Claude Code, from
+	// before another agent could be started.
+	Agent string `json:"agent,omitempty"`
+	// Status is the vendor's own word for where it stands, as last reported
+	// to the control plane, for an agent whose CLI the host follows it with;
+	// empty until the first report, and always for one it does not follow
+	// (Claude Code's, which the browser extension follows).
+	Status string `json:"status,omitempty"`
+}
+
+// cloudWatch is a start whose status is still owed to the control plane, by
+// the Oppenheimer session it was made for.
+type cloudWatch struct {
+	SessionID string
+	ID        string
+	Status    string
 }
 
 // cloudLedger is the cloud sessions this host started, by Oppenheimer session
@@ -59,16 +75,62 @@ func (l cloudLedger) find(sessionID string) (cloud.Started, bool) {
 	return cloud.Started{ID: entry.ID, URL: entry.URL, Title: entry.Title}, true
 }
 
-// record remembers the cloud session started for sessionID, keeping the
-// newest cloudLedgerCap.
-func (l cloudLedger) record(sessionID string, started cloud.Started, at time.Time) error {
+// record remembers the cloud session agent started for sessionID, keeping
+// the newest cloudLedgerCap.
+func (l cloudLedger) record(sessionID, agent string, started cloud.Started, at time.Time) error {
 	cloudLedgerMu.Lock()
 	defer cloudLedgerMu.Unlock()
 	entries, err := l.read()
 	if err != nil {
 		entries = map[string]cloudStart{}
 	}
-	entries[sessionID] = cloudStart{ID: started.ID, URL: started.URL, Title: started.Title, At: at}
+	entry := cloudStart{ID: started.ID, URL: started.URL, Title: started.Title, At: at}
+	if agent != claudeCloudAgent {
+		entry.Agent = agent
+	}
+	entries[sessionID] = entry
+	return l.write(entries)
+}
+
+// unsettled is agent's starts since `since` whose last reported status
+// could still change, by its own vendor's `settled`: the ones a status poll
+// asks about.
+func (l cloudLedger) unsettled(agent string, settled func(string) bool, since time.Time) []cloudWatch {
+	cloudLedgerMu.Lock()
+	defer cloudLedgerMu.Unlock()
+	entries, _ := l.read()
+	var out []cloudWatch
+	for sessionID, entry := range entries {
+		if entry.Agent != agent || settled(entry.Status) || entry.At.Before(since) {
+			continue
+		}
+		out = append(out, cloudWatch{SessionID: sessionID, ID: entry.ID, Status: entry.Status})
+	}
+	sort.Slice(out, func(a, b int) bool { return out[a].SessionID < out[b].SessionID })
+	return out
+}
+
+// reported remembers that status was reported for sessionID's task, so the
+// next poll reports only a change.
+func (l cloudLedger) reported(sessionID, status string) error {
+	cloudLedgerMu.Lock()
+	defer cloudLedgerMu.Unlock()
+	entries, err := l.read()
+	if err != nil {
+		return err
+	}
+	entry, ok := entries[sessionID]
+	if !ok {
+		return nil
+	}
+	entry.Status = status
+	entries[sessionID] = entry
+	return l.write(entries)
+}
+
+// write keeps the newest cloudLedgerCap of entries and replaces the file with
+// them. The caller holds cloudLedgerMu.
+func (l cloudLedger) write(entries map[string]cloudStart) error {
 	if len(entries) > cloudLedgerCap {
 		ids := make([]string, 0, len(entries))
 		for id := range entries {

@@ -1,6 +1,6 @@
 import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { BotEngineEvent, BotTurnContext } from '../bot-engine';
-import { failed, type ToolCallData } from '../turn';
+import type { BotEngineEvent, BotEngineFailure, BotTurnContext } from '../bot-engine';
+import { failed, failureOf, type ToolCallData } from '../turn';
 import { botToolName } from './claude-tool-server';
 
 type ContentBlock = { type: string; [key: string]: unknown };
@@ -53,6 +53,8 @@ export class ClaudeEventTranslator {
   private readonly toolNames = new Map<string, string>();
   private result: SDKResultMessage | undefined;
   private lastError: string | undefined;
+  /** What kind of failure the last error was, from the SDK's own code for it. */
+  private lastFailure: BotEngineFailure = 'other';
   private rateLimited = false;
   private resetAt: Date | null = null;
   /** What the main thread's last answer was sent; none before the first. */
@@ -83,7 +85,7 @@ export class ClaudeEventTranslator {
         this.result = message;
         return [];
       case 'system':
-        this.fromSystem(
+        return this.fromSystem(
           message as {
             subtype?: string;
             error?: unknown;
@@ -91,13 +93,23 @@ export class ClaudeEventTranslator {
             retry_delay_ms?: unknown;
           },
         );
-        return [];
       case 'rate_limit_event':
         this.fromRateLimit(message.rate_limit_info);
         return [];
       default:
         return [];
     }
+  }
+
+  /**
+   * The run threw: Claude Code ends a failed run with an error result and
+   * then the SDK throws, so a result seen already says how it went, its
+   * kind of failure included. Without one, the throw is a failure of the
+   * kind the last error said, in the throw's words.
+   */
+  thrown(error: string, diagnostics?: string): BotEngineEvent[] {
+    if (this.result) return this.finish(diagnostics);
+    return [this.failed(error)];
   }
 
   /** `usage` when the run reported it, then the one `done`. */
@@ -108,7 +120,11 @@ export class ClaudeEventTranslator {
         this.failed(this.lastError ?? diagnostics ?? 'Claude Code stopped without a result.'),
       ];
     }
-    if (result.subtype === 'success' && result.api_error_status === 429) this.rateLimited = true;
+    if (result.subtype === 'success' && typeof result.api_error_status === 'number') {
+      if (result.api_error_status === 429) this.rateLimited = true;
+      else if (this.lastFailure === 'other')
+        this.lastFailure = failureOf({ status: result.api_error_status });
+    }
     const { usage } = result;
     const context = this.contextOf(result);
     const events: BotEngineEvent[] = [
@@ -160,22 +176,33 @@ export class ClaudeEventTranslator {
 
   /** A failed end, marked as a rate limit when the provider refused for one. */
   private failed(error: string): BotEngineEvent {
-    return this.rateLimited ? failed(error, { resetAt: this.resetAt }) : failed(error);
+    return this.rateLimited
+      ? failed(error, 'rate_limit', { resetAt: this.resetAt })
+      : failed(error, this.lastFailure);
   }
 
-  /** Claude Code retrying a refused call: a rate limit's says how long it was told to wait. */
+  /**
+   * Claude Code retrying a refused call, said as `retrying` so the chat can
+   * show the wait rather than "thinking". A rate limit's also says how long
+   * it was told to wait, kept for a failure that follows.
+   */
   private fromSystem(message: {
     subtype?: string;
     error?: unknown;
     error_status?: unknown;
     retry_delay_ms?: unknown;
-  }): void {
-    if (message.subtype !== 'api_retry') return;
-    if (message.error !== 'rate_limit' && message.error_status !== 429) return;
-    this.rateLimited = true;
-    if (typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0) {
-      this.resetAt = new Date(Date.now() + message.retry_delay_ms);
+  }): BotEngineEvent[] {
+    if (message.subtype !== 'api_retry') return [];
+    const delayMs =
+      typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0
+        ? message.retry_delay_ms
+        : null;
+    if (message.error !== 'rate_limit' && message.error_status !== 429) {
+      return [{ type: 'retrying', reason: 'unavailable', delayMs }];
     }
+    this.rateLimited = true;
+    if (delayMs !== null) this.resetAt = new Date(Date.now() + delayMs);
+    return [{ type: 'retrying', reason: 'rate_limit', delayMs }];
   }
 
   /** A limit the provider says is exhausted, with when it resets (epoch seconds). */
@@ -215,6 +242,7 @@ export class ClaudeEventTranslator {
         .join('\n');
       this.lastError = text || String(error);
       if (error === 'rate_limit') this.rateLimited = true;
+      this.lastFailure = CLAUDE_FAILURES[String(error)] ?? 'other';
       return [];
     }
     const events: BotEngineEvent[] = [];
@@ -259,3 +287,22 @@ export class ClaudeEventTranslator {
     return events;
   }
 }
+
+/**
+ * The Claude Agent SDK's code for a failed model call (`SDKAssistantMessageError`)
+ * as the kind of failure it is. A code missing here, or one a later SDK adds,
+ * is `other`.
+ */
+const CLAUDE_FAILURES: Readonly<Record<string, BotEngineFailure>> = {
+  rate_limit: 'rate_limit',
+  billing_error: 'usage_limit',
+  authentication_failed: 'credential',
+  oauth_org_not_allowed: 'credential',
+  account_on_hold: 'credential',
+  verification_required: 'credential',
+  cloud_credential_error: 'credential',
+  invalid_request: 'refused',
+  model_not_found: 'refused',
+  overloaded: 'unavailable',
+  server_error: 'unavailable',
+};

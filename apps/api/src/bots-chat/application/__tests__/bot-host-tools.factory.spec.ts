@@ -8,7 +8,9 @@ import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity'
 import { WorkSessionEventEntity } from '../../../sessions/domain/work-session-event.entity';
 import { FindLatestSessionEventsQuery } from '../../../sessions/queries/find-latest-session-events/find-latest-session-events.query';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
+import { FindSessionEventsQuery } from '../../../sessions/queries/find-session-events/find-session-events.query';
 import { FindSessionsQuery } from '../../../sessions/queries/find-sessions/find-sessions.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostToolsFactory } from '../bot-host-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -29,6 +31,7 @@ const context: BotToolContext = {
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };
@@ -254,5 +257,33 @@ describe('BotHostToolsFactory', () => {
     expect(result.content.match(/agent working/g)).toHaveLength(1);
     expect(result.content).toContain('follow-up prompt from bot bot-7: Now run the tests');
     expect(result.content).toContain('follow-up prompt: Push to main');
+  });
+
+  it('reads only what came after an entry, and says where to read on', async () => {
+    const work = finished();
+    const event = (seq: number, state: 'working' | 'idle') =>
+      WorkSessionEventEntity.createNew({
+        sessionId: work.id,
+        seq,
+        idempotencyKey: `key-${seq}`,
+        source: 'runner',
+        kind: 'agent.observed',
+        payload: { state },
+        occurredAt: at(seq),
+      });
+    const { queryBus, call } = setup((query) =>
+      query instanceof FindSessionEventsQuery
+        ? { events: [event(8, 'working'), event(9, 'idle')], nextSeq: 10 }
+        : work,
+    );
+
+    const result = await call('read_session', { session_id: work.id, limit: 2, after_seq: 7 });
+
+    const page = queryBus.execute.mock.calls
+      .map(([query]) => query)
+      .find((query) => query instanceof FindSessionEventsQuery);
+    expect(page).toMatchObject({ scope: owner, sessionId: work.id, afterSeq: 7, limit: 2 });
+    expect(result.content).toContain('2 entries after entry 7');
+    expect(result.content).toContain('More follows: read_session with after_seq 9.');
   });
 });

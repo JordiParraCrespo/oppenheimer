@@ -5,6 +5,7 @@ import { AddPullRequestConversationCommentCommand } from '../../../pull-requests
 import { MergePullRequestCommand } from '../../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
 import { StartReviewSessionCommand } from '../../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotPullRequestToolsFactory } from '../bot-pull-request-tools.factory';
@@ -61,6 +62,7 @@ function setup(
     homeHostId,
     timeZone: 'UTC',
     permission,
+    permissions: NO_PERMISSIONS,
     approvals,
     budget: new BotTurnBudget(),
   };

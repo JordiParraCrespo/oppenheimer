@@ -51,6 +51,9 @@ import {
  */
 @Injectable()
 export class BotGithubToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'github' as const;
+
   constructor(private readonly queryBus: QueryBus) {}
 
   definitions(): readonly BotToolDefinition[] {
