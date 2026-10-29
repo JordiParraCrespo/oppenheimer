@@ -54,6 +54,17 @@ export class SessionTerminalWatchRepository implements SessionTerminalWatchRepos
     return record ? this.mapper.toDomain(record) : null;
   }
 
+  async recordMatches(organizationId: string, watchId: string, count: number): Promise<void> {
+    // PK_session_terminal_watch; GREATEST so a late report never lowers it.
+    await this.repository
+      .createQueryBuilder()
+      .update(SessionTerminalWatchOrmEntity)
+      .set({ matches: () => 'GREATEST("matches", :count)' })
+      .setParameter('count', count)
+      .where('"organizationId" = :organizationId AND id = :watchId', { organizationId, watchId })
+      .execute();
+  }
+
   async delete(organizationId: string, sessionId: string, watchId: string): Promise<boolean> {
     const result = await this.repository.delete({ organizationId, sessionId, id: watchId });
     return (result.affected ?? 0) > 0;

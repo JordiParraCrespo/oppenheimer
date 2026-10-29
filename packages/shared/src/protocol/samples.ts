@@ -213,6 +213,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     sessionId,
     watchId: '7d4b2f9e-3c1a-4e6b-9f0d-2a8c5e1b7f3a',
     pattern: 'Tests: \\d+ passed',
+    count: 3,
   },
   'session.unwatch': {
     type: 'session.unwatch',

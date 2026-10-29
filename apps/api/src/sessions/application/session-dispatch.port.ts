@@ -114,6 +114,8 @@ export interface SessionKeysSpec {
 export interface SessionTerminalWatchSpec {
   watchId: string;
   pattern: string;
+  /** The count already reported, when the watch is sent again: the runner counts on from it. */
+  count?: number;
 }
 
 /**

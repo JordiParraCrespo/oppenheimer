@@ -117,8 +117,11 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
 
   /**
    * A runner keeps terminal watches in memory, so every hello is sent the
-   * watches of the live sessions it holds again. Best effort: a watch that
-   * does not reach the runner now is sent with its next hello.
+   * watches of the live sessions it holds again, each with the newest count
+   * it reported: a runner that still holds one keeps it, and one that
+   * restarted counts on from there, so its next report is past what the bot
+   * was told. Best effort: a watch that does not reach the runner now is
+   * sent with its next hello.
    */
   private async watchAgain(held: readonly WorkSessionEntity[]): Promise<void> {
     const live = held.filter((session) => session.state === 'open' && session.stoppedAt === null);
@@ -137,7 +140,11 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
       for (const watch of watches) {
         const session = sessions.find((candidate) => candidate.id === watch.sessionId);
         if (session) {
-          await this.dispatch.watchTerminal(session, { watchId: watch.id, pattern: watch.pattern });
+          await this.dispatch.watchTerminal(session, {
+            watchId: watch.id,
+            pattern: watch.pattern,
+            count: watch.matches,
+          });
         }
       }
     }

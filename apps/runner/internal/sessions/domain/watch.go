@@ -33,7 +33,9 @@ const TerminalMatchedKind = "terminal.matched"
 type Watch struct {
 	id      string
 	pattern *regexp.Regexp
-	// seen is the line texts already counted, oldest first in order.
+	// seen is the line texts already counted, oldest first in order. A line
+	// counts once by its text: one that stays on screen, or scrolls back into
+	// view, is not a new match. That is the whole uniqueness rule.
 	seen  map[string]struct{}
 	order []string
 	// count is every new matching line counted so far; reported is what the
@@ -44,9 +46,11 @@ type Watch struct {
 	last     time.Time
 }
 
-// NewWatch compiles a watch, or answers ErrInvalidPattern for a pattern that
-// is empty, longer than WatchPatternMax or not an RE2 expression.
-func NewWatch(id, pattern string) (*Watch, error) {
+// NewWatch compiles a watch that counts on from `from`, the count already
+// reported for it before this runner restarted (0 for a new one), or answers
+// ErrInvalidPattern for a pattern that is empty, longer than WatchPatternMax
+// or not an RE2 expression.
+func NewWatch(id, pattern string, from int) (*Watch, error) {
 	if pattern == "" || len(pattern) > WatchPatternMax {
 		return nil, ErrInvalidPattern.WithDetail("a pattern is 1 to %d bytes", WatchPatternMax)
 	}
@@ -54,8 +58,20 @@ func NewWatch(id, pattern string) (*Watch, error) {
 	if err != nil {
 		return nil, ErrInvalidPattern.WithDetail("%v", err).WithCause(err)
 	}
-	return &Watch{id: id, pattern: compiled, seen: map[string]struct{}{}}, nil
+	if from < 0 {
+		from = 0
+	}
+	return &Watch{
+		id:       id,
+		pattern:  compiled,
+		seen:     map[string]struct{}{},
+		count:    from,
+		reported: from,
+	}, nil
 }
+
+// Pattern is the expression the watch matches, as it was given.
+func (w *Watch) Pattern() string { return w.pattern.String() }
 
 // ID is the watch's id, which the control plane chose.
 func (w *Watch) ID() string { return w.id }

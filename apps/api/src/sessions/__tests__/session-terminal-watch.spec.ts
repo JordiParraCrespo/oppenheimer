@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SessionStateChangedDomainEvent } from '../domain/events/session-state-changed.domain-event';
 import { SessionTerminalMatchedDomainEvent } from '../domain/events/session-terminal-matched.domain-event';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
-import {
-  SessionTerminalWatchEntity,
-  terminalWatchPatternProblem,
-} from '../domain/session-terminal-watch.entity';
+import { SessionTerminalWatchEntity } from '../domain/session-terminal-watch.entity';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 
 /**
@@ -15,21 +12,41 @@ import { WorkSessionEntity } from '../domain/work-session.entity';
  * entry that moves the session's state, or that raises no event, so nobody
  * is woken; a malformed one raising an event with no watch to wake for.
  */
-describe('terminalWatchPatternProblem', () => {
-  it('takes a plain regular expression', () => {
-    expect(terminalWatchPatternProblem('Tests: \\d+ passed|FAIL')).toBeNull();
+/** What the entity says of a pattern: null when it takes it, else why not. */
+function refusal(pattern: string): string | null {
+  try {
+    SessionTerminalWatchEntity.watch({ organizationId: 'o', sessionId: 's', pattern });
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+describe('a watched pattern', () => {
+  it('takes a plain regular expression, and Go’s leading inline flags', () => {
+    expect(refusal('Tests: \\d+ passed|FAIL')).toBeNull();
+    expect(refusal('(?i)error: \\w+')).toBeNull();
+    expect(refusal('\\bpanic\\b|\\Aready\\z')).toBeNull();
   });
 
   it('refuses what RE2 lacks, an invalid expression, and an empty or long one', () => {
-    expect(terminalWatchPatternProblem('error(?!: none)')).toMatch(/Lookahead/);
-    expect(terminalWatchPatternProblem('(?<=x)y')).toMatch(/Lookahead/);
-    expect(terminalWatchPatternProblem('(a)\\1')).toMatch(/Backreferences/);
-    expect(terminalWatchPatternProblem('[unclosed')).toMatch(/not a valid/);
-    expect(terminalWatchPatternProblem('  ')).toMatch(/empty/);
-    expect(terminalWatchPatternProblem('x'.repeat(201))).toMatch(/longer than 200/);
-    expect(() =>
-      SessionTerminalWatchEntity.watch({ organizationId: 'o', sessionId: 's', pattern: '[' }),
-    ).toThrow();
+    expect(refusal('error(?!: none)')).toMatch(/Lookahead/);
+    expect(refusal('(?<=x)y')).toMatch(/Lookahead/);
+    expect(refusal('(a)\\1')).toMatch(/Backreferences/);
+    expect(refusal('[unclosed')).toMatch(/not a valid/);
+    expect(refusal('  ')).toMatch(/empty/);
+    expect(refusal('x'.repeat(201))).toMatch(/longer than 200/);
+  });
+
+  // What breaks this: a pattern JavaScript takes and Go refuses, stored and
+  // sent, so the bot is told it watches and its host never matches anything.
+  it('refuses what JavaScript takes and Go does not: unknown escapes, repeats past 1000', () => {
+    expect(refusal('a{1001}')).toMatch(/repeat count above 1000/);
+    expect(refusal('a{2,1001}')).toMatch(/repeat count above 1000/);
+    expect(refusal('a{1000}')).toBeNull();
+    expect(refusal('\\u0041')).toMatch(/\\u is not an escape/);
+    expect(refusal('end\\Z')).toMatch(/\\Z is not an escape/);
+    expect(refusal('trailing\\')).toMatch(/lone backslash/);
   });
 });
 

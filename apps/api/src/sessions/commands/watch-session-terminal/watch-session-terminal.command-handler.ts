@@ -1,13 +1,13 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { SessionTerminalWatchRepositoryPort } from '../../database/session-terminal-watch.repository.port';
 import {
   SESSION_TERMINAL_WATCHES_MAX,
   SessionTerminalWatchEntity,
-  terminalWatchPatternProblem,
 } from '../../domain/session-terminal-watch.entity';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { SESSION_DISPATCH, SESSION_TERMINAL_WATCH_REPOSITORY } from '../../sessions.di-tokens';
@@ -38,13 +38,7 @@ export class WatchSessionTerminalCommandHandler
 
   async execute(command: WatchSessionTerminalCommand): Promise<WatchSessionTerminalResult> {
     const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
-    const problem = terminalWatchPatternProblem(command.pattern);
-    if (problem) throw new AppError(SessionErrors.TERMINAL_PATTERN_INVALID, { detail: problem });
-    const watch = SessionTerminalWatchEntity.watch({
-      organizationId: session.organizationId,
-      sessionId: session.id,
-      pattern: command.pattern,
-    });
+    const watch = this.watchOf(session, command.pattern);
     const outcome = await this.watches.insert(watch, SESSION_TERMINAL_WATCHES_MAX);
     if (outcome === 'full') throw new AppError(SessionErrors.TERMINAL_WATCHES_FULL);
     if (outcome === 'missing') throw new AppError(SessionErrors.NOT_FOUND);
@@ -53,5 +47,22 @@ export class WatchSessionTerminalCommandHandler
       pattern: watch.pattern,
     });
     return { sessionId: session.id, watchId: watch.id, hints };
+  }
+
+  /** The watch, or the entity's refusal of its pattern as `SESSIONS_042`: the entity owns the rule. */
+  private watchOf(
+    session: { organizationId: string; id: string },
+    pattern: string,
+  ): SessionTerminalWatchEntity {
+    try {
+      return SessionTerminalWatchEntity.watch({
+        organizationId: session.organizationId,
+        sessionId: session.id,
+        pattern,
+      });
+    } catch (error) {
+      if (!(error instanceof ArgumentInvalidException)) throw error;
+      throw new AppError(SessionErrors.TERMINAL_PATTERN_INVALID, { detail: error.message });
+    }
   }
 }

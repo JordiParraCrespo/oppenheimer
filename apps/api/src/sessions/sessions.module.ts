@@ -15,6 +15,7 @@ import { CloudSessionSyncResolver } from './application/cloud-session-sync.resol
 import { CloudTaskFactory } from './application/cloud-task.factory';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
+import { SessionTerminalMatchedDomainEventHandler } from './application/event-handlers/session-terminal-matched.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
@@ -264,6 +265,7 @@ const adapters: Provider[] = [
     ...HostsModule.contributeUsage([SessionHostUsage]),
     ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     HostUnpairedStopsSessionsDomainEventHandler,
+    SessionTerminalMatchedDomainEventHandler,
     HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },

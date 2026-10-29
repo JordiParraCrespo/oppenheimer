@@ -21,6 +21,7 @@ export class SessionTerminalWatchMapper
     record.organizationId = entity.organizationId;
     record.sessionId = entity.sessionId;
     record.pattern = entity.pattern;
+    record.matches = entity.matches;
     return record;
   }
 
@@ -28,10 +29,12 @@ export class SessionTerminalWatchMapper
     return SessionTerminalWatchEntity.create({
       id: record.id,
       createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
       props: {
         organizationId: record.organizationId,
         sessionId: record.sessionId,
         pattern: record.pattern,
+        matches: record.matches,
       },
     });
   }
