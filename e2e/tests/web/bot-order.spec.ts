@@ -53,6 +53,8 @@ test('a bot dragged under a section’s Bots heading moves there and in Employee
   await page.keyboard.press('Space');
   await expect(heading.locator('[data-dragging]')).toHaveCount(1);
   await page.keyboard.press('ArrowUp');
+  // What a screen reader hears once the row is over its new place.
+  await expect(page.getByText('Bea is over Ada.')).toBeAttached();
   await page.keyboard.press('Space');
   await expect.poll(() => names(page)).toEqual(['Cy', 'Bea', 'Ada']);
   // The drop did not open the chat: Space is not Enter.
