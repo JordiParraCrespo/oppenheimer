@@ -22,6 +22,9 @@
  * `google_calendar` says whether Plan's calendar can show a person's Google
  * Calendar: the Google client and the key its refresh tokens are sealed under.
  *
+ * `gmail` says whether a person can connect their Gmail for their bots
+ * (`product/next-steps/mail.md`): the same Google client and `MAIL_TOKEN_KEY`.
+ *
  * `voice_transcription` says whether the deployment has a speech-to-text key
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
@@ -43,6 +46,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'session_namer',
   'ip_geolocation',
   'google_calendar',
+  'gmail',
   'bot_providers',
   'voice_transcription',
   'cloud_agents',
@@ -76,6 +80,8 @@ export const CLIENT_CAPABILITIES = [
   'github_app',
   // Plan's calendar offers Connect Google Calendar only when it can work.
   'google_calendar',
+  // Settings → Mail offers Connect Gmail only when it can work.
+  'gmail',
   // Whether this server can pair a machine. An empty host list does not say
   // so, and the mint is the request that would find out, so a console reads
   // this before it asks. Public because the probe is: anonymous callers get

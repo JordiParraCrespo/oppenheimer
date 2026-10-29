@@ -167,7 +167,8 @@ const createSessionFields = z.object({
    * Files attached to the first task (images, PDF, text), each uploaded beforehand with
    * `POST /sessions/attachments` and named here by the id that returned
    * (`product/versions/mvp/03-control-plane.md`). What becomes of them on the
-   * wire is `session.create`'s `images`.
+   * wire is `session.create`'s `images`; a cloud session's become a download
+   * link each in its task instead, since the host only starts it.
    */
   attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_FILES).optional(),
 });
@@ -210,17 +211,15 @@ export const createSessionSchema = createSessionFields
     path: ['attachmentIds'],
   })
   /**
-   * A cloud session is Claude Code, started from one repository with a task
-   * and nothing else: the files of a first task stay on the host, which the
-   * cloud never sees.
+   * A cloud session is Claude Code, started from one repository with a task.
+   * Its files never reach the host: the API keeps them and the task carries a
+   * link to each, which the cloud's agent downloads
+   * (`product/next-steps/cloud-agents.md`, "Files for a cloud session").
    */
   .refine(
     (value) =>
       !value.cloud ||
-      (value.agent === 'claude-code' &&
-        value.checkouts.length === 1 &&
-        value.prompt !== undefined &&
-        !value.attachmentIds?.length),
+      (value.agent === 'claude-code' && value.checkouts.length === 1 && value.prompt !== undefined),
     { path: ['cloud'] },
   );
 

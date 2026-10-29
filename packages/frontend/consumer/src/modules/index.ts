@@ -5,6 +5,7 @@ export * from './cloud-agents';
 export * from './hosts';
 export * from './inbox';
 export * from './installations';
+export * from './mail';
 export * from './organizations';
 export * from './permissions';
 export * from './profile';

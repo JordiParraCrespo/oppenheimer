@@ -9,6 +9,7 @@ export * from './cloud-agent.schema.js';
 export * from './github.schema.js';
 export * from './host.schema.js';
 export * from './inbox.schema.js';
+export * from './mail.schema.js';
 export * from './organization.schema.js';
 export * from './pagination.schema.js';
 export * from './plan-stats.schema.js';

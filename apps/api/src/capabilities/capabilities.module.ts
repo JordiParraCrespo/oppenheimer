@@ -6,6 +6,7 @@ import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
+import { mailTokenKeyOf } from '../config/mail.config';
 import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { speechKeyIsConfigured } from '../config/voice.config';
@@ -74,6 +75,12 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
       configService.get('oauth.google.clientId') &&
         configService.get('oauth.google.clientSecret') &&
         calendarTokenKeyOf(configService.get<string>('calendar.tokenKey')),
+    ),
+    // The same Google client and a valid key for Gmail's refresh tokens.
+    gmail: Boolean(
+      configService.get('oauth.google.clientId') &&
+        configService.get('oauth.google.clientSecret') &&
+        mailTokenKeyOf(configService.get<string>('mail.tokenKey')),
     ),
     // A valid sealing key for a person's cloud agent vendor keys.
     cloud_agents: Boolean(cloudAgentsSealKeyOf(configService.get<string>('cloudAgents.sealKey'))),

@@ -156,16 +156,19 @@ test('reports what it tracks to the Oppenheimer it is connected to', async ({
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
 
-  await expect.poll(() => reports.length).toBeGreaterThan(0);
-  expect(reports[0]).toEqual({
-    authorization: 'Bearer oppenheimer_pat_test',
-    body: {
-      sessions: expect.arrayContaining([
-        { cloudSessionId: 'session_01FixLogin00', state: 'needs-input' },
-        { cloudSessionId: 'session_01PortExt000', state: 'running' },
-      ]),
-    },
-  });
+  // It reports after every check, and a check that ran before the page was
+  // read tracked nothing yet: wait for the report that carries the sessions.
+  await expect
+    .poll(() => reports.at(-1))
+    .toEqual({
+      authorization: 'Bearer oppenheimer_pat_test',
+      body: {
+        sessions: expect.arrayContaining([
+          { cloudSessionId: 'session_01FixLogin00', state: 'needs-input' },
+          { cloudSessionId: 'session_01PortExt000', state: 'running' },
+        ]),
+      },
+    });
 
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
