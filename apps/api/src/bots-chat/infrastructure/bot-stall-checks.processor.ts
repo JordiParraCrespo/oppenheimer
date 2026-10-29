@@ -4,7 +4,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import { CheckStalledSessionCommand } from '../commands/check-stalled-session/check-stalled-session.command';
-import { CHECK_STALLED_SESSION_JOB } from '../database/bot-subscription.repository';
+import { CHECK_STALLED_SESSION_JOB } from './outbox-bot-stall-checks.adapter';
 
 /**
  * The `bot-stall-checks` worker: one job per task a bot hands a session,

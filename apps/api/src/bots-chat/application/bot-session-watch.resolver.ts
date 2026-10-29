@@ -4,7 +4,7 @@ import { RequestContextService } from '@oppenheimer/backend-ddd';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
-import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
+import { BOT_STALL_CHECKS, BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import { WakeSubscribedBotCommand } from '../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
@@ -14,7 +14,12 @@ import {
   type BotSubscriptionUntil,
   type BotWatchFrom,
 } from '../domain/bot-subscription.policy';
+import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
+
+/** What `start_session` and `send_to_session` answer once the task they handed off is followed. */
+const HANDED_OFF =
+  'You are subscribed to it and will be woken when the task needs input or ends, or if it has not got going in a few minutes: end your turn now, and report when you are.';
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -36,6 +41,7 @@ export class BotSessionWatchResolver {
   constructor(
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)
     private readonly subscriptions: BotSubscriptionRepositoryPort,
+    @Inject(BOT_STALL_CHECKS) private readonly stallChecks: BotStallChecksPort,
     private readonly queries: QueryBus,
     private readonly commands: CommandBus,
     private readonly mapper: BotSubscriptionMapper,
@@ -50,22 +56,8 @@ export class BotSessionWatchResolver {
    * The session exists whatever happens here, so a watch that cannot be
    * stored is said, never thrown: the start stays a start.
    */
-  async watchStarted(context: BotToolCallContext, sessionId: string): Promise<string> {
-    try {
-      const { subscription } = await this.watch(context, sessionId, {
-        until: 'task',
-        purpose: null,
-        from: 'first_task',
-      });
-      await this.commands.execute(
-        new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
-      );
-      await this.checkLater(subscription, 1);
-      return 'You are subscribed to it and will be woken when its task needs input or ends, or if it has not got going in a few minutes: end your turn now, and report when you are.';
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      return `It could not be watched (${reason}); read it later with get_session.`;
-    }
+  watchStarted(context: BotToolCallContext, sessionId: string): Promise<string> {
+    return this.followHandOff(context, sessionId, 'first_task', 1);
   }
 
   /**
@@ -75,18 +67,28 @@ export class BotSessionWatchResolver {
    * time the watch is stored, so the wake is asked for once now; and a watch
    * that cannot be stored is said, never thrown: the prompt was sent.
    */
-  async watchSent(context: BotToolCallContext, sessionId: string, turn: number): Promise<string> {
+  watchSent(context: BotToolCallContext, sessionId: string, turn: number): Promise<string> {
+    return this.followHandOff(context, sessionId, { turn }, turn);
+  }
+
+  /** Store the watch, ask for its wake once now, owe it its stall check, and say so. */
+  private async followHandOff(
+    context: BotToolCallContext,
+    sessionId: string,
+    from: BotWatchFrom,
+    turn: number,
+  ): Promise<string> {
     try {
       const { subscription } = await this.watch(context, sessionId, {
         until: 'task',
         purpose: null,
-        from: { turn },
+        from,
       });
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
       await this.checkLater(subscription, turn);
-      return 'You are subscribed to it and will be woken when the task needs input or ends, or if it has not got going in a few minutes: end your turn now, and report when you are.';
+      return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       return `It could not be watched (${reason}); read it later with get_session.`;
@@ -99,9 +101,13 @@ export class BotSessionWatchResolver {
    */
   private async checkLater(subscription: BotSubscriptionEntity, turn: number): Promise<void> {
     try {
-      await this.subscriptions.scheduleStallCheck(
-        subscription,
-        turn,
+      await this.stallChecks.schedule(
+        {
+          subscriptionId: subscription.id,
+          botId: subscription.botId,
+          sessionId: subscription.resourceId,
+          turn,
+        },
         new Date(Date.now() + BOT_STALL_CHECK_DELAY_MS),
         RequestContextService.getCorrelationId() ?? null,
       );

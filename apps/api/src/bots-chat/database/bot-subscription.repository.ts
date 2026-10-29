@@ -1,17 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { OutboxService } from '@oppenheimer/backend-ddd';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { BotSubscriptionOrmEntity } from './bot-subscription.orm-entity';
 import type { BotSubscriptionRepositoryPort } from './bot-subscription.repository.port';
-
-/** The job that checks a handed-off task got going; its payload is `{ subscriptionId, turn }`. */
-export const CHECK_STALLED_SESSION_JOB = 'check-stalled-session';
 
 @Injectable()
 export class BotSubscriptionRepository
@@ -24,7 +19,6 @@ export class BotSubscriptionRepository
   constructor(
     @InjectRepository(BotSubscriptionOrmEntity)
     protected readonly repository: Repository<BotSubscriptionOrmEntity>,
-    private readonly outbox: OutboxService,
     private readonly mapper: BotSubscriptionMapper,
   ) {
     super();
@@ -127,25 +121,6 @@ export class BotSubscriptionRepository
   async end(subscription: BotSubscriptionEntity): Promise<boolean> {
     const result = await this.repository.delete({ id: subscription.id });
     return result.affected === 1;
-  }
-
-  async scheduleStallCheck(
-    subscription: BotSubscriptionEntity,
-    turn: number,
-    at: Date,
-    correlationId: string | null,
-  ): Promise<void> {
-    await this.outbox.transaction((manager) =>
-      this.outbox.stageJob(manager, {
-        queue: QUEUE_NAMES.BOT_STALL_CHECKS,
-        jobName: CHECK_STALLED_SESSION_JOB,
-        payload: { subscriptionId: subscription.id, turn },
-        reason: `bot ${subscription.botId} handed session ${subscription.resourceId} task #${turn}: check it got going`,
-        aggregateId: subscription.id,
-        correlationId,
-        availableAt: at,
-      }),
-    );
   }
 
   async unsubscribe(organizationId: string, botId: string, sessionId: string): Promise<boolean> {

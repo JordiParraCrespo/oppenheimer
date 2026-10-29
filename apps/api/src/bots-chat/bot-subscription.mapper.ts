@@ -141,7 +141,6 @@ export class BotSubscriptionMapper {
       purpose: subscription.purpose,
       task,
       state: decision.state,
-      stall: null,
       ends: decision.ends,
     };
   }

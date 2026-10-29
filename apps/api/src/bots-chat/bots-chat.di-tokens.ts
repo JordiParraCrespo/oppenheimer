@@ -14,3 +14,5 @@ export const BOT_ATTACHMENT_REPOSITORY = Symbol('BOT_ATTACHMENT_REPOSITORY');
 export const BOT_ATTACHMENT_FILES = Symbol('BOT_ATTACHMENT_FILES');
 /** What sessions each bot follows (`27-bot-subscriptions.md`). */
 export const BOT_SUBSCRIPTION_REPOSITORY = Symbol('BOT_SUBSCRIPTION_REPOSITORY');
+/** Where a bot's hand-off is owed its stall check (`27-bot-subscriptions.md` §4.1). */
+export const BOT_STALL_CHECKS = Symbol('BOT_STALL_CHECKS');

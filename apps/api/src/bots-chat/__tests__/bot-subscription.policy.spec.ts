@@ -50,10 +50,10 @@ function wake(overrides: Partial<SessionWake> = {}): SessionWake {
       failureDetail: null,
     },
     state: 'completed',
-    stall: null,
     ends: true,
     ...overrides,
-  };
+    // An override picks the arm: `state: 'stalled'` comes with its `stall`.
+  } as SessionWake;
 }
 
 describe('wakeFor', () => {

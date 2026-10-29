@@ -65,6 +65,7 @@ import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
+import { OutboxBotStallChecksAdapter } from '../infrastructure/outbox-bot-stall-checks.adapter';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 
 /**
@@ -194,7 +195,6 @@ describe('bots chat (integration)', () => {
     );
     subscriptions = new BotSubscriptionRepository(
       dataSource.getRepository(BotSubscriptionOrmEntity),
-      new OutboxService(dataSource),
       new BotSubscriptionMapper(),
     );
   }, 180000);
@@ -1623,7 +1623,11 @@ describe('bots chat (integration)', () => {
       const bot = await create('Stall');
       const stored = await subscriptions.subscribe(watching(bot));
       const at = new Date(Date.now() + 5 * 60_000);
-      await subscriptions.scheduleStallCheck(stored, 1, at, 'corr-1');
+      await new OutboxBotStallChecksAdapter(new OutboxService(dataSource)).schedule(
+        { subscriptionId: stored.id, botId: bot.id, sessionId: SESSION, turn: 1 },
+        at,
+        'corr-1',
+      );
       const rows: { eventName: string; payload: unknown; status: string; availableAt: Date }[] =
         await dataSource.query(
           `SELECT "eventName", payload, status, "availableAt" FROM outbox_message WHERE topic = 'bot-stall-checks'`,
@@ -1721,7 +1725,6 @@ describe('bots chat (integration)', () => {
           failureDetail: null,
         },
         state: 'completed',
-        stall: null,
         ends: true,
       };
       const props = {

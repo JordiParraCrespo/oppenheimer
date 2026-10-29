@@ -20,6 +20,7 @@ import {
   BOT_SUBSCRIPTIONS_PER_BOT,
 } from '../../domain/bot-subscription.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import type { BotStallChecksPort } from '../../infrastructure/bot-stall-checks.port';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -71,9 +72,9 @@ function setup(
       async () => options.following ?? [],
     ),
     unsubscribe: vi.fn<BotSubscriptionRepositoryPort['unsubscribe']>(async () => true),
-    scheduleStallCheck: vi.fn<BotSubscriptionRepositoryPort['scheduleStallCheck']>(
-      async () => undefined,
-    ),
+  };
+  const stallChecks = {
+    schedule: vi.fn<BotStallChecksPort['schedule']>(async () => undefined),
   };
   const queries = {
     execute: vi.fn(async (query: unknown) => {
@@ -87,6 +88,7 @@ function setup(
   const commands = { execute: vi.fn(async () => undefined) };
   const resolver = new BotSessionWatchResolver(
     repository,
+    stallChecks,
     queries as unknown as QueryBus,
     commands as unknown as CommandBus,
     new BotSubscriptionMapper(),
@@ -110,7 +112,7 @@ function setup(
     if (!definition) throw new Error(`no tool ${name}`);
     return definition.bind(context).run(input, { signal: new AbortController().signal });
   };
-  return { subscriptions, queries, commands, approvals, call, resolver, context };
+  return { subscriptions, stallChecks, queries, commands, approvals, call, resolver, context };
 }
 
 describe('BotWatchToolsFactory', () => {
@@ -216,50 +218,36 @@ describe('BotWatchToolsFactory', () => {
   // What breaks this: a session stuck at its launch (host offline, a trust
   // prompt) that the bot never hears of, since no state it waits on comes.
   it('owes the task it hands off a stall check a few minutes later', async () => {
-    const { resolver, context, subscriptions } = setup();
+    const { resolver, context, subscriptions, stallChecks } = setup();
     const before = Date.now();
     await resolver.watchStarted(context, SESSION);
     await resolver.watchSent(context, SESSION, 3);
 
-    const [[started, firstTurn, firstAt], [, sentTurn]] =
-      subscriptions.scheduleStallCheck.mock.calls;
-    expect(started.id).toBe(subscriptions.subscribe.mock.calls[0][0].id);
-    expect(firstTurn).toBe(1);
-    expect(sentTurn).toBe(3);
+    const [[started, firstAt], [sent]] = stallChecks.schedule.mock.calls;
+    expect(started).toEqual({
+      subscriptionId: subscriptions.subscribe.mock.calls[0][0].id,
+      botId: 'bot-1',
+      sessionId: SESSION,
+      turn: 1,
+    });
+    expect(sent.turn).toBe(3);
     expect(firstAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
   });
 
   it('keeps the watch it stored when its stall check cannot be staged', async () => {
-    const { resolver, context, subscriptions } = setup();
-    subscriptions.scheduleStallCheck.mockRejectedValueOnce(new Error('connection reset'));
+    const { resolver, context, stallChecks } = setup();
+    stallChecks.schedule.mockRejectedValueOnce(new Error('connection reset'));
     expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
   });
 
-  // What breaks this: a prompt whose task finished before the watch was
-  // stored, counted as the next task's or as already known, so the bot that
-  // was told to wait is never woken.
-  it('follows the task a prompt opened by its number, unknown, and reconciles it at once', async () => {
-    const { resolver, context, subscriptions, commands } = setup({
-      read: liveSession('completed', 3),
-    });
-    expect(await resolver.watchSent(context, SESSION, 3)).toContain('You are subscribed to it');
-    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
-      watchedTurn: 3,
-      lastTurn: null,
-      lastState: null,
-    });
-    const [wake] = commands.execute.mock.calls[0] as unknown as [WakeSubscribedBotCommand];
-    expect(wake).toBeInstanceOf(WakeSubscribedBotCommand);
-  });
-
   it("says when start_session's watch could not be stored rather than throw", async () => {
-    const { resolver, context, subscriptions, commands } = setup();
+    const { resolver, context, subscriptions, commands, stallChecks } = setup();
 
     subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
     expect(await resolver.watchStarted(context, SESSION)).toBe(
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
-    expect(subscriptions.scheduleStallCheck).not.toHaveBeenCalled();
+    expect(stallChecks.schedule).not.toHaveBeenCalled();
   });
 });

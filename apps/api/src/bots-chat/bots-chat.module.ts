@@ -50,6 +50,7 @@ import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
+  BOT_STALL_CHECKS,
   BOT_STREAM,
   BOT_SUBSCRIPTION_REPOSITORY,
   BOT_TURN_REPOSITORY,
@@ -93,6 +94,7 @@ import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.proce
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { StorageBotAttachmentFilesAdapter } from './infrastructure/storage-bot-attachment-files.adapter';
@@ -241,6 +243,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
+    { provide: BOT_STALL_CHECKS, useClass: OutboxBotStallChecksAdapter },
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.

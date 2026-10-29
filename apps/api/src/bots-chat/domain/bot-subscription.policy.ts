@@ -232,19 +232,20 @@ const STALL_PHRASES: Readonly<Record<StallReason, string>> = {
   not_working: `started, but its agent has not been seen working ${BOT_STALL_CHECK_DELAY_MS / 60_000} minutes after it was handed off: it may sit at a prompt, such as trusting the folder or signing in`,
 };
 
-/** What a wake tells the bot, as the subscription and the session are now. */
-export interface SessionWake {
+/**
+ * What a wake tells the bot, as the subscription and the session are now:
+ * a state the task reached, or `stalled` with why the stall check (§4.1)
+ * found it stuck. Only the stalled arm has a reason.
+ */
+export type SessionWake = {
   subscriptionId: string;
   sessionId: string;
   sessionName: string;
   purpose: string | null;
   task: WatchedTask;
-  state: BotSessionEventState;
-  /** Why the task looks stuck, for `stalled`; null for every other state. */
-  stall: StallReason | null;
   /** Whether this is the subscription's last wake. */
   ends: boolean;
-}
+} & ({ state: BotSessionWakeState } | { state: 'stalled'; stall: StallReason });
 
 /**
  * The wake's words for the bot, as it reads them now and in its history:
@@ -254,7 +255,7 @@ export function sessionWakeText(wake: SessionWake): string {
   const { task } = wake;
   const what =
     wake.state === 'stalled'
-      ? `looks stuck: it ${STALL_PHRASES[wake.stall ?? 'not_started']}`
+      ? `looks stuck: it ${STALL_PHRASES[wake.stall]}`
       : STATE_PHRASES[wake.state];
   const lines = [
     `The session "${oneLine(wake.sessionName)}" (${wake.sessionId}) you follow: its task #${task.seq} ${what}.`,
