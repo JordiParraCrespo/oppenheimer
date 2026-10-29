@@ -12,9 +12,11 @@ import {
   emptyDraft,
   fitCards,
   githubCard,
+  placePatch,
   scheduleCard,
   toCreateInput,
   toUpdateInput,
+  whereGap,
   withFrequency,
 } from '../lib/automation-draft';
 import { nextRunText, runState, sidebarMeta } from '../lib/automation-view';
@@ -84,6 +86,7 @@ function automation(
     {
       id: 'r-1',
       number: 1,
+      place: 'host',
       hostId: 'h-1',
       agent: 'claude-code',
       model: null,
@@ -249,6 +252,34 @@ describe('the draft', () => {
 
   it('takes the first host there is for a project with no default host', () => {
     expect(emptyDraft([project({ id: 'p-1' })], [host('h-9')], 'p-1').hostId).toBe('h-9');
+  });
+
+  it('runs at a vendor with its own agent and no host, and comes back to the host it left', () => {
+    const draft = draftOf(automation());
+    const atCursor = { ...draft, ...placePatch(draft, 'cursor', 'h-9') };
+    expect(atCursor).toMatchObject({ place: 'cursor', agent: 'cursor', hostId: null });
+    expect(whereGap(atCursor)).toBeNull();
+    expect(toCreateInput(atCursor, { name: 'x', prompt: 'y' })).toMatchObject({
+      place: 'cursor',
+      hostId: null,
+      agent: 'cursor',
+    });
+    // Back on a host, the vendor's agent gives way and a host is picked again.
+    expect(placePatch(atCursor, 'host', 'h-9')).toMatchObject({
+      place: 'host',
+      agent: 'claude-code',
+      hostId: 'h-9',
+    });
+  });
+
+  it('runs Claude Code in Claude Code’s cloud, dropping another agent’s model', () => {
+    const draft = { ...draftOf(automation()), agent: 'codex' as const, model: 'gpt-5' };
+    expect(placePatch(draft, 'claude-cloud', null)).toEqual({
+      place: 'claude-cloud',
+      agent: 'claude-code',
+      hostId: 'h-1',
+      model: null,
+    });
   });
 
   it('opens with nothing to send when there is no project', () => {

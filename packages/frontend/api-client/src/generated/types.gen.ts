@@ -2096,7 +2096,14 @@ export type AutomationRevisionResponseDto = {
      * Numbered from 1; each save that changes what a run executes adds one.
      */
     number: number;
-    hostId: string;
+    /**
+     * Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host
+     */
+    place: 'host' | 'claude-cloud' | 'cursor';
+    /**
+     * The host a run starts on or from; null at a vendor
+     */
+    hostId: string | null;
     agent: string;
     model?: string | null;
     permission: 'auto' | 'full';
@@ -2191,7 +2198,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -2231,7 +2238,7 @@ export type BotRoutineResponseDto = {
      * `running` while a run is queued or its turn runs, else `active` or `paused`.
      */
     status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedules. Null when paused or event-only.
      */
@@ -2251,7 +2258,8 @@ export type CreateAutomationRequest = {
         installationId: string;
         githubRepoId: number;
     }>;
-    hostId: string;
+    place?: 'host' | 'claude-cloud' | 'cursor';
+    hostId: string | null;
     name: string;
     triggers: Array<{
         source: 'schedule';
@@ -2274,7 +2282,7 @@ export type CreateAutomationRequest = {
         };
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2325,7 +2333,8 @@ export type UpdateAutomationRequest = {
         installationId: string;
         githubRepoId: number;
     }>;
-    hostId?: string;
+    place?: 'host' | 'claude-cloud' | 'cursor';
+    hostId?: string | null;
     name?: string;
     triggers?: Array<{
         source: 'schedule';
@@ -2348,7 +2357,7 @@ export type UpdateAutomationRequest = {
         };
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2617,6 +2626,21 @@ export type StartTaskSessionResponseDto = {
      * What the control plane could not do just now: `host_offline` when the session waits for its host.
      */
     hints: Array<string>;
+};
+
+export type StartTaskCloudSessionRequest = {
+    cloud: {
+        provider: 'cursor';
+        name?: string;
+        checkout: {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        };
+        prompt: string;
+        model?: string;
+    };
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
 };
 
 export type LinkTaskSessionRequest = {
@@ -10836,6 +10860,60 @@ export type StartTaskSessionResponses = {
 };
 
 export type StartTaskSessionResponse = StartTaskSessionResponses[keyof StartTaskSessionResponses];
+
+export type StartTaskCloudSessionData = {
+    body: StartTaskCloudSessionRequest;
+    headers?: {
+        /**
+         * A retry with the same key returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/cloud';
+};
+
+export type StartTaskCloudSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 / GITHUB_010 — Task not found, or a repository its GitHub installation does not cover
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that provider
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the launch as asked
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 / CLOUD_AGENTS_007 — Rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — No answer
+     */
+    502: ProblemDetailsDto;
+};
+
+export type StartTaskCloudSessionError = StartTaskCloudSessionErrors[keyof StartTaskCloudSessionErrors];
+
+export type StartTaskCloudSessionResponses = {
+    201: StartTaskSessionResponseDto;
+};
+
+export type StartTaskCloudSessionResponse = StartTaskCloudSessionResponses[keyof StartTaskCloudSessionResponses];
 
 export type UnlinkTaskSessionData = {
     body?: never;

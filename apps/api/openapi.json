@@ -14094,6 +14094,138 @@
         "tags": ["Tasks"]
       }
     },
+    "/api/v1/tasks/{id}/sessions/cloud": {
+      "post": {
+        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "operationId": "startTaskCloudSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retry with the same key returns the session already started.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTaskCloudSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartTaskSessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 / GITHUB_010 — Task not found, or a repository its GitHub installation does not cover",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The provider refused the stored key, or the launch as asked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 / CLOUD_AGENTS_007 — Rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CLOUD_AGENTS_006 — No answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a cloud session from a task",
+        "tags": ["Tasks"]
+      }
+    },
     "/api/v1/tasks/{id}/sessions/{sessionId}": {
       "put": {
         "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
@@ -25621,9 +25753,16 @@
             "type": "number",
             "description": "Numbered from 1; each save that changes what a run executes adds one."
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "description": "Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true,
+            "description": "The host a run starts on or from; null at a vendor"
           },
           "agent": {
             "type": "string",
@@ -25659,6 +25798,7 @@
         "required": [
           "id",
           "number",
+          "place",
           "hostId",
           "agent",
           "permission",
@@ -25851,6 +25991,7 @@
               "host_unpaired",
               "owner_lost_access",
               "bot_provider_missing",
+              "cloud_key_missing",
               null
             ],
             "nullable": true
@@ -25953,6 +26094,7 @@
               "host_unpaired",
               "owner_lost_access",
               "bot_provider_missing",
+              "cloud_key_missing",
               null
             ],
             "nullable": true
@@ -26026,9 +26168,15 @@
               "required": ["installationId", "githubRepoId"]
             }
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "default": "host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "name": {
             "type": "string",
@@ -26171,8 +26319,16 @@
             "maxLength": 2048
           },
           "agent": {
-            "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+              },
+              {
+                "type": "string",
+                "enum": ["cursor"]
+              }
+            ]
           },
           "launch": {
             "type": "object",
@@ -26364,9 +26520,15 @@
               "required": ["installationId", "githubRepoId"]
             }
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "default": "host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "name": {
             "type": "string",
@@ -26509,8 +26671,16 @@
             "maxLength": 2048
           },
           "agent": {
-            "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+              },
+              {
+                "type": "string",
+                "enum": ["cursor"]
+              }
+            ]
           },
           "launch": {
             "type": "object",
@@ -27308,6 +27478,61 @@
           }
         },
         "required": ["task", "sessionId", "hints"]
+      },
+      "StartTaskCloudSessionRequest": {
+        "type": "object",
+        "properties": {
+          "cloud": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["cursor"]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "checkout": {
+                "type": "object",
+                "properties": {
+                  "installationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "githubRepoId": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "baseBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                },
+                "required": ["installationId", "githubRepoId"]
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": ["provider", "checkout", "prompt"]
+          },
+          "seenStatus": {
+            "type": "string",
+            "enum": ["later", "todo", "doing", "done"]
+          }
+        },
+        "required": ["cloud", "seenStatus"]
       },
       "LinkTaskSessionRequest": {
         "type": "object",

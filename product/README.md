@@ -809,6 +809,13 @@ earlier note:
   pasted images, now shows them and the screenshots the agent reads, from
   a preview the runner sends within the link's entry bound
   (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
+- `next-steps/cloud-agents.md` had cloud sessions start from New session
+  alone. On 2026-10-29 the owner asked for them in Plan's tasks and in the
+  automations: Start session and an automation's revision pick where the
+  session runs (on a host, Claude Code's cloud from a host, Cursor's with no
+  host), and a run with no key for its vendor pauses the automation
+  (`cloud_key_missing`; `versions/mvp/24-session-places.md`,
+  `versions/mvp/18-plan-product.md`, `versions/mvp/13-automations.md`).
 - 2026-10-28 the owner asked for bots to send images back: `show_image`
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it

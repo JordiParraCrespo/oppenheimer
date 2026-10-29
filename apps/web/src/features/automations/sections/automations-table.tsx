@@ -77,7 +77,7 @@ export function AutomationsTable() {
             <AutomationTableRow
               key={automation.id}
               automation={automation}
-              subline={automationSubline(automation, projectNames?.get(automation.projectId))}
+              subline={automationSubline(automation, projectNames?.get(automation.projectId), t)}
               trigger={automationTriggerText(automation, locale, t)}
               onOpen={() =>
                 navigate({
