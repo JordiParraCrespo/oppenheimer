@@ -5,6 +5,7 @@ import {
   MAIL_SENDS_PER_DAY,
   type MailPlanAttachment,
 } from '@oppenheimer/shared';
+import type { MailSendStatus } from './mail-send.entity';
 
 /**
  * How much a bot may send (`product/next-steps/mail.md` §3.4), on top of
@@ -31,6 +32,19 @@ export function sizeRefusal(attachmentBytes: number, bodyBytes: number): string 
   return total > MAIL_MESSAGE_MAX_BYTES
     ? `About ${Math.round(total / 1024 / 1024)} MB with its files; Gmail takes 25 MB at most`
     : null;
+}
+
+/**
+ * What an approval's earlier attempt means for this one (at most once): one
+ * that went is answered as it is, null; one started and never confirmed may
+ * have gone, and one that failed (or a scheduled one that was stopped) is
+ * asked again rather than retried.
+ */
+export function priorSendRefusal(status: MailSendStatus): string | null {
+  if (status === 'sent') return null;
+  return status === 'sending'
+    ? 'An earlier attempt at this send started and was never confirmed. Check Sent in Gmail before sending again.'
+    : 'An earlier attempt at this send failed. Check Sent in Gmail, then ask again.';
 }
 
 /** The window the daily cap counts over. */

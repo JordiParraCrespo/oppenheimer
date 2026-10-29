@@ -5,17 +5,14 @@ import type { GmailCallResolver } from '../../../application/gmail-call.resolver
 import type { MailSendRepositoryPort } from '../../../database/mail-send.repository.port';
 import { GmailConnectionEntity } from '../../../domain/gmail-connection.entity';
 import type { MailSendEntity } from '../../../domain/mail-send.entity';
-import { CancelScheduledMailCommand } from '../../cancel-scheduled-mail/cancel-scheduled-mail.command';
-import { CancelScheduledMailCommandHandler } from '../../cancel-scheduled-mail/cancel-scheduled-mail.command-handler';
 import { ScheduleMailCommand } from '../schedule-mail.command';
 import { ScheduleMailCommandHandler } from '../schedule-mail.command-handler';
 
 /**
- * Scheduling and cancelling (`product/next-steps/mail.md` §3.4): a yes keeps
+ * Scheduling (`product/next-steps/mail.md` §3.4): a yes keeps
  * the plan to send at its time, once per approval; a time already past when
  * the yes lands is refused (`MAIL_016`), as is a file from the chat, which
- * cannot wait (`MAIL_018`); and a cancel of a send that no longer waits is
- * `MAIL_017`.
+ * cannot wait (`MAIL_018`).
  */
 const CONNECTION = GmailConnectionEntity.connect({
   organizationId: 'org-1',
@@ -115,25 +112,5 @@ describe('ScheduleMailCommandHandler', () => {
       }),
     ).rejects.toMatchObject({ code: 'MAIL_018' });
     expect(sends.claim).not.toHaveBeenCalled();
-  });
-});
-
-describe('CancelScheduledMailCommandHandler', () => {
-  it('refuses with MAIL_017 a send that no longer waits', async () => {
-    const { sends } = setup();
-    const handler = new CancelScheduledMailCommandHandler(sends);
-
-    await expect(
-      handler.execute(
-        new CancelScheduledMailCommand({ scope: emptyScope('owner-1', 'org-1'), sendId: 'send-1' }),
-      ),
-    ).rejects.toMatchObject({ code: 'MAIL_017' });
-
-    sends.cancelOwn.mockResolvedValueOnce(true);
-    await expect(
-      handler.execute(
-        new CancelScheduledMailCommand({ scope: emptyScope('owner-1', 'org-1'), sendId: 'send-1' }),
-      ),
-    ).resolves.toBe('send-1');
   });
 });

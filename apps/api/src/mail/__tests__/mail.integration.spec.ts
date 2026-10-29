@@ -254,4 +254,19 @@ describe('mail (integration)', () => {
       ),
     ).rejects.toThrow(/CHK_mail_send_scheduled/);
   });
+
+  it('lets only one of two sends approved at once take the last place under the day’s cap', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
+
+    const raced = await Promise.all([
+      sends.claimUnderCap(claimOf(account.id), since, 3),
+      sends.claimUnderCap(claimOf(account.id), since, 3),
+    ]);
+
+    expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
+    await expect(sends.countSince(account.id, since)).resolves.toBe(3);
+  });
 });

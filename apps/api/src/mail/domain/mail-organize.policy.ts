@@ -22,14 +22,13 @@ export interface MailMarks {
 export function markChange(marks: MailMarks): MailLabelChange {
   const add: string[] = [];
   const remove: string[] = [];
-  const set = (wanted: boolean | undefined, label: string, whenTrue: 'add' | 'remove') => {
-    if (wanted === undefined) return;
-    const adds = wanted === (whenTrue === 'add');
-    (adds ? add : remove).push(label);
-  };
-  set(marks.read, 'UNREAD', 'remove');
-  set(marks.starred, 'STARRED', 'add');
-  set(marks.important, 'IMPORTANT', 'add');
+  // Read is the absence of UNREAD; starred and important are labels of their own.
+  if (marks.read === true) remove.push('UNREAD');
+  if (marks.read === false) add.push('UNREAD');
+  if (marks.starred === true) add.push('STARRED');
+  if (marks.starred === false) remove.push('STARRED');
+  if (marks.important === true) add.push('IMPORTANT');
+  if (marks.important === false) remove.push('IMPORTANT');
   return { add, remove };
 }
 
