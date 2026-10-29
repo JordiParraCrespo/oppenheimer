@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import type { CreateSessionDto, SessionEffortDto } from '@oppenheimer/shared';
+import type { SessionEffortDto } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
@@ -12,11 +12,13 @@ import {
   type AutomationRunOutcome,
   type AutomationRunStatus,
   type AutomationSkipReason,
+  isVendorPlace,
 } from '@oppenheimer/shared/automations';
 import type { StoredExternalEvent } from '../inbound-events/domain/external-event.types';
 import { sessionTargetOf } from './application/session-target.policy';
 import type { AutomationRunOrmEntity } from './database/automation-run.orm-entity';
 import type { AutomationEntity } from './domain/automation.entity';
+import type { RunSessionLaunch } from './domain/automation.types';
 import type { RunReadModel } from './domain/automation-read.types';
 import { AutomationRunEntity, type RunCauseSummary } from './domain/automation-run.entity';
 import { AutomationErrors } from './domain/automations.errors';
@@ -120,42 +122,72 @@ export class AutomationRunMapper {
   }
 
   /**
-   * The session a run starts, in the create route's own words: the revision's
-   * host, agent and engine, the repository and branch the event decided, and
-   * the composed prompt.
+   * The session a run starts, in its create route's own words: the
+   * revision's place, host, agent and engine, the repository and branch the
+   * event decided, and the composed prompt. A vendor's place is launched at
+   * the vendor with no host; Claude Code's cloud is started by the host's
+   * runner, from one repository, on a task.
    */
-  toSessionInput(
+  toSessionLaunch(
     automation: AutomationEntity,
     checkout: RunCheckout,
     prompt: string,
-  ): CreateSessionDto {
+  ): RunSessionLaunch {
     const { projectId, revision } = sessionTargetOf(automation);
-    if (!isCodingAgentId(revision.agent)) {
+    const repository = {
+      installationId: checkout.repository.installationId,
+      githubRepoId: Number(checkout.repository.githubRepoId),
+      ...(checkout.baseBranch ? { baseBranch: checkout.baseBranch } : {}),
+    };
+    if (isVendorPlace(revision.place)) {
+      return {
+        kind: 'vendor',
+        input: {
+          provider: revision.place,
+          projectId,
+          checkout: repository,
+          prompt,
+          ...(revision.model ? { model: revision.model } : {}),
+        },
+      };
+    }
+    if (!isCodingAgentId(revision.agent) || !revision.hostId) {
       // A refusal the dispatcher records as a skip, not a fault to retry.
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
-        detail: `Automation ${automation.id} names an agent this build does not know`,
+        detail: `Automation ${automation.id} names an agent or a place this build cannot run`,
       });
+    }
+    if (revision.place === 'claude-cloud') {
+      return {
+        kind: 'host',
+        input: {
+          hostId: revision.hostId,
+          agent: revision.agent,
+          projectId,
+          checkouts: [repository],
+          cloud: true,
+          ...(revision.model ? { launch: { model: revision.model } } : {}),
+          prompt,
+        },
+      };
     }
     const effort = (SESSION_EFFORTS as readonly string[]).includes(revision.effort ?? '')
       ? (revision.effort as SessionEffortDto)
       : undefined;
     return {
-      hostId: revision.hostId,
-      agent: revision.agent,
-      projectId,
-      checkouts: [
-        {
-          installationId: checkout.repository.installationId,
-          githubRepoId: Number(checkout.repository.githubRepoId),
-          ...(checkout.baseBranch ? { baseBranch: checkout.baseBranch } : {}),
+      kind: 'host',
+      input: {
+        hostId: revision.hostId,
+        agent: revision.agent,
+        projectId,
+        checkouts: [repository],
+        launch: {
+          ...(revision.model ? { model: revision.model } : {}),
+          permission: revision.permission,
+          ...(effort ? { effort } : {}),
         },
-      ],
-      launch: {
-        ...(revision.model ? { model: revision.model } : {}),
-        permission: revision.permission,
-        ...(effort ? { effort } : {}),
+        prompt,
       },
-      prompt,
     };
   }
 

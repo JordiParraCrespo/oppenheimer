@@ -9,8 +9,10 @@ import {
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import type { TriggerFilter } from '@oppenheimer/shared/automations';
+import { CLOUD_AGENT_IDS } from '@oppenheimer/shared/schemas/cloud-agent';
 import { injectable } from 'inversify';
 import {
+  type AutomationAgentId,
   AutomationEntity,
   type AutomationInput,
   AutomationRunEntity,
@@ -51,6 +53,14 @@ export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger 
   return null;
 }
 
+/** A revision's agent, narrowed once: an id this build does not know reads as Claude Code. */
+function agentOf(agent: string): AutomationAgentId {
+  if (isCodingAgentId(agent)) return agent;
+  return (CLOUD_AGENT_IDS as readonly string[]).includes(agent)
+    ? (agent as AutomationAgentId)
+    : 'claude-code';
+}
+
 function toEntity(dto: AutomationResponseDto): AutomationEntity {
   return new AutomationEntity(
     dto.id,
@@ -64,8 +74,9 @@ function toEntity(dto: AutomationResponseDto): AutomationEntity {
     {
       id: dto.revision.id,
       number: dto.revision.number,
-      hostId: dto.revision.hostId,
-      agent: isCodingAgentId(dto.revision.agent) ? dto.revision.agent : 'claude-code',
+      place: dto.revision.place,
+      hostId: dto.revision.hostId ?? null,
+      agent: agentOf(dto.revision.agent),
       model: dto.revision.model ?? null,
       permission: dto.revision.permission,
       effort: dto.revision.effort ?? null,
@@ -152,6 +163,7 @@ function toCreateRequest(input: AutomationInput): CreateAutomationRequest {
   return {
     projectId: input.projectId,
     repositories: input.repositories,
+    place: input.place,
     hostId: input.hostId,
     name: input.name,
     triggers: input.triggers.map(toTriggerRequest),

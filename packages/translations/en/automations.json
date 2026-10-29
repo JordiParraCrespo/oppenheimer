@@ -56,7 +56,8 @@
     "project_archived": "Paused because its project was deleted. Move it to another project to resume it.",
     "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
     "owner_lost_access": "Paused because its owner can no longer run it.",
-    "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it."
+    "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
+    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
   },
   "frequency": {
     "once": {
@@ -266,8 +267,17 @@
     "searchRepositories": "Search repositories",
     "repoCount_one": "{{count}} repo",
     "repoCount_other": "{{count}} repos",
+    "runsIn": "Runs in",
+    "placeHost": "On a host",
+    "placeHostDesc": "A worktree on the host, the agent in its terminal",
+    "placeClaudeCloud": "Claude Code cloud",
+    "placeClaudeCloudDesc": "Started from a host, followed on claude.ai",
+    "placeCursor": "Cursor",
+    "placeCursorDesc": "Cursor’s cloud, on your Cursor key; no host",
+    "placeCursorConnect": "Connect Cursor in Settings → Cloud agents first",
     "runsOn": "Runs on",
     "host": "Host",
+    "startedFrom": "Started from",
     "chooseHost": "Choose a host",
     "searchHosts": "Search hosts",
     "agent": "Agent",
@@ -275,7 +285,9 @@
     "model": "Model",
     "searchModels": "Search models",
     "agentDefault": "The agent’s default",
+    "vendorDefault": "The provider’s own pick",
     "branchHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
+    "cloudHint": "Each run is its own cloud session from the repository’s base branch; what it pushes waits for a pull request.",
     "missingName": "Add a name.",
     "missingPrompt": "Describe the work.",
     "missingTrigger": "Add a trigger.",

@@ -199,3 +199,7 @@ host and then lives on claude.ai/code:
   from names it on each host that can start the session. Two accounts are
   two hosts to pick between, until multi-account
   (`../../next-steps/multi-account.md`) gives one host several.
+- 2026-10-29: a task's Start session and an automation's runs pick the
+  place too: on a host, Claude Code's cloud from a host, or Cursor's with no
+  host (`AUTOMATION_PLACES`, `../../next-steps/cloud-agents.md`, "Tasks and
+  automations").

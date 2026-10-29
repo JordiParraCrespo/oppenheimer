@@ -341,8 +341,44 @@ export const AUTOMATION_PAUSED_REASONS = [
   'host_unpaired',
   'owner_lost_access',
   'bot_provider_missing',
+  'cloud_key_missing',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
+
+/**
+ * Where a session automation's runs start (`product/versions/mvp/24-session-places.md`
+ * §7, `product/next-steps/cloud-agents.md`): a worktree on its `host`;
+ * Claude Code's cloud, which the host's runner starts (`claude-cloud`); or a
+ * vendor's cloud the control plane launches on the owner's key, with no host
+ * (`cursor`). A vendor's place is its provider id in `CLOUD_AGENT_PROVIDERS`,
+ * so a new vendor is a value here too.
+ */
+export const AUTOMATION_PLACES = ['host', 'claude-cloud', 'cursor'] as const;
+export type AutomationPlace = (typeof AUTOMATION_PLACES)[number];
+
+/** The places whose runs go to a vendor with no host: each is a cloud provider's id. */
+export const AUTOMATION_VENDOR_PLACES = ['cursor'] as const satisfies readonly AutomationPlace[];
+export type AutomationVendorPlace = (typeof AUTOMATION_VENDOR_PLACES)[number];
+
+export function isVendorPlace(place: AutomationPlace): place is AutomationVendorPlace {
+  return (AUTOMATION_VENDOR_PLACES as readonly string[]).includes(place);
+}
+
+/**
+ * Whether an automation's place, agent and host agree: a host place names a
+ * host and any agent it can run; Claude Code's cloud names the host that
+ * starts it and Claude Code; a vendor's place names no host and the vendor's
+ * own agent, whose id is the vendor's.
+ */
+export function automationPlaceFits(value: {
+  place: AutomationPlace;
+  agent: string;
+  hostId: string | null | undefined;
+}): boolean {
+  if (isVendorPlace(value.place)) return !value.hostId && value.agent === value.place;
+  if (!value.hostId) return false;
+  return value.place === 'host' ? value.agent !== 'cursor' : value.agent === 'claude-code';
+}
 
 /** The permission levels an unattended run may take (§Q11). `ask` has nobody to ask. */
 export const AUTOMATION_PERMISSIONS = ['auto', 'full'] as const;

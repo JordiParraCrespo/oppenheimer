@@ -81,7 +81,10 @@ for, and a session is where it gets done.
   one-line description). ⌘↩ starts. The defaults are the project's.
   Model and agent lists come from `packages/shared/src/agents/catalog.ts`,
   not the frame's names. Permission and effort take the New session
-  defaults; the frame has no picker for them.
+  defaults; the frame has no picker for them. **Where it runs** (added
+  2026-10-29, not in the frames) is on a host, Claude Code's cloud from a
+  host (Claude Code only), or Cursor's cloud with no host and on a task
+  (`../../next-steps/cloud-agents.md`, "Tasks and automations").
 - **One status rule for attaching a session.** Start and Link existing
   both link the session, and both move a task that is in Later or To do
   to **In progress**; In progress and Done stay as they are. So a card

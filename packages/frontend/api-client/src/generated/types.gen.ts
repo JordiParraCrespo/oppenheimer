@@ -2096,7 +2096,14 @@ export type AutomationRevisionResponseDto = {
      * Numbered from 1; each save that changes what a run executes adds one.
      */
     number: number;
-    hostId: string;
+    /**
+     * Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host
+     */
+    place: 'host' | 'claude-cloud' | 'cursor';
+    /**
+     * The host a run starts on or from; null at a vendor
+     */
+    hostId: string | null;
     agent: string;
     model?: string | null;
     permission: 'auto' | 'full';
@@ -2191,7 +2198,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -2231,7 +2238,7 @@ export type BotRoutineResponseDto = {
      * `running` while a run is queued or its turn runs, else `active` or `paused`.
      */
     status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedules. Null when paused or event-only.
      */
@@ -2251,7 +2258,8 @@ export type CreateAutomationRequest = {
         installationId: string;
         githubRepoId: number;
     }>;
-    hostId: string;
+    place?: 'host' | 'claude-cloud' | 'cursor';
+    hostId: string | null;
     name: string;
     triggers: Array<{
         source: 'schedule';
@@ -2274,7 +2282,7 @@ export type CreateAutomationRequest = {
         };
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2325,7 +2333,8 @@ export type UpdateAutomationRequest = {
         installationId: string;
         githubRepoId: number;
     }>;
-    hostId?: string;
+    place?: 'host' | 'claude-cloud' | 'cursor';
+    hostId?: string | null;
     name?: string;
     triggers?: Array<{
         source: 'schedule';
@@ -2348,7 +2357,7 @@ export type UpdateAutomationRequest = {
         };
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2586,7 +2595,7 @@ export type MoveTaskRequest = {
 };
 
 export type StartTaskSessionRequest = {
-    session: {
+    session?: {
         hostId: string;
         agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
         projectId?: string;
@@ -2606,6 +2615,17 @@ export type StartTaskSessionRequest = {
         };
         prompt?: string;
         attachmentIds?: Array<string>;
+    };
+    cloud?: {
+        provider: 'cursor';
+        name?: string;
+        checkout: {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        };
+        prompt: string;
+        model?: string;
     };
     seenStatus: 'later' | 'todo' | 'doing' | 'done';
 };
@@ -10816,9 +10836,13 @@ export type StartTaskSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_006 — Project archived
+     * SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that cloud provider
      */
     409: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The cloud provider refused the stored key, or the launch as asked
+     */
+    422: ProblemDetailsDto;
     /**
      * RATE_001 — Rate limit reached
      */

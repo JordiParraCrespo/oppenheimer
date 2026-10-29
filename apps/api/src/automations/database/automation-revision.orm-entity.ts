@@ -1,8 +1,21 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 
 /** What a run executes, immutable and numbered. Append-only. */
 @Entity('automation_revision')
+@Check('CHK_automation_revision_place', `"place" IN ('host', 'claude-cloud', 'cursor')`)
+@Check(
+  'CHK_automation_revision_place_host',
+  `("hostId" IS NULL) = ("agent" IS NULL OR "place" = 'cursor')`,
+)
 @Unique('UQ_automation_revision_automation_number', ['automationId', 'number'])
 @Unique('UQ_automation_revision_organization_id', ['organizationId', 'id'])
 @Index('IDX_automation_revision_automation', ['organizationId', 'automationId'])
@@ -23,7 +36,14 @@ export class AutomationRevisionOrmEntity {
   @Column({ type: 'integer' })
   number!: number;
 
-  /** Null, with `agent`, for a bot routine's revision. */
+  /**
+   * Where a session automation's run starts its session (`AUTOMATION_PLACES`).
+   * A bot routine's revision keeps the default and never reads it.
+   */
+  @Column({ type: 'varchar', length: 16, default: 'host' })
+  place!: string;
+
+  /** Null, with `agent`, for a bot routine's revision; null alone at a vendor (`cursor`). */
   @Column({ type: 'uuid', nullable: true })
   hostId!: string | null;
 

@@ -2132,7 +2132,7 @@ export const moveTask = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * Start a session from a task
  *
- * New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ * New session’s body under `session` (a host session, or Claude Code’s cloud with `cloud: true`), or a vendor’s cloud session under `cloud` (`POST /sessions/cloud`’s body, on the caller’s key for the vendor), filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
  */
 export const startTaskSession = <ThrowOnError extends boolean = false>(options: Options<StartTaskSessionData, ThrowOnError>): RequestResult<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError> => (options.client ?? client).post<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

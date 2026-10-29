@@ -13984,7 +13984,7 @@
     },
     "/api/v1/tasks/{id}/sessions": {
       "post": {
-        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "New session’s body under `session` (a host session, or Claude Code’s cloud with `cloud: true`), or a vendor’s cloud session under `cloud` (`POST /sessions/cloud`’s body, on the caller’s key for the vendor), filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
         "operationId": "startTaskSession",
         "parameters": [
           {
@@ -14065,7 +14065,17 @@
             }
           },
           "409": {
-            "description": "SESSIONS_006 — Project archived",
+            "description": "SESSIONS_006 / CLOUD_AGENTS_004 — Project archived, or no key stored for that cloud provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The cloud provider refused the stored key, or the launch as asked",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -25621,9 +25631,16 @@
             "type": "number",
             "description": "Numbered from 1; each save that changes what a run executes adds one."
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "description": "Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true,
+            "description": "The host a run starts on or from; null at a vendor"
           },
           "agent": {
             "type": "string",
@@ -25659,6 +25676,7 @@
         "required": [
           "id",
           "number",
+          "place",
           "hostId",
           "agent",
           "permission",
@@ -25851,6 +25869,7 @@
               "host_unpaired",
               "owner_lost_access",
               "bot_provider_missing",
+              "cloud_key_missing",
               null
             ],
             "nullable": true
@@ -25953,6 +25972,7 @@
               "host_unpaired",
               "owner_lost_access",
               "bot_provider_missing",
+              "cloud_key_missing",
               null
             ],
             "nullable": true
@@ -26026,9 +26046,15 @@
               "required": ["installationId", "githubRepoId"]
             }
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "default": "host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "name": {
             "type": "string",
@@ -26171,8 +26197,16 @@
             "maxLength": 2048
           },
           "agent": {
-            "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+              },
+              {
+                "type": "string",
+                "enum": ["cursor"]
+              }
+            ]
           },
           "launch": {
             "type": "object",
@@ -26364,9 +26398,15 @@
               "required": ["installationId", "githubRepoId"]
             }
           },
+          "place": {
+            "type": "string",
+            "enum": ["host", "claude-cloud", "cursor"],
+            "default": "host"
+          },
           "hostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "name": {
             "type": "string",
@@ -26509,8 +26549,16 @@
             "maxLength": 2048
           },
           "agent": {
-            "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+              },
+              {
+                "type": "string",
+                "enum": ["cursor"]
+              }
+            ]
           },
           "launch": {
             "type": "object",
@@ -27282,12 +27330,57 @@
             },
             "required": ["hostId", "agent"]
           },
+          "cloud": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["cursor"]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "checkout": {
+                "type": "object",
+                "properties": {
+                  "installationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "githubRepoId": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "baseBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                },
+                "required": ["installationId", "githubRepoId"]
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": ["provider", "checkout", "prompt"]
+          },
           "seenStatus": {
             "type": "string",
             "enum": ["later", "todo", "doing", "done"]
           }
         },
-        "required": ["session", "seenStatus"]
+        "required": ["seenStatus"]
       },
       "StartTaskSessionResponseDto": {
         "type": "object",

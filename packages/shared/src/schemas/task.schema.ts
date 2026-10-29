@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createSessionSchema } from './session.schema.js';
+import { createSessionSchema, startCloudSessionSchema } from './session.schema.js';
 
 /**
  * Plan's board (`product/versions/mvp/17-plan.md`): a **task** is work a person
@@ -130,13 +130,21 @@ export type MoveTaskDto = z.infer<typeof moveTaskSchema>;
 const seenStatusSchema = taskStatusSchema;
 
 /**
- * `POST /tasks/{id}/sessions`: start a session for the task. The session is
- * New session's body, filed under the task's project whatever `projectId` says.
+ * `POST /tasks/{id}/sessions`: start a session for the task, filed under the
+ * task's project whatever `projectId` says. Exactly one of the two: `session`
+ * is New session's body for a session a host runs or starts (a worktree, a
+ * folder, or Claude Code's cloud with `cloud: true`); `cloud` is the body of
+ * `POST /sessions/cloud`, a session a vendor (Cursor) runs with no host.
  */
-export const startTaskSessionSchema = z.object({
-  session: createSessionSchema,
-  seenStatus: seenStatusSchema,
-});
+export const startTaskSessionSchema = z
+  .object({
+    session: createSessionSchema.optional(),
+    cloud: startCloudSessionSchema.omit({ projectId: true }).optional(),
+    seenStatus: seenStatusSchema,
+  })
+  .refine((value) => (value.session === undefined) !== (value.cloud === undefined), {
+    path: ['session'],
+  });
 
 export type StartTaskSessionDto = z.infer<typeof startTaskSessionSchema>;
 

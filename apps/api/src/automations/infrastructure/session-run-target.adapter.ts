@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { CreateSessionDto } from '@oppenheimer/shared';
 import type { HostVitalsPort } from '../../hosts/application/host-vitals.port';
 import { HOST_VITALS } from '../../hosts/hosts.di-tokens';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
+import { StartCloudSessionCommand } from '../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type {
   AutomationRunTargetPort,
@@ -15,7 +15,7 @@ import { sessionTargetOf } from '../application/session-target.policy';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AUTOMATION_RUN_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
-import type { RunDispatchRef } from '../domain/automation.types';
+import type { RunDispatchRef, RunSessionLaunch } from '../domain/automation.types';
 import { capacityGuard, diskGuard, firstRefusal, overlapGuard } from '../domain/fire-guard.policy';
 import { composeRunPrompt, runCheckout } from '../domain/run-launch.policy';
 import { type RunRefusal, runRefusalOf } from '../domain/run-refusal.policy';
@@ -35,16 +35,19 @@ const CLAIM_LOST_DELAY_MS = 5_000;
 const CLAIM_TTL_MS = 2 * 60_000;
 
 /**
- * A run that starts a session on the automation's host (§Q4), created **as the
- * owner** through the same command a person's session goes through (§Q5): the
- * guards that only a session needs — overlap, the host's capacity and disk, the
- * slot claim — and then the session itself. The session's idempotency key is
- * the run's id, so a job the queue runs twice — or a crash between the create
+ * A run that starts a session where the automation runs (§Q4): on its host,
+ * in Claude Code's cloud from that host, or at a vendor with no host
+ * (`AUTOMATION_PLACES`). It is created **as the owner** through the same
+ * command a person's session goes through (§Q5): the guards that only a
+ * session needs — overlap, the host's capacity and disk, the slot claim —
+ * and then the session itself. A session in the cloud holds no place on a
+ * host, so only overlap holds it back. The session's idempotency key is the
+ * run's id, so a job the queue runs twice — or a crash between the create
  * and the run's write — finds the session already made instead of making a
  * second.
  */
 @Injectable()
-export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDto> {
+export class SessionRunTarget implements AutomationRunTargetPort<RunSessionLaunch> {
   readonly kind = 'session' as const;
 
   constructor(
@@ -56,15 +59,17 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
     private readonly commandBus: CommandBus,
   ) {}
 
-  async decide(context: RunTargetContext): Promise<RunTargetDecision<CreateSessionDto>> {
+  async decide(context: RunTargetContext): Promise<RunTargetDecision<RunSessionLaunch>> {
     const { run, automation, limits, now } = context;
-    const { hostId } = sessionTargetOf(automation).revision;
+    const { revision } = sessionTargetOf(automation);
+    // The host whose slots and disk the session takes; none in the cloud.
+    const hostId = revision.place === 'host' ? revision.hostId : null;
     // A run live past the run limit is being stopped; it holds no place.
     const liveSince = new Date(now.getTime() - limits.maxRunSeconds * 1000);
     const [otherLive, liveOnHost, freeDisk] = await Promise.all([
       this.runs.countLiveForAutomation(automation.id, run.id, liveSince),
-      this.runs.countLiveOnHost(hostId, run.id, liveSince),
-      this.vitals.lastFreeDisk(hostId),
+      hostId ? this.runs.countLiveOnHost(hostId, run.id, liveSince) : 0,
+      hostId ? this.vitals.lastFreeDisk(hostId) : null,
     ]);
     const verdict = firstRefusal(
       () => overlapGuard(otherLive, limits),
@@ -101,17 +106,22 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
     return this.sessionOf(context);
   }
 
-  async launch(context: RunTargetContext, input: CreateSessionDto): Promise<RunDispatchRef> {
+  async launch(context: RunTargetContext, launch: RunSessionLaunch): Promise<RunDispatchRef> {
     const { run, automation, scope } = context;
-    const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-      new CreateSessionCommand({
-        scope,
-        userId: automation.ownerUserId,
-        input,
-        idempotencyKey: `automation-run:${run.id}`,
-        origin: 'automation',
-      }),
-    );
+    const props = {
+      scope,
+      userId: automation.ownerUserId,
+      idempotencyKey: `automation-run:${run.id}`,
+      origin: 'automation' as const,
+    };
+    const result =
+      launch.kind === 'vendor'
+        ? await this.commandBus.execute<StartCloudSessionCommand, SessionCommandResult>(
+            new StartCloudSessionCommand({ ...props, input: launch.input }),
+          )
+        : await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
+            new CreateSessionCommand({ ...props, input: launch.input }),
+          );
     return { kind: 'session', sessionId: result.sessionId };
   }
 
@@ -120,7 +130,7 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
   }
 
   /** The session a run that passed every guard starts, or why it cannot. */
-  private sessionOf(context: RunTargetContext): RunTargetDecision<CreateSessionDto> {
+  private sessionOf(context: RunTargetContext): RunTargetDecision<RunSessionLaunch> {
     const { automation, event } = context;
     const { revision } = sessionTargetOf(automation);
     const prompt = composeRunPrompt(revision.prompt, event);
@@ -128,7 +138,7 @@ export class SessionRunTarget implements AutomationRunTargetPort<CreateSessionDt
     try {
       return {
         kind: 'launch',
-        input: this.mapper.toSessionInput(
+        input: this.mapper.toSessionLaunch(
           automation,
           runCheckout(revision.repositories, event),
           prompt,

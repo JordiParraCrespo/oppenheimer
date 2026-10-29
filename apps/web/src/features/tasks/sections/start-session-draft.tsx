@@ -1,6 +1,7 @@
 import { Callout, DialogDescription, FieldDescription } from '@oppenheimer/design-system-web';
 import { shortName } from '@oppenheimer/frontend-consumer';
 import {
+  useCloudAgentStatus,
   useStartTaskSession,
   useSuspenseStartSession,
   useVoiceDictation,
@@ -18,7 +19,9 @@ const board = getRouteApi('/_authenticated/plan/');
 /**
  * Start session's form, in `StartSessionDialog`'s `QueryState.Data`: it reads
  * the tasks, the projects and the hosts with their presence under Suspense,
- * side by side, and finds the task the address names and its project. A task
+ * side by side, and finds the task the address names and its project. Whether
+ * the reader has a Cursor key is read beside them, without holding the form:
+ * until it answers, Cursor is offered disabled. A task
  * or project that is gone says so instead of the form. The idempotency key is
  * this form's, so a retried submit does not start two sessions. A refetch
  * that fails keeps the form and says so above it.
@@ -30,6 +33,9 @@ export function StartSessionDraft() {
   const navigate = board.useNavigate();
   const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
   const { tasks, projects, hosts, error } = useSuspenseStartSession();
+  const { data: cloudStatus } = useCloudAgentStatus();
+  const cursorConnected =
+    cloudStatus?.providers.some((row) => row.id === 'cursor' && row.connected) ?? false;
   const task = tasks.find((row) => row.id === start);
   const project = projects.find((row) => row.id === task?.projectId);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -69,6 +75,26 @@ export function StartSessionDraft() {
           label: host.name,
           description: host.online ? host.summary : t('tasks.start.offlineShort'),
         }))}
+        places={[
+          {
+            value: 'host',
+            label: t('tasks.start.placeHost'),
+            description: t('tasks.start.placeHostDesc'),
+          },
+          {
+            value: 'claude-cloud',
+            label: t('tasks.start.placeClaudeCloud'),
+            description: t('tasks.start.placeClaudeCloudDesc'),
+          },
+          {
+            value: 'cursor',
+            label: t('tasks.start.placeCursor'),
+            disabled: !cursorConnected,
+            description: cursorConnected
+              ? t('tasks.start.placeCursorDesc')
+              : t('tasks.start.placeCursorConnect'),
+          },
+        ]}
         offline={(hostId) => {
           const host = found.hosts.find((row) => row.id === hostId);
           if (!host || host.online) return null;
@@ -93,11 +119,11 @@ export function StartSessionDraft() {
         error={launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null}
         onCancel={close}
         onSubmit={(values) => {
-          const session = toStartSession(values, found.project);
-          if (session)
+          const body = toStartSession(values, found.project);
+          if (body)
             launch.mutate({
               id: found.task.id,
-              session,
+              ...body,
               seenStatus: found.task.status,
               idempotencyKey,
             });

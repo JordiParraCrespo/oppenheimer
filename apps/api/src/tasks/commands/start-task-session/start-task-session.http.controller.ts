@@ -52,7 +52,7 @@ export class StartTaskSessionHttpController {
   @ApiOperation({
     summary: 'Start a session from a task',
     description:
-      'New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.',
+      'New session’s body under `session` (a host session, or Claude Code’s cloud with `cloud: true`), or a vendor’s cloud session under `cloud` (`POST /sessions/cloud`’s body, on the caller’s key for the vendor), filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -62,7 +62,16 @@ export class StartTaskSessionHttpController {
   @ApiResponse({ status: 201, type: StartTaskSessionResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Task not found', code: 'TASKS_001' })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
-  @ApiProblemResponse({ status: 409, description: 'Project archived', code: 'SESSIONS_006' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Project archived, or no key stored for that cloud provider',
+    code: ['SESSIONS_006', 'CLOUD_AGENTS_004'],
+  })
+  @ApiProblemResponse({
+    status: 422,
+    description: 'The cloud provider refused the stored key, or the launch as asked',
+    code: ['CLOUD_AGENTS_005', 'CLOUD_AGENTS_010'],
+  })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async start(
     @CurrentAccessScope() scope: AccessScope,

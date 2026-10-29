@@ -29,9 +29,8 @@ export class CreateAutomationCommandHandler
     if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
     const now = new Date();
 
-    this.plan.assertAgent(input.agent);
     await this.plan.assertProject(scope, input.projectId);
-    await this.plan.assertHost(scope, input.hostId);
+    await this.plan.assertWhere(scope, input);
     const repositories = await this.plan.resolveRepositories(scope, input.repositories);
     const triggers = this.plan.triggers(input.triggers, now);
 
@@ -41,6 +40,7 @@ export class CreateAutomationCommandHandler
       ownerUserId: scope.userId,
       name: input.name,
       revision: {
+        place: input.place,
         hostId: input.hostId,
         agent: input.agent,
         model: input.launch.model ?? null,
