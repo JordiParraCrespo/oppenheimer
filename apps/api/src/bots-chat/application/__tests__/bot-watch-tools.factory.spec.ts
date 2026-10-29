@@ -16,6 +16,7 @@ import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wak
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../../domain/bot-subscription.entity';
 import { BOT_SUBSCRIPTIONS_PER_BOT } from '../../domain/bot-subscription.policy';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
@@ -95,6 +96,7 @@ function setup(
     homeHostId: null,
     timeZone: 'Europe/Madrid',
     permission: 'auto',
+    permissions: NO_PERMISSIONS,
     approvals,
     budget: new BotTurnBudget(),
     credentialScopes: ['sessions:read', 'sessions:write'],

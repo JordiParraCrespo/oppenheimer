@@ -77,6 +77,14 @@ export class BotToolStepResponseDto {
     description: 'The subagents a `delegate` call ran; null for any other call, and while it runs.',
   })
   subagents!: BotSubagentRunResponseDto[] | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.',
+  })
+  allowedBy!: string | null;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */

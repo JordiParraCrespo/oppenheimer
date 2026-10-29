@@ -71,6 +71,9 @@ const GROUP_GLOSSARY = SESSION_GROUPS.map(
  */
 @Injectable()
 export class BotHostToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'sessions' as const;
+
   constructor(private readonly queryBus: QueryBus) {}
 
   definitions(): readonly BotToolDefinition[] {

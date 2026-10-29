@@ -10,12 +10,15 @@ import type { BotMessageRepositoryPort } from '../../database/bot-message.reposi
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
+import type { BotPermissionsResolver } from '../bot-permissions.resolver';
+import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
@@ -76,6 +79,10 @@ function setup(
     { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
     { resolve: async () => ({ prompt: 'Hi', images: [] }) } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
+    { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+    {
+      create: () => ({ review: async () => ({ effect: 'none' }) }),
+    } as unknown as BotRuleReviewerFactory,
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({

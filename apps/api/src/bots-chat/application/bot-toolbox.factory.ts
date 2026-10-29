@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
-import { expandScopes, type Scope } from '@oppenheimer/shared';
+import { type BotPermission, expandScopes, type Scope } from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
+import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
@@ -70,8 +71,8 @@ export class BotToolboxFactory {
    * scopes of the credential the turn was sent with: null for a browser
    * session (every tool), or a token's scopes (only the tools they cover).
    */
-  catalog(granted: readonly Scope[] | null): BotPromptTool[] {
-    return this.definitions(granted).map(({ name, description, setupStep }) => ({
+  catalog(granted: readonly Scope[] | null, standing: BotStanding): BotPromptTool[] {
+    return this.offered(granted, standing).map(({ name, description, setupStep }) => ({
       name,
       description,
       setupStep,
@@ -90,7 +91,7 @@ export class BotToolboxFactory {
     granted: readonly Scope[] | null,
     held: HeldScopes,
   ): BotEngineTool[] {
-    return this.bind(this.definitions(granted), context, held);
+    return this.bind(this.offered(granted, standingOf(context)), context, held);
   }
 
   /**
@@ -104,7 +105,13 @@ export class BotToolboxFactory {
     granted: readonly Scope[] | null,
     held: HeldScopes,
   ): BotEngineTool[] {
-    const reading = this.definitions(granted).filter((definition) => definition.readOnly);
+    // Only what runs without asking: a child cannot raise a card.
+    const standing = standingOf(context);
+    const reading = this.offered(granted, standing).filter(
+      (definition) =>
+        definition.readOnly &&
+        toolDecision(standing.permissions, definition.traits, standing.preset) === 'allow',
+    );
     return this.bind(reading, { ...context, subagents: undefined }, held);
   }
 
@@ -139,10 +146,15 @@ export class BotToolboxFactory {
     held: HeldScopes,
     call: { tool: string; input: Record<string, unknown> },
     signal: AbortSignal,
+    standing: BotStanding,
   ): Promise<BotToolResult> {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
       return { content: `Not run: ${call.tool} is no longer a tool.`, isError: true };
+    // Turned Off while the card waited: the owner's latest word stands.
+    if (toolDecision(standing.permissions, definition.traits, standing.preset) === 'off') {
+      return { content: `Not run: ${call.tool} is turned off for this bot.`, isError: true };
+    }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
         content: `Not run: your credential does not cover ${definition.scope}.`,
@@ -154,12 +166,40 @@ export class BotToolboxFactory {
     );
   }
 
+  /**
+   * Every tool, as Settings → Permissions lists it: the group it is listed
+   * under beside each definition, whatever the bot's settings say.
+   */
+  listed(): { group: BotToolArea['group']; definition: BotToolDefinition }[] {
+    return this.areas.flatMap((area) =>
+      area.definitions().map((definition) => ({ group: area.group, definition })),
+    );
+  }
+
+  /** The tools a turn may be offered: its credential's, less the ones the owner turned Off. */
+  private offered(granted: readonly Scope[] | null, standing: BotStanding): BotToolDefinition[] {
+    return this.definitions(granted).filter(
+      (definition) =>
+        toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off',
+    );
+  }
+
   private definitions(granted: readonly Scope[] | null): BotToolDefinition[] {
     const all = this.areas.flatMap((area) => area.definitions());
     if (granted === null) return all;
     const covered = expandScopes(granted);
     return all.filter((definition) => covered.has(definition.scope));
   }
+}
+
+/** Where a bot's tools stand: its preset and what its owner set (`25-bots.md` §5). */
+export interface BotStanding {
+  preset: BotPermission;
+  permissions: BotPermissions;
+}
+
+function standingOf(context: BotToolContext): BotStanding {
+  return { preset: context.permission, permissions: context.permissions };
 }
 
 /** Reads the owner's scopes as their roles stand at the moment of the call. */

@@ -20,6 +20,9 @@ import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-t
  */
 @Injectable()
 export class BotWatchToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'sessions' as const;
+
   constructor(
     private readonly watches: BotSessionWatchResolver,
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)

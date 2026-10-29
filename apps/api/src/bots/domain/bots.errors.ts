@@ -165,4 +165,40 @@ export const BotErrors = {
     message: "The bot's model does not read images",
     httpStatus: 422,
   },
+  /** A tool name the catalog does not have. */
+  TOOL_UNKNOWN: {
+    code: 'BOTS_029',
+    message: 'No such tool',
+    httpStatus: 404,
+  },
+  /** Allow, or an approval that reaches past one call, for a tool decided call by call (merging). */
+  TOOL_PER_CALL: {
+    code: 'BOTS_030',
+    message: 'This tool is decided call by call',
+    httpStatus: 422,
+  },
+  /** A rule past `BOT_PERMISSION_RULES_MAX`. */
+  PERMISSION_RULES_FULL: {
+    code: 'BOTS_031',
+    message: 'The bot holds as many rules as it can',
+    httpStatus: 409,
+  },
+  /** Also a rule of another bot, or in another workspace. */
+  PERMISSION_RULE_NOT_FOUND: {
+    code: 'BOTS_032',
+    message: 'Rule not found',
+    httpStatus: 404,
+  },
+  /** Also a grant of another bot, or in another workspace. */
+  TOOL_GRANT_NOT_FOUND: {
+    code: 'BOTS_033',
+    message: 'Grant not found',
+    httpStatus: 404,
+  },
+  /** A standing grant past `BOT_TOOL_GRANTS_MAX`. */
+  TOOL_GRANTS_FULL: {
+    code: 'BOTS_034',
+    message: 'The bot holds as many grants as it can',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

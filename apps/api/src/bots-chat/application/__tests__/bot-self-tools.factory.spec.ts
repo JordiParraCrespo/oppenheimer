@@ -15,6 +15,7 @@ import { FindBotDocumentsQuery } from '../../../bots/queries/find-bot-documents/
 import { FindBotMemoryQuery } from '../../../bots/queries/find-bot-memory/find-bot-memory.query';
 import { FindBotMemoryFactQuery } from '../../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { SearchBotConversationQuery } from '../../queries/search-bot-conversation/search-bot-conversation.query';
 import { BotSelfToolsFactory } from '../bot-self-tools.factory';
@@ -39,6 +40,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };
@@ -61,6 +63,7 @@ function bot(
       model: null,
       effort: null,
       permission: 'auto',
+      permissions: NO_PERMISSIONS,
       budget: new BotTurnBudget(),
       learnAutomatically: props.learnAutomatically ?? true,
       sections: props.sections ?? [],

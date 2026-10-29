@@ -689,11 +689,75 @@ export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
 /** What the person may add to a decision: why they denied it, or what to do instead. */
 export const BOT_APPROVAL_NOTE_MAX = 1_000;
 
-/** `POST /bots/:id/approvals/:approvalId/decision`. */
+/**
+ * How far a yes reaches (`25-bots.md` §5): `once`, this call only; `tool`,
+ * every call of the tool from now on (the tool becomes Allow); `subject`,
+ * every call of the tool on the same thing (this repository, this session),
+ * offered only when the card names one. A tool that is per call only offers
+ * `once` alone.
+ */
+export const BOT_APPROVAL_REACHES = ['once', 'tool', 'subject'] as const;
+export type BotApprovalReach = (typeof BOT_APPROVAL_REACHES)[number];
+
+/** `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes; a no ignores it. */
 export const decideBotApprovalSchema = z.object({
   decision: z.enum(BOT_APPROVAL_DECISIONS),
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+  reach: z.enum(BOT_APPROVAL_REACHES).default('once'),
 });
+
+/**
+ * What a bot may do with one tool, set by its owner in Settings →
+ * Permissions (`25-bots.md` §5): `allow` runs without asking, `ask` raises a
+ * Needs input card, `off` takes the tool away (the model never sees it). A
+ * tool with no setting follows the bot's preset and the tool's own default.
+ */
+export const BOT_TOOL_DECISIONS = ['allow', 'ask', 'off'] as const;
+export type BotToolDecision = (typeof BOT_TOOL_DECISIONS)[number];
+
+/**
+ * The groups Settings → Permissions lists a bot's tools under, in order:
+ * `25-bots.md` §4.1 to §4.7 (itself, sessions, projects and the plan,
+ * GitHub, automations, other bots, work and the web).
+ */
+export const BOT_TOOL_GROUPS = [
+  'self',
+  'sessions',
+  'plan',
+  'github',
+  'automations',
+  'bots',
+  'web',
+] as const;
+export type BotToolGroup = (typeof BOT_TOOL_GROUPS)[number];
+
+/** `PUT /bots/:id/permissions/tools/:tool`: a decision, or `default` to drop the setting. */
+export const setBotToolDecisionSchema = z.object({
+  decision: z.enum([...BOT_TOOL_DECISIONS, 'default']),
+});
+export type SetBotToolDecisionDto = z.infer<typeof setBotToolDecisionSchema>;
+
+/**
+ * A plain-language rule a reviewer reads before an asking call
+ * (`25-bots.md` §5): `allow` lets a matching call run without a card, `ask`
+ * makes one ask even where it would not. When both match, `ask` wins.
+ */
+export const BOT_PERMISSION_RULE_EFFECTS = ['allow', 'ask'] as const;
+export type BotPermissionRuleEffect = (typeof BOT_PERMISSION_RULE_EFFECTS)[number];
+
+/** One rule's words: a sentence, never a policy document. */
+export const BOT_PERMISSION_RULE_MAX = 280;
+/** Rules one bot may hold, both kinds together: the reviewer reads them all on every call. */
+export const BOT_PERMISSION_RULES_MAX = 20;
+/** Standing grants one bot may hold for single subjects (`reach: 'subject'`). */
+export const BOT_TOOL_GRANTS_MAX = 100;
+
+/** `POST /bots/:id/permissions/rules`. */
+export const createBotPermissionRuleSchema = z.object({
+  effect: z.enum(BOT_PERMISSION_RULE_EFFECTS),
+  text: z.string().trim().min(1).max(BOT_PERMISSION_RULE_MAX),
+});
+export type CreateBotPermissionRuleDto = z.infer<typeof createBotPermissionRuleSchema>;
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
 /** What the console's Deny asks for: the note alone, optional. */

@@ -9,6 +9,7 @@ import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
@@ -40,12 +41,14 @@ const context = (
   homeHostId: HOME,
   timeZone: 'UTC',
   permission,
+  permissions: NO_PERMISSIONS,
   approvals,
   budget: new BotTurnBudget(),
 });
 
 const project = {
   id: PROJECT,
+  name: 'XRP Mobile',
   defaultHostId: null,
   defaultAgent: null,
   repositories: [
@@ -142,6 +145,10 @@ describe('BotSessionToolsFactory', () => {
       input: { task: 'Fix the test', project_id: PROJECT },
       summary:
         'Start Claude Code on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the test',
+      subject: { kind: 'project', key: PROJECT, label: 'XRP Mobile' },
+      sharesOutside: false,
+      perCallOnly: false,
+      reviewNote: null,
     });
     expect(result.content).toContain('End your turn now');
     expect(commandBus.execute).not.toHaveBeenCalled();

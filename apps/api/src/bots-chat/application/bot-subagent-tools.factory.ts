@@ -25,6 +25,9 @@ import {
  */
 @Injectable()
 export class BotSubagentToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'web' as const;
+
   definitions(): readonly BotToolDefinition[] {
     return [
       defineBotTool({

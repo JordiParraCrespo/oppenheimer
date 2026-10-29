@@ -261,7 +261,13 @@
     "VOICE_004": "That recording couldn’t be read. Try dictating again.",
     "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
     "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
-    "VOICE_007": "Too many dictations for now. Try again in a moment."
+    "VOICE_007": "Too many dictations for now. Try again in a moment.",
+    "BOTS_029": "That tool doesn't exist. Reload the page.",
+    "BOTS_030": "This tool is approved one call at a time, so it can't be always allowed.",
+    "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
+    "BOTS_032": "That rule is gone. Reload the page.",
+    "BOTS_033": "That permission is gone. Reload the page.",
+    "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first."
   },
   "notFound": {
     "title": "That page does not exist",

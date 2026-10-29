@@ -29,6 +29,8 @@ import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
+import { BotPermissionsResolver } from './bot-permissions.resolver';
+import { BotRuleReviewerFactory } from './bot-rule-reviewer.factory';
 import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
@@ -75,6 +77,8 @@ export class BotTurnContextResolver {
     private readonly permissions: BotOwnerPermissionsResolver,
     private readonly opening: BotTurnOpeningResolver,
     private readonly subagents: BotSubagentRunnerFactory,
+    private readonly settings: BotPermissionsResolver,
+    private readonly reviewers: BotRuleReviewerFactory,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -86,7 +90,7 @@ export class BotTurnContextResolver {
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, earlier, hosts, lastContext] = await Promise.all([
+    const [documents, facts, earlier, hosts, lastContext, permissions] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
       this.messages.findHistory(
@@ -98,6 +102,7 @@ export class BotTurnContextResolver {
       ),
       this.hostsOf(owner, turn.id),
       this.turns.findLastContext(turn.organizationId, bot.id),
+      this.settings.forBot(turn.organizationId, bot.id),
     ]);
     const model = {
       provider: turn.provider,
@@ -120,6 +125,9 @@ export class BotTurnContextResolver {
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
         approvals: this.approvals,
+        permissions,
+        // The owner's rules are read on the turn's own model, only when there are some.
+        ...(permissions.rules.length > 0 && { reviewer: this.reviewers.create(model) }),
       };
       // A child runs on the turn's model and key, with the turn's read-only
       // tools and its budget: it reaches no further than the bot does.
@@ -138,7 +146,9 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: [...facts].reverse().map((fact) => fact.content),
         engineCapabilities: engineCapabilities(turn.provider),
-        tools: owner ? this.toolbox.catalog(turn.credentialScopes) : [],
+        tools: owner
+          ? this.toolbox.catalog(turn.credentialScopes, { preset: bot.permission, permissions })
+          : [],
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(

@@ -2,6 +2,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { BOT_IMAGE_MAX_BYTES } from '@oppenheimer/shared';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import { SHOWN_IMAGES_DATA_KEY, SHOWN_IMAGES_PER_TURN } from '../../domain/bot-shown-image.policy';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import type {
@@ -27,6 +28,7 @@ const context = (): BotToolContext => ({
   homeHostId: null,
   timeZone: 'UTC',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 });

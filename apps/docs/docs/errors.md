@@ -716,6 +716,12 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
 | `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
 | `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
+| `BOTS_029` <a id="bots_029" />       | No such tool | 404  |
+| `BOTS_030` <a id="bots_030" />       | This tool is decided call by call | 422  |
+| `BOTS_031` <a id="bots_031" />       | The bot holds as many rules as it can | 409  |
+| `BOTS_032` <a id="bots_032" />       | Rule not found | 404  |
+| `BOTS_033` <a id="bots_033" />       | Grant not found | 404  |
+| `BOTS_034` <a id="bots_034" />       | The bot holds as many grants as it can | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -784,6 +790,15 @@ upload or a message with images to a bot on a provider whose models read no
 images (GLM); the message's words are not sent either, so nothing is lost:
 remove the images, or switch the bot's model, and send again. An upload that
 is never sent is deleted after a day.
+
+`BOTS_029` to `BOTS_034` are a bot's permissions (Settings → Permissions, and
+how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
+catalog does not have. `BOTS_030` asks to always allow a tool that is decided
+call by call (merging a pull request), whether as its Allow or as a yes that
+reaches past this call, or asks a yes to reach a thing the card did not name.
+`BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
+its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
+that is not this bot's, not in the caller's workspace, or already removed.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

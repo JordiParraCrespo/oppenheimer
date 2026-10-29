@@ -3,6 +3,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { BotAttachment, BotStreamEvent, BotTurnFailure } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { toShownImages, toSubagentRuns } from '../bot-message.mapper';
+import { ALLOWED_BY_DATA_KEY, BOT_ALLOWED_BY_MAX } from '../domain/bot-approval.policy';
 import {
   BOT_TOOL_OUTPUT_MAX,
   BotMessageEntity,
@@ -135,6 +136,7 @@ export class TurnTranscript {
       isError: false,
       sessionId: null,
       subagents: null,
+      allowedBy: null,
     };
     if (this.activity) {
       this.activity.steps.push(step);
@@ -158,6 +160,7 @@ export class TurnTranscript {
     step.isError = isError;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
+    step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;

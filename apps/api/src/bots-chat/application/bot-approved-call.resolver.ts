@@ -5,6 +5,7 @@ import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
+import { BotPermissionsResolver } from './bot-permissions.resolver';
 import type { BotToolResult } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 
@@ -25,6 +26,7 @@ export class BotApprovedCallResolver {
     private readonly owners: BotOwnerScopeResolver,
     private readonly toolbox: BotToolboxFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
+    private readonly settings: BotPermissionsResolver,
   ) {}
 
   async resolve(
@@ -57,6 +59,10 @@ export class BotApprovedCallResolver {
       () => this.permissions.heldScopes(owner),
       { tool: approval.tool, input: approval.input },
       AbortSignal.timeout(APPROVED_CALL_TIMEOUT_MS),
+      {
+        preset: bot.permission,
+        permissions: await this.settings.forBot(bot.organizationId, bot.id),
+      },
     );
   }
 }

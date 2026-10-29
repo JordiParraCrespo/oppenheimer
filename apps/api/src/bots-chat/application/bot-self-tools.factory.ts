@@ -67,6 +67,9 @@ const RECALL_LIMIT_MAX = 25;
  */
 @Injectable()
 export class BotSelfToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'self' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,

@@ -87,6 +87,7 @@ describe('TurnTranscript', () => {
         isError: false,
         sessionId: null,
         subagents: null,
+        allowedBy: null,
       },
       {
         callId: 'b',
@@ -96,6 +97,7 @@ describe('TurnTranscript', () => {
         isError: true,
         sessionId: null,
         subagents: null,
+        allowedBy: null,
       },
     ]);
   });

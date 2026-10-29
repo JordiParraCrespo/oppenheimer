@@ -47,6 +47,7 @@ export class BotMessageMapper
       isError: step.isError,
       sessionId: step.sessionId,
       subagents: step.subagents,
+      allowedBy: step.allowedBy,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -87,6 +88,7 @@ export class BotMessageMapper
       isError: step.isError,
       sessionId: step.sessionId,
       subagents: step.subagents,
+      allowedBy: step.allowedBy,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -123,6 +125,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     isError: raw.isError === true,
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
     subagents: toSubagentRuns(raw.subagents),
+    allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
   };
 }
 

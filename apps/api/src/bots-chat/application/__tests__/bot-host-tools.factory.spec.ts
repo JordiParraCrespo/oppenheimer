@@ -9,6 +9,7 @@ import { WorkSessionEventEntity } from '../../../sessions/domain/work-session-ev
 import { FindLatestSessionEventsQuery } from '../../../sessions/queries/find-latest-session-events/find-latest-session-events.query';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { FindSessionsQuery } from '../../../sessions/queries/find-sessions/find-sessions.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostToolsFactory } from '../bot-host-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -29,6 +30,7 @@ const context: BotToolContext = {
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };

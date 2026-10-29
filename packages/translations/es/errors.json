@@ -261,7 +261,13 @@
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
     "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
     "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
-    "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento."
+    "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento.",
+    "BOTS_029": "Esa herramienta no existe. Recarga la página.",
+    "BOTS_030": "Esta herramienta se aprueba llamada a llamada, así que no se puede permitir siempre.",
+    "BOTS_031": "Este bot ya tiene tantas reglas como admite. Quita una primero.",
+    "BOTS_032": "Esa regla ya no existe. Recarga la página.",
+    "BOTS_033": "Ese permiso ya no existe. Recarga la página.",
+    "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero."
   },
   "notFound": {
     "title": "Esta página no existe",

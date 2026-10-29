@@ -29,6 +29,9 @@ import type { BotApprovalRequestFactory } from '../application/bot-approval-requ
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
+import type { BotPermissionsResolver } from '../application/bot-permissions.resolver';
+import type { BotRuleReviewerFactory } from '../application/bot-rule-reviewer.factory';
+import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
@@ -37,6 +40,7 @@ import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
+import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
@@ -64,6 +68,7 @@ import {
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
+import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 
@@ -182,6 +187,7 @@ describe('bots chat (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
+      new BotToolPermissionMapper(),
     );
     summaries = new BotConversationSummaryRepository(
       dataSource.getRepository(BotConversationSummaryOrmEntity),
@@ -617,6 +623,11 @@ describe('bots chat (integration)', () => {
         },
         new BotAttachmentMapper(),
       ),
+      { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
+      { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+      {
+        create: () => ({ review: async () => ({ effect: 'none' }) }),
+      } as unknown as BotRuleReviewerFactory,
     );
   }
 
@@ -671,6 +682,61 @@ describe('bots chat (integration)', () => {
       summary,
     });
   }
+
+  it('writes an “Always allow” with the yes, and rolls the yes back when the grants are full', async () => {
+    const bot = await create('Granter');
+    const { turn, message } = sent(bot, 'Start it');
+    await turns.enqueue(turn, message, null);
+    const card = BotApprovalEntity.request({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      tool: 'comment_on_pull_request',
+      input: { body: 'LGTM' },
+      summary: 'Comment on acme/docs#4',
+      subject: { kind: 'repository', key: 'i-1:7', label: 'acme/docs' },
+      sharesOutside: true,
+    });
+    await approvals.insertPending(card);
+    const standing = () =>
+      dataSource.query(
+        `SELECT "tool", "decision", "subjectLabel" FROM bot_tool_permission WHERE "botId" = $1`,
+        [bot.id],
+      );
+
+    // Past the cap: nothing is written, and the card still waits.
+    const full = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    full.approve(userId, new Date(), null, 'subject');
+    const permission = full.standing();
+    if (!permission) throw new Error('a yes for the subject leaves a grant');
+    await expect(
+      approvals.saveTransition(full, {
+        runCall: { by: 'Ana' },
+        standing: { permission, maxGrants: 0 },
+      }),
+    ).rejects.toMatchObject({ code: 'BOTS_034' });
+    expect(await standing()).toEqual([]);
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap()).toMatchObject({
+      status: 'pending',
+      sharesOutside: true,
+      subject: { kind: 'repository', key: 'i-1:7', label: 'acme/docs' },
+    });
+
+    const granted = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    granted.approve(userId, new Date(), null, 'subject');
+    const grant = granted.standing();
+    if (!grant) throw new Error('a yes for the subject leaves a grant');
+    expect(
+      await approvals.saveTransition(granted, {
+        runCall: { by: 'Ana' },
+        standing: { permission: grant, maxGrants: 100 },
+      }),
+    ).toBe(true);
+    expect(await standing()).toEqual([
+      { tool: 'comment_on_pull_request', decision: 'allow', subjectLabel: 'acme/docs' },
+    ]);
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap().reach).toBe('subject');
+  });
 
   it('keeps one card waiting per bot: a second is refused until the first is decided', async () => {
     const bot = await create('Asker');

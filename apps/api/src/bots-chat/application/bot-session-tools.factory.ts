@@ -42,6 +42,9 @@ import {
  */
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'sessions' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
@@ -57,6 +60,15 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'start_session',
       scope: 'sessions:write',
       asks: true,
+      subject: async (input, context) => {
+        if (!input.project_id) return null;
+        const project = await this.project(context, input.project_id).catch(() => null);
+        return {
+          kind: 'project',
+          key: input.project_id,
+          label: project?.name ?? `project ${input.project_id}`,
+        };
+      },
       description:
         "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
       input: z.object({
@@ -144,6 +156,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'send_to_session',
       scope: 'sessions:write',
       asks: true,
+      subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
         "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works, wait for it; when it asks a question or a permission, use answer_session. The session's log records the prompt as yours. You are subscribed to the task it starts unless watch is false.",
       input: z.object({
@@ -189,6 +202,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'answer_session',
       scope: 'sessions:write',
       asks: true,
+      subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
         "Answers what a session's agent is waiting on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Answer only what the person's instructions settle; otherwise tell them.",
       input: z.object({
@@ -249,6 +263,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'stop_session',
       scope: 'sessions:write',
       asks: true,
+      subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
         "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong.",
       input: z.object({
@@ -267,6 +282,12 @@ export class BotSessionToolsFactory implements BotToolArea {
         return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
       },
     });
+  }
+
+  /** The session a call acts on, as a card offers to always allow the tool on it. */
+  private async sessionSubject(context: BotToolCallContext, sessionId: string) {
+    const session = await this.session(context, sessionId).catch(() => null);
+    return { kind: 'session', key: sessionId, label: session?.name ?? `session ${sessionId}` };
   }
 
   private session(context: BotToolCallContext, sessionId: string): Promise<WorkSessionEntity> {
