@@ -14,6 +14,10 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
+function openTab(name: 'hosts' | 'clouds') {
+  fireEvent.click(screen.getByRole('tab', { name: new RegExp(`sessions.new.where.${name}`) }));
+}
+
 const HOSTS = [
   { value: 'host-1', label: 'mac-studio', online: true },
   { value: 'host-2', label: 'optimus', online: false },
@@ -105,18 +109,20 @@ describe('PlaceSelect', () => {
   });
 
   /**
-   * Under the hosts, the clouds (`NewSessionComposer.dc.html`): a vendor with
+   * Beside the hosts, the clouds (`NewSessionComposer.dc.html`): a vendor with
    * the reader's key is picked outright, as the place; one without sends the
    * reader to connect it rather than starting a session it would refuse.
    */
   it('picks a connected cloud outright, and sends a vendor with no key to connect it', () => {
     const picked = renderChip();
+    openTab('clouds');
     fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
     expect(picked.onCloudChange).toHaveBeenCalledWith('cursor');
     expect(picked.onHostChange).not.toHaveBeenCalled();
     cleanup();
 
     const unconnected = renderChip([{ ...CLOUDS[0], connected: false }]);
+    openTab('clouds');
     fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
     expect(unconnected.onConnectCloud).toHaveBeenCalled();
     expect(unconnected.onCloudChange).not.toHaveBeenCalled();
@@ -130,6 +136,7 @@ describe('PlaceSelect', () => {
   it('takes a host’s Claude Code cloud from Cursor, though the place stays the cloud', () => {
     const { onPlaceChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
 
+    openTab('hosts');
     fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
     fireEvent.click(screen.getByRole('option', { name: /sessions.new.where.cloud.label/ }));
 
@@ -144,6 +151,7 @@ describe('PlaceSelect', () => {
    */
   it('starts Claude Code’s cloud from the host picked in its pane, and from none that cannot', () => {
     const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0]);
+    openTab('clouds');
     fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }));
     expect(picked.onPlaceChange).not.toHaveBeenCalled();
 
@@ -163,6 +171,7 @@ describe('PlaceSelect', () => {
     cleanup();
 
     const none = renderChip(CLOUDS, { place: 'worktree', cloud: null }, null);
+    openTab('clouds');
     const row = screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' });
     expect(row).toHaveProperty('disabled', true);
     fireEvent.click(row);
@@ -179,14 +188,33 @@ describe('PlaceSelect', () => {
     expect(onPlaceChange).toHaveBeenCalledWith('cloud');
   });
 
-  it('walks from the hosts into the clouds with the arrows', () => {
-    const { onCloudChange } = renderChip();
-    const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
+  /**
+   * The hosts and the clouds are a tab each, and the chip opens on the tab of
+   * what is picked: a session already at Cursor opens on Cloud, so the arrows
+   * walk the clouds and not hosts the reader is not looking at.
+   */
+  it('opens on the tab of the pick, and the arrows walk that tab only', () => {
+    const { onCloudChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
+    const search = screen.getByRole('textbox', { name: 'sessions.new.where.searchClouds' });
+    expect(screen.queryByRole('option', { name: 'mac-studio' })).toBeNull();
 
-    for (let step = 0; step < HOSTS.length + 1; step++)
-      fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
 
     expect(onCloudChange).toHaveBeenCalledWith('cursor');
+  });
+
+  it('counts what each tab holds under the search', () => {
+    renderChip();
+    fireEvent.change(screen.getByRole('textbox', { name: 'sessions.new.host.search' }), {
+      target: { value: 'o' },
+    });
+
+    expect(screen.getByRole('tab', { name: /sessions.new.where.hosts/ }).textContent).toContain(
+      '3',
+    );
+    expect(screen.getByRole('tab', { name: /sessions.new.where.clouds/ }).textContent).toContain(
+      '2',
+    );
   });
 });

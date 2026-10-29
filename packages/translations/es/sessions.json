@@ -85,6 +85,8 @@
       "startIn": "Empezar en",
       "atVendor": "Nube",
       "clouds": "Nube",
+      "searchClouds": "Buscar nubes…",
+      "cloudsEmpty": "Ninguna nube coincide.",
       "connect": "Conecta tu clave"
     },
     "project": {
@@ -657,6 +659,7 @@
     "open": "Abrir en claude.ai",
     "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
     "copy": "Copiar comando",
+    "copyLink": "Copiar enlace",
     "copied": "Copiado",
     "delete": "Eliminar",
     "openAt": "Abrir en {{vendor}}",

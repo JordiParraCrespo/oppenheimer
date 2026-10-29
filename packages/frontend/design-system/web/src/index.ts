@@ -185,6 +185,8 @@ export {
   ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
+  ChipSelectTab,
+  ChipSelectTabs,
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';

@@ -8,6 +8,8 @@ import {
   type ChipSelectOption,
   ChipSelectPopup,
   ChipSelectSearch,
+  ChipSelectTab,
+  ChipSelectTabs,
   ChipSelectTrigger,
   dotVariants,
   Popover,
@@ -41,14 +43,17 @@ type Pane = { kind: 'root' } | { kind: 'host'; host: PlaceHost } | { kind: 'star
 
 const ROOT: Pane = { kind: 'root' };
 
+/** The root's two lists, a tab each: the hosts, and the clouds. */
+type Tab = 'hosts' | 'cloud';
+
 /**
  * The first chip of New session: where the session runs, read as one — a
  * host and where on it ("mac-studio · New worktree"), or a vendor's cloud
  * ("Cursor · Cloud") — as `NewSessionComposer.dc.html` draws it. The pane
- * lists the hosts under a Hosts heading with their count, each with its
- * presence dot and summary, and under a Cloud heading the vendors the console
- * launches a cloud session at, each with whose key it is (the frame's saved
- * environments are not built). A host opens its Start in pane, and picking
+ * is two tabs under the search, each with its count: Hosts, each with its
+ * presence dot and summary, and Cloud, the vendors the console launches a
+ * cloud session at, each with whose key it is (the frame's third tab, saved
+ * environments, is not built). It opens on the tab of what is picked. A host opens its Start in pane, and picking
  * a place there picks the host with it
  * (`product/versions/mvp/24-session-places.md` §3). Claude Code cloud is a
  * place on a host: that host starts the task in the cloud with its own
@@ -61,7 +66,7 @@ const ROOT: Pane = { kind: 'root' };
  * and one with no key yet goes to connect it. Add host… is the foot. Props
  * in, choices out: the section above fetches.
  *
- * Each pane is one list under one search: the hosts and the clouds, a host's
+ * Each pane is one list under one search: the tab's hosts or clouds, a host's
  * places, or the hosts to start from. The arrows move through it and Enter
  * takes the row, as in `ChipSelect`.
  *
@@ -109,6 +114,7 @@ export function PlaceSelect({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pane, setPane] = useState<Pane>(ROOT);
+  const [tab, setTab] = useState<Tab>('hosts');
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
@@ -119,8 +125,9 @@ export function PlaceSelect({
     : null;
   const term = query.trim().toLowerCase();
 
-  // The root's rows are the hosts, then the clouds: one list, one index. A
-  // loading host list has no host to start Claude Code's cloud from yet.
+  // Both tabs filter under the one search, so each tab's count says what it
+  // holds; the rows are the open tab's. A loading host list has no host to
+  // start Claude Code's cloud from yet.
   const hostRows = pane.kind === 'root' ? filterOptions<PlaceHost>(hosts, term) : [];
   const cloudRows =
     pane.kind === 'root' && !loading
@@ -150,7 +157,9 @@ export function PlaceSelect({
         )
       : pane.kind === 'start-from'
         ? filterOptions(startFrom, term)
-        : [...hostRows, ...cloudRows];
+        : tab === 'hosts'
+          ? hostRows
+          : cloudRows;
 
   function show(next: { pane?: Pane; query?: string }) {
     if (next.pane) setPane(next.pane);
@@ -160,7 +169,13 @@ export function PlaceSelect({
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) show({ pane: ROOT });
+    if (next) setTab(atVendor || place === 'cloud' ? 'cloud' : 'hosts');
+    else show({ pane: ROOT });
+  }
+
+  function pickTab(next: Tab) {
+    setTab(next);
+    setActive(0);
   }
 
   /** A place on a host: from its pane, or Claude Code's cloud from Start from. */
@@ -331,13 +346,31 @@ export function PlaceSelect({
         );
       case 'root':
         return (
-          <ChipSelectHeading>
-            {t('sessions.new.where.hosts')}
-            {loading ? null : <span className="figures ml-1.5">{hosts.length}</span>}
-          </ChipSelectHeading>
+          <ChipSelectTabs aria-label={t('sessions.new.where.label')}>
+            <ChipSelectTab
+              selected={tab === 'hosts'}
+              count={loading ? undefined : hostRows.length}
+              onClick={() => pickTab('hosts')}
+            >
+              {t('sessions.new.where.hosts')}
+            </ChipSelectTab>
+            <ChipSelectTab
+              selected={tab === 'cloud'}
+              count={loading ? undefined : cloudRows.length}
+              onClick={() => pickTab('cloud')}
+            >
+              {t('sessions.new.where.clouds')}
+            </ChipSelectTab>
+          </ChipSelectTabs>
         );
     }
   }
+
+  const searchLabel = t(
+    pane.kind === 'root' && tab === 'cloud'
+      ? 'sessions.new.where.searchClouds'
+      : 'sessions.new.host.search',
+  );
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -361,8 +394,8 @@ export function PlaceSelect({
       <ChipSelectPopup width={320} maxHeight={420}>
         <ChipSelectSearch
           value={query}
-          placeholder={t('sessions.new.host.search')}
-          aria-label={t('sessions.new.host.search')}
+          placeholder={searchLabel}
+          aria-label={searchLabel}
           onChange={(event) => show({ query: event.target.value })}
           onKeyDown={onKeyDown}
         />
@@ -372,24 +405,16 @@ export function PlaceSelect({
           aria-label={t(
             pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
           )}
-          loading={pane.kind === 'root' && loading && cloudRows.length === 0}
+          loading={pane.kind === 'root' && loading}
           loadingText={t('sessions.new.host.loading')}
           empty={rows.length === 0}
-          emptyText={failure ?? t('sessions.new.host.empty')}
+          emptyText={
+            pane.kind === 'root' && tab === 'cloud'
+              ? t('sessions.new.where.cloudsEmpty')
+              : (failure ?? t('sessions.new.host.empty'))
+          }
         >
-          {pane.kind === 'root' ? (
-            <>
-              {hostRows.map(row)}
-              {cloudRows.length > 0 ? (
-                <>
-                  <ChipSelectHeading>{t('sessions.new.where.clouds')}</ChipSelectHeading>
-                  {cloudRows.map((option, index) => row(option, hostRows.length + index))}
-                </>
-              ) : null}
-            </>
-          ) : (
-            rows.map(row)
-          )}
+          {rows.map(row)}
         </ChipSelectList>
         <ChipSelectActionRow
           action={{ label: t('sessions.new.host.add'), onSelect: onAddHost }}
