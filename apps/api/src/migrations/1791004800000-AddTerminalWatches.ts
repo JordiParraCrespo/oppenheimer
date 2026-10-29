@@ -12,7 +12,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   a `terminal.matched` entry in the session's log carrying the watch and a
  *   count, never the text: pane text stays on the host. Bounded per session
  *   by the application (`SESSION_TERMINAL_WATCHES_MAX`), counted under a lock
- *   on the session row.
+ *   on the session row. `matches` is the newest count the runner reported,
+ *   raised and never lowered, so a hello after the runner restarted sends it
+ *   with the watch and the runner counts on from it.
  *   - `(organizationId, sessionId) → work_session(organizationId, id)`,
  *     cascading: a watch means nothing without its session.
  * - `bot_subscription` gains the watch a bot asked for with its pattern:
@@ -36,9 +38,12 @@ export class AddTerminalWatches1791004800000 implements MigrationInterface {
         "organizationId" uuid NOT NULL,
         "sessionId" uuid NOT NULL,
         "pattern" character varying(200) NOT NULL,
+        "matches" integer DEFAULT 0 NOT NULL,
         "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+        "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
         CONSTRAINT "PK_session_terminal_watch" PRIMARY KEY (id),
-        CONSTRAINT "CHK_session_terminal_watch_pattern" CHECK (char_length("pattern") > 0)
+        CONSTRAINT "CHK_session_terminal_watch_pattern" CHECK (char_length("pattern") > 0),
+        CONSTRAINT "CHK_session_terminal_watch_matches" CHECK ("matches" >= 0)
       )`,
     );
     await queryRunner.query(

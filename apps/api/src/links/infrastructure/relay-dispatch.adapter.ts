@@ -188,6 +188,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
         sessionId: session.id,
         watchId: spec.watchId,
         pattern: spec.pattern,
+        ...(spec.count ? { count: spec.count } : {}),
       });
     });
   }

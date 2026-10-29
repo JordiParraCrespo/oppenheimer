@@ -27,6 +27,8 @@ import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory'
 import { BotRuleReviewerFactory } from './application/bot-rule-reviewer.factory';
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
+import { BotSessionWaitResolver } from './application/bot-session-wait.resolver';
+import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
@@ -263,6 +265,8 @@ const queryHandlers: Provider[] = [
     BotHostToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,
+    BotSessionWakeResolver,
+    BotSessionWaitResolver,
     BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,
     BotGoalToolsFactory,

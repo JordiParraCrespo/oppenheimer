@@ -1,28 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
 import { TERMINAL_WATCH_PATTERN_MAX } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
-import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
-import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import {
   BOT_SESSION_WAIT_MAX_SECONDS,
-  BOT_SESSION_WAIT_POLL_MS,
   BOT_SESSION_WAITS_PER_TURN,
-  sessionWaitAnswer,
-  sessionWaitOutcome,
 } from '../domain/bot-session-wait.policy';
 import {
   BOT_SUBSCRIPTION_PURPOSE_MAX,
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   BOT_SUBSCRIPTIONS_PER_BOT,
 } from '../domain/bot-subscription.policy';
+import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
   type BotToolArea,
-  type BotToolCallContext,
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
@@ -46,7 +40,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)
     private readonly subscriptions: BotSubscriptionRepositoryPort,
     private readonly mapper: BotSubscriptionMapper,
-    private readonly queryBus: QueryBus,
+    private readonly waits: BotSessionWaitResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -166,42 +160,8 @@ export class BotWatchToolsFactory implements BotToolArea {
             `You have waited ${BOT_SESSION_WAITS_PER_TURN} times this turn. Watch the session with watch_session and end your turn; it wakes you when the task ends.`,
           );
         }
-        const started = Date.now();
-        const deadline = started + input.seconds * 1_000;
-        for (;;) {
-          const outcome = sessionWaitOutcome(await this.waitView(context, input.session_id));
-          const waited = Math.round((Date.now() - started) / 1_000);
-          if (outcome.settled || Date.now() + BOT_SESSION_WAIT_POLL_MS > deadline) {
-            return sessionWaitAnswer(input.session_id, outcome, waited);
-          }
-          // A turn that is stopped stops its wait with it.
-          await pause(BOT_SESSION_WAIT_POLL_MS, signal);
-        }
+        return this.waits.wait(context, input.session_id, input.seconds, signal);
       },
     });
   }
-
-  /** The session as a wait reads it, in the owner's scope. */
-  private async waitView(context: BotToolCallContext, sessionId: string) {
-    const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
-      new FindSessionQuery({ scope: context.owner, sessionId }),
-    );
-    return { resolved: session.isResolved, latestTurn: session.latestTurn };
-  }
-}
-
-/** Waits `ms`, or rejects the moment `signal` aborts. */
-function pause(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) return reject(signal.reason);
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', stop);
-      resolve();
-    }, ms);
-    const stop = () => {
-      clearTimeout(timer);
-      reject(signal.reason);
-    };
-    signal.addEventListener('abort', stop, { once: true });
-  });
 }

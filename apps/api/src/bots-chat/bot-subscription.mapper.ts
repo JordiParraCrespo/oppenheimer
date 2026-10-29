@@ -12,7 +12,6 @@ import {
   knownStateOf,
   type SessionWake,
   type sessionWakeTurn,
-  type TerminalMatchWake,
   type WakeDecision,
   type WatchedTask,
   watchedTurnFor,
@@ -143,36 +142,50 @@ export class BotSubscriptionMapper {
     decision: Extract<WakeDecision, { kind: 'wake' }>,
   ): SessionWake {
     return {
-      subscriptionId: subscription.id,
-      sessionId: session.id,
-      sessionName: session.name,
-      purpose: subscription.purpose,
-      task,
-      state: decision.state,
-      ends: decision.ends,
-      // A watch that never matched says so once its task is over.
-      silentPattern:
-        subscription.terminalWatch && subscription.matches === 0
-          ? subscription.terminalWatch.pattern
-          : null,
+      ...this.wakeOf(subscription, session, decision.ends),
+      cause: {
+        kind: 'state',
+        task,
+        state: decision.state,
+        // A watch that never matched says so once its task is over.
+        silentPattern:
+          subscription.terminalWatch && subscription.matches === 0
+            ? subscription.terminalWatch.pattern
+            : null,
+      },
     };
   }
 
-  /** What a terminal match tells the bot, as the subscription and the session are now. */
-  toTerminalMatchWake(
+  /** What a terminal match tells the bot: the subscription's watch, and the runner's count. */
+  toMatchWake(
     subscription: BotSubscriptionEntity,
     session: WorkSessionEntity,
+    watch: { id: string; pattern: string },
     count: number,
     ends: boolean,
-  ): TerminalMatchWake {
+  ): SessionWake {
+    return {
+      ...this.wakeOf(subscription, session, ends),
+      cause: {
+        kind: 'match',
+        turn: session.latestTurn?.seq ?? 0,
+        watchId: watch.id,
+        pattern: watch.pattern,
+        count,
+      },
+    };
+  }
+
+  private wakeOf(
+    subscription: BotSubscriptionEntity,
+    session: WorkSessionEntity,
+    ends: boolean,
+  ): Omit<SessionWake, 'cause'> {
     return {
       subscriptionId: subscription.id,
       sessionId: session.id,
       sessionName: session.name,
       purpose: subscription.purpose,
-      turn: session.latestTurn?.seq ?? 0,
-      pattern: subscription.terminalWatch?.pattern ?? '',
-      count,
       ends,
     };
   }

@@ -21,6 +21,7 @@ import { BOT_SUBSCRIPTIONS_PER_BOT } from '../../domain/bot-subscription.policy'
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
+import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 import { BotWatchToolsFactory } from '../bot-watch-tools.factory';
@@ -106,7 +107,7 @@ function setup(
     resolver,
     repository,
     new BotSubscriptionMapper(),
-    queries as unknown as QueryBus,
+    new BotSessionWaitResolver(queries as unknown as QueryBus),
   );
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };
   const context: BotToolContext = {
@@ -217,7 +218,9 @@ describe('BotWatchToolsFactory', () => {
     const { resolver, context, subscriptions, commands } = setup({
       read: liveSession('failed', 1),
     });
-    expect(await resolver.watchStarted(context, SESSION)).toContain('You are subscribed to it');
+    expect(await resolver.follow(context, SESSION, 'first_task')).toContain(
+      'You are subscribed to it',
+    );
     expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
       until: 'task',
       purpose: null,
@@ -237,7 +240,9 @@ describe('BotWatchToolsFactory', () => {
     const { resolver, context, subscriptions, commands } = setup({
       read: liveSession('completed', 3),
     });
-    expect(await resolver.watchSent(context, SESSION, 3)).toContain('You are subscribed to it');
+    expect(await resolver.follow(context, SESSION, { turn: 3 })).toContain(
+      'You are subscribed to it',
+    );
     expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
       watchedTurn: 3,
       lastTurn: null,
@@ -251,7 +256,7 @@ describe('BotWatchToolsFactory', () => {
     const { resolver, context, subscriptions, commands } = setup();
 
     subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
-    expect(await resolver.watchStarted(context, SESSION)).toBe(
+    expect(await resolver.follow(context, SESSION, 'first_task')).toBe(
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();

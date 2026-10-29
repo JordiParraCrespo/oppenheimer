@@ -17,5 +17,6 @@ wake for a task that ended says when its pattern never matched. Two more
 tools land with it. `wait_for_session` waits up to 120 s inside a turn.
 `read_session` takes `after_seq`, which `send_to_session` and
 `answer_session` now hand back, so a bot reads only what followed its own
-input. New errors are `SESSIONS_042` (invalid pattern), `SESSIONS_043`
+input. A watch sent again on a hello carries its last count, so a runner
+that restarted counts on from it. New errors are `SESSIONS_042` (invalid pattern), `SESSIONS_043`
 (10 patterns per session) and the runner's `INVALID_PATTERN`.

@@ -48,7 +48,7 @@ func (h *watchHarness) pass(t *testing.T, single bool) {
 
 func (h *watchHarness) watch(t *testing.T, watchID, pattern string) {
 	t.Helper()
-	if err := h.svc.Watch(h.session.ID, watchID, pattern); err != nil {
+	if err := h.svc.Watch(h.session.ID, watchID, pattern, 0); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -89,8 +89,8 @@ func TestARefreshReportsATerminalWatchesMatches(t *testing.T) {
 	}
 }
 
-// A watch sent again under its id replaces the first, count and all; an
-// unwatched one reports nothing more, and unwatching one the runner does not
+// A watch sent again under its id with another pattern replaces the first,
+// count and all; an unwatched one reports nothing more, and unwatching one the runner does not
 // hold is no error.
 func TestAWatchIsReplacedByItsIDAndStoppedByUnwatch(t *testing.T) {
 	h := newWatchHarness(t)
@@ -175,18 +175,61 @@ func TestASessionThatDisappearsDropsItsWatches(t *testing.T) {
 // does not know, one that is no longer running.
 func TestAWatchIsRefused(t *testing.T) {
 	h := newWatchHarness(t)
-	if err := h.svc.Watch(h.session.ID, watchOne, `(unclosed`); codeOf(err) != "INVALID_PATTERN" {
+	if err := h.svc.Watch(h.session.ID, watchOne, `(unclosed`, 0); codeOf(err) != "INVALID_PATTERN" {
 		t.Fatalf("invalid pattern: err = %v, want INVALID_PATTERN", err)
 	}
-	if err := h.svc.Watch("no-such-session", watchOne, `ok`); codeOf(err) != domain.ErrNotFound.Code {
+	if err := h.svc.Watch("no-such-session", watchOne, `ok`, 0); codeOf(err) != domain.ErrNotFound.Code {
 		t.Fatalf("unknown session: err = %v, want %s", err, domain.ErrNotFound.Code)
 	}
 	if _, err := h.svc.Stop(context.Background(), h.session.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.svc.Watch(h.session.ID, watchOne, `ok`); codeOf(err) != domain.ErrNotRunning.Code {
+	if err := h.svc.Watch(h.session.ID, watchOne, `ok`, 0); codeOf(err) != domain.ErrNotRunning.Code {
 		t.Fatalf("stopped session: err = %v, want %s", err, domain.ErrNotRunning.Code)
 	}
 }
 
 var _ app.Publisher = (*recorder)(nil)
+
+// What breaks this: the control plane sending its watches again on a
+// reconnect, which reset each count to zero, so every match after it was
+// below what the bot had been told and woke nobody. A watch held with the
+// same pattern is kept; one sent after a restart counts on from where the
+// control plane says it was.
+func TestAWatchSentAgainKeepsItsCountAndOneAfterARestartResumesIt(t *testing.T) {
+	h := newWatchHarness(t)
+	h.watch(t, watchOne, `^done`)
+	h.show("done 1\n")
+	h.pass(t, false)
+	h.watch(t, watchOne, `^done`)
+	h.clock.Advance(time.Minute)
+	h.show("done 1\ndone 2\n")
+	h.pass(t, false)
+
+	if err := h.svc.Watch(h.session.ID, watchTwo, `^done`, 20); err != nil {
+		t.Fatal(err)
+	}
+	h.clock.Advance(time.Minute)
+	h.show("done 3\n")
+	h.pass(t, false)
+
+	want := []terminalMatch{
+		{session: h.session.ID, watch: watchOne, count: 1},
+		{session: h.session.ID, watch: watchOne, count: 2},
+		{session: h.session.ID, watch: watchOne, count: 3},
+		{session: h.session.ID, watch: watchTwo, count: 21},
+	}
+	got := slices.Clone(h.events.matches)
+	slices.SortFunc(got, func(a, b terminalMatch) int {
+		if a.watch != b.watch {
+			if a.watch == watchOne {
+				return -1
+			}
+			return 1
+		}
+		return a.count - b.count
+	})
+	if !slices.Equal(got, want) {
+		t.Fatalf("reports = %+v, want %+v", got, want)
+	}
+}

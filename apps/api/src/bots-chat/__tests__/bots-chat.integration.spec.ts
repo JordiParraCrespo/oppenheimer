@@ -1850,15 +1850,19 @@ describe('bots chat (integration)', () => {
         sessionId: SESSION,
         sessionName: 'Research',
         purpose: 'research',
-        task: {
-          seq: 1,
-          state: 'completed',
-          prompt: 'Research',
-          result: 'Done',
-          failureDetail: null,
-        },
-        state: 'completed',
         ends: true,
+        cause: {
+          kind: 'state',
+          task: {
+            seq: 1,
+            state: 'completed',
+            prompt: 'Research',
+            result: 'Done',
+            failureDetail: null,
+          },
+          state: 'completed',
+          silentPattern: null,
+        },
       };
       const props = {
         organizationId: bot.organizationId,

@@ -236,7 +236,7 @@ describe('SessionReconciliationResolver', () => {
     expect(outcome.reclosed).toEqual([]);
   });
 
-  it('sends the watches of the live sessions a host holds again, since a runner keeps them in memory', async () => {
+  it('sends the watches of the live sessions a host holds again, with their counts, since a runner keeps them in memory', async () => {
     const held = session('open');
     const gone = session('open');
     const watch = SessionTerminalWatchEntity.watch({
@@ -250,9 +250,11 @@ describe('SessionReconciliationResolver', () => {
 
     // Only the sessions the host holds: one it lost is recorded stopped, not watched.
     expect(h.terminalWatches.findForSessions).toHaveBeenCalledWith('org', [held.id]);
+    // With the count already reported, so a runner that restarted counts on from it.
     expect(h.dispatch.watchTerminal).toHaveBeenCalledWith(held, {
       watchId: watch.id,
       pattern: 'FAIL',
+      count: 0,
     });
   });
 });

@@ -19,6 +19,11 @@ export interface SessionTerminalWatchRepositoryPort {
     sessionId: string,
     watchId: string,
   ): Promise<SessionTerminalWatchEntity | null>;
+  /**
+   * Records the runner's newest count for a watch, never lowering it: reports
+   * may arrive out of order. A watch already removed is nothing to record.
+   */
+  recordMatches(organizationId: string, watchId: string, count: number): Promise<void>;
   /** Removes one; whether there was one to remove. */
   delete(organizationId: string, sessionId: string, watchId: string): Promise<boolean>;
 }

@@ -64,7 +64,7 @@ func TestAWatchCountsNewLinesAndReportsAtMostEveryFiveSeconds(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			watch, err := domain.NewWatch("w-1", `^error:`)
+			watch, err := domain.NewWatch("w-1", `^error:`, 0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,7 +81,7 @@ func TestAWatchCountsNewLinesAndReportsAtMostEveryFiveSeconds(t *testing.T) {
 // After its hundredth report a watch is spent: it reports nothing more and
 // the caller drops it.
 func TestAWatchIsSpentAfterItsLastReport(t *testing.T) {
-	watch, err := domain.NewWatch("w-1", `match`)
+	watch, err := domain.NewWatch("w-1", `match`, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestAWatchIsSpentAfterItsLastReport(t *testing.T) {
 // The set of counted lines is bounded: past WatchSeenMax the oldest is
 // forgotten, and counted again if it shows up again.
 func TestAWatchRemembersABoundedNumberOfLines(t *testing.T) {
-	watch, err := domain.NewWatch("w-1", `^line`)
+	watch, err := domain.NewWatch("w-1", `^line`, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,13 +133,13 @@ func TestAnInvalidPatternIsRefused(t *testing.T) {
 		"lookahead": `foo(?=bar)`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := domain.NewWatch("w-1", pattern)
+			_, err := domain.NewWatch("w-1", pattern, 0)
 			if pe := problem.From(err); pe == nil || pe.Code != "INVALID_PATTERN" {
 				t.Fatalf("err = %v, want INVALID_PATTERN", err)
 			}
 		})
 	}
-	if _, err := domain.NewWatch("w-1", strings.Repeat("a", domain.WatchPatternMax)); err != nil {
+	if _, err := domain.NewWatch("w-1", strings.Repeat("a", domain.WatchPatternMax), 0); err != nil {
 		t.Fatalf("a pattern at the bound was refused: %v", err)
 	}
 }

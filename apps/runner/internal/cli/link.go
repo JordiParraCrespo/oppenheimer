@@ -694,7 +694,7 @@ func (h *linkHandler) TerminalMatched(sessionID, watchID string, count int) {
 // watch starts a terminal watch; a refusal (an invalid pattern, a session
 // this host does not know) answers command.failed.
 func (h *linkHandler) watch(m link.SessionWatch) {
-	if err := h.app.Sessions.Watch(m.SessionID, m.WatchID, m.Pattern); err != nil {
+	if err := h.app.Sessions.Watch(m.SessionID, m.WatchID, m.Pattern, m.Count); err != nil {
 		h.fail(m.CommandID, err)
 	}
 }

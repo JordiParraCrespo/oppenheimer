@@ -13,6 +13,7 @@ import { UnwatchSessionTerminalCommand } from '../../../../sessions/commands/unw
 import type { WorkSessionEntity } from '../../../../sessions/domain/work-session.entity';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
+import { BotSessionWakeResolver } from '../../../application/bot-session-wake.resolver';
 import type { BotSessionWatchResolver } from '../../../application/bot-session-watch.resolver';
 import { BotSubscriptionSubjectResolver } from '../../../application/bot-subscription-subject.resolver';
 import { BotSubscriptionMapper } from '../../../bot-subscription.mapper';
@@ -92,10 +93,14 @@ function setup(stored: BotSubscriptionEntity | null = subscription()) {
   const commands = { execute: vi.fn(async () => true) };
   const handler = new WakeOnTerminalMatchCommandHandler(
     subscriptions as unknown as BotSubscriptionRepositoryPort,
-    turns as unknown as BotTurnRepositoryPort,
-    stream,
     subjects,
-    watches as unknown as BotSessionWatchResolver,
+    new BotSessionWakeResolver(
+      subscriptions as unknown as BotSubscriptionRepositoryPort,
+      turns as unknown as BotTurnRepositoryPort,
+      stream,
+      new BotSubscriptionMapper(),
+      watches as unknown as BotSessionWatchResolver,
+    ),
     new BotSubscriptionMapper(),
     commands as unknown as CommandBus,
   );
@@ -120,7 +125,7 @@ describe('WakeOnTerminalMatchCommandHandler', () => {
     expect(turn).toMatchObject({
       botId: 'bot-1',
       origin: 'subscription',
-      sourceKey: 'subscription:sub-1:match:3',
+      sourceKey: 'subscription:sub-1:match:watch-1:3',
     });
     expect(opening.event).toEqual({
       kind: 'session',

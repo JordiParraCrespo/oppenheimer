@@ -503,6 +503,7 @@ type SessionWatch struct {
 	SessionID string `json:"sessionId"`
 	WatchID   string `json:"watchId"`
 	Pattern   string `json:"pattern"`
+	Count     int    `json:"count,omitempty"`
 }
 
 // SessionUnwatch is the `session.unwatch` message.

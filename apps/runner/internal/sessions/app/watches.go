@@ -35,6 +35,14 @@ func (b *watchBook) put(sessionID string, watch *domain.Watch) {
 	b.bySession[sessionID][watch.ID()] = watch
 }
 
+// holds reports whether the session has a watch under the id with this pattern.
+func (b *watchBook) holds(sessionID, watchID, pattern string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	watch, ok := b.bySession[sessionID][watchID]
+	return ok && watch.Pattern() == pattern
+}
+
 func (b *watchBook) remove(sessionID, watchID string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -86,11 +94,14 @@ func (b *watchBook) scan(sessionID, body string, now func() time.Time) []matched
 	return out
 }
 
-// Watch starts a terminal watch on a session, replacing any with the same
-// id. The session must be one this host knows that is running or still being
-// created (ErrNotFound, ErrNotRunning), and the pattern a valid one
-// (ErrInvalidPattern).
-func (s *Service) Watch(sessionID, watchID, pattern string) error {
+// Watch starts a terminal watch on a session, counting on from `from`. A
+// watch this host already holds under the id with the same pattern is kept
+// as it is, so the control plane sending its watches again on a reconnect
+// neither resets a count nor recounts the screen; one with another pattern
+// is replaced. The session must be one this host knows that is running or
+// still being created (ErrNotFound, ErrNotRunning), and the pattern a valid
+// one (ErrInvalidPattern).
+func (s *Service) Watch(sessionID, watchID, pattern string, from int) error {
 	session, err := s.Get(sessionID)
 	if err != nil {
 		return err
@@ -98,7 +109,10 @@ func (s *Service) Watch(sessionID, watchID, pattern string) error {
 	if !session.State.Live() && session.State != domain.StateCreating {
 		return domain.ErrNotRunning.WithDetail("session %s is %s", sessionID, session.State)
 	}
-	watch, err := domain.NewWatch(watchID, pattern)
+	if s.watches.holds(sessionID, watchID, pattern) {
+		return nil
+	}
+	watch, err := domain.NewWatch(watchID, pattern, from)
 	if err != nil {
 		return err
 	}

@@ -550,7 +550,8 @@ export const TERMINAL_WATCH_PATTERN_MAX = 200;
 
 /**
  * Watch a live session's screen for a pattern (an RE2 regular expression,
- * matched line by line), replacing any watch with this `watchId`. The runner
+ * matched line by line), replacing any watch with this `watchId` and another
+ * pattern. The runner
  * scans the screen it already reads on each pass, and appends
  * `terminal.matched` (`{ watchId, count }`) to the session's log when lines it
  * had not matched before match: the first at once, then at most one entry per
@@ -565,6 +566,13 @@ export const sessionWatchSchema = z.object({
   sessionId: sessionIdSchema,
   watchId: z.uuid(),
   pattern: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX),
+  /**
+   * The count already reported for this watch, when the control plane sends
+   * it again after the runner restarted: the runner counts on from it, so
+   * its next report is past what the bot was told. A watch the runner still
+   * holds with the same pattern is kept as it is.
+   */
+  count: z.number().int().min(0).optional(),
 });
 
 export type SessionWatchMessage = z.infer<typeof sessionWatchSchema>;

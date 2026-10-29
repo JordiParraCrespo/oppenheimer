@@ -72,12 +72,16 @@ how many lines have matched so far, never the lines: pane text still never
 reaches Postgres, so the bot reads the session to see what happened. The
 runner sends `terminal.matched` with `{ watchId, count }` (the first match
 at once, then at most one every few seconds). The wake's key is
-`subscription:<id>:match:<count>`, so a count that comes back twice wakes
-the bot once. Each match counts against the subscription's 20 wakes. A
+`subscription:<id>:match:<watchId>:<count>`, so a count that comes back
+twice wakes the bot once, and a pattern that replaces another counts afresh. Each match counts against the subscription's 20 wakes. A
 session holds at most 10 watched patterns (`SESSIONS_043`), and an invalid
 pattern is `SESSIONS_042`. The sessions module owns what the runner is told
 (`session_terminal_watch`), and it sends that again on every hello, since a
-runner keeps watches in memory. The subscription owns who is woken. When
+runner keeps watches in memory. It sends each watch with the newest count
+reported for it: a runner that still holds the watch keeps it as it is, and
+one that restarted counts on from that count, so no match is lost below
+what the bot was already told. The API refuses what Go's `regexp` would:
+lookaround, backreferences, unknown escapes and repeats past 1000. The subscription owns who is woken. When
 the task ends and its pattern never matched, the wake says so: "it never
 printed a line matching …".
 

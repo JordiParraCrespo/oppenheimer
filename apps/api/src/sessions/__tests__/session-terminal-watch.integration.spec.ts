@@ -173,4 +173,15 @@ describe('sessions: terminal watches (integration)', () => {
     await dataSource.query(`DELETE FROM work_session WHERE id = $1`, [work.id]);
     expect(await watches.findForSessions(organizationId, [work.id])).toEqual([]);
   });
+  // What breaks this: a late report lowering the count, so the watch sent
+  // after a runner restart counts from below what the bot was told.
+  it('keeps the newest count a report gave, never lowering it, and only in its workspace', async () => {
+    const work = await liveSession();
+    const made = watch(work.id);
+    await watches.insert(made, 10);
+    await watches.recordMatches(organizationId, made.id, 5);
+    await watches.recordMatches(organizationId, made.id, 3);
+    await watches.recordMatches(randomUUID(), made.id, 9);
+    expect((await watches.findOne(organizationId, work.id, made.id))?.matches).toBe(5);
+  });
 });
