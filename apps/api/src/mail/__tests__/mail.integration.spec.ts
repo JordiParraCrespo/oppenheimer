@@ -122,6 +122,21 @@ describe('mail (integration)', () => {
     await expect(connections.insert(connection(ben))).resolves.toBeUndefined();
   });
 
+  it('moves the history mark only from the mark it was read with, so of two overlapping polls one moves it', async () => {
+    const account = connection(ana, 'sub-history');
+    await connections.insert(account);
+    const [first, second] = await connections
+      .findManyForSystem([account.id])
+      .then((found) => [found[0], found[0]]);
+
+    await expect(connections.markHistory(first, '100')).resolves.toBe(true);
+    // The other poll read the account before the first moved it: it moves nothing.
+    await expect(connections.markHistory(second, '120')).resolves.toBe(false);
+    const [now] = await connections.findManyForSystem([account.id]);
+    expect(now.historyId).toBe('100');
+    await expect(connections.markHistory(now, '130')).resolves.toBe(true);
+  });
+
   it('writes a rename and a revoke, and the grant goes with the person', async () => {
     const mine = connection(ana);
     await connections.insert(mine);

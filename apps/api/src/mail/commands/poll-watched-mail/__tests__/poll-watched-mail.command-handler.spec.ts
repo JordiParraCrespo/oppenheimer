@@ -2,6 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { WatchedSubject } from '../../../../automations/domain/automation-read.types';
 import { ReceiveInboundDeliveryCommand } from '../../../../inbound-events/commands/receive-inbound-delivery/receive-inbound-delivery.command';
 import type { GmailCallResolver } from '../../../application/gmail-call.resolver';
+import { MailWatchResolver } from '../../../application/mail-watch.resolver';
 import type { GmailConnectionRepositoryPort } from '../../../database/gmail-connection.repository.port';
 import { GmailConnectionEntity } from '../../../domain/gmail-connection.entity';
 import type {
@@ -55,7 +56,9 @@ function setup(
       messageIds: ['m1', 'm2'],
       historyId: '200',
     })),
-    searchIds: vi.fn<GmailProviderPort['searchIds']>(async () => ['m2']),
+    matchingIds: vi.fn<GmailProviderPort['matchingIds']>(async (_grant, _query, among) =>
+      among.filter((id) => id === 'm2'),
+    ),
     readSummaries: vi.fn<GmailProviderPort['readSummaries']>(async (_grant, ids) =>
       ids.map(summary),
     ),
@@ -70,14 +73,14 @@ function setup(
     findManyForSystem: vi.fn(async (ids: readonly string[]) =>
       connections.filter((connection) => ids.includes(connection.id)),
     ),
-    markHistory: vi.fn(async () => undefined),
+    markHistory: vi.fn(async () => true),
   };
   const queryBus = { execute: vi.fn(async () => watched(connections)) } as unknown as QueryBus;
   const commands = vi.fn(async () => undefined);
   const handler = new PollWatchedMailCommandHandler(
     queryBus,
     { execute: commands } as unknown as CommandBus,
-    gmail,
+    new MailWatchResolver(gmail),
     repository as GmailConnectionRepositoryPort,
   );
   const poll = () => handler.execute(new PollWatchedMailCommand({ now: new Date() }));
@@ -118,17 +121,17 @@ describe('PollWatchedMailCommandHandler', () => {
     );
 
     expect(await poll()).toBe(1);
-    expect(provider.searchIds).toHaveBeenCalledWith(
+    expect(provider.matchingIds).toHaveBeenCalledWith(
       expect.anything(),
       '(from:billing@client.test) newer_than:2d',
-      expect.any(Number),
+      ['m1', 'm2'],
     );
     expect(provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['m2']);
     const [delivery] = commands.mock.calls[0] as unknown as [ReceiveInboundDeliveryCommand];
     expect(delivery).toBeInstanceOf(ReceiveInboundDeliveryCommand);
     expect(delivery).toMatchObject({
       source: 'gmail',
-      deliveryId: `${connection.id}:100`,
+      deliveryId: `${connection.id}:100:200`,
       payload: {
         connectionId: connection.id,
         messages: [expect.objectContaining({ id: 'm2', matched: ['from:billing@client.test'] })],
@@ -141,7 +144,7 @@ describe('PollWatchedMailCommandHandler', () => {
     const { poll, provider } = setup([account()], watching([null]));
 
     expect(await poll()).toBe(2);
-    expect(provider.searchIds).not.toHaveBeenCalled();
+    expect(provider.matchingIds).not.toHaveBeenCalled();
     expect(provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['m1', 'm2']);
   });
 

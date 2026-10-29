@@ -4,19 +4,12 @@ import { CommandBus, CommandHandler, type ICommandHandler, QueryBus } from '@nes
 import type { WatchedSubject } from '../../../automations/domain/automation-read.types';
 import { FindWatchedSubjectsQuery } from '../../../automations/queries/find-watched-subjects/find-watched-subjects.query';
 import { ReceiveInboundDeliveryCommand } from '../../../inbound-events/commands/receive-inbound-delivery/receive-inbound-delivery.command';
-import { GmailCallResolver } from '../../application/gmail-call.resolver';
+import { MailWatchResolver } from '../../application/mail-watch.resolver';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
 import type { GmailConnectionEntity } from '../../domain/gmail-connection.entity';
-import { takenMessages, watchedQuery } from '../../domain/mail-watch.policy';
-import {
-  GMAIL_DELIVERY_EVENT,
-  toGmailDelivery,
-} from '../../infrastructure/gmail-event-normalizer.util';
+import { GMAIL_DELIVERY_EVENT } from '../../infrastructure/gmail-event-normalizer.util';
 import { GMAIL_CONNECTION_REPOSITORY } from '../../mail.di-tokens';
 import { PollWatchedMailCommand } from './poll-watched-mail.command';
-
-/** Per account and poll: new messages read (the rest wait a minute), and ids a query is asked for. */
-const [NEW_MAIL_PER_POLL, QUERY_IDS] = [50, 100];
 
 /**
  * Waking on new mail (`product/next-steps/mail.md` §5), the noticing half:
@@ -37,7 +30,7 @@ export class PollWatchedMailCommandHandler
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
-    private readonly gmail: GmailCallResolver,
+    private readonly watch: MailWatchResolver,
     @Inject(GMAIL_CONNECTION_REPOSITORY)
     private readonly connections: GmailConnectionRepositoryPort,
   ) {}
@@ -73,46 +66,25 @@ export class PollWatchedMailCommandHandler
     return polled.reduce((sum, count) => sum + count, 0);
   }
 
-  private poll(
+  private async poll(
     connection: GmailConnectionEntity,
     filters: readonly (string | null)[],
   ): Promise<number> {
-    return this.gmail.call(connection, async (provider, grant) => {
-      const start = connection.historyId;
-      if (!start) {
-        await this.connections.markHistory(connection, await provider.currentHistoryId(grant));
-        return 0;
-      }
-      const mail = await provider.newMessages(grant, start, NEW_MAIL_PER_POLL);
-      if (!mail) {
-        await this.connections.markHistory(connection, await provider.currentHistoryId(grant));
-        return 0;
-      }
-      const queries = filters.filter((filter): filter is string => filter !== null);
-      const matches = new Map<string, readonly string[]>();
-      if (mail.messageIds.length > 0) {
-        for (const query of queries) {
-          matches.set(query, await provider.searchIds(grant, watchedQuery(query), QUERY_IDS));
-        }
-      }
-      const taken = takenMessages(mail.messageIds, filters, matches);
-      const ids = taken.map(({ id }) => id);
-      const summaries = await provider.readSummaries(grant, ids);
-      if (summaries.length > 0) {
-        const payload = toGmailDelivery(connection, summaries, taken);
-        await this.commandBus.execute(
-          new ReceiveInboundDeliveryCommand({
-            source: 'gmail',
-            // The same mark read twice is the same delivery, stored once.
-            deliveryId: `${connection.id}:${start}`,
-            eventName: GMAIL_DELIVERY_EVENT,
-            payload,
-            payloadDigest: createHash('sha256').update(JSON.stringify(payload)).digest('hex'),
-          }),
-        );
-      }
-      if (mail.historyId !== start) await this.connections.markHistory(connection, mail.historyId);
-      return summaries.length;
-    });
+    const read = await this.watch.read(connection, filters);
+    if (read.delivery) {
+      await this.commandBus.execute(
+        new ReceiveInboundDeliveryCommand({
+          source: 'gmail',
+          // One read, mark to mark: an overlap is its own delivery; a message still wakes once.
+          deliveryId: `${connection.id}:${read.from}:${read.to}`,
+          eventName: GMAIL_DELIVERY_EVENT,
+          payload: read.delivery,
+          payloadDigest: createHash('sha256').update(JSON.stringify(read.delivery)).digest('hex'),
+        }),
+      );
+    }
+    // Only from the mark it read: a read that overlapped another moves nothing.
+    if (read.to !== read.from) await this.connections.markHistory(connection, read.to);
+    return read.delivery?.messages.length ?? 0;
   }
 }

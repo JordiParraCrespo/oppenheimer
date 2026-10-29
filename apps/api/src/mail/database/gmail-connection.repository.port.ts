@@ -14,8 +14,12 @@ export interface GmailConnectionRepositoryPort {
   insert(connection: GmailConnectionEntity): Promise<void>;
   /** Writes a reconnect or a rename: the grant, the account, the label and the status. */
   save(connection: GmailConnectionEntity): Promise<void>;
-  /** Moves the poll's history mark; nothing else on the row is written. */
-  markHistory(connection: GmailConnectionEntity, historyId: string): Promise<void>;
+  /**
+   * Moves the poll's history mark, only from the mark the connection was read
+   * with: a poll that overlapped another and lost answers false and moves
+   * nothing. Nothing else on the row is written.
+   */
+  markHistory(connection: GmailConnectionEntity, historyId: string): Promise<boolean>;
   /** The active connections with these ids, whoever's: for the poll, which runs as nobody. */
   findManyForSystem(ids: readonly string[]): Promise<GmailConnectionEntity[]>;
   markRevoked(connection: GmailConnectionEntity): Promise<void>;

@@ -7,6 +7,7 @@ import { QueueModule } from '../queue/queue.module';
 import { GmailCallResolver } from './application/gmail-call.resolver';
 import { GmailConnectStateResolver } from './application/gmail-connect-state.resolver';
 import { MailComposeResolver } from './application/mail-compose.resolver';
+import { MailWatchResolver } from './application/mail-watch.resolver';
 import { CancelScheduledMailCommandHandler } from './commands/cancel-scheduled-mail/cancel-scheduled-mail.command-handler';
 import { CancelScheduledMailHttpController } from './commands/cancel-scheduled-mail/cancel-scheduled-mail.http.controller';
 import { ConnectGmailCommandHandler } from './commands/connect-gmail/connect-gmail.command-handler';
@@ -127,6 +128,7 @@ const queryHandlers: Provider[] = [
     GmailConnectStateResolver,
     GmailCallResolver,
     MailComposeResolver,
+    MailWatchResolver,
     MailSendMapper,
     MailMinuteProcessor,
     ...InboundEventsModule.contributeSources([GmailEventSource]),

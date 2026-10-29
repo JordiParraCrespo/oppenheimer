@@ -394,6 +394,44 @@ describe('GmailGateway', () => {
     await expect(gateway.newMessages(ANA, '1', 50)).resolves.toBeNull();
   });
 
+  it('pages through a query until each new message is found, and reads no further', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, { messages: [{ id: 'm9' }, { id: 'm2' }], nextPageToken: 'p2' }),
+      )
+      .mockResolvedValueOnce(json(200, { messages: [{ id: 'm1' }], nextPageToken: 'p3' }));
+    vi.stubGlobal('fetch', fetch);
+
+    const found = await new GmailGateway(config).matchingIds(ANA, 'from:bo@x.test', ['m1', 'm2']);
+
+    expect(found.sort()).toEqual(['m1', 'm2']);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  it('reads a poll’s summaries a few at a time, never more at once than the limiter lets run', async () => {
+    let inFlight = 0;
+    let most = 0;
+    const fetch = vi.fn(async (url: string) => {
+      if (String(url).includes('/token')) return TOKEN();
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      const id = new URL(url).pathname.split('/').pop();
+      return json(200, { ...INVOICE, id });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const ids = Array.from({ length: 50 }, (_, i) => `m${i}`);
+
+    const read = await new GmailGateway(config).readSummaries(ANA, ids);
+
+    expect(read).toHaveLength(50);
+    expect(most).toBeLessThanOrEqual(8);
+  });
+
   it('reads a message whole for an answer or a forward, where a thread read for a bot is cut', async () => {
     const long = 'x'.repeat(9_000);
     const withBody = {
