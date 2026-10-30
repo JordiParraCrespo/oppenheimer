@@ -83,8 +83,14 @@ quotes, WhatsApp's time), your own messages from the phone included, and
 what bots sent through it, marked with the bot. Media itself stays on the
 phone: the bot is told "[image]" and the caption.
 
-Kept for **90 days**, deleted by intake in batches as new messages arrive,
-and with the number when it is unlinked. Only the number's owner's bots
+Kept for **90 days** and at most **50,000 per number** (the oldest go
+first), deleted by intake in batches as new messages arrive, and with the
+number when it is unlinked. Intake is bounded per runner link the way
+session events are: one frame stored at a time, a backlog of four, and 600
+messages a minute; a frame past either is not acknowledged, and the runner
+offers it again a minute later. Unlinking also empties the runner's outbox,
+so nothing the old number received reaches the next one linked on that
+host. Only the number's owner's bots
 read it; no route returns it.
 
 ## 4. The bot's tools
@@ -108,7 +114,9 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   asking again while every other chat still asks. That is how a bot comes
   to talk with people on its own: chat by chat, by the owner's say. It is
   not always-ask like mail's sends because talking back is the point here;
-  the per-chat grant keeps it narrow.
+  the per-chat grant keeps it narrow. A send allowed without a card (a
+  grant for the chat, Approve everything) resolves its chat again on the
+  server: only a card's stored call carries a plan.
 - **Limits:** 100 bot sends per number per day, on top of the host's
   budget (§2). Text only, 8,000 characters, WhatsApp's own `*bold*` and
   `_italic_`.
