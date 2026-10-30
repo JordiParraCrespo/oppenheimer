@@ -530,6 +530,7 @@ as the person does and act on them. Three rules hold it:
 | `list_pull_requests` / `get_pull_request` | With files, comments and activity | auto |
 | `comment_on_pull_request` / `review_pull_request` | Post a line comment, or submit a review: approve, request changes or comment | ask |
 | `start_review_session` | Review it in a session | ask |
+| `record_ci_findings` | Record what each failing check came to: cause, relation to the change, flake, action, confidence and evidence, shown with the pull request's checks (`0.2-pull-requests.md`, "CI findings"; built 2026-10-29) | auto |
 | `merge_pull_request` | Merge it, squash by default, pinned to the head the card showed | ask |
 | `list_issues` / `get_issue` | A repository's issues, one with its comments | auto |
 | `create_issue` / `comment_on_issue` | Open an issue, or comment on one | ask |
@@ -1018,6 +1019,10 @@ The decisions it produced:
   merging is never standing. It adds to 2026-10-15's "*Always allow* sets
   the tool to Allow" rather than replacing it. From Grok Bot's per-path
   grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **what a failing check came to is a record** a bot files
+  (`record_ci_findings`, §4.4), on the pull request's head and shown with
+  its checks, not prose in a chat. From Grok Bot's CI investigation (§9
+  row 14).
 - 2026-10-29: **a bot asks questions on a card** (`ask_user`, §3.2): a
   card of its own (`bot_question`), answered or dismissed and never
   approved, beside the approval card; one card of either kind is up at a

@@ -1,4 +1,8 @@
 import type {
+  CiFindingAction,
+  CiFindingConfidence,
+  CiFindingFlake,
+  CiFindingRelation,
   MergeMethod,
   PullRequestAnalyticsRange,
   PullRequestLane,
@@ -155,6 +159,35 @@ export interface PullRequestReviewer {
   state: 'approved' | 'changes_requested' | 'commented' | 'requested';
 }
 
+/** One check that failed on the head, as GitHub named it and summed it up. */
+export interface PullRequestFailingCheck {
+  name: string;
+  /** Where its log or details are. */
+  url: string | null;
+  /** Its one-line result ("2 tests failed"). */
+  title: string | null;
+}
+
+/**
+ * What one failing check on the head came to, as a bot recorded it
+ * (`0.2-pull-requests.md`, "CI findings").
+ */
+export interface CiFinding {
+  id: string;
+  check: string;
+  rootCause: string;
+  relation: CiFindingRelation;
+  flake: CiFindingFlake;
+  action: CiFindingAction;
+  /** The action in words. */
+  next: string;
+  confidence: CiFindingConfidence;
+  evidence: string[];
+  /** The bot that recorded it; null when it is gone. */
+  recordedByBotId: string | null;
+  updatedAt: Date;
+}
+
 /** The briefing: the row, and what the page around it reads. */
 export class PullRequestDetailEntity extends PullRequestEntity {
   constructor(
@@ -172,6 +205,10 @@ export class PullRequestDetailEntity extends PullRequestEntity {
     public readonly gates: { id: MergeGateId; state: MergeGateState }[],
     public readonly reviewers: PullRequestReviewer[],
     public readonly viewerLogin: string | null,
+    /** The checks that failed on the head; empty when none did or they were not read. */
+    public readonly failingChecks: PullRequestFailingCheck[] = [],
+    /** What the head's failing checks came to, one per check looked into. */
+    public readonly ciFindings: CiFinding[] = [],
   ) {
     super(
       row.installationId,

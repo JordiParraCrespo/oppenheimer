@@ -3212,12 +3212,71 @@ export type SetRepositoryWatchRequest = {
     watching: boolean;
 };
 
+export type PullRequestFailingCheckDto = {
+    /**
+     * The check run’s name, or the commit status’s context.
+     */
+    name: string;
+    /**
+     * Where its log or details are.
+     */
+    url: string | null;
+    /**
+     * Its one-line result.
+     */
+    title: string | null;
+    /**
+     * The start of its summary.
+     */
+    summary: string | null;
+};
+
 export type PullRequestChecksDto = {
     state: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
     total: number;
     passed: number;
     failed: number;
     pending: number;
+    /**
+     * The checks that failed on the head; empty when none did or they were not read.
+     */
+    failing: Array<PullRequestFailingCheckDto>;
+};
+
+export type CiFindingResponseDto = {
+    id: string;
+    /**
+     * The check, as GitHub names it.
+     */
+    check: string;
+    /**
+     * The head commit it failed on.
+     */
+    headSha: string;
+    /**
+     * Why it failed.
+     */
+    rootCause: string;
+    /**
+     * `this_change`: the pull request caused it; `unrelated`: it fails without it.
+     */
+    relation: 'this_change' | 'unrelated' | 'unclear';
+    flake: 'flake' | 'real' | 'unsure';
+    action: 'fix_here' | 'rerun' | 'fix_elsewhere' | 'ask';
+    /**
+     * The action in words.
+     */
+    next: string;
+    confidence: 'high' | 'medium' | 'low';
+    /**
+     * What it rests on: log lines, files, runs.
+     */
+    evidence: Array<string>;
+    /**
+     * The bot that recorded it; null when a person did, or the bot is gone.
+     */
+    recordedByBotId: string | null;
+    updatedAt: string;
 };
 
 export type PullRequestGateDto = {
@@ -3299,6 +3358,10 @@ export type PullRequestDetailResponseDto = {
      */
     folders: Array<string>;
     checkCounts: PullRequestChecksDto;
+    /**
+     * What the failing checks on the head came to, one per check that was looked into; empty when none was.
+     */
+    ciFindings: Array<CiFindingResponseDto>;
     gates: Array<PullRequestGateDto>;
     reviewers: Array<PullRequestReviewerDto>;
     viewerLogin?: string | null;

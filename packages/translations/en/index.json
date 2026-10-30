@@ -258,6 +258,8 @@
       "PROJECTS_009": "Unassigned is the name of the project for unfiled sessions. Choose another name.",
       "PULLS_001": "Choose a workspace before working with pull requests.",
       "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
+      "PULLS_003": "That check is not failing on the pull request's latest commit.",
+      "PULLS_004": "GitHub would not show this pull request's checks, so nothing could be recorded about them.",
       "SESSIONS_001": "We could not find that session.",
       "SESSIONS_002": "Choose a workspace before working with sessions.",
       "SESSIONS_003": "We could not find that checkout on this session.",
@@ -2289,6 +2291,31 @@
         "commentCount_other": "{{count}} comments",
         "commentCount_many": "{{count}} comments",
         "commentsFailed": "Could not load the comments."
+      },
+      "ci": {
+        "next": "Next: {{next}}",
+        "notLookedInto": "Not looked into yet",
+        "relation": {
+          "this_change": "Caused by this change",
+          "unrelated": "Not from this change",
+          "unclear": "Cause unclear"
+        },
+        "flake": {
+          "flake": "Flaky",
+          "real": "Fails every time",
+          "unsure": "Not re-run"
+        },
+        "action": {
+          "fix_here": "Fix here",
+          "rerun": "Run again",
+          "fix_elsewhere": "Fix elsewhere",
+          "ask": "Your call"
+        },
+        "confidence": {
+          "high": "Sure",
+          "medium": "Fairly sure",
+          "low": "Unsure"
+        }
       }
     },
     "review": {
