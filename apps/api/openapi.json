@@ -27113,7 +27113,7 @@
           },
           "source": {
             "type": "string",
-            "enum": ["schedule", "github"]
+            "enum": ["schedule", "github", "gmail"]
           },
           "event": {
             "type": "string",
@@ -27129,9 +27129,10 @@
               "check_failed",
               "issue_opened",
               "mention",
-              "release"
+              "release",
+              "mail_received"
             ],
-            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, …)."
+            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
           },
           "schedule": {
             "$ref": "#/components/schemas/ScheduleResponseDto"
@@ -27145,6 +27146,16 @@
           },
           "filter": {
             "$ref": "#/components/schemas/TriggerFilterResponseDto"
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Gmail: the connected account it watches."
+          },
+          "query": {
+            "type": "string",
+            "nullable": true,
+            "description": "Gmail: the query a new message must match; null for every new message."
           },
           "nextFireAt": {
             "format": "date-time",
@@ -27547,6 +27558,30 @@
                     }
                   },
                   "required": ["source", "event", "repositories", "filter"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["gmail"]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": ["mail_received"]
+                    },
+                    "connectionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "query": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "nullable": true,
+                      "default": null
+                    }
+                  },
+                  "required": ["source", "event", "connectionId"]
                 }
               ]
             }
@@ -27899,6 +27934,30 @@
                     }
                   },
                   "required": ["source", "event", "repositories", "filter"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["gmail"]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": ["mail_received"]
+                    },
+                    "connectionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "query": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "nullable": true,
+                      "default": null
+                    }
+                  },
+                  "required": ["source", "event", "connectionId"]
                 }
               ]
             }

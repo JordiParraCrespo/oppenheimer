@@ -682,6 +682,7 @@ owner. See `product/versions/mvp/16-automations-architecture.md`.
 | `AUTOMATIONS_006` <a id="automations_006" /> | A trigger would never fire                  | 422  |
 | `AUTOMATIONS_007` <a id="automations_007" /> | That project cannot hold automations        | 422  |
 | `AUTOMATIONS_008` <a id="automations_008" /> | Run not found                               | 404  |
+| `AUTOMATIONS_009` <a id="automations_009" /> | That Gmail account cannot start a routine   | 422  |
 
 `AUTOMATIONS_001` is also returned for an automation in another workspace, and for a
 deleted one: its runs stay readable, but it cannot be edited or run.

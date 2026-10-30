@@ -49,6 +49,9 @@ export class GmailConnectionOrmEntity {
   @Column({ type: 'varchar', length: 16, default: 'active' })
   status!: 'active' | 'revoked';
 
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  historyId!: string | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

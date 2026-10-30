@@ -10,6 +10,7 @@ import {
   type AutomationPlace,
   type AutomationRunStatus,
   GITHUB_EVENT_TYPES,
+  GMAIL_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
   TRIGGER_SOURCES,
@@ -123,8 +124,8 @@ export class AutomationTriggerResponseDto {
   // The enum is the contract: a trigger is written only through the catalog
   // (`externalEventDefinition`), so a stored event is always one of these.
   @ApiProperty({
-    enum: ['schedule', ...GITHUB_EVENT_TYPES],
-    description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).',
+    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES],
+    description: '`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).',
   })
   event!: string;
 
@@ -136,6 +137,16 @@ export class AutomationTriggerResponseDto {
 
   @ApiPropertyOptional({ type: TriggerFilterResponseDto })
   filter?: TriggerFilterResponseDto;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Gmail: the connected account it watches.' })
+  connectionId?: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Gmail: the query a new message must match; null for every new message.',
+  })
+  query?: string | null;
 
   @ApiPropertyOptional({ nullable: true, type: Date, description: 'Schedule: the next slot, UTC.' })
   nextFireAt!: Date | null;

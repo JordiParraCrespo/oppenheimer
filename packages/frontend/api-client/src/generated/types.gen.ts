@@ -2153,17 +2153,25 @@ export type AutomationTriggerResponseDto = {
      * The card’s place in the editor, from 0.
      */
     position: number;
-    source: 'schedule' | 'github';
+    source: 'schedule' | 'github' | 'gmail';
     /**
-     * `schedule`, or the catalog event (`pr_opened`, `push`, …).
+     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'mail_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
      */
     repositories?: Array<string>;
     filter?: TriggerFilterResponseDto;
+    /**
+     * Gmail: the connected account it watches.
+     */
+    connectionId?: string;
+    /**
+     * Gmail: the query a new message must match; null for every new message.
+     */
+    query?: string | null;
     /**
      * Schedule: the next slot, UTC.
      */
@@ -2284,6 +2292,11 @@ export type CreateAutomationRequest = {
             op: 'equals';
             value: string;
         };
+    } | {
+        source: 'gmail';
+        event: 'mail_received';
+        connectionId: string;
+        query?: string | null;
     }>;
     prompt: string;
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
@@ -2359,6 +2372,11 @@ export type UpdateAutomationRequest = {
             op: 'equals';
             value: string;
         };
+    } | {
+        source: 'gmail';
+        event: 'mail_received';
+        connectionId: string;
+        query?: string | null;
     }>;
     prompt?: string;
     agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';

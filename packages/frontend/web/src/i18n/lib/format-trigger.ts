@@ -9,7 +9,7 @@ import { dateFormatter, viewerTimeZone, wallClock, weekdayDate } from './format-
 
 /**
  * A trigger in words, the way the frames say it: "Weekdays at 08:30",
- * "Every Mon, Wed at 09:00", "On pull request opened". The words are the
+ * "Every Mon, Wed at 09:00", "On pull request opened", "Any new mail". The words are the
  * locale's; the structure is here once, for the automations pages and a
  * bot's Routines tab alike.
  */
@@ -96,12 +96,20 @@ function eventText(event: GithubEventType, t: TFunction): string {
 /** A trigger as words: a saved one, an editor card, a bot's routine's. */
 export type TriggerWords =
   | ({ source: 'schedule' } & ScheduleWords)
-  | { source: 'github'; event: GithubEventType };
+  | { source: 'github'; event: GithubEventType }
+  | { source: 'gmail'; query: string | null };
 
 function triggerText(trigger: TriggerWords, locale: string, t: TFunction): string {
-  return trigger.source === 'schedule'
-    ? scheduleText(trigger, locale, t)
-    : eventText(trigger.event, t);
+  switch (trigger.source) {
+    case 'schedule':
+      return scheduleText(trigger, locale, t);
+    case 'github':
+      return eventText(trigger.event, t);
+    case 'gmail':
+      return trigger.query
+        ? t('automations.trigger.mail', { query: trigger.query })
+        : t('automations.trigger.anyMail');
+  }
 }
 
 /**

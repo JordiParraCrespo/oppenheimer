@@ -18,12 +18,28 @@
  * Where a trigger comes from. `schedule` is ours; every other source is an
  * external system that delivers events through the inbound-events hub.
  */
-export const TRIGGER_SOURCES = ['schedule', 'github'] as const;
+export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
 
-/** The sources whose events arrive from outside, through a webhook. */
-export const EXTERNAL_TRIGGER_SOURCES = ['github'] as const satisfies readonly TriggerSource[];
+/**
+ * The sources whose events arrive from outside: GitHub's through a webhook,
+ * Gmail's from our own poll of the accounts a routine watches.
+ */
+export const EXTERNAL_TRIGGER_SOURCES = [
+  'github',
+  'gmail',
+] as const satisfies readonly TriggerSource[];
 export type ExternalTriggerSource = (typeof EXTERNAL_TRIGGER_SOURCES)[number];
+
+/**
+ * What an external source's events happen to, and so what its triggers watch:
+ * a repository for GitHub, a connected account for Gmail.
+ */
+export const TRIGGER_SUBJECT_KINDS = {
+  github: 'repository',
+  gmail: 'gmail_connection',
+} as const satisfies Record<ExternalTriggerSource, string>;
+export type TriggerSubjectKind = (typeof TRIGGER_SUBJECT_KINDS)[ExternalTriggerSource];
 
 export function isExternalTriggerSource(value: unknown): value is ExternalTriggerSource {
   return (EXTERNAL_TRIGGER_SOURCES as readonly unknown[]).includes(value);
@@ -89,15 +105,20 @@ export const GITHUB_EVENT_TYPES = [
 ] as const;
 export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 
+/** What a watched Gmail account delivers (`next-steps/mail.md` §5): a message arrived. */
+export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
+export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
+
 /** Every external event type any source defines. */
-export type ExternalEventType = GithubEventType;
+export type ExternalEventType = GithubEventType | GmailEventType;
 
 /**
  * The attribute a trigger's one filter value is compared with. `null` is an
  * event with nothing to narrow on (an issue opened, a release), whose trigger
- * always matches.
+ * always matches. A mail's `query` is the list of watched Gmail queries it
+ * matched, so a trigger's query is found in it.
  */
-export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label'] as const;
+export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label', 'query'] as const;
 export type TriggerFilterField = (typeof TRIGGER_FILTER_FIELDS)[number];
 
 /**
@@ -254,6 +275,16 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     defaultFilter: ANY_FILTER,
     checkout: 'default_branch',
     untrustedContent: false,
+  },
+  {
+    source: 'gmail',
+    type: 'mail_received',
+    label: 'Mail received',
+    description: 'A message arrived in a connected Gmail account',
+    filterField: 'query',
+    defaultFilter: { op: 'any' },
+    checkout: 'default_branch',
+    untrustedContent: true,
   },
 ];
 

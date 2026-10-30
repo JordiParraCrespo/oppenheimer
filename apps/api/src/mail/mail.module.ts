@@ -2,10 +2,12 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { QueueModule } from '../queue/queue.module';
 import { GmailCallResolver } from './application/gmail-call.resolver';
 import { GmailConnectStateResolver } from './application/gmail-connect-state.resolver';
 import { MailComposeResolver } from './application/mail-compose.resolver';
+import { MailWatchResolver } from './application/mail-watch.resolver';
 import { CancelScheduledMailCommandHandler } from './commands/cancel-scheduled-mail/cancel-scheduled-mail.command-handler';
 import { CancelScheduledMailHttpController } from './commands/cancel-scheduled-mail/cancel-scheduled-mail.http.controller';
 import { ConnectGmailCommandHandler } from './commands/connect-gmail/connect-gmail.command-handler';
@@ -14,6 +16,7 @@ import { CreateMailDraftCommandHandler } from './commands/create-mail-draft/crea
 import { CreateMailLabelCommandHandler } from './commands/create-mail-label/create-mail-label.command-handler';
 import { DeleteMailDraftCommandHandler } from './commands/delete-mail-draft/delete-mail-draft.command-handler';
 import { OrganizeMailCommandHandler } from './commands/organize-mail/organize-mail.command-handler';
+import { PollWatchedMailCommandHandler } from './commands/poll-watched-mail/poll-watched-mail.command-handler';
 import { RemoveGmailConnectionCommandHandler } from './commands/remove-gmail-connection/remove-gmail-connection.command-handler';
 import { RemoveGmailConnectionHttpController } from './commands/remove-gmail-connection/remove-gmail-connection.http.controller';
 import { ScheduleMailCommandHandler } from './commands/schedule-mail/schedule-mail.command-handler';
@@ -33,6 +36,7 @@ import { GmailConnectionMapper } from './gmail-connection.mapper';
 import { AesTokenSealerAdapter } from './infrastructure/aes-token-sealer.adapter';
 import { DocumentAttachmentReaderAdapter } from './infrastructure/document-attachment-reader.adapter';
 import { GmailGateway } from './infrastructure/gmail.gateway';
+import { GmailEventSource } from './infrastructure/gmail-event-source.adapter';
 import { MailMinuteProcessor } from './infrastructure/mail-minute.processor';
 import {
   ATTACHMENT_READER,
@@ -81,6 +85,7 @@ const commandHandlers: Provider[] = [
   ScheduleMailCommandHandler,
   CancelScheduledMailCommandHandler,
   SendDueMailCommandHandler,
+  PollWatchedMailCommandHandler,
   SendMailCommandHandler,
 ];
 
@@ -113,6 +118,7 @@ const queryHandlers: Provider[] = [
     QueueModule,
     TypeOrmModule.forFeature([GmailConnectionOrmEntity, MailSendOrmEntity]),
     AuthzKernelModule.forFeature([MailResource]),
+    InboundEventsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -122,8 +128,10 @@ const queryHandlers: Provider[] = [
     GmailConnectStateResolver,
     GmailCallResolver,
     MailComposeResolver,
+    MailWatchResolver,
     MailSendMapper,
     MailMinuteProcessor,
+    ...InboundEventsModule.contributeSources([GmailEventSource]),
     { provide: MAIL_SEND_REPOSITORY, useClass: MailSendRepository },
     { provide: GMAIL_CONNECTION_REPOSITORY, useClass: GmailConnectionRepository },
     { provide: GMAIL_PROVIDER, useClass: GmailGateway },

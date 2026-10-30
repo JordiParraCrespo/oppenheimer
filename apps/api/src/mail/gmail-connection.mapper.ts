@@ -36,6 +36,7 @@ export class GmailConnectionMapper
         refreshTokenSealed: record.refreshTokenSealed,
         scopes: record.scopes ?? [],
         status: record.status,
+        historyId: record.historyId,
       },
     });
   }

@@ -7,7 +7,6 @@ import type {
   RunCheckoutRule,
   ScheduleRule,
   TriggerFilter,
-  TriggerSource,
 } from '@oppenheimer/shared/automations';
 
 /**
@@ -106,6 +105,16 @@ export interface GithubTriggerConfig {
   filter: TriggerFilter;
 }
 
+/**
+ * A Gmail trigger's config (`next-steps/mail.md` §5): the connected account it
+ * watches, and the Gmail query a new message must match, as a filter on the
+ * queries the poll found it matching (`any` for every new message).
+ */
+export interface GmailTriggerConfig {
+  connectionId: string;
+  filter: TriggerFilter;
+}
+
 export type AutomationTriggerProps =
   | {
       id: string;
@@ -119,12 +128,24 @@ export type AutomationTriggerProps =
   | {
       id: string;
       position: number;
-      source: Exclude<TriggerSource, 'schedule'>;
+      source: 'github';
       eventType: string;
       config: GithubTriggerConfig;
       timezone: null;
       nextFireAt: null;
+    }
+  | {
+      id: string;
+      position: number;
+      source: 'gmail';
+      eventType: string;
+      config: GmailTriggerConfig;
+      timezone: null;
+      nextFireAt: null;
     };
+
+/** The external triggers: everything a delivered event can fire. */
+export type EventTriggerProps = Exclude<AutomationTriggerProps, { source: 'schedule' }>;
 
 export interface AutomationLimits {
   overlap: AutomationOverlapPolicy | null;

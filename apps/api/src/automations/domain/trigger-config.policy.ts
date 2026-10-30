@@ -27,6 +27,20 @@ export function triggerFromInput(input: TriggerInputDto, position: number): Auto
       nextFireAt: null,
     };
   }
+  if (input.source === 'gmail') {
+    return {
+      id: randomUUID(),
+      position,
+      source: 'gmail',
+      eventType: input.event,
+      config: {
+        connectionId: input.connectionId,
+        filter: input.query ? { op: 'equals', value: input.query } : { op: 'any' },
+      },
+      timezone: null,
+      nextFireAt: null,
+    };
+  }
   const definition = externalEventDefinition(input.source, input.event);
   return {
     id: randomUUID(),

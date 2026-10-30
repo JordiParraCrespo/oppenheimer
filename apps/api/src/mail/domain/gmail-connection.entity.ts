@@ -21,6 +21,12 @@ export interface GmailConnectionProps {
   refreshTokenSealed: Buffer;
   scopes: string[];
   status: GmailConnectionStatus;
+  /**
+   * Where the poll for a watching routine last read the mailbox's history
+   * (`mail.md` §5); null until a routine first watches it. Written only by
+   * the poll, never by a save.
+   */
+  historyId?: string | null;
 }
 
 /** What a fresh grant from Google says about the account it is for. */
@@ -71,6 +77,9 @@ export class GmailConnectionEntity extends AggregateRoot<GmailConnectionProps> {
   }
   get status(): GmailConnectionStatus {
     return this.props.status;
+  }
+  get historyId(): string | null {
+    return this.props.historyId ?? null;
   }
   get isActive(): boolean {
     return this.props.status === 'active';
