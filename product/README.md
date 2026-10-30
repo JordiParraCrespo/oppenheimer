@@ -923,3 +923,10 @@ earlier note:
   the API serves is that order (groups by position, then Ungrouped); it had
   been Ungrouped first with groups by id, so a heading's order differed from
   Employees' (`versions/mvp/28-bots-in-sections.md`, Decided).
+- `next-steps/channels.md` placed WhatsApp third among the channels, after
+  email and contacts, and as a channel (people write to a bot). On
+  2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
+  bots can see and talk with people: it was built as a connector in mail's
+  shape on the channels note's runner transport, and the control plane now
+  keeps the messages a linked number sees for 90 days
+  (`next-steps/whatsapp.md`). The channel comes after, on the same device.
