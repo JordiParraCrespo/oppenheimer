@@ -14,6 +14,7 @@ import {
   providerOfMark,
 } from '../lib/bot-engine';
 import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
+import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
 /**
@@ -191,5 +192,14 @@ describe('firstBot', () => {
 
   it('is undefined for a workspace with no bots, which keeps the greeting', () => {
     expect(firstBot([], [group('g', 0)])).toBeUndefined();
+  });
+});
+
+describe('composerTopOf', () => {
+  it('puts one thing on the composer’s top edge: the queue, else the missing key, else the goal', () => {
+    expect(composerTopOf({ waiting: 2, noKey: true, goal: true })).toBe('queue');
+    expect(composerTopOf({ waiting: 0, noKey: true, goal: true })).toBe('noKey');
+    expect(composerTopOf({ waiting: 0, noKey: false, goal: true })).toBe('goal');
+    expect(composerTopOf({ waiting: 0, noKey: false, goal: false })).toBeNull();
   });
 });

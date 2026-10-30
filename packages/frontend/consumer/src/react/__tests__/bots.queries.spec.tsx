@@ -3,6 +3,8 @@
  * on the bot's detail before the API answers, and a refusal puts back what
  * that pick set and nothing else. The cache helpers the other bot mutations
  * share write in place, which `query-keys.spec.ts` and the screens cover.
+ * A fact about the person is read by every bot of theirs, so a change to one
+ * refreshes the other bots' memory too, and a bot's own fact only its own.
  */
 import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -10,9 +12,15 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
-import { BotEntity, type UpdateBotInput } from '../../modules/bots/bot.entity';
+import { BotEntity, BotMemoryFactEntity, type UpdateBotInput } from '../../modules/bots/bot.entity';
 import type { BotsRepository } from '../../modules/bots/bots.repository';
-import { botsKeys, useSuspenseBot, useUpdateBotOptimistically } from '../bots.queries';
+import {
+  botsKeys,
+  useDeleteBotFact,
+  useSuspenseBot,
+  useUpdateBotFact,
+  useUpdateBotOptimistically,
+} from '../bots.queries';
 import { fakeKernel } from './fake-kernel';
 
 const at = new Date('2026-10-01T00:00:00Z');
@@ -98,5 +106,65 @@ describe('useUpdateBotOptimistically', () => {
 
     await waitFor(() => expect(result.current.bot.model).toBeNull());
     expect(result.current.bot.permission).toBe('full');
+  });
+});
+
+describe('a fact about the person', () => {
+  const fact = (scope: 'bot' | 'person', botId = 'bot-1') =>
+    new BotMemoryFactEntity(
+      'f-1',
+      'Prefers squash merges.',
+      'user',
+      'profile',
+      scope,
+      botId,
+      at,
+      at,
+    );
+
+  function setupFacts(saved: BotMemoryFactEntity, cached: BotMemoryFactEntity) {
+    const updateFact = vi.fn(async () => saved);
+    const removeFact = vi.fn(async () => {});
+    const app = fakeKernel({ [TOKENS.BotsRepository]: { updateFact, removeFact } });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
+    });
+    queryClient.setQueryData(botsKeys.memoryList('bot-1'), [cached]);
+    // The sibling read the shared fact earlier.
+    queryClient.setQueryData(botsKeys.memoryList('bot-2'), [cached]);
+    function wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <OppenheimerProvider app={app}>{children}</OppenheimerProvider>
+        </QueryClientProvider>
+      );
+    }
+    const { result } = renderHook(
+      () => ({ update: useUpdateBotFact(), remove: useDeleteBotFact() }),
+      { wrapper },
+    );
+    const stale = (id: string) =>
+      queryClient.getQueryState(botsKeys.memoryList(id))?.isInvalidated ?? false;
+    return { result, stale };
+  }
+
+  it('refreshes the other bots’ memory when it moves in or out of the person’s scope', async () => {
+    const { result, stale } = setupFacts(fact('bot'), fact('person'));
+    await act(() =>
+      result.current.update.mutateAsync({ id: 'bot-1', factId: 'f-1', scope: 'bot' }),
+    );
+    expect(stale('bot-2')).toBe(true);
+  });
+
+  it('refreshes them when a shared fact is forgotten, and not for the bot’s own fact', async () => {
+    const shared = setupFacts(fact('person'), fact('person'));
+    await act(() => shared.result.current.remove.mutateAsync({ id: 'bot-1', factId: 'f-1' }));
+    expect(shared.stale('bot-2')).toBe(true);
+
+    const own = setupFacts(fact('bot'), fact('bot'));
+    await act(() =>
+      own.result.current.update.mutateAsync({ id: 'bot-1', factId: 'f-1', content: 'Rebase.' }),
+    );
+    expect(own.stale('bot-2')).toBe(false);
   });
 });

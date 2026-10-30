@@ -25,6 +25,7 @@ export {
   type BotHistory,
   type BotImageReads,
   type BotLive,
+  type BotLiveRetries,
   type BotLiveSubagents,
   type BotLiveText,
   type CancelBotTurnVariables,
@@ -43,6 +44,23 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
+export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export {
+  type AddBotPermissionRuleVariables,
+  type DeleteBotPermissionRuleVariables,
+  type DeleteBotToolGrantVariables,
+  type SetBotToolDecisionVariables,
+  useAddBotPermissionRule,
+  useDeleteBotPermissionRule,
+  useDeleteBotToolGrant,
+  useSetBotToolDecision,
+  useSuspenseBotPermissions,
+} from './bot-permissions.queries';
+export {
+  useAnswerBotQuestion,
+  useBotPendingQuestion,
+  useDismissBotQuestion,
+} from './bot-questions.queries';
 export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,

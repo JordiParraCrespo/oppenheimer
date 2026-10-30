@@ -31,12 +31,17 @@ import {
 } from '../modules/bots/live-subagents';
 import {
   appendBotText,
+  type BotLiveRetries,
   type BotLiveText,
   type BotTextBuffers,
+  botLiveRetries,
   botLiveText,
+  clearBotRetry,
   forgetEndedBotTurns,
   markBotStreamGap,
+  NO_BOT_RETRIES,
   NO_BOT_TEXT,
+  noteBotRetry,
 } from '../modules/bots/live-text';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
@@ -180,11 +185,15 @@ export function useBotRoomLeft(id: string): BotRoomLeft {
 }
 
 /**
- * The chat read again; when a turn has ended, the bot too (its last activity
- * moved) and its Needs input card (the turn may have raised one).
+ * The chat read again, and its goal (a line or a turn may have set, moved or
+ * ended it); when a turn has ended, the bot too (its last activity moved) and
+ * its Needs input card (the turn may have raised one).
  */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
-  const reads = [queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) })];
+  const reads = [
+    queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+    queryClient.invalidateQueries({ queryKey: botsKeys.goal(id) }),
+  ];
   if (ended) {
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
@@ -284,19 +293,22 @@ export function useCancelBotTurn(
   });
 }
 
-export type { BotLiveSubagents, BotLiveText };
+export type { BotLiveRetries, BotLiveSubagents, BotLiveText };
 
 /** A bot's chat as it happens, beyond what is stored: by turn, and by `delegate` call. */
 export interface BotLive {
   /** The text each running turn is writing, by turn id. */
   text: BotLiveText;
+  /** The turns waiting to try a refused call again, and why. */
+  retrying: BotLiveRetries;
   /** Where each child of a running `delegate` call is, by the call's id. */
   subagents: BotLiveSubagents;
 }
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
- * writing that the stored conversation does not hold yet, and where the
+ * writing that the stored conversation does not hold yet, which turns wait
+ * on a provider that refused a call (until they write again), and where the
  * children of a running `delegate` call are. The stream's text is kept as it
  * arrived ({@link BotTextBuffers}); what is drawn is derived from it and the
  * conversation in render ({@link botLiveText}), so a read landing early or
@@ -316,6 +328,10 @@ export function useBotLive(id: string): BotLive {
     buffers: BotTextBuffers;
     frames: BotSubagentFrames;
   }>({ id, buffers: NO_BOT_TEXT, frames: NO_BOT_SUBAGENTS });
+  const [waits, setWaits] = useState<{ id: string; retries: BotLiveRetries }>({
+    id,
+    retries: NO_BOT_RETRIES,
+  });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
   useEffect(() => {
@@ -343,6 +359,11 @@ export function useBotLive(id: string): BotLive {
           ? current
           : { id, ...kept };
       });
+    const retry = (next: (retries: BotLiveRetries) => BotLiveRetries) =>
+      setWaits((current) => {
+        const retries = next(current.id === id ? current.retries : NO_BOT_RETRIES);
+        return current.id === id && retries === current.retries ? current : { id, retries };
+      });
     const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
       change((state) => ({ ...state, buffers: next(state.buffers) }));
     let up = false;
@@ -357,7 +378,12 @@ export function useBotLive(id: string): BotLive {
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
+      if (event.type === 'retrying') {
+        retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
+        return;
+      }
       if (event.type === 'text') {
+        retry((retries) => clearBotRetry(retries, event.turnId));
         update((buffers) => appendBotText(buffers, event.turnId, event.text));
         return;
       }
@@ -369,6 +395,11 @@ export function useBotLive(id: string): BotLive {
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
         return;
       }
+      if (event.type === 'question') {
+        void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
+        return;
+      }
+      retry((retries) => clearBotRetry(retries, event.turnId));
       const ended =
         event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
       void refetchChat(queryClient, id, ended);
@@ -384,6 +415,7 @@ export function useBotLive(id: string): BotLive {
   const mine = streamed.id === id;
   return {
     text: botLiveText(mine ? streamed.buffers : NO_BOT_TEXT, conversation),
+    retrying: botLiveRetries(waits.id === id ? waits.retries : NO_BOT_RETRIES, conversation),
     subagents: botLiveSubagents(mine ? streamed.frames : NO_BOT_SUBAGENTS, conversation),
   };
 }

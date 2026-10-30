@@ -1,10 +1,9 @@
 import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
 import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ChatSendResult, SessionChatComposer } from '../components/session-chat-composer';
-import { SessionChatQuestion } from '../components/session-chat-question';
 import type { HeldFile } from '../hooks/use-held-files';
 import { useChatState } from '../hooks/use-session-chat';
 import {
@@ -42,7 +41,7 @@ const FILES_SETTLE_MS = 1500;
  *
  * While the agent is stopped on questions (`pendingQuestion`), its picker
  * holds the terminal's input, so they are answered here instead of a
- * message: `SessionChatQuestion` takes the composer's place, and the
+ * message: `ChatQuestionPicker` takes the composer's place, and the
  * composer stays mounted under it, keeping a half-written draft and its
  * files for when the agent goes on.
  */
@@ -111,7 +110,7 @@ export function SessionChatSend({
         />
       ) : null}
       {question?.questions ? (
-        <SessionChatQuestion
+        <ChatQuestionPicker
           key={question.id}
           questions={question.questions}
           onAnswer={(answers) => {

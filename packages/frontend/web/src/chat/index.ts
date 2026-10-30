@@ -1,5 +1,8 @@
 export { ChatCode } from './components/chat-code';
 export { ChatImageGallery } from './components/chat-image-gallery';
+export { ChatMailMessage } from './components/chat-mail-message';
+export { ChatMailSendNote } from './components/chat-mail-send-note';
+export { type ChatPickerQuestion, ChatQuestionPicker } from './components/chat-question-picker';
 export { ChatQueuedRow } from './components/chat-queued-row';
 export { ChatToolOutput } from './components/chat-tool-output';
 export { ChatUsage } from './components/chat-usage';

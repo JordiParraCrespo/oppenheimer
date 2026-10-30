@@ -11,6 +11,21 @@ import { BotTurnEntity } from './bot-turn.entity';
  * from Oppenheimer (`botEventPrompt`).
  */
 
+/**
+ * Where a call that would have asked says why it ran without a card: the
+ * data its step keeps for the chat (`BotToolStep.allowedBy`), never the
+ * model's words.
+ */
+export const ALLOWED_BY_DATA_KEY = 'allowedBy';
+
+/** How long a step's `allowedBy` line may be: a rule's words fit with room to spare. */
+export const BOT_ALLOWED_BY_MAX = 320;
+
+/** Why a call ran without asking, when a standing grant covered what it acts on. */
+export function grantedLine(subjectLabel: string): string {
+  return `Always allowed for ${subjectLabel}`;
+}
+
 /** What the model reads when its call became a card: nothing ran, and its turn should end. */
 export function askedForApproval(summary: string): string {
   return `Not done yet: this needs the person's approval, so it is now waiting on an approval card in the chat ("${summary}"). Nothing has run. End your turn now: say in one sentence what you asked for and that you will carry on once they answer. Do not try to do it another way meanwhile.`;

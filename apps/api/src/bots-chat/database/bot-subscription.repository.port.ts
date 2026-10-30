@@ -34,4 +34,14 @@ export interface BotSubscriptionRepositoryPort {
   end(subscription: BotSubscriptionEntity): Promise<boolean>;
   /** The bot stops following the session. Whether it was following it. */
   unsubscribe(organizationId: string, botId: string, sessionId: string): Promise<boolean>;
+  /** The subscription that asked for this terminal watch, if one still does. */
+  findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null>;
+  /**
+   * Names the terminal watch the subscription follows, resetting its match
+   * count; answers the watch it named before, which the caller removes.
+   */
+  attachTerminalWatch(
+    subscriptionId: string,
+    watch: { id: string; pattern: string },
+  ): Promise<string | null>;
 }

@@ -2,17 +2,22 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
+  BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
-  BOT_SESSION_WAKE_STATES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
+  type BotAnsweredQuestion,
   type BotAttachment,
+  type BotMailDraft,
   type BotMessageEvent,
   type BotMessageRole,
   type BotSubagentProgress,
   type BotSubagentRun,
+  botMailDraftSchema,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
@@ -21,10 +26,12 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotGoalEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
 } from './dtos/bot-message.response.dto';
@@ -49,6 +56,8 @@ export class BotMessageMapper
       isError: step.isError,
       sessionId: step.sessionId,
       subagents: step.subagents,
+      allowedBy: step.allowedBy,
+      mailDraft: step.mailDraft,
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -89,6 +98,8 @@ export class BotMessageMapper
       isError: step.isError,
       sessionId: step.sessionId,
       subagents: step.subagents,
+      allowedBy: step.allowedBy,
+      mailDraft: step.mailDraft,
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -125,7 +136,26 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     isError: raw.isError === true,
     sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
     subagents: toSubagentRuns(raw.subagents),
+    allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
+    mailDraft: toMailDraft(raw.mailDraft),
   };
+}
+
+/**
+ * The draft a mail step holds, narrowed once: from the step's stored column,
+ * or from the JSON its call's data carried. Anything else reads as none.
+ */
+export function toMailDraft(raw: unknown): BotMailDraft | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  const parsed = botMailDraftSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**
@@ -226,6 +256,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
   switch (event.kind) {
     case 'approval':
       return Object.assign(new BotApprovalEventResponseDto(), event);
+    case 'question':
+      return Object.assign(new BotQuestionEventResponseDto(), event);
     case 'routine':
       return Object.assign(new BotRoutineEventResponseDto(), event);
     case 'bot_message':
@@ -234,7 +266,18 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'goal':
+      return Object.assign(new BotGoalEventResponseDto(), event);
   }
+}
+
+/** An answered card's questions and answers in words, narrowed once; anything else is dropped. */
+function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { question, answer } = item as Record<string, unknown>;
+    return typeof question === 'string' && typeof answer === 'string' ? [{ question, answer }] : [];
+  });
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
@@ -249,6 +292,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    };
+  }
+  if (raw.kind === 'question') {
+    const outcome = BOT_QUESTION_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'question',
+      outcome,
+      summary: String(raw.summary ?? ''),
+      answers: Array.isArray(raw.answers) ? toAnsweredQuestions(raw.answers) : [],
     };
   }
   if (raw.kind === 'routine') {
@@ -282,7 +335,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'session') {
-    const state = BOT_SESSION_WAKE_STATES.find((known) => known === raw.state);
+    const state = BOT_SESSION_EVENT_STATES.find((known) => known === raw.state);
     if (!state || typeof raw.subscriptionId !== 'string' || typeof raw.sessionId !== 'string') {
       return null;
     }
@@ -293,7 +346,30 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       sessionName: String(raw.sessionName ?? ''),
       turn: typeof raw.turn === 'number' ? raw.turn : 0,
       state,
+      ...matchOf(raw.match),
+    };
+  }
+  if (raw.kind === 'goal') {
+    const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.goalId !== 'string') return null;
+    return {
+      kind: 'goal',
+      activity,
+      goalId: raw.goalId,
+      objective: String(raw.objective ?? ''),
+      step: typeof raw.step === 'number' ? raw.step : 0,
+      limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
   return null;
+}
+
+/** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */
+function matchOf(raw: unknown): { match?: { pattern: string; count: number } } {
+  if (typeof raw !== 'object' || raw === null) return {};
+  const { pattern, count } = raw as Record<string, unknown>;
+  return typeof pattern === 'string' && typeof count === 'number' && count > 0
+    ? { match: { pattern, count } }
+    : {};
 }

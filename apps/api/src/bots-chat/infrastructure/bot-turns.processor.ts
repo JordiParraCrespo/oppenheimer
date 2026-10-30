@@ -3,9 +3,14 @@ import { Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
+import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
 import { DeliverBotAnswerCommand } from '../commands/deliver-bot-answer/deliver-bot-answer.command';
 import { RunBotTurnCommand } from '../commands/run-bot-turn/run-bot-turn.command';
-import { DELIVER_BOT_ANSWER_JOB, RUN_BOT_TURN_JOB } from '../database/bot-turn.repository';
+import {
+  CONTINUE_BOT_GOAL_JOB,
+  DELIVER_BOT_ANSWER_JOB,
+  RUN_BOT_TURN_JOB,
+} from '../database/bot-turn.repository';
 
 /** How many turns one API process runs at once, across every bot. */
 const TURNS_PER_PROCESS = 8;
@@ -15,7 +20,9 @@ const TURNS_PER_PROCESS = 8;
  * becomes due, and one per ask that ended, which queues its answer on the
  * bot that asked (`DELIVER_BOT_ANSWER_JOB`). A turn runs for as long as the model works, so the job is not
  * retried on a failure: the turn records it, and a worker that died under one
- * leaves it running for the next pickup to fail.
+ * leaves it running for the next pickup to fail. A turn of a bot with a goal
+ * that ended owes one more, which decides whether the goal goes on
+ * (`CONTINUE_BOT_GOAL_JOB`).
  */
 @Processor(QUEUE_NAMES.BOT_TURNS, { concurrency: TURNS_PER_PROCESS })
 export class BotTurnsProcessor extends WorkerHost {
@@ -33,6 +40,10 @@ export class BotTurnsProcessor extends WorkerHost {
     }
     if (turnId && job.name === DELIVER_BOT_ANSWER_JOB) {
       await this.commandBus.execute(new DeliverBotAnswerCommand({ turnId }));
+      return;
+    }
+    if (turnId && job.name === CONTINUE_BOT_GOAL_JOB) {
+      await this.commandBus.execute(new ContinueBotGoalCommand({ turnId }));
       return;
     }
     this.logger.warn({ message: 'Unknown bot-turns job', jobName: job.name, jobId: job.id });

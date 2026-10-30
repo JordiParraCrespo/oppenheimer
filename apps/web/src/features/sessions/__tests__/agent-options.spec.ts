@@ -21,26 +21,31 @@ describe('agent options', () => {
     expect(defaultModelFor('shell')).toBeNull();
   });
 
-  it('brings Claude Code to Claude Code’s cloud, and leaves the engine alone elsewhere', () => {
+  it('keeps Claude Code or Codex in a host’s cloud, brings Claude Code for any other, and leaves the engine alone elsewhere', () => {
     const codex = { agent: 'codex' as const, model: 'gpt-6-astra' };
     const claude = { agent: 'claude-code' as const, model: 'claude-sonnet-5-5' };
+    const grok = { agent: 'grok' as const, model: 'grok-4.6' };
 
-    expect(engineForPlace({ where: 'cloud', cloudProvider: null }, codex)).toEqual({
+    expect(engineForPlace({ where: 'cloud', cloudProvider: null }, grok)).toEqual({
       agent: 'claude-code',
       model: defaultModelFor('claude-code'),
     });
-    // Claude Code already picked keeps its model; a vendor's cloud and a host place keep theirs.
+    // An agent whose own cloud a host starts keeps its model; a vendor's cloud and a host place keep theirs.
     expect(engineForPlace({ where: 'cloud', cloudProvider: null }, claude)).toBe(claude);
-    expect(engineForPlace({ where: 'cloud', cloudProvider: 'cursor' }, codex)).toBe(codex);
-    expect(engineForPlace({ where: 'worktree', cloudProvider: null }, codex)).toBe(codex);
+    expect(engineForPlace({ where: 'cloud', cloudProvider: null }, codex)).toBe(codex);
+    expect(engineForPlace({ where: 'cloud', cloudProvider: 'cursor' }, grok)).toBe(grok);
+    expect(engineForPlace({ where: 'worktree', cloudProvider: null }, grok)).toBe(grok);
   });
 
-  it('offers Claude Code alone in Claude Code’s cloud, and every agent elsewhere', () => {
+  it('offers Claude Code and Codex alone in a host’s cloud, and every agent elsewhere', () => {
     const cursor = { id: 'cursor', label: 'Cursor', models: [] } as Parameters<
       typeof toEngineAgents
     >[1];
 
-    expect(toEngineAgents(true, cursor).map((option) => option.id)).toEqual(['claude-code']);
+    expect(toEngineAgents(true, cursor).map((option) => option.id)).toEqual([
+      'claude-code',
+      'codex',
+    ]);
     const elsewhere = toEngineAgents(false, cursor).map((option) => option.id);
     expect(elsewhere).toContain('codex');
     expect(elsewhere.at(-1)).toBe('cursor');

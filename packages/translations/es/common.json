@@ -88,6 +88,38 @@
       "download": "Descargar",
       "position": "{{position}} de {{total}}",
       "pasted": "Imagen pegada"
+    },
+    "mail": {
+      "label": "El mensaje, tal y como sale",
+      "from": "De",
+      "to": "Para",
+      "cc": "Cc",
+      "bcc": "Cco",
+      "subject": "Asunto",
+      "answers": "En respuesta a {{from}}",
+      "forwards": "Reenviando el mensaje de {{from}}",
+      "fromMail": "Tomado del mensaje al que responde",
+      "files_one": "{{count}} archivo",
+      "files_other": "{{count}} archivos",
+      "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
+      "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
+      "nobody": "Nadie",
+      "draftSaved": "Guardado como borrador en {{email}}. No se envió nada.",
+      "draftUpdated": "El borrador de {{email}}, reescrito. No se envió nada.",
+      "openInGmail": "Abrir en Gmail"
+    },
+    "question": {
+      "ownAnswer": "O escribe tu propia respuesta…",
+      "ownAnswerLabel": "Tu respuesta",
+      "several": "Marca con 1–{{last}} todas las que apliquen",
+      "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+      "next": "Siguiente",
+      "submit": "Enviar respuestas",
+      "dismiss": "Descartar",
+      "sending": "Enviando tus respuestas…",
+      "previous": "Pregunta anterior",
+      "nextQuestion": "Pregunta siguiente",
+      "of": "{{n}} de {{total}}"
     }
   },
   "search": {

@@ -6,11 +6,15 @@ import { ErrorAlert, formatMediumDate, useLocale } from '@oppenheimer/frontend-w
 import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FactKeptMenu } from '@/features/bots/components/fact-kept-menu';
+import { factRowModel } from '@/features/bots/lib/fact-row';
 
 /**
- * One fact the bot remembers: the sentence, who wrote it and when, Edit and
- * forget. Edit rewords it in place (Enter saves, Escape cancels). The row owns
- * both writes and its draft, so editing one fact re-renders that row alone.
+ * One fact the bot remembers: the sentence, who wrote it and when, a tag when
+ * it is about the person or only looked up, Edit, where it is kept, and
+ * forget. Edit rewords it in place (Enter saves, Escape cancels). A fact
+ * another of the person's bots shared is shown muted, to read only. The row
+ * owns its writes and its draft, so editing one fact re-renders that row alone.
  */
 export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFactEntity }) {
   const { t } = useTranslation();
@@ -18,13 +22,11 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
   const [draft, setDraft] = useState<string | null>(null);
   const update = useUpdateBotFact({ onSuccess: () => setDraft(null) });
   const remove = useDeleteBotFact();
-  const when = formatMediumDate(fact.updatedAt, locale);
-  const meta =
-    fact.source === 'bot'
-      ? t('bots.settings.memory.learned', { date: when })
-      : fact.isEdited
-        ? t('bots.settings.memory.editedByYou', { date: when })
-        : t('bots.settings.memory.addedByYou', { date: when });
+  const row = factRowModel(fact, botId);
+  const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
+  const meta = t(`bots.settings.memory.${row.meta}`, {
+    date: formatMediumDate(fact.updatedAt, locale),
+  });
 
   function save() {
     const content = draft?.trim();
@@ -80,15 +82,31 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
     );
   }
 
+  if (row.shared) {
+    return (
+      <SettingsListRow muted meta={meta} kind={kind}>
+        {fact.content}
+      </SettingsListRow>
+    );
+  }
+
   return (
     <>
       <SettingsListRow
         meta={meta}
+        kind={kind}
         actions={
           <>
             <Button variant="ghost" size="sm" onClick={() => setDraft(fact.content)}>
               {t('bots.settings.memory.edit')}
             </Button>
+            <FactKeptMenu
+              fact={fact.content}
+              tier={fact.tier}
+              scope={fact.scope}
+              disabled={update.isPending}
+              onChange={(change) => update.mutate({ id: botId, factId: fact.id, ...change })}
+            />
             <IconButton
               variant="quiet"
               size="sm"
@@ -103,6 +121,12 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
       >
         {fact.content}
       </SettingsListRow>
+      <ErrorAlert
+        error={update.error}
+        fallback={t('bots.settings.memory.saveFailed')}
+        onDismiss={() => update.reset()}
+        className="mx-5 mb-3"
+      />
       <ErrorAlert
         error={remove.error}
         fallback={t('bots.settings.memory.forgetFailed')}

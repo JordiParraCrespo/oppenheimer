@@ -41,6 +41,7 @@ import { Route as AuthenticatedBotsIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBotsBotIdRouteImport } from './routes/_authenticated/bots/$botId'
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
+import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './route
 import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
+import { Route as AuthenticatedBotsBotIdSettingsPermissionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/permissions'
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
@@ -235,6 +237,11 @@ const AuthenticatedPlanCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanInboxRoute = AuthenticatedPlanInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPlanMilestonesRoute =
   AuthenticatedPlanMilestonesRouteImport.update({
     id: '/milestones',
@@ -390,6 +397,12 @@ const AuthenticatedBotsBotIdSettingsMemoryRoute =
     path: '/memory',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsPermissionsRoute =
+  AuthenticatedBotsBotIdSettingsPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsProfileRoute =
   AuthenticatedBotsBotIdSettingsProfileRouteImport.update({
     id: '/profile',
@@ -441,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
@@ -470,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -497,6 +512,7 @@ export interface FileRoutesByTo {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
@@ -525,6 +541,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -561,6 +578,7 @@ export interface FileRoutesById {
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
@@ -590,6 +608,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/_authenticated/bots_/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -624,6 +643,7 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
+    | '/plan/inbox'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
@@ -653,6 +673,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
@@ -680,6 +701,7 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
+    | '/plan/inbox'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
@@ -708,6 +730,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
@@ -743,6 +766,7 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/runs'
     | '/_authenticated/bots/$botId'
     | '/_authenticated/plan/calendar'
+    | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
@@ -772,6 +796,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/home-host'
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
+    | '/_authenticated/bots_/$botId/settings/permissions'
     | '/_authenticated/bots_/$botId/settings/profile'
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
@@ -1016,6 +1041,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/inbox': {
+      id: '/_authenticated/plan/inbox'
+      path: '/inbox'
+      fullPath: '/plan/inbox'
+      preLoaderRoute: typeof AuthenticatedPlanInboxRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/plan/milestones': {
       id: '/_authenticated/plan/milestones'
       path: '/milestones'
@@ -1198,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/permissions': {
+      id: '/_authenticated/bots_/$botId/settings/permissions'
+      path: '/permissions'
+      fullPath: '/bots/$botId/settings/permissions'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/bots_/$botId/settings/profile': {
       id: '/_authenticated/bots_/$botId/settings/profile'
       path: '/profile'
@@ -1300,6 +1339,7 @@ const AuthenticatedAutomationsRouteWithChildren =
 
 interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
+  AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
@@ -1307,6 +1347,7 @@ interface AuthenticatedPlanRouteChildren {
 
 const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
+  AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
@@ -1363,6 +1404,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsHomeHostRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  AuthenticatedBotsBotIdSettingsPermissionsRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
@@ -1377,6 +1419,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsInstructionsRoute,
     AuthenticatedBotsBotIdSettingsMemoryRoute:
       AuthenticatedBotsBotIdSettingsMemoryRoute,
+    AuthenticatedBotsBotIdSettingsPermissionsRoute:
+      AuthenticatedBotsBotIdSettingsPermissionsRoute,
     AuthenticatedBotsBotIdSettingsProfileRoute:
       AuthenticatedBotsBotIdSettingsProfileRoute,
     AuthenticatedBotsBotIdSettingsRoutinesRoute:

@@ -5,19 +5,27 @@ import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
 import { GmailConnectionOrmEntity } from '../database/gmail-connection.orm-entity';
 import { GmailConnectionRepository } from '../database/gmail-connection.repository';
+import { MailSendOrmEntity } from '../database/mail-send.orm-entity';
+import { MailSendRepository } from '../database/mail-send.repository';
 import { GmailConnectionEntity } from '../domain/gmail-connection.entity';
+import { MailSendEntity } from '../domain/mail-send.entity';
 import { GmailConnectionMapper } from '../gmail-connection.mapper';
+import { MailSendMapper } from '../mail-send.mapper';
 
 /**
  * Mail's one table against a real Postgres, built by the migrations: a Gmail
  * connection is read only by its owner, even by a workspace owner who can
  * read every row of the workspace; one Google account is one row per person;
- * and the connection goes with the person.
+ * and the connection goes with the person. A send is claimed once per
+ * approval, two racing claims see one winner, and the daily count takes what
+ * went and what is going but not what failed; the record outlives the
+ * account it went from.
  */
 describe('mail (integration)', () => {
   let pg: StartedTestContainer;
   let dataSource: DataSource;
   let connections: GmailConnectionRepository;
+  let sends: MailSendRepository;
   let organizationId: string;
   let ana: string;
   let ben: string;
@@ -46,13 +54,17 @@ describe('mail (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      entities: [GmailConnectionOrmEntity],
+      entities: [GmailConnectionOrmEntity, MailSendOrmEntity],
       synchronize: false,
     });
     await dataSource.initialize();
     connections = new GmailConnectionRepository(
       dataSource.getRepository(GmailConnectionOrmEntity),
       new GmailConnectionMapper(),
+    );
+    sends = new MailSendRepository(
+      dataSource.getRepository(MailSendOrmEntity),
+      new MailSendMapper(),
     );
   }, 180000);
 
@@ -125,5 +137,72 @@ describe('mail (integration)', () => {
       [ana],
     );
     expect(count).toBe(0);
+  });
+
+  const claimOf = (connectionId: string, approvalId = randomUUID()) =>
+    MailSendEntity.claim({
+      organizationId,
+      userId: ana,
+      connectionId,
+      botId: null,
+      approvalId,
+      kind: 'new',
+      accountEmail: 'ana@gmail.test',
+      recipients: ['bo@client.test'],
+      subject: 'Invoice 42',
+    });
+
+  it('claims a send once per approval, with one winner when two claims race', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const approvalId = randomUUID();
+
+    const raced = await Promise.all([
+      sends.claim(claimOf(account.id, approvalId)),
+      sends.claim(claimOf(account.id, approvalId)),
+    ]);
+
+    expect(raced.filter(Boolean)).toHaveLength(1);
+    const stored = (await sends.findByApproval(approvalId)).unwrap();
+    expect(stored.status).toBe('sending');
+  });
+
+  it('counts what went and what is going in the day, not what failed, and keeps the record when the account goes', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const [sent, failed, going] = [claimOf(account.id), claimOf(account.id), claimOf(account.id)];
+    for (const send of [sent, failed, going]) await sends.claim(send);
+    sent.sent('g1', 't1', new Date());
+    failed.failed(new Date());
+    await sends.save(sent);
+    await sends.save(failed);
+
+    await expect(sends.countSince(account.id, new Date(Date.now() - 60_000))).resolves.toBe(2);
+    await expect(sends.countSince(account.id, new Date(Date.now() + 60_000))).resolves.toBe(0);
+
+    await dataSource.query(`DELETE FROM gmail_connection WHERE id = $1`, [account.id]);
+    const own = await sends.findRecentOwn(scopeOf(ana), 10);
+    expect(own).toHaveLength(3);
+    expect(own.find((send) => send.id === sent.id)).toMatchObject({
+      connectionId: null,
+      status: 'sent',
+      gmailMessageId: 'g1',
+    });
+    await expect(sends.findRecentOwn(scopeOf(ben, true), 10)).resolves.toEqual([]);
+  });
+
+  it('lets only one of two sends approved at once take the last place under the day’s cap', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
+
+    const raced = await Promise.all([
+      sends.claimUnderCap(claimOf(account.id), since, 3),
+      sends.claimUnderCap(claimOf(account.id), since, 3),
+    ]);
+
+    expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
+    await expect(sends.countSince(account.id, since)).resolves.toBe(3);
   });
 });

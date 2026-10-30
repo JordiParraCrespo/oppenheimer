@@ -10,6 +10,7 @@ import {
 } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import { attachedImagesNote } from '../domain/bot-image.policy';
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
@@ -38,8 +39,10 @@ export class BotTurnOpeningResolver {
 
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
-    const prompt = botTurnPrompt(opening);
-    if (!opening?.attachments.length) return { prompt, images: [] };
+    if (!opening?.attachments.length) return { prompt: botTurnPrompt(opening), images: [] };
+    const prompt = [botTurnPrompt(opening).trim(), attachedImagesNote(opening.attachments)]
+      .filter(Boolean)
+      .join('\n\n');
     const stored = await this.attachments.findForMessage(turn.organizationId, opening.id);
     const images = await Promise.all(
       opening.attachments.map(async ({ id }) => {

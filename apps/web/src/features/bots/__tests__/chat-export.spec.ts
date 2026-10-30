@@ -78,6 +78,8 @@ describe('chatExportHeader and chatExportChunk', () => {
             isError: false,
             sessionId: null,
             subagents: null,
+            allowedBy: null,
+            mailDraft: null,
           },
           {
             callId: 'b',
@@ -87,6 +89,8 @@ describe('chatExportHeader and chatExportChunk', () => {
             isError: false,
             sessionId: null,
             subagents: null,
+            allowedBy: null,
+            mailDraft: null,
           },
           {
             callId: 'c',
@@ -96,6 +100,8 @@ describe('chatExportHeader and chatExportChunk', () => {
             isError: true,
             sessionId: null,
             subagents: null,
+            allowedBy: null,
+            mailDraft: null,
           },
         ],
       }),
@@ -135,6 +141,8 @@ describe('chatExportHeader and chatExportChunk', () => {
             isError: false,
             sessionId: null,
             subagents: [run('Check #12', 'completed'), run('Check #13', 'timed_out')],
+            allowedBy: null,
+            mailDraft: null,
           },
         ],
       }),
@@ -166,6 +174,24 @@ describe('chatExportHeader and chatExportChunk', () => {
       '**bots.settings.profile.oppenheimer** · 10:04\n\nbots.chat.event.denied(Start it)',
     );
     expect(chunk).not.toContain('The owner approved');
+  });
+
+  it('write answered questions as the line and each question with its answer, never the fenced words', () => {
+    const chunk = chatExportChunk(
+      message('event', '<answers>\n- Which repository?\n  Answer: acme/api\n</answers>', 4, {
+        event: {
+          kind: 'question',
+          outcome: 'answered',
+          summary: 'Which repository?',
+          answers: [{ question: 'Which repository?', answer: 'acme/api' }],
+        },
+      }),
+      words,
+    );
+    expect(chunk).toContain(
+      'bots.chat.question.answered(Which repository?)\n- Which repository? acme/api',
+    );
+    expect(chunk).not.toContain('<answers>');
   });
 
   it('write another bot’s message or answer under that bot’s name, with its words', () => {

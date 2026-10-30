@@ -40,6 +40,9 @@ export class BotSubscriptionMapper {
     record.lastTurn = entity.lastTurn;
     record.lastState = entity.lastState;
     record.wakes = entity.wakes;
+    record.terminalWatchId = entity.terminalWatch?.id ?? null;
+    record.pattern = entity.terminalWatch?.pattern ?? null;
+    record.matches = entity.matches;
     record.version = entity.versionAtLoad;
     return record;
   }
@@ -65,6 +68,11 @@ export class BotSubscriptionMapper {
         lastTurn: lastState ? record.lastTurn : null,
         lastState,
         wakes: record.wakes,
+        terminalWatch:
+          record.terminalWatchId && record.pattern
+            ? { id: record.terminalWatchId, pattern: record.pattern }
+            : null,
+        matches: record.matches ?? 0,
         version: record.version,
       },
     });
@@ -134,13 +142,51 @@ export class BotSubscriptionMapper {
     decision: Extract<WakeDecision, { kind: 'wake' }>,
   ): SessionWake {
     return {
+      ...this.wakeOf(subscription, session, decision.ends),
+      cause: {
+        kind: 'state',
+        task,
+        state: decision.state,
+        // A watch that never matched says so once its task is over.
+        silentPattern:
+          subscription.terminalWatch && subscription.matches === 0
+            ? subscription.terminalWatch.pattern
+            : null,
+      },
+    };
+  }
+
+  /** What a terminal match tells the bot: the subscription's watch, and the runner's count. */
+  toMatchWake(
+    subscription: BotSubscriptionEntity,
+    session: WorkSessionEntity,
+    watch: { id: string; pattern: string },
+    count: number,
+    ends: boolean,
+  ): SessionWake {
+    return {
+      ...this.wakeOf(subscription, session, ends),
+      cause: {
+        kind: 'match',
+        turn: session.latestTurn?.seq ?? 0,
+        watchId: watch.id,
+        pattern: watch.pattern,
+        count,
+      },
+    };
+  }
+
+  private wakeOf(
+    subscription: BotSubscriptionEntity,
+    session: WorkSessionEntity,
+    ends: boolean,
+  ): Omit<SessionWake, 'cause'> {
+    return {
       subscriptionId: subscription.id,
       sessionId: session.id,
       sessionName: session.name,
       purpose: subscription.purpose,
-      task,
-      state: decision.state,
-      ends: decision.ends,
+      ends,
     };
   }
 
@@ -157,6 +203,18 @@ export class BotSubscriptionMapper {
     return `You follow session ${session.id} "${session.name}": ${follows}. ${now} You will be woken when a task you follow needs input, finishes, fails or is stopped; end your turn now rather than wait for it.`;
   }
 
+  /** What `watch_session` adds when it also watches the terminal, and what the host could not take. */
+  toPatternAnswer(pattern: string, hints: readonly string[]): string {
+    const watching = `You are also woken when its terminal prints a new line matching “${pattern}”: you are told it matched, not the line.`;
+    if (hints.includes('not_supported')) {
+      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated.`;
+    }
+    if (hints.includes('host_offline')) {
+      return `${watching} Its host is offline; the watch starts when it reconnects.`;
+    }
+    return watching;
+  }
+
   /** One line of `list_watches`. */
   toListLine(subscription: BotSubscriptionEntity, timeZone: string): string {
     const until =
@@ -166,6 +224,9 @@ export class BotSubscriptionMapper {
       `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
       subscription.lastState
         ? `last: task #${subscription.lastTurn} ${subscription.lastState}`
+        : null,
+      subscription.terminalWatch
+        ? `pattern “${subscription.terminalWatch.pattern}”, ${subscription.matches} matching line${subscription.matches === 1 ? '' : 's'}`
         : null,
       `since ${formatToolTime(subscription.createdAt, timeZone)}`,
     ].filter(Boolean);

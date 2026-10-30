@@ -40,6 +40,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.replyRequested = entity.replyRequested;
     record.answersTurnId = entity.answersTurnId;
     record.error = entity.error;
+    record.failure = entity.failure;
     record.inputTokens = entity.inputTokens;
     record.outputTokens = entity.outputTokens;
     record.contextTokens = entity.context?.tokens ?? null;
@@ -76,6 +77,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         replyRequested: record.replyRequested === true,
         answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
+        failure: record.failure ?? null,
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,
         context:
@@ -97,6 +99,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     dto.provider = entity.provider;
     dto.model = entity.model;
     dto.error = entity.error;
+    dto.failure = entity.failure;
     dto.inputTokens = entity.inputTokens;
     dto.outputTokens = entity.outputTokens;
     dto.contextTokens = entity.context?.tokens ?? null;

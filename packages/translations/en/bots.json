@@ -49,6 +49,16 @@
     "queuedImages_other": "{{count}} images",
     "failed": "{{provider}} could not finish this turn",
     "failedUnknown": "The turn ended without saying why.",
+    "failure": {
+      "rate_limit": "{{provider}} is limiting requests for now. This usually passes: try again in a moment.",
+      "usage_limit": "The {{provider}} account is out of quota or credit. Sending it again won't help until it is topped up or the plan resets.",
+      "credential": "{{provider}} refused the key or sign-in. Sending it again won't help: check it in Model providers.",
+      "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
+      "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
+      "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+    },
+    "openProviders": "Open Model providers",
     "errorDetails": "Show details",
     "errorLess": "Show less",
     "retry": "Retry",
@@ -58,6 +68,7 @@
     "switchedModel": "Switched to <model>{{model}}</model>",
     "tokens_one": "{{tokens}} token",
     "tokens_other": "{{tokens}} tokens",
+    "workedFor": "Worked for {{time}}",
     "images": {
       "attach": "Add images",
       "remove": "Remove {{name}}",
@@ -73,6 +84,10 @@
     },
     "turn": {
       "queued": "Waiting",
+      "retrying": {
+        "rate_limit": "{{provider}} is limiting requests, retrying…",
+        "unavailable": "{{provider}} is busy, retrying…"
+      },
       "thinking": "Thinking",
       "writing": "Writing",
       "stopped": "Stopped"
@@ -175,6 +190,11 @@
     },
     "saveFailed": "Could not change the bot.",
     "loadFailed": "Could not load this bot.",
+    "question": {
+      "answered": "You answered: {{summary}}",
+      "dismissed": "You dismissed: {{summary}}",
+      "failed": "Could not send your answers."
+    },
     "approval": {
       "needsInput": "Needs input",
       "title": "{{name}} wants to do this",
@@ -186,7 +206,12 @@
       "noteLabel": "What should {{name}} do instead?",
       "notePlaceholder": "Optional: why not, or what to do instead",
       "cancel": "Cancel",
-      "failed": "Could not answer the request."
+      "failed": "Could not answer the request.",
+      "approveOnce": "Approve once",
+      "always": "Always allow",
+      "alwaysFor": "Always allow for {{subject}}",
+      "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
+      "fullRequest": "Show the full request"
     },
     "event": {
       "approved": "You approved: {{summary}}",
@@ -211,7 +236,15 @@
         "completed": "Session “{{name}}” finished",
         "failed": "Session “{{name}}” failed",
         "cancelled": "Session “{{name}}” was stopped",
-        "expired": "Session “{{name}}” expired before it ran"
+        "expired": "Session “{{name}}” expired before it ran",
+        "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
+        "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
+      },
+      "goal": {
+        "continued": "Goal · continuation {{step}} of {{limit}}",
+        "cleared": "You stopped the goal “{{objective}}”",
+        "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
+        "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
       }
     },
     "routineReason": {
@@ -224,7 +257,13 @@
       "owner_lost_access": "its owner can no longer run it",
       "unknown": "something went wrong"
     },
-    "openSession": "Open session"
+    "openSession": "Open session",
+    "goal": {
+      "title": "Goal: {{objective}}",
+      "progress": "{{step}} of {{limit}} continuations",
+      "stop": "Stop goal",
+      "stopFailed": "Could not stop the goal. Try again."
+    }
   },
   "settings": {
     "back": "Back to the chat",
@@ -235,6 +274,7 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
+      "permissions": "Permissions",
       "routines": "Routines",
       "homeHost": "Home host"
     },
@@ -343,7 +383,15 @@
       "saveFailed": "Could not save the fact.",
       "forget": "Forget “{{fact}}”",
       "forgetFailed": "Could not forget the fact.",
-      "loadFailed": "Could not load what the bot remembers."
+      "loadFailed": "Could not load what the bot remembers.",
+      "aboutYou": "About you",
+      "lookedUp": "Looked up",
+      "sharedBy": "Shared by another of your bots · {{date}}",
+      "keptActions": "Where “{{fact}}” is kept",
+      "toLog": "Look it up only when needed",
+      "toProfile": "Keep it in mind in every chat",
+      "toPerson": "Share it with all your bots",
+      "toBot": "Keep it to this bot"
     },
     "routines": {
       "title": "Routines",
@@ -388,6 +436,55 @@
       "saved": "Saved",
       "failed": "Could not change the home host.",
       "hostsFailed": "Could not load your hosts."
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "What the bot does on its own, and what it asks you first.",
+      "loadFailed": "Could not load the bot’s permissions.",
+      "saveFailed": "Could not change the permission.",
+      "tools": "Tools",
+      "preset": {
+        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
+        "full": "Tools you leave on their default follow Full access: they run without asking."
+      },
+      "decisions": {
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off"
+      },
+      "decisionFor": "What {{tool}} does",
+      "reset": "Default",
+      "perCall": "Every call asks: it is never allowed for good.",
+      "groups": {
+        "self": "Itself",
+        "sessions": "Sessions and hosts",
+        "plan": "Plan",
+        "mail": "Mail",
+        "github": "GitHub",
+        "automations": "Routines and automations",
+        "bots": "Other bots",
+        "web": "Web and helpers"
+      },
+      "grants": "Always allowed",
+      "noGrants": "Nothing yet. “Always allow for …” on a request adds it here.",
+      "removeGrant": "Stop always allowing {{tool}} for {{subject}}",
+      "rules": {
+        "empty": "No rules yet.",
+        "add": "Add",
+        "remove": "Remove the rule “{{rule}}”",
+        "ask": {
+          "title": "Ask me first when",
+          "hint": "A matching request waits for you, even where the tool would run on its own.",
+          "placeholder": "e.g. it mentions payments or customer data",
+          "new": "New ask rule"
+        },
+        "allow": {
+          "title": "Go ahead without asking when",
+          "hint": "A matching request runs without a card. An ask rule that also matches wins.",
+          "placeholder": "e.g. it comments on our docs repository",
+          "new": "New allow rule"
+        }
+      }
     }
   },
   "delete": {

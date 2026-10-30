@@ -22,6 +22,7 @@ import {
   type BotGroupEntity,
   type BotMemoryFactEntity,
   type SaveBotDocumentInput,
+  type UpdateBotFactInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
 import { useConsumerApp } from './context';
@@ -46,6 +47,8 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  permissions: (id: string) => [...botsKeys.detail(id), 'permissions'] as const,
+  goal: (id: string) => [...botsKeys.detail(id), 'goal'] as const,
   routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
   routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
   // Every bot's, for `/automations`: apart from any one bot's, so a write to
@@ -56,6 +59,8 @@ export const botsKeys = {
     [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
+  // The card of questions the bot waits on (`ask_user`).
+  pendingQuestion: (id: string) => [...botsKeys.detail(id), 'question'] as const,
   // The workspace's approvals across its bots (the Inbox): apart from any one
   // bot's, and announced by `botApproval.changed`.
   workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,
@@ -272,6 +277,24 @@ function settleFacts(
   );
 }
 
+/**
+ * A fact about the person is read by every bot of theirs (`25-bots.md`
+ * §4.1), so a change to one, or a move in or out of that scope, refreshes
+ * every bot's memory that was read, not only the bot that keeps it.
+ */
+function refreshSharedMemory(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({
+    queryKey: botsKeys.details(),
+    predicate: (query) => query.queryKey[3] === 'memory',
+  });
+}
+
+/** Whether a fact this bot's list holds is about the person, so its siblings read it too. */
+function isSharedFact(queryClient: QueryClient, id: string, factId: string): boolean {
+  const rows = queryClient.getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id));
+  return rows?.find((row) => row.id === factId)?.scope === 'person';
+}
+
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
 export function useCreateBot(
@@ -482,10 +505,9 @@ export function useAddBotFact(
   });
 }
 
-export interface UpdateBotFactVariables {
+export interface UpdateBotFactVariables extends UpdateBotFactInput {
   id: string;
   factId: string;
-  content: string;
 }
 
 export function useUpdateBotFact(
@@ -494,11 +516,12 @@ export function useUpdateBotFact(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, factId, content }: UpdateBotFactVariables) =>
-      app.bots.updateFact(id, factId, content),
-    ...withCacheOnSuccess(options, (saved, { id }) =>
-      settleFacts(queryClient, id, replaced(saved)),
-    ),
+    mutationFn: ({ id, factId, ...change }: UpdateBotFactVariables) =>
+      app.bots.updateFact(id, factId, change),
+    ...withCacheOnSuccess(options, (saved, { id, scope }) => {
+      settleFacts(queryClient, id, replaced(saved));
+      return saved.scope === 'person' || scope ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }
 
@@ -514,9 +537,11 @@ export function useDeleteBotFact(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, factId }: DeleteBotFactVariables) => app.bots.removeFact(id, factId),
-    ...withCacheOnSuccess(options, (_data, { id, factId }) =>
-      settleFacts(queryClient, id, without(factId)),
-    ),
+    ...withCacheOnSuccess(options, (_data, { id, factId }) => {
+      const shared = isSharedFact(queryClient, id, factId);
+      settleFacts(queryClient, id, without(factId));
+      return shared ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }
 
@@ -526,8 +551,12 @@ export function useClearBotMemory(options?: UseMutationOptions<void, Error, stri
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => app.bots.clearMemory(id),
-    ...withCacheOnSuccess(options, (_data, id) =>
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []),
-    ),
+    ...withCacheOnSuccess(options, (_data, id) => {
+      const shared = queryClient
+        .getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id))
+        ?.some((row) => row.scope === 'person' && row.botId === id);
+      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []);
+      return shared ? refreshSharedMemory(queryClient) : undefined;
+    }),
   });
 }

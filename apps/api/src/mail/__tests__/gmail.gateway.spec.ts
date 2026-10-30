@@ -222,4 +222,138 @@ describe('GmailGateway', () => {
       bytes: Buffer.from('%PDF-1.7'),
     });
   });
+
+  it('sends the raw message base64url in its thread, and reads back Gmail’s ids', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 'g1', threadId: 't1' }));
+    vi.stubGlobal('fetch', fetch);
+
+    const sent = await new GmailGateway(config).sendMessage(ANA, {
+      raw: Buffer.from('Subject: Hi\r\n\r\nÉ?'),
+      threadId: 't1',
+    });
+
+    const [url, init] = fetch.mock.calls[1];
+    expect(new URL(url).pathname).toBe('/gmail/v1/users/me/messages/send');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({
+      raw: Buffer.from('Subject: Hi\r\n\r\nÉ?').toString('base64url'),
+      threadId: 't1',
+    });
+    expect(sent).toEqual({ messageId: 'g1', threadId: 't1' });
+  });
+
+  it('pauses only the account when Gmail refuses a send for its sending limit', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(429, { error: { errors: [{ reason: 'rateLimitExceeded' }] } }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { labels: [] }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(
+      gateway.sendMessage(ANA, { raw: Buffer.from('x'), threadId: null }),
+    ).rejects.toMatchObject({ code: 'MAIL_008' });
+    await expect(gateway.listLabels(BEN)).resolves.toEqual([]);
+  });
+
+  it('deletes a draft, reading Gmail’s empty answer as done', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(new GmailGateway(config).deleteDraft(ANA, 'd1')).resolves.toBeUndefined();
+
+    const [url, init] = fetch.mock.calls[1];
+    expect(new URL(url).pathname).toBe('/gmail/v1/users/me/drafts/d1');
+    expect(init.method).toBe('DELETE');
+  });
+
+  it('changes threads one by one, says which Gmail does not have, and batches messages', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }))
+      .mockResolvedValueOnce(json(404, { error: { code: 404 } }))
+      .mockResolvedValueOnce(json(200, { id: 't3' }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+    const change = { add: ['STARRED'], remove: ['UNREAD'] };
+
+    await expect(gateway.modifyThreads(ANA, ['t1', 'gone', 't3'], change)).resolves.toEqual({
+      changed: ['t1', 't3'],
+      missing: ['gone'],
+    });
+    await gateway.modifyMessages(ANA, ['m1', 'm2'], change);
+
+    expect(new URL(fetch.mock.calls[1][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/modify');
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
+      addLabelIds: ['STARRED'],
+      removeLabelIds: ['UNREAD'],
+    });
+    expect(new URL(fetch.mock.calls[5][0]).pathname).toBe(
+      '/gmail/v1/users/me/messages/batchModify',
+    );
+    expect(JSON.parse(fetch.mock.calls[5][1].body)).toEqual({
+      ids: ['m1', 'm2'],
+      addLabelIds: ['STARRED'],
+      removeLabelIds: ['UNREAD'],
+    });
+  });
+
+  it('moves threads to Trash and back by their own endpoints', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }))
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, { id: 't1' }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await gateway.trashThreads(ANA, ['t1'], true);
+    await gateway.trashThreads(ANA, ['t1'], false);
+
+    expect(new URL(fetch.mock.calls[1][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/trash');
+    expect(new URL(fetch.mock.calls[3][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/untrash');
+  });
+
+  it('reads a message whole for an answer or a forward, where a thread read for a bot is cut', async () => {
+    const long = 'x'.repeat(9_000);
+    const withBody = {
+      ...INVOICE,
+      payload: {
+        partId: '',
+        mimeType: 'text/plain',
+        filename: '',
+        headers: [...INVOICE.payload.headers, { name: 'Bcc', value: 'audit@acme.test' }],
+        body: { size: long.length, data: b64(long) },
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(json(200, withBody))
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(json(200, { id: 't1', messages: [withBody] })),
+    );
+    const gateway = new GmailGateway(config);
+
+    const whole = await gateway.readMessage(ANA, 'm1');
+    const thread = await gateway.readThread(ANA, 't1');
+
+    expect(whole.body).toBe(long);
+    expect(whole.bcc).toBe('audit@acme.test');
+    expect(thread.messages[0].body).toContain('was cut');
+  });
 });

@@ -9,12 +9,16 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot-approval.entity';
+import {
+  BOT_APPROVAL_RESULT_MAX,
+  BOT_APPROVAL_REVIEW_NOTE_MAX,
+  BOT_APPROVAL_SUMMARY_MAX,
+} from '../domain/bot-approval.entity';
 
 /**
  * One call of an asking tool waiting for the bot's owner
  * (`1791002200000-AddBotApprovals`, `1791002900000-AddBotApprovalSession`,
- * `1791003600000-AddBotApprovalWorkspaceIndex`).
+ * `1791003600000-AddBotApprovalWorkspaceIndex`, `1791004700000-AddBotPermissions`).
  */
 @Entity('bot_approval')
 @Index('IDX_bot_approval_bot', ['organizationId', 'botId', 'createdAt', 'id'])
@@ -34,6 +38,11 @@ import { BOT_APPROVAL_RESULT_MAX, BOT_APPROVAL_SUMMARY_MAX } from '../domain/bot
 @Check('CHK_bot_approval_tool', `char_length("tool") > 0`)
 @Check('CHK_bot_approval_summary', `char_length("summary") > 0`)
 @Check('CHK_bot_approval_decided', `("status" = 'pending') = ("decidedAt" IS NULL)`)
+@Check(
+  'CHK_bot_approval_subject',
+  `num_nonnulls("subjectKind", "subjectKey", "subjectLabel") IN (0, 3)`,
+)
+@Check('CHK_bot_approval_reach', `"reach" IS NULL OR "reach" IN ('once', 'tool', 'subject')`)
 export class BotApprovalOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -69,6 +78,28 @@ export class BotApprovalOrmEntity {
 
   @Column({ type: 'varchar', length: BOT_APPROVAL_NOTE_MAX, nullable: true })
   note!: string | null;
+
+  /** What the call acts on, when its tool names one: the three set together or none. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  subjectKind!: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  subjectKey!: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  subjectLabel!: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  sharesOutside!: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  perCallOnly!: boolean;
+
+  @Column({ type: 'varchar', length: BOT_APPROVAL_REVIEW_NOTE_MAX, nullable: true })
+  reviewNote!: string | null;
+
+  @Column({ type: 'varchar', length: 8, nullable: true })
+  reach!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
   decidedByUserId!: string | null;

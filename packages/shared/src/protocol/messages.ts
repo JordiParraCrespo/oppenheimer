@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
 import {
   deviceAttachSchema,
   deviceDetachSchema,
@@ -98,8 +99,33 @@ export const RUNNER_CAPABILITIES = [
    * (`product/research/cloud-agents.md` §5B).
    */
   'session.cloud',
+  /**
+   * Takes a `session.create` with `cloud` for Codex: the runner starts the task
+   * in Codex cloud (`codex cloud exec`) on the checkout's base branch, reports
+   * the task's id, and from then on reads the task's status off
+   * `codex cloud list --json` and reports it as the session's
+   * (`product/next-steps/cloud-agents.md`).
+   */
+  'session.cloud.codex',
+  /**
+   * Takes `session.watch` and `session.unwatch`: it scans a live session's
+   * screen for a pattern on every pass it already makes, and reports a match
+   * as a `terminal.matched` log entry carrying a count, never the text
+   * (`product/versions/mvp/27-bot-subscriptions.md`).
+   */
+  'session.watch',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
+/**
+ * The capability a runner names to take a cloud session of each agent a host
+ * starts in its vendor's cloud. A runner that named only `session.cloud`
+ * predates Codex cloud and would refuse a Codex one.
+ */
+export const HOST_CLOUD_CAPABILITIES = {
+  'claude-code': 'session.cloud',
+  codex: 'session.cloud.codex',
+} as const satisfies Record<HostCloudAgentId, RunnerCapability>;
 
 /**
  * The capabilities a hello named that this side knows, in order. The hello
@@ -359,16 +385,19 @@ export const sessionCreateSchema = z
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
     /**
-     * A cloud session: the runner does not open a terminal. It fetches the one
-     * checkout's repository with this token (minted for that repository alone
-     * and sealed to the host, as `repository.prepare`'s is: a credential ask
-     * names a live checkout, and a cloud session leaves none on the host),
-     * checks out its base in a scratch directory, runs `claude --cloud` there
-     * with `prompt`, reports the cloud session's id on `session.started`
-     * (`agentSessionId`) and removes the scratch directory.
+     * A cloud session: the runner does not open a terminal. For Claude Code it
+     * fetches the one checkout's repository with this token (minted for that
+     * repository alone and sealed to the host, as `repository.prepare`'s is: a
+     * credential ask names a live checkout, and a cloud session leaves none on
+     * the host), checks out its base in a scratch directory, runs
+     * `claude --cloud` there with `prompt` and removes the scratch directory.
+     * For Codex it runs `codex cloud exec` on the checkout's base branch and
+     * needs no checkout, so the token goes unused. Either way it reports the
+     * cloud session's id on `session.started` (`agentSessionId`).
      *
-     * Only with `claude-code`, one checkout and a prompt, and sent only to a
-     * runner whose `hello` named `session.cloud`.
+     * Only with an agent of `HOST_CLOUD_AGENT_IDS`, one checkout and a prompt,
+     * and sent only to a runner whose `hello` named `session.cloud` (Claude
+     * Code) or `session.cloud.codex` (Codex).
      */
     cloud: z
       .object({
@@ -385,11 +414,11 @@ export const sessionCreateSchema = z
   .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
-  /** A cloud session starts Claude Code from one repository with a task. */
+  /** A cloud session starts Claude Code or Codex from one repository with a task. */
   .refine(
     (message) =>
       message.cloud === undefined ||
-      (message.agent === 'claude-code' &&
+      (isHostCloudAgent(message.agent) &&
         message.checkouts.length === 1 &&
         message.prompt !== undefined),
     { path: ['cloud'] },
@@ -537,6 +566,48 @@ export const sessionCloseSchema = z.object({
 });
 
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
+
+/** How long a terminal watch's pattern may be. */
+export const TERMINAL_WATCH_PATTERN_MAX = 200;
+
+/**
+ * Watch a live session's screen for a pattern (an RE2 regular expression,
+ * matched line by line), replacing any watch with this `watchId` and another
+ * pattern. The runner
+ * scans the screen it already reads on each pass, and appends
+ * `terminal.matched` (`{ watchId, count }`) to the session's log when lines it
+ * had not matched before match: the first at once, then at most one entry per
+ * 5 seconds, and at most 100 entries before it drops the watch. The matched
+ * text never leaves the host. Kept in memory: the control plane sends its
+ * watches again on every hello. An invalid pattern is `command.failed`
+ * `INVALID_PATTERN`.
+ */
+export const sessionWatchSchema = z.object({
+  type: z.literal('session.watch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+  pattern: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX),
+  /**
+   * The count already reported for this watch, when the control plane sends
+   * it again after the runner restarted: the runner counts on from it, so
+   * its next report is past what the bot was told. A watch the runner still
+   * holds with the same pattern is kept as it is.
+   */
+  count: z.number().int().min(0).optional(),
+});
+
+export type SessionWatchMessage = z.infer<typeof sessionWatchSchema>;
+
+/** Stop a watch `session.watch` started; one the runner does not hold is no error. */
+export const sessionUnwatchSchema = z.object({
+  type: z.literal('session.unwatch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+});
+
+export type SessionUnwatchMessage = z.infer<typeof sessionUnwatchSchema>;
 
 /**
  * End the agent and the tmux session and leave every checkout on disk, which
@@ -904,6 +975,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
   sessionCloseSchema,
+  sessionWatchSchema,
+  sessionUnwatchSchema,
   sessionStopSchema,
   sessionRestartSchema,
   hostPreflightSchema,

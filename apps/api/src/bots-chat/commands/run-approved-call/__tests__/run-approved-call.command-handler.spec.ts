@@ -7,6 +7,7 @@ import { BotEntity } from '../../../../bots/domain/bot.entity';
 import { BotApprovedCallResolver } from '../../../application/bot-approved-call.resolver';
 import type { BotOwnerPermissionsResolver } from '../../../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../../../application/bot-owner-scope.resolver';
+import { BotPermissionsResolver } from '../../../application/bot-permissions.resolver';
 import { type BotToolArea, defineBotTool } from '../../../application/bot-tool.factory';
 import { BotToolboxFactory } from '../../../application/bot-toolbox.factory';
 import type {
@@ -15,6 +16,7 @@ import type {
 } from '../../../database/bot-approval.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
+import { NO_PERMISSIONS } from '../../../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { RunApprovedCallCommand } from '../run-approved-call.command';
@@ -94,7 +96,26 @@ function setup(
     BotToolboxFactory as unknown as new (
       ...areas: BotToolArea[]
     ) => BotToolboxFactory
-  )(area, none, none, none, none, none, none, none, none, none, none, none, none, none);
+  )(
+    area,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+    none,
+  );
   const owners = {
     resolve: vi.fn(async () => emptyScope(OWNER, 'org-1')),
   } as unknown as BotOwnerScopeResolver;
@@ -115,10 +136,17 @@ function setup(
     bots as unknown as BotRepositoryPort,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    new BotApprovedCallResolver(owners, toolbox, {
-      // The owner's roles cover the tool: what runs is the scopes' call.
-      heldScopes: async () => new Set<Scope>(['sessions:read', 'sessions:write']),
-    } as unknown as BotOwnerPermissionsResolver),
+    new BotApprovedCallResolver(
+      owners,
+      toolbox,
+      {
+        // The owner's roles cover the tool: what runs is the scopes' call.
+        heldScopes: async () => new Set<Scope>(['sessions:read', 'sessions:write']),
+      } as unknown as BotOwnerPermissionsResolver,
+      {
+        forBot: async () => NO_PERMISSIONS,
+      } as unknown as BotPermissionsResolver,
+    ),
   );
   const execute = () =>
     handler.execute(new RunApprovedCallCommand({ approvalId: approval.id, by: 'Ana' }));

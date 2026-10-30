@@ -1,5 +1,5 @@
 import type { BotEngineEvent, BotPlanLimits } from '../bot-engine';
-import { describeError, failed, resetFromHeaders, type ToolCallData } from '../turn';
+import { describeError, failed, failureOf, resetFromHeaders, type ToolCallData } from '../turn';
 
 /**
  * The part of the OpenAI Agents SDK's `RunStreamEvent` this package reads,
@@ -149,10 +149,10 @@ export class OpenAiEventTranslator {
     } else if (error instanceof Error && error.name === 'MaxTurnsExceededError') {
       events.push({ type: 'done', reason: 'max_steps' });
     } else {
-      const rateLimit = rateLimitOf(error);
-      events.push(
-        rateLimit ? failed(describeError(error), rateLimit) : failed(describeError(error)),
-      );
+      const failure = failureOf(error);
+      // A spent quota is a 429 too, but waiting for Retry-After does not bring it back.
+      const rateLimit = failure === 'rate_limit' ? rateLimitOf(error) : null;
+      events.push(failed(describeError(error), failure, rateLimit ?? undefined));
     }
     return events;
   }

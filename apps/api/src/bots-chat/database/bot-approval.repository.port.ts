@@ -3,6 +3,7 @@ import type { BotApprovalStatus } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { BotToolPermissionEntity } from '../domain/bot-tool-permission.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** What a decision owes, written in the same transaction as the move itself. */
@@ -11,14 +12,21 @@ export interface BotApprovalEffects {
   continuation?: { turn: BotTurnEntity; opening: BotMessageEntity };
   /** A yes: the `run-approved-call` job, with who decided, by name, for the event. */
   runCall?: { by: string };
+  /**
+   * A yes that reaches past this call: the tool's Allow or a standing grant
+   * (`BotApprovalEntity.standing`), written with the decision. A grant past
+   * `maxGrants` is `BOTS_034`, and the decision is not written either.
+   */
+  standing?: { permission: BotToolPermissionEntity; maxGrants: number };
 }
 
 export interface BotApprovalRepositoryPort {
   /**
-   * Stores a new pending approval. `pending_exists` when the bot already has
-   * one waiting (`UQ_bot_approval_pending`): nothing is written.
+   * Stores a new pending approval, unless the bot already has a card
+   * waiting, an approval or questions: then nothing is written, and the
+   * answer is that card's line.
    */
-  insertPending(approval: BotApprovalEntity): Promise<'inserted' | 'pending_exists'>;
+  insertPending(approval: BotApprovalEntity): Promise<'inserted' | { waiting: string }>;
 
   /** One approval of a bot in the caller's workspace. */
   findOne(

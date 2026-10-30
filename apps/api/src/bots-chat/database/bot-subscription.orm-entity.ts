@@ -38,6 +38,11 @@ import {
   `num_nonnulls("lastTurn", "lastState") <> 1 AND ("lastState" IS NULL OR "lastState" IN ('requires_action', 'completed', 'failed', 'cancelled', 'expired'))`,
 )
 @Check('CHK_bot_subscription_wakes', `wakes >= 0`)
+@Check('CHK_bot_subscription_pattern', `("terminalWatchId" IS NULL) = ("pattern" IS NULL)`)
+@Check('CHK_bot_subscription_matches', `"matches" >= 0`)
+@Index('IDX_bot_subscription_terminal_watch', ['terminalWatchId'], {
+  where: '"terminalWatchId" IS NOT NULL',
+})
 @Check('CHK_bot_subscription_version', `version >= 1`)
 export class BotSubscriptionOrmEntity {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_bot_subscription' })
@@ -87,6 +92,16 @@ export class BotSubscriptionOrmEntity {
 
   @Column({ type: 'integer', default: 0 })
   wakes!: number;
+
+  /** The sessions module's terminal watch behind `pattern`; no foreign key (see the migration). */
+  @Column({ type: 'uuid', nullable: true })
+  terminalWatchId!: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  pattern!: string | null;
+
+  @Column({ type: 'int', default: 0 })
+  matches!: number;
 
   @Column({ type: 'integer', default: 1 })
   version!: number;

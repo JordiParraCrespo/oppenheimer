@@ -434,9 +434,16 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
 | `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+| `PULLS_003` <a id="pulls_003" /> | That check is not failing on the pull request | 422  |
+| `PULLS_004` <a id="pulls_004" /> | The pull request’s checks could not be read | 409  |
 
 `PULLS_002` answers a review session started on a pull request whose head
 branch is in a fork: a host fetches the base repository's branches only.
+
+`PULLS_003` and `PULLS_004` answer a record of CI findings
+(`record_ci_findings`). A finding is filed against the head GitHub shows now,
+and only for a check failing on it: `PULLS_003` names the checks that are
+failing. `PULLS_004` is GitHub refusing to show the checks at all.
 
 ## Projects
 
@@ -537,10 +544,12 @@ are never reissued.
 | `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
 | `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
 | `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
-| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input on claude.ai, not here | 409 |
+| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input at its vendor's site, not here | 409 |
 | `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
 | `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
+| `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
+| `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -581,10 +590,12 @@ pending decision (an option it lacks, several picks for one choice). `034` is a 
 with no link: nothing was typed, and nothing is kept for when it comes back.
 
 `SESSIONS_037` is a cloud session (`place: cloud`, `product/research/cloud-agents.md` §5B)
-for a host whose live runner did not announce `session.cloud`: it would open a terminal
-instead of starting the task in Claude Code's cloud. As with `025`, a host with no link
-right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a pasted
-file for a cloud session: it has no terminal on its host, and is answered on claude.ai.
+for a host whose live runner did not announce the capability for its agent's cloud
+(`session.cloud` for Claude Code, `session.cloud.codex` for Codex): it would open a
+terminal, or refuse the agent, instead of starting the task. As with `025`, a host with no
+link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
+pasted file for a cloud session: it has no terminal on its host, and is answered at its
+vendor, on claude.ai or chatgpt.com/codex.
 
 `SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
 reach the host, which only starts the session: the API keeps them, and the task the cloud
@@ -592,6 +603,11 @@ receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no c
 a day long, minted again whenever the create is sent). `040` is a task whose text and those
 links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
 `041` is a link that expired or never existed.
+
+`SESSIONS_042` and `SESSIONS_043` are a terminal watch (`session_terminal_watch`): a pattern the
+session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
+so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
+(`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -725,6 +741,15 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
 | `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
 | `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
+| `BOTS_029` <a id="bots_029" />       | No such tool | 404  |
+| `BOTS_030` <a id="bots_030" />       | This tool is decided call by call | 422  |
+| `BOTS_031` <a id="bots_031" />       | The bot holds as many rules as it can | 409  |
+| `BOTS_032` <a id="bots_032" />       | Rule not found | 404  |
+| `BOTS_033` <a id="bots_033" />       | Grant not found | 404  |
+| `BOTS_034` <a id="bots_034" />       | The bot holds as many grants as it can | 409  |
+| `BOTS_035` <a id="bots_035" />       | Questions not found | 404  |
+| `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
+| `BOTS_037` <a id="bots_037" />       | The questions were already answered | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -793,6 +818,23 @@ upload or a message with images to a bot on a provider whose models read no
 images (GLM); the message's words are not sent either, so nothing is lost:
 remove the images, or switch the bot's model, and send again. An upload that
 is never sent is deleted after a day.
+
+`BOTS_029` to `BOTS_034` are a bot's permissions (Settings → Permissions, and
+how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
+catalog does not have. `BOTS_030` asks to always allow a tool that is decided
+call by call (merging a pull request), whether as its Allow or as a yes that
+reaches past this call, or asks a yes to reach a thing the card did not name.
+`BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
+its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
+that is not this bot's, not in the caller's workspace, or already removed.
+
+`BOTS_035` to `BOTS_037` are a card of questions (`ask_user`), a card of its
+own beside approvals. `BOTS_035` is a card that is not this bot's or not in
+the caller's workspace. `BOTS_036` is answers that do not fit: not one per
+question, an option the question does not have, two picks where one is
+taken, or a question left unanswered; its `detail` names which. `BOTS_037` is
+a card already answered or dismissed, or retired because a message reached
+the bot first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -920,6 +962,12 @@ and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
 | `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
 | `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
 | `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+| `MAIL_010` <a id="mail_010" />   | That message cannot go to those recipients             | 400  |
+| `MAIL_011` <a id="mail_011" />   | That account has sent as much bot mail as a day allows | 429  |
+| `MAIL_012` <a id="mail_012" />   | That message is larger than Gmail takes                | 400  |
+| `MAIL_013` <a id="mail_013" />   | That address is not one this account sends from        | 400  |
+| `MAIL_014` <a id="mail_014" />   | That draft changed since it was approved               | 409  |
+| `MAIL_015` <a id="mail_015" />   | That message may already have been sent                | 409  |
 
 `MAIL_001` is no such connection of the caller's, or one Google has since
 revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
@@ -939,6 +987,23 @@ project, and is not asked again until then.
 
 `MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
 has (deleted, or an id from another account).
+
+`MAIL_010` is a recipient that is not an email address, or more than ten
+recipients on one message (to, cc and bcc together).
+
+`MAIL_011` is the account's fifty bot sends in the last 24 hours. Drafts are
+not counted.
+
+`MAIL_012` is a message whose files and text pass Gmail's 25 MB once encoded.
+
+`MAIL_013` is a `from` that is neither the account nor one of its Gmail
+send-as addresses (Gmail → Settings → Accounts).
+
+`MAIL_014` is a draft edited, sent or deleted after the card that approved
+sending it was raised: nothing was sent, and the bot asks again.
+
+`MAIL_015` is an approved send that was started and never confirmed: it may
+have gone. It is never sent a second time on its own; check Gmail's Sent.
 
 ## Cloud agents
 
@@ -1058,11 +1123,13 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `INVALID_PATTERN` <a id="invalid_pattern" /> | The watch pattern is not a valid expression | 400 |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
+| `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

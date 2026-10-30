@@ -47,6 +47,9 @@ const shownImageInput = z.object({
  */
 @Injectable()
 export class BotWebToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'web' as const;
+
   constructor(
     @Inject(WEB_PAGE) private readonly web: WebPagePort,
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,

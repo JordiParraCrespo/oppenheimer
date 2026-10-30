@@ -1,19 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { AppError } from '@oppenheimer/backend-core';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { type BotApprovalStatus, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
+import type { EntityManager } from 'typeorm';
 import { Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { BotResource } from '../../bots/bots.resource';
+import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
+import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotApprovalOrmEntity } from './bot-approval.orm-entity';
 import type { BotApprovalEffects, BotApprovalRepositoryPort } from './bot-approval.repository.port';
-import { enqueueWithin } from './bot-turn.repository';
+import { insertGrantWithin, upsertDecisionWithin } from './bot-tool-permission.repository';
+import { enqueueWithin, lockBot, waitingCardWithin } from './bot-turn.repository';
 
 /** The job that carries out an approved call; its payload is `{ approvalId, by }`. */
 export const RUN_APPROVED_CALL_JOB = 'run-approved-call';
@@ -40,13 +45,17 @@ export class BotApprovalRepository
     private readonly outbox: OutboxService,
     private readonly turns: BotTurnMapper,
     private readonly messages: BotMessageMapper,
+    private readonly permissions: BotToolPermissionMapper,
   ) {
     super();
   }
 
-  async insertPending(approval: BotApprovalEntity): Promise<'inserted' | 'pending_exists'> {
+  async insertPending(approval: BotApprovalEntity): Promise<'inserted' | { waiting: string }> {
     try {
-      await this.outbox.transaction(async (manager) => {
+      const waiting = await this.outbox.transaction(async (manager) => {
+        await lockBot(manager, approval);
+        const summary = await waitingCardWithin(manager, approval.organizationId, approval.botId);
+        if (summary !== null) return summary;
         // The jsonb input is a plain object; TypeORM's partial type cannot see that.
         await manager
           .getRepository(BotApprovalOrmEntity)
@@ -54,12 +63,14 @@ export class BotApprovalRepository
             this.mapper.toPersistence(approval) as QueryDeepPartialEntity<BotApprovalOrmEntity>,
           );
         await this.outbox.stageEvents(manager, approval.domainEvents);
+        return null;
       });
+      if (waiting !== null) return { waiting };
       approval.clearEvents();
       approval.markPersisted();
       return 'inserted';
     } catch (error) {
-      if (isPendingTaken(error)) return 'pending_exists';
+      if (isPendingTaken(error)) return { waiting: approval.summary };
       throw error;
     }
   }
@@ -137,6 +148,7 @@ export class BotApprovalRepository
           decidedByUserId: approval.decidedByUserId,
           decidedWithScopes: approval.decidedWithScopes ? [...approval.decidedWithScopes] : null,
           decidedAt: approval.decidedAt,
+          reach: approval.reach,
         })
         .where('id = :id AND "organizationId" = :organizationId AND "status" = :at', {
           id: approval.id,
@@ -150,6 +162,7 @@ export class BotApprovalRepository
       await this.outbox.stageEvents(manager, approval.domainEvents);
       approval.clearEvents();
       approval.markPersisted();
+      if (effects.standing) await this.writeStanding(manager, effects.standing);
       if (effects.continuation) {
         const { turn, opening } = effects.continuation;
         await enqueueWithin(
@@ -174,5 +187,20 @@ export class BotApprovalRepository
       }
       return true;
     });
+  }
+
+  /** A grant past the cap throws, so the whole decision rolls back and the card stays open. */
+  private async writeStanding(
+    manager: EntityManager,
+    { permission, maxGrants }: NonNullable<BotApprovalEffects['standing']>,
+  ): Promise<void> {
+    const record = this.permissions.toPersistence(permission);
+    if (!permission.subject) {
+      await upsertDecisionWithin(manager, record);
+      return;
+    }
+    if ((await insertGrantWithin(manager, record, maxGrants)) === 'full') {
+      throw new AppError(BotErrors.TOOL_GRANTS_FULL);
+    }
   }
 }

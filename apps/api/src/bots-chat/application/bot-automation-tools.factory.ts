@@ -43,6 +43,9 @@ const TEST_RESULTS_NOTE =
  */
 @Injectable()
 export class BotAutomationToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'automations' as const;
+
   constructor(private readonly queryBus: QueryBus) {}
 
   definitions(): readonly BotToolDefinition[] {

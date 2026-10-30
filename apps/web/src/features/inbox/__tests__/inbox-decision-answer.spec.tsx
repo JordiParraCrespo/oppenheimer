@@ -6,7 +6,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InboxPermissionAnswer } from '../components/inbox-permission-answer';
 import { InboxQuestionAnswer } from '../components/inbox-question-answer';
-import { answerSummary, type InboxAnswer, toAnswers } from '../lib/inbox-answer';
+import { type InboxAnswer, toAnswers } from '../lib/inbox-answer';
 
 /**
  * A session's decision answered on its Inbox card (`29-inbox.md` slice 4).
@@ -88,7 +88,6 @@ describe('InboxQuestionAnswer', () => {
       { picks: [1], other: null },
       { picks: [0, 2], other: 'Linux' },
     ]);
-    expect(answerSummary(QUESTION, answers ?? [])).toBe('All · iOS, Web, Linux');
   });
 
   it('lets words replace the pick of a single choice, and a pick replace the words', () => {

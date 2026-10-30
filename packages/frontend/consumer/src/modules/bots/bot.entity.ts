@@ -5,6 +5,8 @@ import type {
   BotAuthor,
   BotAvatarColor,
   BotDocumentName,
+  BotMemoryScope,
+  BotMemoryTier,
   BotPermission,
   BotProvider,
   BotSection,
@@ -119,6 +121,12 @@ export class BotMemoryFactEntity {
     public readonly content: string,
     /** Who wrote it last: the reader, or the bot through its tools. */
     public readonly source: BotAuthor,
+    /** `profile`: in mind every turn. `log`: looked up with `recall` when needed. */
+    public readonly tier: BotMemoryTier,
+    /** `bot`: this bot's alone. `person`: about its owner, read by all their bots. */
+    public readonly scope: BotMemoryScope,
+    /** The bot that keeps it, which is another of the owner's bots for a shared fact. */
+    public readonly botId: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
@@ -127,6 +135,18 @@ export class BotMemoryFactEntity {
   get isEdited(): boolean {
     return this.updatedAt.getTime() !== this.createdAt.getTime();
   }
+
+  /** Kept by another of the owner's bots and shared with this one: read, never changed here. */
+  isSharedWith(botId: string): boolean {
+    return this.botId !== botId;
+  }
+}
+
+/** A change to a fact: its words, its tier or its scope; what is left out stays. */
+export interface UpdateBotFactInput {
+  content?: string;
+  tier?: BotMemoryTier;
+  scope?: BotMemoryScope;
 }
 
 /** `PATCH /bots/:id`: a field left out is unchanged; `null` clears what can be cleared. */

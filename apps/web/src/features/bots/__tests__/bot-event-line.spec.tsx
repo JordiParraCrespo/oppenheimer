@@ -47,6 +47,29 @@ describe('BotEventLine', () => {
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
   });
 
+  it('draws answered questions with each answer under the line, and a dismissal as dismissed', () => {
+    const asked = (
+      outcome: 'answered' | 'dismissed',
+      answers: { question: string; answer: string }[] = [],
+    ) =>
+      ({
+        id: `e-${outcome}`,
+        role: 'event',
+        content: 'Ana answered your questions.',
+        event: { kind: 'question', outcome, summary: 'Which repository?', answers },
+      }) as unknown as BotMessageEntity;
+    render(
+      <BotEventLine
+        message={asked('answered', [{ question: 'Which repository?', answer: 'acme/api' }])}
+      />,
+    );
+    expect(screen.getByText('bots.chat.question.answered|Which repository?')).toBeTruthy();
+    expect(screen.getByText('acme/api')).toBeTruthy();
+    cleanup();
+    render(<BotEventLine message={asked('dismissed')} />);
+    expect(screen.getByText('bots.chat.question.dismissed|Which repository?')).toBeTruthy();
+  });
+
   it('names the routine that woke the bot, not the words it was told', () => {
     const message = {
       id: 'e2',
@@ -180,5 +203,27 @@ describe('BotEventLine', () => {
     const failed = render(<BotEventLine message={woke('failed')} />);
     expect(screen.getByText('bots.chat.event.session.failed|Research')).toBeTruthy();
     expect(failed.container.querySelector('.text-danger')).toBeTruthy();
+  });
+  it('draws a goal’s continuation and how it ended from the event, a stop in red', () => {
+    const goal = (activity: 'continued' | 'stopped') =>
+      ({
+        id: `g-${activity}`,
+        role: 'event',
+        content: 'Continue toward your goal…',
+        event: {
+          kind: 'goal',
+          activity,
+          goalId: 'goal-1',
+          objective: 'Ship it',
+          step: 2,
+          limit: 5,
+          reason: activity === 'stopped' ? 'failed' : null,
+        },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={goal('continued')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.continued/)).toBeTruthy();
+    const stopped = render(<BotEventLine message={goal('stopped')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.stopped/)).toBeTruthy();
+    expect(stopped.container.querySelector('.text-danger')).toBeTruthy();
   });
 });

@@ -11,21 +11,31 @@ import {
   messageOf,
   messageSummaryOf,
   partOf,
+  sendAsOf,
+  sentRefOf,
 } from './gmail-message.util';
 import {
   GMAIL_SCOPE,
   type GmailAttachmentContent,
   type GmailAttachmentInfo,
+  type GmailBulkOutcome,
   type GmailCallGrant,
   type GmailDraftPage,
+  type GmailDraftRead,
+  type GmailDraftRef,
   type GmailGrant,
   GmailGrantRevokedError,
   type GmailLabel,
+  type GmailLabelChange,
+  type GmailMessage,
   GmailNotFoundError,
   GmailProviderError,
   type GmailProviderPort,
+  type GmailRawMessage,
   type GmailSearchPage,
   type GmailSearchRequest,
+  type GmailSendAs,
+  type GmailSentRef,
   type GmailThread,
 } from './gmail-provider.port';
 
@@ -53,6 +63,21 @@ const SUMMARY_FIELDS =
   'id,threadId,labelIds,snippet,internalDate,payload(partId,mimeType,filename,headers,body/size,body/attachmentId,parts(partId,mimeType,filename,body/size,body/attachmentId,parts(partId,mimeType,filename,body/size,body/attachmentId,parts(partId,mimeType,filename,body/size,body/attachmentId))))';
 
 type Bucket = 'project' | `connection:${string}`;
+
+/** One person's Gmail for one port call: reads, and the writes drafts and sends make. */
+interface GmailSession {
+  get(path: string, params: Record<string, string>): Promise<Record<string, unknown>>;
+  write(
+    method: 'POST' | 'PUT' | 'DELETE',
+    path: string,
+    body?: unknown,
+  ): Promise<Record<string, unknown>>;
+  /**
+   * A send: a refusal counts against the person's sending limit, never the
+   * project's, so it pauses only that account.
+   */
+  send(path: string, body: unknown): Promise<Record<string, unknown>>;
+}
 
 /**
  * Gmail, through the same OAuth client as Google sign-in, with a grant of its
@@ -144,7 +169,7 @@ export class GmailGateway implements GmailProviderPort {
     });
     return {
       id: typeof thread.id === 'string' ? thread.id : threadId,
-      messages: list(thread.messages).map(messageOf),
+      messages: list(thread.messages).map((message) => messageOf(message)),
     };
   }
 
@@ -216,6 +241,115 @@ export class GmailGateway implements GmailProviderPort {
     return { ...named, bytes: Buffer.from(body.data, 'base64url') };
   }
 
+  async listSendAs(grant: GmailCallGrant): Promise<GmailSendAs[]> {
+    const session = await this.session(grant);
+    const aliases = list((await session.get('settings/sendAs', {})).sendAs).map(sendAsOf);
+    return aliases.sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  }
+
+  async readMessage(grant: GmailCallGrant, messageId: string): Promise<GmailMessage> {
+    const session = await this.session(grant);
+    // Whole on purpose: a forward quotes all of it. Only the model's reads are cut.
+    return messageOf(
+      await session.get(`messages/${encodeURIComponent(messageId)}`, { format: 'full' }),
+      Number.POSITIVE_INFINITY,
+    );
+  }
+
+  async readDraft(grant: GmailCallGrant, draftId: string): Promise<GmailDraftRead> {
+    const session = await this.session(grant);
+    const draft = await session.get(`drafts/${encodeURIComponent(draftId)}`, { format: 'full' });
+    // Whole on purpose, as `readMessage`: the plan cuts it for the card.
+    return {
+      id: typeof draft.id === 'string' ? draft.id : draftId,
+      message: messageOf(draft.message, Number.POSITIVE_INFINITY),
+    };
+  }
+
+  async createDraft(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailDraftRef> {
+    const session = await this.session(grant);
+    const draft = await session.write('POST', 'drafts', { message: rawBody(message) });
+    return { draftId: String(draft.id ?? ''), ...sentRefOf(draft.message) };
+  }
+
+  async updateDraft(
+    grant: GmailCallGrant,
+    draftId: string,
+    message: GmailRawMessage,
+  ): Promise<GmailDraftRef> {
+    const session = await this.session(grant);
+    const draft = await session.write('PUT', `drafts/${encodeURIComponent(draftId)}`, {
+      id: draftId,
+      message: rawBody(message),
+    });
+    return { draftId: String(draft.id ?? draftId), ...sentRefOf(draft.message) };
+  }
+
+  async deleteDraft(grant: GmailCallGrant, draftId: string): Promise<void> {
+    const session = await this.session(grant);
+    await session.write('DELETE', `drafts/${encodeURIComponent(draftId)}`);
+  }
+
+  async sendDraft(grant: GmailCallGrant, draftId: string): Promise<GmailSentRef> {
+    const session = await this.session(grant);
+    return sentRefOf(await session.send('drafts/send', { id: draftId }));
+  }
+
+  async sendMessage(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailSentRef> {
+    const session = await this.session(grant);
+    return sentRefOf(await session.send('messages/send', rawBody(message)));
+  }
+
+  async modifyThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<GmailBulkOutcome> {
+    const session = await this.session(grant);
+    return eachThread(threadIds, (id) =>
+      session.write('POST', `threads/${encodeURIComponent(id)}/modify`, {
+        addLabelIds: change.add,
+        removeLabelIds: change.remove,
+      }),
+    );
+  }
+
+  async modifyMessages(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+    change: GmailLabelChange,
+  ): Promise<void> {
+    const session = await this.session(grant);
+    await session.write('POST', 'messages/batchModify', {
+      ids: messageIds,
+      addLabelIds: change.add,
+      removeLabelIds: change.remove,
+    });
+  }
+
+  async trashThreads(
+    grant: GmailCallGrant,
+    threadIds: readonly string[],
+    trash: boolean,
+  ): Promise<GmailBulkOutcome> {
+    const session = await this.session(grant);
+    const verb = trash ? 'trash' : 'untrash';
+    return eachThread(threadIds, (id) =>
+      session.write('POST', `threads/${encodeURIComponent(id)}/${verb}`),
+    );
+  }
+
+  async createLabel(grant: GmailCallGrant, name: string): Promise<GmailLabel> {
+    const session = await this.session(grant);
+    return labelOf(
+      await session.write('POST', 'labels', {
+        name,
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
+      }),
+    );
+  }
+
   async revoke(grant: GmailCallGrant): Promise<void> {
     const url = new URL(`${this.config('googleOauthBaseUrl')}/revoke`);
     url.searchParams.set('token', grant.refreshToken);
@@ -226,9 +360,7 @@ export class GmailGateway implements GmailProviderPort {
    * An access token for the grant, and a reader of Gmail's `users/me` API
    * with it: one token refresh per port call, never kept beyond it.
    */
-  private async session(grant: GmailCallGrant): Promise<{
-    get(path: string, params: Record<string, string>): Promise<Record<string, unknown>>;
-  }> {
+  private async session(grant: GmailCallGrant): Promise<GmailSession> {
     const buckets = bucketsOf(grant.connectionId);
     const token = await this.token(
       { refresh_token: grant.refreshToken, grant_type: 'refresh_token' },
@@ -238,20 +370,37 @@ export class GmailGateway implements GmailProviderPort {
       throw new GmailProviderError('Google returned no access token');
     }
     const accessToken = token.access_token;
+    const call = async (
+      method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+      path: string,
+      params: Record<string, string>,
+      body?: unknown,
+      quota: 'person' | 'either' = 'either',
+    ): Promise<Record<string, unknown>> => {
+      const url = new URL(`${this.config('gmailApiBaseUrl')}/gmail/v1/users/me/${path}`);
+      for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+      const { response, errorBody } = await this.fetch(
+        url,
+        {
+          method,
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        },
+        buckets,
+        quota,
+      );
+      if (response.status === 401) throw new GmailGrantRevokedError('Gmail refused the token');
+      if (response.status === 404) throw new GmailNotFoundError(`Gmail has no ${path}`);
+      if (errorBody !== null) throw new GmailProviderError(`Gmail answered ${response.status}`);
+      return response.status === 204 ? {} : jsonOf(await response.text());
+    };
     return {
-      get: async (path, params) => {
-        const url = new URL(`${this.config('gmailApiBaseUrl')}/gmail/v1/users/me/${path}`);
-        for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-        const { response, errorBody } = await this.fetch(
-          url,
-          { headers: { authorization: `Bearer ${accessToken}` } },
-          buckets,
-        );
-        if (response.status === 401) throw new GmailGrantRevokedError('Gmail refused the token');
-        if (response.status === 404) throw new GmailNotFoundError(`Gmail has no ${path}`);
-        if (errorBody !== null) throw new GmailProviderError(`Gmail answered ${response.status}`);
-        return jsonOf(await response.text());
-      },
+      get: (path, params) => call('GET', path, params),
+      write: (method, path, body) => call(method, path, {}, body),
+      send: (path, body) => call('POST', path, {}, body, 'person'),
     };
   }
 
@@ -291,12 +440,13 @@ export class GmailGateway implements GmailProviderPort {
     url: URL,
     init: RequestInit,
     buckets: Bucket[],
+    quota: 'person' | 'either' = 'either',
   ): Promise<{ response: Response; errorBody: string | null }> {
     try {
       return await this.limiter.exchange(
         buckets,
         () => fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) }),
-        readQuotaRefusal(buckets[0]),
+        readQuotaRefusal(buckets[0], quota),
       );
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -334,10 +484,14 @@ function bucketsOf(connectionId: string): Bucket[] {
  * (`RESOURCE_EXHAUSTED`), and sends it as a 403 as often as a 429. A
  * per-person reason pauses the grant; a per-project one pauses every grant.
  */
-function readQuotaRefusal(personBucket: Bucket): RefusalReader {
+function readQuotaRefusal(personBucket: Bucket, quota: 'person' | 'either'): RefusalReader {
   return (errorBody) => {
     const error = record(jsonOf(errorBody).error);
     const reasons = list(error.errors).map((entry) => String(record(entry).reason ?? ''));
+    const limited =
+      reasons.some((reason) => PERSON_REASONS.has(reason) || PROJECT_REASONS.has(reason)) ||
+      error.status === 'RESOURCE_EXHAUSTED';
+    if (quota === 'person' && limited) return { limited: true, bucket: personBucket };
     if (reasons.some((reason) => PERSON_REASONS.has(reason))) {
       return { limited: true, bucket: personBucket };
     }
@@ -348,6 +502,14 @@ function readQuotaRefusal(personBucket: Bucket): RefusalReader {
       return { limited: true, bucket: PROJECT };
     }
     return { limited: false };
+  };
+}
+
+/** A message as Gmail's API takes it: the whole of it, base64url, in its thread when it has one. */
+function rawBody(message: GmailRawMessage): Record<string, string> {
+  return {
+    raw: message.raw.toString('base64url'),
+    ...(message.threadId ? { threadId: message.threadId } : {}),
   };
 }
 
@@ -367,4 +529,25 @@ function record(value: unknown): Record<string, unknown> {
 
 function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+/**
+ * One write per thread, in order, so a call over many stays inside Gmail's
+ * per-second quota; a thread Gmail does not have is listed, the rest go on.
+ */
+async function eachThread(
+  threadIds: readonly string[],
+  write: (id: string) => Promise<unknown>,
+): Promise<GmailBulkOutcome> {
+  const outcome: GmailBulkOutcome = { changed: [], missing: [] };
+  for (const id of threadIds) {
+    try {
+      await write(id);
+      outcome.changed.push(id);
+    } catch (error) {
+      if (!(error instanceof GmailNotFoundError)) throw error;
+      outcome.missing.push(id);
+    }
+  }
+  return outcome;
 }

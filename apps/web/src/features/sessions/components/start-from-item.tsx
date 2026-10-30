@@ -2,9 +2,10 @@ import { ChipSelectItem, dotVariants } from '@oppenheimer/design-system-web';
 import type { StartFromHost } from '../lib/session-options';
 
 /**
- * One host in the Claude Code row's Start from pane: its presence dot, its
- * name, and either the claude.ai account it would run the session on or why
- * it cannot start one, in which case the row is disabled
+ * One host in a host cloud's Start from pane: its presence dot, its name, and
+ * either the account it would run the session on (the claude.ai one, for
+ * Claude Code), what the host is, or why it cannot start one, in which case
+ * the row is disabled
  * (`product/versions/mvp/24-session-places.md` §7).
  */
 export function StartFromItem({

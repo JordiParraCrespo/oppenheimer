@@ -25,7 +25,12 @@ export interface BotPromptInput {
   description: string;
   soul: string;
   instructions: string;
+  /** Its own facts kept in mind (`memoryInMind`), oldest first. */
   facts: readonly string[];
+  /** What it keeps in mind about the person, shared by every bot of theirs. */
+  personFacts?: readonly string[];
+  /** How many more facts it keeps to look up with `recall`. */
+  factsToRecall?: number;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
@@ -62,8 +67,18 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
+  if (input.personFacts?.length) {
+    parts.push(
+      `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
+  }
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
+  }
+  if (input.factsToRecall) {
+    parts.push(
+      `You also keep ${input.factsToRecall} fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
+    );
   }
   return parts.join('\n\n');
 }
@@ -96,12 +111,14 @@ const HOW_A_TURN_GOES = `# How a turn goes
 - Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
 - Keep going until the request is done or you are blocked, then stop. A turn has a time limit of a few minutes and a limit on tool calls; do not start work you cannot finish in it.
 - Report what actually happened. Say "done" only for what a tool confirmed. When something failed, is still running or is blocked, say that, and what would unblock it.
+- A reply commits to something. When you take on work, say what you are taking on, where it stands and when the person will hear from you next (when the session finishes, when the review is in). "On it" or "Sure" alone is not a reply.
+- Asking again for something already under way is the same errand, not a new one. Say where it stands and start nothing new: check what you started (a session, a task, a review) before starting another.
 - Do not narrate each tool call; the chat shows them on their own line. Your messages are the conversation.
 - Write in the person's language, briefly, in Markdown when a list or a table helps.`;
 
 const THE_TURN_CONTEXT = `# The turn context
 
-The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
+The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not, and how full your context was when your last turn ended. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
 
 function whatYouCanDo(
   engine: readonly string[],
@@ -180,6 +197,9 @@ function approvalPrompt(content: string): string {
 const APPROVAL_ASK =
   'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
 
+const QUESTION_ASK =
+  'This is what came of the questions you asked. If they answered, carry on with what you were doing, as their answers say, without asking the same thing again. If they dismissed them, do what you can without the answer, or say what you need and stop.';
+
 type EventPrompts = {
   [Kind in BotMessageEvent['kind']]: (
     event: Extract<BotMessageEvent, { kind: Kind }>,
@@ -190,14 +210,17 @@ type EventPrompts = {
 /**
  * The prompt of a turn an event opened, one entry per kind, so a new kind
  * is a row the compiler asks for. A routine's opening already says what to
- * do (`routineOpening`), so it is read as the note it is.
+ * do (`routineOpening`), and so does a goal's continuation
+ * (`goalContinuationText`), so each is read as the note it is.
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (_event, content) => approvalPrompt(content),
+  question: (_event, content) => `${eventNote(content)}\n\n${QUESTION_ASK}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,
   session: sessionWakePrompt,
+  goal: (_event, content) => eventNote(content),
 };
 
 /**
