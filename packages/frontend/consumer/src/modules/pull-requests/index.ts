@@ -1,6 +1,7 @@
 export {
   type AnalyticsFigure,
   type AnalyticsMedian,
+  type CiFinding,
   type LaneReason,
   type LineCommentInput,
   type MergeGateId,
@@ -16,6 +17,7 @@ export {
   type PullRequestComment,
   PullRequestDetailEntity,
   PullRequestEntity,
+  type PullRequestFailingCheck,
   type PullRequestFile,
   type PullRequestLane,
   type PullRequestQueue,

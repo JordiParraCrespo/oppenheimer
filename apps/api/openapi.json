@@ -29872,6 +29872,31 @@
         },
         "required": ["watching"]
       },
+      "PullRequestFailingCheckDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The check run’s name, or the commit status’s context."
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where its log or details are."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Its one-line result."
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true,
+            "description": "The start of its summary."
+          }
+        },
+        "required": ["name", "url", "title", "summary"]
+      },
       "PullRequestChecksDto": {
         "type": "object",
         "properties": {
@@ -29890,9 +29915,89 @@
           },
           "pending": {
             "type": "number"
+          },
+          "failing": {
+            "description": "The checks that failed on the head; empty when none did or they were not read.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PullRequestFailingCheckDto"
+            }
           }
         },
-        "required": ["state", "total", "passed", "failed", "pending"]
+        "required": ["state", "total", "passed", "failed", "pending", "failing"]
+      },
+      "CiFindingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "check": {
+            "type": "string",
+            "description": "The check, as GitHub names it."
+          },
+          "headSha": {
+            "type": "string",
+            "description": "The head commit it failed on."
+          },
+          "rootCause": {
+            "type": "string",
+            "description": "Why it failed."
+          },
+          "relation": {
+            "type": "string",
+            "enum": ["this_change", "unrelated", "unclear"],
+            "description": "`this_change`: the pull request caused it; `unrelated`: it fails without it."
+          },
+          "flake": {
+            "type": "string",
+            "enum": ["flake", "real", "unsure"]
+          },
+          "action": {
+            "type": "string",
+            "enum": ["fix_here", "rerun", "fix_elsewhere", "ask"]
+          },
+          "next": {
+            "type": "string",
+            "description": "The action in words."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "evidence": {
+            "description": "What it rests on: log lines, files, runs.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recordedByBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The bot that recorded it; null when a person did, or the bot is gone."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "check",
+          "headSha",
+          "rootCause",
+          "relation",
+          "flake",
+          "action",
+          "next",
+          "confidence",
+          "evidence",
+          "recordedByBotId",
+          "updatedAt"
+        ]
       },
       "PullRequestGateDto": {
         "type": "object",
@@ -30054,6 +30159,13 @@
           "checkCounts": {
             "$ref": "#/components/schemas/PullRequestChecksDto"
           },
+          "ciFindings": {
+            "description": "What the failing checks on the head came to, one per check that was looked into; empty when none was.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CiFindingResponseDto"
+            }
+          },
           "gates": {
             "type": "array",
             "items": {
@@ -30100,6 +30212,7 @@
           "changedFiles",
           "folders",
           "checkCounts",
+          "ciFindings",
           "gates",
           "reviewers"
         ]
