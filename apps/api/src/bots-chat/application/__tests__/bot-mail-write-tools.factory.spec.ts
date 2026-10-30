@@ -11,6 +11,7 @@ import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
+import { BotMailChatFilesResolver } from '../bot-mail-chat-files.resolver';
 import { BotMailWriteToolsFactory } from '../bot-mail-write-tools.factory';
 import type { ApprovedCallContext, BotToolContext } from '../bot-tool.factory';
 
@@ -101,8 +102,7 @@ function setup(permission: BotToolContext['permission']) {
     queryBus,
     { execute: commands } as unknown as CommandBus,
     new BotMailAccountsResolver(queryBus),
-    images,
-    files,
+    new BotMailChatFilesResolver(images, files),
   ).definitions();
   const definition = (name: string) => {
     const found = definitions.find((tool) => tool.name === name);

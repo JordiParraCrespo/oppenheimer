@@ -32,6 +32,18 @@ export function sizeRefusal(attachmentBytes: number, bodyBytes: number): string 
     : null;
 }
 
+/**
+ * What an approval's earlier attempt means for this one (at most once): one
+ * that went is answered as it is, null; one started and never confirmed may
+ * have gone, and one that failed is asked again rather than retried.
+ */
+export function priorSendRefusal(status: 'sending' | 'sent' | 'failed'): string | null {
+  if (status === 'sent') return null;
+  return status === 'sending'
+    ? 'An earlier attempt at this send started and was never confirmed. Check Sent in Gmail before sending again.'
+    : 'An earlier attempt at this send failed. Check Sent in Gmail, then ask again.';
+}
+
 /** The window the daily cap counts over. */
 export function dayBefore(now: Date): Date {
   return new Date(now.getTime() - 24 * 60 * 60 * 1000);

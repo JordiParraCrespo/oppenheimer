@@ -72,6 +72,11 @@ interface GmailSession {
     path: string,
     body?: unknown,
   ): Promise<Record<string, unknown>>;
+  /**
+   * A send: a refusal counts against the person's sending limit, never the
+   * project's, so it pauses only that account.
+   */
+  send(path: string, body: unknown): Promise<Record<string, unknown>>;
 }
 
 /**
@@ -164,7 +169,7 @@ export class GmailGateway implements GmailProviderPort {
     });
     return {
       id: typeof thread.id === 'string' ? thread.id : threadId,
-      messages: list(thread.messages).map(messageOf),
+      messages: list(thread.messages).map((message) => messageOf(message)),
     };
   }
 
@@ -244,17 +249,20 @@ export class GmailGateway implements GmailProviderPort {
 
   async readMessage(grant: GmailCallGrant, messageId: string): Promise<GmailMessage> {
     const session = await this.session(grant);
+    // Whole on purpose: a forward quotes all of it. Only the model's reads are cut.
     return messageOf(
       await session.get(`messages/${encodeURIComponent(messageId)}`, { format: 'full' }),
+      Number.POSITIVE_INFINITY,
     );
   }
 
   async readDraft(grant: GmailCallGrant, draftId: string): Promise<GmailDraftRead> {
     const session = await this.session(grant);
     const draft = await session.get(`drafts/${encodeURIComponent(draftId)}`, { format: 'full' });
+    // Whole on purpose, as `readMessage`: the plan cuts it for the card.
     return {
       id: typeof draft.id === 'string' ? draft.id : draftId,
-      message: messageOf(draft.message),
+      message: messageOf(draft.message, Number.POSITIVE_INFINITY),
     };
   }
 
@@ -284,12 +292,12 @@ export class GmailGateway implements GmailProviderPort {
 
   async sendDraft(grant: GmailCallGrant, draftId: string): Promise<GmailSentRef> {
     const session = await this.session(grant);
-    return sentRefOf(await session.write('POST', 'drafts/send', { id: draftId }));
+    return sentRefOf(await session.send('drafts/send', { id: draftId }));
   }
 
   async sendMessage(grant: GmailCallGrant, message: GmailRawMessage): Promise<GmailSentRef> {
     const session = await this.session(grant);
-    return sentRefOf(await session.write('POST', 'messages/send', rawBody(message)));
+    return sentRefOf(await session.send('messages/send', rawBody(message)));
   }
 
   async modifyThreads(
@@ -367,6 +375,7 @@ export class GmailGateway implements GmailProviderPort {
       path: string,
       params: Record<string, string>,
       body?: unknown,
+      quota: 'person' | 'either' = 'either',
     ): Promise<Record<string, unknown>> => {
       const url = new URL(`${this.config('gmailApiBaseUrl')}/gmail/v1/users/me/${path}`);
       for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
@@ -381,8 +390,7 @@ export class GmailGateway implements GmailProviderPort {
           ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         },
         buckets,
-        // A refused send counts against the person's sending limit, never the project's.
-        method === 'POST' && path.endsWith('/send') ? 'person' : 'either',
+        quota,
       );
       if (response.status === 401) throw new GmailGrantRevokedError('Gmail refused the token');
       if (response.status === 404) throw new GmailNotFoundError(`Gmail has no ${path}`);
@@ -392,6 +400,7 @@ export class GmailGateway implements GmailProviderPort {
     return {
       get: (path, params) => call('GET', path, params),
       write: (method, path, body) => call(method, path, {}, body),
+      send: (path, body) => call('POST', path, {}, body, 'person'),
     };
   }
 

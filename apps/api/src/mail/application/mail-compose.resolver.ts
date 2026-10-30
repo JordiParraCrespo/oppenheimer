@@ -3,18 +3,8 @@ import { AppError } from '@oppenheimer/backend-core';
 import { type MailPlan, type MailPlanAttachment, mailAttachmentKey } from '@oppenheimer/shared';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
 import { MailErrors } from '../domain/mail.errors';
-import {
-  addressesOf,
-  formatAddress,
-  isMailAddress,
-  type MailAddress,
-} from '../domain/mail-address.policy';
-import {
-  forwardSubject,
-  referencesFor,
-  replyRecipients,
-  replySubject,
-} from '../domain/mail-reply.policy';
+import { addressesOf, isMailAddress, type MailAddress } from '../domain/mail-address.policy';
+import { replyRecipients } from '../domain/mail-reply.policy';
 import {
   type MailLocalFiles,
   type MailRequest,
@@ -29,7 +19,7 @@ import type {
   GmailRawMessage,
   GmailSendAs,
 } from '../infrastructure/gmail-provider.port';
-import { composeBody } from '../infrastructure/mail-body.util';
+import { MailPlanMapper } from '../mail-plan.mapper';
 import { GmailCallResolver } from './gmail-call.resolver';
 
 /**
@@ -60,17 +50,18 @@ export class MailComposeResolver {
         cc: parsedRecipients(request.cc),
         bcc: parsedRecipients(request.bcc),
       };
-      const answering = original && (request.kind === 'reply' || request.kind === 'reply_all');
-      const answered = answering
-        ? replyRecipients(original, own, request.kind === 'reply_all')
-        : { to: [], cc: [] };
+      const answering = request.kind === 'reply' || request.kind === 'reply_all';
+      const answered =
+        answering && original
+          ? replyRecipients(original, own, request.kind === 'reply_all')
+          : { to: [], cc: [] };
       const to = [...answered.to, ...given.to];
       const cc = [...answered.cc, ...given.cc];
       const refusal = recipientsRefusal(to.length + cc.length + given.bcc.length);
       if (refusal) throw new AppError(MailErrors.RECIPIENTS_REFUSED, { detail: refusal });
 
       const attachments = [
-        ...(original && request.kind === 'forward' ? attachmentsOf(original) : []),
+        ...(original && request.kind === 'forward' ? MailPlanMapper.attachmentsOf(original) : []),
         ...(await this.namedAttachments(provider, grant, request.attachments)),
         ...request.localFiles,
       ];
@@ -80,37 +71,17 @@ export class MailComposeResolver {
       );
       if (tooLarge) throw new AppError(MailErrors.MESSAGE_TOO_LARGE, { detail: tooLarge });
 
-      return {
-        kind: request.kind,
-        connectionId: connection.id,
-        accountEmail: connection.accountEmail,
+      return MailPlanMapper.toPlan({
+        request,
+        connection,
         from,
-        to: to.map(formatAddress),
-        cc: cc.map(formatAddress),
-        bcc: given.bcc.map(formatAddress),
+        original,
+        to,
+        cc,
+        bcc: given.bcc,
         recipientsFromMail: Boolean(answering && answered.to.length + answered.cc.length > 0),
-        subject:
-          request.subject?.trim() ||
-          (original
-            ? request.kind === 'forward'
-              ? forwardSubject(original.subject)
-              : replySubject(original.subject)
-            : '(no subject)'),
-        body: request.body,
-        signature: request.signature,
-        original: original
-          ? {
-              messageId: original.id,
-              from: original.from,
-              subject: original.subject,
-              date: original.dateHeader || null,
-            }
-          : null,
-        threadId: answering && original ? original.threadId : null,
         attachments,
-        draftId: null,
-        draftMessageId: null,
-      };
+      });
     });
   }
 
@@ -118,26 +89,11 @@ export class MailComposeResolver {
   async planDraft(connection: GmailConnectionEntity, draftId: string): Promise<MailPlan> {
     return this.gmail.call(connection, async (provider, grant) => {
       const draft = await provider.readDraft(grant, draftId);
-      const message = draft.message;
-      const sender = addressesOf(message.from)[0] ?? { name: null, email: connection.accountEmail };
-      return {
-        kind: 'draft',
-        connectionId: connection.id,
-        accountEmail: connection.accountEmail,
-        from: { email: sender.email, name: sender.name },
-        to: addressesOf(message.to).map(formatAddress),
-        cc: addressesOf(message.cc).map(formatAddress),
-        bcc: [],
-        recipientsFromMail: false,
-        subject: message.subject,
-        body: message.body,
-        signature: false,
-        original: null,
-        threadId: message.threadId || null,
-        attachments: attachmentsOf(message),
-        draftId: draft.id,
-        draftMessageId: message.id,
-      };
+      const plan = MailPlanMapper.draftToPlan(connection, draft);
+      // A draft written in Gmail is held to the same limit as one a bot writes.
+      const refusal = recipientsRefusal(plan.to.length + plan.cc.length + plan.bcc.length);
+      if (refusal) throw new AppError(MailErrors.RECIPIENTS_REFUSED, { detail: refusal });
+      return plan;
     });
   }
 
@@ -160,19 +116,6 @@ export class MailComposeResolver {
           (alias) => alias.email.toLowerCase() === plan.from.email.toLowerCase(),
         )?.signatureHtml ?? null)
       : null;
-    const quoted =
-      original && plan.kind !== 'new'
-        ? {
-            kind: plan.kind === 'forward' ? ('forward' as const) : ('reply' as const),
-            from: original.from,
-            to: original.to,
-            cc: original.cc,
-            subject: original.subject,
-            date: original.dateHeader,
-            body: original.body,
-          }
-        : null;
-    const answering = original && (plan.kind === 'reply' || plan.kind === 'reply_all');
     const files = await Promise.all(
       plan.attachments.map(async (file) => ({
         filename: file.filename,
@@ -180,17 +123,7 @@ export class MailComposeResolver {
         bytes: await bytesOf(provider, grant, file, local),
       })),
     );
-    const raw = buildMime({
-      from: plan.from,
-      to: plan.to.flatMap(addressesOf),
-      cc: plan.cc.flatMap(addressesOf),
-      bcc: plan.bcc.flatMap(addressesOf),
-      subject: plan.subject,
-      body: composeBody(plan.body, { quoted, signatureHtml }),
-      inReplyTo: answering && original ? original.messageIdHeader || null : null,
-      references: answering && original ? referencesFor(original) || null : null,
-      attachments: files,
-    });
+    const raw = buildMime(MailPlanMapper.toOutgoing(plan, original, signatureHtml, files));
     return { raw, threadId: plan.threadId };
   }
 
@@ -208,7 +141,9 @@ export class MailComposeResolver {
         message = await provider.readMessage(grant, messageId);
         messages.set(messageId, message);
       }
-      const file = attachmentsOf(message).find((attachment) => attachment.partId === partId);
+      const file = MailPlanMapper.attachmentsOf(message).find(
+        (attachment) => attachment.partId === partId,
+      );
       if (!file) {
         throw new AppError(MailErrors.GMAIL_ITEM_NOT_FOUND, {
           detail: `Message ${messageId} has no attachment in part ${partId}`,
@@ -276,15 +211,4 @@ async function bytesOf(
     });
   }
   return bytes;
-}
-
-function attachmentsOf(message: GmailMessage): MailFile[] {
-  return message.attachments.map((file) => ({
-    source: 'mail' as const,
-    messageId: message.id,
-    partId: file.partId,
-    filename: file.filename,
-    mimeType: file.mimeType,
-    sizeBytes: file.sizeBytes,
-  }));
 }

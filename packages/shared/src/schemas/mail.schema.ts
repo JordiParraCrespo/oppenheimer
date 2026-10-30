@@ -70,7 +70,7 @@ const fileFacts = {
  * A file the message carries, by where its bytes are: an attachment of a
  * message in the account, or an image from the bot's chat.
  */
-export const mailPlanAttachmentSchema = z.discriminatedUnion('source', [
+const sourcedAttachmentSchema = z.discriminatedUnion('source', [
   /** A file of a message in the account, by its message and part. */
   z.object({
     source: z.literal('mail'),
@@ -82,7 +82,21 @@ export const mailPlanAttachmentSchema = z.discriminatedUnion('source', [
   z.object({ source: z.literal('chat'), attachmentId: z.string().uuid(), ...fileFacts }),
 ]);
 
-export type MailPlanAttachment = z.infer<typeof mailPlanAttachmentSchema>;
+/**
+ * A file as a plan carries it. A plan stored before files had a `source`
+ * (before 2026-10-29, `#540`) named only files of a message, so one without
+ * it reads as `mail`; the shim can go once no approval card from before then
+ * is still waiting.
+ */
+export const mailPlanAttachmentSchema = z.preprocess(
+  (value) =>
+    value && typeof value === 'object' && !('source' in value)
+      ? { ...value, source: 'mail' }
+      : value,
+  sourcedAttachmentSchema,
+);
+
+export type MailPlanAttachment = z.infer<typeof sourcedAttachmentSchema>;
 
 /** Where a planned file is fetched from, as one key: what the send's local bytes are looked up by. */
 export function mailAttachmentKey(file: MailPlanAttachment): string {
@@ -90,6 +104,9 @@ export function mailAttachmentKey(file: MailPlanAttachment): string {
     ? `mail:${file.messageId}:${file.partId}`
     : `chat:${file.attachmentId}`;
 }
+
+/** The longest body a plan holds; a draft's longer body is cut for its card and sent whole. */
+export const MAIL_PLAN_BODY_MAX = 100_000;
 
 /**
  * A message as it will go, every default resolved: the alias it goes from,
@@ -109,7 +126,7 @@ export const mailPlanSchema = z.object({
   recipientsFromMail: z.boolean(),
   subject: z.string().max(998),
   /** What the bot wrote, in light markdown; the quoted original and the signature are added when sent. */
-  body: z.string().max(100_000),
+  body: z.string().max(MAIL_PLAN_BODY_MAX),
   /** The alias's Gmail signature goes below the body. */
   signature: z.boolean(),
   /** The message answered or forwarded, as the card names it. */
