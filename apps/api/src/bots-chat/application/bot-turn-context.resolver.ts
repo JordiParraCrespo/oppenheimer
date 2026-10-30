@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { BOT_MEMORY_PROFILE_IN_PROMPT_MAX } from '@oppenheimer/shared';
 import { BOT_DOCUMENT_REPOSITORY, BOT_MEMORY_FACT_REPOSITORY } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
@@ -20,6 +21,7 @@ import type { BotMessageRepositoryPort } from '../database/bot-message.repositor
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
+import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
@@ -139,6 +141,7 @@ export class BotTurnContextResolver {
       });
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
+    const inMind = memoryInMind(facts, BOT_MEMORY_PROFILE_IN_PROMPT_MAX);
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
     return {
@@ -148,7 +151,9 @@ export class BotTurnContextResolver {
         description: bot.description,
         soul: documentText('soul'),
         instructions: documentText('instructions'),
-        facts: [...facts].reverse().map((fact) => fact.content),
+        facts: inMind.own,
+        personFacts: inMind.person,
+        factsToRecall: inMind.toRecall,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {

@@ -161,7 +161,7 @@ test.describe('Bots', () => {
       { status: 404, code: 'BOTS_007' },
     );
 
-    // Memory: taught, reworded, forgotten, cleared.
+    // Memory: taught, reworded, forgotten, shared, cleared.
     const fact = await ok<{ id: string; content: string; source: string }>(
       await api.post(`/api/v1/bots/${first.id}/memory`, {
         data: { content: 'Releases go out on Thursdays.' },
@@ -186,8 +186,35 @@ test.describe('Bots', () => {
       await api.get(`/api/v1/bots/${first.id}/memory`),
     );
     expect(remembered.map((f) => f.content)).toEqual(['Staging is devbox.']);
+
+    // A fact about the person, shared with their other bot, read-only there.
+    const aboutYou = await ok<{ id: string; tier: string; scope: string; botId: string }>(
+      await api.post(`/api/v1/bots/${first.id}/memory`, {
+        data: { content: 'Prefers squash merges.', tier: 'log', scope: 'person' },
+      }),
+      201,
+    );
+    expect(aboutYou).toMatchObject({ tier: 'log', scope: 'person', botId: first.id });
+    const keptInMind = await ok<{ tier: string; scope: string }>(
+      await api.patch(`/api/v1/bots/${first.id}/memory/${aboutYou.id}`, {
+        data: { tier: 'profile' },
+      }),
+    );
+    expect(keptInMind).toMatchObject({ tier: 'profile', scope: 'person' });
+    const sharedWithSecond = await ok<{ id: string; botId: string }[]>(
+      await api.get(`/api/v1/bots/${second.id}/memory`),
+    );
+    expect(sharedWithSecond.map((f) => [f.id, f.botId])).toEqual([[aboutYou.id, first.id]]);
+    await expectProblemDocument(
+      await api.patch(`/api/v1/bots/${second.id}/memory/${aboutYou.id}`, {
+        data: { content: 'Prefers rebases.' },
+      }),
+      { status: 404, code: 'BOTS_008' },
+    );
+
     await ok(await api.delete(`/api/v1/bots/${first.id}/memory`), 204);
     expect(await ok<unknown[]>(await api.get(`/api/v1/bots/${first.id}/memory`))).toEqual([]);
+    expect(await ok<unknown[]>(await api.get(`/api/v1/bots/${second.id}/memory`))).toEqual([]);
 
     // Another workspace sees none of it.
     const { api: stranger } = await signedUpContext('botstranger');

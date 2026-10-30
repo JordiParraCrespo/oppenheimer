@@ -1,6 +1,8 @@
 export const BOT_TURN_REPOSITORY = Symbol('BOT_TURN_REPOSITORY');
 export const BOT_MESSAGE_REPOSITORY = Symbol('BOT_MESSAGE_REPOSITORY');
 export const BOT_APPROVAL_REPOSITORY = Symbol('BOT_APPROVAL_REPOSITORY');
+/** The cards of questions a bot puts to its owner (`ask_user`). */
+export const BOT_QUESTION_REPOSITORY = Symbol('BOT_QUESTION_REPOSITORY');
 export const BOT_STREAM = Symbol('BOT_STREAM');
 /** The engines a turn runs on (`@oppenheimer/backend-agents`), bound once per process. */
 export const BOT_ENGINE = Symbol('BOT_ENGINE');

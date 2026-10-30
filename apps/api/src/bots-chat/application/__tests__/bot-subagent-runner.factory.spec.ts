@@ -125,11 +125,20 @@ describe('BotSubagentRunnerFactory', () => {
 
   it(`never runs more than ${SUBAGENT_CONCURRENCY} children at once`, async () => {
     let running = 0;
+    let started = 0;
     let most = 0;
+    // Every child holds until the first full batch has started, so the peak
+    // is what the runner allows, not how fast a timer fires under load.
+    let open = () => {};
+    const full = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     const { factory } = setup(async function* () {
       running++;
+      started++;
       most = Math.max(most, running);
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      if (started === SUBAGENT_CONCURRENCY) open();
+      await full;
       running--;
       yield { type: 'text.done', text: 'ok' };
       yield { type: 'done', reason: 'completed' };

@@ -24,7 +24,7 @@ it lives.
 | Who it is: name, description, avatar, sidebar group | Columns on `bot` | Settings → Profile |
 | `SOUL.md`: persona and tone | A document with revisions | Settings → Instructions |
 | `INSTRUCTIONS.md`: its job and rules | A document with revisions | Settings → Instructions |
-| What it remembers | Rows, one fact each, with where it came from | Settings → Memory |
+| What it remembers | Rows, one fact each, with where it came from, how it is kept in mind and whose it is | Settings → Memory |
 | Its provider, model and effort | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
 | Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
@@ -314,6 +314,44 @@ over the text as soon as it is picked, and a message may be images alone.
   An upload can be sent for 23 hours, an hour short of the sweep, so a
   send never claims an image whose file the sweep is deleting.
 
+### 3.2 Questions
+
+A bot that cannot go on without a choice only you can make asks rather
+than guesses (2026-10-29, from Grok Bot's form cards,
+`research/lessons-from-grok-bot.md` §9 row 12). `ask_user` puts up to four
+questions on a card, each with two to four likely answers and a tag
+("Repo"), the shape of Claude Code's `AskUserQuestion`, and its turn ends.
+
+- **It is a card of its own** beside the approval card (§5), not a kind of
+  approval: a `bot_question` row holding the questions and, once answered,
+  the answers. Nothing runs on it, so it has no tool, no reach and no yes.
+  A bot still has one card up at a time of either kind: raising one locks
+  the bot and looks for a waiting card in both tables, and a bot whose card
+  waits is told to wait. Writing to the bot instead retires it, as it does
+  an approval. The Inbox does not list questions yet; they are answered in
+  the chat.
+- **Answering** is the same picker a session's questions use, where the
+  composer was: one question at a time, an option by its number or row,
+  several where the bot allows, or your own words instead. Submit sends
+  every answer at once (`POST /bots/:id/questions/:questionId/answer`);
+  Dismiss declines (`…/dismiss`, with a note if you like). Answers that do
+  not fit the questions are refused (`BOTS_036`, naming which), and a card
+  already decided or retired is `BOTS_037`. `GET /bots/:id/question` reads
+  the waiting card.
+- **The bot is told** in the turn the decision queues, like an approval's:
+  each question with its answer, between markers, as data rather than
+  instructions; a dismissal says not to ask again unless you bring it up.
+  The answers are fenced the way a page is (`fenceUntrusted`), so an answer
+  that spells the closing marker cannot leave the fence. The turn's origin
+  is `question`. The chat draws the line ("You answered: Which
+  repository?") with each question over its answer.
+- **Only where someone answers.** The tool is marked attended-only, and the
+  toolbox offers it on turns a person is waiting on (their message, or a
+  card they decided), never on a routine's, a wake's or a goal's.
+- **Not built:** Grok Bot's other resume points, a sign-in to a connector
+  and handing a computer over; they need a connector or a host to resume
+  from.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
@@ -369,11 +407,12 @@ that did not cover the tool never runs.
 | `edit_soul` | Rewrite SOUL.md, saved as a revision | auto |
 | `edit_instructions` | Rewrite INSTRUCTIONS.md, saved as a revision | auto |
 | `update_profile` | Change its name and description; an activity line, no revision | auto |
-| `remember` | Save a fact with its source; an activity line, no revision | auto with *Learn automatically*, else ask |
+| `remember` | Save a fact with its source, kept in mind or to look up, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
-| `recall` | Search its memory | auto |
+| `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
 | `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+| `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,
 `research/lessons-from-grok-bot.md` §9 row 10). A goal is for work that
@@ -410,6 +449,29 @@ and it is opened by a line: "Goal · continuation 2 of 5".
   history that no longer exists.
 - **No card.** Neither tool asks. The spend is bounded, every continuation
   is a line, and Stop is one click.
+
+**Memory has a tier and a scope** (2026-10-29, from Grok Bot's memory,
+`research/lessons-from-grok-bot.md` §9 row 11). Each fact is still one row
+of `bot_memory_fact`, with two columns more:
+
+- **Tier.** A `profile` fact is in mind every turn, in the system prompt.
+  A `log` fact is kept to look up with `recall`: a detail that matters
+  once in a while. The prompt carries the newest 60 profile facts and says
+  how many more there are to recall, so a long memory does not crowd the
+  turn's context.
+- **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
+  owner ("prefers squash merges"), and every bot that person made in the
+  workspace reads it, in a section of the prompt of its own. It stays the
+  row of the bot that learned it: that bot edits and forgets it, the
+  others read it, and it goes with that bot when the bot is deleted or its
+  memory cleared. Copying it to each bot would make "forget" mean nothing.
+- **Defaults.** A fact is `profile` and `bot` unless the bot or the owner
+  says otherwise: `remember` takes `tier` and `about: 'person'`, and the
+  owner moves a fact from its row's menu in Settings → Memory. A fact
+  another bot shared is shown there muted, with nothing to change.
+- **Not built.** Grok Bot's review queue for shared learnings: a fact
+  about you comes from your own bots, so it is a line in their chat like
+  any other memory change.
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
@@ -608,7 +670,6 @@ one.
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
-| `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
 Pairing, unpairing or uninstalling hosts; connecting or disconnecting
@@ -751,8 +812,7 @@ the owner's rules (§5). Next: the asking tools of each area.
 Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
 Routines, Notifications, daily caps, slash commands, voice,
-attachments other than images (§3.1), project and
-user memory, a bot's engine running on a host of its own with the full
+attachments other than images (§3.1), project memory, a bot's engine running on a host of its own with the full
 Claude Code toolset.
 
 Routines, a bot waking on a schedule, an event or finished work, are
@@ -958,6 +1018,14 @@ The decisions it produced:
   merging is never standing. It adds to 2026-10-15's "*Always allow* sets
   the tool to Allow" rather than replacing it. From Grok Bot's per-path
   grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **a bot asks questions on a card** (`ask_user`, §3.2): a
+  card of its own (`bot_question`), answered or dismissed and never
+  approved, beside the approval card; one card of either kind is up at a
+  time. From Grok Bot's form cards (§9 row 12).
+- 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
+  the bot's or about the person and read by all their bots, still one row
+  owned by the bot that learned it (§4.1). It moves user memory out of §7.
+  From Grok Bot's memory (§9 row 11).
 - 2026-10-29: **the owner's rules are read by a reviewer on the bot's own
   model, and it fails closed**: an ask rule beats an allow rule, and a
   review that cannot say asks. It moves plain-language rules out of §7.

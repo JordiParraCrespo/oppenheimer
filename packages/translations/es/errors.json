@@ -290,7 +290,10 @@
     "BOTS_031": "Este bot ya tiene tantas reglas como admite. Quita una primero.",
     "BOTS_032": "Esa regla ya no existe. Recarga la página.",
     "BOTS_033": "Ese permiso ya no existe. Recarga la página.",
-    "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero."
+    "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero.",
+    "BOTS_035": "Esas preguntas no existen.",
+    "BOTS_036": "Esas respuestas no encajan con las preguntas. Responde cada una y vuelve a enviarlas.",
+    "BOTS_037": "Esas preguntas ya tenían respuesta."
   },
   "notFound": {
     "title": "Esta página no existe",

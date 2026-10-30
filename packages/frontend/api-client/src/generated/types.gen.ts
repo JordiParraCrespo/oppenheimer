@@ -3523,16 +3523,32 @@ export type BotMemoryFactResponseDto = {
      * Who wrote it last.
      */
     source: 'user' | 'bot';
+    /**
+     * `profile`: in mind in every turn. `log`: kept to be looked up with `recall`.
+     */
+    tier: 'profile' | 'log';
+    /**
+     * `bot`: this bot's alone. `person`: about its owner, read by every bot of theirs in the workspace.
+     */
+    scope: 'bot' | 'person';
+    /**
+     * The bot that keeps it; another bot of the same owner for a shared fact.
+     */
+    botId: string;
     createdAt: string;
     updatedAt: string;
 };
 
 export type CreateBotMemoryFactRequest = {
     content: string;
+    tier?: 'profile' | 'log';
+    scope?: 'bot' | 'person';
 };
 
 export type UpdateBotMemoryFactRequest = {
-    content: string;
+    content?: string;
+    tier?: 'profile' | 'log';
+    scope?: 'bot' | 'person';
 };
 
 export type BotGroupResponseDto = {
@@ -3622,6 +3638,27 @@ export type BotApprovalEventResponseDto = {
      * The session the approved call started; null when it started none.
      */
     sessionId: string | null;
+};
+
+export type BotAnsweredQuestionResponseDto = {
+    question: string;
+    /**
+     * The picked options and the person’s own words, joined.
+     */
+    answer: string;
+};
+
+export type BotQuestionEventResponseDto = {
+    kind: 'question';
+    outcome: 'answered' | 'dismissed';
+    /**
+     * The card's line: its first question, and how many follow.
+     */
+    summary: string;
+    /**
+     * Each question and its answer, in words; empty when dismissed.
+     */
+    answers: Array<BotAnsweredQuestionResponseDto>;
 };
 
 export type BotRoutineEventResponseDto = {
@@ -3822,7 +3859,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4062,6 +4099,71 @@ export type DecideBotApprovalRequest = {
     decision: 'approve' | 'deny';
     note?: string;
     reach?: 'once' | 'tool' | 'subject';
+};
+
+export type BotQuestionOptionResponseDto = {
+    label: string;
+    /**
+     * What picking it means.
+     */
+    description: string | null;
+};
+
+export type BotQuestionItemResponseDto = {
+    /**
+     * A tag over it ("Repo").
+     */
+    header: string | null;
+    question: string;
+    /**
+     * Several options may be picked.
+     */
+    multiSelect: boolean;
+    options: Array<BotQuestionOptionResponseDto>;
+};
+
+export type BotQuestionAnswerResponseDto = {
+    picks: Array<number>;
+    other: string | null;
+};
+
+export type BotQuestionResponseDto = {
+    id: string;
+    /**
+     * The turn whose call asked.
+     */
+    turnId: string;
+    questions: Array<BotQuestionItemResponseDto>;
+    /**
+     * The card’s line: the first question, and how many follow.
+     */
+    summary: string;
+    status: 'pending' | 'answered' | 'dismissed' | 'expired';
+    /**
+     * One per question, once answered.
+     */
+    answers: Array<BotQuestionAnswerResponseDto> | null;
+    /**
+     * What the person added to a dismissal.
+     */
+    note: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+};
+
+export type BotPendingQuestionResponseDto = {
+    question: BotQuestionResponseDto | null;
+};
+
+export type AnswerBotQuestionRequest = {
+    answers: Array<{
+        picks: Array<number>;
+        other?: string | null;
+    }>;
+};
+
+export type DismissBotQuestionRequest = {
+    note?: string;
 };
 
 export type BotToolPermissionDto = {
@@ -14049,6 +14151,120 @@ export type DecideBotApprovalResponses = {
 };
 
 export type DecideBotApprovalResponse = DecideBotApprovalResponses[keyof DecideBotApprovalResponses];
+
+export type FindPendingBotQuestionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/question';
+};
+
+export type FindPendingBotQuestionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindPendingBotQuestionError = FindPendingBotQuestionErrors[keyof FindPendingBotQuestionErrors];
+
+export type FindPendingBotQuestionResponses = {
+    200: BotPendingQuestionResponseDto;
+};
+
+export type FindPendingBotQuestionResponse = FindPendingBotQuestionResponses[keyof FindPendingBotQuestionResponses];
+
+export type AnswerBotQuestionData = {
+    body: AnswerBotQuestionRequest;
+    path: {
+        id: string;
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/questions/{questionId}/answer';
+};
+
+export type AnswerBotQuestionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_035 — Questions not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_037 — Already answered
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_036 — Answers that do not fit
+     */
+    422: ProblemDetailsDto;
+};
+
+export type AnswerBotQuestionError = AnswerBotQuestionErrors[keyof AnswerBotQuestionErrors];
+
+export type AnswerBotQuestionResponses = {
+    201: BotQuestionResponseDto;
+};
+
+export type AnswerBotQuestionResponse = AnswerBotQuestionResponses[keyof AnswerBotQuestionResponses];
+
+export type DismissBotQuestionData = {
+    body: DismissBotQuestionRequest;
+    path: {
+        id: string;
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/questions/{questionId}/dismiss';
+};
+
+export type DismissBotQuestionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_035 — Questions not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_037 — Already answered
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DismissBotQuestionError = DismissBotQuestionErrors[keyof DismissBotQuestionErrors];
+
+export type DismissBotQuestionResponses = {
+    201: BotQuestionResponseDto;
+};
+
+export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
 
 export type FindBotPermissionsData = {
     body?: never;

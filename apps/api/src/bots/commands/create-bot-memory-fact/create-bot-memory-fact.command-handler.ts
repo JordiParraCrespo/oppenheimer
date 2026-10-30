@@ -22,13 +22,16 @@ export class CreateBotMemoryFactCommandHandler
     private readonly memory: BotMemoryFactRepositoryPort,
   ) {}
 
-  async execute({ scope, botId, content }: CreateBotMemoryFactCommand): Promise<AggregateID> {
+  async execute(command: CreateBotMemoryFactCommand): Promise<AggregateID> {
+    const { scope, botId, content } = command;
     const bot = await this.lookup.bot(scope, botId);
     const fact = BotMemoryFactEntity.createNew({
       organizationId: bot.organizationId,
       botId: bot.id,
       content,
       actor: userActor(scope.userId),
+      tier: command.tier,
+      scope: command.memoryScope,
     });
     const outcome = await this.memory.insert(fact, BOT_MEMORY_FACTS_MAX);
     if (outcome === 'full') {

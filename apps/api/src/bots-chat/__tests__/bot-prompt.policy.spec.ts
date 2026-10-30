@@ -32,6 +32,19 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
+  it('adds what it knows about the person under its own heading, and how many facts are left to recall', () => {
+    const prompt = composeBotSystemPrompt({
+      ...base,
+      personFacts: ['Prefers squash merges.'],
+      factsToRecall: 3,
+    });
+    expect(prompt).toContain(
+      '# What you know about the person (shared by all their bots)\n\n- Prefers squash merges.',
+    );
+    expect(prompt).toContain('You also keep 3 facts not shown here');
+    expect(composeBotSystemPrompt(base)).not.toMatch(/about the person|You also keep/);
+  });
+
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });

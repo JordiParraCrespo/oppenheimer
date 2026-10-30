@@ -1,7 +1,17 @@
 import { Button, QuestionPanel, Textarea } from '@oppenheimer/design-system-web';
-import type { ChatAnswer, ChatQuestion } from '@oppenheimer/frontend-consumer';
+import type { ChatAnswer } from '@oppenheimer/shared/sessions';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+/** A question the picker asks: the shape of Claude Code's `AskUserQuestion`, which a bot's `ask_user` shares. */
+export interface ChatPickerQuestion {
+  /** The tag over it ("Scope"). */
+  header: string | null;
+  question: string;
+  /** Several options may be picked. */
+  multiSelect: boolean;
+  options: readonly { label: string; description: string | null }[];
+}
 
 const UNANSWERED: ChatAnswer = { picks: [], other: null };
 
@@ -9,8 +19,9 @@ const answered = (answer: ChatAnswer | undefined) =>
   Boolean(answer && (answer.picks.length > 0 || answer.other?.trim()));
 
 /**
- * The questions the agent stopped on (`AskUserQuestion`), answered where the
- * composer was, one at a time, as its terminal picker asks them, each under
+ * The questions an agent stopped on (a session's `AskUserQuestion`, a bot's
+ * `ask_user`), answered where the composer was, one at a time, as Claude
+ * Code's terminal picker asks them, each under
  * the agent's tag for it. Focus lands on the first option as the panel
  * appears, so an option is picked by its number at once, or by its row;
  * where the agent allows several, each toggles. The person may answer in
@@ -23,12 +34,12 @@ const answered = (answer: ChatAnswer | undefined) =>
  * nothing there. `onAnswer` says whether the answers went; when they could
  * not, the panel stays to be sent again.
  */
-export function SessionChatQuestion({
+export function ChatQuestionPicker({
   questions,
   onAnswer,
   onDismiss,
 }: {
-  questions: readonly ChatQuestion[];
+  questions: readonly ChatPickerQuestion[];
   onAnswer: (answers: ChatAnswer[]) => boolean;
   onDismiss: () => void;
 }) {
@@ -89,9 +100,9 @@ export function SessionChatQuestion({
       onPrevious={() => setIndex(index - 1)}
       onNext={() => setIndex(index + 1)}
       labels={{
-        previous: t('sessions.chat.question.previous'),
-        next: t('sessions.chat.question.nextQuestion'),
-        of: (n, total) => t('sessions.chat.question.of', { n, total }),
+        previous: t('common.chat.question.previous'),
+        next: t('common.chat.question.nextQuestion'),
+        of: (n, total) => t('common.chat.question.of', { n, total }),
       }}
       answer={
         <Textarea
@@ -109,38 +120,38 @@ export function SessionChatQuestion({
             event.preventDefault();
             goOn();
           }}
-          placeholder={t('sessions.chat.question.ownAnswer')}
-          aria-label={t('sessions.chat.question.ownAnswerLabel')}
+          placeholder={t('common.chat.question.ownAnswer')}
+          aria-label={t('common.chat.question.ownAnswerLabel')}
         />
       }
       foot={
         <>
           <span className="flex-1">
             {sent
-              ? t('sessions.chat.question.sending')
+              ? t('common.chat.question.sending')
               : t(
                   question.multiSelect
-                    ? 'sessions.chat.question.several'
-                    : 'sessions.chat.question.one',
+                    ? 'common.chat.question.several'
+                    : 'common.chat.question.one',
                   { last: question.options.length },
                 )}
           </span>
           <Button variant="ghost" size="sm" disabled={sent} onClick={onDismiss}>
-            {t('sessions.chat.question.dismiss')}
+            {t('common.chat.question.dismiss')}
           </Button>
           {last ? (
             <Button
               size="sm"
               disabled={!ready}
               pending={sent}
-              pendingLabel={t('sessions.chat.question.sending')}
+              pendingLabel={t('common.chat.question.sending')}
               onClick={() => submit(answers)}
             >
-              {t('sessions.chat.question.submit')}
+              {t('common.chat.question.submit')}
             </Button>
           ) : (
             <Button size="sm" disabled={!answered(answer)} onClick={goOn}>
-              {t('sessions.chat.question.next')}
+              {t('common.chat.question.next')}
             </Button>
           )}
         </>
