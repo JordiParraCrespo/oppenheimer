@@ -54,6 +54,19 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
     return affected;
   }
 
+  /** The batch past the newest `keep`, picked by a backward walk of `IDX_whatsapp_message_account_sent`. */
+  async pruneBeyond(account: WhatsappAccountRef, keep: number, limit: number): Promise<number> {
+    const [, affected]: [unknown, number] = await this.repository.query(
+      `DELETE FROM whatsapp_message WHERE ctid = ANY (ARRAY(
+         SELECT ctid FROM whatsapp_message
+          WHERE "organizationId" = $1 AND "accountId" = $2
+          ORDER BY "sentAt" DESC
+          OFFSET $3 LIMIT $4))`,
+      [account.organizationId, account.accountId, keep, limit],
+    );
+    return affected;
+  }
+
   async findChats(account: WhatsappAccountRef, limit: number): Promise<WhatsappChat[]> {
     // The newest row of each chat, then the chats by it: one pass over the
     // account's slice of `IDX_whatsapp_message_account_sent`.

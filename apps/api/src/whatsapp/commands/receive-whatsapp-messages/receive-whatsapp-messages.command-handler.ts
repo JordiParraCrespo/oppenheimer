@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { WHATSAPP_RETENTION_DAYS } from '@oppenheimer/shared';
+import { WHATSAPP_MESSAGES_KEPT_MAX, WHATSAPP_RETENTION_DAYS } from '@oppenheimer/shared';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-message.repository.port';
 import { WHATSAPP_ACCOUNT_REPOSITORY, WHATSAPP_MESSAGE_REPOSITORY } from '../../whatsapp.di-tokens';
@@ -17,7 +17,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * forget: every message stored, or already stored (a resend after a dropped
  * link), and every message for a host with no linked number, which nobody
  * will read. Intake also deletes a batch of the number's messages past
- * `WHATSAPP_RETENTION_DAYS`, which is the table's whole retention.
+ * `WHATSAPP_RETENTION_DAYS`, and of its oldest past `WHATSAPP_MESSAGES_KEPT_MAX`,
+ * which is the table's whole retention.
  */
 @CommandHandler(ReceiveWhatsappMessagesCommand)
 export class ReceiveWhatsappMessagesCommandHandler
@@ -39,11 +40,13 @@ export class ReceiveWhatsappMessagesCommandHandler
     await this.messages.insertMany(
       messages.map((message) => this.mapper.fromInbound(account, message)),
     );
+    const ref = { organizationId: account.organizationId, accountId: account.id };
     await this.messages.pruneBefore(
-      { organizationId: account.organizationId, accountId: account.id },
+      ref,
       new Date(Date.now() - WHATSAPP_RETENTION_DAYS * DAY_MS),
       WHATSAPP_PRUNE_BATCH,
     );
+    await this.messages.pruneBeyond(ref, WHATSAPP_MESSAGES_KEPT_MAX, WHATSAPP_PRUNE_BATCH);
     return keys;
   }
 }

@@ -18,6 +18,13 @@ export const WHATSAPP_SENDS_PER_DAY = 100;
 /** How long the messages a number receives are kept for its bots to read. */
 export const WHATSAPP_RETENTION_DAYS = 90;
 
+/**
+ * The most messages kept for one number, whatever their age: the oldest go
+ * first. A busy personal number sees a few hundred a day; this bounds what a
+ * runner can make the control plane store for one account.
+ */
+export const WHATSAPP_MESSAGES_KEPT_MAX = 50_000;
+
 /** How an account stands: the runner's device state, kept as the host last reported it. */
 export const WHATSAPP_ACCOUNT_STATUSES = [
   'pairing',

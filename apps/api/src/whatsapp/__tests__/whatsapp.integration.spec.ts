@@ -233,6 +233,17 @@ describe('whatsapp (integration)', () => {
     expect(await messages.pruneBefore(ref, new Date('2026-06-01T00:00:00Z'), 2)).toBe(1);
     expect(await messages.findInChat(ref, '34600333444@s.whatsapp.net', 10, null)).toHaveLength(1);
 
+    await messages.insertMany([
+      message(mine, { sentAt: new Date(Date.now() - 3_000), text: 'older' }),
+      message(mine, { sentAt: new Date(Date.now() - 2_000), text: 'newer' }),
+    ]);
+    expect(await messages.pruneBeyond(ref, 2, 500)).toBe(1);
+    expect(
+      (await messages.findInChat(ref, '34600333444@s.whatsapp.net', 10, null)).map(
+        (kept) => kept.text,
+      ),
+    ).not.toContain('older');
+
     await accounts.delete(mine);
     const [{ count }] = await dataSource.query(
       `SELECT count(*)::int AS count FROM whatsapp_message WHERE "accountId" = $1`,

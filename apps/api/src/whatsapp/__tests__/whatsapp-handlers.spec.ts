@@ -83,6 +83,7 @@ function fakeMessages(
     insertMany: vi.fn(async () => {}),
     recordBotSend: vi.fn(async () => {}),
     pruneBefore: vi.fn(async () => 0),
+    pruneBeyond: vi.fn(async () => 0),
     findChats: vi.fn(async () => []),
     findInChat: vi.fn(async () => []),
     search: vi.fn(async () => []),
@@ -261,6 +262,11 @@ describe('ReceiveWhatsappMessagesCommandHandler', () => {
     expect(messages.pruneBefore).toHaveBeenCalledWith(
       { organizationId: ORG, accountId: linked.id },
       expect.any(Date),
+      500,
+    );
+    expect(messages.pruneBeyond).toHaveBeenCalledWith(
+      { organizationId: ORG, accountId: linked.id },
+      50_000,
       500,
     );
   });

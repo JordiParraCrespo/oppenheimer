@@ -25,6 +25,8 @@ export interface WhatsappMessageRepositoryPort {
   recordBotSend(message: WhatsappMessageDraft): Promise<void>;
   /** Deletes up to `limit` of the account's messages sent before `before`; answers how many. */
   pruneBefore(account: WhatsappAccountRef, before: Date, limit: number): Promise<number>;
+  /** Deletes up to `limit` of the account's oldest messages past its newest `keep`; answers how many. */
+  pruneBeyond(account: WhatsappAccountRef, keep: number, limit: number): Promise<number>;
   /** The account's chats, the most recently active first. */
   findChats(account: WhatsappAccountRef, limit: number): Promise<WhatsappChat[]>;
   /** One chat's messages before `before` (or the newest), newest first. */
