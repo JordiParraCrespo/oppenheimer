@@ -41,13 +41,22 @@ export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger 
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github' && dto.event !== 'schedule') {
+  if (dto.source === 'github' && dto.event !== 'schedule' && dto.event !== 'mail_received') {
     return {
       source: 'github',
       id: dto.id,
       event: dto.event,
       repositories: dto.repositories ?? [],
       filter: filterOf(dto.filter),
+    };
+  }
+  if (dto.source === 'gmail' && dto.event === 'mail_received' && dto.connectionId) {
+    return {
+      source: 'gmail',
+      id: dto.id,
+      event: 'mail_received',
+      connectionId: dto.connectionId,
+      query: dto.query ?? null,
     };
   }
   return null;
@@ -149,6 +158,14 @@ function toTriggerRequest(trigger: TriggerInput): TriggerRequest {
       ...(trigger.days ? { days: trigger.days } : {}),
       ...(trigger.dayOfMonth !== undefined ? { dayOfMonth: trigger.dayOfMonth } : {}),
       ...(trigger.date ? { date: trigger.date } : {}),
+    };
+  }
+  if (trigger.source === 'gmail') {
+    return {
+      source: 'gmail',
+      event: trigger.event,
+      connectionId: trigger.connectionId,
+      query: trigger.query,
     };
   }
   return {

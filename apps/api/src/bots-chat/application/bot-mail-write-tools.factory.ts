@@ -4,12 +4,15 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import {
   type BotMailDraft,
   MAIL_RECIPIENTS_MAX,
+  MAIL_SCHEDULE_MAX_DAYS,
   type MailPlan,
   mailPlanSchema,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { CancelScheduledMailCommand } from '../../mail/commands/cancel-scheduled-mail/cancel-scheduled-mail.command';
 import { CreateMailDraftCommand } from '../../mail/commands/create-mail-draft/create-mail-draft.command';
 import { DeleteMailDraftCommand } from '../../mail/commands/delete-mail-draft/delete-mail-draft.command';
+import { ScheduleMailCommand } from '../../mail/commands/schedule-mail/schedule-mail.command';
 import { SendMailCommand } from '../../mail/commands/send-mail/send-mail.command';
 import { UpdateMailDraftCommand } from '../../mail/commands/update-mail-draft/update-mail-draft.command';
 import type { MailSendEntity } from '../../mail/domain/mail-send.entity';
@@ -27,7 +30,7 @@ import {
   gmailMessageLink,
   sendSummary,
 } from '../bot-mail-tool.mapper';
-import { formatToolList } from '../domain/bot-tool-text.policy';
+import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
 import { BotMailChatFilesResolver } from './bot-mail-chat-files.resolver';
 import {
@@ -138,6 +141,8 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       this.deleteDraft(),
       this.sendMail(),
       this.sendDraft(),
+      this.scheduleMail(),
+      this.cancelScheduled(),
       this.listSent(),
     ];
   }
@@ -224,6 +229,67 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     });
   }
 
+  private scheduleMail(): BotToolDefinition {
+    return defineBotTool({
+      name: 'schedule_mail',
+      asks: 'always',
+      scope: 'mail:write',
+      description: `Schedules a message, or one of the person’s drafts (give draft_id and leave the message fields out), to send from their Gmail at a time: up to ${MAIL_SCHEDULE_MAX_DAYS} days ahead, sent within a minute of it. Always asks the person first, showing the message and the time; their yes is for that message at that time, and changing either means asking again. cancel_scheduled_mail stops it until it goes. Files from mail only: an image from this chat cannot wait.`,
+      input: message.partial({ body: true }).extend({
+        send_at: z
+          .string()
+          .datetime({ offset: true })
+          .describe('When to send, as ISO 8601 with its offset: 2026-11-02T09:00:00+01:00.'),
+        draft_id: z
+          .string()
+          .trim()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Send this draft as it stands at that time, instead of a new message.'),
+        plan,
+      }),
+      normalize: async (input, context) => ({
+        ...input,
+        plan: input.draft_id
+          ? await this.draftPlan({ account: input.account, draft_id: input.draft_id }, context)
+          : await this.plan({ ...input, body: input.body ?? '' }, context),
+      }),
+      summarize: (input, context) =>
+        `At ${formatToolTime(new Date(input.send_at), context.timeZone)}: ${sendSummary(storedPlan(input.plan))}`,
+      run: async (input, context) => {
+        const approvalId = approvedCard(context, 'scheduled', 'schedule_mail');
+        const planned = storedPlan(input.plan);
+        const id = await this.commandBus.execute<ScheduleMailCommand, AggregateID>(
+          new ScheduleMailCommand({
+            scope: context.owner,
+            plan: planned,
+            sendAt: new Date(input.send_at),
+            approvalId,
+            botId: context.botId,
+          }),
+        );
+        return `Scheduled (id ${id}) from ${planned.from.email} for ${formatToolTime(new Date(input.send_at), context.timeZone)}: "${planned.subject}". It goes within a minute of then; cancel_scheduled_mail stops it.`;
+      },
+    });
+  }
+
+  private cancelScheduled(): BotToolDefinition {
+    return defineBotTool({
+      name: 'cancel_scheduled_mail',
+      scope: 'mail:write',
+      description:
+        'Cancels a scheduled send before it goes; it is never sent. Its id is in schedule_mail’s answer and in list_sent_mail.',
+      input: z.object({ id: z.string().uuid() }),
+      run: async (input, context) => {
+        await this.commandBus.execute(
+          new CancelScheduledMailCommand({ scope: context.owner, sendId: input.id }),
+        );
+        return `Scheduled send ${input.id} cancelled; it will not go.`;
+      },
+    });
+  }
+
   private sendDraft(): BotToolDefinition {
     return this.sending({
       name: 'send_draft',
@@ -253,7 +319,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       input: tool.input,
       normalize: async (input, context) => ({ ...input, plan: await tool.planOf(input, context) }),
       summarize: (input) => sendSummary(storedPlan(input.plan)),
-      run: async (input, context) => this.send(storedPlan(input.plan), context),
+      run: async (input, context) => this.send(storedPlan(input.plan), context, tool.name),
     });
   }
 
@@ -263,7 +329,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       readOnly: true,
       scope: 'mail:read',
       description:
-        'Lists what bots sent from the person’s Gmail accounts, newest first: when, from which account, to whom, the subject and Gmail’s message id. Only bot sends are listed; the person’s own are in Gmail’s Sent.',
+        'Lists what bots sent or scheduled from the person’s Gmail accounts, newest first: when, from which account, to whom, the subject and Gmail’s message id, or for a scheduled one its id and when it goes. Only bot sends are listed; the person’s own are in Gmail’s Sent.',
       input: z.object({ limit: z.number().int().min(1).max(50).default(20) }),
       run: async (input, context) => {
         const sends = await this.queryBus.execute<FindSentMailQuery, MailSendEntity[]>(
@@ -278,17 +344,17 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     });
   }
 
-  private async send(planned: MailPlan, context: BotToolCallContext & { approvalId?: string }) {
-    if (!context.approvalId) {
-      throw new BotToolRefusal(
-        'Mail is sent only from an approved card. Call send_mail again to ask.',
-      );
-    }
+  private async send(
+    planned: MailPlan,
+    context: BotToolCallContext & { approvalId?: string },
+    tool: string,
+  ) {
+    const approvalId = approvedCard(context, 'sent', tool);
     await this.commandBus.execute<SendMailCommand, AggregateID>(
       new SendMailCommand({
         scope: context.owner,
         plan: planned,
-        approvalId: context.approvalId,
+        approvalId,
         botId: context.botId,
         localFiles: await this.chatFiles.bytes(planned, context),
       }),
@@ -351,6 +417,23 @@ function requestOf(input: MessageInput): Omit<MailRequest, 'localFiles'> {
 }
 
 /** The plan the card stored; a call carried out without one is refused, never planned anew. */
+/**
+ * The approval a mail write carries out: a yes on its card, or a refusal. A
+ * write that always asks runs only from its card, never on its own.
+ */
+function approvedCard(
+  context: { approvalId?: string },
+  done: 'sent' | 'scheduled',
+  tool: string,
+): string {
+  if (!context.approvalId) {
+    throw new BotToolRefusal(
+      `Mail is ${done} only from an approved card. Call ${tool} again to ask.`,
+    );
+  }
+  return context.approvalId;
+}
+
 function storedPlan(stored: unknown): MailPlan {
   const parsed = mailPlanSchema.safeParse(stored);
   if (!parsed.success) {

@@ -99,4 +99,22 @@ export const MailErrors = {
     message: 'That message may already have been sent',
     httpStatus: 409,
   },
+  /** A time already past, or further off than a send may be scheduled. */
+  SCHEDULE_TIME_REFUSED: {
+    code: 'MAIL_016',
+    message: 'A mail cannot be scheduled for that time',
+    httpStatus: 400,
+  },
+  /** None of the caller's scheduled sends with that id still waits: sent, cancelled or unknown. */
+  SCHEDULED_NOT_FOUND: {
+    code: 'MAIL_017',
+    message: 'No such scheduled mail is waiting',
+    httpStatus: 404,
+  },
+  /** A scheduled send keeps only what Gmail holds: an image from the bot's chat cannot wait with it. */
+  SCHEDULE_FILES_REFUSED: {
+    code: 'MAIL_018',
+    message: 'A scheduled mail carries only files from mail',
+    httpStatus: 400,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

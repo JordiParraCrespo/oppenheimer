@@ -3,6 +3,7 @@ import type { Option } from 'oxide.ts';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
 import type { WorkspaceLimits } from '../domain/automation-limits.policy';
+import type { WatchedSubject } from '../domain/automation-read.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 
 /** A trigger that matched an event, with the automation it belongs to. */
@@ -58,6 +59,9 @@ export interface AutomationRepositoryPort {
   findOneByIdForSystem(id: string): Promise<Option<AutomationEntity>>;
 
   /** Live automations whose triggers watch this subject for this event type. */
+  /** Every subject live, unpaused triggers of a source watch, across workspaces, with their filters. */
+  findWatchedSubjects(source: string): Promise<WatchedSubject[]>;
+
   findEventCandidates(
     organizationId: string,
     source: string,

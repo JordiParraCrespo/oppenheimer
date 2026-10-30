@@ -1,4 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import type { MailPlan } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -18,8 +19,16 @@ import {
 @Entity('mail_send')
 @Index('UQ_mail_send_approval', ['approvalId'], { unique: true })
 @Index('IDX_mail_send_connection_created', ['connectionId', 'createdAt'])
-@Index('IDX_mail_send_user_created', ['organizationId', 'userId', 'createdAt'])
-@Check('CHK_mail_send_status', `"status" IN ('sending', 'sent', 'failed')`)
+@Index('IDX_mail_send_user_updated', ['organizationId', 'userId', 'updatedAt'])
+@Index('IDX_mail_send_due', ['scheduledFor'], { where: `"status" = 'scheduled'` })
+@Check(
+  'CHK_mail_send_status',
+  `"status" IN ('scheduled', 'sending', 'sent', 'failed', 'cancelled')`,
+)
+@Check(
+  'CHK_mail_send_scheduled',
+  `"status" <> 'scheduled' OR ("scheduledFor" IS NOT NULL AND "plan" IS NOT NULL)`,
+)
 @Check('CHK_mail_send_kind', `"kind" IN ('new', 'reply', 'reply_all', 'forward', 'draft')`)
 export class MailSendOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -53,7 +62,7 @@ export class MailSendOrmEntity {
   subject!: string;
 
   @Column({ type: 'varchar', length: 16 })
-  status!: 'sending' | 'sent' | 'failed';
+  status!: 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   gmailMessageId!: string | null;
@@ -63,6 +72,12 @@ export class MailSendOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   sentAt!: Date | null;
+
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  scheduledFor!: Date | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  plan!: MailPlan | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

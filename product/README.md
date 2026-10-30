@@ -915,6 +915,14 @@ earlier note:
   with its checks (`next-steps/0.2-pull-requests.md`, "CI findings"). A
   review session has no channel back to the control plane yet
   (`review.report` is unbuilt).
+- 2026-10-29 the owner asked for bots to be dragged into order on every page
+  that shows them. There is still one order, the Employees order, and no
+  per-page one: a section's Bots heading now drags its rows too, and a drop
+  there moves the bot in Employees (between the same two bots, keeping its
+  group when a neighbour is in it), so every heading follows. The bots list
+  the API serves is that order (groups by position, then Ungrouped); it had
+  been Ungrouped first with groups by id, so a heading's order differed from
+  Employees' (`versions/mvp/28-bots-in-sections.md`, Decided).
 - `versions/mvp/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
   never wake a bot, so a delegated task stuck before it began (its host
   offline, its agent at a folder-trust or sign-in prompt) left the bot

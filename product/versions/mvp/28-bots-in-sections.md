@@ -52,7 +52,11 @@ says what the bot is *for*, which permissions do not.
 - **Bot tools:** `update_profile` takes `sections` (the whole set); `get_self`
   says where the bot shows.
 - **Console:** the bots feature draws the heading (`SectionBots`, its rows
-  read by `useSuspenseSectionBots`, which narrows the one bots read). The
+  read by `useSuspenseSectionBots`, which narrows the one bots read, in the
+  order `GET /v1/bots` serves: Employees', groups by position then
+  Ungrouped). Its rows drag (`useSectionBotOrder`): a drop is the bot's
+  `groupId` and `position` in Employees (`placementInSection`), the write
+  the Employees drag already makes. The
   route's `ConsoleSidebar` hands it to each section's sidebar, which places
   it where the design does: under New session, under New automation, under
   Plan's three views (on the calendar too), and in Pull requests between the
@@ -79,7 +83,9 @@ says what the bot is *for*, which permissions do not.
   Add one" and opens the same menu. Grouping, order and delete stay in
   Employees, so a page chooses which bots it lists and nothing else: no
   per-page order, no per-page groups. No API change: each write is the
-  `sections` set `PATCH /v1/bots/:id` already takes.
+  `sections` set `PATCH /v1/bots/:id` already takes. (Order moved on
+  2026-10-29: a heading's rows drag too, into the one Employees order; see
+  "Decided".)
 
 ## Not in this note
 
@@ -105,3 +111,14 @@ says what the bot is *for*, which permissions do not.
   hides itself from its section** (slice D). The owner wanted to manage
   each page's bots from that page. It replaces "the plus makes a blank bot"
   in §1; Employees keeps groups, order and delete.
+- 2026-10-29: **a section's Bots heading drags its bots into order, and the
+  order is Employees'.** The owner wanted bots reorderable on every page that
+  shows them, the same order on each. There is still no per-page order: a
+  drop under a heading puts the bot between the same two bots in Employees,
+  staying in its group when either neighbour is in it, else joining the
+  group of the one above (below, when dropped first), so Employees and every
+  other heading follow. `GET /v1/bots` now serves the Employees order (it
+  had been Ungrouped first, then groups by id). Pointer and keyboard (Space
+  picks a row up, the arrows move it, Space drops it, Enter still opens the
+  chat), with the drag layer's announcements. Replaces "Grouping, order and
+  delete stay in Employees" in slice D for the order only.

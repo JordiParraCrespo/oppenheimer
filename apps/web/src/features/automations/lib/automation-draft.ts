@@ -112,18 +112,22 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
     hostId: revision.hostId,
     agent: revision.agent,
     model: revision.model,
-    triggers: automation.triggers.map((trigger): TriggerCard => {
+    // A mail trigger belongs to a bot's routine, which this editor never opens.
+    triggers: automation.triggers.flatMap((trigger): TriggerCard[] => {
       if (trigger.source === 'schedule') {
         const { id: _id, nextFireAt: _next, ...rule } = trigger;
-        return { ...rule, key: nextKey() };
+        return [{ ...rule, key: nextKey() }];
       }
-      return {
-        source: 'github',
-        event: trigger.event,
-        repositories: trigger.repositories.map(Number),
-        filter: trigger.filter,
-        key: nextKey(),
-      };
+      if (trigger.source === 'gmail') return [];
+      return [
+        {
+          source: 'github',
+          event: trigger.event,
+          repositories: trigger.repositories.map(Number),
+          filter: trigger.filter,
+          key: nextKey(),
+        },
+      ];
     }),
   };
 }

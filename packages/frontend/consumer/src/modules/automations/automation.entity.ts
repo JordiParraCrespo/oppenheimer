@@ -54,7 +54,17 @@ export interface GithubTrigger {
   filter: TriggerFilter;
 }
 
-export type AutomationTrigger = ScheduleTrigger | GithubTrigger;
+/** A Gmail trigger: new mail on one of the owner's accounts, maybe narrowed by a search. Bot routines only. */
+export interface GmailTrigger {
+  source: 'gmail';
+  id: string | null;
+  event: 'mail_received';
+  connectionId: string;
+  /** A Gmail search a new message must match; null for every new message. */
+  query: string | null;
+}
+
+export type AutomationTrigger = ScheduleTrigger | GithubTrigger | GmailTrigger;
 
 /** A repository an automation's runs clone. */
 export interface AutomationRepository {

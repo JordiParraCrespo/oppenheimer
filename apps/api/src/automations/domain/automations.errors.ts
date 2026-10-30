@@ -47,4 +47,10 @@ export const AutomationErrors = {
     message: 'Run not found',
     httpStatus: 404,
   },
+  /** A mail trigger on a Gmail account that is not the owner's, or no longer connected. */
+  MAIL_ACCOUNT_UNAVAILABLE: {
+    code: 'AUTOMATIONS_009',
+    message: 'That Gmail account cannot start a routine',
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

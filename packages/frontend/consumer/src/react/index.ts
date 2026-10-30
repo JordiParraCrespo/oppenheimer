@@ -84,6 +84,7 @@ export {
   useBotDocuments,
   useBotGroups,
   useBots,
+  useBotsSnapshot,
   useClearBotMemory,
   useCreateBot,
   useCreateBotGroup,
@@ -161,11 +162,13 @@ export {
   useStartInstallation,
 } from './installations.queries';
 export {
+  useCancelScheduledMail,
   useConnectGmail,
   useDisconnectGmail,
   useRenameGmailConnection,
   useStartGmailConnection,
   useSuspenseGmailConnections,
+  useSuspenseScheduledMail,
 } from './mail.queries';
 export {
   useModelProviders,

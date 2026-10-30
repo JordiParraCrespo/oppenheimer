@@ -10,6 +10,7 @@ import {
   type AutomationPlace,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
+  TRIGGER_SUBJECT_KINDS,
   type TriggerFilter,
 } from '@oppenheimer/shared/automations';
 import { botTargetOf } from './application/bot-target.policy';
@@ -183,6 +184,21 @@ export class AutomationMapper {
       };
     }
     const filter = asRecord(config.filter);
+    const stored: TriggerFilter =
+      filter.op === 'equals' && typeof filter.value === 'string'
+        ? { op: 'equals', value: filter.value }
+        : { op: 'any' };
+    if (record.source === 'gmail') {
+      return {
+        id: record.id,
+        position: record.position,
+        source: 'gmail',
+        eventType: record.eventType,
+        config: { connectionId: String(config.connectionId ?? ''), filter: stored },
+        timezone: null,
+        nextFireAt: null,
+      };
+    }
     return {
       id: record.id,
       position: record.position,
@@ -190,10 +206,7 @@ export class AutomationMapper {
       eventType: record.eventType,
       config: {
         repositories: Array.isArray(config.repositories) ? config.repositories.map(String) : [],
-        filter:
-          filter.op === 'equals' && typeof filter.value === 'string'
-            ? ({ op: 'equals', value: filter.value } satisfies TriggerFilter)
-            : { op: 'any' },
+        filter: stored,
       },
       timezone: null,
       nextFireAt: null,
@@ -285,8 +298,13 @@ export class AutomationMapper {
   /** The subjects a trigger watches, as `automation_trigger_subject` rows. */
   subjectsOf(trigger: AutomationTriggerProps): { subjectKind: string; subjectRef: string }[] {
     if (trigger.source === 'schedule') return [];
+    if (trigger.source === 'gmail') {
+      return [
+        { subjectKind: TRIGGER_SUBJECT_KINDS.gmail, subjectRef: trigger.config.connectionId },
+      ];
+    }
     return trigger.config.repositories.map((ref) => ({
-      subjectKind: 'repository',
+      subjectKind: TRIGGER_SUBJECT_KINDS.github,
       subjectRef: ref,
     }));
   }
@@ -377,6 +395,9 @@ export class AutomationMapper {
         ...(days ? { days: [...days] } : {}),
         timezone: trigger.timezone,
       };
+    } else if (trigger.source === 'gmail') {
+      dto.connectionId = trigger.config.connectionId;
+      dto.query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
     } else {
       dto.repositories = trigger.config.repositories;
       dto.filter = trigger.config.filter;

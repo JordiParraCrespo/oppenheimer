@@ -11,11 +11,13 @@ import {
 import type { AutomationEntity } from '../../automations/domain/automation.entity';
 import type { AutomationListing } from '../../automations/domain/automation-read.types';
 import { FindBotRoutinesQuery } from '../../automations/queries/find-bot-routines/find-bot-routines.query';
+import { describeAccount } from '../bot-mail-tool.mapper';
 import { routineTriggers } from '../bot-routine-tool.mapper';
 import { ROUTINE_ACTIONS, routineCallAsks } from '../domain/bot-routine.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import { describeTrigger } from './bot-automation-tools.factory';
+import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -56,6 +58,19 @@ const githubTrigger = z.object({
   branch: z.string().optional().describe('Only for this branch; any branch when absent.'),
 });
 
+const gmailTrigger = z.object({
+  source: z.literal('gmail'),
+  account: z.string().min(1).describe('The Gmail account to watch: its id, address or name.'),
+  query: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .describe(
+      'Only mail matching this Gmail search (from:billing@x.com is:important); any new mail when absent.',
+    ),
+});
+
 const routineInput = z.object({
   action: z
     .enum(ROUTINE_ACTIONS)
@@ -73,7 +88,7 @@ const routineInput = z.object({
     .optional()
     .describe('What you will do each time it runs, written to yourself.'),
   triggers: z
-    .array(z.union([scheduleTrigger, githubTrigger]))
+    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
@@ -105,6 +120,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly accounts: BotMailAccountsResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -144,12 +160,15 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return {
       name: 'update_routine',
       scope: 'automations:write' as const,
-      description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs") or when a GitHub event happens. list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
+      description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, or when new mail reaches one of the person's Gmail accounts (checked about once a minute). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
       input,
       normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
       summarize: async (call: RoutineCall, context: BotToolCallContext) => {
         if (call.action === 'create') {
-          const when = (call.triggers ?? []).map((trigger) => describeCall(trigger)).join(' or ');
+          const named = await this.accountNames(call, context);
+          const when = (call.triggers ?? [])
+            .map((trigger) => describeCall(trigger, named))
+            .join(' or ');
           return `Save routine "${call.name}": ${when}. ${cut(call.prompt ?? '', 160)}`;
         }
         const routine = await this.routineOf(call.routine_id, context);
@@ -163,18 +182,39 @@ export class BotRoutineToolsFactory implements BotToolArea {
         return `${verb} routine "${routine.name}"`;
       },
       run: async (call: RoutineCall, context: BotToolCallContext) => {
-        await this.act(this.checked(call, context), context);
+        await this.act(await this.checked(call, context), context);
         return this.listing(context);
       },
     };
   }
 
-  /** The call with its triggers checked, or the refusal that says what to fix. */
-  private checked(call: RoutineCall, context: BotToolCallContext): RoutineCall {
+  /**
+   * The call with its triggers checked, or the refusal that says what to
+   * fix. A mail trigger's account is frozen to its connection id here, so
+   * the card the owner approves stores the account it named.
+   */
+  private async checked(call: RoutineCall, context: BotToolCallContext): Promise<RoutineCall> {
     if (!call.triggers) return call;
-    const planned = routineTriggers(call.triggers, context.timeZone);
+    const triggers = await Promise.all(
+      call.triggers.map(async (trigger) =>
+        trigger.source === 'gmail'
+          ? { ...trigger, account: (await this.accounts.one(context.owner, trigger.account)).id }
+          : trigger,
+      ),
+    );
+    const planned = routineTriggers(triggers, context.timeZone);
     if ('refusal' in planned) throw new BotToolRefusal(planned.refusal);
-    return call;
+    return { ...call, triggers };
+  }
+
+  /** The address of each account a call's mail triggers name, by connection id. */
+  private async accountNames(
+    call: RoutineCall,
+    context: BotToolCallContext,
+  ): Promise<ReadonlyMap<string, string>> {
+    if (!call.triggers?.some((trigger) => trigger.source === 'gmail')) return new Map();
+    const connections = await this.accounts.all(context.owner);
+    return new Map(connections.map((connection) => [connection.id, describeAccount(connection)]));
   }
 
   private async act(call: RoutineCall, context: BotToolCallContext): Promise<void> {
@@ -278,7 +318,14 @@ export class BotRoutineToolsFactory implements BotToolArea {
 }
 
 /** A trigger as the card states it, before it is saved. */
-function describeCall(trigger: NonNullable<RoutineCall['triggers']>[number]): string {
+function describeCall(
+  trigger: NonNullable<RoutineCall['triggers']>[number],
+  accounts: ReadonlyMap<string, string>,
+): string {
+  if (trigger.source === 'gmail') {
+    const account = accounts.get(trigger.account) ?? trigger.account;
+    return `new mail in ${account}${trigger.query ? ` matching "${trigger.query}"` : ''}`;
+  }
   if (trigger.source === 'github') {
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
   }

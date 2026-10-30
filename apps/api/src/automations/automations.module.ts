@@ -86,6 +86,7 @@ import { FindRoutinesHttpController } from './queries/find-routines/find-routine
 import { FindRoutinesQueryHandler } from './queries/find-routines/find-routines.query-handler';
 import { FindRunHistoryHttpController } from './queries/find-run-history/find-run-history.http.controller';
 import { FindRunHistoryQueryHandler } from './queries/find-run-history/find-run-history.query-handler';
+import { FindWatchedSubjectsQueryHandler } from './queries/find-watched-subjects/find-watched-subjects.query-handler';
 import { PreviewTriggerHttpController } from './queries/preview-trigger/preview-trigger.http.controller';
 import { PreviewTriggerQueryHandler } from './queries/preview-trigger/preview-trigger.query-handler';
 
@@ -141,6 +142,7 @@ const queryHandlers: Provider[] = [
   FindAutomationSettingsQueryHandler,
   FindBotRoutinesQueryHandler,
   FindBotRoutineRefQueryHandler,
+  FindWatchedSubjectsQueryHandler,
   FindRoutinesQueryHandler,
 ];
 

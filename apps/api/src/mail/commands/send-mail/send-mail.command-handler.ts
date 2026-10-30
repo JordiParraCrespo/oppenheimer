@@ -2,23 +2,13 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { MAIL_SENDS_PER_DAY, type MailPlan } from '@oppenheimer/shared';
+import { MAIL_SENDS_PER_DAY } from '@oppenheimer/shared';
 import { GmailCallResolver } from '../../application/gmail-call.resolver';
 import { MailComposeResolver } from '../../application/mail-compose.resolver';
 import type { MailSendRepositoryPort } from '../../database/mail-send.repository.port';
 import { MailErrors } from '../../domain/mail.errors';
 import { MailSendEntity } from '../../domain/mail-send.entity';
-import {
-  dailyRefusal,
-  dayBefore,
-  type MailLocalFiles,
-  priorSendRefusal,
-} from '../../domain/mail-send.policy';
-import type {
-  GmailCallGrant,
-  GmailProviderPort,
-  GmailSentRef,
-} from '../../infrastructure/gmail-provider.port';
+import { dailyRefusal, dayBefore, priorSendRefusal } from '../../domain/mail-send.policy';
 import { MAIL_SEND_REPOSITORY } from '../../mail.di-tokens';
 import { SendMailCommand } from './send-mail.command';
 
@@ -73,7 +63,7 @@ export class SendMailCommandHandler implements ICommandHandler<SendMailCommand, 
     }
     try {
       const sent = await this.gmail.call(connection, (provider, grant) =>
-        this.deliver(provider, grant, plan, localFiles),
+        this.compose.deliver(provider, grant, plan, localFiles),
       );
       send.sent(sent.messageId, sent.threadId, new Date());
     } catch (error) {
@@ -83,28 +73,6 @@ export class SendMailCommandHandler implements ICommandHandler<SendMailCommand, 
     }
     await this.sends.save(send);
     return send.id;
-  }
-
-  private async deliver(
-    provider: GmailProviderPort,
-    grant: GmailCallGrant,
-    plan: MailPlan,
-    localFiles: MailLocalFiles,
-  ): Promise<GmailSentRef> {
-    if (plan.kind !== 'draft') {
-      return provider.sendMessage(
-        grant,
-        await this.compose.build(provider, grant, plan, localFiles),
-      );
-    }
-    if (!plan.draftId) throw new AppError(MailErrors.DRAFT_CHANGED);
-    const draft = await provider.readDraft(grant, plan.draftId);
-    if (draft.message.id !== plan.draftMessageId) {
-      throw new AppError(MailErrors.DRAFT_CHANGED, {
-        detail: 'The draft was edited after the card was shown; ask again to send it as it is now',
-      });
-    }
-    return provider.sendDraft(grant, plan.draftId);
   }
 }
 

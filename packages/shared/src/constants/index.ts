@@ -82,4 +82,6 @@ export const QUEUE_NAMES = {
   BOT_STALL_CHECKS: 'bot-stall-checks',
   /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
   BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
+  /** The one-minute tick that sends scheduled bot mail and reads the mail routines watch. */
+  MAIL_MINUTE: 'mail-minute',
 } as const;

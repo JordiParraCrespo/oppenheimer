@@ -181,7 +181,7 @@
   },
   "mail": {
     "title": "Correo",
-    "description": "Conecta tus propias cuentas de Gmail para que tus bots puedan buscar y leer tu correo y sus adjuntos. Solo las usan tus bots, y solo para ti.",
+    "description": "Conecta tus propias cuentas de Gmail para que tus bots puedan buscar y leer tu correo, escribir borradores, y enviar o programar correo cuando lo apruebes. Solo las usan tus bots, y solo para ti.",
     "unavailable": "Este servidor no puede conectar Gmail. Pide a quien lo administra que configure el cliente de Google y MAIL_TOKEN_KEY.",
     "loadFailed": "No se pudieron cargar tus cuentas de Gmail.",
     "emptyTitle": "Ninguna cuenta de Gmail conectada",
@@ -209,6 +209,14 @@
     "connecting": "Conectando Gmail…",
     "refused": "Google no dio acceso a Gmail.",
     "connectFailed": "No se pudo conectar Gmail.",
-    "back": "Volver a Correo"
+    "back": "Volver a Correo",
+    "scheduledTitle": "Programados",
+    "scheduledLoadFailed": "No se pudo cargar tu correo programado.",
+    "scheduledMeta": "Para {{to}} · desde {{email}}",
+    "scheduledFor": "Se envía {{when}}",
+    "cancelScheduled": "Cancelar",
+    "cancelScheduledLabel": "Cancelar «{{subject}}»",
+    "cancellingScheduled": "Cancelando…",
+    "cancelScheduledFailed": "No se pudo cancelar. Puede que ya se haya enviado."
   }
 }

@@ -179,6 +179,50 @@ export async function insertBotRoutine(
   return rows[0].id;
 }
 
+/**
+ * A routine that wakes on new mail in one Gmail account (`next-steps/mail.md`
+ * §5), seeded as `insertBotRoutine` seeds a schedule: a bot makes one through
+ * its own tool and a real model. The account need not exist for the card.
+ */
+export async function insertBotMailRoutine(
+  botId: string,
+  name: string,
+  connectionId: string,
+  search: string | null,
+): Promise<string> {
+  const filter = search ? { op: 'equals', value: search } : { op: 'any' };
+  const rows = await query<{ id: string }>(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          owner AS (SELECT "userId" FROM member m JOIN bot ON m."organizationId" = bot."organizationId" LIMIT 1),
+          ids AS (SELECT gen_random_uuid() AS automation, gen_random_uuid() AS revision, gen_random_uuid() AS trigger),
+          a AS (
+            INSERT INTO automation (id, "organizationId", "projectId", "runTarget", "botId", "ownerUserId", name, "currentRevisionId")
+            SELECT ids.automation, bot."organizationId", NULL, 'bot', $1, owner."userId", $2, ids.revision
+              FROM bot, owner, ids
+            RETURNING id
+          ),
+          r AS (
+            INSERT INTO automation_revision (id, "organizationId", "automationId", number, permission, prompt, "createdByUserId")
+            SELECT ids.revision, bot."organizationId", ids.automation, 1, 'auto', 'Answer the mail.', owner."userId"
+              FROM bot, owner, ids
+          ),
+          t AS (
+            INSERT INTO automation_trigger (id, "organizationId", "automationId", position, source, "eventType", config)
+            SELECT ids.trigger, bot."organizationId", ids.automation, 0, 'gmail', 'mail_received',
+                   jsonb_build_object('connectionId', $3::text, 'filter', $4::jsonb)
+              FROM bot, ids
+          ),
+          s AS (
+            INSERT INTO automation_trigger_subject ("triggerId", "subjectKind", "subjectRef", "organizationId")
+            SELECT ids.trigger, 'gmail_connection', $3, bot."organizationId"
+              FROM bot, ids
+          )
+     SELECT id FROM a`,
+    [botId, name, connectionId, JSON.stringify(filter)],
+  );
+  return rows[0].id;
+}
+
 export async function routinePausedAt(routineId: string): Promise<Date | null> {
   const rows = await query<{ pausedAt: Date | null }>(
     'SELECT "pausedAt" FROM automation WHERE id = $1',
@@ -237,4 +281,27 @@ export async function insertBotActivity(
      SELECT turn."organizationId", $1, turn.id, 'activity', $2::jsonb, 0 FROM turn`,
     [botId, JSON.stringify(steps)],
   );
+}
+
+/**
+ * A send a bot scheduled from its owner's Gmail (`next-steps/mail.md` §3.4),
+ * written straight into `mail_send` in the bot's workspace: the stack has no
+ * Gmail to approve one against, and the list and its Cancel are the API's.
+ */
+export async function insertScheduledMail(
+  botId: string,
+  userId: string,
+  subject: string,
+  scheduledFor: Date,
+): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `INSERT INTO mail_send ("organizationId", "userId", "botId", "approvalId", kind, "accountEmail",
+                            recipients, subject, status, "scheduledFor", plan)
+     SELECT bot."organizationId", $2, $1, gen_random_uuid(), 'new', 'ana@acme.test',
+            ARRAY['Bo Ruiz <bo@client.test>'], $3, 'scheduled', $4, '{}'::jsonb
+       FROM bot WHERE bot.id = $1
+     RETURNING id`,
+    [botId, userId, subject, scheduledFor],
+  );
+  return rows[0].id;
 }

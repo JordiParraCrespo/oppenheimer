@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
-import { In, MoreThan, Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import type { MailSendEntity } from '../domain/mail-send.entity';
 import { MailResource } from '../mail.resource';
 import { MailSendMapper } from '../mail-send.mapper';
@@ -52,13 +52,11 @@ export class MailSendRepository
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         `mail_send:${send.connectionId}`,
       ]);
-      const sentInWindow = await manager.getRepository(MailSendOrmEntity).count({
-        where: {
-          connectionId: send.connectionId ?? undefined,
-          status: In(['sending', 'sent']),
-          createdAt: MoreThan(since),
-        },
-      });
+      const sentInWindow = await sentSince(
+        manager.getRepository(MailSendOrmEntity),
+        send.connectionId ?? '',
+        since,
+      );
       if (sentInWindow >= cap) return { outcome: 'over_cap', sentInWindow };
       const result = await manager
         .createQueryBuilder()
@@ -80,18 +78,95 @@ export class MailSendRepository
   }
 
   async countSince(connectionId: string, since: Date): Promise<number> {
-    return this.repository.count({
-      where: { connectionId, status: In(['sending', 'sent']), createdAt: MoreThan(since) },
+    return sentSince(this.repository, connectionId, since);
+  }
+
+  async findDue(now: Date, limit: number): Promise<MailSendEntity[]> {
+    const records = await this.repository.find({
+      where: { status: 'scheduled', scheduledFor: LessThanOrEqual(now) },
+      order: { scheduledFor: 'ASC', id: 'ASC' },
+      take: limit,
     });
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
+  async claimDueUnderCap(
+    send: MailSendEntity,
+    since: Date,
+    cap: number,
+  ): Promise<MailSendClaimOutcome> {
+    return this.repository.manager.transaction(async (manager) => {
+      // The same queue as an immediate send's: the two never both pass at the cap.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `mail_send:${send.connectionId}`,
+      ]);
+      const repository = manager.getRepository(MailSendOrmEntity);
+      const sentInWindow = await sentSince(repository, send.connectionId ?? '', since, send.id);
+      const overCap = sentInWindow >= cap;
+      const result = await repository.update(
+        { id: send.id, status: 'scheduled' },
+        overCap ? { status: 'failed', plan: null } : { status: 'sending' },
+      );
+      if (result.affected !== 1) return { outcome: 'taken' };
+      return overCap ? { outcome: 'over_cap', sentInWindow } : { outcome: 'claimed' };
+    });
+  }
+
+  async cancelOwn(scope: AccessScope, id: string): Promise<boolean> {
+    if (!scope.organizationId) return false;
+    const result = await this.repository.update(
+      {
+        id,
+        organizationId: scope.organizationId,
+        userId: scope.userId,
+        status: 'scheduled',
+      },
+      { status: 'cancelled', plan: null },
+    );
+    return result.affected === 1;
+  }
+
+  async findScheduledOwn(scope: AccessScope, limit: number): Promise<MailSendEntity[]> {
+    const records = await this.scopedQuery(scope)
+      .andWhere('send.userId = :userId', { userId: scope.userId })
+      .andWhere(`send.status = 'scheduled'`)
+      .orderBy('send.scheduledFor', 'ASC')
+      .addOrderBy('send.id', 'ASC')
+      .take(limit)
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
   }
 
   async findRecentOwn(scope: AccessScope, limit: number): Promise<MailSendEntity[]> {
     const records = await this.scopedQuery(scope)
       .andWhere('send.userId = :userId', { userId: scope.userId })
-      .orderBy('send.createdAt', 'DESC')
+      // Every change of state moves `updatedAt`: a send scheduled weeks ago lists when it goes.
+      .orderBy('send.updatedAt', 'DESC')
       .addOrderBy('send.id', 'DESC')
       .take(limit)
       .getMany();
     return records.map((record) => this.mapper.toDomain(record));
   }
+}
+
+/**
+ * Sends from one account that went since a moment, by when each went: a sent
+ * one by its `sentAt`, one still going by its claim (`updatedAt`), so a send
+ * scheduled days ago counts on the day it goes.
+ */
+function sentSince(
+  repository: Repository<MailSendOrmEntity>,
+  connectionId: string,
+  since: Date,
+  excludingId?: string,
+): Promise<number> {
+  const query = repository
+    .createQueryBuilder('send')
+    .where('send.connectionId = :connectionId', { connectionId })
+    .andWhere(
+      `((send.status = 'sent' AND send.sentAt > :since) OR (send.status = 'sending' AND send.updatedAt > :since))`,
+      { since },
+    );
+  if (excludingId) query.andWhere('send.id != :excludingId', { excludingId });
+  return query.getCount();
 }

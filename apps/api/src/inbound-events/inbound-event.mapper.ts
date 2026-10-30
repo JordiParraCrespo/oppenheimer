@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { isExternalTriggerSource } from '@oppenheimer/shared/automations';
+import { isExternalTriggerSource, TRIGGER_SUBJECT_KINDS } from '@oppenheimer/shared/automations';
 import type { InboundDeliveryOrmEntity } from './database/inbound-delivery.orm-entity';
 import type { InboundEventOrmEntity } from './database/inbound-event.orm-entity';
 import type {
@@ -36,7 +36,7 @@ export class InboundEventMapper {
       type: record.eventType,
       externalId: record.externalId,
       subject: {
-        kind: 'repository',
+        kind: TRIGGER_SUBJECT_KINDS[record.source],
         ref: record.subjectRef,
         name: typeof subjectName === 'string' ? subjectName : record.subjectRef,
       },

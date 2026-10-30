@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { MailPlan } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
@@ -121,6 +122,21 @@ describe('mail (integration)', () => {
     await expect(connections.insert(connection(ben))).resolves.toBeUndefined();
   });
 
+  it('moves the history mark only from the mark it was read with, so of two overlapping polls one moves it', async () => {
+    const account = connection(ana, 'sub-history');
+    await connections.insert(account);
+    const [first, second] = await connections
+      .findManyForSystem([account.id])
+      .then((found) => [found[0], found[0]]);
+
+    await expect(connections.markHistory(first, '100')).resolves.toBe(true);
+    // The other poll read the account before the first moved it: it moves nothing.
+    await expect(connections.markHistory(second, '120')).resolves.toBe(false);
+    const [now] = await connections.findManyForSystem([account.id]);
+    expect(now.historyId).toBe('100');
+    await expect(connections.markHistory(now, '130')).resolves.toBe(true);
+  });
+
   it('writes a rename and a revoke, and the grant goes with the person', async () => {
     const mine = connection(ana);
     await connections.insert(mine);
@@ -137,6 +153,25 @@ describe('mail (integration)', () => {
       [ana],
     );
     expect(count).toBe(0);
+  });
+
+  const PLAN = (connectionId: string): MailPlan => ({
+    kind: 'new',
+    connectionId,
+    accountEmail: 'ana@gmail.test',
+    from: { email: 'ana@gmail.test', name: null },
+    to: ['bo@client.test'],
+    cc: [],
+    bcc: [],
+    recipientsFromMail: false,
+    subject: 'Invoice 42',
+    body: 'Paid',
+    signature: true,
+    original: null,
+    threadId: null,
+    attachments: [],
+    draftId: null,
+    draftMessageId: null,
   });
 
   const claimOf = (connectionId: string, approvalId = randomUUID()) =>
@@ -191,18 +226,96 @@ describe('mail (integration)', () => {
     await expect(sends.findRecentOwn(scopeOf(ben, true), 10)).resolves.toEqual([]);
   });
 
+  it('finds a due send, lets one of a claim and a cancel win, and keeps the plan only while it waits', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const due = MailSendEntity.schedule(
+      {
+        organizationId,
+        userId: ana,
+        connectionId: account.id,
+        botId: null,
+        approvalId: randomUUID(),
+        kind: 'new',
+        accountEmail: 'ana@gmail.test',
+        recipients: ['bo@client.test'],
+        subject: 'Invoice 42',
+      },
+      PLAN(account.id),
+      new Date(Date.now() - 60_000),
+    );
+    await sends.claim(due);
+
+    const found = (await sends.findDue(new Date(), 10)).filter((send) => send.id === due.id);
+    expect(found).toHaveLength(1);
+    expect(found[0].plan).toMatchObject({ subject: 'Invoice 42' });
+    await expect(sends.findScheduledOwn(scopeOf(ana), 10)).resolves.toHaveLength(1);
+
+    const day = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [claimed, cancelled] = await Promise.all([
+      sends.claimDueUnderCap(due, day, 50).then((claim) => claim.outcome === 'claimed'),
+      sends.cancelOwn(scopeOf(ana), due.id),
+    ]);
+    expect([claimed, cancelled].filter(Boolean)).toHaveLength(1);
+    await expect(sends.findScheduledOwn(scopeOf(ana), 10)).resolves.toEqual([]);
+    await expect(sends.cancelOwn(scopeOf(ben), due.id)).resolves.toBe(false);
+  });
+
+  it('refuses a scheduled row without its time or its plan', async () => {
+    await expect(
+      dataSource.query(
+        `INSERT INTO mail_send ("organizationId", "userId", "approvalId", kind, "accountEmail", subject, status)
+         VALUES ($1, $2, $3, 'new', 'ana@gmail.test', 'x', 'scheduled')`,
+        [organizationId, ana, randomUUID()],
+      ),
+    ).rejects.toThrow(/CHK_mail_send_scheduled/);
+  });
+
   it('lets only one of two sends approved at once take the last place under the day’s cap', async () => {
     const account = connection(ana);
     await connections.insert(account);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
 
+    const racers = [claimOf(account.id), claimOf(account.id)];
+    const raced = await Promise.all(racers.map((send) => sends.claimUnderCap(send, since, 3)));
+
+    expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
+    await expect(sends.countSince(account.id, since)).resolves.toBe(3);
+  });
+
+  it('lets only one of a send approved now and a scheduled one falling due take the last place', async () => {
+    const account = connection(ana);
+    await connections.insert(account);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    for (let i = 0; i < 2; i += 1) await sends.claim(claimOf(account.id));
+    const due = MailSendEntity.schedule(
+      {
+        organizationId,
+        userId: ana,
+        connectionId: account.id,
+        botId: null,
+        approvalId: randomUUID(),
+        kind: 'new',
+        accountEmail: 'ana@gmail.test',
+        recipients: ['bo@client.test'],
+        subject: 'Invoice 43',
+      },
+      PLAN(account.id),
+      new Date(Date.now() - 60_000),
+    );
+    await sends.claim(due);
+
     const raced = await Promise.all([
       sends.claimUnderCap(claimOf(account.id), since, 3),
-      sends.claimUnderCap(claimOf(account.id), since, 3),
+      sends.claimDueUnderCap(due, since, 3),
     ]);
 
     expect(raced.map((claim) => claim.outcome).sort()).toEqual(['claimed', 'over_cap']);
     await expect(sends.countSince(account.id, since)).resolves.toBe(3);
+    // A due send past the cap is failed by its claim, so no tick tries it again.
+    await expect(sends.findDue(new Date(), 50)).resolves.not.toContainEqual(
+      expect.objectContaining({ id: due.id }),
+    );
   });
 });

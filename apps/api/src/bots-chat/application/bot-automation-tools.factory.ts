@@ -214,7 +214,7 @@ function describeState(automation: AutomationEntity): string {
   return `paused (${automation.pausedReason ?? 'user'})`;
 }
 
-/** One trigger in words: a schedule with its zone and next slot, or the GitHub event it listens for. */
+/** One trigger in words: a schedule with its zone and next slot, the GitHub event it listens for, or the mail it watches. */
 export function describeTrigger(
   trigger: AutomationTriggerProps,
   context: Pick<BotToolCallContext, 'timeZone'>,
@@ -233,6 +233,10 @@ export function describeTrigger(
               ? `on ${config.date ?? '?'} at ${at}`
               : `at ${at}`;
     return `schedule ${config.frequency} ${detail} ${trigger.timezone}, next ${trigger.nextFireAt ? formatToolTime(trigger.nextFireAt, context.timeZone) : 'none'}`;
+  }
+  if (trigger.source === 'gmail') {
+    const query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
+    return `gmail mail_received in account ${trigger.config.connectionId}${query ? ` matching "${query}"` : ' (every new message in the inbox)'}`;
   }
   const filter =
     trigger.config.filter.op === 'equals'

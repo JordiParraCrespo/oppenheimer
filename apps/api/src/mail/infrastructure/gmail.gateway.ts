@@ -28,6 +28,8 @@ import {
   type GmailLabel,
   type GmailLabelChange,
   type GmailMessage,
+  type GmailMessageSummary,
+  type GmailNewMail,
   GmailNotFoundError,
   GmailProviderError,
   type GmailProviderPort,
@@ -50,6 +52,8 @@ const TIMEOUT_MS = 15_000;
  * than hanging the turn.
  */
 const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 10_000 };
+/** The most result pages a watched query is read for: 5,000 messages of two days. */
+const MATCH_PAGES_MAX = 10;
 /** Google's per-project quota: every connected account draws on it. */
 const PROJECT: Bucket = 'project';
 /** Google's reasons for a per-person quota refusal, and for a per-project one. */
@@ -348,6 +352,111 @@ export class GmailGateway implements GmailProviderPort {
         messageListVisibility: 'show',
       }),
     );
+  }
+
+  async currentHistoryId(grant: GmailCallGrant): Promise<string> {
+    const session = await this.session(grant);
+    const profile = await session.get('profile', {});
+    if (typeof profile.historyId !== 'string') {
+      throw new GmailProviderError('Gmail returned no history id');
+    }
+    return profile.historyId;
+  }
+
+  async newMessages(
+    grant: GmailCallGrant,
+    startHistoryId: string,
+    max: number,
+  ): Promise<GmailNewMail | null> {
+    const session = await this.session(grant);
+    const ids: string[] = [];
+    let historyId = startHistoryId;
+    let pageToken: string | null = null;
+    do {
+      const params: Record<string, string> = {
+        startHistoryId,
+        historyTypes: 'messageAdded',
+        maxResults: '100',
+      };
+      if (pageToken) params.pageToken = pageToken;
+      let page: Record<string, unknown>;
+      try {
+        page = await session.get('history', params);
+      } catch (error) {
+        // Gmail keeps about a week of history; older than that is a 404.
+        if (error instanceof GmailNotFoundError) return null;
+        throw error;
+      }
+      for (const entry of list(page.history)) {
+        // At the cap, the next read starts at this entry: a message seen twice is one event.
+        if (ids.length >= max) return { messageIds: ids, historyId };
+        const entryId = record(entry).id;
+        for (const added of list(record(entry).messagesAdded)) {
+          const message = record(record(added).message);
+          const labels = list(message.labelIds).filter((label) => typeof label === 'string');
+          if (labels.includes('DRAFT') || labels.includes('SENT')) continue;
+          if (typeof message.id === 'string' && !ids.includes(message.id)) ids.push(message.id);
+        }
+        if (typeof entryId === 'string') historyId = entryId;
+      }
+      pageToken = typeof page.nextPageToken === 'string' ? page.nextPageToken : null;
+      // Only the last page moves the mark to where the mailbox stands now.
+      if (!pageToken && typeof page.historyId === 'string') historyId = page.historyId;
+    } while (pageToken);
+    return { messageIds: ids, historyId };
+  }
+
+  async readSummaries(
+    grant: GmailCallGrant,
+    messageIds: readonly string[],
+  ): Promise<GmailMessageSummary[]> {
+    const session = await this.session(grant);
+    const read: GmailMessageSummary[] = [];
+    // As many at once as the limiter lets run: a whole poll's worth at once is refused.
+    for (let at = 0; at < messageIds.length; at += LIMITS.maxInFlight) {
+      const batch = await Promise.all(
+        messageIds.slice(at, at + LIMITS.maxInFlight).map(async (id) => {
+          try {
+            return messageSummaryOf(
+              await session.get(`messages/${encodeURIComponent(id)}`, {
+                format: 'full',
+                fields: SUMMARY_FIELDS,
+              }),
+            );
+          } catch (error) {
+            // A message deleted between the history and this read is no longer new mail.
+            if (error instanceof GmailNotFoundError) return null;
+            throw error;
+          }
+        }),
+      );
+      read.push(...batch.filter((summary): summary is GmailMessageSummary => summary !== null));
+    }
+    return read;
+  }
+
+  async matchingIds(
+    grant: GmailCallGrant,
+    query: string,
+    among: readonly string[],
+  ): Promise<string[]> {
+    const session = await this.session(grant);
+    const wanted = new Set(among);
+    const found: string[] = [];
+    let pageToken: string | null = null;
+    // Newest first: a backlog's older messages may be pages down, so read until each is seen.
+    for (let page = 0; page < MATCH_PAGES_MAX && wanted.size > 0; page += 1) {
+      const params: Record<string, string> = { q: query, maxResults: '500' };
+      if (pageToken) params.pageToken = pageToken;
+      const answer = await session.get('messages', params);
+      for (const entry of list(answer.messages)) {
+        const id = record(entry).id;
+        if (typeof id === 'string' && wanted.delete(id)) found.push(id);
+      }
+      pageToken = typeof answer.nextPageToken === 'string' ? answer.nextPageToken : null;
+      if (!pageToken) break;
+    }
+    return found;
   }
 
   async revoke(grant: GmailCallGrant): Promise<void> {

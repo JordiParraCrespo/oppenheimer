@@ -594,6 +594,62 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       });
     });
 
+    it('watches a mail account for its live routines, and fires the ones whose query matched', async () => {
+      const botId = await insertBot();
+      const connectionId = randomUUID();
+      const mail = (query: string | null, position: number) =>
+        triggerFromInput(
+          { source: 'gmail', event: 'mail_received', connectionId, query },
+          position,
+        );
+      const routine = (name: string, query: string | null) =>
+        AutomationEntity.createRoutine({
+          organizationId,
+          ownerUserId: userId,
+          botId,
+          name,
+          prompt: 'Answer the mail.',
+          triggers: [mail(query, 0)],
+          active: true,
+          credentialScopes: null,
+          now: new Date(),
+        });
+      const billing = routine('Billing mail', 'from:billing@client.test');
+      const anyMail = routine('Any mail', null);
+      const paused = routine('Paused', 'is:starred');
+      paused.pause('user', new Date());
+      for (const each of [billing, anyMail, paused]) await automations.insert(each);
+
+      const watched = await automations.findWatchedSubjects('gmail');
+      const mine = watched.filter((subject) => subject.subjectRef === connectionId);
+      expect(mine).toHaveLength(1);
+      expect(mine[0]).toMatchObject({ organizationId });
+      expect([...mine[0].filters].sort()).toEqual(['from:billing@client.test', null].sort());
+
+      const fire = async (externalId: string, matched: string[]) => {
+        const [row]: { id: string }[] = await dataSource.query(
+          `INSERT INTO "inbound_event"
+             ("organizationId", "source", "externalId", "eventType", "subjectKind", "subjectRef", "occurredAt")
+           VALUES ($1, 'gmail', $2, 'mail_received', 'gmail_connection', $3, now()) RETURNING "id"`,
+          [organizationId, externalId, connectionId],
+        );
+        return events.execute(
+          new FireEventTriggersCommand({
+            organizationId,
+            inboundEventId: row.id,
+            source: 'gmail',
+            eventType: 'mail_received',
+            subjectRef: connectionId,
+            externalId,
+            actorIsOwnApp: false,
+            attributes: { query: matched },
+          }),
+        );
+      };
+      expect(await fire(`${connectionId}:m1`, [])).toBe(1);
+      expect(await fire(`${connectionId}:m2`, ['from:billing@client.test'])).toBe(2);
+    });
+
     it("records the bot turn its run became, and reads the run's status from it", async () => {
       const botId = await insertBot();
       const routine = AutomationEntity.createRoutine({

@@ -326,6 +326,112 @@ describe('GmailGateway', () => {
     expect(new URL(fetch.mock.calls[3][0]).pathname).toBe('/gmail/v1/users/me/threads/t1/untrash');
   });
 
+  it('reads new mail from a history id across pages, leaves out drafts and sent mail, and moves the mark', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            {
+              id: '101',
+              messagesAdded: [{ message: { id: 'm1', labelIds: ['INBOX', 'UNREAD'] } }],
+            },
+            { id: '102', messagesAdded: [{ message: { id: 'd1', labelIds: ['DRAFT'] } }] },
+          ],
+          nextPageToken: 'p2',
+          historyId: '200',
+        }),
+      )
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            {
+              id: '103',
+              messagesAdded: [
+                { message: { id: 's1', labelIds: ['SENT'] } },
+                { message: { id: 'm2', labelIds: ['INBOX'] } },
+              ],
+            },
+          ],
+          historyId: '200',
+        }),
+      );
+    vi.stubGlobal('fetch', fetch);
+
+    const mail = await new GmailGateway(config).newMessages(ANA, '100', 50);
+
+    expect(mail).toEqual({ messageIds: ['m1', 'm2'], historyId: '200' });
+    const first = new URL(fetch.mock.calls[1][0]);
+    expect(first.pathname).toBe('/gmail/v1/users/me/history');
+    expect(first.searchParams.get('startHistoryId')).toBe('100');
+    expect(first.searchParams.get('historyTypes')).toBe('messageAdded');
+    expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  it('stops at its cap where it stopped, and answers null for history Gmail no longer keeps', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, {
+          history: [
+            { id: '101', messagesAdded: [{ message: { id: 'm1', labelIds: ['INBOX'] } }] },
+            { id: '102', messagesAdded: [{ message: { id: 'm2', labelIds: ['INBOX'] } }] },
+          ],
+          historyId: '300',
+        }),
+      )
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(404, { error: { code: 404 } }));
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(gateway.newMessages(ANA, '100', 1)).resolves.toEqual({
+      messageIds: ['m1'],
+      historyId: '101',
+    });
+    await expect(gateway.newMessages(ANA, '1', 50)).resolves.toBeNull();
+  });
+
+  it('pages through a query until each new message is found, and reads no further', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(200, { messages: [{ id: 'm9' }, { id: 'm2' }], nextPageToken: 'p2' }),
+      )
+      .mockResolvedValueOnce(json(200, { messages: [{ id: 'm1' }], nextPageToken: 'p3' }));
+    vi.stubGlobal('fetch', fetch);
+
+    const found = await new GmailGateway(config).matchingIds(ANA, 'from:bo@x.test', ['m1', 'm2']);
+
+    expect(found.sort()).toEqual(['m1', 'm2']);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  it('reads a poll’s summaries a few at a time, never more at once than the limiter lets run', async () => {
+    let inFlight = 0;
+    let most = 0;
+    const fetch = vi.fn(async (url: string) => {
+      if (String(url).includes('/token')) return TOKEN();
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      const id = new URL(url).pathname.split('/').pop();
+      return json(200, { ...INVOICE, id });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const ids = Array.from({ length: 50 }, (_, i) => `m${i}`);
+
+    const read = await new GmailGateway(config).readSummaries(ANA, ids);
+
+    expect(read).toHaveLength(50);
+    expect(most).toBeLessThanOrEqual(8);
+  });
+
   it('reads a message whole for an answer or a forward, where a thread read for a bot is cut', async () => {
     const long = 'x'.repeat(9_000);
     const withBody = {

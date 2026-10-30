@@ -401,6 +401,7 @@
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
+      "gmail": "Gmail · {{when}}",
       "last": "Last",
       "next": "Next",
       "never": "Never",
