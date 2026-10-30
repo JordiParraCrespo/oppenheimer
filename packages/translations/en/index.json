@@ -1669,7 +1669,15 @@
         "saveFailed": "Could not save the fact.",
         "forget": "Forget “{{fact}}”",
         "forgetFailed": "Could not forget the fact.",
-        "loadFailed": "Could not load what the bot remembers."
+        "loadFailed": "Could not load what the bot remembers.",
+        "aboutYou": "About you",
+        "lookedUp": "Looked up",
+        "sharedBy": "Shared by another of your bots · {{date}}",
+        "keptActions": "Where “{{fact}}” is kept",
+        "toLog": "Look it up only when needed",
+        "toProfile": "Keep it in mind in every chat",
+        "toPerson": "Share it with all your bots",
+        "toBot": "Keep it to this bot"
       },
       "routines": {
         "title": "Routines",

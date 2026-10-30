@@ -5,6 +5,7 @@ import {
   BOT_DOCUMENT_MAX,
   BOT_MEMORY_FACT_MAX,
   BOT_MEMORY_FACTS_MAX,
+  BOT_MEMORY_TIERS,
   BOT_NAME_MAX,
   BOT_REVISION_NOTE_MAX,
   BOT_SECTIONS,
@@ -29,6 +30,14 @@ import {
   searchWords,
   snippetAround,
 } from '../domain/bot-chat-search.policy';
+import {
+  describeKept,
+  memoryScopeOf,
+  REMEMBER_ABOUT,
+  REMEMBER_ABOUT_HINT,
+  REMEMBER_DESCRIPTION,
+  REMEMBER_TIER_HINT,
+} from '../domain/bot-memory.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { fenceUntrusted, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import { SearchBotConversationQuery } from '../queries/search-bot-conversation/search-bot-conversation.query';
@@ -241,7 +250,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       scope: 'bots:write',
       setupStep:
         'Save what you learned about them that will matter later (their repositories, their hosts, when they work) with `remember`, saying where you learned it.',
-      description: `Saves one fact to your memory, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation. Only when "Learn automatically" is on in your settings; when it is off nothing is saved, and you ask the person in the chat first. Keep facts durable (preferences, names, decisions), one per call; you hold at most ${BOT_MEMORY_FACTS_MAX}, so forget one that no longer holds. Check recall first to avoid duplicates.`,
+      description: REMEMBER_DESCRIPTION,
       input: z.strictObject({
         fact: z
           .string()
@@ -249,6 +258,8 @@ export class BotSelfToolsFactory implements BotToolArea {
           .min(1)
           .max(BOT_MEMORY_FACT_MAX)
           .describe('The fact, as one self-contained sentence.'),
+        tier: z.enum(BOT_MEMORY_TIERS).optional().describe(REMEMBER_TIER_HINT),
+        about: z.enum(REMEMBER_ABOUT).optional().describe(REMEMBER_ABOUT_HINT),
       }),
       run: async (input, context) => {
         const bot = await this.bot(context);
@@ -260,12 +271,14 @@ export class BotSelfToolsFactory implements BotToolArea {
             scope: context.owner,
             botId: context.botId,
             content: input.fact,
+            tier: input.tier,
+            memoryScope: memoryScopeOf(input.about),
           }),
         );
         const saved = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
           new FindBotMemoryFactQuery({ scope: context.owner, botId: context.botId, factId }),
         );
-        return `Remembered ${saved.id}: "${saved.content}". The person can edit or delete it in Settings → Memory.`;
+        return `Remembered ${saved.id} (${describeKept(saved)}): "${saved.content}". The person can edit or delete it in Settings → Memory.`;
       },
     });
   }
@@ -275,7 +288,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'forget',
       scope: 'bots:write',
       description:
-        'Deletes one fact from your memory, by its id from recall. It cannot be undone; the person sees what was forgotten in the chat. To correct a fact, forget it and remember the new one.',
+        "Deletes one fact from your memory, by its id from recall. It cannot be undone; the person sees what was forgotten in the chat. To correct a fact, forget it and remember the new one. A fact another of the person's bots shared is that bot's to forget: tell the person instead.",
       input: z.strictObject({ fact_id: z.uuid().describe('A fact id from recall.') }),
       run: async (input, context) => {
         const fact = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
@@ -302,7 +315,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'recall',
       readOnly: true,
       scope: 'bots:read',
-      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
+      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and what the person's other bots know about the person. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
       input: z.strictObject({
         query: z
           .string()
@@ -330,7 +343,7 @@ export class BotSelfToolsFactory implements BotToolArea {
           words.length ? `Facts matching "${input.query}"` : 'Your newest facts',
           shown.map(
             (fact) =>
-              `${fact.id} "${fact.content}" [saved by ${fact.source === 'bot' ? 'you' : 'the person'}, ${formatToolTime(fact.updatedAt, context.timeZone)}]`,
+              `${fact.id} "${fact.content}" [${describeKept(fact, context.botId)}; saved by ${fact.source === 'bot' ? 'a bot' : 'the person'}, ${formatToolTime(fact.updatedAt, context.timeZone)}]`,
           ),
           facts.length === 0
             ? 'Your memory is empty.'

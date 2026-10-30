@@ -431,4 +431,8 @@ which the two tools that type into a session hand back. Row 10 landed the
 same day in `versions/mvp/25-bots.md` §4.1, as a bounded goal the bot sets
 itself rather than a routine. A continuation turn is queued when a turn
 ends with the goal open: at most 5 unless the bot asks for up to 10, never
-renewed by a continuation, and stopped by its owner from the chat.
+renewed by a continuation, and stopped by its owner from the chat. Row 11
+landed the same day in `versions/mvp/25-bots.md` §4.1: a fact is
+`profile` or `log`, and `bot` or `person`, on the same table. A person's
+fact is read by all their bots and owned by the one that learned it. The
+review queue for shared learnings was left out.

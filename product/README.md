@@ -899,3 +899,8 @@ earlier note:
   routine's run is a schedule's slot, but a goal goes on when the bot's
   last turn ends. So it is a bounded count of continuation turns, at most
   10, keyed in the turn queue like a wake, with Stop above the composer.
+- Note 25 §7 listed user memory as not built. On 2026-10-29, from Grok
+  Bot's memory (`research/lessons-from-grok-bot.md` §9 row 11), a fact
+  gained a tier (in the prompt, or looked up with `recall`) and a scope
+  (the bot's, or about the person and read by all their bots), on the same
+  table (`versions/mvp/25-bots.md` §4.1). Project memory stays in §7.

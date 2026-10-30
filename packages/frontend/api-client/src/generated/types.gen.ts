@@ -3502,16 +3502,32 @@ export type BotMemoryFactResponseDto = {
      * Who wrote it last.
      */
     source: 'user' | 'bot';
+    /**
+     * `profile`: in mind in every turn. `log`: kept to be looked up with `recall`.
+     */
+    tier: 'profile' | 'log';
+    /**
+     * `bot`: this bot's alone. `person`: about its owner, read by every bot of theirs in the workspace.
+     */
+    scope: 'bot' | 'person';
+    /**
+     * The bot that keeps it; another bot of the same owner for a shared fact.
+     */
+    botId: string;
     createdAt: string;
     updatedAt: string;
 };
 
 export type CreateBotMemoryFactRequest = {
     content: string;
+    tier?: 'profile' | 'log';
+    scope?: 'bot' | 'person';
 };
 
 export type UpdateBotMemoryFactRequest = {
-    content: string;
+    content?: string;
+    tier?: 'profile' | 'log';
+    scope?: 'bot' | 'person';
 };
 
 export type BotGroupResponseDto = {

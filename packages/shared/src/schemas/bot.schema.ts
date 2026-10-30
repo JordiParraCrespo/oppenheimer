@@ -63,8 +63,27 @@ export const BOT_GROUP_NAME_MAX = 60;
 export const BOT_DOCUMENT_MAX = 32_768;
 export const BOT_REVISION_NOTE_MAX = 200;
 export const BOT_MEMORY_FACT_MAX = 500;
-/** How many facts one bot may keep. The bot reads them all before every turn. */
+/** How many facts one bot may keep, both tiers together. */
 export const BOT_MEMORY_FACTS_MAX = 200;
+
+/**
+ * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's memory tiers,
+ * `research/lessons-from-grok-bot.md` §9 row 11): `profile`, in mind in
+ * every turn (who the person is, standing preferences); `log`, kept to be
+ * looked up with `recall` (a detail, a past decision), never in the prompt.
+ */
+export const BOT_MEMORY_TIERS = ['profile', 'log'] as const;
+export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
+
+/**
+ * Who a fact is for: this bot alone (`bot`), or the person, so every bot of
+ * theirs in the workspace keeps it in mind too (`person`).
+ */
+export const BOT_MEMORY_SCOPES = ['bot', 'person'] as const;
+export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
+
+/** The `profile` facts one turn is given, newest first: the rest wait for `recall`. */
+export const BOT_MEMORY_PROFILE_IN_PROMPT_MAX = 60;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -365,11 +384,27 @@ export const findBotDocumentRevisionsSchema = z.object({
 });
 export type FindBotDocumentRevisionsDto = z.infer<typeof findBotDocumentRevisionsSchema>;
 
-/** `POST /bots/:id/memory` and `PATCH /bots/:id/memory/:factId`: one fact, in a sentence. */
+/** `POST /bots/:id/memory`: one fact, in a sentence, kept in mind for this bot unless said. */
 export const botMemoryFactSchema = z.object({
   content: memoryFactContentSchema,
+  tier: z.enum(BOT_MEMORY_TIERS).optional(),
+  scope: z.enum(BOT_MEMORY_SCOPES).optional(),
 });
 export type BotMemoryFactDto = z.infer<typeof botMemoryFactSchema>;
+
+/** `PATCH /bots/:id/memory/:factId`: its words, its tier or its scope, at least one. */
+export const updateBotMemoryFactSchema = z
+  .object({
+    content: memoryFactContentSchema.optional(),
+    tier: z.enum(BOT_MEMORY_TIERS).optional(),
+    scope: z.enum(BOT_MEMORY_SCOPES).optional(),
+  })
+  .refine(
+    (change) =>
+      change.content !== undefined || change.tier !== undefined || change.scope !== undefined,
+    { params: { i18nKey: 'validation.required' } },
+  );
+export type UpdateBotMemoryFactDto = z.infer<typeof updateBotMemoryFactSchema>;
 
 /**
  * A bot's turn (`product/versions/mvp/25-bots.md` §2): one message of yours

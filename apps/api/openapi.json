@@ -30418,6 +30418,21 @@
             "enum": ["user", "bot"],
             "description": "Who wrote it last."
           },
+          "tier": {
+            "type": "string",
+            "enum": ["profile", "log"],
+            "description": "`profile`: in mind in every turn. `log`: kept to be looked up with `recall`."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["bot", "person"],
+            "description": "`bot`: this bot's alone. `person`: about its owner, read by every bot of theirs in the workspace."
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that keeps it; another bot of the same owner for a shared fact."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -30427,7 +30442,7 @@
             "format": "date-time"
           }
         },
-        "required": ["id", "content", "source", "createdAt", "updatedAt"]
+        "required": ["id", "content", "source", "tier", "scope", "botId", "createdAt", "updatedAt"]
       },
       "CreateBotMemoryFactRequest": {
         "type": "object",
@@ -30436,6 +30451,14 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["profile", "log"]
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["bot", "person"]
           }
         },
         "required": ["content"]
@@ -30447,9 +30470,16 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["profile", "log"]
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["bot", "person"]
           }
-        },
-        "required": ["content"]
+        }
       },
       "BotGroupResponseDto": {
         "type": "object",

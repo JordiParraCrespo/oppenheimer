@@ -55,6 +55,7 @@ import {
   type ChatgptLoginState,
   ModelProviderEntity,
   type SaveBotDocumentInput,
+  type UpdateBotFactInput,
   type UpdateBotInput,
 } from './bot.entity';
 import {
@@ -161,6 +162,9 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.id,
     dto.content,
     dto.source,
+    dto.tier,
+    dto.scope,
+    dto.botId,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
   );
@@ -708,9 +712,13 @@ export class BotsRepository {
   }
 
   @MapApiError(BotsErrors.SAVE_FACT_FAILED)
-  async updateFact(id: string, factId: string, content: string): Promise<BotMemoryFactEntity> {
+  async updateFact(
+    id: string,
+    factId: string,
+    change: UpdateBotFactInput,
+  ): Promise<BotMemoryFactEntity> {
     const data = await unwrapBody(
-      heyApiSdk.updateBotMemoryFact({ path: { id, factId }, body: { content } }),
+      heyApiSdk.updateBotMemoryFact({ path: { id, factId }, body: change }),
       BotsErrors.SAVE_FACT_FAILED,
     );
     return toFact(data);

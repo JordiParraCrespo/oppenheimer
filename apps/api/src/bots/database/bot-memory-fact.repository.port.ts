@@ -3,10 +3,14 @@ import type { Option } from 'oxide.ts';
 import type { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 
 export interface BotMemoryFactRepositoryPort {
-  /** A bot's facts, newest first. */
+  /**
+   * A bot's facts and the `person` facts its owner's other bots keep, newest
+   * first; a shared fact names the bot that keeps it (`botId`).
+   */
   findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]>;
-  /** A bot's facts, newest first, for a turn the worker runs in the bot's workspace. */
+  /** The same, for a turn the worker runs in the bot's workspace. */
   findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]>;
+  /** One of the bot's own facts; a fact shared by another bot is that bot's to change. */
   findOneById(
     scope: AccessScope,
     botId: string,

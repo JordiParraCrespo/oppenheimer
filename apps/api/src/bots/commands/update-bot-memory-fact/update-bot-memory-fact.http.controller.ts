@@ -52,7 +52,12 @@ export class UpdateBotMemoryFactHttpController {
     @Body() body: UpdateBotMemoryFactRequest,
   ): Promise<BotMemoryFactResponseDto> {
     await this.commandBus.execute<UpdateBotMemoryFactCommand, string>(
-      new UpdateBotMemoryFactCommand({ scope, botId, factId, content: body.content }),
+      new UpdateBotMemoryFactCommand({
+        scope,
+        botId,
+        factId,
+        change: { content: body.content, tier: body.tier, scope: body.scope },
+      }),
     );
     const fact = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
       new FindBotMemoryFactQuery({ scope, botId, factId }),
