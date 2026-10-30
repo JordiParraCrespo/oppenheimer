@@ -73,11 +73,11 @@ export function StartSessionForm({
   });
   const hostId = useWatch({ control, name: 'hostId' });
   const place = useWatch({ control, name: 'place' });
-  const prompt = useWatch({ control, name: 'prompt' });
+  const promptEmpty = useWatch({ control, name: 'prompt', compute: (prompt) => !prompt.trim() });
   const rule = AUTOMATION_PLACE_RULES[place];
   const note = hostId && rule.host ? offline(hostId) : null;
   // A cloud session starts on a task; a host session may start on nothing.
-  const needsTask = rule.host !== 'runs' && !prompt.trim();
+  const needsTask = rule.host !== 'runs' && promptEmpty;
   const submit = handleSubmit(onSubmit);
 
   return (
