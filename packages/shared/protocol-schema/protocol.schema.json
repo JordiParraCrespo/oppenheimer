@@ -1548,6 +1548,263 @@
         "type",
         "attachmentId"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.link"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.unlink"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.state"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "unlinked",
+            "pairing",
+            "connecting",
+            "connected",
+            "logged_out"
+          ]
+        },
+        "qr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "qrExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "state"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.messages"
+        },
+        "messages": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "chatId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "senderName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "fromMe": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 8000
+              },
+              "media": {
+                "type": "string",
+                "enum": [
+                  "image",
+                  "video",
+                  "audio",
+                  "document",
+                  "sticker",
+                  "contact",
+                  "location"
+                ]
+              },
+              "quotedId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "key",
+              "id",
+              "chatId",
+              "chatKind",
+              "senderId",
+              "fromMe",
+              "text",
+              "sentAt"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.ack"
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "type",
+        "keys"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.send"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.sent"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "id",
+        "sentAt"
+      ]
     }
   ],
   "$defs": {
@@ -1887,7 +2144,8 @@
       "port.forward",
       "session.cloud",
       "session.cloud.codex",
-      "session.watch"
+      "session.watch",
+      "whatsapp"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
