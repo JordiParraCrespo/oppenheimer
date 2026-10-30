@@ -107,6 +107,19 @@
       "draftSaved": "Guardado como borrador en {{email}}. No se envió nada.",
       "draftUpdated": "El borrador de {{email}}, reescrito. No se envió nada.",
       "openInGmail": "Abrir en Gmail"
+    },
+    "question": {
+      "ownAnswer": "O escribe tu propia respuesta…",
+      "ownAnswerLabel": "Tu respuesta",
+      "several": "Marca con 1–{{last}} todas las que apliquen",
+      "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+      "next": "Siguiente",
+      "submit": "Enviar respuestas",
+      "dismiss": "Descartar",
+      "sending": "Enviando tus respuestas…",
+      "previous": "Pregunta anterior",
+      "nextQuestion": "Pregunta siguiente",
+      "of": "{{n}} de {{total}}"
     }
   },
   "search": {

@@ -151,11 +151,16 @@ describe('bots (integration)', () => {
 
   async function create(
     name: string,
-    options: { groupId?: string | null; homeHostId?: string | null; organization?: string } = {},
+    options: {
+      groupId?: string | null;
+      homeHostId?: string | null;
+      organization?: string;
+      createdBy?: string;
+    } = {},
   ): Promise<BotEntity> {
     const bot = BotEntity.createNew({
       organizationId: options.organization ?? organizationId,
-      createdByUserId: userId,
+      createdByUserId: options.createdBy ?? userId,
       name,
       description: '',
       avatarColor: 'mint',
@@ -368,7 +373,7 @@ describe('bots (integration)', () => {
     });
     await memory.insert(first, 10);
     await memory.insert(second, 10);
-    first.edit('uno', userActor(userId));
+    first.edit({ content: 'uno' }, userActor(userId));
     expect(await memory.save(first)).toBe('saved');
     expect((await memory.findOneById(scope(), bot.id, first.id)).unwrap()).toMatchObject({
       content: 'uno',
@@ -378,6 +383,50 @@ describe('bots (integration)', () => {
     expect((await memory.findAll(scope(), bot.id)).map((fact) => fact.content)).toEqual(['uno']);
     await memory.clear(bot);
     expect(await memory.findAll(scope(), bot.id)).toEqual([]);
+  });
+
+  it("shares a fact about the person with the person's other bots, and nothing else", async () => {
+    const ana = await create('Ana');
+    const bea = await create('Bea');
+    const otherUserId = randomUUID();
+    await dataSource.query(
+      `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+       VALUES ($1, 'Eva', $2, 'Eva', 'Ruiz')`,
+      [otherUserId, `${otherUserId}@example.com`],
+    );
+    const evas = await create('Evas', { createdBy: otherUserId });
+    const keep = (bot: BotEntity, content: string, kept: { tier?: 'log'; scope?: 'person' } = {}) =>
+      memory.insert(
+        BotMemoryFactEntity.createNew({
+          organizationId,
+          botId: bot.id,
+          content,
+          ...kept,
+          actor: { kind: 'bot' },
+        }),
+        10,
+      );
+    await keep(ana, 'Ana prefers squash merges.', { scope: 'person' });
+    await keep(ana, 'The flaky test is the relay one.', { tier: 'log' });
+    await keep(evas, 'Eva works in Lisbon.', { scope: 'person' });
+
+    const seen = (facts: BotMemoryFactEntity[]) =>
+      facts.map((fact) => [fact.content, fact.tier, fact.scope, fact.botId === ana.id]);
+    expect(seen(await memory.findAll(scope(), bea.id))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+    expect(seen(await memory.findAllForTurn(organizationId, bea.id))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+    expect(
+      (await memory.findAll(scope(), ana.id)).map((fact) => [fact.tier, fact.scope]).sort(),
+    ).toEqual([
+      ['log', 'bot'],
+      ['profile', 'person'],
+    ]);
+    expect((await memory.findAll(scope(), evas.id)).map((fact) => fact.content)).toEqual([
+      'Eva works in Lisbon.',
+    ]);
   });
 
   it('reads nothing of another workspace’s bot', async () => {

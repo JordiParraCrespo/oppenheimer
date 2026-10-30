@@ -10,6 +10,7 @@ export {
   type ChatgptLoginState,
   documentConflictRevision,
   type SaveBotDocumentInput,
+  type UpdateBotFactInput,
   type UpdateBotInput,
 } from './bot.entity';
 export {
@@ -18,6 +19,7 @@ export {
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
+  type BotQuestionCardEntity,
   type BotRoomLeft,
   type BotToolStep,
   type BotTurnContext,

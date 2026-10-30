@@ -40,6 +40,7 @@ import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
+import { BotQuestionMapper } from '../bot-question.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
@@ -54,6 +55,8 @@ import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
+import { BotQuestionRepository } from '../database/bot-question.repository';
 import { BotSubscriptionOrmEntity } from '../database/bot-subscription.orm-entity';
 import { BotSubscriptionRepository } from '../database/bot-subscription.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
@@ -64,6 +67,7 @@ import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
+import { BotQuestionEntity } from '../domain/bot-question.entity';
 import {
   routineActivityLine,
   routinePrefix,
@@ -103,6 +107,7 @@ describe('bots chat (integration)', () => {
   let turns: BotTurnRepository;
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
+  let questions: BotQuestionRepository;
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
@@ -145,6 +150,7 @@ describe('bots chat (integration)', () => {
         BotTurnOrmEntity,
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
+        BotQuestionOrmEntity,
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
@@ -195,6 +201,13 @@ describe('bots chat (integration)', () => {
       new BotTurnMapper(),
       new BotMessageMapper(),
       new BotToolPermissionMapper(),
+    );
+    questions = new BotQuestionRepository(
+      dataSource.getRepository(BotQuestionOrmEntity),
+      new BotQuestionMapper(),
+      new OutboxService(dataSource),
+      new BotTurnMapper(),
+      new BotMessageMapper(),
     );
     summaries = new BotConversationSummaryRepository(
       dataSource.getRepository(BotConversationSummaryOrmEntity),
@@ -751,11 +764,87 @@ describe('bots chat (integration)', () => {
     expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap().reach).toBe('subject');
   });
 
+  /** A card of questions on the bot's turn, waiting for its owner. */
+  async function questioned(bot: BotEntity, question = 'Which repository?') {
+    const { turn, message } = sent(bot, 'Release it');
+    await turns.enqueue(turn, message, null);
+    return BotQuestionEntity.ask({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      questions: [
+        {
+          header: null,
+          question,
+          multiSelect: false,
+          options: [
+            { label: 'acme/web', description: null },
+            { label: 'acme/api', description: null },
+          ],
+        },
+      ],
+      summary: question,
+    });
+  }
+
+  it('stores a card of questions answered, and refuses an answered card without its answers', async () => {
+    const bot = await create('Questioner');
+    const card = await questioned(bot);
+    expect(await questions.insertPending(card)).toBe('inserted');
+    const stored = (await questions.findPending(organizationId, bot.id)).unwrap();
+    expect(stored.questions.map((question) => question.question)).toEqual(['Which repository?']);
+    stored.answer(userId, new Date(), [{ picks: [1], other: 'and tag it' }]);
+    expect(await questions.saveTransition(stored)).toBe(true);
+    expect((await questions.findOne(scope(), bot.id, card.id)).unwrap()).toMatchObject({
+      status: 'answered',
+      answers: [{ picks: [1], other: 'and tag it' }],
+    });
+    // The loser of a race writes nothing.
+    const stale = card;
+    stale.expire(new Date());
+    expect(await questions.saveTransition(stale)).toBe(false);
+    await expect(
+      dataSource.query(`UPDATE bot_question SET answers = NULL WHERE id = $1`, [card.id]),
+    ).rejects.toThrow(/CHK_bot_question_answers/);
+    // Another workspace cannot read it.
+    expect(
+      (await questions.findOne(scopeOf(await insertOrganization()), bot.id, card.id)).isNone(),
+    ).toBe(true);
+  });
+
+  it('keeps one card up per bot across both kinds: questions wait on an approval, and the other way round', async () => {
+    const bot = await create('One at a time');
+    const approval = await asked(bot, 'Start Claude Code on build-02');
+    expect(await approvals.insertPending(approval)).toBe('inserted');
+    const blocked = await questioned(bot);
+    expect(await questions.insertPending(blocked)).toEqual({
+      waiting: 'Start Claude Code on build-02',
+    });
+    expect((await questions.findPending(organizationId, bot.id)).isNone()).toBe(true);
+
+    const decided = (await approvals.findPending(organizationId, bot.id)).unwrap();
+    decided.deny(userId, new Date(), 'no');
+    expect(await approvals.saveTransition(decided)).toBe(true);
+    const card = await questioned(bot, 'Which branch?');
+    expect(await questions.insertPending(card)).toBe('inserted');
+    expect(await approvals.insertPending(await asked(bot, 'Merge it'))).toEqual({
+      waiting: 'Which branch?',
+    });
+
+    // Raised at once, one of the two lands and the other is told to wait.
+    const racer = await create('Racing cards');
+    const outcomes = await Promise.all([
+      approvals.insertPending(await asked(racer, 'Run it')),
+      questions.insertPending(await questioned(racer, 'Which one?')),
+    ]);
+    expect(outcomes.filter((outcome) => outcome === 'inserted')).toHaveLength(1);
+  });
+
   it('keeps one card waiting per bot: a second is refused until the first is decided', async () => {
     const bot = await create('Asker');
     const first = await asked(bot, 'First');
     expect(await approvals.insertPending(first)).toBe('inserted');
-    expect(await approvals.insertPending(await asked(bot, 'Second'))).toBe('pending_exists');
+    expect(await approvals.insertPending(await asked(bot, 'Second'))).toEqual({ waiting: 'First' });
     // Another bot asks on its own.
     expect(await approvals.insertPending(await asked(await create('Other')))).toBe('inserted');
 
@@ -820,7 +909,7 @@ describe('bots chat (integration)', () => {
     const bot = await create('Twice');
     await approvals.insertPending(await asked(bot));
     const refused = await asked(bot);
-    expect(await approvals.insertPending(refused)).toBe('pending_exists');
+    expect(await approvals.insertPending(refused)).toEqual({ waiting: refused.summary });
     const [{ count }]: { count: string }[] = await dataSource.query(
       `SELECT count(*) FROM outbox_message WHERE "aggregateId" = $1`,
       [refused.id],

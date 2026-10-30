@@ -291,7 +291,10 @@
     "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
     "BOTS_032": "That rule is gone. Reload the page.",
     "BOTS_033": "That permission is gone. Reload the page.",
-    "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first."
+    "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first.",
+    "BOTS_035": "Those questions don't exist.",
+    "BOTS_036": "Those answers do not fit the questions. Answer each one, then send them again.",
+    "BOTS_037": "Those questions were already answered."
   },
   "notFound": {
     "title": "That page does not exist",

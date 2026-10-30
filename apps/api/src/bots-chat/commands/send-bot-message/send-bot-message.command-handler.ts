@@ -12,12 +12,8 @@ import type { ModelProviderCredentialRepositoryPort } from '../../../bots/databa
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
 import { BotMessageAttachmentsResolver } from '../../application/bot-message-attachments.resolver';
-import {
-  BOT_APPROVAL_REPOSITORY,
-  BOT_STREAM,
-  BOT_TURN_REPOSITORY,
-} from '../../bots-chat.di-tokens';
-import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
+import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
+import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
@@ -43,7 +39,7 @@ export class SendBotMessageCommandHandler
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
-    @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
+    private readonly cards: BotWaitingCardResolver,
     private readonly images: BotMessageAttachmentsResolver,
   ) {}
 
@@ -89,25 +85,7 @@ export class SendBotMessageCommandHandler
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
-    await this.expireCard(bot.organizationId, bot.id);
+    await this.cards.retire(bot.organizationId, bot.id);
     return turn.id;
-  }
-
-  /**
-   * Writing to the bot instead of answering its card retires the card
-   * (`25-bots.md` §5): the new turn starts fresh, and nobody decided. A
-   * decision that lands first wins, and this does nothing.
-   */
-  private async expireCard(organizationId: string, botId: string): Promise<void> {
-    const pending = await this.approvals.findPending(organizationId, botId);
-    if (pending.isNone()) return;
-    const approval = pending.unwrap();
-    approval.expire(new Date());
-    if (!(await this.approvals.saveTransition(approval))) return;
-    await this.stream.publish(botId, {
-      type: 'approval',
-      approvalId: approval.id,
-      status: 'expired',
-    });
   }
 }

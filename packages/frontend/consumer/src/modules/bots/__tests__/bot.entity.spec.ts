@@ -54,8 +54,12 @@ describe('BotDocumentEntity.isBlank', () => {
 describe('BotMemoryFactEntity.isEdited', () => {
   it('is edited once its last write is not its first', () => {
     const later = new Date('2026-10-14T10:00:00.000Z');
-    expect(new BotMemoryFactEntity('f', 'x', 'user', at, at).isEdited).toBe(false);
-    expect(new BotMemoryFactEntity('f', 'x', 'user', at, later).isEdited).toBe(true);
+    expect(new BotMemoryFactEntity('f', 'x', 'user', 'profile', 'bot', 'b', at, at).isEdited).toBe(
+      false,
+    );
+    expect(
+      new BotMemoryFactEntity('f', 'x', 'user', 'profile', 'bot', 'b', at, later).isEdited,
+    ).toBe(true);
   });
 });
 

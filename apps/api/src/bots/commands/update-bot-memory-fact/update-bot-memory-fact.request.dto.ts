@@ -1,4 +1,4 @@
-import { botMemoryFactSchema } from '@oppenheimer/shared';
+import { updateBotMemoryFactSchema } from '@oppenheimer/shared';
 import { createZodDto } from 'nestjs-zod';
 
-export class UpdateBotMemoryFactRequest extends createZodDto(botMemoryFactSchema) {}
+export class UpdateBotMemoryFactRequest extends createZodDto(updateBotMemoryFactSchema) {}
