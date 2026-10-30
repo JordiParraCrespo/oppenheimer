@@ -969,6 +969,7 @@ export const BOT_TOOL_GROUPS = [
   'sessions',
   'plan',
   'mail',
+  'whatsapp',
   'github',
   'automations',
   'bots',

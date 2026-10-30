@@ -52,6 +52,8 @@ import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
 import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
+import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -137,6 +139,8 @@ export default new DataSource({
     CalendarConnectionOrmEntity,
     GmailConnectionOrmEntity,
     MailSendOrmEntity,
+    WhatsappAccountOrmEntity,
+    WhatsappMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,

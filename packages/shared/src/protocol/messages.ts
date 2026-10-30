@@ -16,15 +16,6 @@ import {
   portOpenSchema,
 } from './ports.js';
 import {
-  whatsappAckSchema,
-  whatsappLinkSchema,
-  whatsappMessagesSchema,
-  whatsappSendSchema,
-  whatsappSentSchema,
-  whatsappStateSchema,
-  whatsappUnlinkSchema,
-} from './whatsapp.js';
-import {
   attachmentIdSchema,
   checkoutIdSchema,
   commandIdSchema,
@@ -45,6 +36,15 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import {
+  whatsappAckSchema,
+  whatsappLinkSchema,
+  whatsappMessagesSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
+  whatsappStateSchema,
+  whatsappUnlinkSchema,
+} from './whatsapp.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON

@@ -19,6 +19,7 @@ import { BotMailAccountsResolver } from './application/bot-mail-accounts.resolve
 import { BotMailChatFilesResolver } from './application/bot-mail-chat-files.resolver';
 import { BotMailOrganizeToolsFactory } from './application/bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './application/bot-mail-tools.factory';
+import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.factory';
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
@@ -311,6 +312,7 @@ const queryHandlers: Provider[] = [
     BotPeerToolsFactory,
     BotWebToolsFactory,
     BotMailToolsFactory,
+    BotWhatsappToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
     BotMailAccountsResolver,

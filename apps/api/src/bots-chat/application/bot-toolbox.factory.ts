@@ -18,6 +18,7 @@ import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
+import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
@@ -59,6 +60,7 @@ export class BotToolboxFactory {
     mail: BotMailToolsFactory,
     mailWrites: BotMailWriteToolsFactory,
     mailOrganizing: BotMailOrganizeToolsFactory,
+    whatsapp: BotWhatsappToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
@@ -81,6 +83,7 @@ export class BotToolboxFactory {
       mail,
       mailWrites,
       mailOrganizing,
+      whatsapp,
       peers,
       web,
       subagents,
