@@ -250,7 +250,7 @@ export class BotSessionEventResponseDto {
   @ApiProperty({
     enum: BOT_SESSION_EVENT_STATES,
     description:
-      'What became of the task, or `matched`: its terminal printed a line matching the pattern the bot watches for.',
+      'What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.',
   })
   state!: BotSessionEventState;
 

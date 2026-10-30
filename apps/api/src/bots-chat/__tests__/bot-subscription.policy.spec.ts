@@ -2,18 +2,23 @@
  * When a session a bot follows wakes it, and what the wake says
  * (`27-bot-subscriptions.md` §2, §4): the decision over the task as it
  * stands, the key that makes a wake delivered twice one turn, and the
- * session's words fenced as data. The handler that acts on the decision is
- * `wake-subscribed-bot.command-handler.spec.ts`; the table's constraints are
- * the integration suite's.
+ * session's words fenced as data; and the stall check a few minutes after a
+ * hand-off (§4.1), which speaks only for a task stuck short of every wake.
+ * The handlers that act on the decisions are
+ * `wake-subscribed-bot.command-handler.spec.ts` and
+ * `check-stalled-session.command-handler.spec.ts`; the table's constraints
+ * are the integration suite's.
  */
 import { BOT_SESSION_WAKE_STATES, type BotSessionEvent } from '@oppenheimer/shared';
 import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   knownStateOf,
   type SessionWake,
+  type StallTask,
   sessionWakePrompt,
   sessionWakeText,
   sessionWakeTurn,
+  stallFor,
   type WakeSubject,
   type WatchedTask,
   wakeFor,
@@ -167,6 +172,117 @@ describe('wakeFor', () => {
     expect(wakeFor(spent, { seq: 30, state: 'completed' }, false)).toEqual({
       kind: 'end',
       reason: 'wake_limit',
+    });
+  });
+});
+
+describe('stallFor', () => {
+  const host = { closed: false, place: 'host' };
+  const task = (overrides: Partial<StallTask> = {}): StallTask => ({
+    seq: 1,
+    state: 'in_progress',
+    observedWorking: false,
+    drive: 'interactive',
+    ...overrides,
+  });
+
+  // What breaks this: a session whose host is offline, or whose agent sits
+  // at a trust prompt, leaving the bot silent until somebody asks.
+  it('finds a task that never started, or whose agent was never seen working, stuck', () => {
+    expect(stallFor(subject(), 1, task({ state: 'queued' }), host)).toEqual({
+      kind: 'stalled',
+      reason: 'not_started',
+      turn: 1,
+    });
+    expect(stallFor(subject(), 1, task(), host)).toMatchObject({
+      kind: 'stalled',
+      reason: 'not_working',
+    });
+  });
+
+  // What breaks this: the check turning into a "still running" update the
+  // person did not ask for.
+  it('is silent for an agent seen working, and for every state a wake already tells', () => {
+    expect(stallFor(subject(), 1, task({ observedWorking: true }), host)).toEqual({
+      kind: 'skip',
+    });
+    for (const state of BOT_SESSION_WAKE_STATES) {
+      expect(stallFor(subject(), 1, task({ state }), host)).toEqual({ kind: 'skip' });
+    }
+  });
+
+  // What breaks this: a quiet headless or cloud run, which reports its own
+  // progress and never shows on a screen, reported as stuck.
+  it('reads "never seen working" only off an interactive turn on a host', () => {
+    expect(stallFor(subject(), 1, task({ drive: 'headless' }), host)).toEqual({ kind: 'skip' });
+    expect(stallFor(subject(), 1, task(), { closed: false, place: 'cloud' })).toEqual({
+      kind: 'skip',
+    });
+    expect(
+      stallFor(subject(), 1, task({ state: 'queued' }), { closed: false, place: 'cloud' }),
+    ).toMatchObject({ kind: 'stalled', reason: 'not_started' });
+  });
+
+  it('is silent once the session moved past the task checked, or the bot was told about it', () => {
+    expect(stallFor(subject(), 1, task({ seq: 2 }), host)).toEqual({ kind: 'skip' });
+    expect(stallFor(subject({ watchedTurn: 2 }), 1, task(), host)).toEqual({ kind: 'skip' });
+    expect(
+      stallFor(subject({ lastTurn: 1, lastState: 'requires_action', wakes: 1 }), 1, task(), host),
+    ).toEqual({ kind: 'skip' });
+    expect(stallFor(subject(), 1, task(), { closed: true, place: 'host' })).toEqual({
+      kind: 'skip',
+    });
+    expect(stallFor(subject(), 1, null, host)).toEqual({ kind: 'skip' });
+  });
+});
+
+describe('a stall', () => {
+  const stalled: SessionWake = {
+    ...wake({ ends: false, task: { state: 'queued', result: null } }),
+    cause: {
+      kind: 'stall',
+      task: {
+        seq: 1,
+        state: 'in_progress',
+        prompt: 'Make bots reorderable',
+        result: null,
+        failureDetail: null,
+      },
+      reason: 'not_working',
+    },
+  };
+
+  it('says what looks stuck, quotes the task, and keeps the bot subscribed', () => {
+    const text = sessionWakeText(stalled);
+    expect(text).toContain(
+      'its task #1 looks stuck: it started, but its agent has not been seen working',
+    );
+    expect(text).toContain('<session_task>\nMake bots reorderable\n</session_task>');
+    expect(text).toContain('You stay subscribed to it');
+  });
+
+  it('is told once per task, and opens a stalled line in the chat', () => {
+    expect(wakeSourceKey(stalled)).toBe('subscription:sub-1:1:stalled');
+    const { opening } = sessionWakeTurn(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        requestedByUserId: 'owner-1',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5-5',
+        effort: null,
+        timeZone: 'UTC',
+        credentialScopes: null,
+      },
+      stalled,
+    );
+    expect(opening.event).toEqual({
+      kind: 'session',
+      subscriptionId: 'sub-1',
+      sessionId: 'session-1',
+      sessionName: 'Cursor skills research',
+      turn: 1,
+      state: 'stalled',
     });
   });
 });

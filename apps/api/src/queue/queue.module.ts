@@ -35,6 +35,8 @@ import { EmailProcessor } from './infrastructure/email.processor';
       { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       // A summary write is conditional on the version it read, so a retry never moves it back.
       { name: QUEUE_NAMES.BOT_SUMMARIES, defaultJobOptions: DURABLE_JOB_OPTIONS },
+      // A stall check queues its wake under a key, so a retry tells the bot once.
+      { name: QUEUE_NAMES.BOT_STALL_CHECKS, defaultJobOptions: DURABLE_JOB_OPTIONS },
       // Scheduler-driven queues (the automation tick, the daily purges): the
       // root defaults from `app.module.ts`.
       { name: QUEUE_NAMES.HOST_RETENTION },

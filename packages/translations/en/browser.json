@@ -1539,6 +1539,7 @@
           "failed": "Session “{{name}}” failed",
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
+          "stalled": "Session “{{name}}” looks stuck",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
         },

@@ -35,6 +35,7 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     @InjectQueue(QUEUE_NAMES.BOT_TURNS) botTurnsQueue: Queue,
     @InjectQueue(QUEUE_NAMES.BOT_APPROVALS) botApprovalsQueue: Queue,
     @InjectQueue(QUEUE_NAMES.BOT_SUMMARIES) botSummariesQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.BOT_STALL_CHECKS) botStallChecksQueue: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [QUEUE_NAMES.EMAIL, emailQueue],
@@ -43,6 +44,7 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
       [QUEUE_NAMES.BOT_TURNS, botTurnsQueue],
       [QUEUE_NAMES.BOT_APPROVALS, botApprovalsQueue],
       [QUEUE_NAMES.BOT_SUMMARIES, botSummariesQueue],
+      [QUEUE_NAMES.BOT_STALL_CHECKS, botStallChecksQueue],
     ]);
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,

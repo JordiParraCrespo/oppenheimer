@@ -70,6 +70,7 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_PERMISSION_RULE_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
+  BOT_STALL_CHECKS,
   BOT_STREAM,
   BOT_SUBSCRIPTION_REPOSITORY,
   BOT_TOOL_PERMISSION_REPOSITORY,
@@ -81,6 +82,7 @@ import { AnswerBotQuestionCommandHandler } from './commands/answer-bot-question/
 import { AnswerBotQuestionHttpController } from './commands/answer-bot-question/answer-bot-question.http.controller';
 import { CancelBotTurnCommandHandler } from './commands/cancel-bot-turn/cancel-bot-turn.command-handler';
 import { CancelBotTurnHttpController } from './commands/cancel-bot-turn/cancel-bot-turn.http.controller';
+import { CheckStalledSessionCommandHandler } from './commands/check-stalled-session/check-stalled-session.command-handler';
 import { ClearBotConversationCommandHandler } from './commands/clear-bot-conversation/clear-bot-conversation.command-handler';
 import { ClearBotConversationHttpController } from './commands/clear-bot-conversation/clear-bot-conversation.http.controller';
 import { ClearBotGoalCommandHandler } from './commands/clear-bot-goal/clear-bot-goal.command-handler';
@@ -133,9 +135,11 @@ import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
+import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
 import { StorageBotAttachmentFilesAdapter } from './infrastructure/storage-bot-attachment-files.adapter';
@@ -201,6 +205,7 @@ const commandHandlers: Provider[] = [
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
   WakeSubscribedBotCommandHandler,
+  CheckStalledSessionCommandHandler,
   WakeOnTerminalMatchCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
@@ -234,7 +239,8 @@ const queryHandlers: Provider[] = [
  * stream a chat follows, the Needs input cards an asking tool raises and the
  * owner answers, and the summary that stands in for a long conversation's
  * oldest messages, written by the `bot-summaries` worker; and the sessions
- * a bot follows, whose news wakes it (`27-bot-subscriptions.md`). It reads the bot,
+ * a bot follows, whose news wakes it, and the `bot-stall-checks` worker
+ * that checks a handed-off task got going (`27-bot-subscriptions.md`). It reads the bot,
  * its documents, its memory and the workspace's provider key through the
  * ports `BotsModule` exports, and serves routes under `/bots/:id` whose last
  * segment no route of that module has.
@@ -325,6 +331,7 @@ const queryHandlers: Provider[] = [
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,
+    BotStallChecksProcessor,
     BotAttachmentRetentionProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
@@ -335,6 +342,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
+    { provide: BOT_STALL_CHECKS, useClass: OutboxBotStallChecksAdapter },
     { provide: BOT_GOAL_REPOSITORY, useClass: BotGoalRepository },
     { provide: BOT_TOOL_PERMISSION_REPOSITORY, useClass: BotToolPermissionRepository },
     { provide: BOT_PERMISSION_RULE_REPOSITORY, useClass: BotPermissionRuleRepository },
