@@ -1,11 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { MERGE_METHODS, REVIEW_COMMENT_MAX } from '@oppenheimer/shared';
+import {
+  CI_FINDING_ACTIONS,
+  CI_FINDING_CHECK_MAX,
+  CI_FINDING_CONFIDENCE,
+  CI_FINDING_EVIDENCE_ITEM_MAX,
+  CI_FINDING_EVIDENCE_MAX,
+  CI_FINDING_FLAKE,
+  CI_FINDING_NEXT_MAX,
+  CI_FINDING_RELATIONS,
+  CI_FINDING_ROOT_CAUSE_MAX,
+  CI_FINDINGS_PER_RECORD_MAX,
+  MERGE_METHODS,
+  REVIEW_COMMENT_MAX,
+} from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import { AddPullRequestCommentCommand } from '../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
 import { AddPullRequestConversationCommentCommand } from '../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../pull-requests/commands/merge-pull-request/merge-pull-request.command';
+import {
+  type CiFindingInput,
+  RecordCiFindingsCommand,
+} from '../../pull-requests/commands/record-ci-findings/record-ci-findings.command';
 import { StartReviewSessionCommand } from '../../pull-requests/commands/start-review-session/start-review-session.command';
 import { SubmitPullRequestReviewCommand } from '../../pull-requests/commands/submit-pull-request-review/submit-pull-request-review.command';
 import { FindPullRequestQuery } from '../../pull-requests/queries/find-pull-request/find-pull-request.query';
@@ -46,6 +63,58 @@ const lineComment = z.object({
 
 type Address = { installation_id: string; github_repo_id: number; number: number };
 
+/** What one failing check came to, as `record_ci_findings` takes it. */
+const ciFinding = z.object({
+  check: z
+    .string()
+    .trim()
+    .min(1)
+    .max(CI_FINDING_CHECK_MAX)
+    .describe('The failing check, exactly as get_pull_request names it.'),
+  root_cause: z
+    .string()
+    .trim()
+    .min(1)
+    .max(CI_FINDING_ROOT_CAUSE_MAX)
+    .describe('Why it failed, in a sentence or two: the error, where, and what made it.'),
+  relation: z
+    .enum(CI_FINDING_RELATIONS)
+    .describe(
+      '"this_change": the pull request caused it. "unrelated": it fails without it (the base, the runner, another change). "unclear": you could not tell.',
+    ),
+  flake: z
+    .enum(CI_FINDING_FLAKE)
+    .describe(
+      '"flake": it passes on a re-run of the same commit. "real": it fails the same way each time. "unsure": not re-run or not known.',
+    ),
+  action: z
+    .enum(CI_FINDING_ACTIONS)
+    .describe(
+      '"fix_here": change this pull request. "rerun": run it again. "fix_elsewhere": the fix belongs in another change. "ask": the person must decide.',
+    ),
+  next: z
+    .string()
+    .trim()
+    .min(1)
+    .max(CI_FINDING_NEXT_MAX)
+    .describe('The action in words: what exactly to change, re-run or ask.'),
+  confidence: z.enum(CI_FINDING_CONFIDENCE),
+  evidence: z
+    .array(z.string().trim().min(1).max(CI_FINDING_EVIDENCE_ITEM_MAX))
+    .min(1)
+    .max(CI_FINDING_EVIDENCE_MAX)
+    .describe('What it rests on: a line of the log, a file and line, a run you compared.'),
+});
+
+/**
+ * A finding as the model wrote it, as the command takes it: the one field
+ * whose name differs is renamed, and every other passes through, so a field
+ * added to the schema reaches the command without another line here.
+ */
+function toCiFinding({ root_cause, ...rest }: z.output<typeof ciFinding>): CiFindingInput {
+  return { ...rest, rootCause: root_cause };
+}
+
 /**
  * GitHub and pull requests, the writes (`25-bots.md` §4.4): comment, review,
  * merge, and start a review session. Each reaches outside Oppenheimer, so
@@ -71,7 +140,37 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       this.reviewPullRequest(),
       this.mergePullRequest(),
       this.startReviewSession(),
+      this.recordCiFindings(),
     ];
+  }
+
+  /**
+   * What the failing checks came to (`0.2-pull-requests.md`, "CI findings"):
+   * a record on the pull request's head, shown with its checks, rather than
+   * prose in a chat. It writes nothing to GitHub, so it does not ask.
+   */
+  private recordCiFindings(): BotToolDefinition {
+    return defineBotTool({
+      name: 'record_ci_findings',
+      scope: 'pulls:write',
+      description: `Records what the failing checks on a pull request came to, one finding per check you looked into: why it failed, whether this change caused it, whether it is a flake, what to do, how sure you are, and the evidence. It is kept on the pull request's head and shown with its checks, so the person reads a verdict rather than a chat; a second record of a check on the same commit replaces the first. Read the failing checks with get_pull_request first, and look at a check's log before you judge it. At most ${CI_FINDINGS_PER_RECORD_MAX} checks per call. It writes nothing to GitHub.`,
+      input: z.strictObject({
+        ...address,
+        findings: z.array(ciFinding).min(1).max(CI_FINDINGS_PER_RECORD_MAX),
+      }),
+      run: async (input, context) => {
+        const headSha = await this.commandBus.execute<RecordCiFindingsCommand, string>(
+          new RecordCiFindingsCommand({
+            scope: context.owner,
+            address: addressOf(input),
+            findings: input.findings.map(toCiFinding),
+            botId: context.botId,
+          }),
+        );
+        const checks = input.findings.map((finding) => finding.check).join(', ');
+        return `Recorded ${input.findings.length} finding${input.findings.length === 1 ? '' : 's'} on #${input.number} at ${headSha.slice(0, 7)}: ${checks}. The person sees them with the pull request's checks; a push leaves them on the commit before.`;
+      },
+    });
   }
 
   private commentOnPullRequest(): BotToolDefinition {

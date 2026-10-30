@@ -641,6 +641,14 @@ export function createPullsStub(
           name: ['build', 'test', 'lint'][index] ?? `check-${index}`,
           status: outcome === 'in_progress' ? 'in_progress' : 'completed',
           conclusion: outcome === 'in_progress' ? null : outcome,
+          // A failed run says what failed and where its log is, as GitHub's do.
+          ...(outcome === 'failure' && {
+            details_url: `https://github.com/${fullName}/actions/runs/${index + 1}`,
+            output: {
+              title: '2 tests failed',
+              summary: 'FAIL src/date.spec.ts > parses an empty date',
+            },
+          }),
         }));
         return { status: 200, body: { total_count: runs.length, check_runs: runs } };
       }

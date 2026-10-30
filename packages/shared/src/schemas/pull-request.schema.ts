@@ -108,3 +108,35 @@ export const pullRequestAnalyticsQuerySchema = z.object({
   range: z.enum(PULL_REQUEST_ANALYTICS_RANGES).default('month'),
 });
 export type PullRequestAnalyticsQueryDto = z.infer<typeof pullRequestAnalyticsQuerySchema>;
+
+/**
+ * A CI finding (`product/next-steps/0.2-pull-requests.md`, "CI findings";
+ * from Grok Bot's CI investigation, `research/lessons-from-grok-bot.md` §9
+ * row 14): what one failing check on a pull request's head came to, as a
+ * record rather than prose. How the failure relates to the change, whether
+ * it is a flake, what to do about it, and how sure the one who looked is.
+ */
+export const CI_FINDING_RELATIONS = ['this_change', 'unrelated', 'unclear'] as const;
+export type CiFindingRelation = (typeof CI_FINDING_RELATIONS)[number];
+
+/** `flake`: it passes on a re-run of the same commit; `real`: it fails the same way. */
+export const CI_FINDING_FLAKE = ['flake', 'real', 'unsure'] as const;
+export type CiFindingFlake = (typeof CI_FINDING_FLAKE)[number];
+
+/** Fix it in this pull request, run it again, fix it where it lives, or ask the person. */
+export const CI_FINDING_ACTIONS = ['fix_here', 'rerun', 'fix_elsewhere', 'ask'] as const;
+export type CiFindingAction = (typeof CI_FINDING_ACTIONS)[number];
+
+export const CI_FINDING_CONFIDENCE = ['high', 'medium', 'low'] as const;
+export type CiFindingConfidence = (typeof CI_FINDING_CONFIDENCE)[number];
+
+/** How long a check's name may be, as GitHub names them. */
+export const CI_FINDING_CHECK_MAX = 200;
+export const CI_FINDING_ROOT_CAUSE_MAX = 1_000;
+/** The action in words: what exactly to change, re-run or ask. */
+export const CI_FINDING_NEXT_MAX = 500;
+/** At most this many pieces of evidence, each a line of a log, a file and line, a run. */
+export const CI_FINDING_EVIDENCE_MAX = 5;
+export const CI_FINDING_EVIDENCE_ITEM_MAX = 300;
+/** At most this many findings in one record: one per failing check. */
+export const CI_FINDINGS_PER_RECORD_MAX = 20;
