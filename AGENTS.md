@@ -142,6 +142,11 @@ When you add a file that mentions an optional app (CI, compose,
   `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
   a new root-level file every package relies on is a pattern in its
   `GLOBAL_PATHS`
+- **Merge policy** (Jordi's standing approval): a `fix` pull request merges
+  on its own once an independent `verify-pr` verdict passes its head; every
+  other change waits until Jordi accepts it, and research is never merged by
+  an agent. The lanes and every gate are the `ship` skill
+  (`.agents/skills/ship/SKILL.md`), the one place they are written
 - Agent guardrails live in `.claude/settings.json`: it denies force pushes,
   `git reset --hard`, deleting branches, `sudo`, piping a download into a
   shell and reading credential files, asks before `rm -rf` or reading an
