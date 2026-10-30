@@ -13,6 +13,7 @@ import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
+import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -94,6 +95,28 @@ function blockedSession(): WorkSessionEntity {
   return session;
 }
 
+/** A Claude Code cloud session its host has started, or not yet when `cloudSessionId` is null. */
+function cloudSession(cloudSessionId: string | null): WorkSessionEntity {
+  const session = WorkSessionEntity.request({
+    organizationId: 'org-1',
+    projectId: PROJECT,
+    createdByUserId: 'owner-1',
+    hostId: HOME,
+    slug: 'bold-otter-3f9a7k',
+    agent: 'claude-code',
+    place: 'cloud',
+  });
+  if (cloudSessionId) {
+    session.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: cloudSessionId, checkouts: [] },
+      occurredAt: new Date(),
+    });
+  }
+  return session;
+}
+
 function setup(permission: BotToolContext['permission']) {
   const session = blockedSession();
   const queryBus = {
@@ -122,6 +145,7 @@ function setup(permission: BotToolContext['permission']) {
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
     watches as unknown as BotSessionWatchResolver,
+    new BotSessionWaitResolver(queryBus as unknown as QueryBus),
   );
   const call = (name: string, input: unknown) => {
     const definition = factory.definitions().find((candidate) => candidate.name === name);
@@ -265,6 +289,86 @@ describe('BotSessionToolsFactory', () => {
     commandBus.execute.mockResolvedValueOnce({ sessionId: 'session-2', hints: ['host_offline'] });
     const result = await call('start_session', { task: 'x', folder: '/srv/app' });
     expect(result.content).toContain('The host is offline: the session is queued');
+  });
+
+  describe('start_cloud_session', () => {
+    const CLOUD_ID = 'session_014a8EH8DJs95X1iK8ZH9Y82';
+
+    /** The session the create made, as the owner reads it back. */
+    function readsBack(queryBus: ReturnType<typeof setup>['queryBus'], session: WorkSessionEntity) {
+      queryBus.execute.mockImplementation(async (query: unknown) => {
+        if (query instanceof FindHostQuery) return { host: { name: 'build-02' }, online: true };
+        if (query instanceof FindSessionQuery) return session;
+        return project;
+      });
+    }
+
+    it('asks first under Approve for me, the card naming the cloud, the host, the repository and the task', async () => {
+      const { commandBus, approvals, call } = setup('auto');
+      await call('start_cloud_session', { task: 'Fix the test', project_id: PROJECT });
+      expect(approvals.request.mock.calls[0][0]).toMatchObject({
+        tool: 'start_cloud_session',
+        summary: 'Start a Claude Code cloud session from build-02 in acme/xrp-mobile: Fix the test',
+        subject: { kind: 'project', key: PROJECT, label: 'XRP Mobile' },
+      });
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('creates the session the console’s Claude Code cloud does, which has the host run claude --cloud, and returns its claude.ai URL', async () => {
+      const { commandBus, queryBus, call } = setup('full');
+      readsBack(queryBus, cloudSession(CLOUD_ID));
+      const result = await call('start_cloud_session', {
+        task: 'Fix the failing test',
+        project_id: PROJECT,
+      });
+      const command = commandBus.execute.mock.calls[0][0] as CreateSessionCommand;
+      expect(command).toBeInstanceOf(CreateSessionCommand);
+      expect(command).toMatchObject({ scope: owner, userId: 'owner-1', origin: 'bot' });
+      expect(command.input).toMatchObject({
+        hostId: HOME,
+        agent: 'claude-code',
+        cloud: true,
+        projectId: PROJECT,
+        prompt: 'Fix the failing test',
+        checkouts: [{ installationId: INSTALLATION, githubRepoId: 42, baseBranch: 'main' }],
+      });
+      expect(command.idempotencyKey).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
+      expect(result.content).toContain(`https://claude.ai/code/${CLOUD_ID}`);
+      expect(result.data).toEqual({ sessionId: 'session-1' });
+    });
+
+    it('answers without a URL when the host has not named the session within the wait', async () => {
+      const { queryBus, call } = setup('full');
+      readsBack(queryBus, cloudSession(null));
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        wait_seconds: 0,
+      });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toContain('has not named it yet');
+      expect(result.content).not.toContain('claude.ai/code/');
+    });
+
+    it('does not wait on a host that is offline', async () => {
+      const { commandBus, queryBus, call } = setup('full');
+      commandBus.execute.mockResolvedValueOnce({ sessionId: 'session-2', hints: ['host_offline'] });
+      const result = await call('start_cloud_session', { task: 'x', project_id: PROJECT });
+      expect(result.content).toContain('is offline');
+      expect(queryBus.execute).not.toHaveBeenCalledWith(expect.any(FindSessionQuery));
+    });
+
+    it('refuses a repository the project does not hold, starting nothing', async () => {
+      const { commandBus, call } = setup('full');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        repository: 'acme/other',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('The project has no repository acme/other');
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
   });
 
   it('stops a session through the sessions’ own command, in the owner’s scope', async () => {
