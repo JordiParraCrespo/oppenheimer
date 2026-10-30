@@ -43,6 +43,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release"
 	updstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/state"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
+	waapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/whatsapp/app"
 )
 
 // App is the assembled host agent: the contexts a subcommand needs, wired to
@@ -89,6 +90,10 @@ type App struct {
 	// Ports is the TCP ports sessions' processes listen on, for the
 	// console's preview; nil where the runner cannot read them.
 	Ports *portsapp.Service
+	// WhatsApp is the host's WhatsApp linked device (link_whatsapp.go),
+	// built by the daemon's link; nil is a host that offers none
+	// (RUNNER_WHATSAPP=off), or a subcommand that holds no link.
+	WhatsApp *waapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -302,6 +307,9 @@ func unit(paths Paths) svcdomain.Unit {
 	// service, which would not otherwise see the installer's environment.
 	if updates := os.Getenv(EnvAgentUpdates); updates != "" {
 		env[EnvAgentUpdates] = updates
+	}
+	if whatsApp := os.Getenv(EnvWhatsApp); whatsApp != "" {
+		env[EnvWhatsApp] = whatsApp
 	}
 	// The devices and the Argent the installer was told about.
 	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {

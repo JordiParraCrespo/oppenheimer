@@ -48,7 +48,7 @@ export type WhatsappDeviceState = (typeof WHATSAPP_DEVICE_STATES)[number];
  * `pairing` with each QR code WhatsApp issues (one every twenty seconds or
  * so, while the pairing window lasts), then `connected` once the phone has
  * scanned one, or `unlinked` when the window closed unscanned. Refused with
- * `command.failed`: `WHATSAPP_001` the host already holds a device.
+ * `command.failed`: `WA_001` the host already holds a device.
  */
 export const whatsappLinkSchema = z.object({
   type: z.literal('whatsapp.link'),
@@ -154,8 +154,8 @@ export type WhatsappAckMessage = z.infer<typeof whatsappAckSchema>;
 /**
  * Send a text message to one chat, as the paired number. Answered by
  * `whatsapp.sent` with the same `commandId`, or `command.failed`:
- * `WHATSAPP_002` no device is connected, `WHATSAPP_003` WhatsApp refused it,
- * `WHATSAPP_004` the host's own send budget is spent.
+ * `WA_002` no device is connected, `WA_003` WhatsApp refused it,
+ * `WA_004` the host's own send budget is spent.
  */
 export const whatsappSendSchema = z.object({
   type: z.literal('whatsapp.send'),
