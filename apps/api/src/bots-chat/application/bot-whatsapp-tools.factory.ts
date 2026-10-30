@@ -246,7 +246,11 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         return `Send on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}: ${input.text}`;
       },
       run: async (input, context) => {
-        const planned = input.planned
+        // Only a card's stored call carries a plan Oppenheimer made. A call
+        // that runs without one (Full access, a grant for the chat) is the
+        // model's own input, whose `planned` could name any chat: it is
+        // resolved again here, the same way the grant was checked.
+        const planned = context.approvalId
           ? plannedOf(input.planned)
           : await this.plan(input, context.owner);
         const id = await this.commandBus.execute<SendWhatsappMessageCommand, string>(
@@ -329,7 +333,7 @@ function targetOf(chat: WhatsappChatTarget): Omit<PlannedSend, 'accountId' | 'ac
   };
 }
 
-/** The send the card stored; a call without one is planned when it runs. */
+/** The send the card stored, which a call carrying out its approval runs. */
 function plannedOf(stored: unknown): PlannedSend {
   const parsed = plannedSend.safeParse(stored);
   if (!parsed.success)

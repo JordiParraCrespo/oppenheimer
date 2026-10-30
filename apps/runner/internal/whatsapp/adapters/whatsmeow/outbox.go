@@ -149,3 +149,9 @@ func (o *Outbox) Ack(ctx context.Context, keys []string) error {
 	_, err := o.db.ExecContext(ctx, `DELETE FROM opp_whatsapp_outbox WHERE key IN (`+marks+`)`, args...) //nolint:gosec // placeholders only
 	return err
 }
+
+// Clear forgets every message waiting.
+func (o *Outbox) Clear(ctx context.Context) error {
+	_, err := o.db.ExecContext(ctx, `DELETE FROM opp_whatsapp_outbox`)
+	return err
+}

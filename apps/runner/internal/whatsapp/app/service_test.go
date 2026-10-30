@@ -98,6 +98,13 @@ func (o *memOutbox) Ack(_ context.Context, keys []string) error {
 	return nil
 }
 
+func (o *memOutbox) Clear(context.Context) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.rows = nil
+	return nil
+}
+
 type recorder struct {
 	mu      sync.Mutex
 	states  []domain.Status
@@ -286,14 +293,21 @@ func TestFlushBatchesAtFifty(t *testing.T) {
 	}
 }
 
-// Unlinking logs the device out and says the host is unlinked.
+// Unlinking logs the device out, says the host is unlinked, and forgets what
+// the number received and was never acked, so none of it reaches the next
+// number linked on this host.
 func TestUnlink(t *testing.T) {
 	device := &fakeDevice{}
-	svc, _, pub := started(t, device, nil)
+	svc, outbox, pub := started(t, device, nil)
+	pub.refuse = true
+	svc.Received(message("A"))
 	if err := svc.Unlink(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if !device.loggedOut || pub.last().State != domain.StateUnlinked {
 		t.Fatalf("logged out %v, state %+v", device.loggedOut, pub.last())
+	}
+	if pending, _ := outbox.Pending(context.Background(), 10); len(pending) != 0 {
+		t.Fatalf("an unlinked number's messages are still waiting: %v", pending)
 	}
 }

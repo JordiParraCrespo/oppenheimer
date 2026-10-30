@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 )
@@ -165,4 +166,42 @@ func utf16Len(s string) int {
 		}
 	}
 	return units
+}
+
+// BatchMaxBytes bounds one batch's messages as JSON, well under the link's
+// frame cap (`LINK_MAX_FRAME_BYTES`, 512 KiB): 50 messages of 8,000
+// characters each can pass a megabyte, and a frame the link refuses would be
+// offered again forever, holding every newer message behind it.
+const BatchMaxBytes = 384 * 1024
+
+// Batches splits messages, in order, into batches of at most maxCount whose
+// JSON stays under maxBytes. One message larger than maxBytes on its own
+// (which the length cuts make impossible) still goes, alone.
+func Batches(messages []Inbound, maxCount, maxBytes int) [][]Inbound {
+	var batches [][]Inbound
+	var current []Inbound
+	size := 0
+	for _, message := range messages {
+		encoded := encodedSize(message)
+		if len(current) > 0 && (len(current) == maxCount || size+encoded > maxBytes) {
+			batches = append(batches, current)
+			current, size = nil, 0
+		}
+		current = append(current, message)
+		size += encoded
+	}
+	if len(current) > 0 {
+		batches = append(batches, current)
+	}
+	return batches
+}
+
+// encodedSize is the message's JSON length, field names included, which
+// tracks the wire's within a few bytes and counts escapes as they go.
+func encodedSize(message Inbound) int {
+	encoded, err := json.Marshal(message)
+	if err != nil {
+		return len(message.Text)*6 + 1024
+	}
+	return len(encoded)
 }

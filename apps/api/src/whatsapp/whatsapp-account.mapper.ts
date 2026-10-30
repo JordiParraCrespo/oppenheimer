@@ -4,6 +4,7 @@ import type { WhatsappStateMessage } from '@oppenheimer/shared/protocol';
 import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity';
 import { WhatsappAccountEntity, type WhatsappDeviceReport } from './domain/whatsapp-account.entity';
 import { WhatsappAccountResponseDto } from './dtos/whatsapp-account.response.dto';
+import type { WhatsappAccountView } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query';
 
 @Injectable()
 export class WhatsappAccountMapper
@@ -68,6 +69,11 @@ export class WhatsappAccountMapper
     dto.statusReason = entity.statusReason;
     dto.linkedAt = entity.createdAt.toISOString();
     return dto;
+  }
+
+  /** A number as its reads answer it: with whether its host can be reached now. */
+  toView(account: WhatsappAccountEntity, hostOnline: boolean): WhatsappAccountView {
+    return { account, hostOnline };
   }
 
   /** The host's `whatsapp.state`, as the aggregate takes it. */

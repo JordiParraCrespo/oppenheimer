@@ -335,6 +335,15 @@ func (d *Device) Ack(ctx context.Context, keys []string) error {
 	return box.Ack(ctx, keys)
 }
 
+// Clear forgets everything waiting for the control plane.
+func (d *Device) Clear(ctx context.Context) error {
+	box, err := d.box()
+	if err != nil {
+		return err
+	}
+	return box.Clear(ctx)
+}
+
 /* ---------------------------------------------------------------- events */
 
 func (d *Device) onEvent(raw any) {

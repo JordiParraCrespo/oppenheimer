@@ -35,6 +35,7 @@ func (emptyOutbox) Pending(context.Context, int) ([]wadomain.Inbound, error) {
 	return nil, nil
 }
 func (emptyOutbox) Ack(context.Context, []string) error { return nil }
+func (emptyOutbox) Clear(context.Context) error         { return nil }
 
 func whatsAppHandler(t *testing.T, offered bool) (*linkHandler, *capturedLink) {
 	t.Helper()

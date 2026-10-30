@@ -186,6 +186,15 @@ func (s *Service) Unlink(ctx context.Context) error {
 	if err := s.device.Logout(ctx); err != nil {
 		s.logger.Warn("whatsapp: logging the device out failed; its keys are deleted anyway", slog.Any("error", err))
 	}
+	// What the number received and the control plane has not acked belongs to
+	// the number being unlinked: kept, it would reach whichever number is
+	// linked on this host next.
+	if err := s.outbox.Clear(ctx); err != nil {
+		s.logger.Warn("whatsapp: the outbox could not be emptied", slog.Any("error", err))
+	}
+	s.mu.Lock()
+	s.inFlight = map[string]time.Time{}
+	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateUnlinked, Reason: "unlinked from Oppenheimer"})
 	return nil
 }
@@ -225,7 +234,7 @@ func (s *Service) Ack(ctx context.Context, keys []string) {
 }
 
 // Flush offers the link everything waiting that it does not hold unacked, in
-// batches of BatchMax, until the link refuses one.
+// batches of BatchMax under domain.BatchMaxBytes, until the link refuses one.
 func (s *Service) Flush(ctx context.Context) {
 	s.flushing.Lock()
 	defer s.flushing.Unlock()
@@ -250,8 +259,7 @@ func (s *Service) Flush(ctx context.Context) {
 		due = append(due, m)
 	}
 	s.mu.Unlock()
-	for start := 0; start < len(due); start += BatchMax {
-		batch := due[start:min(start+BatchMax, len(due))]
+	for _, batch := range domain.Batches(due, BatchMax, domain.BatchMaxBytes) {
 		if !publisher.Messages(batch) {
 			return
 		}

@@ -3,6 +3,7 @@ import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { WhatsappDevicePort } from '../../application/whatsapp-device.port';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import { WHATSAPP_ACCOUNT_REPOSITORY, WHATSAPP_DEVICE } from '../../whatsapp.di-tokens';
+import { WhatsappAccountMapper } from '../../whatsapp-account.mapper';
 import {
   FindWhatsappAccountsQuery,
   type WhatsappAccountView,
@@ -22,15 +23,15 @@ export class FindWhatsappAccountsQueryHandler
     private readonly accounts: WhatsappAccountRepositoryPort,
     @Inject(WHATSAPP_DEVICE)
     private readonly device: WhatsappDevicePort,
+    private readonly mapper: WhatsappAccountMapper,
   ) {}
 
   async execute({ scope, id }: FindWhatsappAccountsQuery): Promise<WhatsappAccountView[]> {
     const accounts = id
       ? (await this.accounts.findOwnById(scope, id)).mapOr([], (account) => [account])
       : await this.accounts.findAllOwn(scope);
-    return accounts.map((account) => ({
-      account,
-      hostOnline: this.device.reach(account.hostId) === 'online',
-    }));
+    return accounts.map((account) =>
+      this.mapper.toView(account, this.device.reach(account.hostId) === 'online'),
+    );
   }
 }

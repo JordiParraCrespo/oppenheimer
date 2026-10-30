@@ -1,6 +1,8 @@
 package domain_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -78,5 +80,39 @@ func TestCutTextFitsTheSchemaInUTF16Units(t *testing.T) {
 	}
 	if short := "hola"; domain.CutText(short) != short {
 		t.Fatal("a short text was changed")
+	}
+}
+
+// Fifty messages of 8,000 characters in a script of three bytes a character
+// pass the link's frame cap together; batches stay under the byte bound, in
+// order, and every message goes in exactly one.
+func TestBatchesStayUnderTheByteBound(t *testing.T) {
+	long := strings.Repeat("語", domain.TextMaxChars)
+	messages := make([]domain.Inbound, 50)
+	for i := range messages {
+		messages[i] = domain.Inbound{Key: fmt.Sprintf("k%02d", i), Text: long}
+	}
+	batches := domain.Batches(messages, 50, domain.BatchMaxBytes)
+	if len(batches) < 2 {
+		t.Fatalf("one batch of %d messages", len(batches[0]))
+	}
+	seen := 0
+	for _, batch := range batches {
+		encoded, _ := json.Marshal(batch)
+		if len(encoded) > domain.BatchMaxBytes {
+			t.Fatalf("a batch of %d bytes", len(encoded))
+		}
+		for _, message := range batch {
+			if message.Key != fmt.Sprintf("k%02d", seen) {
+				t.Fatalf("message %s out of order at %d", message.Key, seen)
+			}
+			seen++
+		}
+	}
+	if seen != len(messages) {
+		t.Fatalf("%d of %d messages batched", seen, len(messages))
+	}
+	if got := domain.Batches(messages[:3], 2, domain.BatchMaxBytes*10); len(got) != 2 || len(got[0]) != 2 {
+		t.Fatalf("the count bound did not hold: %v", len(got))
 	}
 }

@@ -56,6 +56,8 @@ type Outbox interface {
 	Pending(ctx context.Context, limit int) ([]domain.Inbound, error)
 	// Ack forgets the messages under keys.
 	Ack(ctx context.Context, keys []string) error
+	// Clear forgets every message waiting.
+	Clear(ctx context.Context) error
 }
 
 // Publisher is the control-plane link, as the service reaches it.

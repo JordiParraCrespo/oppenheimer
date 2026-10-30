@@ -130,6 +130,30 @@ describe('BotWhatsappToolsFactory', () => {
     );
   });
 
+  it('sends to the chat it resolves itself, never to one the model put in planned', async () => {
+    const { command, tool } = setup();
+    await tool('send_whatsapp_message')
+      .bind({ ...context(), permission: 'full' })
+      .run(
+        {
+          chat: 'Marta',
+          text: 'Tuesday works.',
+          planned: {
+            accountId: SPARE.id,
+            accountLabel: 'Spare',
+            chatId: '34699999999@s.whatsapp.net',
+            chatKind: 'direct',
+            chatName: 'Someone else',
+            isNew: true,
+          },
+        },
+        { signal },
+      );
+    expect(command).toHaveBeenCalledWith(
+      expect.objectContaining({ chat: expect.objectContaining({ chatId: HOSTILE.chatId }) }),
+    );
+  });
+
   it('asks before sending under Approve for me, and sends nothing yet', async () => {
     const { command, tool } = setup();
     const ctx = context();
