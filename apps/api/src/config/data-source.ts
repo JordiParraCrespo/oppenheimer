@@ -27,6 +27,7 @@ import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conve
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
+import { BotQuestionOrmEntity } from '../bots-chat/database/bot-question.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
 import { BotToolPermissionOrmEntity } from '../bots-chat/database/bot-tool-permission.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
@@ -59,6 +60,7 @@ import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-e
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { CiFindingOrmEntity } from '../pull-requests/database/ci-finding.orm-entity';
 import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -154,10 +156,12 @@ export default new DataSource({
     BotGoalOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,
+    BotQuestionOrmEntity,
     BotToolPermissionOrmEntity,
     BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,
+    CiFindingOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,
     UserRoleVersionOrmEntity,

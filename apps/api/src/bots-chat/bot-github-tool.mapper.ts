@@ -54,11 +54,26 @@ export interface PullRequestDetailView extends PullRequestRowView {
   state: 'open' | 'merged' | 'closed';
   changedFiles: number;
   folders: string[];
-  checkCounts: { state: string; total: number; passed: number; failed: number; pending: number };
+  checkCounts: {
+    state: string;
+    total: number;
+    passed: number;
+    failed: number;
+    pending: number;
+    failing: { name: string; url: string | null; title: string | null; summary: string | null }[];
+  };
   gates: { id: string; state: string }[];
   reviewers: { login: string; state: string }[];
   mergeable: boolean;
   htmlUrl: string;
+  ciFindings: {
+    check: string;
+    relation: string;
+    flake: string;
+    action: string;
+    confidence: string;
+    rootCause: string;
+  }[];
 }
 
 export interface PullRequestFileView {
@@ -162,7 +177,45 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
       ? `- description (${UNTRUSTED_NOTE}):\n${untrusted(cut(body, BODY_MAX))}`
       : '- description: none',
   );
+  lines.push(...describeFailingChecks(checks.failing));
+  lines.push(...describeCiFindings(pull.ciFindings));
   return lines;
+}
+
+/**
+ * What failing checks on this head were already found to be
+ * (`record_ci_findings`), so a look is not repeated. A finding's check name
+ * and cause can repeat what a check printed, so they come back fenced too.
+ */
+function describeCiFindings(findings: PullRequestDetailView['ciFindings']): string[] {
+  if (findings.length === 0) return [];
+  const rows = findings.map(
+    (finding) =>
+      `- ${finding.check}: ${finding.relation}, ${finding.flake}, ${finding.action} (${finding.confidence}). ${cut(finding.rootCause, 200)}`,
+  );
+  return [
+    `Findings already recorded on this head (${UNTRUSTED_NOTE}):`,
+    untrusted(rows.join('\n')),
+  ];
+}
+
+/**
+ * The checks that failed on the head, each with what it said and where its
+ * log is: what an investigation of CI starts from (`record_ci_findings`).
+ * Their names and words are the CI's, so they come back fenced.
+ */
+function describeFailingChecks(failing: PullRequestDetailView['checkCounts']['failing']): string[] {
+  if (failing.length === 0) return [];
+  const rows = failing.map((check) =>
+    [
+      `- ${check.name}${check.title ? `: ${check.title}` : ''}`,
+      check.url ? `  log: ${check.url}` : null,
+      check.summary ? `  summary: ${cut(check.summary.replace(/\s+/g, ' '), 300)}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  );
+  return [`Failing checks (${UNTRUSTED_NOTE}):`, untrusted(rows.join('\n'))];
 }
 
 export function describeFiles(files: PromiseSettledResult<PullRequestFileView[]>): string[] {

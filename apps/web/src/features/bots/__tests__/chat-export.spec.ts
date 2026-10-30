@@ -176,6 +176,24 @@ describe('chatExportHeader and chatExportChunk', () => {
     expect(chunk).not.toContain('The owner approved');
   });
 
+  it('write answered questions as the line and each question with its answer, never the fenced words', () => {
+    const chunk = chatExportChunk(
+      message('event', '<answers>\n- Which repository?\n  Answer: acme/api\n</answers>', 4, {
+        event: {
+          kind: 'question',
+          outcome: 'answered',
+          summary: 'Which repository?',
+          answers: [{ question: 'Which repository?', answer: 'acme/api' }],
+        },
+      }),
+      words,
+    );
+    expect(chunk).toContain(
+      'bots.chat.question.answered(Which repository?)\n- Which repository? acme/api',
+    );
+    expect(chunk).not.toContain('<answers>');
+  });
+
   it('write another bot’s message or answer under that bot’s name, with its words', () => {
     const asked = message('event', 'Which task is PR 412?', 5, {
       event: { kind: 'bot_message', fromBotId: 'b1', fromBotName: 'Ada', expectsReply: true },

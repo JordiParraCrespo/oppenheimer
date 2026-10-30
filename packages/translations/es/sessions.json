@@ -614,18 +614,7 @@
     "question": {
       "waiting": "Esperando tu respuesta",
       "dismissed": "Descartaste las preguntas",
-      "noAnswer": "No se pudo leer la respuesta",
-      "ownAnswer": "O escribe tu propia respuesta…",
-      "ownAnswerLabel": "Tu respuesta",
-      "several": "Marca con 1–{{last}} todas las que apliquen",
-      "one": "Elige una con 1–{{last}}, o responde con tus palabras",
-      "next": "Siguiente",
-      "submit": "Enviar respuestas",
-      "dismiss": "Descartar",
-      "sending": "Enviando tus respuestas…",
-      "previous": "Pregunta anterior",
-      "nextQuestion": "Pregunta siguiente",
-      "of": "{{n}} de {{total}}"
+      "noAnswer": "No se pudo leer la respuesta"
     }
   },
   "preview": {

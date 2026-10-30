@@ -57,6 +57,11 @@ export {
   useSuspenseBotPermissions,
 } from './bot-permissions.queries';
 export {
+  useAnswerBotQuestion,
+  useBotPendingQuestion,
+  useDismissBotQuestion,
+} from './bot-questions.queries';
+export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,

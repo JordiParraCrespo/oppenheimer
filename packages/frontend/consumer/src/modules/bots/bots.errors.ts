@@ -56,4 +56,6 @@ export const BotsErrors = {
   SAVE_PERMISSION_FAILED: { code: 'BOTS_CLIENT_036', message: 'Failed to change the permission' },
   FETCH_GOAL_FAILED: { code: 'BOTS_CLIENT_037', message: 'Failed to load the goal' },
   CLEAR_GOAL_FAILED: { code: 'BOTS_CLIENT_038', message: 'Failed to stop the goal' },
+  FETCH_QUESTION_FAILED: { code: 'BOTS_CLIENT_039', message: 'Failed to load the questions' },
+  ANSWER_QUESTION_FAILED: { code: 'BOTS_CLIENT_040', message: 'Failed to answer the questions' },
 } as const satisfies Record<string, ErrorDefinition>;

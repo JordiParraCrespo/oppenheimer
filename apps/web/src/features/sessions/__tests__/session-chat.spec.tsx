@@ -395,7 +395,7 @@ describe('questions the agent asks', () => {
     fireEvent.click(screen.getByRole('button', { name: /iOS/ }));
     fireEvent.click(screen.getByRole('button', { name: /iOS/ }));
     expect(typed).toEqual([]);
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.submit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.chat.question.submit' }));
     act(() => vi.runAllTimers());
     const down = '\u001b[B';
     expect(typed).toEqual(['2', '1', '3', down, down, down, down, '\r', '1']);
@@ -408,13 +408,13 @@ describe('questions the agent asks', () => {
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, ask] });
     render(<SessionChat chat={chat} readOnly={false} />);
-    fireEvent.change(screen.getByLabelText('sessions.chat.question.ownAnswerLabel'), {
+    fireEvent.change(screen.getByLabelText('common.chat.question.ownAnswerLabel'), {
       target: { value: 'Only icons' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.next' }));
-    const submit = screen.getByRole('button', { name: 'sessions.chat.question.submit' });
+    fireEvent.click(screen.getByRole('button', { name: 'common.chat.question.next' }));
+    const submit = screen.getByRole('button', { name: 'common.chat.question.submit' });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.question.dismiss' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.chat.question.dismiss' }));
     expect(typed).toEqual(['\u001b']);
   });
 
@@ -487,7 +487,7 @@ describe('questions the agent asks', () => {
     act(() => vi.runAllTimers());
     // The picker sends a lone one-choice question on the pick: no review to confirm.
     expect(typed).toEqual(['2']);
-    expect(screen.getAllByText('sessions.chat.question.sending').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('common.chat.question.sending').length).toBeGreaterThan(0);
     vi.useRealTimers();
   });
 
@@ -498,7 +498,7 @@ describe('questions the agent asks', () => {
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, lone] });
     render(<SessionChat chat={chat} readOnly={false} />);
-    const own = screen.getByLabelText('sessions.chat.question.ownAnswerLabel');
+    const own = screen.getByLabelText('common.chat.question.ownAnswerLabel');
     fireEvent.keyDown(own, { key: 'Enter' });
     expect(typed).toEqual([]);
     fireEvent.change(own, { target: { value: 'Only icons' } });
@@ -513,8 +513,8 @@ describe('questions the agent asks', () => {
     chat.apply({ reset: true, entries: [prompt, lone] });
     render(<SessionChat chat={chat} readOnly={false} />);
     fireEvent.click(screen.getByRole('button', { name: /Components/ }));
-    expect(screen.queryByText('sessions.chat.question.sending')).toBeNull();
-    const submit = screen.getByRole('button', { name: 'sessions.chat.question.submit' });
+    expect(screen.queryByText('common.chat.question.sending')).toBeNull();
+    const submit = screen.getByRole('button', { name: 'common.chat.question.submit' });
     expect((submit as HTMLButtonElement).disabled).toBe(false);
   });
 

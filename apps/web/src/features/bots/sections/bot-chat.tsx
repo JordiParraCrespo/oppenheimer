@@ -12,6 +12,7 @@ import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
+import { BotQuestionCard } from './bot-question-card';
 import { BotTranscript } from './bot-transcript';
 import { BotUsage } from './bot-usage';
 
@@ -73,6 +74,7 @@ export function BotChat({ botId }: { botId: string }) {
       <div className="px-4 pb-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />
+          <BotQuestionCard botId={bot.id} />
           <ErrorAlert
             error={update.error}
             fallback={t('bots.chat.saveFailed')}

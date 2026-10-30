@@ -201,4 +201,22 @@ export const BotErrors = {
     message: 'The bot holds as many grants as it can',
     httpStatus: 409,
   },
+  /** A card of questions of another bot, or in another workspace. */
+  QUESTION_NOT_FOUND: {
+    code: 'BOTS_035',
+    message: 'Questions not found',
+    httpStatus: 404,
+  },
+  /** Answers that are not one per question, pick no option it has, or leave one unanswered. */
+  ANSWERS_INVALID: {
+    code: 'BOTS_036',
+    message: 'The answers do not fit the questions',
+    httpStatus: 422,
+  },
+  /** A card of questions already answered, dismissed, or retired by a new message. */
+  QUESTION_DECIDED: {
+    code: 'BOTS_037',
+    message: 'The questions were already answered',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

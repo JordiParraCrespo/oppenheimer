@@ -15,6 +15,8 @@ const sdk = vi.hoisted(() => ({
   findBotDocumentRevisions: vi.fn(),
   findBotConversation: vi.fn(),
   exportBotConversation: vi.fn(),
+  findPendingBotQuestion: vi.fn(),
+  answerBotQuestion: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: sdk }));
@@ -292,6 +294,78 @@ describe('BotsRepository', () => {
     );
     const conversation = await repository.findConversation('bot-1');
     expect(conversation.messages[0]?.event).toMatchObject({ kind: 'approval', sessionId: 's-1' });
+  });
+
+  it('reads a card of questions as its own card, and sends one answer per question', async () => {
+    const card = {
+      id: 'q-1',
+      turnId: 't1',
+      questions: [
+        {
+          header: 'Repo',
+          question: 'Which repository?',
+          multiSelect: false,
+          options: [
+            { label: 'acme/web', description: null },
+            { label: 'acme/api', description: 'The API' },
+          ],
+        },
+      ],
+      summary: 'Which repository?',
+      status: 'pending',
+      answers: null,
+      note: null,
+      decidedAt: null,
+      createdAt: '2026-10-15T09:00:00.000Z',
+    };
+    sdk.findPendingBotQuestion.mockResolvedValue(ok({ question: card }));
+    const pending = await repository.findPendingQuestion('bot-1');
+    expect(pending).toMatchObject({ id: 'q-1', summary: 'Which repository?', status: 'pending' });
+    expect(pending?.questions[0]?.options[1]).toEqual({
+      label: 'acme/api',
+      description: 'The API',
+    });
+
+    sdk.findPendingBotQuestion.mockResolvedValue(ok({ question: null }));
+    expect(await repository.findPendingQuestion('bot-1')).toBeNull();
+
+    sdk.answerBotQuestion.mockResolvedValue(ok({ ...card, status: 'answered' }));
+    await repository.answerQuestion('bot-1', 'q-1', [{ picks: [1], other: null }]);
+    expect(sdk.answerBotQuestion).toHaveBeenCalledWith({
+      path: { id: 'bot-1', questionId: 'q-1' },
+      body: { answers: [{ picks: [1], other: null }] },
+    });
+  });
+
+  it('reads a decided card of questions on its event, with each answer', async () => {
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [
+          {
+            id: 'm1',
+            turnId: 't1',
+            role: 'event',
+            content: 'Ana answered your questions.',
+            steps: [],
+            event: {
+              kind: 'question',
+              outcome: 'answered',
+              summary: 'Which repository?',
+              answers: [{ question: 'Which repository?', answer: 'acme/api' }],
+            },
+            createdAt: '2026-10-15T09:00:01.000Z',
+          },
+        ],
+        turns: [],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.messages[0]?.event).toEqual({
+      kind: 'question',
+      outcome: 'answered',
+      summary: 'Which repository?',
+      answers: [{ question: 'Which repository?', answer: 'acme/api' }],
+    });
   });
 
   describe('exportConversation', () => {

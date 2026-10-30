@@ -107,6 +107,19 @@
       "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
       "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
       "openInGmail": "Open in Gmail"
+    },
+    "question": {
+      "ownAnswer": "Or type your own answer…",
+      "ownAnswerLabel": "Your answer",
+      "several": "Toggle with 1–{{last}}, as many as apply",
+      "one": "Pick one with 1–{{last}}, or answer in your own words",
+      "next": "Next",
+      "submit": "Submit answers",
+      "dismiss": "Dismiss",
+      "sending": "Sending your answers…",
+      "previous": "Previous question",
+      "nextQuestion": "Next question",
+      "of": "{{n}} of {{total}}"
     }
   },
   "search": {

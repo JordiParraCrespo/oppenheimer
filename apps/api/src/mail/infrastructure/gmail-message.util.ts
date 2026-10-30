@@ -53,18 +53,23 @@ export function messageSummaryOf(input: unknown): GmailMessageSummary {
   };
 }
 
-/** A message read with `format=full`: its envelope and its text. */
-export function messageOf(input: unknown): GmailMessage {
+/**
+ * A message read with `format=full`: its envelope and its text, cut at
+ * `bodyMax` for a model to read; a message being answered, forwarded or sent
+ * as a draft is read whole (`Infinity`), so nothing it carries is lost.
+ */
+export function messageOf(input: unknown, bodyMax = GMAIL_BODY_MAX): GmailMessage {
   const message = record(input);
   const payload = record(message.payload);
   const headers = headersOf(payload);
   return {
     ...messageSummaryOf(message),
+    bcc: headers.get('bcc') ?? '',
     replyTo: headers.get('reply-to') ?? '',
     messageIdHeader: headers.get('message-id') ?? '',
     referencesHeader: headers.get('references') ?? '',
     dateHeader: headers.get('date') ?? '',
-    body: bodyOf(payload),
+    body: bodyOf(payload, bodyMax),
   };
 }
 
@@ -143,9 +148,9 @@ function attachmentsOf(payload: Record<string, unknown>): GmailAttachmentInfo[] 
 /**
  * The text the sender wrote: the first `text/plain` part that is not a file,
  * else the first `text/html` part read as text. Decoded in the part's own
- * charset, cut at {@link GMAIL_BODY_MAX} with the cut said.
+ * charset, cut at `max` with the cut said.
  */
-function bodyOf(payload: Record<string, unknown>): string {
+function bodyOf(payload: Record<string, unknown>, max: number): string {
   const plain = firstPart(payload, 'text/plain');
   const html = plain ? null : firstPart(payload, 'text/html');
   const part = plain ?? html;
@@ -154,8 +159,8 @@ function bodyOf(payload: Record<string, unknown>): string {
   if (!bytes) return '';
   const decoded = decode(bytes, charsetOf(part));
   const body = (html ? htmlToText(decoded) : decoded).replace(/\r\n/g, '\n').trim();
-  return body.length > GMAIL_BODY_MAX
-    ? `${body.slice(0, GMAIL_BODY_MAX)}\n… (the rest of this message, ${body.length - GMAIL_BODY_MAX} characters, was cut)`
+  return body.length > max
+    ? `${body.slice(0, max)}\n… (the rest of this message, ${body.length - max} characters, was cut)`
     : body;
 }
 

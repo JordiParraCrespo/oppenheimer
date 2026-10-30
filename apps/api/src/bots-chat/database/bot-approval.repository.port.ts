@@ -22,10 +22,11 @@ export interface BotApprovalEffects {
 
 export interface BotApprovalRepositoryPort {
   /**
-   * Stores a new pending approval. `pending_exists` when the bot already has
-   * one waiting (`UQ_bot_approval_pending`): nothing is written.
+   * Stores a new pending approval, unless the bot already has a card
+   * waiting, an approval or questions: then nothing is written, and the
+   * answer is that card's line.
    */
-  insertPending(approval: BotApprovalEntity): Promise<'inserted' | 'pending_exists'>;
+  insertPending(approval: BotApprovalEntity): Promise<'inserted' | { waiting: string }>;
 
   /** One approval of a bot in the caller's workspace. */
   findOne(

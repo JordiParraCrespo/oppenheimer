@@ -5,6 +5,8 @@ import type {
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
+  BotQuestion,
+  BotQuestionStatus,
   BotSubagentRun,
   BotTurnFailure,
   BotTurnStatus,
@@ -242,6 +244,24 @@ export class BotApprovalEntity {
   get isPending(): boolean {
     return this.status === 'pending';
   }
+}
+
+/**
+ * A card of questions a bot stopped on (`ask_user`,
+ * `product/versions/mvp/25-bots.md` §3.2): answered or dismissed, never
+ * approved, and nothing runs on it. A card of its own beside approvals; a
+ * bot has one card up at a time of either kind.
+ */
+export class BotQuestionCardEntity {
+  constructor(
+    public readonly id: string,
+    public readonly turnId: string,
+    public readonly questions: readonly BotQuestion[],
+    /** The card's line: its first question, and how many follow. */
+    public readonly summary: string,
+    public readonly status: BotQuestionStatus,
+    public readonly createdAt: Date,
+  ) {}
 }
 
 /**

@@ -56,7 +56,13 @@ export class CreateBotMemoryFactHttpController {
     @Body() body: CreateBotMemoryFactRequest,
   ): Promise<BotMemoryFactResponseDto> {
     const factId = await this.commandBus.execute<CreateBotMemoryFactCommand, string>(
-      new CreateBotMemoryFactCommand({ scope, botId, content: body.content }),
+      new CreateBotMemoryFactCommand({
+        scope,
+        botId,
+        content: body.content,
+        tier: body.tier,
+        memoryScope: body.scope,
+      }),
     );
     const fact = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
       new FindBotMemoryFactQuery({ scope, botId, factId }),

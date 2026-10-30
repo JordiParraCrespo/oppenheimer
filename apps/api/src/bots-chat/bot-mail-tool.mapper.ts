@@ -1,8 +1,14 @@
-import { type BotMailDraft, MAIL_DRAFT_CARD_BODY_MAX, type MailPlan } from '@oppenheimer/shared';
+import {
+  type BotMailDraft,
+  MAIL_DRAFT_CARD_BODY_MAX,
+  type MailPlan,
+  type MailPlanAttachment,
+} from '@oppenheimer/shared';
 import type { GmailConnectionEntity } from '../mail/domain/gmail-connection.entity';
 import type { MailSendEntity } from '../mail/domain/mail-send.entity';
 import type {
   GmailAttachmentInfo,
+  GmailBulkOutcome,
   GmailDraft,
   GmailLabel,
   GmailMessage,
@@ -100,6 +106,22 @@ export function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+/** An image from the bot's chat as a planned mail file. */
+export function chatImageAttachment(image: {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+}): Extract<MailPlanAttachment, { source: 'chat' }> {
+  return {
+    source: 'chat',
+    attachmentId: image.id,
+    filename: image.name,
+    mimeType: image.mimeType,
+    sizeBytes: image.sizeBytes,
+  };
+}
+
 /** Where a draft opens in Gmail, in the account it belongs to. */
 export function gmailDraftLink(accountEmail: string, messageId: string): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#drafts?compose=${encodeURIComponent(messageId)}`;
@@ -170,4 +192,52 @@ export function describeSend(send: MailSendEntity, timeZone: string): string {
         ? 'started, never confirmed'
         : 'failed';
   return `${state} from ${send.accountEmail} to ${send.recipients.join(', ')}: "${send.subject}"${send.gmailMessageId ? ` (message ${send.gmailMessageId})` : ''}`;
+}
+
+/**
+ * A label change as a card stores it: each label named by its id or its
+ * name (ignoring case) resolved to its id, with the names for the card's
+ * line, and the names the account has no label for.
+ */
+export function labelChangeOf(
+  labels: readonly GmailLabel[],
+  add: readonly string[],
+  remove: readonly string[],
+): { add: string[]; remove: string[]; names: Record<string, string>; missing: string[] } {
+  const missing: string[] = [];
+  const find = (wanted: string): GmailLabel[] => {
+    const needle = wanted.trim().toLowerCase();
+    const found =
+      labels.find((label) => label.id === wanted.trim()) ??
+      labels.find((label) => label.name.toLowerCase() === needle);
+    if (!found) missing.push(wanted);
+    return found ? [found] : [];
+  };
+  const added = add.flatMap(find);
+  const removed = remove.flatMap(find);
+  return {
+    add: added.map((label) => label.id),
+    remove: removed.map((label) => label.id),
+    names: Object.fromEntries([...added, ...removed].map((label) => [label.id, label.name])),
+    missing,
+  };
+}
+
+/** "3 threads and 2 messages", for a card. */
+export function targetCount(call: { thread_ids: string[]; message_ids?: string[] }): string {
+  const count = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
+  const messages = call.message_ids?.length ?? 0;
+  const parts = [
+    call.thread_ids.length ? count(call.thread_ids.length, 'thread', 'threads') : null,
+    messages ? count(messages, 'message', 'messages') : null,
+  ].filter(Boolean);
+  return parts.join(' and ') || 'nothing';
+}
+
+/** What an organizing write did, in one line: how many, and the ids Gmail did not have. */
+export function organizeAnswer(outcome: GmailBulkOutcome): string {
+  const done = `${outcome.changed.length} changed`;
+  return outcome.missing.length
+    ? `${done}; Gmail has no ${outcome.missing.join(', ')} (deleted, or an id from another account)`
+    : `${done}.`;
 }

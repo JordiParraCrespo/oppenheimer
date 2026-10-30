@@ -25,7 +25,12 @@ export interface BotPromptInput {
   description: string;
   soul: string;
   instructions: string;
+  /** Its own facts kept in mind (`memoryInMind`), oldest first. */
   facts: readonly string[];
+  /** What it keeps in mind about the person, shared by every bot of theirs. */
+  personFacts?: readonly string[];
+  /** How many more facts it keeps to look up with `recall`. */
+  factsToRecall?: number;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
@@ -62,8 +67,18 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
+  if (input.personFacts?.length) {
+    parts.push(
+      `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
+  }
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
+  }
+  if (input.factsToRecall) {
+    parts.push(
+      `You also keep ${input.factsToRecall} fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
+    );
   }
   return parts.join('\n\n');
 }
@@ -182,6 +197,9 @@ function approvalPrompt(content: string): string {
 const APPROVAL_ASK =
   'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
 
+const QUESTION_ASK =
+  'This is what came of the questions you asked. If they answered, carry on with what you were doing, as their answers say, without asking the same thing again. If they dismissed them, do what you can without the answer, or say what you need and stop.';
+
 type EventPrompts = {
   [Kind in BotMessageEvent['kind']]: (
     event: Extract<BotMessageEvent, { kind: Kind }>,
@@ -197,6 +215,7 @@ type EventPrompts = {
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (_event, content) => approvalPrompt(content),
+  question: (_event, content) => `${eventNote(content)}\n\n${QUESTION_ASK}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,

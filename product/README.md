@@ -899,6 +899,22 @@ earlier note:
   routine's run is a schedule's slot, but a goal goes on when the bot's
   last turn ends. So it is a bounded count of continuation turns, at most
   10, keyed in the turn queue like a wake, with Stop above the composer.
+- Note 25 §7 listed user memory as not built. On 2026-10-29, from Grok
+  Bot's memory (`research/lessons-from-grok-bot.md` §9 row 11), a fact
+  gained a tier (in the prompt, or looked up with `recall`) and a scope
+  (the bot's, or about the person and read by all their bots), on the same
+  table (`versions/mvp/25-bots.md` §4.1). Project memory stays in §7.
+- Note 25 §4.7 listed `ask_user` as a question card with no design. On
+  2026-10-29, from Grok Bot's form cards (`research/lessons-from-grok-bot.md`
+  §9 row 12), it was built as a card of up to four questions, a card of its
+  own beside approvals that is answered or dismissed and never approved,
+  with one card of either kind up per bot (`versions/mvp/25-bots.md` §3.2).
+- Row 14 of `research/lessons-from-grok-bot.md` §9 placed CI findings in
+  the review session's result. On 2026-10-29 they were built as a bot's
+  tool, `record_ci_findings`, filed on the pull request's head and shown
+  with its checks (`next-steps/0.2-pull-requests.md`, "CI findings"). A
+  review session has no channel back to the control plane yet
+  (`review.report` is unbuilt).
 - `versions/mvp/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
   never wake a bot, so a delegated task stuck before it began (its host
   offline, its agent at a folder-trust or sign-in prompt) left the bot

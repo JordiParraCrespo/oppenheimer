@@ -106,6 +106,8 @@
     "PROJECTS_009": "Unassigned is the name of the project for unfiled sessions. Choose another name.",
     "PULLS_001": "Choose a workspace before working with pull requests.",
     "PULLS_002": "This pull request comes from a fork, which a session cannot check out yet.",
+    "PULLS_003": "That check is not failing on the pull request's latest commit.",
+    "PULLS_004": "GitHub would not show this pull request's checks, so nothing could be recorded about them.",
     "SESSIONS_001": "We could not find that session.",
     "SESSIONS_002": "Choose a workspace before working with sessions.",
     "SESSIONS_003": "We could not find that checkout on this session.",
@@ -287,7 +289,10 @@
     "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
     "BOTS_032": "That rule is gone. Reload the page.",
     "BOTS_033": "That permission is gone. Reload the page.",
-    "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first."
+    "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first.",
+    "BOTS_035": "Those questions don't exist.",
+    "BOTS_036": "Those answers do not fit the questions. Answer each one, then send them again.",
+    "BOTS_037": "Those questions were already answered."
   },
   "notFound": {
     "title": "That page does not exist",

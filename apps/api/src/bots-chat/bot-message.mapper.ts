@@ -4,11 +4,13 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
+  BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
+  type BotAnsweredQuestion,
   type BotAttachment,
   type BotMailDraft,
   type BotMessageEvent,
@@ -29,6 +31,7 @@ import {
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
 } from './dtos/bot-message.response.dto';
@@ -253,6 +256,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
   switch (event.kind) {
     case 'approval':
       return Object.assign(new BotApprovalEventResponseDto(), event);
+    case 'question':
+      return Object.assign(new BotQuestionEventResponseDto(), event);
     case 'routine':
       return Object.assign(new BotRoutineEventResponseDto(), event);
     case 'bot_message':
@@ -264,6 +269,15 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
   }
+}
+
+/** An answered card's questions and answers in words, narrowed once; anything else is dropped. */
+function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { question, answer } = item as Record<string, unknown>;
+    return typeof question === 'string' && typeof answer === 'string' ? [{ question, answer }] : [];
+  });
 }
 
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
@@ -278,6 +292,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+    };
+  }
+  if (raw.kind === 'question') {
+    const outcome = BOT_QUESTION_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'question',
+      outcome,
+      summary: String(raw.summary ?? ''),
+      answers: Array.isArray(raw.answers) ? toAnsweredQuestions(raw.answers) : [],
     };
   }
   if (raw.kind === 'routine') {
