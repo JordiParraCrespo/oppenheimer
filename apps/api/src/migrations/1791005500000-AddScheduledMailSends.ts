@@ -13,8 +13,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   `IDX_mail_send_user_updated`, which replaces `IDX_mail_send_user_created`:
  *   a send scheduled weeks ago lists by when it went, not when it was asked for.
  */
-export class AddScheduledMailSends1791005000000 implements MigrationInterface {
-  name = 'AddScheduledMailSends1791005000000';
+export class AddScheduledMailSends1791005500000 implements MigrationInterface {
+  name = 'AddScheduledMailSends1791005500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
