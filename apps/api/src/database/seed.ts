@@ -55,8 +55,6 @@ import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
 import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
-import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
-import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -90,6 +88,8 @@ import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
