@@ -37,3 +37,12 @@ export interface WhatsappChat {
   messageCount: number;
   last: WhatsappMessage;
 }
+
+/** Where a message goes: a chat the number has, or a new direct chat with a phone number. */
+export interface WhatsappChatTarget {
+  chatId: string;
+  chatKind: 'direct' | 'group';
+  chatName: string | null;
+  /** The number has no message in this chat yet. */
+  isNew: boolean;
+}

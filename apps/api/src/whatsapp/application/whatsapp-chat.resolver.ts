@@ -5,21 +5,12 @@ import type { WhatsappAccountRepositoryPort } from '../database/whatsapp-account
 import type { WhatsappMessageRepositoryPort } from '../database/whatsapp-message.repository.port';
 import { WhatsappErrors } from '../domain/whatsapp.errors';
 import type { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
-import type { WhatsappChat } from '../domain/whatsapp-message.types';
+import type { WhatsappChat, WhatsappChatTarget } from '../domain/whatsapp-message.types';
 import { pickWhatsappChat } from '../domain/whatsapp-send.policy';
 import { WHATSAPP_ACCOUNT_REPOSITORY, WHATSAPP_MESSAGE_REPOSITORY } from '../whatsapp.di-tokens';
 
 /** Chats a name is looked for among: the number's most recently active. */
 export const WHATSAPP_CHATS_SCANNED = 500;
-
-/** Where a message goes: a chat the number has, or a new direct chat with a phone number. */
-export interface WhatsappChatTarget {
-  chatId: string;
-  chatKind: 'direct' | 'group';
-  chatName: string | null;
-  /** The number has no message in this chat yet. */
-  isNew: boolean;
-}
 
 /**
  * One of the caller's numbers, and a chat on it from what a bot wrote: a

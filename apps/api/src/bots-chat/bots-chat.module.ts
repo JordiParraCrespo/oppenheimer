@@ -19,7 +19,6 @@ import { BotMailAccountsResolver } from './application/bot-mail-accounts.resolve
 import { BotMailChatFilesResolver } from './application/bot-mail-chat-files.resolver';
 import { BotMailOrganizeToolsFactory } from './application/bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './application/bot-mail-tools.factory';
-import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.factory';
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
@@ -47,6 +46,7 @@ import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver'
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';

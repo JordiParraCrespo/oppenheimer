@@ -1,6 +1,9 @@
-import type { WhatsappChatTarget } from '../whatsapp/application/whatsapp-chat.resolver';
 import type { WhatsappAccountEntity } from '../whatsapp/domain/whatsapp-account.entity';
-import type { WhatsappChat, WhatsappMessage } from '../whatsapp/domain/whatsapp-message.types';
+import type {
+  WhatsappChat,
+  WhatsappChatTarget,
+  WhatsappMessage,
+} from '../whatsapp/domain/whatsapp-message.types';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**

@@ -18,7 +18,6 @@ import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
-import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
@@ -36,6 +35,7 @@ import type {
 } from './bot-tool.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 
 /**
  * Every tool a bot's turn is offered (`25-bots.md` §4), area by area. A tool

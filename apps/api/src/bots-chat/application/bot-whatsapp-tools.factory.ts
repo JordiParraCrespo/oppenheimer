@@ -3,9 +3,12 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { WHATSAPP_TEXT_MAX_CHARS } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
-import type { WhatsappChatTarget } from '../../whatsapp/application/whatsapp-chat.resolver';
 import { SendWhatsappMessageCommand } from '../../whatsapp/commands/send-whatsapp-message/send-whatsapp-message.command';
-import type { WhatsappChat, WhatsappMessage } from '../../whatsapp/domain/whatsapp-message.types';
+import type {
+  WhatsappChat,
+  WhatsappChatTarget,
+  WhatsappMessage,
+} from '../../whatsapp/domain/whatsapp-message.types';
 import {
   FindWhatsappAccountsQuery,
   type WhatsappAccountView,

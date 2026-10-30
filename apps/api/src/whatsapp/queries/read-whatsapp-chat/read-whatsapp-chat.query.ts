@@ -1,7 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
-import type { WhatsappChatTarget } from '../../application/whatsapp-chat.resolver';
-import type { WhatsappMessage } from '../../domain/whatsapp-message.types';
+import type { WhatsappChatTarget, WhatsappMessage } from '../../domain/whatsapp-message.types';
 
 export interface WhatsappChatRead {
   accountLabel: string;
