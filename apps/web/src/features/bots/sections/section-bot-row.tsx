@@ -1,4 +1,4 @@
-import { BotItem } from '@oppenheimer/design-system-web';
+import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { formatAge, MarkdownLine } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
@@ -17,6 +17,8 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
  * Settings, hides it from this section (`onHide`, the heading's write) or
  * deletes it for good, behind the same confirmation as in Employees. A
  * section because it subscribes to the route, to light up on its own chat.
+ * The row drags by itself (a click still opens the chat) on its heading's
+ * drag layer.
  */
 export function SectionBotRow({
   bot,
@@ -39,7 +41,8 @@ export function SectionBotRow({
 
   return (
     <>
-      <BotItem
+      <SortableBotItem
+        id={bot.id}
         name={bot.name}
         initials={bot.initials}
         color={bot.avatarColor}

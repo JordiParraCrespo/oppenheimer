@@ -299,6 +299,24 @@ describe('bots (integration)', () => {
     expect((await groups.findOneById(scope(), a.id)).unwrap().position).toBe(1);
   });
 
+  it('lists the bots in the Employees order: groups by position, then Ungrouped', async () => {
+    const ops = await addGroup('Ops');
+    const design = await addGroup('Design');
+    await create('Una');
+    await create('Ola', { groupId: ops.id });
+    await create('Dot', { groupId: design.id });
+    await create('Oz', { groupId: ops.id });
+    design.moveTo(0);
+    expect(await groups.save(design)).toBe('saved');
+    // A section's Bots heading narrows this list, so its order is the sidebar's.
+    expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual([
+      'Dot',
+      'Ola',
+      'Oz',
+      'Una',
+    ]);
+  });
+
   it('lets one of two writers that read the same revision win, and records only its revision', async () => {
     const bot = await create('Ana');
     const first = (await documents.findOne(scope(), bot.id, 'instructions')).unwrap();
