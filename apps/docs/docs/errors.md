@@ -968,6 +968,9 @@ and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
 | `MAIL_013` <a id="mail_013" />   | That address is not one this account sends from        | 400  |
 | `MAIL_014` <a id="mail_014" />   | That draft changed since it was approved               | 409  |
 | `MAIL_015` <a id="mail_015" />   | That message may already have been sent                | 409  |
+| `MAIL_016` <a id="mail_016" />   | A mail cannot be scheduled for that time               | 400  |
+| `MAIL_017` <a id="mail_017" />   | No such scheduled mail is waiting                      | 404  |
+| `MAIL_018` <a id="mail_018" />   | A scheduled mail carries only files from mail          | 400  |
 
 `MAIL_001` is no such connection of the caller's, or one Google has since
 revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
@@ -1004,6 +1007,15 @@ sending it was raised: nothing was sent, and the bot asks again.
 
 `MAIL_015` is an approved send that was started and never confirmed: it may
 have gone. It is never sent a second time on its own; check Gmail's Sent.
+
+`MAIL_016` is a scheduled send's time that has passed by the time the person
+says yes, or that is more than 90 days ahead.
+
+`MAIL_017` is a cancel of a scheduled send that no longer waits: already sent,
+already cancelled, or not one of the caller's.
+
+`MAIL_018` is a scheduled send carrying an image from the bot's chat: only
+files Gmail holds can wait with it. Attach files from mail, or send it now.
 
 ## Cloud agents
 

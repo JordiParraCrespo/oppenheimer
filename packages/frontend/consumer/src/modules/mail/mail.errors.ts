@@ -17,4 +17,12 @@ export const MailErrors = {
     code: 'MAIL_CLIENT_004',
     message: 'Failed to disconnect the Gmail account',
   },
+  FETCH_SCHEDULED_FAILED: {
+    code: 'MAIL_CLIENT_005',
+    message: 'Failed to load your scheduled mail',
+  },
+  CANCEL_SCHEDULED_FAILED: {
+    code: 'MAIL_CLIENT_006',
+    message: 'Failed to cancel the scheduled mail',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

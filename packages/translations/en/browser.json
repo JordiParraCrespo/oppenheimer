@@ -382,6 +382,9 @@
       "MAIL_013": "That address isn't one this Gmail account sends from.",
       "MAIL_014": "That draft changed after you approved sending it, so it wasn't sent.",
       "MAIL_015": "That message may already have been sent. Check Gmail's Sent before asking again.",
+      "MAIL_016": "That time can't be used: it has passed, or it's more than 90 days ahead.",
+      "MAIL_017": "That scheduled mail isn't waiting any more: it was sent or cancelled.",
+      "MAIL_018": "A scheduled mail can only carry files from mail. Attach those, or send it now.",
       "CLOUD_AGENTS_002": "Cloud agents belong to a workspace. Open one first.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
@@ -3084,7 +3087,7 @@
     },
     "mail": {
       "title": "Mail",
-      "description": "Connect your own Gmail accounts so your bots can search and read your mail and its attachments. Only your bots use them, and only for you.",
+      "description": "Connect your own Gmail accounts so your bots can search and read your mail, write drafts, and send or schedule mail when you approve. Only your bots use them, and only for you.",
       "unavailable": "This server can’t connect Gmail. Ask whoever runs it to set the Google client and MAIL_TOKEN_KEY.",
       "loadFailed": "Couldn’t load your Gmail accounts.",
       "emptyTitle": "No Gmail account connected",
@@ -3112,7 +3115,15 @@
       "connecting": "Connecting Gmail…",
       "refused": "Google didn’t grant access to Gmail.",
       "connectFailed": "Couldn’t connect Gmail.",
-      "back": "Back to Mail"
+      "back": "Back to Mail",
+      "scheduledTitle": "Scheduled",
+      "scheduledLoadFailed": "Couldn’t load your scheduled mail.",
+      "scheduledMeta": "To {{to}} · from {{email}}",
+      "scheduledFor": "Sends {{when}}",
+      "cancelScheduled": "Cancel",
+      "cancelScheduledLabel": "Cancel “{{subject}}”",
+      "cancellingScheduled": "Cancelling…",
+      "cancelScheduledFailed": "Couldn’t cancel it. It may have been sent already."
     }
   },
   "nav": {

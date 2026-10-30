@@ -1,9 +1,11 @@
 import {
   MAIL_MESSAGE_MAX_BYTES,
   MAIL_RECIPIENTS_MAX,
+  MAIL_SCHEDULE_MAX_DAYS,
   MAIL_SENDS_PER_DAY,
   type MailPlanAttachment,
 } from '@oppenheimer/shared';
+import type { MailSendStatus } from './mail-send.entity';
 
 /**
  * How much a bot may send (`product/next-steps/mail.md` §3.4), on top of
@@ -35,9 +37,10 @@ export function sizeRefusal(attachmentBytes: number, bodyBytes: number): string 
 /**
  * What an approval's earlier attempt means for this one (at most once): one
  * that went is answered as it is, null; one started and never confirmed may
- * have gone, and one that failed is asked again rather than retried.
+ * have gone, and one that failed (or a scheduled one that was stopped) is
+ * asked again rather than retried.
  */
-export function priorSendRefusal(status: 'sending' | 'sent' | 'failed'): string | null {
+export function priorSendRefusal(status: MailSendStatus): string | null {
   if (status === 'sent') return null;
   return status === 'sending'
     ? 'An earlier attempt at this send started and was never confirmed. Check Sent in Gmail before sending again.'
@@ -74,3 +77,13 @@ export interface MailRequest {
 
 /** The bytes of a plan's files held outside Gmail, by `mailAttachmentKey`. */
 export type MailLocalFiles = ReadonlyMap<string, Buffer>;
+
+/** Why a send cannot be scheduled for `at`, or null: it must be in the future, and within the window. */
+export function scheduleRefusal(at: Date, now: Date): string | null {
+  if (Number.isNaN(at.getTime())) return 'Not a time';
+  if (at.getTime() <= now.getTime()) return 'That time has passed';
+  const latest = now.getTime() + MAIL_SCHEDULE_MAX_DAYS * 24 * 60 * 60 * 1000;
+  return at.getTime() > latest
+    ? `More than ${MAIL_SCHEDULE_MAX_DAYS} days ahead; a bot schedules at most that far`
+    : null;
+}

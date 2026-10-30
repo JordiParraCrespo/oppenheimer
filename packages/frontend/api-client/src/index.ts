@@ -231,6 +231,7 @@ export type {
   RunHistoryResponseDto,
   RunStatusCountsResponseDto,
   RunTurnResponseDto,
+  ScheduledMailResponseDto,
   ScheduleResponseDto,
   ScopeLevelDto,
   ScopeLevelsDto,

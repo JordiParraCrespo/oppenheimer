@@ -290,7 +290,9 @@ message's id and a summary; the bot reads it with the tools above.
    cards, aliases, signatures, attachments, threading and the limits.
 3. **Organizing** (built 2026-10-29: `mark_mail`, `label_mail`,
    `archive_mail`, `trash_mail`, `untrash_mail`, `create_label`) (§3.5).
-4. **Scheduled sends** and **waking on new mail** (§3.4, §5).
+4. **Scheduled sends** (built 2026-10-29: `schedule_mail`,
+   `cancel_scheduled_mail`, Settings → Mail's Scheduled list) and **waking
+   on new mail** (§3.4, §5).
 
 Later: Gmail's push through Pub/Sub; Google Contacts, so "email Marta"
 finds her address (its own scope); Gmail filters and vacation replies
@@ -352,3 +354,14 @@ as a channel (`channels.md` §7.3).
   batch. A thread Gmail does not have is named in the answer and the rest
   are still changed. A label card stores the labels' ids, so a rename while
   it waits does not change what a yes does.
+- 2026-10-29: scheduled sends built. The wait is ours, as §3.4 says, but not
+  a delayed job per send: a scheduled send is a `mail_send` row holding the
+  approved plan and its time, and one job ticking every minute sends what is
+  due, so a lost Redis loses no send. Each is claimed with a conditional
+  write, so a cancel and the tick cannot both win; one claimed and then
+  refused is recorded as failed and never retried on its own. A time already
+  past when the person says yes is refused rather than sent late, a send is
+  scheduled at most 90 days ahead, and a scheduled send carries files from
+  mail only: an image from the chat cannot wait with it. A draft can be
+  scheduled too, and goes only if unchanged. The daily cap counts a send on
+  the day it goes.

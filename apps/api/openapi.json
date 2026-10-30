@@ -15786,6 +15786,115 @@
         "tags": ["Mail"]
       }
     },
+    "/api/v1/mail/scheduled": {
+      "get": {
+        "description": "Messages the caller’s bots will send from their Gmail at a time, still waiting, soonest first: from which account, to whom, the subject and when.",
+        "operationId": "findScheduledMail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduledMailResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s scheduled mail",
+        "tags": ["Mail"]
+      }
+    },
+    "/api/v1/mail/scheduled/{id}/cancel": {
+      "post": {
+        "description": "Stops one of the caller’s scheduled sends while it still waits; it is never sent. One already sent or cancelled is refused.",
+        "operationId": "cancelScheduledMail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The scheduled send.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "MAIL_017 — Not waiting any more",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a scheduled mail",
+        "tags": ["Mail"]
+      }
+    },
     "/api/v1/pulls": {
       "get": {
         "description": "Open pull requests read live through the workspace’s installations: all of them (`all`), or yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
@@ -29308,6 +29417,41 @@
           }
         },
         "required": ["label"]
+      },
+      "ScheduledMailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountEmail": {
+            "type": "string",
+            "description": "The account it goes from."
+          },
+          "recipients": {
+            "description": "To, cc and bcc, as the card showed them.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject": {
+            "type": "string"
+          },
+          "scheduledFor": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it goes."
+          },
+          "botId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The bot that scheduled it; null once that bot is deleted."
+          }
+        },
+        "required": ["id", "accountEmail", "recipients", "subject", "scheduledFor", "botId"]
       },
       "PullRequestLaneReasonDto": {
         "type": "object",

@@ -21,8 +21,24 @@ export interface MailSendRepositoryPort {
   claimUnderCap(send: MailSendEntity, since: Date, cap: number): Promise<MailSendClaimOutcome>;
   /** Writes how the send ended: sent with Gmail's ids, or failed. */
   save(send: MailSendEntity): Promise<void>;
-  /** Sends from one account since a moment, counting those still going out; failed ones do not count. */
+  /**
+   * Sends from one account that went since a moment, by when they went,
+   * counting those still going out; failed, waiting and cancelled ones do not count.
+   */
   countSince(connectionId: string, since: Date): Promise<number>;
+  /** Scheduled sends whose time has come, oldest first, at most `limit`; every workspace's. */
+  findDue(now: Date, limit: number): Promise<MailSendEntity[]>;
+  /**
+   * Takes one due send for sending, under the same per-account lock as
+   * `claimUnderCap`: `claimed` when it is now `sending`, `over_cap` when the
+   * account already sent its day's share (the send is then `failed`, so it
+   * is not tried again), `taken` when a cancel or another worker moved it first.
+   */
+  claimDueUnderCap(send: MailSendEntity, since: Date, cap: number): Promise<MailSendClaimOutcome>;
+  /** Stops one of the caller's scheduled sends, only while it still waits: whether it did. */
+  cancelOwn(scope: AccessScope, id: string): Promise<boolean>;
+  /** The caller's scheduled sends still waiting, soonest first, at most `limit`. */
+  findScheduledOwn(scope: AccessScope, limit: number): Promise<MailSendEntity[]>;
   /** The caller's own sends, newest first, at most `limit`. */
   findRecentOwn(scope: AccessScope, limit: number): Promise<MailSendEntity[]>;
 }

@@ -18,6 +18,7 @@ import type {
   GmailProviderPort,
   GmailRawMessage,
   GmailSendAs,
+  GmailSentRef,
 } from '../infrastructure/gmail-provider.port';
 import { MailPlanMapper } from '../mail-plan.mapper';
 import { GmailCallResolver } from './gmail-call.resolver';
@@ -125,6 +126,29 @@ export class MailComposeResolver {
     );
     const raw = buildMime(MailPlanMapper.toOutgoing(plan, original, signatureHtml, files));
     return { raw, threadId: plan.threadId };
+  }
+
+  /**
+   * Sends a plan: a message built from it, or a draft as the card showed it,
+   * which is not sent if it was edited since (`MAIL_014`).
+   */
+  async deliver(
+    provider: GmailProviderPort,
+    grant: GmailCallGrant,
+    plan: MailPlan,
+    local: MailLocalFiles,
+  ): Promise<GmailSentRef> {
+    if (plan.kind !== 'draft') {
+      return provider.sendMessage(grant, await this.build(provider, grant, plan, local));
+    }
+    if (!plan.draftId) throw new AppError(MailErrors.DRAFT_CHANGED);
+    const draft = await provider.readDraft(grant, plan.draftId);
+    if (draft.message.id !== plan.draftMessageId) {
+      throw new AppError(MailErrors.DRAFT_CHANGED, {
+        detail: 'The draft was edited after the card was shown; ask again to send it as it is now',
+      });
+    }
+    return provider.sendDraft(grant, plan.draftId);
   }
 
   /** Files named by message and part, with what their messages say they are. */
