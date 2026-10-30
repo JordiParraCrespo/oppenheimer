@@ -7,11 +7,14 @@ import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/dat
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
 import { BotMessageAttachmentsResolver } from '../../../application/bot-message-attachments.resolver';
+import { BotWaitingCardResolver } from '../../../application/bot-waiting-card.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type { BotAttachmentRepositoryPort } from '../../../database/bot-attachment.repository.port';
+import type { BotQuestionRepositoryPort } from '../../../database/bot-question.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../../../domain/bot-attachment.entity';
+import { BotQuestionEntity } from '../../../domain/bot-question.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
 import { SendBotMessageCommandHandler } from '../send-bot-message.command-handler';
@@ -35,6 +38,7 @@ function setup(
     key?: boolean;
     sealer?: boolean;
     pending?: boolean;
+    question?: boolean;
     lost?: boolean;
     provider?: BotEntity['provider'];
   } = {},
@@ -73,13 +77,38 @@ function setup(
     findPending: vi.fn(async () => (options.pending ? Some(card) : None)),
     saveTransition: vi.fn(async () => !options.lost),
   } satisfies Partial<BotApprovalRepositoryPort>;
+  const asked = BotQuestionEntity.ask({
+    organizationId: bot.organizationId,
+    botId: bot.id,
+    turnId: randomUUID(),
+    questions: [
+      {
+        header: null,
+        question: 'Which repository?',
+        multiSelect: false,
+        options: [
+          { label: 'acme/api', description: null },
+          { label: 'acme/web', description: null },
+        ],
+      },
+    ],
+    summary: 'Which repository?',
+  });
+  const questions = {
+    findPending: vi.fn(async () => (options.question ? Some(asked) : None)),
+    saveTransition: vi.fn(async () => !options.lost),
+  } satisfies Partial<BotQuestionRepositoryPort>;
   const handler = new SendBotMessageCommandHandler(
     { bot: async () => bot } as unknown as BotLookupResolver,
     credentials as unknown as ModelProviderCredentialRepositoryPort,
     sealer,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    approvals as unknown as BotApprovalRepositoryPort,
+    new BotWaitingCardResolver(
+      approvals as unknown as BotApprovalRepositoryPort,
+      questions as unknown as BotQuestionRepositoryPort,
+      stream,
+    ),
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
   );
   const upload = () => {
@@ -97,7 +126,7 @@ function setup(
     uploads.push(created);
     return created;
   };
-  return { handler, turns, bot, approvals, card, stream, upload };
+  return { handler, turns, bot, approvals, card, questions, asked, stream, upload };
 }
 
 const send = (
@@ -208,12 +237,33 @@ describe('SendBotMessageCommandHandler', () => {
     });
   });
 
+  it('retires a card of questions the same way: unanswered, and an open chat is told', async () => {
+    const { handler, bot, questions, asked, stream } = setup({ question: true });
+    await send(handler, bot.id);
+    expect(asked).toMatchObject({ status: 'expired', answers: null, decidedByUserId: null });
+    expect(questions.saveTransition).toHaveBeenCalledWith(asked);
+    expect(stream.publish).toHaveBeenCalledWith(bot.id, {
+      type: 'question',
+      questionId: asked.id,
+      status: 'expired',
+    });
+  });
+
   it('announces nothing when a decision moved the card first', async () => {
     const { handler, bot, stream } = setup({ pending: true, lost: true });
     await send(handler, bot.id);
     expect(stream.publish).not.toHaveBeenCalledWith(
       bot.id,
       expect.objectContaining({ type: 'approval' }),
+    );
+  });
+
+  it('announces nothing when the questions were answered first', async () => {
+    const { handler, bot, stream } = setup({ question: true, lost: true });
+    await send(handler, bot.id);
+    expect(stream.publish).not.toHaveBeenCalledWith(
+      bot.id,
+      expect.objectContaining({ type: 'question' }),
     );
   });
 });

@@ -18,7 +18,7 @@ import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotApprovalOrmEntity } from './bot-approval.orm-entity';
 import type { BotApprovalEffects, BotApprovalRepositoryPort } from './bot-approval.repository.port';
 import { insertGrantWithin, upsertDecisionWithin } from './bot-tool-permission.repository';
-import { enqueueWithin } from './bot-turn.repository';
+import { enqueueWithin, lockBot, waitingCardWithin } from './bot-turn.repository';
 
 /** The job that carries out an approved call; its payload is `{ approvalId, by }`. */
 export const RUN_APPROVED_CALL_JOB = 'run-approved-call';
@@ -50,9 +50,12 @@ export class BotApprovalRepository
     super();
   }
 
-  async insertPending(approval: BotApprovalEntity): Promise<'inserted' | 'pending_exists'> {
+  async insertPending(approval: BotApprovalEntity): Promise<'inserted' | { waiting: string }> {
     try {
-      await this.outbox.transaction(async (manager) => {
+      const waiting = await this.outbox.transaction(async (manager) => {
+        await lockBot(manager, approval);
+        const summary = await waitingCardWithin(manager, approval.organizationId, approval.botId);
+        if (summary !== null) return summary;
         // The jsonb input is a plain object; TypeORM's partial type cannot see that.
         await manager
           .getRepository(BotApprovalOrmEntity)
@@ -60,12 +63,14 @@ export class BotApprovalRepository
             this.mapper.toPersistence(approval) as QueryDeepPartialEntity<BotApprovalOrmEntity>,
           );
         await this.outbox.stageEvents(manager, approval.domainEvents);
+        return null;
       });
+      if (waiting !== null) return { waiting };
       approval.clearEvents();
       approval.markPersisted();
       return 'inserted';
     } catch (error) {
-      if (isPendingTaken(error)) return 'pending_exists';
+      if (isPendingTaken(error)) return { waiting: approval.summary };
       throw error;
     }
   }

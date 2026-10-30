@@ -314,6 +314,44 @@ over the text as soon as it is picked, and a message may be images alone.
   An upload can be sent for 23 hours, an hour short of the sweep, so a
   send never claims an image whose file the sweep is deleting.
 
+### 3.2 Questions
+
+A bot that cannot go on without a choice only you can make asks rather
+than guesses (2026-10-29, from Grok Bot's form cards,
+`research/lessons-from-grok-bot.md` §9 row 12). `ask_user` puts up to four
+questions on a card, each with two to four likely answers and a tag
+("Repo"), the shape of Claude Code's `AskUserQuestion`, and its turn ends.
+
+- **It is a card of its own** beside the approval card (§5), not a kind of
+  approval: a `bot_question` row holding the questions and, once answered,
+  the answers. Nothing runs on it, so it has no tool, no reach and no yes.
+  A bot still has one card up at a time of either kind: raising one locks
+  the bot and looks for a waiting card in both tables, and a bot whose card
+  waits is told to wait. Writing to the bot instead retires it, as it does
+  an approval. The Inbox does not list questions yet; they are answered in
+  the chat.
+- **Answering** is the same picker a session's questions use, where the
+  composer was: one question at a time, an option by its number or row,
+  several where the bot allows, or your own words instead. Submit sends
+  every answer at once (`POST /bots/:id/questions/:questionId/answer`);
+  Dismiss declines (`…/dismiss`, with a note if you like). Answers that do
+  not fit the questions are refused (`BOTS_036`, naming which), and a card
+  already decided or retired is `BOTS_037`. `GET /bots/:id/question` reads
+  the waiting card.
+- **The bot is told** in the turn the decision queues, like an approval's:
+  each question with its answer, between markers, as data rather than
+  instructions; a dismissal says not to ask again unless you bring it up.
+  The answers are fenced the way a page is (`fenceUntrusted`), so an answer
+  that spells the closing marker cannot leave the fence. The turn's origin
+  is `question`. The chat draws the line ("You answered: Which
+  repository?") with each question over its answer.
+- **Only where someone answers.** The tool is marked attended-only, and the
+  toolbox offers it on turns a person is waiting on (their message, or a
+  card they decided), never on a routine's, a wake's or a goal's.
+- **Not built:** Grok Bot's other resume points, a sign-in to a connector
+  and handing a computer over; they need a connector or a host to resume
+  from.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
@@ -374,6 +412,7 @@ that did not cover the tool never runs.
 | `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
 | `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+| `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,
 `research/lessons-from-grok-bot.md` §9 row 10). A goal is for work that
@@ -631,7 +670,6 @@ one.
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
 | `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
-| `ask_user` | A question card with options | auto |
 
 ### 4.8 Never given to a bot
 Pairing, unpairing or uninstalling hosts; connecting or disconnecting
@@ -980,6 +1018,10 @@ The decisions it produced:
   merging is never standing. It adds to 2026-10-15's "*Always allow* sets
   the tool to Allow" rather than replacing it. From Grok Bot's per-path
   grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **a bot asks questions on a card** (`ask_user`, §3.2): a
+  card of its own (`bot_question`), answered or dismissed and never
+  approved, beside the approval card; one card of either kind is up at a
+  time. From Grok Bot's form cards (§9 row 12).
 - 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
   the bot's or about the person and read by all their bots, still one row
   owned by the bot that learned it (§4.1). It moves user memory out of §7.

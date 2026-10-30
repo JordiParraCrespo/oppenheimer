@@ -196,6 +196,12 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   notOn?: readonly BotTurnOrigin[];
   /**
+   * Offered only on a turn a person is waiting on (`BOT_ATTENDED_ORIGINS`):
+   * a tool that needs someone to answer it, never on a routine's run, a
+   * wake or a goal's continuation.
+   */
+  attendedOnly?: boolean;
+  /**
    * The one thing a call acts on, when there is one: the repository a
    * comment goes to, the session a stop ends. A card offers to always allow
    * the tool on it, and a grant for it lets the next call run. From the
@@ -249,6 +255,8 @@ export interface BotToolDefinition {
   readonly sharesOutside: boolean;
   /** The turns not offered the tool (`BotToolSpec.notOn`). */
   readonly notOn: readonly BotTurnOrigin[];
+  /** Offered only on a turn a person is waiting on (`BotToolSpec.attendedOnly`). */
+  readonly attendedOnly: boolean;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
   bind(context: BotToolContext): BotEngineTool;
   /**
@@ -321,6 +329,7 @@ export function defineBotTool<Input extends z.ZodType>(
     scope: spec.scope,
     readOnly: spec.readOnly === true,
     notOn: spec.notOn ?? [],
+    attendedOnly: spec.attendedOnly === true,
     traits,
     sharesOutside: spec.sharesOutside === true,
     bind: (context) => {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
 import { GoalEventLine } from '@/features/bots/components/goal-event-line';
 import { PeerEventCard } from '@/features/bots/components/peer-event-card';
+import { QuestionEventLine } from '@/features/bots/components/question-event-line';
 import { RoutineEventLine } from '@/features/bots/components/routine-event-line';
 import { SessionEventLine } from '@/features/bots/components/session-event-line';
 
@@ -23,6 +24,7 @@ const EVENT_LINES: {
   [Kind in BotMessageEvent['kind']]: (props: EventLineProps<Kind>) => ReactNode;
 } = {
   approval: ({ event }) => <ApprovalEventLine event={event} />,
+  question: ({ event }) => <QuestionEventLine event={event} />,
   routine: ({ event, action }) => <RoutineEventLine event={event} action={action} />,
   bot_message: ({ event, message }) => (
     <PeerEventCard event={event} messageId={message.id} content={message.content} />
@@ -36,7 +38,7 @@ const EVENT_LINES: {
 
 /**
  * What Oppenheimer told the bot, in the chat, drawn by its kind
- * (`EVENT_LINES`): a decided approval, a routine's activity, another bot's
+ * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity, another bot's
  * message or answer, a followed session that woke it, the bot's own goal
  * going on or ending. Read from the event's
  * own fields, never its words, which are the bot's. Never a bubble from you:

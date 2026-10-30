@@ -108,6 +108,19 @@
         "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
         "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
         "openInGmail": "Open in Gmail"
+      },
+      "question": {
+        "ownAnswer": "Or type your own answer…",
+        "ownAnswerLabel": "Your answer",
+        "several": "Toggle with 1–{{last}}, as many as apply",
+        "one": "Pick one with 1–{{last}}, or answer in your own words",
+        "next": "Next",
+        "submit": "Submit answers",
+        "dismiss": "Dismiss",
+        "sending": "Sending your answers…",
+        "previous": "Previous question",
+        "nextQuestion": "Next question",
+        "of": "{{n}} of {{total}}"
       }
     },
     "search": {
@@ -426,7 +439,10 @@
       "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
       "BOTS_032": "That rule is gone. Reload the page.",
       "BOTS_033": "That permission is gone. Reload the page.",
-      "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first."
+      "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first.",
+      "BOTS_035": "Those questions don't exist.",
+      "BOTS_036": "Those answers do not fit the questions. Answer each one, then send them again.",
+      "BOTS_037": "Those questions were already answered."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1215,18 +1231,7 @@
       "question": {
         "waiting": "Waiting for your answer",
         "dismissed": "You dismissed the questions",
-        "noAnswer": "No answer read",
-        "ownAnswer": "Or type your own answer…",
-        "ownAnswerLabel": "Your answer",
-        "several": "Toggle with 1–{{last}}, as many as apply",
-        "one": "Pick one with 1–{{last}}, or answer in your own words",
-        "next": "Next",
-        "submit": "Submit answers",
-        "dismiss": "Dismiss",
-        "sending": "Sending your answers…",
-        "previous": "Previous question",
-        "nextQuestion": "Next question",
-        "of": "{{n}} of {{total}}"
+        "noAnswer": "No answer read"
       }
     },
     "preview": {
@@ -1481,6 +1486,11 @@
       },
       "saveFailed": "Could not change the bot.",
       "loadFailed": "Could not load this bot.",
+      "question": {
+        "answered": "You answered: {{summary}}",
+        "dismissed": "You dismissed: {{summary}}",
+        "failed": "Could not send your answers."
+      },
       "approval": {
         "needsInput": "Needs input",
         "title": "{{name}} wants to do this",

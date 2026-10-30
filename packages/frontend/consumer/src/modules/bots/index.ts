@@ -19,6 +19,7 @@ export {
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
+  type BotQuestionCardEntity,
   type BotRoomLeft,
   type BotToolStep,
   type BotTurnContext,

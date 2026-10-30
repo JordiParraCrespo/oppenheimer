@@ -502,6 +502,27 @@ export interface BotApprovalEvent {
   sessionId: string | null;
 }
 
+/** How a card of questions was decided: answered, or dismissed. */
+export const BOT_QUESTION_OUTCOMES = ['answered', 'dismissed'] as const;
+export type BotQuestionOutcome = (typeof BOT_QUESTION_OUTCOMES)[number];
+
+/** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
+export interface BotQuestionEvent {
+  kind: 'question';
+  outcome: BotQuestionOutcome;
+  /** The card's line: its first question, and how many follow. */
+  summary: string;
+  /** Each question and its answer in words; empty when dismissed. */
+  answers: BotAnsweredQuestion[];
+}
+
+/** One answered question of an `ask_user` card, as the chat shows it. */
+export interface BotAnsweredQuestion {
+  question: string;
+  /** The picked options' labels and the person's own words, joined. */
+  answer: string;
+}
+
 /**
  * What happened to a routine, as one activity whatever path made it
  * (`26-bot-routines.md` §4, "In the chat"): a change, a run, or a failure.
@@ -613,11 +634,30 @@ export interface BotGoal {
 
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
- * decision, a routine's run, a session the bot is subscribed to, or a goal
- * it set itself.
+ * decision, a card of questions answered or dismissed, a routine's run, a
+ * session the bot is subscribed to, or a goal it set itself.
  */
-export const BOT_TURN_ORIGINS = ['message', 'approval', 'routine', 'subscription', 'goal'] as const;
+export const BOT_TURN_ORIGINS = [
+  'message',
+  'approval',
+  'question',
+  'routine',
+  'subscription',
+  'goal',
+] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
+
+/**
+ * The turns a person is waiting on: one they started by writing, or by
+ * deciding a card. A routine's run, a wake and a goal's continuation run
+ * with nobody there, so a tool that needs someone to answer is not offered
+ * on them.
+ */
+export const BOT_ATTENDED_ORIGINS = [
+  'message',
+  'approval',
+  'question',
+] as const satisfies readonly BotTurnOrigin[];
 
 /**
  * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
@@ -707,6 +747,7 @@ export interface BotPeerReplyEvent {
 
 export type BotMessageEvent =
   | BotApprovalEvent
+  | BotQuestionEvent
   | BotRoutineEvent
   | BotPeerMessageEvent
   | BotPeerReplyEvent
@@ -716,6 +757,7 @@ export type BotMessageEvent =
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
   'approval',
+  'question',
   'routine',
   'bot_message',
   'bot_reply',
@@ -822,6 +864,84 @@ export const BOT_APPROVAL_NOTE_MAX = 1_000;
  */
 export const BOT_APPROVAL_REACHES = ['once', 'tool', 'subject'] as const;
 export type BotApprovalReach = (typeof BOT_APPROVAL_REACHES)[number];
+
+/**
+ * A card of questions a bot put to its owner (`ask_user`, `25-bots.md`
+ * §3.2): `pending` until they answer it or dismiss it, `expired` when they
+ * wrote to the bot instead. Nothing runs on it; the answers go to the bot.
+ */
+export const BOT_QUESTION_STATUSES = ['pending', 'answered', 'dismissed', 'expired'] as const;
+export type BotQuestionStatus = (typeof BOT_QUESTION_STATUSES)[number];
+
+/** How many questions one `ask_user` card holds. */
+export const BOT_QUESTIONS_MAX = 4;
+/** How many options one question offers, at least and at most. */
+export const BOT_QUESTION_OPTIONS_MIN = 2;
+export const BOT_QUESTION_OPTIONS_MAX = 4;
+export const BOT_QUESTION_TEXT_MAX = 300;
+/** The short tag over a question ("Scope"). */
+export const BOT_QUESTION_HEADER_MAX = 16;
+export const BOT_QUESTION_OPTION_LABEL_MAX = 80;
+export const BOT_QUESTION_OPTION_DESCRIPTION_MAX = 200;
+/** How long an answer in the person's own words may be. */
+export const BOT_QUESTION_ANSWER_MAX = 1_000;
+
+/**
+ * One question of an `ask_user` card, the shape Claude Code's
+ * `AskUserQuestion` has: a tag, the question, two to four options, and
+ * whether several may be picked. The person may always answer in their own
+ * words instead.
+ */
+export const botQuestionSchema = z.object({
+  header: z.string().trim().max(BOT_QUESTION_HEADER_MAX).nullable().default(null),
+  question: z.string().trim().min(1).max(BOT_QUESTION_TEXT_MAX),
+  multiSelect: z.boolean().default(false),
+  options: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(BOT_QUESTION_OPTION_LABEL_MAX),
+        description: z
+          .string()
+          .trim()
+          .max(BOT_QUESTION_OPTION_DESCRIPTION_MAX)
+          .nullable()
+          .default(null),
+      }),
+    )
+    .min(BOT_QUESTION_OPTIONS_MIN)
+    .max(BOT_QUESTION_OPTIONS_MAX),
+});
+export type BotQuestion = z.output<typeof botQuestionSchema>;
+
+/** An `ask_user` card's questions, as the bot asked them. */
+export const botQuestionsSchema = z.array(botQuestionSchema).min(1).max(BOT_QUESTIONS_MAX);
+
+/** One question's answer: the options picked, by index, and the person's own words. */
+export const botQuestionAnswerSchema = z.object({
+  picks: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(BOT_QUESTION_OPTIONS_MAX - 1),
+    )
+    .max(BOT_QUESTION_OPTIONS_MAX),
+  other: z.string().trim().max(BOT_QUESTION_ANSWER_MAX).nullable().default(null),
+});
+export type BotQuestionAnswer = z.output<typeof botQuestionAnswerSchema>;
+
+/** `POST /bots/:id/questions/:questionId/answer`: one answer per question, in order. */
+export const answerBotQuestionSchema = z.object({
+  answers: z.array(botQuestionAnswerSchema).min(1).max(BOT_QUESTIONS_MAX),
+});
+export type AnswerBotQuestionDto = z.infer<typeof answerBotQuestionSchema>;
+
+/** `POST /bots/:id/questions/:questionId/dismiss`: why not, optionally. */
+export const dismissBotQuestionSchema = z.object({
+  note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+});
+export type DismissBotQuestionDto = z.infer<typeof dismissBotQuestionSchema>;
 
 /** `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes; a no ignores it. */
 export const decideBotApprovalSchema = z.object({
@@ -935,6 +1055,12 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('approval'),
     approvalId: z.string(),
     status: z.enum(BOT_APPROVAL_STATUSES),
+  }),
+  /** A card of questions (`ask_user`) was raised, answered, dismissed or retired. */
+  z.object({
+    type: z.literal('question'),
+    questionId: z.string(),
+    status: z.enum(BOT_QUESTION_STATUSES),
   }),
   /**
    * Where each child of a running `delegate` call is, the whole set each

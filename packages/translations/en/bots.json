@@ -190,6 +190,11 @@
     },
     "saveFailed": "Could not change the bot.",
     "loadFailed": "Could not load this bot.",
+    "question": {
+      "answered": "You answered: {{summary}}",
+      "dismissed": "You dismissed: {{summary}}",
+      "failed": "Could not send your answers."
+    },
     "approval": {
       "needsInput": "Needs input",
       "title": "{{name}} wants to do this",
