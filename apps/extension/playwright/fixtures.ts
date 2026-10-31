@@ -2,9 +2,11 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
+import { chromiumPath } from '../../../scripts/chromium.mjs';
 import type { CloudSessionRecord } from '../src/sessions/session';
 
 const DIST = path.resolve(import.meta.dirname, '../dist');
+const CHROMIUM_PATH = chromiumPath();
 
 /** A fake claude.ai: its sessions list answers with whatever `sessions` holds. */
 export interface FakeClaude {
@@ -35,12 +37,20 @@ export const test = base.extend<{
       mkdtempSync(path.join(tmpdir(), 'ext-')),
       {
         channel: 'chromium',
+        ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {}),
         locale,
         args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
       },
     );
+    // The extension checks claude.ai as soon as it is installed, before the
+    // test has said what claude.ai holds. That check finds claude.ai
+    // unreachable, and the test starts only once it has settled, so the
+    // first list the extension sees is the test's (the baseline, not news),
+    // and a page the test opens is what teaches it the endpoint.
+    let installing = true;
     await context.route('https://claude.ai/**', (route) => {
       const url = new URL(route.request().url());
+      if (installing && url.pathname.startsWith('/v1/')) return route.abort('internetdisconnected');
       if (url.pathname === '/v1/code/sessions') {
         claude.requests.push({ url: url.href, headers: route.request().headers() });
         const cursor = url.searchParams.get('cursor');
@@ -60,6 +70,11 @@ export const test = base.extend<{
         </script>`,
       });
     });
+    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+    await base.expect
+      .poll(() => worker.evaluate(async () => (await chrome.storage.local.get('status')).status))
+      .toBeDefined();
+    installing = false;
     await use(context);
     await context.close();
   },
