@@ -196,6 +196,7 @@ pnpm --filter @oppenheimer/api dev                # watch mode
 pnpm --filter @oppenheimer/api arch               # dependency-cruiser boundary check
 pnpm --filter @oppenheimer/api test               # unit tests
 pnpm --filter @oppenheimer/api test:integration   # needs Docker (Postgres + Redis)
+pnpm --filter @oppenheimer/api test:relay-e2e     # the real Go runner against the relay (go, tmux, git, network)
 pnpm migration:new <PascalName>                   # start a migration: src/migrations/<now>-<Name>.ts
 pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # diff entities against a database (foreign keys are not in the entities)
 pnpm --filter @oppenheimer/api migration:run

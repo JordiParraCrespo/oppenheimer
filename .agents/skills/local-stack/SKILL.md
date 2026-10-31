@@ -35,7 +35,7 @@ API's log is `.stack/api.log`, which is where the suites read it by default.
 | Change touches | Run |
 | --- | --- |
 | API routes, sessions, hosts, pairing | `pnpm --filter @oppenheimer/e2e e2e:api` |
-| The runner's side of the link, the relay | `cd apps/api && RELAY_E2E=1 pnpm exec vitest run src/relay/__tests__/relay.e2e.spec.ts` (no stack needed) |
+| The runner's side of the link, the relay | `pnpm --filter @oppenheimer/api test:relay-e2e` (no stack needed) |
 | Several hosts, sessions on a real runner, flow control, the console's terminal | `pnpm --filter @oppenheimer/e2e e2e:fleet:local` (see `e2e/README.md` for the specs that need `--web`) |
 | How the terminal feels over real-world links (latency, jitter, loss, slow uplinks), relay vs direct path | `pnpm --filter @oppenheimer/e2e e2e:netsim` with the stack up `--web` (Linux, root; the `/netsim` skill) |
 
