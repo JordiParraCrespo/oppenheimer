@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { BOT_GROUP_REPOSITORY } from '../../bots.di-tokens';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
 import { BotGroupEntity } from '../../domain/bot-group.entity';
@@ -19,7 +20,7 @@ export class CreateBotGroupCommandHandler
   ) {}
 
   async execute({ scope, input }: CreateBotGroupCommand): Promise<AggregateID> {
-    if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const group = BotGroupEntity.createNew({
       organizationId: scope.organizationId,
       name: input.name,

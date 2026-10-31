@@ -1,6 +1,7 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { type VoiceTranscriptionDto, vocabularyTerms } from '@oppenheimer/shared';
+import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
 import { VoicePolishResolver } from '../../application/voice-polish.resolver';
 import { VoiceTranscriptionResolver } from '../../application/voice-transcription.resolver';
 import { VoiceErrors } from '../../domain/voice.errors';
@@ -31,7 +32,7 @@ export class TranscribeVoiceCommandHandler
   ) {}
 
   async execute(command: TranscribeVoiceCommand): Promise<VoiceTranscriptionDto> {
-    if (!command.organizationId) throw new AppError(VoiceErrors.NO_ACTIVE_ORGANIZATION);
+    requireOrganization(command.organizationId);
     if (!command.audio?.length) throw new AppError(VoiceErrors.AUDIO_MISSING);
     if (!isPcmWav(command.audio)) {
       throw new AppError(VoiceErrors.UNSUPPORTED_AUDIO, {

@@ -1,11 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { TaskFilingResolver } from '../../application/task-filing.resolver';
 import type { TaskRepositoryPort } from '../../database/task.repository.port';
 import { TaskEntity } from '../../domain/task.entity';
-import { TaskErrors } from '../../domain/tasks.errors';
 import { TASK_REPOSITORY } from '../../tasks.di-tokens';
 import { CreateTaskCommand } from './create-task.command';
 
@@ -25,7 +24,7 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
     idempotencyKey,
     input,
   }: CreateTaskCommand): Promise<AggregateID> {
-    if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const filed = await this.filing.resolve(scope, {
       projectId: input.projectId,
       milestoneId: input.milestoneId,

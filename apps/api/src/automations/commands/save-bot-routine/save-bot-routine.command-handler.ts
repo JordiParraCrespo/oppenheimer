@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { type AggregateID, ArgumentInvalidException } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { BotRoutineResolver } from '../../application/bot-routine.resolver';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
@@ -31,7 +32,7 @@ export class SaveBotRoutineCommandHandler
 
   async execute(command: SaveBotRoutineCommand): Promise<AggregateID> {
     const { scope, changes } = command;
-    if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const now = new Date();
     if (changes.triggers) await this.plan.assertMailAccounts(scope, changes.triggers);
     const triggers = changes.triggers ? this.plan.triggers(changes.triggers, now) : undefined;

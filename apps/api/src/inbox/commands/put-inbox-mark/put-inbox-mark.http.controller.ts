@@ -40,7 +40,7 @@ export class PutInboxMarkHttpController {
   })
   @ApiParam({ name: 'itemKey', description: 'The occurrence, e.g. `approval:<id>`.' })
   @ApiResponse({ status: 200, type: InboxMarkResponseDto })
-  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'INBOX_001' })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   @ApiProblemResponse({ status: 400, description: 'Not an Inbox item key', code: 'INBOX_002' })
   @ApiProblemResponse({ status: 422, description: 'Snooze not in the future', code: 'INBOX_003' })
   async put(

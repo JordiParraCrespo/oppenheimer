@@ -1,12 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 export const VoiceErrors = {
-  /** A dictation is the caller's in their workspace, and nobody has none. */
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'VOICE_001',
-    message: 'Dictation needs an active workspace',
-    httpStatus: 400,
-  },
   AUDIO_MISSING: {
     code: 'VOICE_002',
     message: 'No audio was sent',

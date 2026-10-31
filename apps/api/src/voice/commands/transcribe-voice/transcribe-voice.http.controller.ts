@@ -71,7 +71,7 @@ export class TranscribeVoiceHttpController {
     description: `A recording (16-bit PCM WAV, at most ${VOICE_AUDIO_MAX_BYTES} bytes) in, the text it says out, tidied into writing. Heard by the workspace's ChatGPT sign-in when it has one, otherwise by the deployment's own speech-to-text server. Nothing is kept.`,
   })
   @ApiResponse({ status: 200, type: VoiceTranscriptionResponseDto })
-  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'VOICE_001' })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   @ApiProblemResponse({ status: 400, description: 'No audio attached', code: 'VOICE_002' })
   @ApiProblemResponse({ status: 413, description: 'Recording too long', code: 'VOICE_003' })
   @ApiProblemResponse({ status: 415, description: 'Not 16-bit PCM WAV', code: 'VOICE_004' })

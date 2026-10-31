@@ -59,6 +59,7 @@ const locales = readdirSync(TRANSLATIONS, { withFileTypes: true })
 describe('error catalog coverage', () => {
   it('finds the catalogs and locales to check', () => {
     expect(codes.length).toBeGreaterThan(20);
+    expect(codes).toContain('TENANT_001');
     expect(locales.length).toBeGreaterThan(1);
   });
 

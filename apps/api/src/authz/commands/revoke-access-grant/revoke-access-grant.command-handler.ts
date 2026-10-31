@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../application/tenant-scope.policy';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
 import { AccessGrantErrors } from '../../domain/access-grant.errors';
@@ -17,17 +18,14 @@ export class RevokeAccessGrantCommandHandler
 
   async execute(command: RevokeAccessGrantCommand): Promise<void> {
     const { scope } = command;
-    if (!scope.organizationId) {
-      throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
-    }
+    requireTenant(scope);
 
-    const found = await this.grants.findOneInOrganization(scope.organizationId, command.grantId);
-    if (found.isNone()) {
-      throw new AppError(AccessGrantErrors.NOT_FOUND, {
-        detail: `No access grant with id ${command.grantId}`,
-      });
-    }
+    const grant = requireFound(
+      await this.grants.findOneInOrganization(scope.organizationId, command.grantId),
+      AccessGrantErrors.NOT_FOUND,
+      { detail: `No access grant with id ${command.grantId}` },
+    );
 
-    await this.grants.delete(found.unwrap());
+    await this.grants.delete(grant);
   }
 }

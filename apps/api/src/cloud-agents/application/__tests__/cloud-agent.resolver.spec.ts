@@ -56,7 +56,7 @@ describe('CloudAgentResolver', () => {
       expect.objectContaining({ code: 'CLOUD_AGENTS_011' }),
     );
     await expect(resolver.callFor(scope(null), 'cursor')).rejects.toMatchObject({
-      code: 'CLOUD_AGENTS_002',
+      code: 'TENANT_001',
     });
   });
 

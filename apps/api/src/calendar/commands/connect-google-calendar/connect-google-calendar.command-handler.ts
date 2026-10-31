@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { GoogleConnectStateResolver } from '../../application/google-connect-state.resolver';
 import {
   CALENDAR_CONNECTION_REPOSITORY,
@@ -49,7 +50,7 @@ export class ConnectGoogleCalendarCommandHandler
   ) {}
 
   async execute({ scope, input }: ConnectGoogleCalendarCommand): Promise<AggregateID> {
-    if (!scope.organizationId) throw new AppError(CalendarErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     if (!this.provider.isConfigured() || !this.sealer.isConfigured()) {
       throw new AppError(CalendarErrors.GOOGLE_NOT_CONFIGURED);
     }

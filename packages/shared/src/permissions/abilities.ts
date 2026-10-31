@@ -6,7 +6,6 @@ import {
   type MongoQuery,
   subject as tagSubject,
 } from '@casl/ability';
-import type { Role } from '../types/index.js';
 
 /**
  * Instance-level permission check: does `ability` allow `action` on this
@@ -447,12 +446,3 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     },
   ],
 };
-
-/**
- * Legacy: an ability from a single role name, using the seeded system-role
- * permissions. Prefer {@link defineAbilitiesFromPermissions} with the user's
- * DB-backed permissions.
- */
-export function defineAbilitiesFor(role: Role, context: AbilityContext = {}): AppAbility {
-  return defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS[role] ?? [], context);
-}

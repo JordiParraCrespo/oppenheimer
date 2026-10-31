@@ -182,7 +182,7 @@ const fallbackText: React.CSSProperties = {
   lineHeight: '19px',
 };
 
-export const link: React.CSSProperties = {
+const link: React.CSSProperties = {
   color: '#2F80F6',
   textDecoration: 'none',
   wordBreak: 'break-all',

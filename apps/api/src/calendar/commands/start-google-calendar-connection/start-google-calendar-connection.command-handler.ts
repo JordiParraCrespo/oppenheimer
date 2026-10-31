@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { GoogleConnectStateResolver } from '../../application/google-connect-state.resolver';
 import {
   CALENDAR_CONNECTION_REPOSITORY,
@@ -45,7 +46,7 @@ export class StartGoogleCalendarConnectionCommandHandler
     scope,
     input,
   }: StartGoogleCalendarConnectionCommand): Promise<StartedGoogleConnection> {
-    if (!scope.organizationId) throw new AppError(CalendarErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     if (!this.provider.isConfigured() || !this.sealer.isConfigured()) {
       throw new AppError(CalendarErrors.GOOGLE_NOT_CONFIGURED);
     }
@@ -61,8 +62,7 @@ export class StartGoogleCalendarConnectionCommandHandler
   ): Promise<string | undefined> {
     if (connectionId) {
       const found = await this.connections.findOwnById(scope, connectionId);
-      if (found.isNone()) throw new AppError(CalendarErrors.GOOGLE_NOT_CONNECTED);
-      return found.unwrap().accountEmail;
+      return requireFound(found, CalendarErrors.GOOGLE_NOT_CONNECTED).accountEmail;
     }
     const held = await this.connections.findAllOwn(scope);
     if (!canConnectAnotherAccount(held.length)) {

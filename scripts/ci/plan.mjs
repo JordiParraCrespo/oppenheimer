@@ -102,6 +102,9 @@ export function plan(
   // oppenheimer:end runner
   // oppenheimer:begin web
   add('lint', 'Frontend structure', 'pnpm', ['check:structure']);
+  // The design-system catalog names only public components, and every
+  // component has a row or an `// uncatalogued:` reason (`scripts/ui-catalog.mjs`).
+  add('lint', 'UI catalog', 'pnpm', ['check:ui-catalog']);
   // The React Compiler gives up silently on a function it cannot compile (the
   // build prints nothing). The web tier is at zero bail-outs; keep it.
   add('lint', 'React Compiler bail-outs', 'pnpm', ['check:compiler', '--strict']);
@@ -152,6 +155,11 @@ export function plan(
     );
   }
   // oppenheimer:end web
+  // The same for the backend packages (`knip.backend.json`): an export of
+  // `packages/backend/*` that neither the API nor another package imports is
+  // deleted. The API's own files and the authz, llm and agents packages are
+  // read for what they import but not reported on (its `ignore`).
+  add('lint', 'Unused backend exports', 'pnpm', ['check:unused:backend']);
   // oppenheimer:begin starter
   add('lint', 'Starter manifest', 'pnpm', ['starter:check']);
   // oppenheimer:end starter

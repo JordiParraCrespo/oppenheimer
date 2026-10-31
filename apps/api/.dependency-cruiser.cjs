@@ -30,6 +30,8 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // Its companion: a row-level check against the ability that factory built
   // (tagging the row for CASL, which is why it is not in `domain/`).
   '^src/authz/application/can-access-row\\.policy\\.ts$',
+  // The one tenancy check every tenant use case makes (`TENANT_001`).
+  '^src/authz/application/tenant-scope\\.policy\\.ts$',
   // The base every tenant repository extends, and the predicate it applies:
   // row scoping is a persistence concern, so it lives in `authz/database/`.
   '^src/authz/database/scoped\\.repository\\.ts$',

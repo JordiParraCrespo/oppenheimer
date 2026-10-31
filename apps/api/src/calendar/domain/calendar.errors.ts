@@ -7,11 +7,6 @@ export const CalendarErrors = {
     message: 'Event not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'CALENDAR_002',
-    message: 'The calendar belongs to an organization',
-    httpStatus: 400,
-  },
   /** A range that runs backwards or past the widest one read covers. */
   RANGE_TOO_WIDE: {
     code: 'CALENDAR_003',

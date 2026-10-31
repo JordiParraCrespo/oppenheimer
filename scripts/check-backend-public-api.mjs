@@ -47,7 +47,7 @@ const BACKEND = join(ROOT, 'packages/backend');
  * What a package's surface may name, keyed by package; `'*'` is what every
  * package may name. A library goes under a package only when it is the point
  * of the package, not the driver behind it; the pluggable packages (email,
- * llm, queue, storage) have no entry. An entry ending in `/*` matches the
+ * llm, storage) have no entry. An entry ending in `/*` matches the
  * whole scope.
  */
 export const ALLOWED = {

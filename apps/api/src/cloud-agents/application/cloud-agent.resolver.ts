@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { type CloudAgentProviderId, cloudAgentProviderSchema } from '@oppenheimer/shared';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
+import { requireTenant } from '../../authz/application/tenant-scope.policy';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { CloudAgentErrors } from '../domain/cloud-agents.errors';
 import type { CloudAgentProvider } from './cloud-agent-provider.port';
 import { CloudAgentProviderRegistry } from './cloud-agent-provider.registry';
@@ -60,6 +61,6 @@ export class CloudAgentResolver {
 }
 
 export function requireOrganization(scope: AccessScope): string {
-  if (!scope.organizationId) throw new AppError(CloudAgentErrors.NO_ACTIVE_ORGANIZATION);
+  requireTenant(scope);
   return scope.organizationId;
 }

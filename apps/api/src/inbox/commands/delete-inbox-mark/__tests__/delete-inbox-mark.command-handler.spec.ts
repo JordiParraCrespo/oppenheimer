@@ -51,7 +51,7 @@ describe('DeleteInboxMarkCommandHandler', () => {
   });
 
   it.each([
-    ['INBOX_001', { organizationId: null }],
+    ['TENANT_001', { organizationId: null }],
     ['INBOX_002', { itemKey: 'run' }],
   ])('refuses with %s before reading anything', async (code, overrides) => {
     const { marks, handler } = setup(null);

@@ -94,7 +94,7 @@ describe('CreateProjectCommandHandler', () => {
       handler.execute(
         new CreateProjectCommand({ scope: scope({ organizationId: null }), input: INPUT }),
       ),
-    ).rejects.toMatchObject({ code: 'PROJECTS_002' });
+    ).rejects.toMatchObject({ code: 'TENANT_001' });
     expect(projects.insert).not.toHaveBeenCalled();
   });
 

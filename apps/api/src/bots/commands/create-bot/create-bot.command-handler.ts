@@ -3,7 +3,8 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
-import type { AccessScope } from '../../../authz/domain/access-scope.types';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
+import { type AccessScope } from '../../../authz/domain/access-scope.types';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { NewBotProviderResolver } from '../../application/new-bot-provider.resolver';
@@ -22,15 +23,14 @@ import { BotErrors } from '../../domain/bots.errors';
 import { CreateBotCommand } from './create-bot.command';
 
 /**
- * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`,
- * on the next avatar colour, last in its group, in the sections named. It is born
- * with a `SOUL.md` that says its name and an empty `INSTRUCTIONS.md`, both at revision 1,
- * so its history starts with its creation. A home host, when given, is one the caller may use.
- * The optional fields set what the form does not: the engine, the level,
- * both documents, a creating bot and an idempotency key (`create_bot`,
- * §4.6). The new bot is the caller's whoever creates it; a creating bot
- * marks it and caps its level, held under a lock on the creator's row until
- * the write commits; a key makes it once, however often it is retried.
+ * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`, on the next
+ * avatar colour, last in its group, in the sections named. It is born with a `SOUL.md` that
+ * says its name and an empty `INSTRUCTIONS.md`, both at revision 1, so its history starts with
+ * its creation. A home host, when given, is one the caller may use. The optional fields set
+ * what the form does not: the engine, the level, both documents, a creating bot and an
+ * idempotency key (`create_bot`, §4.6). The new bot is the caller's whoever creates it; a
+ * creating bot marks it and caps its level, held under a lock on the creator's row until the
+ * write commits; a key makes it once, however often it is retried.
  */
 @CommandHandler(CreateBotCommand)
 export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand, AggregateID> {
@@ -46,7 +46,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
 
   async execute(command: CreateBotCommand): Promise<AggregateID> {
     const { scope, input } = command;
-    if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     // A retry of a creation that landed: the bot it made, checking nothing again.
     const earlier = await this.madeWith(scope, command.idempotencyKey);
     if (earlier) return earlier;

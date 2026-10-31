@@ -33,4 +33,3 @@ Reusable NestJS modules under `packages/backend/`, each following a pluggable se
 - **@oppenheimer/backend-llm** — One interface over LLM providers (OpenRouter, Together, Anthropic, any OpenAI-compatible server)
 - **@oppenheimer/backend-agents** — The engines a bot's turn runs on: Claude Agent SDK (Anthropic, GLM) and OpenAI Agents SDK behind one port
 - **@oppenheimer/backend-storage** — File storage (Local / S3)
-- **@oppenheimer/backend-queue** — BullMQ async jobs + Bull Board admin UI

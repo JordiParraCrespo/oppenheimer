@@ -23,6 +23,15 @@ export interface AccessScope {
   bypass: boolean;
 }
 
+/**
+ * An {@link AccessScope} that acts inside one organization: the request's
+ * tenant. Tenant rows are only ever written and read through one, so a port
+ * that takes it cannot be handed the platform tier's global scope by mistake.
+ */
+export interface TenantScope extends AccessScope {
+  organizationId: string;
+}
+
 /** A scope that can reach nothing. The safe value to fall back to. */
 export function emptyScope(userId: string, organizationId: string | null = null): AccessScope {
   return {

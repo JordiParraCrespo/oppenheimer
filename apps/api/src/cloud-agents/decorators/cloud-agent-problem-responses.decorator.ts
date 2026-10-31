@@ -6,8 +6,8 @@ export const CloudAgentProblemResponses = () =>
   applyDecorators(
     ApiProblemResponse({
       status: 400,
-      description: 'Cloud agents belong to an organization',
-      code: 'CLOUD_AGENTS_002',
+      description: 'No active workspace',
+      code: 'TENANT_001',
     }),
   );
 

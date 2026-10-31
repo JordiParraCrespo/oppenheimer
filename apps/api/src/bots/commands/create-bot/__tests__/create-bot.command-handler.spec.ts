@@ -175,11 +175,11 @@ describe('CreateBotCommandHandler', () => {
     expect(bots.insert).not.toHaveBeenCalled();
   });
 
-  it('refuses a caller with no workspace with BOTS_002', async () => {
+  it('refuses a caller with no workspace with TENANT_001', async () => {
     const { handler, bots } = setup();
     await expect(
       handler.execute(new CreateBotCommand({ scope: scope({ organizationId: null }), input: {} })),
-    ).rejects.toMatchObject({ code: 'BOTS_002' });
+    ).rejects.toMatchObject({ code: 'TENANT_001' });
     expect(bots.insert).not.toHaveBeenCalled();
   });
 

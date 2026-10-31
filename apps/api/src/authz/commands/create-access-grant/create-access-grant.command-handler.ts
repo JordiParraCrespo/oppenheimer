@@ -4,6 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { PrincipalResidencyChecker } from '../../application/principal-residency.policy';
 import { ResourceRegistry } from '../../application/resource.registry';
+import { requireTenant } from '../../application/tenant-scope.policy';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
 import { AccessGrantEntity } from '../../domain/access-grant.entity';
@@ -34,9 +35,7 @@ export class CreateAccessGrantCommandHandler
 
   async execute(command: CreateAccessGrantCommand): Promise<AggregateID> {
     const { scope } = command;
-    if (!scope.organizationId) {
-      throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
-    }
+    requireTenant(scope);
 
     // An unknown subject is a warning, not a rejection: the catalog is
     // advisory and an admin may grant over a resource this deployment has not

@@ -32,7 +32,7 @@ export class DeleteInboxMarkHttpController {
   })
   @ApiParam({ name: 'itemKey', description: 'The occurrence, e.g. `approval:<id>`.' })
   @ApiResponse({ status: 204, description: 'The occurrence has no mark.' })
-  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'INBOX_001' })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   @ApiProblemResponse({ status: 400, description: 'Not an Inbox item key', code: 'INBOX_002' })
   async remove(
     @Req() request: ScopedRequest,

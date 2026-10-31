@@ -1,10 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { CHATGPT_AUTH, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
 import { ChatgptSignInMapper } from '../../chatgpt-sign-in.mapper';
-import { BotErrors } from '../../domain/bots.errors';
 import { chatgptLoginExpiry } from '../../domain/chatgpt-login.policy';
 import type { ChatgptLoginResponseDto } from '../../dtos/chatgpt-login.response.dto';
 import type { ChatgptAuthPort } from '../../infrastructure/chatgpt-auth.port';
@@ -30,7 +29,7 @@ export class StartChatgptLoginCommandHandler
   ) {}
 
   async execute({ scope }: StartChatgptLoginCommand): Promise<ChatgptLoginResponseDto> {
-    if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     this.providers.assertConfigured();
     const code = await this.auth.requestDeviceCode();
     const expiresAt = chatgptLoginExpiry(new Date());

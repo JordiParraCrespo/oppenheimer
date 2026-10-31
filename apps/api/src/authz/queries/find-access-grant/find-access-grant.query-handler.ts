@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../application/tenant-scope.policy';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
 import type { AccessGrantEntity } from '../../domain/access-grant.entity';
@@ -17,18 +18,13 @@ export class FindAccessGrantQueryHandler
   ) {}
 
   async execute(query: FindAccessGrantQuery): Promise<AccessGrantEntity> {
-    if (!query.scope.organizationId) {
-      throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
-    }
+    requireTenant(query.scope);
     const found = await this.grants.findOneInOrganization(
       query.scope.organizationId,
       query.grantId,
     );
-    if (found.isNone()) {
-      throw new AppError(AccessGrantErrors.NOT_FOUND, {
-        detail: `No access grant with id ${query.grantId}`,
-      });
-    }
-    return found.unwrap();
+    return requireFound(found, AccessGrantErrors.NOT_FOUND, {
+      detail: `No access grant with id ${query.grantId}`,
+    });
   }
 }
