@@ -116,8 +116,8 @@ variants that do not exist.
 
 ## Schemas that would bloat the web bundle
 
-`@oppenheimer/shared` tree-shakes in `apps/web` (see the note in the
-repo-root `AGENTS.md`), so the cost of a schema is what it reaches, not where
+`@oppenheimer/shared` tree-shakes in `apps/web` (see
+`packages/shared/AGENTS.md`), so the cost of a schema is what it reaches, not where
 it is imported from. For forms this means:
 
 - Auth forms import from `@oppenheimer/shared/schemas/auth`, which pulls in nothing

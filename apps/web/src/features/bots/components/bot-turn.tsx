@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { BotActivity } from '@/features/bots/components/bot-activity';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
+import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
@@ -37,7 +38,9 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * someone pressed Stop); a failure says why and what helps
  * (`BotTurnFailure`). The images your message carried
  * sit above its bubble, and the ones the bot showed (`show_image`) in its
- * answer where it showed them, both drawn by `images`, which reads them.
+ * answer where it showed them, both drawn by `images`, which reads them. A
+ * message you steered in while it worked sits in the answer where the bot
+ * took it (`BotSteerMessage`).
  */
 export function BotTurn({
   block,
@@ -108,7 +111,13 @@ export function BotTurn({
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotActivity key={message.id} steps={message.steps} />
+            <BotActivity key={message.id} steps={message.steps} live={active} />
+          ) : message.role === 'user' ? (
+            <BotSteerMessage
+              key={message.id}
+              message={message}
+              time={time.format(message.createdAt)}
+            />
           ) : message.attachments.length > 0 ? (
             <div key={message.id} className="flex flex-col gap-3">
               {message.content ? <BotReply content={message.content} /> : null}

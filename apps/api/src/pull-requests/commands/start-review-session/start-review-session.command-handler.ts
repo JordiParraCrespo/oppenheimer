@@ -1,11 +1,12 @@
 import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestReadPort } from '../../../github/application/pull-request-read.port';
+import { PULL_REQUEST_READS } from '../../../github/github.di-tokens';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
+import { requireApp } from '../../application/app-address.policy';
 import type { ReviewSessionRepositoryPort } from '../../database/review-session.repository.port';
 import { PullRequestsErrors } from '../../domain/pull-requests.errors';
 import { type ReviewedPullRequest, reviewSessionInput } from '../../domain/review-session.policy';
@@ -29,8 +30,8 @@ export class StartReviewSessionCommandHandler
   implements ICommandHandler<StartReviewSessionCommand, SessionCommandResult>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_READS)
+    private readonly reads: PullRequestReadPort,
     @Inject(REVIEW_SESSION_REPOSITORY)
     private readonly reviews: ReviewSessionRepositoryPort,
     private readonly commandBus: CommandBus,
@@ -39,8 +40,8 @@ export class StartReviewSessionCommandHandler
   async execute(command: StartReviewSessionCommand): Promise<SessionCommandResult> {
     const { scope, userId, address } = command;
     // A session clones through the App.
-    const app = this.access.requireApp(address);
-    const { repository, pull } = await this.access.pullRequest(scope, address);
+    const app = requireApp(address);
+    const { repository, pull } = await this.reads.pullRequest(scope, address);
     if (pull.fromFork)
       throw new AppError(PullRequestsErrors.REVIEW_FROM_FORK, {
         detail: `${repository.fullName}#${pull.number} comes from a fork`,

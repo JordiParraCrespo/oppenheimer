@@ -39,6 +39,8 @@
     "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
+    "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
+    "steered": "Steered in while it worked",
     "send": "Send",
     "stop": "Stop",
     "noKey": "{{provider}} has no key in this workspace yet. Add one to talk to this bot.",
@@ -104,8 +106,6 @@
       "results_one": "{{count}} result",
       "results_other": "{{count}} results",
       "rawOutput": "Show raw output",
-      "moreLines_one": "Show {{count}} more line",
-      "moreLines_other": "Show {{count}} more lines",
       "lessOutput": "Show less",
       "group_one": "Used {{count}} tool",
       "group_other": "Used {{count}} tools",
@@ -130,7 +130,12 @@
         "cancelled": "stopped",
         "timed_out": "timed out"
       },
-      "subagentTokens": "{{tokens}} tokens"
+      "subagentTokens": "{{tokens}} tokens",
+      "explored": "Explored",
+      "exploring": "Exploring",
+      "moreLines_one": "+{{count}} line",
+      "moreLines_other": "+{{count}} lines",
+      "fullLines": "Show full lines"
     },
     "suggest": {
       "task": {
@@ -211,11 +216,17 @@
       "always": "Always allow",
       "alwaysFor": "Always allow for {{subject}}",
       "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
-      "fullRequest": "Show the full request"
+      "fullRequest": "Show the full request",
+      "stop": "Deny and stop",
+      "stopping": "Stopping…",
+      "denyHint": "{{name}} is told why and carries on",
+      "stopHint": "Nothing runs, and {{name}} stops this turn",
+      "shortcut": "Press {{key}}"
     },
     "event": {
       "approved": "You approved: {{summary}}",
       "denied": "You denied: {{summary}}",
+      "stopped": "You denied and stopped the turn: {{summary}}",
       "failed": "You approved, and it failed: {{summary}}",
       "routine": "Routine · {{name}}",
       "routineSaved": "Created routine “{{name}}”",

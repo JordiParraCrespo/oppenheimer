@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
-import type { PullRequestAccessPort } from '../../../../github/application/pull-request-access.port';
+import type { PullRequestReadPort } from '../../../../github/application/pull-request-read.port';
 import type { CiFindingRepositoryPort } from '../../../database/ci-finding.repository.port';
 import type { CiFindingEntity } from '../../../domain/ci-finding.entity';
 import { type CiFindingInput, RecordCiFindingsCommand } from '../record-ci-findings.command';
@@ -42,13 +42,13 @@ const finding = (check: string): CiFindingInput => ({
 function setup(checks: { value: unknown; refusal: string | null }) {
   const access = {
     pullRequest: vi.fn().mockResolvedValue({ pull: { headSha: HEAD }, checks }),
-  } satisfies Pick<PullRequestAccessPort, 'pullRequest'>;
+  } satisfies Pick<PullRequestReadPort, 'pullRequest'>;
   const findings = {
     record: vi.fn(async (_findings: readonly CiFindingEntity[]) => {}),
     findForHead: vi.fn(),
   } satisfies CiFindingRepositoryPort;
   const handler = new RecordCiFindingsCommandHandler(
-    access as unknown as PullRequestAccessPort,
+    access as unknown as PullRequestReadPort,
     findings,
   );
   const run = (...checksFound: string[]) =>

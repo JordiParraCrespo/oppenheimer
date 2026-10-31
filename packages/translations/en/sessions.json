@@ -612,7 +612,11 @@
       "waiting": "Waiting for your answer",
       "dismissed": "You dismissed the questions",
       "noAnswer": "No answer read"
-    }
+    },
+    "explored": {
+      "title": "Explored"
+    },
+    "exploring": "Exploring"
   },
   "preview": {
     "show": "Show preview",

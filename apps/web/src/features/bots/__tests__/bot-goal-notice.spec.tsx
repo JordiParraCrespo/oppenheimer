@@ -20,7 +20,10 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useClearBotGoal: () => ({ mutate: state.mutate, isPending: false, isError: state.isError }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  state.isError = false;
+});
 
 const goal = {
   id: 'goal-1',

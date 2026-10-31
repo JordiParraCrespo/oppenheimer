@@ -94,6 +94,12 @@ export interface HostRepositoryPort {
    * the account is the system acting on the account's own machines.
    */
   findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]>;
+  /**
+   * Writes a loaded host back, only if nobody has written it since it was
+   * loaded; otherwise `VersionConflictException` and nothing is written,
+   * staged or put on the timeline. A host is created by `redeemAndRegister`,
+   * never here.
+   */
   save(entity: HostEntity): Promise<HostEntity>;
   /**
    * Spend a pairing token and create the host it pairs, in **one transaction**. The

@@ -3706,7 +3706,7 @@ export type ChatgptLoginStatusResponseDto = {
 
 export type BotApprovalEventResponseDto = {
     kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    outcome: 'approved' | 'denied' | 'stopped' | 'failed';
     /**
      * The tool the decided call was for.
      */
@@ -3719,6 +3719,10 @@ export type BotApprovalEventResponseDto = {
      * The session the approved call started; null when it started none.
      */
     sessionId: string | null;
+    /**
+     * The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.
+     */
+    approvalId?: string;
 };
 
 export type BotAnsweredQuestionResponseDto = {
@@ -3972,6 +3976,10 @@ export type BotTurnResponseDto = {
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
     provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
+     * Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn.
+     */
+    steer: boolean;
+    /**
      * The model it runs on, fixed when it was sent.
      */
     model: string;
@@ -4019,12 +4027,19 @@ export type BotConversationResponseDto = {
      * How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.
      */
     messageCount: number;
+    /**
+     * For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`).
+     */
+    storedTextBlocks: {
+        [key: string]: number;
+    };
 };
 
 export type SendBotMessageRequest = {
     content?: string;
     attachmentIds?: Array<string>;
     timeZone?: string;
+    steer?: boolean;
 };
 
 export type BotGoalResponseDto = {
@@ -4098,6 +4113,10 @@ export type BotApprovalResponseDto = {
      */
     reaches: Array<'once' | 'tool' | 'subject'>;
     /**
+     * What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.
+     */
+    availableDecisions: Array<'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop'>;
+    /**
      * How far the yes went.
      */
     reach: 'once' | 'tool' | 'subject' | null;
@@ -4156,6 +4175,10 @@ export type WorkspaceBotApprovalResponseDto = {
      */
     reaches: Array<'once' | 'tool' | 'subject'>;
     /**
+     * What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.
+     */
+    availableDecisions: Array<'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop'>;
+    /**
      * How far the yes went.
      */
     reach: 'once' | 'tool' | 'subject' | null;
@@ -4177,7 +4200,7 @@ export type WorkspaceBotApprovalResponseDto = {
 };
 
 export type DecideBotApprovalRequest = {
-    decision: 'approve' | 'deny';
+    decision: 'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop';
     note?: string;
     reach?: 'once' | 'tool' | 'subject';
 };
@@ -6175,6 +6198,10 @@ export type InviteMemberErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
      * ORG_016 — The organization service failed to handle the request
      */
     502: ProblemDetailsDto;
@@ -7526,6 +7553,10 @@ export type UninstallHostErrors = {
      * HOSTS_005 — No valid host assertion was presented
      */
     401: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UninstallHostError = UninstallHostErrors[keyof UninstallHostErrors];
@@ -7590,6 +7621,10 @@ export type UnpairHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UnpairHostError = UnpairHostErrors[keyof UnpairHostErrors];
@@ -7657,6 +7692,10 @@ export type RenameHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type RenameHostError = RenameHostErrors[keyof RenameHostErrors];
@@ -13691,7 +13730,7 @@ export type StartChatgptLoginErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**
@@ -13737,7 +13776,7 @@ export type PollChatgptLoginErrors = {
      */
     410: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**
@@ -14220,7 +14259,7 @@ export type DecideBotApprovalErrors = {
      */
     409: ProblemDetailsDto;
     /**
-     * BOTS_030 — A reach the card does not offer
+     * BOTS_030 — A decision or reach the card does not offer
      */
     422: ProblemDetailsDto;
 };

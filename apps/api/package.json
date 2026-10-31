@@ -14,10 +14,11 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "typeorm": "TS_NODE_PROJECT=tsconfig.typeorm.json typeorm-ts-node-commonjs",
+    "migration:new": "TS_NODE_PROJECT=tsconfig.typeorm.json ts-node src/database/new-migration.ts",
     "migration:generate": "pnpm typeorm migration:generate -d src/config/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/config/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/config/data-source.ts",
-    "generate:openapi": "pnpm exec nest build && node dist/generate-openapi.js && biome check --write openapi.json",
+    "generate:openapi": "pnpm exec nest build && node dist/generate-openapi.js",
     "seed": "TS_NODE_PROJECT=tsconfig.typeorm.json ts-node src/database/seed.ts",
     "clean": "rm -rf dist"
   },

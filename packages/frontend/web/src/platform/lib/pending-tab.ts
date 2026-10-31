@@ -1,3 +1,5 @@
+import { leaveFor } from './leave';
+
 /**
  * A tab opened in the click, for an address that only arrives after an
  * `await`. Popup blockers refuse a `window.open` once the click's task is
@@ -22,7 +24,7 @@ export function openPendingTab(options: { onReturn?: () => void } = {}): Pending
   return {
     go: (url) => {
       if (tab) tab.location.href = url;
-      else window.location.assign(url);
+      else leaveFor(url);
     },
     close: () => {
       tab?.close();

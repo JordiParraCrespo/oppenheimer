@@ -6,7 +6,7 @@ import { sniffSessionFile } from '@oppenheimer/shared/protocol';
 import type { ParkedFilePort } from '../../../links/application/parked-file.port';
 import { PARKED_FILES } from '../../../links/links.di-tokens';
 import { SessionErrors } from '../../domain/sessions.errors';
-import { WorkSessionMapper } from '../../work-session.mapper';
+import { SessionAttachmentMapper } from '../../session-attachment.mapper';
 import { UploadSessionAttachmentCommand } from './upload-session-attachment.command';
 
 /**
@@ -47,6 +47,6 @@ export class UploadSessionAttachmentCommandHandler
       data: command.data,
     });
     if (!id) throw new AppError(SessionErrors.TOO_MANY_ATTACHMENTS);
-    return WorkSessionMapper.toAttachmentResponse(id, mediaType, command.data);
+    return SessionAttachmentMapper.toResponse(id, mediaType, command.data);
   }
 }

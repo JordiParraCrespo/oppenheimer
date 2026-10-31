@@ -170,3 +170,21 @@ describe('BotTurnEntity, between bots', () => {
     ).toThrow('no longer has an account');
   });
 });
+
+describe('BotTurnEntity.queue as a steer', () => {
+  it('lets only a message of yours steer, never a routine run', () => {
+    const steer = {
+      organizationId: randomUUID(),
+      botId: randomUUID(),
+      requestedByUserId: randomUUID(),
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+      steer: true,
+    };
+    expect(BotTurnEntity.queue(steer).steer).toBe(true);
+    expect(() => BotTurnEntity.queue({ ...steer, origin: 'routine' })).toThrow(
+      'Only a message of yours steers',
+    );
+  });
+});

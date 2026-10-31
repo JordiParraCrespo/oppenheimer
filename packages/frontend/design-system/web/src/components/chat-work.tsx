@@ -1,8 +1,9 @@
 'use client';
 
 import { CpuIcon, LoaderIcon, SlidersHorizontalIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
+import { clipOutput } from '../internal/clip-output';
 import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 
@@ -13,11 +14,16 @@ import { cn } from '../lib/utils';
  * - `ToolCallGroup`: a settled run of calls folded into one verb summary
  *   ("Read 3 files, searched 2 patterns, ran 2 commands, 1 failed", the
  *   failure in red via `failed`); open, its `ToolCallRow`s hang from a
- *   hairline.
+ *   hairline. A run of read-only calls is the same fold with `summary`
+ *   "Explored" ("Exploring" while it runs) and its targets in `detail`
+ *   ("Read a.ts, b.ts · Searched foo"), subtle and cut to one line.
  * - `ToolCallRow`: one call, 28px: the glyph, the verb, the target in mono
  *   in full ink, then a mono meta (a line range, "14 results", "exit 1"
  *   in red with `tone="danger"`, a `DiffStat`). `output` makes the row a
  *   fold over the call's output on the terminal ground.
+ * - `ToolCallOutput`: a call's text output, compact: its first five lines,
+ *   a line too long to read cut to its head and tail, and "+N lines" under
+ *   it, which shows the whole output as it came.
  * - `ToolCallLive`: the call in flight, in place of the summary: a spinner,
  *   the verb and target breathing, the elapsed time.
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
@@ -27,6 +33,7 @@ import { cn } from '../lib/utils';
  */
 function ToolCallGroup({
   summary,
+  detail,
   failed,
   icon,
   defaultOpen = false,
@@ -34,6 +41,8 @@ function ToolCallGroup({
   children,
 }: {
   summary: React.ReactNode;
+  /** What the run acted on, after the summary in subtle ink, cut to the line ("Read a.ts · Searched foo"). */
+  detail?: React.ReactNode;
   /** "1 failed", in red after the summary. */
   failed?: React.ReactNode;
   icon?: React.ReactNode;
@@ -48,11 +57,11 @@ function ToolCallGroup({
       defaultOpen={defaultOpen}
       className={cn('flex flex-col text-[13.5px] text-fg-muted', className)}
     >
-      <FoldTrigger className="inline-flex items-center gap-1.75 self-start py-0.5">
-        <span aria-hidden className="flex w-4 justify-center [&_svg]:size-3.5">
+      <FoldTrigger className="inline-flex max-w-full items-center gap-1.75 self-start py-0.5">
+        <span aria-hidden className="flex w-4 shrink-0 justify-center [&_svg]:size-3.5">
           {icon ?? <SlidersHorizontalIcon />}
         </span>
-        <span>
+        <span className="shrink-0">
           {summary}
           {failed ? (
             <>
@@ -61,6 +70,7 @@ function ToolCallGroup({
             </>
           ) : null}
         </span>
+        {detail ? <span className="min-w-0 truncate text-fg-subtle">{detail}</span> : null}
       </FoldTrigger>
       <FoldPanel className="ml-1.75 flex flex-col border-l border-border-subtle pt-1 pb-0.5 pl-1.75">{children}</FoldPanel>
     </Fold>
@@ -117,6 +127,56 @@ function ToolCallRow({
         {output}
       </FoldPanel>
     </Fold>
+  );
+}
+
+type ToolCallOutputLabels = {
+  /** The control under a cut: how many more lines the whole output has. */
+  more: (count: number) => string;
+  /** The same control when every line is drawn but some were cut short. */
+  full: string;
+  less: string;
+};
+
+const TOOL_CALL_OUTPUT_LABELS: ToolCallOutputLabels = {
+  more: (count) => `+${count} ${count === 1 ? 'line' : 'lines'}`,
+  full: 'Show full lines',
+  less: 'Show less',
+};
+
+/** How many lines a call's output draws before "+N lines", as Codex's transcript caps a call. */
+const TOOL_CALL_OUTPUT_LINES = 5;
+
+function ToolCallOutput({
+  maxLines = TOOL_CALL_OUTPUT_LINES,
+  labels,
+  children,
+}: {
+  /** Lines drawn before the "+N lines" control. */
+  maxLines?: number;
+  labels?: Partial<ToolCallOutputLabels>;
+  /** The whole output, as text; the compact view clips it, the open one draws all of it. */
+  children: string;
+}) {
+  const label = { ...TOOL_CALL_OUTPUT_LABELS, ...labels };
+  const [expanded, setExpanded] = React.useState(false);
+  const clipped = clipOutput(children, maxLines);
+  const clips = clipped.hidden > 0 || clipped.cut;
+  const text = expanded || !clips ? children.replace(/\n$/, '') : clipped.lines.join('\n');
+  return (
+    <span data-slot="tool-call-output" className="flex flex-col">
+      <span>{text}</span>
+      {clips ? (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1.5 self-start rounded-xs font-sans text-[12px] text-term-dim outline-none hover:text-term-fg focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {expanded ? label.less : clipped.hidden > 0 ? label.more(clipped.hidden) : label.full}
+        </button>
+      ) : null}
+    </span>
   );
 }
 
@@ -180,4 +240,5 @@ function ReasoningRow({
   );
 }
 
-export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow };
+export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow };
+export type { ToolCallOutputLabels };

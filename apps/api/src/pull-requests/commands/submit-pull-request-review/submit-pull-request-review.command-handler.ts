@@ -1,9 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
+import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
 import { GithubErrors } from '../../../github/domain/github.errors';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
+import { requireApp } from '../../application/app-address.policy';
 import { SubmitPullRequestReviewCommand } from './submit-pull-request-review.command';
 
 const EVENTS = {
@@ -29,27 +30,27 @@ export class SubmitPullRequestReviewCommandHandler
   implements ICommandHandler<SubmitPullRequestReviewCommand, Submitted>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_WRITES)
+    private readonly writes: PullRequestWritePort,
   ) {}
 
   async execute({ scope, address, review }: SubmitPullRequestReviewCommand): Promise<Submitted> {
     // A review is made in the caller's name, which only the App's repositories take.
-    const app = this.access.requireApp(address);
-    await this.access.submitReview(scope, scope.userId, app, {
+    const app = requireApp(address);
+    await this.writes.submitReview(scope, scope.userId, app, {
       event: EVENTS[review.verdict],
       body: review.body,
       comments: review.comments,
     });
     if (review.verdict !== 'approve_and_merge') return { merged: false, autoMerge: false };
     try {
-      await this.access.merge(scope, scope.userId, app, 'squash');
+      await this.writes.merge(scope, scope.userId, app, 'squash');
       return { merged: true, autoMerge: false };
     } catch (error) {
       if (!(error instanceof AppError && error.code === GithubErrors.MERGE_REFUSED.code))
         throw error;
     }
-    const autoMerge = await this.access.enableAutoMerge(scope, scope.userId, app, 'squash');
+    const autoMerge = await this.writes.enableAutoMerge(scope, scope.userId, app, 'squash');
     return { merged: false, autoMerge };
   }
 }

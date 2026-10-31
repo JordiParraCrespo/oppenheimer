@@ -15,6 +15,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
+import { steerNote } from '../../turn';
 import { ClaudeBotEngine } from '../claude-bot-engine';
 import { BUILT_IN_TOOLS, DISALLOWED_TOOLS, GLM_BASE_URL } from '../claude-options';
 
@@ -332,6 +333,74 @@ describe('ClaudeBotEngine', () => {
       content: [{ type: 'text', text: 'Started it.' }],
       isError: false,
     });
+  });
+
+  it('hands the model what the person sent meanwhile with the call it rode, and reports it after that call', async () => {
+    const time: BotEngineTool = {
+      name: 'get_time',
+      description: 'The time',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: '13:37 UTC' }),
+    };
+    const steers = [{ id: 'message-1', text: 'Use Tokyo time instead.' }];
+    const waiting = [steers];
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      const result = await client.callTool({
+        name: 'get_time',
+        arguments: {},
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      // Claude Code names no tool use: nothing is taken that could not be reported.
+      await client.callTool({ name: 'get_time', arguments: {} });
+      modelRead = result;
+      await client.close();
+      yield assistant([
+        { type: 'tool_use', id: 'toolu_1', name: 'mcp__oppenheimer__get_time', input: {} },
+      ]);
+      yield toolResults([{ type: 'tool_result', tool_use_id: 'toolu_1', content: result.content }]);
+      yield success();
+    });
+    let asks = 0;
+
+    const events = await collect(
+      new ClaudeBotEngine().run(
+        request({
+          tools: [time],
+          steering: {
+            take: async () => {
+              asks += 1;
+              return waiting.shift() ?? [];
+            },
+          },
+        }),
+      ),
+    );
+
+    expect(asks).toBe(1);
+    expect(modelRead).toEqual({
+      content: [{ type: 'text', text: `13:37 UTC${steerNote(steers)}` }],
+      isError: false,
+    });
+    expect(
+      events.filter((event) => event.type.startsWith('tool.') || event.type === 'steered'),
+    ).toEqual([
+      { type: 'tool.started', callId: 'toolu_1', name: 'get_time', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'toolu_1',
+        name: 'get_time',
+        output: '13:37 UTC',
+        isError: false,
+      },
+      { type: 'steered', callId: 'toolu_1', steers },
+    ]);
   });
 
   it('keeps built-in tool names and reports their results', async () => {

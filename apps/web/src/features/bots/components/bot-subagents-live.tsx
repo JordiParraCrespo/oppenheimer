@@ -1,10 +1,10 @@
 import { Trace, TraceNote, TraceStep } from '@oppenheimer/design-system-web';
 import { Bot, Clock, LoaderCircle } from '@oppenheimer/design-system-web/icons';
+import { humaniseToolName } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { humaniseToolName } from '@/features/bots/lib/tool-activity';
 
 /** A child's glyph: waiting, at work, or ended (a bot, as its stored line draws it). */
 const GLYPH: Record<BotSubagentProgress['state'], ReactNode> = {

@@ -12,29 +12,13 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
+import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 
-/** What a tool call is, for the card it gets; Claude's tools are classified, not listed. */
-export type ChatToolKind =
-  | 'command'
-  | 'read'
-  | 'edit'
-  | 'write'
-  | 'search'
-  | 'web'
-  | 'todo'
-  | 'agent'
-  | 'plan'
-  | 'question'
-  | 'mcp'
-  | 'other';
-
-export type ChatTodoStatus = 'pending' | 'in_progress' | 'completed';
-
-export interface ChatTodo {
-  content: string;
-  status: ChatTodoStatus;
-}
+/** One item of the agent's task list: the chat module's, which the bots chat reads too. */
+export type ChatTodo = ChatItemTodo;
+export type ChatTodoStatus = ChatItemTodo['status'];
 
 /** One question `AskUserQuestion` puts to the person, as the agent wrote it. */
 export interface ChatQuestion {
@@ -61,8 +45,12 @@ export interface ChatToolCall {
   /** The tool's own name (`Bash`, `Edit`, `mcp__github__get_issue`). */
   name: string;
   kind: ChatToolKind;
+  /** The tool in words, for a call the chat has no verb for (`github · get_issue`). */
+  label: string;
   /** What it acted on, in a line: a path, a command, a pattern, a URL. */
   target: string | null;
+  /** A web call that opens a page by its URL rather than searching for words. */
+  opensPage: boolean;
   /** What it was asked to do in words, when it says (a command's description, a subagent's task). */
   description: string | null;
   /** `running` until its result is in the transcript. */
@@ -713,59 +701,23 @@ function typedPrompt(raw: string): string | null {
   return value;
 }
 
-const KINDS: Record<string, ChatToolKind> = {
-  Bash: 'command',
-  BashOutput: 'command',
-  KillShell: 'command',
-  Read: 'read',
-  NotebookRead: 'read',
-  Edit: 'edit',
-  MultiEdit: 'edit',
-  NotebookEdit: 'edit',
-  Write: 'write',
-  Grep: 'search',
-  Glob: 'search',
-  LS: 'search',
-  WebFetch: 'web',
-  WebSearch: 'web',
-  TodoWrite: 'todo',
-  Task: 'agent',
-  Agent: 'agent',
-  ExitPlanMode: 'plan',
-  AskUserQuestion: 'question',
-};
-
 function toolCall(block: Loose): ChatToolCall {
   const name = text(block.name) ?? 'tool';
   const input = record(block.input) ?? {};
-  const kind = KINDS[name] ?? (name.startsWith('mcp__') ? 'mcp' : 'other');
-  const field = (...keys: string[]) => {
-    for (const key of keys) {
-      const value = text(input[key]);
-      if (value) return value;
-    }
-    return null;
-  };
+  const { kind, label, target, opensPage } = classifyTool(name, input, 'agent');
   return {
     id: text(block.id) ?? name,
     name,
     kind,
-    target:
-      kind === 'command'
-        ? field('command', 'bash_id', 'shell_id')
-        : kind === 'search'
-          ? field('pattern', 'path')
-          : kind === 'web'
-            ? field('url', 'query')
-            : kind === 'agent'
-              ? field('subagent_type', 'description')
-              : field('file_path', 'notebook_path', 'path', 'url', 'query', 'command'),
-    description: field('description', 'prompt'),
+    label,
+    target,
+    opensPage,
+    description: fieldOf(input, ['description', 'prompt']),
     status: 'running',
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
-    plan: kind === 'plan' ? field('plan') : null,
+    plan: kind === 'plan' ? fieldOf(input, ['plan']) : null,
     questions: kind === 'question' ? questionsOf(input.questions) : null,
     answers: null,
     images: null,
@@ -871,16 +823,4 @@ function answersOf(output: string | null): Record<string, string> {
     if (question !== undefined && answer !== undefined) answers[question] = answer;
   }
   return answers;
-}
-
-function todosOf(value: unknown): ChatTodo[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((raw) => {
-    const todo = record(raw);
-    const content = text(todo?.content);
-    if (!content) return [];
-    const status: ChatTodoStatus =
-      todo?.status === 'completed' || todo?.status === 'in_progress' ? todo.status : 'pending';
-    return [{ content, status }];
-  });
 }

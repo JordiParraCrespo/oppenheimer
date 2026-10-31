@@ -3,6 +3,7 @@ import {
   addressFrom,
   addressKeyOf,
   addressOf,
+  appAddressOf,
   installationIdOf,
   isInstallationAddress,
 } from '../domain/repository-address.policy';
@@ -44,5 +45,17 @@ describe('a repository address at the edges', () => {
     expect(
       isInstallationAddress({ kind: 'installation', installationId: 'inst', githubRepoId: 7 }),
     ).toBe(true);
+  });
+
+  // Sessions and writes go through the App, which a token repository has none of.
+  it('narrows to the App, or answers the refusal a token address is owed', () => {
+    const app = { kind: 'installation' as const, installationId: 'inst', githubRepoId: 7 };
+
+    expect(appAddressOf(app)).toBe(app);
+    expect(appAddressOf({ kind: 'tokens', githubRepoId: 99 })).toEqual({
+      kind: 'refused',
+      error: expect.objectContaining({ code: 'GITHUB_022' }),
+      detail: 'Repository 99 is read through your own GitHub token.',
+    });
   });
 });

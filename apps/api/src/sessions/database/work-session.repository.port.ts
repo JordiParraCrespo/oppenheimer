@@ -4,22 +4,15 @@ import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
+import type { SessionListCursor } from '../domain/session-list-cursor.policy';
 import type { SessionFold } from '../domain/session-state.policy';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import type {
-  SessionEventSource,
-  WorkSessionEventEntity,
-} from '../domain/work-session-event.entity';
+import type { NewSessionEvent, WorkSessionEventEntity } from '../domain/work-session-event.entity';
 
-/** One entry a caller wants appended. `seq` is the control plane's to assign. */
-export interface NewSessionEvent {
-  idempotencyKey: string;
-  source: SessionEventSource;
-  kind: string;
-  payload?: unknown;
-  occurredAt?: Date;
-}
+/** Built in the domain (`session-log-entry.factory.ts`); named here for the port's callers. */
+/** The list's keyset position and its wire format live in `session-list-cursor.policy.ts`. */
+export type { NewSessionEvent, SessionListCursor };
 
 /**
  * What an append came back with, in the shape the link's `events.ack` needs.
@@ -41,16 +34,6 @@ export interface SessionCreateOutcome {
   session: WorkSessionEntity;
   created: boolean;
   refused: 'project-archived' | 'host-unpaired' | null;
-}
-
-/**
- * Where a keyset walk of the list stands: the sort it was issued for, the last
- * row's sort key as Postgres printed it, and the last row's id.
- */
-export interface SessionListCursor {
-  sort: SessionSortDto;
-  key: string;
-  id: string;
 }
 
 export interface SessionFilters {

@@ -157,7 +157,7 @@
             "type": "command",
             "command": ".agents/hooks/arch-check.sh",
             "timeout": 180,
-            "statusMessage": "Checking architecture boundaries..."
+            "statusMessage": "Checking architecture boundaries and layout of the packages you changed..."
           }
         ]
       }

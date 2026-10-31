@@ -60,6 +60,12 @@ export interface BotTurnProps {
   replyRequested: boolean;
   /** On the turn that delivers an answer, the turn it answers. */
   answersTurnId: string | null;
+  /**
+   * Sent as a steer: while it waits, the running turn of the same sender
+   * takes its message at its next tool call (`BotSteerPolicy`); one it
+   * never reached runs as the turn it is. Only a message of yours steers.
+   */
+  steer: boolean;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
@@ -141,6 +147,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     askedByTurnId?: string | null;
     replyRequested?: boolean;
     answersTurnId?: string | null;
+    steer?: boolean;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
@@ -152,6 +159,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         askedByTurnId: null,
         replyRequested: false,
         answersTurnId: null,
+        steer: false,
         ...props,
         origin: props.origin ?? 'message',
         sourceKey: props.sourceKey ?? null,
@@ -288,6 +296,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get answersTurnId(): string | null {
     return this.props.answersTurnId;
   }
+  get steer(): boolean {
+    return this.props.steer;
+  }
   get timeZone(): string | null {
     return this.props.timeZone;
   }
@@ -400,6 +411,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     }
     if (props.lane === 'bots' && props.chainId === null) {
       throw new ArgumentInvalidException('A turn a bot queued belongs to its chain');
+    }
+    if (props.steer && (props.lane !== 'owner' || props.origin !== 'message')) {
+      throw new ArgumentInvalidException('Only a message of yours steers');
     }
     if (props.answersTurnId && props.replyRequested) {
       throw new ArgumentInvalidException('An answer asks for no answer');

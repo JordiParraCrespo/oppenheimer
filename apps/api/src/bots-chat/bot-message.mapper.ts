@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { BotSteer } from '@oppenheimer/backend-agents';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_EVENT_OUTCOMES,
@@ -20,6 +21,7 @@ import {
   botMailDraftSchema,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
+import type { BotSteerTaken } from './database/bot-turn.repository.port';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
@@ -123,6 +125,15 @@ export class BotMessageMapper
       turnEnded:
         message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
+  }
+
+  /**
+   * A steer a running turn took, as its engine hands it to the model: its
+   * words, under the stored message's id, which `steered` hands back so the
+   * transcript can place that message.
+   */
+  toEngineSteer(taken: BotSteerTaken): BotSteer {
+    return { id: taken.messageId, text: taken.text };
   }
 }
 
@@ -292,6 +303,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+      ...(typeof raw.approvalId === 'string' && { approvalId: raw.approvalId }),
     };
   }
   if (raw.kind === 'question') {

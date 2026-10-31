@@ -39,6 +39,12 @@ feature lands.
       and binds the channel to the DTLS fingerprint that offer named; a
       watcher's input is dropped by the runner on the channel as on the link,
       and nothing listens for a peer it was not told about
+- [ ] F30 the host proves itself on every direct channel (31): before a byte
+      crosses it, it signs both DTLS fingerprints and the browser's nonce with
+      its pairing key (`ProveDirect`, which signs nothing else), and the
+      browser checks the signature against its own peer connection and the key
+      it pinned for the host. A control plane that rewrites the signalling
+      cannot sit in the middle of a direct path
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
