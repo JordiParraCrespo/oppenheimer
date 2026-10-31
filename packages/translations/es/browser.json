@@ -462,7 +462,8 @@
     "code": "Código: {{code}}",
     "startFailure": {
       "codes": {
-        "SESS_002": "Este host crea sesiones con un solo repositorio."
+        "SESS_002": "Este host crea sesiones con un solo repositorio.",
+        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
       },
       "details": "Detalles del host: {{detail}}"
     }
@@ -664,7 +665,11 @@
           "shell": "Iniciar shell"
         }
       },
-      "progressFailed": "No se pudo cargar el progreso del inicio."
+      "progressFailed": "No se pudo cargar el progreso del inicio.",
+      "codexEnvironment": {
+        "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos que lista codex cloud. Los entornos creados en Configuración de ChatGPT → Codex Cloud todavía no son accesibles para la CLI, así que uno de ahí con el nombre de este repositorio no se puede usar desde aquí. Ejecuta codex cloud en el host para ver los entornos que puede usar.",
+        "link": "Abrir la configuración de Codex Cloud"
+      }
     },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",

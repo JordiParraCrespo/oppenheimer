@@ -310,7 +310,8 @@
   "code": "Código: {{code}}",
   "startFailure": {
     "codes": {
-      "SESS_002": "Este host crea sesiones con un solo repositorio."
+      "SESS_002": "Este host crea sesiones con un solo repositorio.",
+      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
     },
     "details": "Detalles del host: {{detail}}"
   }
