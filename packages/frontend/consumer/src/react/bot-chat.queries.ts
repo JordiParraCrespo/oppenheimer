@@ -5,12 +5,21 @@ import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
+  BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
   BotRoomLeft,
   BotTurnEntity,
   BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
+import {
+  BotLiveApprovals,
+  type BotResolvedApprovals,
+  botResolvedApprovals,
+  NO_RESOLVED_APPROVALS,
+  noteResolvedApproval,
+  withoutClosedApproval,
+} from '../modules/bots/live-approvals';
 import {
   type BotLiveSubagents,
   type BotSubagentFrames,
@@ -264,6 +273,8 @@ export interface BotLive {
   retrying: BotLiveRetries;
   /** Where each child of a running `delegate` call is, by the call's id. */
   subagents: BotLiveSubagents;
+  /** Cards decided while the chat is open, by any tab or device, whose line is not stored yet. */
+  resolved: BotResolvedApprovals;
 }
 
 /**
@@ -279,6 +290,12 @@ export interface BotLive {
  * The conversation is read again the moment a message is stored or a turn
  * moves, and each time the stream comes up (the first connect included) for
  * what the gap may have missed.
+ *
+ * Needs input cards: one some tab or device decided (`approval_resolved`)
+ * leaves the card at once, before the approvals are read again, and its
+ * decided line is drawn until the stored one lands ({@link botResolvedApprovals}).
+ * One raised while the text is half a line waits for the line to end, or
+ * 600 ms ({@link BotApprovalHold}).
  */
 export function useBotLive(id: string): BotLive {
   const app = useConsumerApp();
@@ -292,6 +309,10 @@ export function useBotLive(id: string): BotLive {
   const [waits, setWaits] = useState<{ id: string; retries: BotLiveRetries }>({
     id,
     retries: NO_BOT_RETRIES,
+  });
+  const [decided, setDecided] = useState<{ id: string; resolved: BotResolvedApprovals }>({
+    id,
+    resolved: NO_RESOLVED_APPROVALS,
   });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
@@ -327,6 +348,37 @@ export function useBotLive(id: string): BotLive {
       });
     const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
       change((state) => ({ ...state, buffers: next(state.buffers) }));
+    // A decided card is retired for good the first time a read holds its line.
+    const retireStored = (read: BotConversationEntity | undefined) =>
+      setDecided((current) => {
+        if (current.id !== id || !read) return current;
+        const resolved = botResolvedApprovals(current.resolved, read);
+        return resolved === current.resolved ? current : { id, resolved };
+      });
+    const conversationKey = JSON.stringify(key);
+    const offStored = queryClient.getQueryCache().subscribe((cached) => {
+      if (cached.type !== 'updated' || JSON.stringify(cached.query.queryKey) !== conversationKey) {
+        return;
+      }
+      retireStored(cached.query.state.data as BotConversationEntity | undefined);
+    });
+    const approvals = new BotLiveApprovals({
+      readCards: () => void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
+      closeCard: (approvalId) =>
+        queryClient.setQueryData<BotApprovalEntity | null>(botsKeys.pendingApproval(id), (card) =>
+          withoutClosedApproval(card, approvalId),
+        ),
+      keepLine: (frame) =>
+        setDecided((current) => {
+          const noted = noteResolvedApproval(
+            current.id === id ? current.resolved : NO_RESOLVED_APPROVALS,
+            frame,
+          );
+          const read = queryClient.getQueryData<BotConversationEntity>(key);
+          const resolved = read ? botResolvedApprovals(noted, read) : noted;
+          return current.id === id && resolved === current.resolved ? current : { id, resolved };
+        }),
+    });
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
@@ -339,36 +391,37 @@ export function useBotLive(id: string): BotLive {
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
-      if (event.type === 'retrying') {
-        retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
-        return;
+      if (approvals.see(event)) return;
+      switch (event.type) {
+        case 'retrying':
+          retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
+          return;
+        case 'text':
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          update((buffers) => appendBotText(buffers, event.turnId, event.text));
+          return;
+        case 'subagents':
+          change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
+          return;
+        case 'question':
+          void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
+          return;
+        case 'message':
+        case 'turn': {
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          const ended =
+            event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
+          void refetchChat(queryClient, id, ended);
+          return;
+        }
       }
-      if (event.type === 'text') {
-        retry((retries) => clearBotRetry(retries, event.turnId));
-        update((buffers) => appendBotText(buffers, event.turnId, event.text));
-        return;
-      }
-      if (event.type === 'subagents') {
-        change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
-        return;
-      }
-      if (event.type === 'approval') {
-        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
-        return;
-      }
-      if (event.type === 'question') {
-        void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
-        return;
-      }
-      retry((retries) => clearBotRetry(retries, event.turnId));
-      const ended =
-        event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
-      void refetchChat(queryClient, id, ended);
     });
     stream.open();
     return () => {
       offStatus();
       offEvent();
+      offStored();
+      approvals.dispose();
       stream.dispose();
     };
   }, [app, queryClient, id]);
@@ -378,5 +431,9 @@ export function useBotLive(id: string): BotLive {
     text: botLiveText(mine ? streamed.buffers : NO_BOT_TEXT, conversation),
     retrying: botLiveRetries(waits.id === id ? waits.retries : NO_BOT_RETRIES, conversation),
     subagents: botLiveSubagents(mine ? streamed.frames : NO_BOT_SUBAGENTS, conversation),
+    resolved: botResolvedApprovals(
+      decided.id === id ? decided.resolved : NO_RESOLVED_APPROVALS,
+      conversation,
+    ),
   };
 }

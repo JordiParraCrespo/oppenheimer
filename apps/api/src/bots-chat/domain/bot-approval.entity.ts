@@ -8,12 +8,13 @@ import {
 import {
   BOT_APPROVAL_NOTE_MAX,
   BOT_APPROVAL_STATUSES,
+  type BotApprovalDecision,
   type BotApprovalReach,
   type BotApprovalStatus,
   type Scope,
 } from '@oppenheimer/shared';
 import { BotToolPermissionEntity, type BotToolSubject } from './bot-tool-permission.entity';
-import { reachesFor } from './bot-tool-permission.policy';
+import { decisionsFor, reachesFor } from './bot-tool-permission.policy';
 import { BotApprovalChangedDomainEvent } from './events/bot-approval-changed.domain-event';
 
 export interface BotApprovalProps {
@@ -167,6 +168,10 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
       { name: this.props.tool, asks: true, perCallOnly: this.props.perCallOnly },
       this.props.subject,
     );
+  }
+  /** What the card offers, in order (`decisionsFor`): the only decisions it accepts. */
+  get availableDecisions(): BotApprovalDecision[] {
+    return decisionsFor(this.reaches);
   }
   get note(): string | null {
     return this.props.note;

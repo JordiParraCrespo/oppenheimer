@@ -10,6 +10,8 @@ import type { BotTurnEntity } from '../domain/bot-turn.entity';
 export interface BotApprovalEffects {
   /** The bot's turn that reports back, opened by the decision's event. */
   continuation?: { turn: BotTurnEntity; opening: BotMessageEntity };
+  /** A no that stops the turn: its line in the chat, outside any turn, and no turn to report back. */
+  line?: BotMessageEntity;
   /** A yes: the `run-approved-call` job, with who decided, by name, for the event. */
   runCall?: { by: string };
   /**

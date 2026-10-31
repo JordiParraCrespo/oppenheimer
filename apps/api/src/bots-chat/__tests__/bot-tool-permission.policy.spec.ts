@@ -1,6 +1,7 @@
 import { BotPermissionRuleEntity } from '../domain/bot-permission-rule.entity';
 import { BotToolPermissionEntity } from '../domain/bot-tool-permission.entity';
 import {
+  decisionsFor,
   grantFor,
   NO_PERMISSIONS,
   permissionsOf,
@@ -76,6 +77,26 @@ describe('grantFor', () => {
     expect(
       grantFor(settings({ tool: merge.name, grant: 'acme/docs' }), merge, repo('acme/docs')),
     ).toBeNull();
+  });
+});
+
+describe('decisionsFor', () => {
+  // The card draws exactly what it is offered: an "Always allow for …" with no subject would name nothing.
+  it('offers a yes for the subject only when the call names one, and never for a per-call tool', () => {
+    expect(decisionsFor(reachesFor(comment, repo('acme/docs')))).toEqual([
+      'approve',
+      'approve_for_subject',
+      'approve_always',
+      'deny',
+      'stop',
+    ]);
+    expect(decisionsFor(reachesFor(comment, null))).toEqual([
+      'approve',
+      'approve_always',
+      'deny',
+      'stop',
+    ]);
+    expect(decisionsFor(reachesFor(merge, repo('acme/docs')))).toEqual(['approve', 'deny', 'stop']);
   });
 });
 
