@@ -1,3 +1,4 @@
+import { leaveFor } from '../lib/leave';
 import { openPendingTab } from '../lib/pending-tab';
 
 /**
@@ -36,7 +37,7 @@ export function useOpenMinted(
       if (options.target === 'self') {
         const urlFor = options.urlFor ?? ((url: string) => url);
         mint.mutate(undefined, {
-          onSuccess: ({ url }) => window.location.assign(urlFor(url)),
+          onSuccess: ({ url }) => leaveFor(urlFor(url)),
           onError: () => {},
         });
         return;
