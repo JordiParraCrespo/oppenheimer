@@ -6,11 +6,6 @@ import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
  * cloud session's at its vendor now (`product/next-steps/cloud-agents.md`).
  */
 export const CloudAgentErrors = {
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'CLOUD_AGENTS_002',
-    message: 'Cloud agents belong to an organization',
-    httpStatus: 400,
-  },
   /** No `CLOUD_AGENTS_KEY` on this server, so no vendor key can be kept. */
   NOT_CONFIGURED: {
     code: 'CLOUD_AGENTS_003',

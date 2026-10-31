@@ -47,7 +47,7 @@ describe('PutInboxMarkCommandHandler', () => {
   });
 
   it.each([
-    ['INBOX_001', 'a request in no workspace', { organizationId: null }],
+    ['TENANT_001', 'a request in no workspace', { organizationId: null }],
     ['INBOX_002', 'a key no occurrence has', { itemKey: 'not/a key' }],
     [
       'INBOX_003',

@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { InboxMarkRepositoryPort } from '../../database/inbox-mark.repository.port';
 import { InboxErrors } from '../../domain/inbox.errors';
@@ -19,7 +20,7 @@ export class PutInboxMarkCommandHandler implements ICommandHandler<PutInboxMarkC
 
   async execute(command: PutInboxMarkCommand): Promise<string> {
     const { organizationId, userId, itemKey, mark, until } = command;
-    if (!organizationId) throw new AppError(InboxErrors.NO_ACTIVE_ORGANIZATION);
+    requireOrganization(organizationId);
     const now = new Date();
     const problem = inboxMarkProblem({ itemKey, mark, until }, now);
     if (problem === 'item_key') {

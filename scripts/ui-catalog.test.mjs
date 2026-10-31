@@ -1,85 +1,158 @@
 /**
- * The catalog drift check, against source text. The repository passing says
- * only that today's catalog and exports agree; these are the drifts that must
- * fail and the shapes that must not.
+ * The catalog drift check. The repository passing says only that today's
+ * catalog and exports agree; these are the drifts that must fail and the
+ * shapes that must not. The export side runs the compiler over small
+ * fixture packages; the catalog side is the pure comparison.
  */
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
-import { catalogProblems, sourceExports } from './ui-catalog.mjs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { after, test } from 'node:test';
+import {
+  catalogProblems,
+  createCatalogProgram,
+  publicExports,
+  uncataloguedReason,
+} from './ui-catalog.mjs';
 
-const designSystem = `
-export type { BadgeProps } from './components/badge';
-export { Badge, badgeVariants } from './components/badge';
-export {
-  Dialog,
-  DialogBody,
-  DialogContent,
-} from './components/dialog';
-export { useNow } from './hooks/use-now';
-`;
+const dirs = [];
+after(() => {
+  for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+});
+function fixture(files) {
+  const root = mkdtempSync(join(tmpdir(), 'oppenheimer-ui-catalog-'));
+  dirs.push(root);
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), text);
+  }
+  return root;
+}
+
 const table = (rows) =>
   [
     '| Need | Use | Not |',
     '| --- | --- | --- |',
     ...rows.map(([need, use, not]) => `| ${need} | ${use} | ${not} |`),
   ].join('\n');
-const run = ({ rows, kit = [], uncatalogued = new Map() }) =>
+const modules = {
+  'badge.tsx': 'export function Badge() { return null; }\n',
+  'dialog.tsx':
+    '// uncatalogued: a reason\nexport function Dialog() { return null; }\nexport function DialogBody() { return null; }\n',
+};
+const designSystem = new Map([
+  ['Badge', 'badge.tsx'],
+  ['Dialog', 'dialog.tsx'],
+  ['DialogBody', 'dialog.tsx'],
+  ['badgeVariants', 'badge.tsx'],
+]);
+const run = (rows, { kit = [], sources = modules } = {}) =>
   catalogProblems({
     docs: [{ file: 'catalog.md', text: table(rows) }],
     designSystem,
     kit: new Set(kit),
-    uncatalogued,
+    readModule: (file) => sources[file],
   });
+const badge = ['Lifecycle state', '`Badge` with `active`', '`secondary`'];
+const dialog = ['A tall dialog', '`DialogBody` around its middle', '`overflow-y-auto`'];
 
-const covered = [
-  ['Lifecycle state', '`Badge` with `active`', '`secondary`'],
-  ['A tall dialog', '`DialogBody` around its middle', '`overflow-y-auto` on `DialogContent`'],
-];
-
-test('a catalog that names exported components and covers every module passes', () => {
-  assert.deepEqual(run({ rows: covered }), []);
+test('rows that name public exports, and a marked module, pass', () => {
+  assert.deepEqual(run([badge]), []);
 });
 
 test('a row whose component is not exported fails on its line', () => {
-  const problems = run({ rows: [...covered, ['A fold', '`Collapsible`', 'a chevron']] });
+  const problems = run([badge, ['A fold', '`Collapsible`', 'a chevron']]);
   assert.equal(problems.length, 1);
-  assert.match(problems[0], /^catalog\.md:5: `Collapsible` is not exported/);
+  assert.match(problems[0], /^catalog\.md:4: `Collapsible` is not a public export/);
 });
 
-test('a component the kit exports, or a part of a kit compound, is a valid row', () => {
-  const kit = sourceExports(
-    'export const QueryState = Object.assign(QueryStateRoot, {\n  Pending: QueryStatePending,\n  Error,\n});',
-  );
-  const rows = [...covered, ['A read', "the kit's `QueryState`: `Pending`, `Error`", 'a ternary']];
-  assert.deepEqual(run({ rows, kit: [...kit] }), []);
-});
-
-test('only the Use column is checked: a rival in the Not column need not exist', () => {
-  const rows = [...covered, ['A note', '`Badge`', 'a hand-built `Banner`']];
-  assert.deepEqual(run({ rows }), []);
-});
-
-test('a design-system module no row names fails, unless UNCATALOGUED gives a reason', () => {
-  const rows = [covered[0]];
+test('a module named only in a Not column, or in prose, has no row and fails', () => {
+  const sources = { ...modules, 'dialog.tsx': modules['dialog.tsx'].replace(/^\/\/.*\n/, '') };
+  const notOnly = ['A note', '`Badge`', 'a `Dialog` of `div`s'];
+  const problems = run([notOnly], { sources });
+  assert.equal(problems.length, 1);
   assert.match(
-    run({ rows })[0],
-    /^\.\/components\/dialog \(Dialog, DialogBody, DialogContent\): exported/,
+    problems[0],
+    /^dialog\.tsx \(Dialog, DialogBody\): exported by the design system but no catalog row/,
   );
-  const uncatalogued = new Map([['./components/dialog', 'a reason']]);
-  assert.deepEqual(run({ rows, uncatalogued }), []);
 });
 
-test('one part named covers its module; hooks and type exports need no row', () => {
-  assert.deepEqual(run({ rows: [covered[0], ['A dialog', '`Dialog`', 'a div']] }), []);
+test('one part named in a Use column covers its module; lower-case exports need no row', () => {
+  const sources = { ...modules, 'dialog.tsx': modules['dialog.tsx'].replace(/^\/\/.*\n/, '') };
+  assert.deepEqual(run([badge, dialog], { sources }), []);
 });
 
-test('a skip-list entry goes stale once its module has a row or leaves the index', () => {
-  const uncatalogued = new Map([
-    ['./components/badge', 'a reason'],
-    ['./components/gone', 'a reason'],
-  ]);
-  const problems = run({ rows: covered, uncatalogued });
-  assert.equal(problems.length, 2);
-  assert.match(problems[0], /\.\/components\/badge has a catalog row now/);
-  assert.match(problems[1], /\.\/components\/gone, which the index no longer exports/);
+test('a marker on a module that has a row is stale, and an empty reason fails', () => {
+  assert.match(
+    run([badge, dialog])[0],
+    /^dialog\.tsx: has a catalog row, so its `\/\/ uncatalogued:` marker is stale/,
+  );
+  const sources = { ...modules, 'dialog.tsx': modules['dialog.tsx'].replace('a reason', '') };
+  assert.match(run([badge], { sources })[0], /^dialog\.tsx: `\/\/ uncatalogued:` needs a reason/);
+});
+
+test('the marker is read from the top of the module only', () => {
+  assert.equal(uncataloguedReason("'use client';\n// uncatalogued: why\n"), 'why');
+  assert.equal(uncataloguedReason(`${'\n'.repeat(20)}// uncatalogued: why\n`), null);
+});
+
+test('exports resolve through the barrels: export *, type-only skipped, compound parts kept', () => {
+  const root = fixture({
+    'ds/src/index.ts':
+      "export { Badge } from './components/badge';\nexport type { BadgeProps } from './components/badge';\nexport * from './more';\n",
+    'ds/src/components/badge.tsx':
+      'export type BadgeProps = {};\nexport function Badge() { return null; }\n',
+    'ds/src/more.ts': "export { Chip } from './components/chip';\n",
+    'ds/src/components/chip.tsx': 'export function Chip() { return null; }\n',
+    'kit/src/index.ts': "export * from './layout';\nexport * as format from './format';\n",
+    'kit/src/layout/index.ts': "export { QueryState } from './query-state';\n",
+    'kit/src/layout/query-state.tsx':
+      'function Root() { return null; }\nfunction Pending() { return null; }\nexport const QueryState = Object.assign(Root, { Pending, Data: Pending });\nexport function Hidden() { return null; }\n',
+    'kit/src/format.ts': 'export const age = 1;\n',
+  });
+  const { designSystem: ds, kit } = publicExports(
+    join(root, 'ds/src/index.ts'),
+    join(root, 'kit/src/index.ts'),
+  );
+  assert.deepEqual([...ds.keys()].sort(), ['Badge', 'Chip']);
+  assert.match(ds.get('Chip'), /components\/chip\.tsx$/);
+  assert.ok(kit.has('QueryState') && kit.has('Pending') && kit.has('Data') && kit.has('format'));
+  assert.ok(!kit.has('Hidden'), 'exported by its file but not by the barrel');
+});
+
+test('a kit component its file exports but the barrel does not fails its row', () => {
+  const root = fixture({
+    'ds/src/index.ts': "export { Badge } from './badge';\n",
+    'ds/src/badge.tsx': 'export function Badge() { return null; }\n',
+    'kit/src/index.ts': "export * from './forms';\n",
+    'kit/src/forms/index.ts': "export { FieldNote } from './field-note';\n",
+    'kit/src/forms/field-note.tsx': 'export function FieldNote() { return null; }\n',
+    'kit/src/forms/error-alert.tsx': 'export function ErrorAlert() { return null; }\n',
+  });
+  const exports = publicExports(join(root, 'ds/src/index.ts'), join(root, 'kit/src/index.ts'));
+  const problems = catalogProblems({
+    docs: [
+      {
+        file: 'catalog.md',
+        text: table([badge, ['A failure', "the kit's `ErrorAlert`", 'a div']]),
+      },
+    ],
+    ...exports,
+    readModule: () => '',
+  });
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /^catalog\.md:4: `ErrorAlert` is not a public export/);
+});
+
+test('the catalog program reads only the owned directories; a file outside them is an empty module', () => {
+  const root = fixture({
+    'own/src/index.ts':
+      "export { Badge } from './badge';\nexport { Outside } from '../../other/outside';\n",
+    'own/src/badge.tsx': 'export function Badge() { return null; }\n',
+    'other/outside.ts': 'export function Outside() { return null; }\n',
+  });
+  const program = createCatalogProgram([join(root, 'own/src/index.ts')], [join(root, 'own/src')]);
+  assert.match(program.getSourceFile(join(root, 'own/src/badge.tsx')).text, /function Badge/);
+  assert.equal(program.getSourceFile(join(root, 'other/outside.ts')).text, 'export {};');
 });

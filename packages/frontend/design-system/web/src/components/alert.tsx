@@ -1,3 +1,4 @@
+// uncatalogued: the primitive under the kit's ErrorAlert and Callout; the catalog's rows name those
 import { cva } from "class-variance-authority";
 import {
   CircleAlert,

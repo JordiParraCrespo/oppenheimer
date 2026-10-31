@@ -10,7 +10,7 @@ import type { RefusalReader, UpstreamLimiter } from './upstream-limiter';
 export type GoogleBucket = 'project' | `connection:${string}`;
 
 /** Google's per-project quota: every connected account draws on it. */
-export const GOOGLE_PROJECT_BUCKET: GoogleBucket = 'project';
+const GOOGLE_PROJECT_BUCKET: GoogleBucket = 'project';
 
 /** The buckets a call made with a connection's grant counts against. */
 export function googleBucketsOf(connectionId: string): GoogleBucket[] {

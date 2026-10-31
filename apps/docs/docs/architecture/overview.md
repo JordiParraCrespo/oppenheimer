@@ -8,13 +8,13 @@ Oppenheimer follows a monorepo architecture with clear separation of concerns.
 
 ## Backend
 
-The API (`apps/api`) is built with NestJS and consumes 5 reusable backend packages from `packages/backend/`:
+The API (`apps/api`) is built with NestJS and consumes the reusable backend packages from `packages/backend/`:
 
 - **Authentication**: Better Auth (email/password + Google/GitHub OAuth), cookie sessions
 - **Authorization**: CASL (role-based + attribute-based)
 - **Database**: PostgreSQL with TypeORM
 - **Caching**: Redis via [`@oppenheimer/backend-cache`](./backend-packages#oppenheimerbackend-cache)
-- **Queues**: BullMQ via [`@oppenheimer/backend-queue`](./backend-packages#oppenheimerbackend-queue)
+- **Queues**: BullMQ, registered in the API's `queue` module, with a Bull Board dashboard ([Queues](./backend-packages#queues))
 - **Email**: Pluggable with React Email templates via [`@oppenheimer/backend-email`](./backend-packages#oppenheimerbackend-email)
 - **LLM calls**: Pluggable (OpenRouter / Together / Anthropic / OpenAI-compatible) via [`@oppenheimer/backend-llm`](./backend-packages#oppenheimerbackend-llm)
 - **Bot turns**: Claude Agent SDK (Anthropic, GLM) and OpenAI Agents SDK behind one port via [`@oppenheimer/backend-agents`](./backend-packages#oppenheimerbackend-agents)
