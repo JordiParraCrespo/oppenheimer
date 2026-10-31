@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestDirectoryPort } from '../../../github/application/pull-request-directory.port';
+import type { PullRequestReadPort } from '../../../github/application/pull-request-read.port';
+import { PULL_REQUEST_DIRECTORY, PULL_REQUEST_READS } from '../../../github/github.di-tokens';
 import { CiFindingMapper } from '../../ci-finding.mapper';
 import type { CiFindingRepositoryPort } from '../../database/ci-finding.repository.port';
 import type { PullRequestDetailResponseDto } from '../../dtos/pull-request.response.dto';
@@ -18,8 +19,10 @@ export class FindPullRequestQueryHandler
   implements IQueryHandler<FindPullRequestQuery, PullRequestDetailResponseDto>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_READS)
+    private readonly reads: PullRequestReadPort,
+    @Inject(PULL_REQUEST_DIRECTORY)
+    private readonly directory: PullRequestDirectoryPort,
     private readonly mapper: PullRequestMapper,
     @Inject(CI_FINDING_REPOSITORY) private readonly findings: CiFindingRepositoryPort,
     private readonly findingMapper: CiFindingMapper,
@@ -27,8 +30,8 @@ export class FindPullRequestQueryHandler
 
   async execute({ scope, address }: FindPullRequestQuery): Promise<PullRequestDetailResponseDto> {
     const [snapshot, viewerLogin] = await Promise.all([
-      this.access.pullRequest(scope, address),
-      this.access.viewerLogin(scope),
+      this.reads.pullRequest(scope, address),
+      this.directory.viewerLogin(scope),
     ]);
     const findings = await this.findings.findForHead(scope, {
       githubRepoId: address.githubRepoId,

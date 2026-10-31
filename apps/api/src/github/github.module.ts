@@ -8,7 +8,11 @@ import { GithubTokenResolver } from './application/github-token.resolver';
 import { GithubUserGrantResolver } from './application/github-user-grant.resolver';
 import { InstallStateResolver } from './application/install-state.resolver';
 import { IssueAccessResolver } from './application/issue-access.resolver';
-import { PullRequestAccessResolver } from './application/pull-request-access.resolver';
+import { PullRequestDirectoryResolver } from './application/pull-request-directory.resolver';
+import { PullRequestListingResolver } from './application/pull-request-listing.resolver';
+import { PullRequestReadResolver } from './application/pull-request-read.resolver';
+import { PullRequestSnapshotResolver } from './application/pull-request-snapshot.resolver';
+import { PullRequestWriteResolver } from './application/pull-request-write.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { AddGithubTokenCommandHandler } from './commands/add-github-token/add-github-token.command-handler';
 import { AddGithubTokenHttpController } from './commands/add-github-token/add-github-token.http.controller';
@@ -48,7 +52,10 @@ import {
   GITHUB_TOKENS,
   GITHUB_USER_GRANT_REPOSITORY,
   ISSUE_ACCESS,
-  PULL_REQUEST_ACCESS,
+  PULL_REQUEST_DIRECTORY,
+  PULL_REQUEST_LISTINGS,
+  PULL_REQUEST_READS,
+  PULL_REQUEST_WRITES,
   REPOSITORY_ACCESS,
   USER_TOKEN_SEALER,
 } from './github.di-tokens';
@@ -133,7 +140,10 @@ const adapters: Provider[] = [
   { provide: GITHUB_USER_GRANT_REPOSITORY, useClass: GithubUserGrantRepository },
   { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
   { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
-  { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
+  { provide: PULL_REQUEST_DIRECTORY, useClass: PullRequestDirectoryResolver },
+  { provide: PULL_REQUEST_LISTINGS, useClass: PullRequestListingResolver },
+  { provide: PULL_REQUEST_READS, useClass: PullRequestReadResolver },
+  { provide: PULL_REQUEST_WRITES, useClass: PullRequestWriteResolver },
   { provide: GITHUB_ISSUES, useClass: GithubIssuesAdapter },
   { provide: ISSUE_ACCESS, useClass: IssueAccessResolver },
   { provide: GITHUB_TOKEN_REPOSITORY, useClass: GithubTokenRepository },
@@ -145,6 +155,8 @@ const adapters: Provider[] = [
   InstallStateResolver,
   GithubUserGrantResolver,
   GithubTokenResolver,
+  // One fill per snapshot key, whether the queue, the figures or one pull request's screen asks.
+  PullRequestSnapshotResolver,
 ];
 
 /**
@@ -179,11 +191,18 @@ const adapters: Provider[] = [
     ...adapters,
     ...InboundEventsModule.contributeSources([GithubEventSource]),
   ],
-  // `REPOSITORY_ACCESS`, `PULL_REQUEST_ACCESS` and `ISSUE_ACCESS`, and nothing else. The GitHub
+  // `REPOSITORY_ACCESS`, the four `PULL_REQUEST_*` doors and `ISSUE_ACCESS`, and nothing else. The GitHub
   // client and the unscoped installation lookup are this module's own: exporting
   // them is how `sessions/` and `relay/` would end up minting with GitHub's
   // numeric id, past the port that translates a checkout's uuid and checks the
   // installation is usable — and how a user token would leave this module.
-  exports: [REPOSITORY_ACCESS, PULL_REQUEST_ACCESS, ISSUE_ACCESS],
+  exports: [
+    REPOSITORY_ACCESS,
+    PULL_REQUEST_DIRECTORY,
+    PULL_REQUEST_LISTINGS,
+    PULL_REQUEST_READS,
+    PULL_REQUEST_WRITES,
+    ISSUE_ACCESS,
+  ],
 })
 export class GithubModule {}
