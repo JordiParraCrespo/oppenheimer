@@ -2,10 +2,10 @@
 
 import type { Query, QueryClient } from '@tanstack/query-core';
 import { CORE_CONFIG } from '../config';
+import { capabilitiesKeys } from './capabilities.queries';
+import { featureFlagKeys } from './feature-flags.queries';
 import { PERSIST_META } from './persist-meta';
 import { authKeys } from './query-keys';
-import { userSettingsKeys } from './user-settings.queries';
-import { usersKeys } from './users.queries';
 
 /**
  * How long a restored cache entry stays usable before the persister throws it
@@ -15,19 +15,24 @@ import { usersKeys } from './users.queries';
 export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
- * Features whose queries never reach storage, whatever the product: the
- * session, the user's settings, and the signed-in user, whose record carries
- * their email and name (`useMyPermissions` keeps its read with
- * {@link PERSIST_META}, so the nav does not wait on a warm start). A product
- * adds its sensitive features
- * (sessions, hosts, a profile) through `nonPersistedFeatures` when the app
- * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
- * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
+ * Features whose queries reach storage, whatever the product: the flags the
+ * console renders with before the API answers (a failed fetch keeps the last
+ * good set), and the deployment's capabilities. Both are plain JSON, which is
+ * what a restore gives back: an entity class comes back as a plain object,
+ * its `Date`s as strings, so a feature whose reads are entities stays out.
+ * The cache's owner marker ({@link cacheOwnerKey}) is always kept.
+ *
+ * Everything else stays out of storage unless it says otherwise: a product
+ * adds its plain-data features through `persistedFeatures` when the app
+ * builds its persist options (`CONSUMER_PERSISTED_FEATURES` in
+ * `@oppenheimer/frontend-consumer` is the list `apps/web` passes), and one
+ * read inside any feature can opt in with {@link PERSIST_META} (the signed-in
+ * user's permissions, so the nav does not wait on a warm start). A feature
+ * added tomorrow is not stored until someone decides it should be.
  */
-const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [
-  authKeys.all[0],
-  userSettingsKeys.all[0],
-  usersKeys.all[0],
+const KERNEL_PERSISTED_FEATURES: readonly string[] = [
+  featureFlagKeys.all[0],
+  capabilitiesKeys.all[0],
 ];
 
 function optsIn(query: Query): boolean {
@@ -35,8 +40,8 @@ function optsIn(query: Query): boolean {
 }
 
 export interface QueryPersistConfig {
-  /** Feature key prefixes (the first segment of a query key) to keep out of storage. */
-  nonPersistedFeatures?: readonly string[];
+  /** Feature key prefixes (the first segment of a query key) whose plain-data reads may be stored. */
+  persistedFeatures?: readonly string[];
 }
 
 /**
@@ -44,26 +49,24 @@ export interface QueryPersistConfig {
  * fetch would replay a failure the user has already moved past. The feature
  * segment is the first entry of every key factory
  * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
- * per-feature deny-list possible.
+ * per-feature allow-list possible.
  *
- * A denied feature may hold one read that is safe to keep — counts and dates
- * inside a feature that otherwise holds private code. That read says so
- * itself, with `meta: PERSIST_META`, rather than being moved to a key of
- * its own: splitting one feature's key so a storage policy could see the
- * halves left two roots for every later invalidation to remember.
- *
- * The default stays deny, so a key added to a sensitive feature tomorrow is
- * kept out of storage without anyone remembering to list it.
+ * A feature that is not listed may hold one read that is safe to keep:
+ * counts and dates inside a feature that otherwise holds private code. That
+ * read says so itself, with `meta: PERSIST_META`, rather than being moved to
+ * a key of its own: splitting one feature's key so a storage policy could see
+ * the halves left two roots for every later invalidation to remember.
  */
 export function shouldDehydrateQuery(
   query: Query,
-  nonPersistedFeatures: readonly string[] = KERNEL_NON_PERSISTED_FEATURES,
+  persistedFeatures: readonly string[] = KERNEL_PERSISTED_FEATURES,
 ): boolean {
   if (query.state.status !== 'success') return false;
 
   const [feature] = query.queryKey;
   if (typeof feature !== 'string') return false;
-  if (!nonPersistedFeatures.includes(feature)) return true;
+  if (feature === cacheOwnerKey[0]) return true;
+  if (persistedFeatures.includes(feature)) return true;
   return optsIn(query);
 }
 
@@ -101,7 +104,7 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
  * already-stored cache unsafe to hydrate, or changes the shape of a persisted
  * key so an old entry would sit in storage that nothing reads.
  */
-const QUERY_PERSIST_REVISION = 4;
+const QUERY_PERSIST_REVISION = 5;
 
 /**
  * Persistence options every app shares. The app supplies the platform's
@@ -112,12 +115,12 @@ const QUERY_PERSIST_REVISION = 4;
  * entries before the next version bump.
  */
 export function createQueryPersistOptions(appVersion: string, config: QueryPersistConfig = {}) {
-  const nonPersisted = [...KERNEL_NON_PERSISTED_FEATURES, ...(config.nonPersistedFeatures ?? [])];
+  const persisted = [...KERNEL_PERSISTED_FEATURES, ...(config.persistedFeatures ?? [])];
   return {
     maxAge: QUERY_PERSIST_MAX_AGE,
     buster: `${appVersion}:${QUERY_PERSIST_REVISION}`,
     dehydrateOptions: {
-      shouldDehydrateQuery: (query: Query) => shouldDehydrateQuery(query, nonPersisted),
+      shouldDehydrateQuery: (query: Query) => shouldDehydrateQuery(query, persisted),
     },
   };
 }

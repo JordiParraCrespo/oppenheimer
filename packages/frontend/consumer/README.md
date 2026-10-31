@@ -52,8 +52,8 @@ a service fronts it, its repository stay inside the package.
 
 The named hooks the console imports — one `<module>.queries.ts` per module
 behind them, `usePermissionCatalog` among them for OAuth consent — and
-`CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an app keeps out of the
-persisted query cache. Key factories stay in their files: nothing outside the
+`CONSUMER_PERSISTED_FEATURES`, the plain-data prefixes an app lets into the
+persisted query cache (nothing else is stored). Key factories stay in their files: nothing outside the
 package names a key. The barrel is the catalog; it is not repeated here.
 
 ## How to use it
@@ -68,14 +68,14 @@ const organizations = useOrganizations();
 const organization = organizations.data?.[0];
 ```
 
-`apps/web/src/providers/query-provider.tsx` names the features that never
-reach the persisted cache:
+`apps/web/src/providers/query-provider.tsx` names the features whose reads
+may reach the persisted cache:
 
 ```ts
-import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
+import { CONSUMER_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
 
 ...createQueryPersistOptions(__APP_VERSION__, {
-  nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+  persistedFeatures: CONSUMER_PERSISTED_FEATURES,
 }),
 ```
 
