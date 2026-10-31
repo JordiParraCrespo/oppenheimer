@@ -5,9 +5,10 @@ markup" in [`.agents/rules/frontend-ui.md`](../rules/frontend-ui.md), split
 out so the rule file stays short. Each row is a rule: when you need what the
 first column says, use the second, never the third. Read
 `packages/frontend/design-system/web/src/index.ts` in full as well.
-`pnpm check:structure` (`scripts/ui-catalog.mjs`) fails a row whose
-component is not exported, and a design-system component that has no row
-here or in the rule and no reason in the script's `UNCATALOGUED`.
+`pnpm check:ui-catalog` (`scripts/ui-catalog.mjs`) fails a row whose Use
+column names a component that is not a public export, and a design-system
+module that no Use column here or in the rule names, unless it opens with
+`// uncatalogued: <why>`.
 
 This page lives outside `.agents/rules/` on purpose: a file there without a
 `paths` frontmatter would load in every session.

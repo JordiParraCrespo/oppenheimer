@@ -17,8 +17,10 @@ const SRC = resolve(__dirname, '..');
 const REPO_ROOT = resolve(__dirname, '../../../..');
 const ERRORS_DOC = join(REPO_ROOT, 'apps/docs/docs/errors.md');
 const TRANSLATIONS = join(REPO_ROOT, 'packages/translations');
+/** A package whose catalog the API raises: `TENANT_001` is the authz kernel's. */
+const PACKAGE_CATALOGS = [join(REPO_ROOT, 'packages/backend/authz/src/scope/tenant-scope.ts')];
 
-/** Every code declared in an `*.errors.ts` catalog. */
+/** Every code declared in an `*.errors.ts` catalog, and in the packages' catalogs. */
 function catalogCodes(): string[] {
   const files: string[] = [];
   const walk = (directory: string) => {
@@ -29,6 +31,7 @@ function catalogCodes(): string[] {
     }
   };
   walk(SRC);
+  files.push(...PACKAGE_CATALOGS);
 
   return files.flatMap((file) =>
     [...readFileSync(file, 'utf8').matchAll(/code:\s*'([A-Z][A-Z0-9_]*)'/g)].map(
@@ -59,6 +62,7 @@ const locales = readdirSync(TRANSLATIONS, { withFileTypes: true })
 describe('error catalog coverage', () => {
   it('finds the catalogs and locales to check', () => {
     expect(codes.length).toBeGreaterThan(20);
+    expect(codes).toContain('TENANT_001');
     expect(locales.length).toBeGreaterThan(1);
   });
 

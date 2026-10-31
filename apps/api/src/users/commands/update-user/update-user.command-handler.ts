@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { SessionCachePort } from '../../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
@@ -27,9 +27,7 @@ export class UpdateUserCommandHandler implements ICommandHandler<UpdateUserComma
 
   async execute(command: UpdateUserCommand): Promise<AggregateID> {
     const found = await this.userRepository.findOneById(command.userId);
-    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-
-    const user = found.unwrap();
+    const user = requireFound(found, UserErrors.NOT_FOUND);
     user.updateProfile({
       firstName: command.firstName,
       lastName: command.lastName,

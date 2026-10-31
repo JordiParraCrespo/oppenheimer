@@ -1,11 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { externalEventDefinition } from '@oppenheimer/shared/automations';
 import type { InboundEventLookupPort } from '../../../inbound-events/application/inbound-event-lookup.port';
 import { INBOUND_EVENT_LOOKUP } from '../../../inbound-events/inbound-events.di-tokens';
 import type { TriggerPreview } from '../../domain/automation-read.types';
-import { AutomationErrors } from '../../domain/automations.errors';
 import { PreviewTriggerQuery } from './preview-trigger.query';
 
 /** The events the card lists under its count. */
@@ -29,7 +28,7 @@ export class PreviewTriggerQueryHandler
 
   async execute(query: PreviewTriggerQuery): Promise<TriggerPreview> {
     const { scope, input } = query;
-    if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const definition = externalEventDefinition(input.source, input.event);
     if (!definition) return { count: 0, days: input.days, matches: [] };
     const found = await this.events.findMatching({

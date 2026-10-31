@@ -23,7 +23,6 @@ import { fileURLToPath } from 'node:url';
 import { queryStateSlotProblems } from './query-state-slots.mjs';
 import { skeletonSlabProblems } from './skeleton-shape.mjs';
 import { SLAB_DEBT } from './skeleton-slab-debt.mjs';
-import { repositoryCatalogProblems } from './ui-catalog.mjs';
 
 // `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -608,11 +607,6 @@ for (const file of queryStateFiles) {
   if (slabs.length === owed) continue;
   for (const { line, message } of slabs) fail(`${name}:${line}: ${message}`);
 }
-
-// The design-system catalog (`.agents/rules/frontend-ui.md` and
-// `.agents/reference/frontend-ui-catalog.md`) names only exported components,
-// and every exported component has a row or a reason (`ui-catalog.mjs`).
-for (const problem of repositoryCatalogProblems(root)) fail(problem);
 
 // docs: every workspace package documented, frontend surfaces with an ARCHITECTURE.md
 const workspacePackages = [];

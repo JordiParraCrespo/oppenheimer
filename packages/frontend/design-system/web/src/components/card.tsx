@@ -1,3 +1,4 @@
+// uncatalogued: a plain container; the catalog's rows say what replaces a Card of divs
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';

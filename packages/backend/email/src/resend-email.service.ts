@@ -3,18 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { type CreateEmailOptions, Resend } from 'resend';
 import { EmailRateLimitedError } from './email.errors';
 import {
+  type ActionEmailParams,
   EmailService,
   type EmailVerificationEmailParams,
-  type HostNetworkChangedEmailParams,
-  type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
   type WelcomeEmailParams,
 } from './email.service';
 import {
+  renderActionEmail,
   renderEmailVerificationEmail,
-  renderHostNetworkChangedEmail,
-  renderHostPairedEmail,
   renderInvitationEmail,
   renderPasswordResetEmail,
   renderWelcomeEmail,
@@ -105,18 +103,8 @@ export class ResendEmailService extends EmailService {
     });
   }
 
-  async sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void> {
-    const html = await renderHostPairedEmail(params);
-    await this.send({
-      from: this.from,
-      to,
-      subject: params.subject,
-      html,
-    });
-  }
-
-  async sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void> {
-    const html = await renderHostNetworkChangedEmail(params);
+  async sendAction(to: string, params: ActionEmailParams): Promise<void> {
+    const html = await renderActionEmail(params);
     await this.send({
       from: this.from,
       to,

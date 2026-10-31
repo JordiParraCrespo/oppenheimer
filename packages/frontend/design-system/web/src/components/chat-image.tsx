@@ -1,3 +1,4 @@
+// uncatalogued: attachment parts that ChatComposer, ChatTranscript and the kit's chat gallery draw
 'use client';
 
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';

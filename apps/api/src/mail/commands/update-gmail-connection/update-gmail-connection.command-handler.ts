@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
 import { MailErrors } from '../../domain/mail.errors';
@@ -23,8 +23,7 @@ export class UpdateGmailConnectionCommandHandler
     input,
   }: UpdateGmailConnectionCommand): Promise<AggregateID> {
     const found = await this.connections.findOwnById(scope, connectionId);
-    if (found.isNone()) throw new AppError(MailErrors.GMAIL_NOT_CONNECTED);
-    const connection = found.unwrap();
+    const connection = requireFound(found, MailErrors.GMAIL_NOT_CONNECTED);
     connection.rename(input.label);
     await this.connections.save(connection);
     return connection.id;

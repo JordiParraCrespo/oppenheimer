@@ -1,3 +1,4 @@
+// uncatalogued: brand art (the product's name); nothing hand-built competes with it
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';

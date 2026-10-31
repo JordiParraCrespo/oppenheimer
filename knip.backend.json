@@ -1,0 +1,38 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "include": [
+    "files",
+    "dependencies",
+    "devDependencies",
+    "unlisted",
+    "unresolved",
+    "exports",
+    "duplicates"
+  ],
+  "ignore": [
+    "apps/api/**",
+    "packages/backend/authz/**",
+    "packages/backend/llm/**",
+    "packages/backend/agents/**"
+  ],
+  "workspaces": {
+    "apps/api": {
+      "entry": [
+        "src/main.ts",
+        "src/generate-openapi.ts",
+        "src/config/data-source.ts",
+        "src/migrations/*.ts"
+      ],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/backend/agents": { "project": ["src/**/*.ts"] },
+    "packages/backend/authz": { "project": ["src/**/*.ts"] },
+    "packages/backend/cache": { "project": ["src/**/*.ts"], "includeEntryExports": true },
+    "packages/backend/core": { "project": ["src/**/*.ts"], "includeEntryExports": true },
+    "packages/backend/ddd": { "project": ["src/**/*.ts"], "includeEntryExports": true },
+    "packages/backend/email": { "project": ["src/**/*.{ts,tsx}"], "includeEntryExports": true },
+    "packages/backend/i18n": { "project": ["src/**/*.ts"], "includeEntryExports": true },
+    "packages/backend/llm": { "project": ["src/**/*.ts"] },
+    "packages/backend/storage": { "project": ["src/**/*.ts"], "includeEntryExports": true }
+  }
+}
