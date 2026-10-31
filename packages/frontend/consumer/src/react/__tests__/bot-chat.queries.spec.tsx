@@ -268,6 +268,10 @@ describe('useBotLive', () => {
       });
       await chat.land(new BotConversationEntity([line], [], 1));
       expect(result.current.resolved).toEqual([]);
+
+      // The stored line scrolls out of the read's window: the early line stays retired.
+      await chat.land(read('completed', 'Something newer'));
+      expect(result.current.resolved).toEqual([]);
     });
 
     it('reads a card raised mid-sentence only once the line ends', async () => {

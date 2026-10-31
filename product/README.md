@@ -932,3 +932,12 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- `versions/mvp/25-bots.md` §5 (2026-10-15) had every no on a Needs input
+  card give the bot a turn that tells it, so it always carried on. On
+  2026-10-31 the card took Codex's `available_decisions`: the API chooses
+  the decisions a card offers (approve, approve for its subject, always
+  allow, deny, deny and stop) and accepts only those. *Deny* still gives
+  the bot a turn; *Deny and stop* gives it none, writes the decision as a
+  line outside any turn, and stops the asking turn if it still runs. Every
+  decision is broadcast as `approval_resolved`, so every open tab takes the
+  card down at once (25 §5).

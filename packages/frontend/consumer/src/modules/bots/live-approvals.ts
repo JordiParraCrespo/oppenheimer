@@ -17,7 +17,14 @@ export type BotResolvedApprovals = readonly BotApprovalEvent[];
 export const NO_RESOLVED_APPROVALS: BotResolvedApprovals = [];
 
 /**
- * A card closed: kept as its decided line. A card retired by a new message
+ * How many decided cards wait for their stored line at once. A bot has one
+ * card up at a time, so a handful is plenty; past it the oldest goes.
+ */
+export const RESOLVED_APPROVALS_MAX = 10;
+
+/**
+ * A card closed: kept as its decided line, at most
+ * {@link RESOLVED_APPROVALS_MAX} of them. A card retired by a new message
  * (`expired`) has no line, and one already kept is kept once.
  */
 export function noteResolvedApproval(
@@ -27,7 +34,7 @@ export function noteResolvedApproval(
   if (frame.outcome === 'expired') return resolved;
   if (resolved.some((line) => line.approvalId === frame.approvalId)) return resolved;
   return [
-    ...resolved,
+    ...resolved.slice(-(RESOLVED_APPROVALS_MAX - 1)),
     {
       kind: 'approval',
       outcome: frame.outcome,
@@ -40,9 +47,11 @@ export function noteResolvedApproval(
 }
 
 /**
- * What to draw after the stored chat: the decided cards whose own line the
- * conversation does not hold yet. Derived in render, so a read landing early
- * or late never draws a decision twice.
+ * The decided cards whose own line the conversation does not hold yet: what
+ * to draw after the stored chat, so a read landing early or late never draws
+ * a decision twice. It is also how a kept card is retired for good: once a
+ * read has held its line, `useBotLive` drops it, so a line that later leaves
+ * the conversation's window never brings the early one back.
  */
 export function botResolvedApprovals(
   resolved: BotResolvedApprovals,

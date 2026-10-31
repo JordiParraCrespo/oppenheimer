@@ -11,6 +11,7 @@ import {
   botResolvedApprovals,
   NO_RESOLVED_APPROVALS,
   noteResolvedApproval,
+  RESOLVED_APPROVALS_MAX,
   withoutClosedApproval,
 } from '../live-approvals';
 
@@ -59,6 +60,16 @@ describe('a card decided elsewhere', () => {
         approvalId: 'a1',
       },
     ]);
+  });
+
+  it('keeps only the newest few waiting for their line', () => {
+    let lines = NO_RESOLVED_APPROVALS;
+    for (let index = 0; index < RESOLVED_APPROVALS_MAX + 3; index++) {
+      lines = noteResolvedApproval(lines, resolved(`a${index}`, 'denied'));
+    }
+    expect(lines).toHaveLength(RESOLVED_APPROVALS_MAX);
+    expect(lines[0]?.approvalId).toBe('a3');
+    expect(lines.at(-1)?.approvalId).toBe(`a${RESOLVED_APPROVALS_MAX + 2}`);
   });
 
   it('stops being drawn the moment the conversation holds its own line', () => {

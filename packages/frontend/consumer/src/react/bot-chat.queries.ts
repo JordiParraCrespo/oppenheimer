@@ -388,6 +388,20 @@ export function useBotLive(id: string): BotLive {
     const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
       change((state) => ({ ...state, buffers: next(state.buffers) }));
     const hold = new BotApprovalHold();
+    // A decided card is retired for good the first time a read holds its line.
+    const retireStored = (read: BotConversationEntity | undefined) =>
+      setDecided((current) => {
+        if (current.id !== id || !read) return current;
+        const resolved = botResolvedApprovals(current.resolved, read);
+        return resolved === current.resolved ? current : { id, resolved };
+      });
+    const conversationKey = JSON.stringify(key);
+    const offStored = queryClient.getQueryCache().subscribe((cached) => {
+      if (cached.type !== 'updated' || JSON.stringify(cached.query.queryKey) !== conversationKey) {
+        return;
+      }
+      retireStored(cached.query.state.data as BotConversationEntity | undefined);
+    });
     const readApprovals = () =>
       void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
     let up = false;
@@ -426,10 +440,12 @@ export function useBotLive(id: string): BotLive {
           withoutClosedApproval(card, event.approvalId),
         );
         setDecided((current) => {
-          const resolved = noteResolvedApproval(
+          const noted = noteResolvedApproval(
             current.id === id ? current.resolved : NO_RESOLVED_APPROVALS,
             event,
           );
+          const read = queryClient.getQueryData<BotConversationEntity>(key);
+          const resolved = read ? botResolvedApprovals(noted, read) : noted;
           return current.id === id && resolved === current.resolved ? current : { id, resolved };
         });
         readApprovals();
@@ -450,6 +466,7 @@ export function useBotLive(id: string): BotLive {
     return () => {
       offStatus();
       offEvent();
+      offStored();
       hold.dispose();
       stream.dispose();
     };
