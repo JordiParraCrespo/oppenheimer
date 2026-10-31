@@ -78,6 +78,11 @@ jobs:
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.5.0
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
+      # oppenheimer:begin extension
+      # The extension's suite launches Chromium; a contributor has it from
+      # scripts/dev/bootstrap.sh, the runner does not.
+      - run: pnpm --filter @oppenheimer/extension exec playwright install --with-deps chromium
+      # oppenheimer:end extension
       - id: images
         run: node scripts/ci/affected.mjs
       - name: pnpm ci:local --all
