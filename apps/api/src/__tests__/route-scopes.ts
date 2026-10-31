@@ -1,10 +1,14 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 
 /**
- * Reads every HTTP route's scope declaration from the controllers' source,
- * for `route-scope-coverage.spec.ts`. Textual, like
- * `route-policy-coverage.spec.ts`, because booting the app needs a database.
+ * Reads every HTTP route's declarations from the controllers' source: the
+ * scopes a credential needs (`route-scope-coverage.spec.ts`), the guards it
+ * runs behind (`route-auth-coverage.spec.ts`) and its policy
+ * (`route-policy-coverage.spec.ts`). Textual, because booting the app needs a
+ * database. Comments are blanked first, so a decorator quoted in one counts
+ * for nothing.
  *
  * It fails closed. A decorator is read with its arguments however many lines
  * they span, and an argument it cannot read for certain (a template literal,
@@ -33,6 +37,12 @@ export interface DeclaredRoute {
   scopes: ScopeDeclaration;
   /** Both `@RequireScopes` and `@AllowAnyScope` on one route. */
   contradictory: boolean;
+  /** `@UseGuards` arguments in the order Nest runs them: the class's, then the method's. */
+  guards: string[];
+  /** `@CheckPolicies` on the class or the method. */
+  checksPolicies: boolean;
+  /** The reason in `@NoPolicy`, on the method or else the class. */
+  noPolicyReason?: string;
 }
 
 export interface RouteScan {
@@ -54,7 +64,7 @@ class Unreadable extends Error {}
  * in a doc comment is neither read nor counted. String literals are skipped
  * whole, so `'https://…'` is not a comment.
  */
-function withoutComments(text: string): string {
+export function withoutComments(text: string): string {
   let out = '';
   let quote: string | undefined;
   for (let index = 0; index < text.length; index += 1) {
@@ -127,6 +137,30 @@ function optionalLiteral(decorator: Decorator): string | undefined {
   return values[0];
 }
 
+/** `@UseGuards` arguments, which must be plain class names to be read for certain. */
+function guardNames(decorator: Decorator | undefined): string[] {
+  if (!decorator) return [];
+  const names = decorator.args
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (names.length === 0) throw new Unreadable('@UseGuards() names no guard');
+  for (const name of names) {
+    if (!/^[A-Z]\w*$/.test(name)) throw new Unreadable(`@UseGuards(${name}) is not a class name`);
+  }
+  return names;
+}
+
+/** The one string literal `@NoPolicy` carries; a reason may hold commas and the other quote. */
+function reasonOf(decorator: Decorator | undefined): string | undefined {
+  if (!decorator) return undefined;
+  const literal = /^(['"`])((?:(?!\1)[^\\]|\\.)*)\1,?$/.exec(decorator.args.trim());
+  if (!literal || (literal[1] === '`' && literal[2].includes('${'))) {
+    throw new Unreadable(`@NoPolicy(${decorator.args.trim()}) is not literal`);
+  }
+  return literal[2];
+}
+
 function only(decorators: Decorator[], name: string): Decorator | undefined {
   const matching = decorators.filter((decorator) => decorator.name === name);
   if (matching.length > 1) throw new Unreadable(`@${name} appears twice on one declaration`);
@@ -166,6 +200,9 @@ function routesIn(file: string, fallbackVersion: string): DeclaredRoute[] {
   const classScopes = only(prelude, 'RequireScopes');
   const classAny = only(prelude, 'AllowAnyScope') !== undefined;
   const classVersion = only(prelude, 'Version');
+  const classGuards = guardNames(only(prelude, 'UseGuards'));
+  const classChecks = only(prelude, 'CheckPolicies') !== undefined;
+  const classReason = reasonOf(only(prelude, 'NoPolicy'));
   const versionOf = (decorator: Decorator | undefined): string | undefined =>
     decorator && (optionalLiteral(decorator) ?? '');
 
@@ -195,6 +232,9 @@ function routesIn(file: string, fallbackVersion: string): DeclaredRoute[] {
       file: relative(SRC, file),
       scopes: scopes ?? (any ? 'any' : 'session-only'),
       contradictory: scopes !== undefined && any,
+      guards: [...classGuards, ...guardNames(only(decorators, 'UseGuards'))],
+      checksPolicies: classChecks || decorators.some((d) => d.name === 'CheckPolicies'),
+      noPolicyReason: reasonOf(only(decorators, 'NoPolicy')) ?? classReason,
     });
   }
   // Every route decorator in the file must have been read on a method.
@@ -204,7 +244,8 @@ function routesIn(file: string, fallbackVersion: string): DeclaredRoute[] {
   return routes;
 }
 
-function sourceFiles(directory: string): string[] {
+/** Every `.ts` file under `directory`, specs and `__tests__/` left out. */
+export function sourceFiles(directory = SRC): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) return entry.name === '__tests__' ? [] : sourceFiles(path);
@@ -235,3 +276,21 @@ export function scanRoutes(directory = SRC): RouteScan {
   }
   return { routes, unreadable };
 }
+
+/** `scanRoutes` over fixture files, written to a directory of their own and removed after. */
+export function scanFixture(files: Record<string, string>): RouteScan {
+  const directory = mkdtempSync(join(tmpdir(), 'route-scan-'));
+  try {
+    for (const [name, body] of Object.entries(files)) {
+      mkdirSync(join(directory, name, '..'), { recursive: true });
+      writeFileSync(join(directory, name), body);
+    }
+    return scanRoutes(directory);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+/** A fixture controller file: `prelude` above the class, `body` inside it. */
+export const fixtureController = (body: string, prelude = "@Controller('things')") =>
+  `${prelude}\nexport class ThingsHttpController {\n${body}\n}\n`;

@@ -1,101 +1,44 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fixtureController, scanFixture, scanRoutes } from './route-scopes';
 
 /**
  * Every HTTP route states its authorization intent: `@CheckPolicies` or a reasoned
  * `@NoPolicy`. `PoliciesGuard` fails closed on a route with neither, so this turns that
- * runtime rejection into a build failure.
+ * runtime rejection into a build failure. And a `@CheckPolicies` is only checked by
+ * `PoliciesGuard`: on a controller that does not run it, the decorator is metadata
+ * nobody reads and the route is open to whoever its authentication admits.
  *
- * A source scan, not a `DiscoveryService` walk, because booting the app needs a
- * database, Redis and a populated `.env`. It reads decorators textually; the
- * integration suite covers the runtime behaviour.
+ * A source scan (`route-scopes.ts`), not a `DiscoveryService` walk, because booting the
+ * app needs a database, Redis and a populated `.env`. It reads decorators with comments
+ * blanked out; the integration suite covers the runtime behaviour.
  */
 
-const SRC = resolve(__dirname, '..');
-const HTTP_METHOD = /^\s*@(Get|Post|Patch|Put|Delete|Head|Options|All|Sse)\(/;
-const METHOD_SIGNATURE =
-  /^\s{2}(?:public\s+|private\s+|protected\s+)?(?:async\s+)?[A-Za-z_]\w*\s*\(/;
-const CLASS_DECLARATION = /^export class /;
-
-interface Route {
-  file: string;
-  decorator: string;
-  method: string;
-  declaresPolicy: boolean;
-  reason?: string;
-}
-
-function collectRoutes(file: string): Route[] {
-  const lines = readFileSync(file, 'utf8').split('\n');
-  const classAt = lines.findIndex((line) => CLASS_DECLARATION.test(line));
-  const classPrelude = lines.slice(0, classAt === -1 ? lines.length : classAt).join('\n');
-  // A class-level @CheckPolicies covers every route on the controller.
-  const classDeclaresPolicy = classPrelude.includes('@CheckPolicies');
-
-  const routes: Route[] = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    if (!HTTP_METHOD.test(lines[index])) {
-      index += 1;
-      continue;
-    }
-
-    // Everything from the HTTP decorator to the method signature is this
-    // route's decorator block.
-    const start = index;
-    let cursor = index;
-    while (cursor < lines.length && !METHOD_SIGNATURE.test(lines[cursor])) cursor += 1;
-
-    const block = lines.slice(start, cursor).join('\n');
-    // Accept either quote style: the formatter normalizes some of these.
-    const reason = /@NoPolicy\(\s*["'`]([^"'`]*)["'`]/.exec(block)?.[1];
-
-    routes.push({
-      file: relative(SRC, file),
-      decorator: lines[start].trim(),
-      method: (lines[cursor] ?? '').trim().slice(0, 60),
-      declaresPolicy: classDeclaresPolicy || block.includes('@CheckPolicies'),
-      reason,
-    });
-
-    index = cursor + 1;
-  }
-
-  return routes;
-}
-
-function controllerFiles(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      return entry.name === '__tests__' ? [] : controllerFiles(path);
-    }
-    return entry.name.endsWith('.controller.ts') ? [path] : [];
-  });
-}
-
-const routes = controllerFiles(SRC).flatMap(collectRoutes);
+const { routes, unreadable } = scanRoutes();
+const describeRoute = (route: (typeof routes)[number]) => `${route.route} (${route.file})`;
 
 describe('route policy coverage', () => {
   it('finds the controllers to check', () => {
     // A scan that silently matches nothing would pass every assertion below.
-    expect(routes.length).toBeGreaterThan(50);
+    expect(routes.length).toBeGreaterThan(150);
+  });
+
+  it('reads every controller for certain', () => {
+    // A controller the scan refused is a controller none of the checks below saw.
+    expect(unreadable).toEqual([]);
   });
 
   it('declares an authorization policy or a reasoned exemption on every route', () => {
     const undeclared = routes
-      .filter((route) => !route.declaresPolicy && route.reason === undefined)
-      .map((route) => `${route.file} ${route.decorator} -> ${route.method}`);
+      .filter((route) => !route.checksPolicies && route.noPolicyReason === undefined)
+      .map(describeRoute);
 
     expect(undeclared).toEqual([]);
   });
 
   it('never both requires and waives a policy on the same route', () => {
     const contradictory = routes
-      .filter((route) => route.declaresPolicy && route.reason !== undefined)
-      .map((route) => `${route.file} ${route.decorator}`);
+      .filter((route) => route.checksPolicies && route.noPolicyReason !== undefined)
+      .map(describeRoute);
 
     expect(contradictory).toEqual([]);
   });
@@ -104,9 +47,82 @@ describe('route policy coverage', () => {
     // The reason is the review artifact. An empty or placeholder string turns
     // the decorator back into the silent default it replaced.
     const weak = routes
-      .filter((route) => route.reason !== undefined && route.reason.trim().length < 15)
-      .map((route) => `${route.file} ${route.decorator} -> "${route.reason}"`);
+      .filter(
+        (route) => route.noPolicyReason !== undefined && route.noPolicyReason.trim().length < 15,
+      )
+      .map((route) => `${describeRoute(route)} -> "${route.noPolicyReason}"`);
 
     expect(weak).toEqual([]);
+  });
+
+  it('runs PoliciesGuard, after ApiAuthGuard, on every route that checks a policy', () => {
+    // PoliciesGuard reads the principal ApiAuthGuard leaves on the request, so
+    // the order matters as much as the presence.
+    const unchecked = routes
+      .filter((route) => {
+        if (!route.checksPolicies) return false;
+        const policies = route.guards.indexOf('PoliciesGuard');
+        const auth = route.guards.indexOf('ApiAuthGuard');
+        return policies === -1 || auth === -1 || auth > policies;
+      })
+      .map((route) => `${describeRoute(route)} guards: [${route.guards.join(', ')}]`);
+
+    expect(unchecked).toEqual([]);
+  });
+});
+
+describe('the policy scan', () => {
+  it('ignores a policy decorator that only appears in a comment', () => {
+    const { routes } = scanFixture({
+      'things.http.controller.ts': fixtureController(
+        '  @Get()\n  find() {}',
+        [
+          '/**',
+          " * Unlike its neighbours, this one has no @CheckPolicies({ action: 'read' }).",
+          ' */',
+          "// @CheckPolicies({ action: 'read', subject: 'Thing' })",
+          '@UseGuards(ApiAuthGuard)',
+          "@Controller('things')",
+        ].join('\n'),
+      ),
+    });
+
+    expect(routes.map((route) => [route.checksPolicies, route.noPolicyReason])).toEqual([
+      [false, undefined],
+    ]);
+  });
+
+  it('reads class and method guards in the order Nest runs them, and a reason with a comma', () => {
+    const { routes, unreadable } = scanFixture({
+      'things.http.controller.ts': fixtureController(
+        [
+          '  @Get()',
+          '  @UseGuards(ThingGuard)',
+          '  @NoPolicy(\n    "the caller\'s own things, and nothing else",\n  )',
+          '  find() {}',
+        ].join('\n'),
+        "@UseGuards(ApiAuthGuard, PoliciesGuard)\n@Controller('things')",
+      ),
+    });
+
+    expect(unreadable).toEqual([]);
+    expect(routes.map((route) => [route.guards, route.noPolicyReason])).toEqual([
+      [
+        ['ApiAuthGuard', 'PoliciesGuard', 'ThingGuard'],
+        "the caller's own things, and nothing else",
+      ],
+    ]);
+  });
+
+  it('fails closed on a guard list it cannot read for certain', () => {
+    const { routes, unreadable } = scanFixture({
+      'things.http.controller.ts': fixtureController(
+        '  @Get()\n  find() {}',
+        "@UseGuards(...GUARDS)\n@Controller('things')",
+      ),
+    });
+
+    expect(routes).toEqual([]);
+    expect(unreadable).toEqual([expect.stringContaining('is not a class name')]);
   });
 });

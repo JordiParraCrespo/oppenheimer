@@ -3342,6 +3342,16 @@
               }
             }
           },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "ORG_016 — The organization service failed to handle the request",
             "content": {
@@ -19198,7 +19208,7 @@
             }
           },
           "429": {
-            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "description": "BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19304,7 +19314,7 @@
             }
           },
           "429": {
-            "description": "BOTS_019 — ChatGPT's sign-in is busy",
+            "description": "BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached",
             "content": {
               "application/problem+json": {
                 "schema": {
