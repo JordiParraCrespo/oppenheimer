@@ -36,6 +36,7 @@ import type {
 import type { SessionEntity } from '../modules/sessions/session.entity';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
+import { mutation } from './mutation';
 import { pullRequestsKeys } from './pull-requests.keys';
 import { watchSessionStart } from './sessions.queries';
 
@@ -250,19 +251,11 @@ export interface AddCommentVariables {
 }
 
 /** One line comment posted at once, outside a review. */
-export function useAddPullRequestComment(
-  options?: UseMutationOptions<void, Error, AddCommentVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ address, comment }: AddCommentVariables) =>
-      app.pullRequests.addComment(address, comment),
-    ...withCacheOnSuccess(options, (_data, { address }) =>
-      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.comments(address) }),
-    ),
-  });
-}
+export const useAddPullRequestComment = mutation<void, AddCommentVariables>({
+  run: (app, { address, comment }) => app.pullRequests.addComment(address, comment),
+  update: (queryClient, _data, { address }) =>
+    queryClient.invalidateQueries({ queryKey: pullRequestsKeys.comments(address) }),
+});
 
 export interface MergePullRequestVariables {
   address: PullRequestAddress;
@@ -320,24 +313,18 @@ export interface StartReviewSessionVariables {
 }
 
 /** Starts a review session for a pull request; the For review list is read again. */
-export function useStartReviewSession(
-  options?: UseMutationOptions<string, Error, StartReviewSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
-      app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
-    ...withCacheOnSuccess(options, (sessionId) => {
-      // The Chat tab draws the session the moment For review lists it, and the
-      // host makes its pane before the checkout: watched, the tab shows the
-      // start's steps until Claude Code runs rather than a shell in an empty
-      // folder.
-      watchSessionStart(queryClient, sessionId);
-      return queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
-    }),
-  });
-}
+export const useStartReviewSession = mutation<string, StartReviewSessionVariables>({
+  run: (app, { address, hostId, idempotencyKey }) =>
+    app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
+  update: (queryClient, sessionId) => {
+    // The Chat tab draws the session the moment For review lists it, and the
+    // host makes its pane before the checkout: watched, the tab shows the
+    // start's steps until Claude Code runs rather than a shell in an empty
+    // folder.
+    watchSessionStart(queryClient, sessionId);
+    return queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+  },
+});
 
 export interface CloseReviewSessionVariables {
   sessionId: string;

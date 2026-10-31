@@ -1,4 +1,5 @@
 import type {
+  BotApprovalDecision,
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
@@ -78,6 +79,11 @@ export interface BotWaitingMessage {
   text: string;
   /** How many images it carries. */
   images: number;
+  /**
+   * Sent as a steer: the running turn takes it at its next tool call, and
+   * runs it after itself only when it reaches none.
+   */
+  steer: boolean;
 }
 
 /** The room a bot has left, as of its newest turn that said: its context, its plan. */
@@ -109,6 +115,8 @@ export class BotTurnEntity {
     public readonly planLimits: BotPlanLimits | null = null,
     /** What kind of failure it was, as the API recorded it; `null` unless it failed. */
     private readonly recordedFailure: BotTurnFailure | null = null,
+    /** Sent as a steer into the turn under way (`BotWaitingMessage.steer`). */
+    public readonly steer: boolean = false,
   ) {}
 
   /** Queued or running: the chat shows it working, and Stop applies to it. */
@@ -134,6 +142,8 @@ export class BotConversationEntity {
     public readonly turns: readonly BotTurnEntity[],
     /** How many messages the chat holds in all, past this window; activity lines not counted. */
     public readonly messageCount: number,
+    /** For each turn still queued or running, how many blocks of text it has stored in all. */
+    private readonly textBlocksStored: Readonly<Record<string, number>> = {},
   ) {}
 
   /** When the newest message was written; `null` for an empty chat. */
@@ -163,7 +173,14 @@ export class BotConversationEntity {
       if (turn.status !== 'queued') return [];
       const message = this.messages.find((m) => m.turnId === turn.id && m.role === 'user');
       return message
-        ? [{ turnId: turn.id, text: message.content, images: message.attachments.length }]
+        ? [
+            {
+              turnId: turn.id,
+              text: message.content,
+              images: message.attachments.length,
+              steer: turn.steer,
+            },
+          ]
         : [];
     });
   }
@@ -187,6 +204,30 @@ export class BotConversationEntity {
   turn(id: string): BotTurnEntity | undefined {
     return this.turns.find((turn) => turn.id === id);
   }
+
+  /**
+   * How many blocks of text the turn has stored, which its streamed text is
+   * numbered from: the read's own count for a turn still running (a long
+   * turn's first blocks can fall outside this window), else its assistant
+   * messages with text in the window (an image the bot showed has none).
+   */
+  storedTextBlocks(turnId: string): number {
+    return (
+      this.textBlocksStored[turnId] ??
+      this.messages.filter(
+        (message) =>
+          message.turnId === turnId &&
+          message.role === 'assistant' &&
+          message.content.trim() !== '',
+      ).length
+    );
+  }
+
+  /** The conversation shows the turn ended; one it does not show yet is still running. */
+  hasEnded(turnId: string): boolean {
+    const turn = this.turn(turnId);
+    return turn !== undefined && !turn.isActive;
+  }
 }
 
 /**
@@ -209,6 +250,11 @@ export interface BotApprovalDetails {
   reaches: readonly BotApprovalReach[];
   /** How far the yes went, once decided. */
   reach: BotApprovalReach | null;
+  /**
+   * What the card offers, in the order to draw it, as the API chose them for
+   * this call: the only decisions it accepts.
+   */
+  decisions: readonly BotApprovalDecision[];
 }
 
 const NO_APPROVAL_DETAILS: BotApprovalDetails = {
@@ -218,6 +264,7 @@ const NO_APPROVAL_DETAILS: BotApprovalDetails = {
   reviewNote: null,
   reaches: ['once'],
   reach: null,
+  decisions: ['approve', 'deny', 'stop'],
 };
 
 export class BotApprovalEntity {

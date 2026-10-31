@@ -1,17 +1,7 @@
 'use client';
 
-import {
-  useQuery,
-  useSuspenseQueries,
-  useSuspenseQuery,
-  withCacheOnSuccess,
-} from '@oppenheimer/frontend-core/react';
-import {
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useSuspenseQueries, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
+import { type UseQueryOptions, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateProjectInput,
   ProjectEntity,
@@ -19,6 +9,7 @@ import type {
 } from '../modules/projects/project.entity';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
+import { mutation } from './mutation';
 import { projectsKeys } from './projects.keys';
 
 /**
@@ -83,48 +74,23 @@ export function useProjectsSnapshot(): () => ProjectEntity[] | undefined {
   return () => queryClient.getQueryData<ProjectEntity[]>(projectsKeys.list());
 }
 
-export function useCreateProject(
-  options?: UseMutationOptions<ProjectEntity, Error, CreateProjectInput>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: CreateProjectInput) => app.projects.create(input),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
-    }),
-  });
-}
+export const useCreateProject = mutation<ProjectEntity, CreateProjectInput>({
+  run: (app, input) => app.projects.create(input),
+  invalidates: () => [projectsKeys.lists()],
+});
 
 export interface UpdateProjectVariables {
   id: string;
   input: UpdateProjectInput;
 }
 
-export function useUpdateProject(
-  options?: UseMutationOptions<ProjectEntity, Error, UpdateProjectVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateProjectVariables) => app.projects.update(id, input),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
-    }),
-  });
-}
+export const useUpdateProject = mutation<ProjectEntity, UpdateProjectVariables>({
+  run: (app, { id, input }) => app.projects.update(id, input),
+  invalidates: () => [projectsKeys.lists()],
+});
 
 /** Archive: the row stays so its slug is never reissued, and the listing leaves it out. */
-export function useArchiveProject(options?: UseMutationOptions<ProjectEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.projects.archive(id),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
-    }),
-  });
-}
+export const useArchiveProject = mutation<ProjectEntity, string>({
+  run: (app, id) => app.projects.archive(id),
+  invalidates: () => [projectsKeys.lists()],
+});

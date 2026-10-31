@@ -11,13 +11,16 @@ const details = (extra: Partial<BotApprovalDetails> = {}): BotApprovalDetails =>
   reviewNote: null,
   reaches: ['once'],
   reach: null,
+  decisions: ['approve', 'deny', 'stop'],
   ...extra,
 });
 
 /**
  * The Needs input card. What breaks this: a card drawn when nothing waits
- * (or while it loads); Approve sending anything but this card's id; Deny
- * answering at once instead of asking what to do instead, or losing the note.
+ * (or while it loads); a button the API did not offer, or the offered ones
+ * out of its order; Approve sending anything but this card's id; Deny
+ * answering at once instead of asking what to do instead, or losing the
+ * note; a key typed in a field deciding the card.
  */
 
 vi.mock('react-i18next', () => ({
@@ -59,6 +62,11 @@ afterEach(() => {
 });
 
 describe('BotApprovalCard', () => {
+  const buttons = () =>
+    screen
+      .getAllByRole('button')
+      .flatMap((button) => button.getAttribute('aria-keyshortcuts') ?? []);
+
   it('draws nothing when the bot waits on nothing', () => {
     const { container } = render(<BotApprovalCard botId="bot-1" name="Scout" />);
     expect(container.innerHTML).toBe('');
@@ -75,9 +83,25 @@ describe('BotApprovalCard', () => {
     expect(screen.getByText('Start Claude Code on build-02')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'bots.chat.approval.approve' }));
     expect(state.mutate).toHaveBeenCalledWith(
-      { id: 'bot-1', approvalId: 'a-1', decision: 'approve', note: undefined, reach: 'once' },
+      { id: 'bot-1', approvalId: 'a-1', decision: 'approve', note: undefined },
       expect.anything(),
     );
+  });
+
+  it('draws the decisions the API offers, in its order, each with its key', () => {
+    state.approval = {
+      id: 'a-1',
+      tool: 'comment_on_pull_request',
+      summary: 'Comment on acme/docs#4',
+      details: details({
+        subjectLabel: 'acme/docs',
+        reaches: ['once', 'subject', 'tool'],
+        decisions: ['approve', 'approve_for_subject', 'approve_always', 'deny', 'stop'],
+      }),
+    };
+    render(<BotApprovalCard botId="bot-1" name="Scout" />);
+    expect(buttons()).toEqual(['y', 'p', 'a', 'n', 'c']);
+    expect(screen.getByRole('button', { name: 'bots.chat.approval.approveOnce' })).toBeTruthy();
   });
 
   it('asks what to do instead before denying, and sends the note with the no', async () => {
@@ -89,10 +113,47 @@ describe('BotApprovalCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'bots.chat.approval.deny' }));
     await waitFor(() =>
       expect(state.mutate).toHaveBeenCalledWith(
-        { id: 'bot-1', approvalId: 'a-1', decision: 'deny', note: 'Use staging', reach: undefined },
+        { id: 'bot-1', approvalId: 'a-1', decision: 'deny', note: 'Use staging' },
         expect.anything(),
       ),
     );
+  });
+
+  it('stops the turn at once on Deny and stop, asking for nothing', () => {
+    state.approval = { id: 'a-1', tool: 'start_session', summary: 'Start it', details: details() };
+    render(<BotApprovalCard botId="bot-1" name="Scout" />);
+    fireEvent.click(screen.getByRole('button', { name: 'bots.chat.approval.stop' }));
+    expect(state.mutate).toHaveBeenCalledWith(
+      { id: 'bot-1', approvalId: 'a-1', decision: 'stop', note: undefined },
+      expect.anything(),
+    );
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('decides on a bare key press, never on a key typed in a field or with a modifier', () => {
+    state.approval = { id: 'a-1', tool: 'start_session', summary: 'Start it', details: details() };
+    render(
+      <>
+        <textarea aria-label="composer" />
+        <BotApprovalCard botId="bot-1" name="Scout" />
+      </>,
+    );
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'composer' }), { key: 'y' });
+    fireEvent.keyDown(document.body, { key: 'y', metaKey: true });
+    expect(state.mutate).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(state.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'stop' }),
+      expect.anything(),
+    );
+  });
+
+  it('opens the note on n rather than denying outright', () => {
+    state.approval = { id: 'a-1', tool: 'start_session', summary: 'Start it', details: details() };
+    render(<BotApprovalCard botId="bot-1" name="Scout" />);
+    fireEvent.keyDown(document.body, { key: 'n' });
+    expect(state.mutate).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox')).toBeTruthy();
   });
 
   it('offers to always allow the tool on what the call acts on, and says why a rule paused it', () => {
@@ -105,6 +166,7 @@ describe('BotApprovalCard', () => {
         sharesOutside: true,
         reviewNote: 'Paused by your rule “Ask before payments”',
         reaches: ['once', 'subject', 'tool'],
+        decisions: ['approve', 'approve_for_subject', 'approve_always', 'deny', 'stop'],
       }),
     };
     render(<BotApprovalCard botId="bot-1" name="Scout" />);
@@ -112,10 +174,9 @@ describe('BotApprovalCard', () => {
     expect(screen.getByText('bots.chat.approval.sharesOutside')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'bots.chat.approval.alwaysFor' }));
     expect(state.mutate).toHaveBeenCalledWith(
-      { id: 'bot-1', approvalId: 'a-1', decision: 'approve', note: undefined, reach: 'subject' },
+      { id: 'bot-1', approvalId: 'a-1', decision: 'approve_for_subject', note: undefined },
       expect.anything(),
     );
-    expect(screen.getByRole('button', { name: 'bots.chat.approval.approveOnce' })).toBeTruthy();
   });
 
   it('offers only this call for a merge', () => {
@@ -128,6 +189,6 @@ describe('BotApprovalCard', () => {
     render(<BotApprovalCard botId="bot-1" name="Scout" />);
     expect(screen.queryByRole('button', { name: 'bots.chat.approval.alwaysFor' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'bots.chat.approval.always' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'bots.chat.approval.approve' })).toBeTruthy();
+    expect(buttons()).toEqual(['y', 'n', 'c']);
   });
 });

@@ -1,41 +1,54 @@
+import type { BotStreamSnapshot, BotStreamText } from '@oppenheimer/shared/schemas/bot';
 import type { BotConversationEntity } from './bot-conversation.entity';
 
 /**
- * The text a bot's stream has delivered, by turn id: what was received, in
- * order, cut into segments at each reconnect. The stream drops what is
- * published while it is down, so two segments may have a hole between them.
- * Append-only; nothing here is ever corrected by a conversation read.
+ * What a bot's stream has said of one turn's text: each block it wrote, by
+ * the number of blocks the turn stored before it, and the last `seq` it
+ * holds. A delta at or below that `seq` is one it has.
  */
-export type BotTextBuffers = Readonly<Record<string, readonly string[]>>;
+export interface BotTurnText {
+  readonly seq: number;
+  readonly blocks: Readonly<Record<number, string>>;
+}
+
+/** What the stream has said of each turn's text, by turn id. Never corrected by a conversation read. */
+export type BotTextBuffers = Readonly<Record<string, BotTurnText>>;
 
 /** What a turn has written that the stored conversation does not hold yet, by turn id. */
 export type BotLiveText = Readonly<Record<string, string>>;
 
 export const NO_BOT_TEXT: BotTextBuffers = {};
 
-/** A `text` delta, added to the end of its turn's last segment. */
+/** A `text` delta, added to its block; one the turn's text already holds is dropped. */
 export function appendBotText(
   buffers: BotTextBuffers,
-  turnId: string,
-  text: string,
+  { turnId, block, seq, text }: BotStreamText,
 ): BotTextBuffers {
-  const segments = buffers[turnId] ?? [''];
-  const last = segments.length - 1;
-  return { ...buffers, [turnId]: [...segments.slice(0, last), segments[last] + text] };
+  const held = buffers[turnId];
+  if (held && seq <= held.seq) return buffers;
+  const blocks = held?.blocks ?? {};
+  return {
+    ...buffers,
+    [turnId]: { seq, blocks: { ...blocks, [block]: (blocks[block] ?? '') + text } },
+  };
 }
 
 /**
- * The stream came up again: whatever arrives next may follow a hole, so it
- * starts a new segment in every turn that has text.
+ * A `snapshot`, sent as the stream comes up: the whole of the block the turn
+ * is writing, in place of what was held of it (a drop may have left a hole
+ * in it) and of any later one. Earlier blocks are kept for the read that
+ * stores them.
  */
-export function markBotStreamGap(buffers: BotTextBuffers): BotTextBuffers {
-  let next: Record<string, readonly string[]> | null = null;
-  for (const [turnId, segments] of Object.entries(buffers)) {
-    if (segments.at(-1) === '') continue;
-    next ??= { ...buffers };
-    next[turnId] = [...segments, ''];
+export function putBotSnapshot(
+  buffers: BotTextBuffers,
+  { turnId, block, seq, text }: BotStreamSnapshot,
+): BotTextBuffers {
+  const blocks: Record<number, string> = {};
+  for (const [index, held] of Object.entries(buffers[turnId]?.blocks ?? {})) {
+    if (Number(index) < block) blocks[Number(index)] = held;
   }
-  return next ?? buffers;
+  blocks[block] = text;
+  return { ...buffers, [turnId]: { seq, blocks } };
 }
 
 /** Drops the turns the conversation shows ended. Memory only: {@link botLiveText} never draws them. */
@@ -44,7 +57,7 @@ export function forgetEndedBotTurns(
   conversation: BotConversationEntity | undefined,
 ): BotTextBuffers {
   if (!conversation) return buffers;
-  const ended = Object.keys(buffers).filter((turnId) => hasEnded(conversation, turnId));
+  const ended = Object.keys(buffers).filter((turnId) => conversation.hasEnded(turnId));
   if (ended.length === 0) return buffers;
   const next = { ...buffers };
   for (const turnId of ended) delete next[turnId];
@@ -52,10 +65,14 @@ export function forgetEndedBotTurns(
 }
 
 /**
- * What to draw after the stored messages of each turn still running: a pure
- * function of what was streamed and what is stored, so a read landing early
- * or late can neither draw stored text twice nor make it blink out. A turn
- * the conversation shows ended draws nothing live; one it does not show yet
+ * What to draw after the stored messages of each turn still running: the
+ * blocks the conversation does not hold yet. The API stores each block of
+ * text that is not only whitespace as one assistant message, and numbers a
+ * block by how many it stored before it, so block `n` is stored once the
+ * turn has stored more than `n` ({@link BotConversationEntity.storedTextBlocks}).
+ * A pure function of the two, so a read landing early or late can
+ * neither draw stored text twice nor make it blink out. A turn the
+ * conversation shows ended draws nothing live; one it does not show yet
  * draws what streamed.
  */
 export function botLiveText(
@@ -63,17 +80,18 @@ export function botLiveText(
   conversation: BotConversationEntity,
 ): BotLiveText {
   const live: Record<string, string> = {};
-  for (const [turnId, segments] of Object.entries(buffers)) {
-    if (hasEnded(conversation, turnId)) continue;
-    const stored = conversation.messages
-      .filter((message) => message.turnId === turnId && message.role === 'assistant')
-      .map((message) => message.content);
-    const suffix = liveSuffix(segments, stored);
-    if (suffix) live[turnId] = suffix;
+  for (const [turnId, { blocks }] of Object.entries(buffers)) {
+    if (conversation.hasEnded(turnId)) continue;
+    const stored = conversation.storedTextBlocks(turnId);
+    const unstored = Object.entries(blocks)
+      .filter(([index]) => Number(index) >= stored)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([, text]) => text.trimStart())
+      .filter(Boolean);
+    if (unstored.length > 0) live[turnId] = unstored.join('\n\n');
   }
   return live;
 }
-
 /** Why a running turn is waiting to try a call again, by turn id. */
 export type BotLiveRetries = Readonly<Record<string, 'rate_limit' | 'unavailable'>>;
 
@@ -101,90 +119,9 @@ export function botLiveRetries(
   retries: BotLiveRetries,
   conversation: BotConversationEntity,
 ): BotLiveRetries {
-  const ended = Object.keys(retries).filter((turnId) => hasEnded(conversation, turnId));
+  const ended = Object.keys(retries).filter((turnId) => conversation.hasEnded(turnId));
   if (ended.length === 0) return retries;
   const next = { ...retries };
   for (const turnId of ended) delete next[turnId];
   return next;
-}
-
-function hasEnded(conversation: BotConversationEntity, turnId: string): boolean {
-  const turn = conversation.turn(turnId);
-  return turn !== undefined && !turn.isActive;
-}
-
-/**
- * The part of one turn's streamed text that is not stored yet.
- *
- * The API stores each finished block of text as an assistant message whose
- * content is that block's deltas joined (a block of only whitespace is not
- * stored). Whitespace at a block boundary is not significant: before each
- * stored content, and before the live remainder, leading whitespace in the
- * stream is skipped, and contents are compared trimmed. Inside a block the
- * comparison is exact.
- *
- * 1. The first segment is read as starting at the turn's start: each stored
- *    content, in order, is stripped from its front, and what remains is
- *    drawn. Text after a reconnect (a later segment) is not drawn here; it
- *    follows a possible hole, and waits for the stored message that covers
- *    the hole. When the stream is behind the stored text (what remains is
- *    the start of the next content, the read landed before the last deltas),
- *    nothing is drawn: the stored message already shows it.
- * 2. Otherwise (the stream connected mid-turn, a reconnect dropped deltas, or
- *    the stored text differs from what streamed) the last segment began at
- *    an unknown point. What is drawn is what follows the furthest point in
- *    it where the last stored content ends: the end of its last whole
- *    occurrence, or the end of the longest start of the segment that is an
- *    end of that content (the segment began inside it). Taking the furthest
- *    point can only hide live text, never repeat stored text, because the
- *    true end is one of the candidates. With no such point, nothing is
- *    drawn until the next stored message gives one: guessing could double.
- */
-export function liveSuffix(segments: readonly string[], storedContents: readonly string[]): string {
-  const contents = storedContents.map((content) => content.trim()).filter(Boolean);
-  const first = segments[0] ?? '';
-  let rest = first;
-  let index = 0;
-  for (; index < contents.length; index++) {
-    const content = contents[index] as string;
-    const head = rest.trimStart();
-    if (head.startsWith(content)) {
-      rest = head.slice(content.length);
-      continue;
-    }
-    if (content.startsWith(head) && segments.length === 1) return '';
-    break;
-  }
-  if (index === contents.length) return rest.trimStart();
-
-  const last = contents.at(-1) as string;
-  const segment = segments.at(-1) ?? '';
-  const end = furthestEnd(segment, last);
-  return end === -1 ? '' : segment.slice(end).trimStart();
-}
-
-/** The furthest index in `segment` right after where `content` (trimmed, non-empty) can end; -1 if none. */
-function furthestEnd(segment: string, content: string): number {
-  const whole = segment.lastIndexOf(content);
-  const wholeEnd = whole === -1 ? -1 : whole + content.length;
-  const head = segment.trimStart();
-  const overlap = longestPrefixThatIsSuffix(head, content);
-  const overlapEnd = overlap === 0 ? -1 : segment.length - head.length + overlap;
-  return Math.max(wholeEnd, overlapEnd);
-}
-
-/**
- * The length of the longest start of `text` that is also an end of `content`,
- * in linear time: the prefix function of `text` + a separator + `content`.
- */
-function longestPrefixThatIsSuffix(text: string, content: string): number {
-  const joined = `${text}\u0000${content}`;
-  const prefix = new Array<number>(joined.length).fill(0);
-  for (let i = 1; i < joined.length; i++) {
-    let k = prefix[i - 1] as number;
-    while (k > 0 && joined[i] !== joined[k]) k = prefix[k - 1] as number;
-    if (joined[i] === joined[k]) k++;
-    prefix[i] = k;
-  }
-  return Math.min(prefix[joined.length - 1] as number, text.length);
 }

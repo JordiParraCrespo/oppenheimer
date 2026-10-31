@@ -408,6 +408,13 @@ earlier note:
   relay path and falling back to it (built the same day, behind the
   `terminal_direct_path` flag), and the console now draws predictable keys
   before their echo. The relay still admits every attachment.
+- `versions/mvp/22-direct-terminal-path.md` bound the direct channel to the
+  DTLS fingerprints in the signalling, which the control plane relays, so a
+  compromised control plane could sit in the middle of it. On 2026-10-31 the
+  owner asked for as much peer to peer as possible and a handshake to harden
+  it: `versions/mvp/31-peer-to-peer-and-the-host-proof.md` has the host sign
+  both fingerprints with its pairing key on every channel, the browser pin
+  the key per host, and orders what moves off the control plane next.
 - `versions/mvp/05-screens.md` said a deleted session's row stays until
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if
@@ -582,6 +589,13 @@ earlier note:
   owed close again, a restart request supersedes it, and the console draws
   such a row as deleting or refused instead of bringing it back as it was
   (03, "A close is owed until the host answers it"; 01, "Hello").
+- Note 03 keyed the `session.stopped` a hello records for a lost pane by the
+  runner's `runId` alone, so a replayed hello wrote it once. That also
+  merged a second loss of the same pane, after a restart, on a later link of
+  the same runner process, into the first, and the session stayed open on a
+  pane that was gone. On 2026-10-31 the key is the run and the link's epoch,
+  and the entry is written only while the row is still open and not stopped
+  under its lock (03, "Hello reconciliation").
 - `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
   no key, fell back to the first keyed provider in catalog order, so a
   workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
@@ -885,6 +899,17 @@ earlier note:
   host, not the browser extension, reports its status off
   `codex cloud list --json`, since Codex's CLI answers it
   (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
+- `next-steps/cloud-agents.md` had a Codex environment named neither for
+  the repository's full name nor its bare name be the CLI's refusal, in its
+  words (`SESS_009`). On 2026-10-31 starts failed "not found" on
+  environments made in ChatGPT Settings → Codex Cloud, which codex-cli
+  0.166.0 cannot reach (it resolves only the list `codex cloud` browses).
+  That is now `SESS_010`, naming the labels tried and the labels on the
+  account's recent tasks, the one non-interactive view codex-cli offers,
+  partial; the failed start's pane explains it with a link to Settings →
+  Codex Cloud. The place picker does not mark the Codex row for it, since
+  a partial list would hide starts that work
+  (`next-steps/cloud-agents.md`, "Environments the CLI cannot reach").
 - A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
   Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
   9), it can also wake on a line the terminal prints that matches a
@@ -932,3 +957,28 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- 2026-10-31: the owner took the six chat slices drawn from a read of Codex
+  and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
+  in `next-steps/0.7-chat-protocol.md`.
+- `versions/mvp/25-bots.md` §5 (2026-10-15) had every no on a Needs input
+  card give the bot a turn that tells it, so it always carried on. On
+  2026-10-31 the card took Codex's `available_decisions`: the API chooses
+  the decisions a card offers (approve, approve for its subject, always
+  allow, deny, deny and stop) and accepts only those. *Deny* still gives
+  the bot a turn; *Deny and stop* gives it none, writes the decision as a
+  line outside any turn, and stops the asking turn if it still runs. Every
+  decision is broadcast as `approval_resolved`, so every open tab takes the
+  card down at once (25 §5).
+- `versions/mvp/25-bots.md` §3 had a message written while a bot works
+  wait over the composer for the turn after. On 2026-10-31, from Codex's
+  `turn/steer`, Enter steers the running turn instead: the turn takes the
+  message at its next tool call, and one it never reaches runs as its own
+  turn; Alt+Enter still queues it for after
+  (`next-steps/0.7-terminal-and-chat.md`, "Steer in the bots chat").
+- The bot stream was lossy by design: text published while the browser was
+  away was gone, and the console matched what it streamed against stored
+  text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
+  text is kept beside the channel and sent as a snapshot when the browser
+  connects, and the console reconciles by block and sequence number, the
+  stored message being the authority (`versions/mvp/25-bots.md` §2,
+  `next-steps/0.7-chat-protocol.md` slice 2).

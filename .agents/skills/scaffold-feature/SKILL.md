@@ -103,11 +103,12 @@ it. The steps are the "Add a module to a product package" cookbook in
    placeholder (`HostDetails`).
 2. **Errors:** `THINGS_CLIENT_00n` fallbacks, used only when the API sent no
    problem document.
-3. **Repository:** calls `heyApiSdk` from `@oppenheimer/api-client` through
-   `unwrap` / `unwrapBody` (the SDK function is the API slice's name:
-   `FindThingsHttpController` is `findThings`), maps DTOs to
-   entities, and puts `@MapApiError` on every method. An absent body is a
-   failed read, never `[]`.
+3. **Repository:** each method is one `callApi(ThingsErrors.X, async (api)
+   => …)` from `@oppenheimer/frontend-core`, which calls `heyApiSdk` from
+   `@oppenheimer/api-client` through `api.body` / `api.result` (the SDK
+   function is the API slice's name: `FindThingsHttpController` is
+   `findThings`) and maps DTOs to entities. `api.body` fails an absent
+   body: a failed read, never `[]`.
 4. **Module, tokens, `ConsumerApp` getter** — and a **service only when a
    method does more than call the repository**; otherwise the getter returns
    the repository (`packages/frontend/ARCHITECTURE.md`, step 4).

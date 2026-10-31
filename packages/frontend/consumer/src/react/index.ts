@@ -184,7 +184,7 @@ export {
   useOrganizations,
 } from './organizations.queries';
 export { usePermissionCatalog } from './permissions.queries';
-export { CONSUMER_NON_PERSISTED_FEATURES } from './persistence';
+export { CONSUMER_PERSISTED_FEATURES } from './persistence';
 export {
   useChangeEmail,
   useChangeOwnPassword,

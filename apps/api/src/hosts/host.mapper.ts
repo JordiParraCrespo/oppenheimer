@@ -134,6 +134,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     record.publicKeyFingerprint = entity.publicKeyFingerprint;
     record.lastSeenAt = entity.lastSeenAt;
     record.unpairedAt = entity.unpairedAt;
+    record.version = entity.version;
     return record;
   }
 
@@ -150,6 +151,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       id: record.id,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
+      version: record.version,
       props: {
         ownerUserId: record.ownerUserId,
         name: record.name,

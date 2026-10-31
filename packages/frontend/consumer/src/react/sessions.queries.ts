@@ -40,6 +40,7 @@ import {
   RESTART_WATCH_MS,
   usePollWhile,
 } from './live-poll';
+import { mutation } from './mutation';
 import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 import { sessionsKeys } from './sessions.keys';
@@ -382,29 +383,21 @@ export interface CreateSessionVariables {
   idempotencyKey: string;
 }
 
-export function useCreateSession(
-  options?: UseMutationOptions<SessionEntity, Error, CreateSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
-      app.sessions.create(input, idempotencyKey),
-    ...withCacheOnSuccess(options, (session) => {
-      // The row the API just answered with, put where the session screen reads
-      // it. Without this the screen the caller navigates to opens `pending`,
-      // draws its skeleton and fetches the session it was handed a moment ago:
-      // a round trip on the critical path between pressing send and the
-      // terminal mounting, which is the one stretch a reader is watching. Every
-      // other session mutation already seeds it ({@link useSessionPatch});
-      // create was the one that did not.
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      watchSessionStart(queryClient, session.id);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
+export const useCreateSession = mutation<SessionEntity, CreateSessionVariables>({
+  run: (app, { input, idempotencyKey }) => app.sessions.create(input, idempotencyKey),
+  update: (queryClient, session) => {
+    // The row the API just answered with, put where the session screen reads
+    // it. Without this the screen the caller navigates to opens `pending`,
+    // draws its skeleton and fetches the session it was handed a moment ago:
+    // a round trip on the critical path between pressing send and the
+    // terminal mounting, which is the one stretch a reader is watching. Every
+    // other session mutation already seeds it ({@link useSessionPatch});
+    // create was the one that did not.
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    watchSessionStart(queryClient, session.id);
+    queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
 
 export interface StartCloudSessionVariables {
   input: StartCloudSessionInput;
@@ -416,20 +409,13 @@ export interface StartCloudSessionVariables {
  * Starts a session in a vendor's cloud. The answer is the session, listed at
  * once with the others; its row opens the vendor's page.
  */
-export function useStartCloudSession(
-  options?: UseMutationOptions<SessionEntity, Error, StartCloudSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ input, idempotencyKey }: StartCloudSessionVariables) =>
-      app.sessions.startCloud(input, idempotencyKey),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
+export const useStartCloudSession = mutation<SessionEntity, StartCloudSessionVariables>({
+  run: (app, { input, idempotencyKey }) => app.sessions.startCloud(input, idempotencyKey),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
 
 /**
  * Gets a host ready for the session New session is composing: the draft's
@@ -437,15 +423,9 @@ export function useStartCloudSession(
  * send cuts a branch from a checkout that already exists. Nothing is cached:
  * the answer is only whether the host was told.
  */
-export function usePrepareSession(
-  options?: UseMutationOptions<string[], Error, PrepareSessionInput>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: (input: PrepareSessionInput) => app.sessions.prepare(input),
-    ...options,
-  });
-}
+export const usePrepareSession = mutation<string[], PrepareSessionInput>({
+  run: (app, input) => app.sessions.prepare(input),
+});
 
 export interface RenameSessionVariables {
   id: string;
@@ -550,21 +530,16 @@ export interface CloseSessionVariables {
  * said in it rather than empty. The session's own row is refreshed and the
  * lists with it: what changes is the lifecycle, which every list draws.
  */
-export function useRestartSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.sessions.restart(id),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      // A restart is a request; the row is still stopped until the host says
-      // otherwise, so the detail reads until it does.
-      watchRestart(queryClient, session.id);
-    }),
-  });
-}
+export const useRestartSession = mutation<SessionEntity, string>({
+  run: (app, id) => app.sessions.restart(id),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    // A restart is a request; the row is still stopped until the host says
+    // otherwise, so the detail reads until it does.
+    watchRestart(queryClient, session.id);
+  },
+});
 
 /**
  * Delete a session. The row leaves the lists on the click: the close is the
@@ -616,15 +591,9 @@ export function useCloseSession(
  * Upload a file for New session's first task. Nothing is cached: what comes
  * back is the id the create names in `attachmentIds`.
  */
-export function useUploadSessionAttachment(
-  options?: UseMutationOptions<SessionAttachment, Error, Blob>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: (file: Blob) => app.sessions.uploadAttachment(file),
-    ...options,
-  });
-}
+export const useUploadSessionAttachment = mutation<SessionAttachment, Blob>({
+  run: (app, file) => app.sessions.uploadAttachment(file),
+});
 
 /**
  * Paste a file into one window's prompt. Nothing is cached and no key is
@@ -768,17 +737,10 @@ export function useSuspenseSessionPreview(sessionId: string, port: number, opene
  * Open in a new tab: a URL of its own for one of the session's ports, outside
  * the console's frame. Nothing cached changes.
  */
-export function useOpenSessionPreviewTab(
-  options?: UseMutationOptions<
-    SessionPreview,
-    Error,
-    { sessionId: string; port: number; path?: string }
-  >,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    ...options,
-    mutationFn: ({ sessionId, port, path }) =>
-      app.sessions.openPreview(sessionId, { port, path, embed: false }),
-  });
-}
+export const useOpenSessionPreviewTab = mutation<
+  SessionPreview,
+  { sessionId: string; port: number; path?: string }
+>({
+  run: (app, { sessionId, port, path }) =>
+    app.sessions.openPreview(sessionId, { port, path, embed: false }),
+});

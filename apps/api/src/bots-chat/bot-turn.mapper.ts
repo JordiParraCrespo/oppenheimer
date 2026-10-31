@@ -38,6 +38,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.askedByBotId = entity.askedByBotId;
     record.askedByTurnId = entity.askedByTurnId;
     record.replyRequested = entity.replyRequested;
+    record.steer = entity.steer;
     record.answersTurnId = entity.answersTurnId;
     record.error = entity.error;
     record.failure = entity.failure;
@@ -75,6 +76,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         askedByBotId: record.askedByBotId ?? null,
         askedByTurnId: record.askedByTurnId ?? null,
         replyRequested: record.replyRequested === true,
+        steer: record.steer === true,
         answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
         failure: record.failure ?? null,
@@ -106,6 +108,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     dto.contextWindow = entity.context?.window ?? null;
     dto.planLimits = planLimitsToRecord(entity.planLimits) as BotTurnPlanLimitsDto | null;
     dto.cancelRequested = entity.cancelRequestedAt !== null;
+    dto.steer = entity.steer;
     dto.createdAt = entity.createdAt.toISOString();
     dto.startedAt = entity.startedAt?.toISOString() ?? null;
     dto.endedAt = entity.endedAt?.toISOString() ?? null;

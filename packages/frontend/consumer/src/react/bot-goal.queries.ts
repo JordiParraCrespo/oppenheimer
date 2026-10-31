@@ -1,10 +1,10 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotGoal } from '@oppenheimer/shared/schemas/bot';
-import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * A bot's goal (`product/versions/mvp/25-bots.md` §4.1): what it keeps
@@ -24,16 +24,11 @@ export function useBotGoal(id: string) {
   });
 }
 
-export function useClearBotGoal(options?: UseMutationOptions<void, Error, { id: string }>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id }: { id: string }) => app.bots.clearGoal(id),
-    ...withCacheOnSuccess(options, (_data, { id }) =>
-      Promise.all([
-        queryClient.setQueryData(botsKeys.goal(id), null),
-        queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
-      ]),
-    ),
-  });
-}
+export const useClearBotGoal = mutation<void, { id: string }>({
+  run: (app, { id }) => app.bots.clearGoal(id),
+  update: (queryClient, _data, { id }) =>
+    Promise.all([
+      queryClient.setQueryData(botsKeys.goal(id), null),
+      queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+    ]),
+});

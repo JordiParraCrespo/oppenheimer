@@ -5,7 +5,7 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
+import { deliverSteers, failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
 import { CodexLimitsRecorder } from './codex-limits';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
@@ -146,7 +146,11 @@ export class OpenAiBotEngine extends BotEngine {
             });
             if (result.isError && callId) failedCalls.add(callId);
             made.record(callId, result.data);
-            return result.content;
+            return deliverSteers(
+              result.content,
+              { steering: request.steering, signal: request.signal, callId },
+              made,
+            );
           },
         }),
       ),

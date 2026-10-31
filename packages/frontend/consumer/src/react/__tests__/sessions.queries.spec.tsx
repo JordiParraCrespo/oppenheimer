@@ -5,6 +5,7 @@ import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
+import { sessionEntity } from '../../testing';
 import { sessionsKeys } from '../sessions.keys';
 import {
   useCloseSession,
@@ -117,14 +118,10 @@ describe('useSessions', () => {
   it('keeps the rows, and the details, of a poll that changed nothing', async () => {
     // Real class instances: a plain object literal would pass on the default
     // sharing alone and prove nothing.
-    class Row {
-      constructor(
-        public readonly id: string,
-        public readonly isProvisioning: boolean,
-      ) {}
-    }
-    const poll = (provisioning: boolean) =>
-      [new Row('s-2', false), new Row('s-1', provisioning)] as unknown as SessionEntity[];
+    const poll = (provisioning: boolean): SessionEntity[] => [
+      sessionEntity({ id: 's-2' }),
+      sessionEntity({ id: 's-1', lifecycle: provisioning ? 'starting' : 'open' }),
+    ];
     const findAll = vi
       .fn()
       .mockResolvedValueOnce(poll(true))

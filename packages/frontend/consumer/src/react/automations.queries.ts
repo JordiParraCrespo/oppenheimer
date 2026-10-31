@@ -5,16 +5,13 @@ import {
   useQuery,
   useSuspenseQueries,
   useSuspenseQuery,
-  withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   type QueryClient,
   type QueryKey,
   skipToken,
-  type UseMutationOptions,
   type UseQueryOptions,
-  useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import { CONSUMER_CONFIG } from '../config';
@@ -33,6 +30,7 @@ import type {
 import { automationsKeys } from './automations.keys';
 import { useConsumerApp } from './context';
 import { type PollKeys, usePollWhile } from './live-poll';
+import { mutation } from './mutation';
 import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
 
@@ -233,32 +231,20 @@ async function settleAutomation(queryClient: QueryClient, write: AutomationWrite
   );
 }
 
-export function useCreateAutomation(
-  options?: UseMutationOptions<AutomationEntity, Error, AutomationInput>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: AutomationInput) => app.automations.create(input),
-    ...withCacheOnSuccess(options, (added) => settleAutomation(queryClient, { added })),
-  });
-}
+export const useCreateAutomation = mutation<AutomationEntity, AutomationInput>({
+  run: (app, input) => app.automations.create(input),
+  update: (queryClient, added) => settleAutomation(queryClient, { added }),
+});
 
 export interface UpdateAutomationVariables {
   id: string;
   input: UpdateAutomationInput;
 }
 
-export function useUpdateAutomation(
-  options?: UseMutationOptions<AutomationEntity, Error, UpdateAutomationVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateAutomationVariables) => app.automations.update(id, input),
-    ...withCacheOnSuccess(options, (saved) => settleAutomation(queryClient, { saved, runs: true })),
-  });
-}
+export const useUpdateAutomation = mutation<AutomationEntity, UpdateAutomationVariables>({
+  run: (app, { id, input }) => app.automations.update(id, input),
+  update: (queryClient, saved) => settleAutomation(queryClient, { saved, runs: true }),
+});
 
 export interface PauseAutomationVariables {
   id: string;
@@ -266,45 +252,26 @@ export interface PauseAutomationVariables {
 }
 
 /** Pause or resume: triggers are ignored while paused, and Run now still works. */
-export function useSetAutomationPaused(
-  options?: UseMutationOptions<AutomationEntity, Error, PauseAutomationVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, paused }: PauseAutomationVariables) =>
-      paused ? app.automations.pause(id) : app.automations.resume(id),
-    ...withCacheOnSuccess(options, (saved) =>
-      settleAutomation(queryClient, { saved, runs: false }),
-    ),
-  });
-}
+export const useSetAutomationPaused = mutation<AutomationEntity, PauseAutomationVariables>({
+  run: (app, { id, paused }) => (paused ? app.automations.pause(id) : app.automations.resume(id)),
+  update: (queryClient, saved) => settleAutomation(queryClient, { saved, runs: false }),
+});
 
 /** Duplicate: the copy is the caller's, and starts paused only if the original was. */
-export function useDuplicateAutomation(
-  options?: UseMutationOptions<AutomationEntity, Error, string>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.automations.duplicate(id),
-    ...withCacheOnSuccess(options, (added) => settleAutomation(queryClient, { added })),
-  });
-}
+export const useDuplicateAutomation = mutation<AutomationEntity, string>({
+  run: (app, id) => app.automations.duplicate(id),
+  update: (queryClient, added) => settleAutomation(queryClient, { added }),
+});
 
 /**
  * Delete: its triggers stop now, and its past runs are kept. The deleted
  * automation's own read is dropped rather than left stale, so nothing asks
  * the API again for a row that is gone.
  */
-export function useDeleteAutomation(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.automations.remove(id),
-    ...withCacheOnSuccess(options, (_data, removed) => settleAutomation(queryClient, { removed })),
-  });
-}
+export const useDeleteAutomation = mutation<void, string>({
+  run: (app, id) => app.automations.remove(id),
+  update: (queryClient, _data, removed) => settleAutomation(queryClient, { removed }),
+});
 
 export interface RunAutomationVariables {
   id: string;
@@ -313,14 +280,7 @@ export interface RunAutomationVariables {
 }
 
 /** Run now, whether or not the automation is paused. */
-export function useRunAutomation(
-  options?: UseMutationOptions<AutomationRunEntity, Error, RunAutomationVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, idempotencyKey }: RunAutomationVariables) =>
-      app.automations.run(id, idempotencyKey),
-    ...withCacheOnSuccess(options, (_run, { id }) => settleAutomation(queryClient, { ran: id })),
-  });
-}
+export const useRunAutomation = mutation<AutomationRunEntity, RunAutomationVariables>({
+  run: (app, { id, idempotencyKey }) => app.automations.run(id, idempotencyKey),
+  update: (queryClient, _run, { id }) => settleAutomation(queryClient, { ran: id }),
+});

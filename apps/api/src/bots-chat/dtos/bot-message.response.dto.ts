@@ -130,6 +130,15 @@ export class BotApprovalEventResponseDto {
     description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    required: false,
+    description:
+      'The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.',
+  })
+  approvalId?: string;
 }
 
 /** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
@@ -382,4 +391,12 @@ export class BotConversationResponseDto {
       'How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.',
   })
   messageCount!: number;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    description:
+      'For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`).',
+  })
+  storedTextBlocks!: Record<string, number>;
 }

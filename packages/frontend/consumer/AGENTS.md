@@ -27,17 +27,20 @@ and the full "add a module" cookbook are
   `pnpm check:structure` allows a feature name a module carries.
 - A new query hook → `src/react/things.queries.ts`, keys from
   `thingsKeys` in `src/react/things.keys.ts` (every key derived from
-  `thingsKeys.all`), hooks over `useConsumerApp()`, mutations invalidating by
-  prefix through `withCacheOnSuccess(options, update)` from
-  `@oppenheimer/frontend-core/react`; export by name from
+  `thingsKeys.all`), hooks over `useConsumerApp()`, mutations made with
+  `mutation({ run, invalidates | update })` (`src/react/mutation.ts`,
+  `defineMutation` from `@oppenheimer/frontend-core/react`), invalidating by
+  prefix; one that needs its own `onMutate` or `onError` writes `useMutation`
+  out over `withCacheOnSuccess`. Export by name from
   `src/react/index.ts` the hooks the app imports. The key factory stays
   unexported from the barrel — `pnpm check:unused` fails an export nothing
   outside reads.
-- Data that must not be written to storage → its key prefix in
-  `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`), imported
-  from `things.keys.ts`, never from `things.queries.ts`: the console's entry
+- Nothing is written to storage unless it is listed: plain data (no entity,
+  no `Date`) that is safe to keep in a browser → its key prefix in
+  `CONSUMER_PERSISTED_FEATURES` (`src/react/persistence.ts`), imported from
+  `things.keys.ts`, never from `things.queries.ts`: the console's entry
   loads that list, and a `.queries` import puts every hook in the file on the
-  first load (`pnpm check:bundle`).
+  first load (`pnpm check:bundle`). Or one read with `meta: PERSIST_META`.
 - Something that is not product logic (every app would need it) → promote it
   to `@oppenheimer/frontend-core` rather than keeping it here.
 

@@ -1,13 +1,7 @@
 'use client';
 
-import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import {
-  skipToken,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
+import { skipToken, type UseQueryOptions, useQueryClient } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 import type {
   CalendarEventEntity,
@@ -18,6 +12,7 @@ import type {
 } from '../modules/calendar/calendar-event.entity';
 import { calendarKeys } from './calendar.keys';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /** How long Google's month stays fresh before a focus reads it again. */
 const GOOGLE_FRESH_MS = 2 * 60_000;
@@ -142,93 +137,57 @@ export function useLatestGoogleCalendarRead(): {
   };
 }
 
-export function useCreateCalendarEvent(
-  options?: UseMutationOptions<CalendarEventEntity, Error, CalendarEventInput>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: CalendarEventInput) => app.calendar.createEvent(input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
-    }),
-  });
-}
+export const useCreateCalendarEvent = mutation<CalendarEventEntity, CalendarEventInput>({
+  run: (app, input) => app.calendar.createEvent(input),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+  },
+});
 
 export interface UpdateCalendarEventVariables {
   id: string;
   input: Partial<CalendarEventInput>;
 }
 
-export function useUpdateCalendarEvent(
-  options?: UseMutationOptions<CalendarEventEntity, Error, UpdateCalendarEventVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateCalendarEventVariables) =>
-      app.calendar.updateEvent(id, input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
-    }),
-  });
-}
+export const useUpdateCalendarEvent = mutation<CalendarEventEntity, UpdateCalendarEventVariables>({
+  run: (app, { id, input }) => app.calendar.updateEvent(id, input),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+  },
+});
 
-export function useDeleteCalendarEvent(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.calendar.removeEvent(id),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
-    }),
-  });
-}
+export const useDeleteCalendarEvent = mutation<void, string>({
+  run: (app, id) => app.calendar.removeEvent(id),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+  },
+});
 
 /**
  * Asks for Google's consent page and sends the browser there: a new account,
  * or, given a connection's id, a reconnect of that one.
  */
-export function useStartGoogleCalendarConnection(
-  options?: UseMutationOptions<string, Error, string | undefined>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: (connectionId?: string) => app.calendar.startGoogleConnection(connectionId),
-    ...withCacheOnSuccess(options, (url) => {
-      window.location.assign(url);
-    }),
-  });
-}
+export const useStartGoogleCalendarConnection = mutation<string, string | undefined>({
+  run: (app, connectionId) => app.calendar.startGoogleConnection(connectionId),
+  update: (_queryClient, url) => {
+    window.location.assign(url);
+  },
+});
 
-export function useConnectGoogleCalendar(
-  options?: UseMutationOptions<
-    GoogleCalendarConnectionEntity,
-    Error,
-    { code: string; state: string }
-  >,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ code, state }: { code: string; state: string }) =>
-      app.calendar.connectGoogle(code, state),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
-    }),
-  });
-}
+export const useConnectGoogleCalendar = mutation<
+  GoogleCalendarConnectionEntity,
+  { code: string; state: string }
+>({
+  run: (app, { code, state }) => app.calendar.connectGoogle(code, state),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
+  },
+});
 
 /** Removes one Google account: its events leave the month and its colour is free again. */
-export function useRemoveGoogleCalendarConnection(
-  options?: UseMutationOptions<void, Error, string>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.calendar.removeGoogleConnection(id),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
-    }),
-  });
-}
+export const useRemoveGoogleCalendarConnection = mutation<void, string>({
+  run: (app, id) => app.calendar.removeGoogleConnection(id),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: calendarKeys.google() });
+  },
+});

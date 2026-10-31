@@ -3,7 +3,7 @@ import {
   heyApiSdk,
   type ScheduledMailResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { GmailConnectionEntity } from './gmail-connection.entity';
 import { MailErrors } from './mail.errors';
@@ -38,59 +38,55 @@ function toScheduled(data: ScheduledMailResponseDto): ScheduledMailEntity {
  */
 @injectable()
 export class MailRepository {
-  @MapApiError(MailErrors.FETCH_CONNECTIONS_FAILED)
-  async findConnections(): Promise<GmailConnectionEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findGmailConnections(),
-      MailErrors.FETCH_CONNECTIONS_FAILED,
-    );
-    return data.map(toConnection);
+  findConnections(): Promise<GmailConnectionEntity[]> {
+    return callApi(MailErrors.FETCH_CONNECTIONS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findGmailConnections());
+      return data.map(toConnection);
+    });
   }
 
   /** Google's consent page, for a new account or to reconnect one; the browser goes there. */
-  @MapApiError(MailErrors.CONNECT_FAILED)
-  async startConnection(connectionId?: string): Promise<string> {
-    const data = await unwrapBody(
-      heyApiSdk.startGmailConnection({ body: connectionId ? { connectionId } : {} }),
-      MailErrors.CONNECT_FAILED,
-    );
-    return data.url;
+  startConnection(connectionId?: string): Promise<string> {
+    return callApi(MailErrors.CONNECT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.startGmailConnection({ body: connectionId ? { connectionId } : {} }),
+      );
+      return data.url;
+    });
   }
 
-  @MapApiError(MailErrors.CONNECT_FAILED)
-  async connect(code: string, state: string): Promise<GmailConnectionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.connectGmail({ body: { code, state } }),
-      MailErrors.CONNECT_FAILED,
-    );
-    return toConnection(data);
+  connect(code: string, state: string): Promise<GmailConnectionEntity> {
+    return callApi(MailErrors.CONNECT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.connectGmail({ body: { code, state } }));
+      return toConnection(data);
+    });
   }
 
-  @MapApiError(MailErrors.RENAME_FAILED)
-  async rename(id: string, label: string): Promise<GmailConnectionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateGmailConnection({ path: { id }, body: { label } }),
-      MailErrors.RENAME_FAILED,
-    );
-    return toConnection(data);
+  rename(id: string, label: string): Promise<GmailConnectionEntity> {
+    return callApi(MailErrors.RENAME_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateGmailConnection({ path: { id }, body: { label } }),
+      );
+      return toConnection(data);
+    });
   }
 
-  @MapApiError(MailErrors.DISCONNECT_FAILED)
-  async disconnect(id: string): Promise<void> {
-    await unwrap(heyApiSdk.removeGmailConnection({ path: { id } }), MailErrors.DISCONNECT_FAILED);
+  disconnect(id: string): Promise<void> {
+    return callApi(MailErrors.DISCONNECT_FAILED, async (api) => {
+      await api.result(heyApiSdk.removeGmailConnection({ path: { id } }));
+    });
   }
 
-  @MapApiError(MailErrors.FETCH_SCHEDULED_FAILED)
-  async findScheduled(): Promise<ScheduledMailEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findScheduledMail(), MailErrors.FETCH_SCHEDULED_FAILED);
-    return data.map(toScheduled);
+  findScheduled(): Promise<ScheduledMailEntity[]> {
+    return callApi(MailErrors.FETCH_SCHEDULED_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findScheduledMail());
+      return data.map(toScheduled);
+    });
   }
 
-  @MapApiError(MailErrors.CANCEL_SCHEDULED_FAILED)
-  async cancelScheduled(id: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.cancelScheduledMail({ path: { id } }),
-      MailErrors.CANCEL_SCHEDULED_FAILED,
-    );
+  cancelScheduled(id: string): Promise<void> {
+    return callApi(MailErrors.CANCEL_SCHEDULED_FAILED, async (api) => {
+      await api.result(heyApiSdk.cancelScheduledMail({ path: { id } }));
+    });
   }
 }

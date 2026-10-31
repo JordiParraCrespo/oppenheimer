@@ -5,7 +5,6 @@ import { runAllMigrations } from '../../__tests__/run-migrations';
 import { SessionTurnOrmEntity } from '../database/session-turn.orm-entity';
 import { SessionUsageRepository } from '../database/session-usage.repository';
 import type { SessionUsageWeek } from '../database/session-usage.repository.port';
-import { WorkSessionMapper } from '../work-session.mapper';
 
 /**
  * `SessionUsageReader.weeklyUsage` against the schema the migrations build: the
@@ -93,10 +92,7 @@ describe('sessions: weekly turn usage (integration)', () => {
       synchronize: false,
     });
     await dataSource.initialize();
-    reader = new SessionUsageRepository(
-      dataSource.getRepository(SessionTurnOrmEntity),
-      new WorkSessionMapper(),
-    );
+    reader = new SessionUsageRepository(dataSource.getRepository(SessionTurnOrmEntity));
 
     await dataSource.query(
       `INSERT INTO "user" ("id", "email", "name", "firstName", "lastName", "emailVerified")

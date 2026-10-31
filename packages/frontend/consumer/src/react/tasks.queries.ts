@@ -18,6 +18,7 @@ import {
 import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks/tasks.repository';
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
+import { mutation } from './mutation';
 import { useProjectListQuery } from './projects.queries';
 import { sessionsKeys } from './sessions.keys';
 import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
@@ -160,30 +161,20 @@ function movesMilestoneProgress(was: TaskEntity | undefined, now: TaskEntity | n
   return before !== null && (was?.isDone ?? false) !== (now?.isDone ?? false);
 }
 
-export function useCreateTask(options?: UseMutationOptions<TaskEntity, Error, TaskInput>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: TaskInput) => app.tasks.create(input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
-  });
-}
+export const useCreateTask = mutation<TaskEntity, TaskInput>({
+  run: (app, input) => app.tasks.create(input),
+  update: (queryClient, task) => settleTask(queryClient, task.id, task),
+});
 
 export interface UpdateTaskVariables {
   id: string;
   input: Partial<TaskInput>;
 }
 
-export function useUpdateTask(
-  options?: UseMutationOptions<TaskEntity, Error, UpdateTaskVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateTaskVariables) => app.tasks.update(id, input),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
-  });
-}
+export const useUpdateTask = mutation<TaskEntity, UpdateTaskVariables>({
+  run: (app, { id, input }) => app.tasks.update(id, input),
+  update: (queryClient, task) => settleTask(queryClient, task.id, task),
+});
 
 export interface MoveTaskVariables extends TaskMove {
   id: string;
@@ -253,33 +244,21 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
   );
 }
 
-export function useDeleteTask(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.tasks.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => settleTask(queryClient, id, null)),
-  });
-}
+export const useDeleteTask = mutation<void, string>({
+  run: (app, id) => app.tasks.remove(id),
+  update: (queryClient, _data, id) => settleTask(queryClient, id, null),
+});
 
 export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
 
 /** Start a session for a task; the session list learns of it on its next read. */
-export function useStartTaskSession(
-  options?: UseMutationOptions<StartedTaskSession, Error, StartTaskSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    // The input is read field by field, so the id riding along is never sent.
-    mutationFn: (variables: StartTaskSessionVariables) =>
-      app.tasks.startSession(variables.id, variables),
-    ...withCacheOnSuccess(options, (started) => {
-      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      return settleTask(queryClient, started.task.id, started.task);
-    }),
-  });
-}
+export const useStartTaskSession = mutation<StartedTaskSession, StartTaskSessionVariables>({
+  run: (app, variables) => app.tasks.startSession(variables.id, variables),
+  update: (queryClient, started) => {
+    void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    return settleTask(queryClient, started.task.id, started.task);
+  },
+});
 
 export interface LinkTaskSessionVariables {
   id: string;
@@ -287,42 +266,22 @@ export interface LinkTaskSessionVariables {
   seenStatus: TaskEntity['status'];
 }
 
-export function useLinkTaskSession(
-  options?: UseMutationOptions<TaskEntity, Error, LinkTaskSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, sessionId, seenStatus }: LinkTaskSessionVariables) =>
-      app.tasks.linkSession(id, sessionId, seenStatus),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
-  });
-}
+export const useLinkTaskSession = mutation<TaskEntity, LinkTaskSessionVariables>({
+  run: (app, { id, sessionId, seenStatus }) => app.tasks.linkSession(id, sessionId, seenStatus),
+  update: (queryClient, task) => settleTask(queryClient, task.id, task),
+});
 
-export function useUnlinkTaskSession(
-  options?: UseMutationOptions<TaskEntity, Error, { id: string; sessionId: string }>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, sessionId }: { id: string; sessionId: string }) =>
-      app.tasks.unlinkSession(id, sessionId),
-    ...withCacheOnSuccess(options, (task) => settleTask(queryClient, task.id, task)),
-  });
-}
+export const useUnlinkTaskSession = mutation<TaskEntity, { id: string; sessionId: string }>({
+  run: (app, { id, sessionId }) => app.tasks.unlinkSession(id, sessionId),
+  update: (queryClient, task) => settleTask(queryClient, task.id, task),
+});
 
-export function useCreateMilestone(
-  options?: UseMutationOptions<MilestoneEntity, Error, MilestoneInput>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: MilestoneInput) => app.tasks.createMilestone(input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
-    }),
-  });
-}
+export const useCreateMilestone = mutation<MilestoneEntity, MilestoneInput>({
+  run: (app, input) => app.tasks.createMilestone(input),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
+  },
+});
 
 export interface UpdateMilestoneVariables {
   id: string;
@@ -330,27 +289,17 @@ export interface UpdateMilestoneVariables {
 }
 
 /** A milestone moved to another project takes its tasks with it, so the board refetches too. */
-export function useUpdateMilestone(
-  options?: UseMutationOptions<MilestoneEntity, Error, UpdateMilestoneVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateMilestoneVariables) => app.tasks.updateMilestone(id, input),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
-    }),
-  });
-}
+export const useUpdateMilestone = mutation<MilestoneEntity, UpdateMilestoneVariables>({
+  run: (app, { id, input }) => app.tasks.updateMilestone(id, input),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
+  },
+});
 
 /** Its tasks lose their milestone, so the board refetches too. */
-export function useDeleteMilestone(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.tasks.removeMilestone(id),
-    ...withCacheOnSuccess(options, () => {
-      void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
-    }),
-  });
-}
+export const useDeleteMilestone = mutation<void, string>({
+  run: (app, id) => app.tasks.removeMilestone(id),
+  update: (queryClient) => {
+    void queryClient.invalidateQueries({ queryKey: tasksKeys.all });
+  },
+});

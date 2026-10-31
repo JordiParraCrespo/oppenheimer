@@ -17,6 +17,7 @@ import { BotTurnMapper } from '../bot-turn.mapper';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { BotApprovalOrmEntity } from './bot-approval.orm-entity';
 import type { BotApprovalEffects, BotApprovalRepositoryPort } from './bot-approval.repository.port';
+import { insertMessageWithin } from './bot-message.repository';
 import { insertGrantWithin, upsertDecisionWithin } from './bot-tool-permission.repository';
 import { enqueueWithin, lockBot, waitingCardWithin } from './bot-turn.repository';
 
@@ -175,6 +176,7 @@ export class BotApprovalRepository
           correlationId,
         );
       }
+      if (effects.line) await insertMessageWithin(manager, this.messages, effects.line);
       if (effects.runCall) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_APPROVALS,

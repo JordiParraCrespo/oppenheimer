@@ -4,9 +4,9 @@ import type { CloudRunsPort } from '../../cloud-agents/application/cloud-runs.po
 import { CLOUD_RUNS } from '../../cloud-agents/cloud-agents.di-tokens';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
 import { DETAIL_SYNC_AFTER_MS, needsSync, runsToSync } from '../domain/cloud-session-sync.policy';
+import { cloudRunEntries } from '../domain/session-log-entry.factory';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
-import { WorkSessionMapper } from '../work-session.mapper';
 
 /**
  * Asks a cloud session's vendor where its run stands, on the launcher's key,
@@ -29,7 +29,6 @@ export class CloudSessionSyncResolver {
   constructor(
     @Inject(CLOUD_RUNS) private readonly runs: CloudRunsPort,
     @Inject(WORK_SESSION_REPOSITORY) private readonly sessions: WorkSessionRepositoryPort,
-    private readonly mapper: WorkSessionMapper,
   ) {}
 
   /** A list's page: its stalest few working cloud sessions. */
@@ -67,7 +66,7 @@ export class CloudSessionSyncResolver {
       const runIdAtLoad = run.latestRunId;
       run.synced(report, now);
       await this.sessions.saveCloudRunIf(run, runIdAtLoad);
-      const events = this.mapper.toCloudRunEvents(report, now);
+      const events = cloudRunEntries(report, now);
       if (events.length > 0) await this.sessions.appendEvents(session, events);
     } catch (error) {
       if (!(error instanceof AppError)) throw error;

@@ -12,10 +12,11 @@ import { botsKeys } from '../bots.keys';
 import { hostsKeys } from '../hosts.keys';
 import { useHostPresence } from '../hosts.queries';
 import { inboxKeys } from '../inbox.keys';
-import { LIVE_POLL } from '../live-poll';
+import { LIVE_POLL, usePollWhile } from '../live-poll';
 import { pullRequestsKeys } from '../pull-requests.keys';
 import { sessionsKeys } from '../sessions.keys';
 import { useSessionStartProgress, useSessions, useSuspenseSession } from '../sessions.queries';
+import { tasksKeys } from '../tasks.keys';
 import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
 
@@ -155,7 +156,7 @@ describe('useWorkspaceEvents', () => {
   });
 
   /**
-   * The coverage table at work: a read whose every change is an event stands
+   * The refresh table at work: a read whose every change is an event stands
    * its poll down while the stream is live and polls again the moment it
    * drops. Start steps raise `session.changed`, so the start log is one.
    */
@@ -219,6 +220,43 @@ describe('useWorkspaceEvents', () => {
 
     await status('live');
     expect(pollInterval(queryClient, hostsKeys.list())).toBe(LIVE_POLL.hostPresence.interval);
+  });
+
+  /**
+   * Standing down is opt-in twice over: the poll's kind says the stream may
+   * cover it, and the stream announces every change to its read. A new kind,
+   * or a new read beside one the stream refreshes, keeps polling.
+   */
+  it('keeps a poll whose kind has not opted in, even on a read the stream announces in full', async () => {
+    const { status, wrapper } = setup();
+    const { result } = renderHook(
+      () => {
+        useWorkspaceEvents('org-1');
+        return usePollWhile('liveRun', sessionsKeys.list(), true);
+      },
+      { wrapper },
+    );
+    await status('live');
+    expect(result.current.refetchInterval).toBe(LIVE_POLL.liveRun.interval);
+  });
+
+  it('keeps the poll on a read the stream refreshes only part of its feature', async () => {
+    const { status, wrapper } = setup();
+    // `task.changed` refreshes the task list and the milestones, nothing else of tasks.
+    const other = [...tasksKeys.all, 'detail', 't-1'];
+    const { result } = renderHook(
+      () => {
+        useWorkspaceEvents('org-1');
+        return {
+          other: usePollWhile('sessionStarting', other, true),
+          list: usePollWhile('sessionStarting', tasksKeys.list(), true),
+        };
+      },
+      { wrapper },
+    );
+    await status('live');
+    await waitFor(() => expect(result.current.list.refetchInterval).toBe(false));
+    expect(result.current.other.refetchInterval).toBe(LIVE_POLL.sessionStarting.interval);
   });
 
   it('closes the stream on unmount', () => {

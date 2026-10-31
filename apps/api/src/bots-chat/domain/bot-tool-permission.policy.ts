@@ -1,4 +1,6 @@
 import type {
+  BotApprovalDecision,
+  BotApprovalReach,
   BotPermission,
   BotPermissionRuleEffect,
   BotToolDecision,
@@ -95,6 +97,21 @@ export function grantFor(
       candidate.subject.key === subject.key,
   );
   return grant ? grant.subject : null;
+}
+
+/**
+ * The decisions a card offers, in the order it draws them (Codex's
+ * `available_decisions`): a yes to this call; the yes that stands for the
+ * call's subject and the one that stands for the tool, where the card's
+ * reaches allow them; a no the bot carries on from; and a no that stops the
+ * turn. The decide endpoint accepts these and nothing else.
+ */
+export function decisionsFor(reaches: readonly BotApprovalReach[]): BotApprovalDecision[] {
+  const decisions: BotApprovalDecision[] = ['approve'];
+  if (reaches.includes('subject')) decisions.push('approve_for_subject');
+  if (reaches.includes('tool')) decisions.push('approve_always');
+  decisions.push('deny', 'stop');
+  return decisions;
 }
 
 /** Which ways a yes may reach for this tool and call (`BOT_APPROVAL_REACHES`). */

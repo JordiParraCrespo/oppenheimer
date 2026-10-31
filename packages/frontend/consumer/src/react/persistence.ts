@@ -1,52 +1,17 @@
-import { automationsKeys } from './automations.keys';
-import { botsKeys } from './bots.keys';
-import { calendarKeys } from './calendar.keys';
-import { cloudAgentsKeys } from './cloud-agents.keys';
-import { hostsKeys } from './hosts.keys';
-import { inboxKeys } from './inbox.keys';
-import { installationsKeys } from './installations.keys';
-import { mailKeys } from './mail.keys';
-import { profileKeys } from './profile.keys';
-import { projectsKeys } from './projects.keys';
-import { pullRequestsKeys } from './pull-requests.keys';
-import { sessionsKeys } from './sessions.keys';
-import { tasksKeys } from './tasks.keys';
-import { voiceKeys } from './voice.keys';
+import { permissionsKeys } from './permissions.keys';
 
 /**
- * Consumer features that never reach the persisted query cache: a session
- * record names a host, a repository and a branch, a host list names the
- * machines someone owns, an installation names GitHub accounts and their
- * repositories, a project names its repositories and its host, and a profile
- * is not a thing to leave in a browser's storage either, nor an automation's
- * prompt or the events its runs were started by. Plan's tasks name the work
- * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
- * private repositories' code, diffs included. A bot's soul, instructions and
- * memory are what someone told it about their work. Whether a workspace can
-dictate says whether it has a ChatGPT sign-in. A cloud agent names a
- * repository and what someone asked of it, and its status says which vendor
- * keys they hold. A consumer app passes this
- * to `createQueryPersistOptions`.
+ * The consumer features whose reads reach the persisted query cache, beside
+ * the kernel's own (`createQueryPersistOptions`). Only plain data belongs
+ * here: a restore gives back plain JSON, so an entity (a session, a host, a
+ * workspace: anything with a `Date` or a method) would come back broken, and
+ * most features name someone's machines, repositories, code or day besides.
+ * The permission catalog is neither: groups of scopes and what the caller may
+ * grant. A consumer app passes this to `createQueryPersistOptions`.
  *
- * The review period's numbers are the one read of that feature which is kept:
- * counts, medians, a lane mix and dates, naming no repository and holding no
- * code. It opts in where it is defined, with `meta: PERSIST_META` on
- * `useSuspensePullRequestAnalytics`, so this list stays one entry per feature and the
- * default for anything new stays "not stored".
+ * Anything else is not stored. One read inside a feature that is safe to keep
+ * opts in where it is defined, with `meta: PERSIST_META` (the review period's
+ * numbers on `useSuspensePullRequestAnalytics`: counts, medians, a lane mix
+ * and dates, naming no repository and holding no code).
  */
-export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
-  sessionsKeys.all[0],
-  hostsKeys.all[0],
-  installationsKeys.all[0],
-  profileKeys.all[0],
-  projectsKeys.all[0],
-  automationsKeys.all[0],
-  botsKeys.all[0],
-  tasksKeys.all[0],
-  calendarKeys.all[0],
-  cloudAgentsKeys.all[0],
-  mailKeys.all[0],
-  pullRequestsKeys.all[0],
-  voiceKeys.all[0],
-  inboxKeys.all[0],
-];
+export const CONSUMER_PERSISTED_FEATURES: readonly string[] = [permissionsKeys.all[0]];
