@@ -72,14 +72,6 @@ export const APPEND_QUEUE_LIMITS: AppendQueueLimits = {
   maxEventsPerAppend: 256,
 };
 
-/**
- * The waits between attempts at recording a hello before the link is closed
- * for a redial. Long enough to ride out a database failover's first seconds,
- * short enough that a runner is not left unreconciled for longer than its own
- * reconnect ladder would take.
- */
-export const HELLO_RETRY_DELAYS_MS: readonly number[] = [500, 2_000, 5_000];
-
 /** "Try again later": the link is overloaded, not broken. */
 const LINK_OVERLOADED = 1013;
 
@@ -106,8 +98,6 @@ const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  */
 @Injectable()
 export class RunnerLinkGateway {
-  /** `HELLO_RETRY_DELAYS_MS`; a field only so a test can shorten it. */
-  helloRetryDelaysMs: readonly number[] = HELLO_RETRY_DELAYS_MS;
   /** Each link's `events.append` messages, applied in arrival order (see `LinkAppendQueue`). */
   private readonly appendQueues = new WeakMap<SocketRunnerLink, LinkAppendQueue>();
 
@@ -332,44 +322,27 @@ export class RunnerLinkGateway {
    * The hello's reconciliation is the only place owed launches and closes go
    * out again, lost panes are recorded stopped and terminal watches are sent
    * again, so one that fails must not leave the link up as if it had run: a
-   * database blip would keep sessions `starting` until the next reconnect.
-   * It is retried on `helloRetryDelaysMs` (every step is idempotent: the
-   * runner's commands by session id, the stopped entry under its lock), and a
-   * link still unreconciled after that is closed with 1013, which the runner
-   * redials, so its next hello tries again.
+   * database blip would keep sessions `starting` until the next reconnect. The
+   * link is closed with 1013, which the runner redials, and its next hello is
+   * reconciled afresh. Never retried here: the snapshot is what the runner held
+   * when it said hello, and a launch the failed attempt already sent may be
+   * running by now, so a second pass over the same snapshot would record it
+   * stopped.
    */
   private async recordHello(
     link: SocketRunnerLink,
     hello: ReturnType<typeof helloSchema.parse>,
     address: string | null,
   ): Promise<void> {
-    for (let attempt = 0; ; attempt++) {
-      try {
-        await this.events.onHello(link, hello, link.connectedAt, address);
-        return;
-      } catch (error) {
-        // Replaced or gone: the newer link's hello is the one that counts.
-        if (this.links.find(link.hostId) !== link) return;
-        const delay = this.helloRetryDelaysMs[attempt];
-        if (delay === undefined) {
-          this.logger.error({
-            message: 'hello could not be recorded; closing the link so the runner redials',
-            hostId: link.hostId,
-            attempts: attempt + 1,
-            error: String(error),
-          });
-          link.close(LINK_OVERLOADED, 'hello could not be recorded; try again later');
-          return;
-        }
-        this.logger.warn({
-          message: 'hello could not be recorded; retrying',
-          hostId: link.hostId,
-          attempt: attempt + 1,
-          error: String(error),
-        });
-        await new Promise((resolve) => setTimeout(resolve, delay).unref());
-        if (this.links.find(link.hostId) !== link) return;
-      }
+    try {
+      await this.events.onHello(link, hello, link.connectedAt, address);
+    } catch (error) {
+      this.logger.error({
+        message: 'hello could not be recorded; closing the link so the runner redials',
+        hostId: link.hostId,
+        error: String(error),
+      });
+      link.close(LINK_OVERLOADED, 'hello could not be recorded; try again later');
     }
   }
 

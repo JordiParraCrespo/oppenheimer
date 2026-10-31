@@ -748,8 +748,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   state records, and a store left in `repos/` is cloned again on its next
   create.
 - 2026-10-31: **the relay's critical path hardened** (01, 03, #556): a hello
-  whose reconciliation fails is retried and then the link closed with 1013
-  for a redial, instead of logged; the handshake answers 503, not 401, when
+  whose reconciliation fails closes the link with 1013 for a redial and a
+  fresh hello, instead of being logged; the handshake answers 503, not 401, when
   the assertion's store is down; attach sockets are pinged like the link;
   a browser's `resize` and `credit` are held to a rate per attachment and a
   credit clamped; a lost pane's `session.stopped` is keyed by run and link

@@ -843,26 +843,15 @@ describe('runner link', () => {
     expect(vi.mocked(h.events.record).mock.calls[0][0].batchId).toBe('b-after');
   });
 
-  describe('when the hello cannot be recorded', () => {
-    beforeEach(() => {
-      h.runners.helloRetryDelaysMs = [10, 10];
-    });
-
-    it('tries again, so a blip does not leave owed launches unsent until the next reconnect', async () => {
-      vi.mocked(h.reconciliation.reconcile).mockRejectedValueOnce(new Error('deadlock detected'));
-      const runner = await runnerUp(h);
-      sockets.push(runner);
-      await vi.waitFor(() => expect(h.reconciliation.reconcile).toHaveBeenCalledTimes(2));
-      expect(runner.readyState).toBe(WebSocket.OPEN);
-    });
-
-    it('closes the link with 1013 once every attempt failed, so the runner redials and says hello again', async () => {
-      vi.mocked(h.reconciliation.reconcile).mockRejectedValue(new Error('database is down'));
-      const runner = await runnerUp(h);
-      sockets.push(runner);
-      await expect(closed(runner)).resolves.toMatchObject({ code: 1013 });
-      expect(h.reconciliation.reconcile).toHaveBeenCalledTimes(3);
-    });
+  it('closes the link with 1013 when the hello cannot be recorded, and never reconciles its snapshot twice', async () => {
+    // A retry on the same link reused the hello's snapshot: a launch the failed
+    // pass had sent could be running by then, absent from that snapshot, and
+    // recorded stopped. The runner redials and its fresh hello is reconciled.
+    vi.mocked(h.reconciliation.reconcile).mockRejectedValueOnce(new Error('deadlock detected'));
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    await expect(closed(runner)).resolves.toMatchObject({ code: 1013 });
+    expect(h.reconciliation.reconcile).toHaveBeenCalledTimes(1);
   });
 
   it('replaces an older link from the same host and unregisters it on close', async () => {

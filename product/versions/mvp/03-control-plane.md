@@ -432,9 +432,11 @@ a session it has no record of) — a `failed` one included, since a person may
 delete it — and a `starting` one with a close owed is closed, never built
 first; anything the runner holds that the rows do not know is logged and left
 alone. It is the only place those things are sent again, so a hello that
-cannot be recorded (a database or Redis blip) is retried a few times on the
-link and then the link is closed with 1013, which the runner redials, rather
-than logged and left up unreconciled until the next reconnect (2026-10-31).
+cannot be recorded (a database or Redis blip) closes the link with 1013,
+which the runner redials, rather than being logged and left up unreconciled
+until the next reconnect (2026-10-31). It is never retried on the same link:
+a launch the failed pass already sent may be running by the retry, absent
+from the hello's snapshot, and would be recorded stopped.
 The handshake tells a refused assertion (401) from a store that could not
 verify one (503, logged as an error), which the runner also redials.
 
