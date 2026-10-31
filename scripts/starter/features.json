@@ -23,14 +23,7 @@
         "scripts/check-singletons.mjs",
         "scripts/check-singletons.test.mjs"
       ],
-      "scripts": ["dev:mvp", "check:unused", "check:singletons", "screens"],
-      "json": [
-        {
-          "file": "package.json",
-          "path": "devDependencies",
-          "deleteKeys": ["knip"]
-        }
-      ]
+      "scripts": ["dev:mvp", "check:unused", "check:singletons", "screens"]
     },
     "web-showcase": {
       "title": "Web design-system showcase",
@@ -165,6 +158,15 @@
     },
     "scripts/query-state-slots.mjs": {
       "identifiers": ["query-state-slots"],
+      "neededBy": ["web"]
+    },
+    "scripts/ui-catalog.mjs": {
+      "identifiers": ["ui-catalog.mjs", "check:ui-catalog"],
+      "neededBy": ["web"],
+      "scripts": ["check:ui-catalog"]
+    },
+    "scripts/ui-catalog.test.mjs": {
+      "identifiers": ["ui-catalog.test.mjs"],
       "neededBy": ["web"]
     },
     "scripts/check-react-compiler.mjs": {

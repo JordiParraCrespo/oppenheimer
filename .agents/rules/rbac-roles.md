@@ -1,7 +1,10 @@
 ---
 paths:
   - "apps/api/**/*"
-  - "packages/shared/**/*"
+  - "packages/shared/src/permissions/**/*"
+  - "packages/shared/src/constants/**/*"
+  - "packages/shared/src/schemas/role.schema.ts"
+  - "packages/shared/src/schemas/authz.schema.ts"
 ---
 
 # Roles & Authorization (RBAC) Rules
@@ -38,9 +41,9 @@ their permissions live in the `role` table (not in code); a user's effective
 permissions are the **union of every role assigned to them** via the `user_role`
 join. CASL turns those permissions into an ability that guards check.
 
-Do **not** reintroduce a hardcoded role→permission switch. The legacy
-`defineAbilitiesFor(role)` helper remains only as a fallback/ frontend
-convenience — application authorization goes through the database.
+Do **not** reintroduce a hardcoded role→permission switch: application
+authorization goes through the database. `SYSTEM_ROLE_PERMISSIONS` is what
+the system roles are seeded with, not a second source of truth.
 
 ## Where things live
 
@@ -111,6 +114,14 @@ export class PublishArticleHttpController {
   `@CheckPolicies` nor `@NoPolicy('reason')` is refused (`AUTHZ_002`), and
   `route-policy-coverage.spec.ts` fails the build. A route open to any
   authenticated caller says so with `@NoPolicy` (e.g. `GET /users/me`).
+  The same spec fails a `@CheckPolicies` on a controller that does not run
+  `PoliciesGuard` after `ApiAuthGuard`: nothing else would read it.
+- **Authentication is per controller, so its absence is a build failure.**
+  `route-auth-coverage.spec.ts` fails a route behind no authenticating guard
+  (`ApiAuthGuard`, `HostPrincipalGuard`) unless its `PUBLIC` ledger says what
+  stands in for a signed-in caller; `OptionalApiAuthGuard` routes are listed
+  there too. A new `upgrade` listener or WebSocket server goes in its
+  `UPGRADES` ledger, with how the handshake authenticates.
 
 ### An endpoint a client gates a destination on declares its rules once
 

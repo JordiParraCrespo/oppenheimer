@@ -155,6 +155,13 @@ export class BotTurnOrmEntity {
   @Column({ type: 'boolean', default: false })
   replyRequested!: boolean;
 
+  /**
+   * Sent as a steer (`1791005730000-AddBotTurnSteer`): while queued, the
+   * running turn of its sender takes its message at its next tool call.
+   */
+  @Column({ type: 'boolean', default: false })
+  steer!: boolean;
+
   /** On an answer's turn: the turn it answers. */
   @Column({ type: 'uuid', nullable: true })
   answersTurnId!: string | null;

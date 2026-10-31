@@ -34,7 +34,10 @@ import type {
  * What the host holds that the rows do not know is logged and left alone: ending
  * someone's work is not a side effect of a hello.
  *
- * The stopped entry is keyed by the runner's `runId`, so a replayed hello writes it once.
+ * The stopped entry is keyed by the runner's `runId` and the link's epoch, and written
+ * only while the row is as it was read (`recordStopped`), so a hello retried on its link
+ * writes it once, and the same pane lost again after a restart, on a later link of the
+ * same runner process, is recorded again rather than merged into the first loss.
  * A close sent twice is harmless for the same reason the runner makes it so.
  * The terminal watches of the live sessions it holds are sent again too: a
  * runner keeps them in memory only.
@@ -56,6 +59,7 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
   async reconcile(
     hostId: string,
     runId: string,
+    epoch: number,
     heldSessionIds: readonly string[],
   ): Promise<HostReconciliationOutcome> {
     const held = new Set(heldSessionIds);
@@ -75,7 +79,7 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
           // and its absence from a hello is not a lost pane.
           session.place !== 'cloud' &&
           session.stoppedAt === null &&
-          (await this.recordStopped(session, runId))
+          (await this.recordStopped(session, runId, epoch))
         ) {
           outcome.stopped.push(session.id);
         }
@@ -150,18 +154,35 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     }
   }
 
-  private async recordStopped(session: WorkSessionEntity, runId: string): Promise<boolean> {
-    const appended = await this.sessions.appendEvents(session, [
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          `hello-${runId}`,
-          SESSION_EVENT_KINDS.STOPPED,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.STOPPED,
-        payload: { source: 'reconciliation', runId },
-      },
-    ]);
-    return appended.accepted.length > 0;
+  /**
+   * The decision was made on the row as it was read at the start, and a
+   * reconciliation awaits a dispatch per session, so it is taken again under
+   * the row's lock: stopped only if the session is still open and not
+   * stopped. A stop, a close, a failure, or another link's reconciliation in
+   * between wins, and nothing is written. (Not "nothing recorded since": the
+   * runner resends its unacknowledged batches right after hello, and a late
+   * entry from the pane before it died says nothing about it being alive.)
+   */
+  private async recordStopped(
+    session: WorkSessionEntity,
+    runId: string,
+    epoch: number,
+  ): Promise<boolean> {
+    const appended = await this.sessions.appendEventsIf(
+      session,
+      [
+        {
+          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+            `hello-${runId}-${epoch}`,
+            SESSION_EVENT_KINDS.STOPPED,
+          ),
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.STOPPED,
+          payload: { source: 'reconciliation', runId },
+        },
+      ],
+      (fold) => fold.state === 'open' && fold.stoppedAt === null,
+    );
+    return (appended?.accepted.length ?? 0) > 0;
   }
 }

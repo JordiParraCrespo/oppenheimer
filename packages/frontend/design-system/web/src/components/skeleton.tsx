@@ -1,3 +1,4 @@
+// uncatalogued: frontend-ui.md's placeholder rules say how to draw with it
 import { cn } from '../lib/utils';
 
 /**

@@ -7,11 +7,6 @@ export const BotErrors = {
     message: 'Bot not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'BOTS_002',
-    message: 'Bots belong to an organization',
-    httpStatus: 400,
-  },
   /** Also a group in another workspace. */
   GROUP_NOT_FOUND: {
     code: 'BOTS_003',

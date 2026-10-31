@@ -1,3 +1,4 @@
+import { assignProps } from '@oppenheimer/frontend-core';
 import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import type {
   AutomationOverlapPolicy,
@@ -172,6 +173,33 @@ export interface RunTurn {
   prompt: string | null;
 }
 
+/** What a {@link AutomationRunEntity} is made from: every field, the defaulted ones optional. */
+export type AutomationRunEntityProps = Pick<
+  AutomationRunEntity,
+  | 'id'
+  | 'automationId'
+  | 'automationName'
+  | 'automationDeleted'
+  | 'projectId'
+  | 'status'
+  | 'outcome'
+  | 'skipReason'
+  | 'cause'
+  | 'causeSummary'
+  | 'title'
+  | 'sessionId'
+  | 'branch'
+  | 'revisionNumber'
+  | 'agent'
+  | 'model'
+  | 'hostId'
+  | 'createdAt'
+  | 'startedAt'
+  | 'endedAt'
+  | 'durationMs'
+  | 'turn'
+>;
+
 /**
  * One firing of an automation. Its status is read from the session it
  * started — queued until the session exists, running while its first turn is,
@@ -179,32 +207,34 @@ export interface RunTurn {
  * (skipped, expired), and says why.
  */
 export class AutomationRunEntity {
-  constructor(
-    public readonly id: string,
-    public readonly automationId: string,
-    public readonly automationName: string,
-    public readonly automationDeleted: boolean,
-    /** Null for a bot routine's run, which belongs to no project. */
-    public readonly projectId: string | null,
-    public readonly status: AutomationRunStatus,
-    public readonly outcome: AutomationRunOutcome,
-    public readonly skipReason: AutomationSkipReason | null,
-    public readonly cause: AutomationRunCause,
-    public readonly causeSummary: RunCause,
-    public readonly title: string,
-    public readonly sessionId: string | null,
-    public readonly branch: string | null,
-    public readonly revisionNumber: number,
-    /** Null for a bot routine's run, as `hostId` is: its bot runs it. */
-    public readonly agent: string | null,
-    public readonly model: string | null,
-    public readonly hostId: string | null,
-    public readonly createdAt: Date,
-    public readonly startedAt: Date | null,
-    public readonly endedAt: Date | null,
-    public readonly durationMs: number | null,
-    public readonly turn: RunTurn | null,
-  ) {}
+  readonly id!: string;
+  readonly automationId!: string;
+  readonly automationName!: string;
+  readonly automationDeleted!: boolean;
+  /** Null for a bot routine's run, which belongs to no project. */
+  readonly projectId!: string | null;
+  readonly status!: AutomationRunStatus;
+  readonly outcome!: AutomationRunOutcome;
+  readonly skipReason!: AutomationSkipReason | null;
+  readonly cause!: AutomationRunCause;
+  readonly causeSummary!: RunCause;
+  readonly title!: string;
+  readonly sessionId!: string | null;
+  readonly branch!: string | null;
+  readonly revisionNumber!: number;
+  /** Null for a bot routine's run, as `hostId` is: its bot runs it. */
+  readonly agent!: string | null;
+  readonly model!: string | null;
+  readonly hostId!: string | null;
+  readonly createdAt!: Date;
+  readonly startedAt!: Date | null;
+  readonly endedAt!: Date | null;
+  readonly durationMs!: number | null;
+  readonly turn!: RunTurn | null;
+
+  constructor(props: AutomationRunEntityProps) {
+    assignProps(this, props);
+  }
 
   get isLive(): boolean {
     return this.status === 'queued' || this.status === 'running';

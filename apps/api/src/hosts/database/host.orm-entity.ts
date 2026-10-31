@@ -1,5 +1,13 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  UpdateDateColumn,
+  VersionColumn,
+} from 'typeorm';
 import type { HostCapabilities } from '../domain/host.entity';
 
 /**
@@ -59,4 +67,8 @@ export class HostOrmEntity {
 
   @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
+
+  /** Goes up on every write of the row; a write names the one it loaded (`writeVersioned`). */
+  @VersionColumn({ default: 1 })
+  version!: number;
 }

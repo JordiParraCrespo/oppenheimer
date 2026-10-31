@@ -5,14 +5,14 @@ goes through review like code does. The routine's own prompt (set in
 claude.ai → Routines) only points at the file here, so editing the file is how
 you change what the routine does.
 
-| Routine | Prompt | What it does |
-| --- | --- | --- |
-| Daily hexagon audit | [`hexagon-audit.md`](hexagon-audit.md) | Audits every `apps/api` module against its Domain-Driven Hexagon contract on every run. Keeps one `hexagon-audit` issue current and opens a small fix PR for the blocking findings it is sure about. |
-| Frontend audit | `/frontend-audit routine` ([the skill](../skills/frontend-audit/SKILL.md), "Routine mode") | Audits `apps/web` and `packages/frontend/*` against the frontend rules, the re-renders the React Compiler does not prevent included. Keeps one `frontend-audit` issue current and one `frontend-audit/fix-<date>` PR for the findings it is safe to fix, and answers that PR's review comments on every run. |
-| Main red | [`main-red.md`](main-red.md) | Runs one hour after each scheduled CI run (the `cron` in `.github/workflows/ci.yml`). Owns the `main-red` issue that run opens: reproduces the failure with `pnpm ci:local --all`, and opens the pull request that fixes the root cause. Does nothing when `main` is green. |
+| Routine | Runs | Prompt | What it does |
+| --- | --- | --- | --- |
+| Hexagon audit | Daily | [`hexagon-audit.md`](hexagon-audit.md) | Audits every `apps/api` module against its Domain-Driven Hexagon contract on every run. Keeps one `hexagon-audit` issue current and opens a small fix PR for the blocking findings it is sure about. |
+| Frontend audit | Daily | `/frontend-audit routine` ([the skill](../skills/frontend-audit/SKILL.md), "Routine mode") | Audits `apps/web` and `packages/frontend/*` against the frontend rules, the re-renders the React Compiler does not prevent included. Keeps one `frontend-audit` issue current and one `frontend-audit/fix-<date>` PR for the findings it is safe to fix, and answers that PR's review comments on every run. |
+| Backend review | Weekly | [`backend-review.md`](backend-review.md) | Measures where pull requests lose time (CI rows, unit-test overhead, clash commits) and reviews the critical path, security coverage, backend structure and the harness. Keeps one `backend-review` issue current and opens one pull request per confirmed finding it can fix, one after another, at most six a run. |
+| Main red | After each scheduled CI run | [`main-red.md`](main-red.md) | Starts one hour after the run (the `cron` in `.github/workflows/ci.yml`). Owns the `main-red` issue that run opens: reproduces the failure with `pnpm ci:local --all`, and opens the pull request that fixes the root cause. Does nothing when `main` is green. |
 
-The audits run daily and write to one GitHub issue each; `main-red` answers
-the scheduled CI run. The schedule lives with the routine in claude.ai →
+Each routine writes to one GitHub issue. The schedule lives with the routine in claude.ai →
 Routines, not here. No audit issue on GitHub means the
 routine's run could not write, not that the code is clean: open the run's
 session from claude.ai → Routines and read why. Create a routine from

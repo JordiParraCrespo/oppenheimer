@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   redisCommandClientOptions,
   redisConfigFromEnv,
@@ -8,13 +8,13 @@ import {
 const REDIS_VARS = ['REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD', 'REDIS_DB'];
 
 function withEnv(values: Record<string, string>) {
-  for (const [key, value] of Object.entries(values)) process.env[key] = value;
+  for (const [key, value] of Object.entries(values)) vi.stubEnv(key, value);
   return redisConfigFromEnv();
 }
 
 describe('redis config', () => {
   beforeEach(() => {
-    for (const key of REDIS_VARS) delete process.env[key];
+    for (const key of REDIS_VARS) vi.stubEnv(key, undefined);
   });
 
   it('defaults to a local, unauthenticated Redis, and gives BullMQ nothing about retries', () => {

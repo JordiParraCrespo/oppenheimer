@@ -13,8 +13,12 @@ export interface ApiTokenRepositoryPort extends Omit<RepositoryPort<ApiTokenEnti
   /** Look a token up by the SHA-256 digest of the presented secret. */
   findOneByHash(tokenHash: string): Promise<Option<ApiTokenEntity>>;
 
-  /** Every token belonging to a user, newest first, including revoked ones. */
-  findByUserId(userId: string): Promise<ApiTokenEntity[]>;
+  /**
+   * A user's tokens, newest first: every usable one (there are at most the
+   * mint limit of them), and the latest `INACTIVE_TOKENS_LISTED` revoked or
+   * expired ones. Revoking keeps the row, so those are the ones that pile up.
+   */
+  findByUserId(userId: string, now: Date): Promise<ApiTokenEntity[]>;
 
   /**
    * Insert the token unless its owner already holds `limit` usable ones (not

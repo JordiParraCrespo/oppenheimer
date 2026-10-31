@@ -12,9 +12,9 @@ of duplicating them per app.
 | `@oppenheimer/shared`                | Re-exports `schemas`, `types`, `constants`, `permissions` and `scopes` — **not** `agents` or `protocol` (see below)                             |
 | `@oppenheimer/shared/schemas`        | Zod schemas — the source of truth for request/response DTOs — plus the shared primitives every schema is built from                             |
 | `@oppenheimer/shared/schemas/*`      | One narrow subpath per `src/schemas/<x>.schema.ts` (`auth`, `admin`, `profile`, `organization`, `role`, `host`, `project`, `session`, …)        |
-| `@oppenheimer/shared/types`          | `Role`, `PaginationParams`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers           |
-| `@oppenheimer/shared/constants`      | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                         |
-| `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES`  |
+| `@oppenheimer/shared/types`          | `Role`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers                               |
+| `@oppenheimer/shared/constants`      | `PAGINATION`, the password lengths, `ROLES`, `SYSTEM_ROLES`, `MEMBERSHIP_ROLES`, `ORGANIZATION_ROLES`, `QUEUE_NAMES`                            |
+| `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), `SYSTEM_ROLE_PERMISSIONS`, `ENDPOINT_POLICIES` |
 | `@oppenheimer/shared/scopes`         | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES`, and the helpers that expand, sort, compare and grant them       |
 | `@oppenheimer/shared/agents`         | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                                         |
 | `@oppenheimer/shared/protocol`       | The runner link's wire vocabulary as Zod: `protocolMessageSchema`, the per-message schemas, the hint sets, and `PROTOCOL_VERSION`               |

@@ -23,8 +23,14 @@ rules.
   `idColumn` for a table keyed by something other than `id`). Tenant-scoped
   adapters use `ScopedRepositoryBase` from `@oppenheimer/backend-authz`
   instead.
-- **Guards & exceptions**: `Guard`, `ExceptionBase`, `NotFoundException`,
-  `ConflictException`, `ArgumentInvalidException`, `ArgumentNotProvidedException`,
+- **Optimistic concurrency, the default write of an existing aggregate**:
+  `VersionedAggregateRoot` (carries the row's version), `writeVersioned`
+  (one `UPDATE … WHERE id AND version` that bumps it, or throws
+  `VersionConflictException`), `TypeOrmRepositoryBase.saveVersioned` (the
+  same inside `writeWithEvents`), and `retryOnVersionConflict` for the
+  handler that decides again on a fresh read.
+- **Exceptions**: `ExceptionBase`, `NotFoundException`,
+  `ConflictException`, `VersionConflictException`, `ArgumentInvalidException`, `ArgumentNotProvidedException`,
   `ArgumentOutOfRangeException`.
 - **Transactional outbox**: `OutboxService` (`transaction(fn)` runs a
   multi-statement write and wakes the relay after commit when it staged
@@ -38,12 +44,12 @@ rules.
   (decorator-free `EntitySchema` for the `outbox_message` table), and
   `TIMESTAMP_COLUMN_TYPE` — `timestamptz`, the type its dates and every date
   column of the API's ORM entities are stored as.
-- **Utilities**: `RequestContextService`, `convertPropsToObject`.
+- **Utilities**: `RequestContextService`.
 
 ## Usage
 
 ```ts
-import { AggregateRoot, type RepositoryPort, Guard } from "@oppenheimer/backend-ddd";
+import { AggregateRoot, type RepositoryPort } from "@oppenheimer/backend-ddd";
 ```
 
 ## Scripts

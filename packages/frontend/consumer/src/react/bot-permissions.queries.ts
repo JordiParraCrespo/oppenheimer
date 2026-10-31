@@ -1,11 +1,11 @@
 'use client';
 
-import { useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotPermissionRuleEffect, BotToolDecision } from '@oppenheimer/shared/schemas/bot';
-import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotPermissionsEntity } from '../modules/bots/bot-permissions.entity';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * A bot's Settings → Permissions (`product/versions/mvp/25-bots.md` §5):
@@ -27,19 +27,10 @@ export interface SetBotToolDecisionVariables {
   decision: BotToolDecision | 'default';
 }
 
-export function useSetBotToolDecision(
-  options?: UseMutationOptions<BotPermissionsEntity, Error, SetBotToolDecisionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, tool, decision }: SetBotToolDecisionVariables) =>
-      app.bots.setToolDecision(id, tool, decision),
-    ...withCacheOnSuccess(options, (view, { id }) =>
-      queryClient.setQueryData(botsKeys.permissions(id), view),
-    ),
-  });
-}
+export const useSetBotToolDecision = mutation<BotPermissionsEntity, SetBotToolDecisionVariables>({
+  run: (app, { id, tool, decision }) => app.bots.setToolDecision(id, tool, decision),
+  update: (queryClient, view, { id }) => queryClient.setQueryData(botsKeys.permissions(id), view),
+});
 
 export interface AddBotPermissionRuleVariables {
   id: string;
@@ -47,54 +38,32 @@ export interface AddBotPermissionRuleVariables {
   text: string;
 }
 
-export function useAddBotPermissionRule(
-  options?: UseMutationOptions<BotPermissionsEntity, Error, AddBotPermissionRuleVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, effect, text }: AddBotPermissionRuleVariables) =>
-      app.bots.addPermissionRule(id, effect, text),
-    ...withCacheOnSuccess(options, (view, { id }) =>
-      queryClient.setQueryData(botsKeys.permissions(id), view),
-    ),
-  });
-}
+export const useAddBotPermissionRule = mutation<
+  BotPermissionsEntity,
+  AddBotPermissionRuleVariables
+>({
+  run: (app, { id, effect, text }) => app.bots.addPermissionRule(id, effect, text),
+  update: (queryClient, view, { id }) => queryClient.setQueryData(botsKeys.permissions(id), view),
+});
 
 export interface DeleteBotPermissionRuleVariables {
   id: string;
   ruleId: string;
 }
 
-export function useDeleteBotPermissionRule(
-  options?: UseMutationOptions<void, Error, DeleteBotPermissionRuleVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ruleId }: DeleteBotPermissionRuleVariables) =>
-      app.bots.removePermissionRule(id, ruleId),
-    ...withCacheOnSuccess(options, (_data, { id }) =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
-    ),
-  });
-}
+export const useDeleteBotPermissionRule = mutation<void, DeleteBotPermissionRuleVariables>({
+  run: (app, { id, ruleId }) => app.bots.removePermissionRule(id, ruleId),
+  update: (queryClient, _data, { id }) =>
+    queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
+});
 
 export interface DeleteBotToolGrantVariables {
   id: string;
   grantId: string;
 }
 
-export function useDeleteBotToolGrant(
-  options?: UseMutationOptions<void, Error, DeleteBotToolGrantVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, grantId }: DeleteBotToolGrantVariables) =>
-      app.bots.removeToolGrant(id, grantId),
-    ...withCacheOnSuccess(options, (_data, { id }) =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
-    ),
-  });
-}
+export const useDeleteBotToolGrant = mutation<void, DeleteBotToolGrantVariables>({
+  run: (app, { id, grantId }) => app.bots.removeToolGrant(id, grantId),
+  update: (queryClient, _data, { id }) =>
+    queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
+});

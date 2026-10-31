@@ -1,3 +1,4 @@
+// uncatalogued: a plain form primitive with no hand-built rival to warn against
 'use client';
 
 import { EyeIcon, EyeOffIcon } from 'lucide-react';

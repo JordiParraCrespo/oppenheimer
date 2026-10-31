@@ -1,3 +1,4 @@
+// uncatalogued: the sidebar's routine rows; RoutineCard's row covers a bot's routine
 'use client';
 
 import { Button as ButtonPrimitive } from '@base-ui/react/button';

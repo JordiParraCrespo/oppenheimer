@@ -284,12 +284,27 @@ Design for the table at a hundred times today's size.
   the design decisions, the relationships that were considered, and anything
   deliberately left out. The migration in
   `.agents/skills/design-database/references/templates.md` is the model.
-- Its timestamp is later than the newest migration's and shared with none:
-  TypeORM orders by the timestamp in the class name, so two migrations with
-  the same one run in whatever order the loader finds them.
-  `apps/api/src/__tests__/migration-timestamps.spec.ts` fails on a shared one.
-  Never rename a migration that may have run: TypeORM records it by class
-  name, and a renamed one runs again.
+- Start it with `pnpm migration:new <PascalName>` (from the root or
+  `apps/api`). It writes `src/migrations/<now>-<Name>.ts` with the class
+  `<Name><now>` and refuses a name that is not PascalCase letters or that a
+  migration already has. Never pick the timestamp by hand, and never as "the
+  newest plus a step": parallel branches counting from the same newest
+  migration pick the same number, and one of them has to renumber. TypeORM
+  orders by the timestamp in the class name, so two migrations sharing one
+  run in whatever order the loader finds them.
+- A migration older than one a database already ran still runs: TypeORM
+  runs every pending migration, in timestamp order, after the applied ones
+  (in the one boot transaction). So a branch that merges after a newer
+  migration landed on main keeps its timestamp. The one case that needs a
+  new one: yours now *depends on* that newer migration (alters a table it
+  created). A fresh database runs them in timestamp order, so yours would run
+  first and fail; before merging, recreate it with `migration:new` and move
+  the body across.
+- `apps/api/src/__tests__/migration-timestamps.spec.ts` fails on a shared
+  timestamp, one in the future, a file named apart from its class, and a
+  skeleton still marked `TODO(migration:new)`. Never rename a migration that
+  may have run: TypeORM records it by class name, and a renamed one runs
+  again.
 - `down()` reverses `up()` exactly: drop in reverse order, and restore data a
   backfill moved.
 - Statements that can run twice without harm when practical: `IF NOT EXISTS`,

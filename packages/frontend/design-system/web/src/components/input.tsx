@@ -1,3 +1,4 @@
+// uncatalogued: a plain form primitive with no hand-built rival to warn against
 import { Input as InputPrimitive } from '@base-ui/react/input';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type * as React from 'react';

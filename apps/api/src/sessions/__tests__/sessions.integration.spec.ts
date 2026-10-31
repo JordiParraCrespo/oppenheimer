@@ -16,6 +16,10 @@ import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-en
 import { cloudRunLogEntries } from '../domain/cloud-session-sync.policy';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import { type CloudRunReport, SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
+import {
+  decodeSessionListCursor,
+  encodeSessionListCursor,
+} from '../domain/session-list-cursor.policy';
 import { mintSessionSlug } from '../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
@@ -1034,8 +1038,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     });
 
     describe('the session list', () => {
-      const mapper = new WorkSessionMapper();
-
       async function sessions(count: number): Promise<WorkSessionEntity[]> {
         const made: WorkSessionEntity[] = [];
         for (let n = 0; n < count; n += 1) {
@@ -1058,14 +1060,14 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
             page: 1,
             limit: 100,
             sort,
-            cursor: cursor ? mapper.fromListCursor(cursor, sort) : undefined,
+            cursor: cursor ? decodeSessionListCursor(cursor, sort) : undefined,
           });
           // The first page is a page; every one after it is a cursor's, uncounted.
           if (cursor) expect(result.total).toBeUndefined();
           seen.push(...result.data.map((work) => work.id));
           if (!result.nextCursor) return seen;
           // Through the wire format, so the encoding round-trips too.
-          cursor = mapper.toListCursor(result.nextCursor);
+          cursor = encodeSessionListCursor(result.nextCursor);
           await between(page);
         }
         throw new Error('the walk did not end');

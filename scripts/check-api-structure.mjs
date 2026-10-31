@@ -18,6 +18,8 @@
  *    adapter, or a use case
  *  - an HTTP route is declared in a use-case controller, never anywhere else
  *  - a controller dispatches and maps; a handler orchestrates. Both have caps
+ *  - a mapper translates between shapes and builds nothing of the domain's:
+ *    it imports no domain event, and it has a cap too
  *
  * See apps/api/ARCHITECTURE.md. Run: pnpm check:api-structure
  */
@@ -55,6 +57,10 @@ const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 
 const CONTROLLER_LINE_CAP = 110;
 const HANDLER_LINE_CAP = 120;
+const MAPPER_LINE_CAP = 300;
+
+/** An import of a domain event class: `…/domain/events/<name>.domain-event`. */
+const DOMAIN_EVENT_IMPORT = /^\s*import\s[^;]*?from\s+['"][^'"]*\.domain-event['"]/m;
 
 /**
  * The layer directories a module may have, each with the file names it may
@@ -129,8 +135,8 @@ const LAYERS = {
     dirs: { __tests__: { files: [/\.spec\.ts$/] } },
   },
   __tests__: {
-    what: "tests for the module's own wiring",
-    files: [/\.spec\.ts$/],
+    what: "tests for the module's own wiring, and the helpers its specs share (*.spec-support.ts)",
+    files: [/\.spec\.ts$/, /\.spec-support\.ts$/],
     dirs: {},
   },
 };
@@ -171,15 +177,66 @@ const DISSOLVED_DIRS = {
 const HTTP_METHOD = /^\s*@(Get|Post|Put|Patch|Delete|All|Head|Options)\s*\(/m;
 
 /**
- * Known violations, waiting on a refactor. Each entry names one file and one
- * *kind* of breach (see `errors` above).
+ * Known violations, waiting on a refactor. Each entry names one file, one
+ * *kind* of breach (see `errors` above), and the reason it is still owed: what
+ * the file holds that is not mapping, or what the split is waiting for. An
+ * entry without a reason is itself an error.
  *
  * Nothing else in these modules is excused, a new violation in them still
  * fails, and an entry that stops matching is itself an error: the list cannot
  * outlive the debt it describes. Adding an entry deserves the same scrutiny as
  * deleting a rule.
  */
-const LEDGER = [];
+const LEDGER = [
+  {
+    path: 'apps/api/src/pull-requests/pull-request.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'GitHub reads to the queue, the detail, files, comments, activity and analytics, with the review-requested and stale rules inline; those rules belong in a domain policy',
+  },
+  {
+    path: 'apps/api/src/hosts/host.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'the host, its inventory, vitals, network and timeline, plus the timeline cursor codec and capability probing; the cursor and the probes are not mapping',
+  },
+  {
+    path: 'apps/api/src/hosts/host.mapper.ts',
+    kind: 'mapper-imports-domain-event',
+    reason:
+      '`toTimelineEntries` reads the events the aggregate raised in this request (`instanceof`) to answer the timeline without a re-read; it belongs on the entity, which knows its own events',
+  },
+  {
+    path: 'apps/api/src/automations/automation.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'the automation, its revision, targets and triggers, the trigger subjects index and the workspace limits; the subjects and limits are rules, not mapping',
+  },
+  {
+    path: 'apps/api/src/bots-chat/bot-github-tool.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'a bag of describe* functions that render GitHub reads as the bot reads them, with the limits beside them; a renderer, not a mapper, and wants a name and a layer of its own',
+  },
+  {
+    path: 'apps/api/src/bots-chat/bot-message.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'the message and the jsonb shapes it carries (mail drafts, subagent runs, images), each narrowed from unknown; the jsonb readers can move beside the entity',
+  },
+  {
+    path: 'apps/api/src/automations/automation-run.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      'the run, its read model and the session launch it asks for; the launch command and the cause summary are decisions, not mapping',
+  },
+  {
+    path: 'apps/api/src/bots-chat/bot-session-tool.mapper.ts',
+    kind: 'mapper-over-cap',
+    reason:
+      "plans a session from the bot's input and words the session for the bot; `planSession` and the decision answers are rules that want a policy",
+  },
+];
 const tsFiles = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
 const subDirs = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory());
 const lineCount = (path) => readFileSync(path, 'utf8').split('\n').length;
@@ -343,6 +400,32 @@ function checkLayer(dir, label, spec) {
   }
 }
 
+/**
+ * A mapper translates: domain ↔ persistence ↔ response, and an adapter's shape
+ * into domain input. What the domain decides — the entries a request owes a
+ * log, the events an aggregate raises — is built in the domain, so a mapper
+ * imports no domain event. And it has a cap, because a mapper past it has
+ * started holding rules.
+ */
+function checkMapper(file) {
+  const source = readFileSync(file, 'utf8');
+  const lines = lineCount(file);
+  if (lines > MAPPER_LINE_CAP) {
+    fail(
+      rel(file),
+      'mapper-over-cap',
+      `${rel(file)}: ${lines} lines; a mapper translates between shapes (cap ${MAPPER_LINE_CAP}). Rules and builders belong in domain/, and a member table can have a mapper of its own`,
+    );
+  }
+  if (DOMAIN_EVENT_IMPORT.test(source)) {
+    fail(
+      rel(file),
+      'mapper-imports-domain-event',
+      `${rel(file)}: imports a domain event. A mapper maps; the aggregate raises its events and the domain builds what it owes (domain/*.entity.ts or *.factory.ts)`,
+    );
+  }
+}
+
 function checkModule(name) {
   const moduleDir = join(srcDir, name);
   const label = `${relative(reportRoot, srcDir)}/${name}`;
@@ -364,6 +447,7 @@ function checkModule(name) {
     );
   }
   for (const file of rootFiles) {
+    if (file.endsWith('.mapper.ts')) checkMapper(join(moduleDir, file));
     if (ROOT_FILES.some(({ pattern }) => pattern.test(file))) continue;
     if (file.endsWith('.mappers.ts')) {
       fail(
@@ -477,6 +561,15 @@ export function checkApiStructure(dir, options = {}) {
   const entries = options.ledger ?? LEDGER;
   const ledger = new Set(entries.map(key));
   const outstanding = errors.filter((error) => !ledger.delete(key(error)));
+  for (const entry of entries) {
+    if (typeof entry.reason !== 'string' || entry.reason.trim() === '') {
+      outstanding.push({
+        path: entry.path,
+        kind: 'ledger-entry-without-reason',
+        message: `LEDGER: ${entry.path} ("${entry.kind}") carries no reason — say what it is waiting for, or fix the file`,
+      });
+    }
+  }
   for (const stale of ledger) {
     const [path, kind] = stale.split('\u0000');
     outstanding.push({

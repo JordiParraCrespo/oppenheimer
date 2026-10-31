@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { databaseConfigFromEnv, poolOptions } from '../database.config';
 
 const POOL_VARS = [
@@ -12,15 +12,14 @@ const POOL_VARS = [
 
 function withEnv(values: Record<string, string | undefined>) {
   for (const [key, value] of Object.entries(values)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    vi.stubEnv(key, value);
   }
   return databaseConfigFromEnv();
 }
 
 describe('databaseConfigFromEnv', () => {
   beforeEach(() => {
-    for (const key of POOL_VARS) delete process.env[key];
+    for (const key of POOL_VARS) vi.stubEnv(key, undefined);
   });
 
   it('bounds every pool and timeout by default', () => {
@@ -81,7 +80,7 @@ describe('databaseConfigFromEnv', () => {
 
 describe('poolOptions', () => {
   beforeEach(() => {
-    for (const key of POOL_VARS) delete process.env[key];
+    for (const key of POOL_VARS) vi.stubEnv(key, undefined);
   });
 
   it('sizes and names each pool, and gives both the same timeouts', () => {

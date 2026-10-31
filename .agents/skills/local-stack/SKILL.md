@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before the change is committed for a pull request, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
+description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before its pull request is pushed, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
 ---
 
 # Verify a change end to end
@@ -35,7 +35,7 @@ API's log is `.stack/api.log`, which is where the suites read it by default.
 | Change touches | Run |
 | --- | --- |
 | API routes, sessions, hosts, pairing | `pnpm --filter @oppenheimer/e2e e2e:api` |
-| The runner's side of the link, the relay | `cd apps/api && RELAY_E2E=1 pnpm exec vitest run src/relay/__tests__/relay.e2e.spec.ts` (no stack needed) |
+| The runner's side of the link, the relay | `pnpm --filter @oppenheimer/api test:relay-e2e` (no stack needed) |
 | Several hosts, sessions on a real runner, flow control, the console's terminal | `pnpm --filter @oppenheimer/e2e e2e:fleet:local` (see `e2e/README.md` for the specs that need `--web`) |
 | How the terminal feels over real-world links (latency, jitter, loss, slow uplinks), relay vs direct path | `pnpm --filter @oppenheimer/e2e e2e:netsim` with the stack up `--web` (Linux, root; the `/netsim` skill) |
 
@@ -49,6 +49,9 @@ In an environment that ships its own Chromium, point Playwright at it with
 
 ## 3. Show a visual change
 
+Where this sits among the other steps of a pull request (after the commit,
+before `pnpm ci:local`) is the order in `.agents/skills/steward/SKILL.md`.
+
 Every change that alters what the console shows gets screenshots, taken
 here and shown to the user, before its pull request is opened or updated.
 What counts is defined once, in `.agents/hooks/visual-change.mjs`: the
@@ -56,8 +59,9 @@ console, the platform kit, the design system and the translations, not
 their tests, stories or docs. The Stop hook
 `.agents/hooks/screenshot-guard.mjs` holds the end of a task on such a
 branch until `.screenshots/` is of the code as it is: `pnpm screens`
-records a fingerprint of the change's files, and an edit to one of them
-after the pictures means taking them again.
+records a fingerprint of what the change's files say, and an edit to one
+of them after the pictures means taking them again; an edit to a comment
+or to layout alone does not.
 
 1. Bring the stack up with the console: `node scripts/stack/stack.mjs up --web`.
    It serves this checkout's source through Vite, so later edits show
@@ -112,7 +116,8 @@ fingerprint, and put the same line under `## Screenshots`.
 ## 4. Report and tear down
 
 Report which rows you ran, what they printed, which screenshots you took,
-and what you did not run and why. Then:
+and what you did not run and why. Then, once the branch's `pnpm ci:local`
+has run (it uses a stack up `--web` and leaves it up):
 
 ```bash
 node scripts/stack/stack.mjs down

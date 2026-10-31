@@ -73,7 +73,9 @@
       "queued": "En cola",
       "sendNow": "Enviar ahora",
       "edit": "Editar",
-      "remove": "Quitar de la cola"
+      "remove": "Quitar de la cola",
+      "steer": "Reconducir",
+      "steerHint": "Entra en el turno en curso en su próxima llamada a una herramienta. Si el turno acaba antes, va a continuación."
     },
     "json": {
       "tree": "Árbol",
@@ -120,6 +122,21 @@
       "previous": "Pregunta anterior",
       "nextQuestion": "Pregunta siguiente",
       "of": "{{n}} de {{total}}"
+    },
+    "output": {
+      "more_one": "+{{count}} línea",
+      "more_many": "+{{count}} líneas",
+      "more_other": "+{{count}} líneas",
+      "full": "Ver líneas completas",
+      "less": "Ver menos"
+    },
+    "explored": {
+      "read": "Leyó",
+      "search": "Buscó",
+      "list": "Listó",
+      "more_one": "+{{count}} más",
+      "more_many": "+{{count}} más",
+      "more_other": "+{{count}} más"
     }
   },
   "search": {

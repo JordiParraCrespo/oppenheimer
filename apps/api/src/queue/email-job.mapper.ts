@@ -1,7 +1,6 @@
 import type {
+  ActionEmailParams,
   EmailVerificationEmailParams,
-  HostNetworkChangedEmailParams,
-  HostPairedEmailParams,
   InvitationEmailParams,
   PasswordResetEmailParams,
   WelcomeEmailParams,
@@ -64,7 +63,7 @@ export class EmailJobMapper {
    * reported them. The closing names the host id, for unpairing it through
    * the API (`DELETE /v1/hosts/:id`).
    */
-  toHostPaired(input: unknown, t: LocalizedFormatter): HostPairedEmailParams {
+  toHostPaired(input: unknown, t: LocalizedFormatter): ActionEmailParams {
     const data = this.record(input);
     const reported = [data.hostname, data.os].filter(
       (value): value is string => typeof value === 'string' && value.length > 0,
@@ -93,7 +92,7 @@ export class EmailJobMapper {
    * Telefonica" — and DB-IP's licence asks for its attribution beside any
    * location it gave, so the helper line carries it.
    */
-  toHostNetworkChanged(input: unknown, t: LocalizedFormatter): HostNetworkChangedEmailParams {
+  toHostNetworkChanged(input: unknown, t: LocalizedFormatter): ActionEmailParams {
     const data = this.record(input);
     const unknown = t.t('emails.hostNetworkChanged.unknownPlace');
     const moved = this.record(data.toNetwork);
