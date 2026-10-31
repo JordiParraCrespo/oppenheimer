@@ -25,7 +25,7 @@ All `packages/backend/*` must have both `"import"` and `"require"` in their `pac
 
 There are two kinds of backend package:
 
-**Pluggable services** (`email`, `storage`, `cache`, `queue`) — an abstract
+**Pluggable services** (`email`, `storage`, `cache`) — an abstract
 service selected at runtime by a factory:
 
 ```
@@ -99,7 +99,9 @@ in its own diff.
 
 - `tsconfig.json` must have `"jsx": "react-jsx"` for React Email templates
 - `react`, `@react-email/components`, `@react-email/render` are **production** deps (not devDeps)
-- Templates live in `src/templates/` as React components
+- Templates live in `src/templates/` as React components: the layout and the
+  account emails. A product notice is `sendAction` with copy the API writes
+  (`apps/api/src/queue/email-job.mapper.ts`), not a template in the package
 
 ## Shared config dependency
 
