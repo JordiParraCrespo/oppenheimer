@@ -190,9 +190,10 @@ Apply `@Throttle()` on public-facing endpoints:
 
 The `/api/auth/*` routes never reach the NestJS `ThrottlerGuard` (Better Auth
 mounts them on the HTTP adapter first), so their limits live in Better Auth's
-own `rateLimit` block in `auth.ts`, stored in the `rateLimit` table so they
-hold across replicas. It is on in production and opt-in elsewhere
-(`AUTH_RATE_LIMIT_ENABLED`).
+own `rateLimit` block (`auth/infrastructure/auth-rate-limit.util.ts`), stored
+in the `rateLimit` table so they hold across replicas. It is on everywhere but
+under `NODE_ENV=test`, and `AUTH_RATE_LIMIT_ENABLED=false` switches it off (the
+e2e stack does).
 
 **The tracker is keyed on the credential, not the IP.**
 `CredentialThrottlerGuard` (`src/throttling/`) is the app's `APP_GUARD`. It

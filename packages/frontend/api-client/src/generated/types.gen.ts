@@ -6175,6 +6175,10 @@ export type InviteMemberErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
      * ORG_016 — The organization service failed to handle the request
      */
     502: ProblemDetailsDto;
@@ -13703,7 +13707,7 @@ export type StartChatgptLoginErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**
@@ -13749,7 +13753,7 @@ export type PollChatgptLoginErrors = {
      */
     410: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**

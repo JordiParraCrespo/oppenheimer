@@ -10,7 +10,8 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { Throttle } from '@nestjs/throttler';
+import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { Request } from 'express';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -43,8 +44,11 @@ export class InviteMemberHttpController {
   @RequireScopes('invitations:write')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'create', subject: 'Invitation' })
+  // Every call sends an email, to an address the caller chooses.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Invite a member to an organization' })
   @ApiResponse({ status: 201, type: InvitationResponseDto })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async invite(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
