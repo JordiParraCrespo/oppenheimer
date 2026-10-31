@@ -20848,7 +20848,7 @@
     },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
-        "description": "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+        "description": "`decision` is one of the card's `availableDecisions`. `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `approve_always` also sets the tool to Allow for the bot, `approve_for_subject` allows it on what the call acts on (the older `approve` with `reach` `tool` or `subject` says the same). `deny` runs nothing, and the bot gets a turn that tells it so, with the note, under the same scopes, and carries on. `stop` runs nothing and gives the bot no turn back: the running turn is asked to stop, and the chat keeps a line saying so. Every open chat hears the card closed (`approval_resolved` on the bot's stream).",
         "operationId": "decideBotApproval",
         "parameters": [
           {
@@ -20930,7 +20930,7 @@
             }
           },
           "422": {
-            "description": "BOTS_030 — A reach the card does not offer",
+            "description": "BOTS_030 — A decision or reach the card does not offer",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -33510,6 +33510,7 @@
             "enum": [
               "approved",
               "denied",
+              "stopped",
               "failed"
             ]
           },
@@ -33526,6 +33527,11 @@
             "format": "uuid",
             "nullable": true,
             "description": "The session the approved call started; null when it started none."
+          },
+          "approvalId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The card it decided, as the stream’s `approval_resolved` named it; absent on older lines."
           }
         },
         "required": [
@@ -34401,6 +34407,20 @@
               ]
             }
           },
+          "availableDecisions": {
+            "type": "array",
+            "description": "What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "approve",
+                "approve_for_subject",
+                "approve_always",
+                "deny",
+                "stop"
+              ]
+            }
+          },
           "reach": {
             "type": "string",
             "enum": [
@@ -34441,6 +34461,7 @@
           "sharesOutside",
           "reviewNote",
           "reaches",
+          "availableDecisions",
           "reach",
           "decidedByUserId",
           "decidedAt",
@@ -34523,6 +34544,20 @@
               ]
             }
           },
+          "availableDecisions": {
+            "type": "array",
+            "description": "What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "approve",
+                "approve_for_subject",
+                "approve_always",
+                "deny",
+                "stop"
+              ]
+            }
+          },
           "reach": {
             "type": "string",
             "enum": [
@@ -34578,6 +34613,7 @@
           "sharesOutside",
           "reviewNote",
           "reaches",
+          "availableDecisions",
           "reach",
           "decidedByUserId",
           "decidedAt",
@@ -34594,7 +34630,10 @@
             "type": "string",
             "enum": [
               "approve",
-              "deny"
+              "approve_for_subject",
+              "approve_always",
+              "deny",
+              "stop"
             ]
           },
           "note": {

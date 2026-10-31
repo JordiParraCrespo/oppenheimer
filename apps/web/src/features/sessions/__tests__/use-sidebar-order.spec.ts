@@ -1,5 +1,6 @@
 import { type DragItem, sortableProjectId } from '@oppenheimer/design-system-web';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import { sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PINNED_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
@@ -26,8 +27,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 }));
 
 const project = (id: string) => ({ id, isUnassigned: false }) as ProjectEntity;
-const session = (id: string, projectId: string): SessionEntity =>
-  ({ id, projectId, inProject: (to: string) => session(id, to) }) as unknown as SessionEntity;
+const session = (id: string, projectId: string): SessionEntity => sessionEntity({ id, projectId });
 
 const PROJECTS = [project('a'), project('b')];
 const SESSIONS = [session('s1', 'a'), session('s2', 'a'), session('s3', 'b')];

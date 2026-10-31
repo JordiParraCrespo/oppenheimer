@@ -833,7 +833,9 @@ is never sent is deleted after a day.
 how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
 catalog does not have. `BOTS_030` asks to always allow a tool that is decided
 call by call (merging a pull request), whether as its Allow or as a yes that
-reaches past this call, or asks a yes to reach a thing the card did not name.
+reaches past this call, or asks a yes to reach a thing the card did not name:
+a decision outside the card's `availableDecisions` (`approve_always`,
+`approve_for_subject` where it offers neither).
 `BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
 its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
 that is not this bot's, not in the caller's workspace, or already removed.

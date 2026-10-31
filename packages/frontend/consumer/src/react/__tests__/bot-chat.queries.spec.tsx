@@ -7,7 +7,7 @@ import type {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import {
   BotConversationEntity,
@@ -15,6 +15,7 @@ import {
   type BotStreamStatus,
   BotTurnEntity,
 } from '../../modules/bots';
+import { BotApprovalEntity } from '../../modules/bots/bot-conversation.entity';
 import { useBotLive } from '../bot-chat.queries';
 import { fakeKernel } from './fake-kernel';
 
@@ -74,6 +75,7 @@ function setup() {
     );
   }
   return {
+    queryClient,
     stream,
     order,
     openStream,
@@ -260,5 +262,51 @@ describe('useBotLive', () => {
     expect(Object.keys(result.current.subagents)).toEqual(['c1']);
     await chat.land(delegated('running'));
     expect(result.current.subagents).toEqual({});
+  });
+
+  describe('Needs input cards', () => {
+    const PENDING = [...APPROVALS, 'pending'];
+    afterEach(() => vi.useRealTimers());
+
+    it('takes down a card another tab decided at once, and draws its line until the stored one lands', async () => {
+      const chat = setup();
+      const card = new BotApprovalEntity('a1', 't1', 'start_session', 'Start', 'pending', null, at);
+      chat.queryClient.setQueryData(PENDING, card);
+      const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+      await chat.send({
+        type: 'approval_resolved',
+        approvalId: 'a1',
+        outcome: 'stopped',
+        tool: 'start_session',
+        summary: 'Start',
+      });
+      expect(chat.queryClient.getQueryData(PENDING)).toBeNull();
+      expect(result.current.resolved).toMatchObject([{ outcome: 'stopped', approvalId: 'a1' }]);
+      const line = new BotMessageEntity('m9', null, 'event', 'You stopped', [], at, {
+        kind: 'approval',
+        outcome: 'stopped',
+        tool: 'start_session',
+        summary: 'Start',
+        sessionId: null,
+        approvalId: 'a1',
+      });
+      await chat.land(new BotConversationEntity([line], [], 1));
+      expect(result.current.resolved).toEqual([]);
+
+      // The stored line scrolls out of the read's window: the early line stays retired.
+      await chat.land(read('completed', 'Something newer'));
+      expect(result.current.resolved).toEqual([]);
+    });
+
+    it('reads a card raised mid-sentence only once the line ends', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const chat = setup();
+      renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+      await chat.send(text('I will start a ses'));
+      await chat.send({ type: 'approval', approvalId: 'a1', status: 'pending' });
+      expect(chat.invalidated).toEqual([]);
+      await chat.send(text('sion.\n'));
+      expect(chat.invalidated).toEqual([APPROVALS]);
+    });
   });
 });

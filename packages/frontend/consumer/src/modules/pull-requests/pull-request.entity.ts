@@ -1,3 +1,4 @@
+import { assignProps } from '@oppenheimer/frontend-core';
 import type {
   CiFindingAction,
   CiFindingConfidence,
@@ -77,40 +78,70 @@ export type LaneReason =
   /** GitHub did not give the files: size alone, never quick. */
   | { code: 'files_unread'; lines: number };
 
+/** What a {@link PullRequestEntity} is made from: every field, the defaulted ones optional. */
+export type PullRequestEntityProps = Pick<
+  PullRequestEntity,
+  | 'installationId'
+  | 'githubRepoId'
+  | 'repository'
+  | 'number'
+  | 'title'
+  | 'author'
+  | 'authorKind'
+  | 'headRef'
+  | 'scope'
+  | 'lane'
+  | 'laneReason'
+  | 'additions'
+  | 'deletions'
+  | 'checks'
+  | 'mergeable'
+  | 'blocker'
+  | 'waitingSeconds'
+  | 'draft'
+  | 'htmlUrl'
+  | 'checksRefusal'
+  | 'unread'
+  | 'headSha'
+  | 'openedAt'
+>;
+
 /** One row of the queue. */
 export class PullRequestEntity {
-  constructor(
-    public readonly installationId: string,
-    public readonly githubRepoId: number,
-    /** `acme-labs/xrp-mobile`. */
-    public readonly repository: string,
-    public readonly number: number,
-    public readonly title: string,
-    /** A GitHub login. */
-    public readonly author: string,
-    /** A session's when its branch is one a session pushed. */
-    public readonly authorKind: 'session' | 'person',
-    public readonly headRef: string,
-    public readonly scope: PullRequestScope,
-    public readonly lane: PullRequestLane,
-    public readonly laneReason: LaneReason,
-    public readonly additions: number,
-    public readonly deletions: number,
-    public readonly checks: PullRequestChecks,
-    public readonly mergeable: boolean,
-    public readonly blocker: PullRequestBlocker | null,
-    public readonly waitingSeconds: number,
-    public readonly draft: boolean,
-    public readonly htmlUrl: string,
-    /** Why the checks are `unavailable`; null when GitHub showed them. */
-    public readonly checksRefusal: ReadRefusal | null,
-    /** What GitHub did not give on this read; an unread part is not an empty one. */
-    public readonly unread: readonly ('files' | 'reviews')[],
-    /** The head commit this read saw: a new push is a new wait (the Inbox's key). */
-    public readonly headSha: string,
-    /** When it was opened, from `waitingSeconds` at the moment of the read. */
-    public readonly openedAt: Date,
-  ) {}
+  readonly installationId!: string;
+  readonly githubRepoId!: number;
+  /** `acme-labs/xrp-mobile`. */
+  readonly repository!: string;
+  readonly number!: number;
+  readonly title!: string;
+  /** A GitHub login. */
+  readonly author!: string;
+  /** A session's when its branch is one a session pushed. */
+  readonly authorKind!: 'session' | 'person';
+  readonly headRef!: string;
+  readonly scope!: PullRequestScope;
+  readonly lane!: PullRequestLane;
+  readonly laneReason!: LaneReason;
+  readonly additions!: number;
+  readonly deletions!: number;
+  readonly checks!: PullRequestChecks;
+  readonly mergeable!: boolean;
+  readonly blocker!: PullRequestBlocker | null;
+  readonly waitingSeconds!: number;
+  readonly draft!: boolean;
+  readonly htmlUrl!: string;
+  /** Why the checks are `unavailable`; null when GitHub showed them. */
+  readonly checksRefusal!: ReadRefusal | null;
+  /** What GitHub did not give on this read; an unread part is not an empty one. */
+  readonly unread!: readonly ('files' | 'reviews')[];
+  /** The head commit this read saw: a new push is a new wait (the Inbox's key). */
+  readonly headSha!: string;
+  /** When it was opened, from `waitingSeconds` at the moment of the read. */
+  readonly openedAt!: Date;
+
+  constructor(props: PullRequestEntityProps) {
+    assignProps(this, props);
+  }
 
   get address(): PullRequestAddress {
     return {
@@ -189,52 +220,46 @@ export interface CiFinding {
 }
 
 /** The briefing: the row, and what the page around it reads. */
+/** What a {@link PullRequestDetailEntity} is made from: its row's props and its own fields. */
+export type PullRequestDetailEntityProps = PullRequestEntityProps &
+  Pick<
+    PullRequestDetailEntity,
+    | 'body'
+    | 'baseRef'
+    | 'fromFork'
+    | 'state'
+    | 'changedFiles'
+    | 'folders'
+    | 'checkCounts'
+    | 'gates'
+    | 'reviewers'
+    | 'viewerLogin'
+  > &
+  Partial<Pick<PullRequestDetailEntity, 'failingChecks' | 'ciFindings'>>;
+
 export class PullRequestDetailEntity extends PullRequestEntity {
-  constructor(
-    row: PullRequestEntity,
-    /** The description, as written (Markdown). */
-    public readonly body: string,
-    public readonly baseRef: string,
-    /** The head branch is in a fork, which a session cannot check out yet. */
-    public readonly fromFork: boolean,
-    public readonly state: 'open' | 'merged' | 'closed',
-    public readonly changedFiles: number,
-    /** Top-level directories, most files first. */
-    public readonly folders: string[],
-    public readonly checkCounts: { total: number; passed: number; failed: number; pending: number },
-    public readonly gates: { id: MergeGateId; state: MergeGateState }[],
-    public readonly reviewers: PullRequestReviewer[],
-    public readonly viewerLogin: string | null,
-    /** The checks that failed on the head; empty when none did or they were not read. */
-    public readonly failingChecks: PullRequestFailingCheck[] = [],
-    /** What the head's failing checks came to, one per check looked into. */
-    public readonly ciFindings: CiFinding[] = [],
-  ) {
-    super(
-      row.installationId,
-      row.githubRepoId,
-      row.repository,
-      row.number,
-      row.title,
-      row.author,
-      row.authorKind,
-      row.headRef,
-      row.scope,
-      row.lane,
-      row.laneReason,
-      row.additions,
-      row.deletions,
-      row.checks,
-      row.mergeable,
-      row.blocker,
-      row.waitingSeconds,
-      row.draft,
-      row.htmlUrl,
-      row.checksRefusal,
-      row.unread,
-      row.headSha,
-      row.openedAt,
-    );
+  /** The description, as written (Markdown). */
+  readonly body!: string;
+  readonly baseRef!: string;
+  /** The head branch is in a fork, which a session cannot check out yet. */
+  readonly fromFork!: boolean;
+  readonly state!: 'open' | 'merged' | 'closed';
+  readonly changedFiles!: number;
+  /** Top-level directories, most files first. */
+  readonly folders!: string[];
+  readonly checkCounts!: { total: number; passed: number; failed: number; pending: number };
+  readonly gates!: { id: MergeGateId; state: MergeGateState }[];
+  readonly reviewers!: PullRequestReviewer[];
+  readonly viewerLogin!: string | null;
+  /** The checks that failed on the head; empty when none did or they were not read. */
+  readonly failingChecks: PullRequestFailingCheck[] = [];
+  /** What the head's failing checks came to, one per check looked into. */
+  readonly ciFindings: CiFinding[] = [];
+
+  constructor(props: PullRequestDetailEntityProps) {
+    super(props);
+    // A subclass's fields are defined after `super` returns, so its own are set here.
+    assignProps(this, props);
   }
 
   get isOpen(): boolean {

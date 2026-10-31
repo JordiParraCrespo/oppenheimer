@@ -1,5 +1,5 @@
+import type { EventSourceLike } from '@oppenheimer/frontend-core';
 import { describe, expect, it, vi } from 'vitest';
-import type { EventSourceLike } from '../../../organizations/events/workspace-event-stream';
 import { BotStream, type BotStreamStatus } from '../bot-stream';
 
 class FakeSource implements EventSourceLike {

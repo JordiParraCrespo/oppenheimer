@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireApp } from '../../../github/application/app-address.policy';
 import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
 import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
 import { MergePullRequestCommand } from './merge-pull-request.command';
@@ -23,7 +24,7 @@ export class MergePullRequestCommandHandler
     method,
     expectedHeadSha,
   }: MergePullRequestCommand): Promise<void> {
-    const app = this.writes.requireApp(address);
+    const app = requireApp(address);
     await this.writes.merge(scope, scope.userId, app, method, expectedHeadSha);
   }
 }

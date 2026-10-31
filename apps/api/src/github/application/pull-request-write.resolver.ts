@@ -3,14 +3,11 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
-import { isInstallationAddress } from '../domain/repository-address.policy';
 import { GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubCredential, GithubPullsPort } from '../infrastructure/github-pulls.port';
 import { GithubAccessResolver } from './github-access.resolver';
 import type {
-  InstallationAddress,
   InstallationPullRequestAddress,
-  RepositoryAddress,
   ReviewSubmission,
   WorkspaceRepository,
 } from './pull-request-access.port';
@@ -31,13 +28,6 @@ export class PullRequestWriteResolver implements PullRequestWritePort {
     private readonly cache: CacheService,
     private readonly access: GithubAccessResolver,
   ) {}
-
-  requireApp<T extends RepositoryAddress>(address: T): Extract<T, InstallationAddress> {
-    if (isInstallationAddress(address)) return address;
-    throw new AppError(GithubErrors.READ_ONLY_REPOSITORY, {
-      detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
-    });
-  }
 
   async submitReview(
     scope: AccessScope,

@@ -1,21 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { planClosedReads } from '../domain/closed-read.policy';
-import { GITHUB_PULLS } from '../github.di-tokens';
 import type {
   GithubCredential,
-  GithubOpenPullRequest,
-  GithubPart,
-  GithubPullRequestDetail,
   GithubPullRequestSummary,
-  GithubPullsPort,
   GithubRefusal,
 } from '../infrastructure/github-pulls.port';
-import { GithubAccessResolver } from './github-access.resolver';
 import type {
   ClosedPullRequestSnapshot,
-  Part,
   PullRequestRead,
   PullRequestSnapshot,
   ReadBudget,
@@ -25,15 +18,14 @@ import type {
 } from './pull-request-access.port';
 import type { PullRequestListingPort } from './pull-request-listing.port';
 import {
-  listingKey,
   OPEN_TTL_SECONDS,
-  openListingKeys,
   PullRequestSnapshotResolver,
   partGaps,
   refusalOf,
   snapshotKey,
   ttlFor,
 } from './pull-request-snapshot.resolver';
+import { PullRequestSourceResolver } from './pull-request-source.resolver';
 
 /** A closed pull request no longer changes: its snapshot is kept for most of a day. */
 const CLOSED_SNAPSHOT_TTL_SECONDS = 6 * 3600;
@@ -53,20 +45,17 @@ const SNAPSHOT_BUDGET = 5;
 const PULLS_PER_PAGE = 100;
 
 /**
- * The queue's and the figures' reads through the installation, or the
- * caller's own token (§6.2), cached briefly in Redis as GitHub's own answers
- * (`CacheService`, JSON) and never as a mirror. Each pull request is filled by
- * {@link PullRequestSnapshotResolver}, on the page view's budget.
+ * The queue's and the figures' reads, on the page view's budget: which pull
+ * requests there are comes from {@link PullRequestSourceResolver}, and each
+ * one the budget allows is filled by {@link PullRequestSnapshotResolver}.
+ * Both cache in Redis as GitHub's own answers (`CacheService`, JSON), never as
+ * a mirror.
  */
 @Injectable()
 export class PullRequestListingResolver implements PullRequestListingPort {
-  private readonly logger = new Logger(PullRequestListingResolver.name);
-
   constructor(
-    @Inject(GITHUB_PULLS)
-    private readonly pulls: GithubPullsPort,
     private readonly cache: CacheService,
-    private readonly access: GithubAccessResolver,
+    private readonly source: PullRequestSourceResolver,
     private readonly snapshots: PullRequestSnapshotResolver,
   ) {}
 
@@ -98,7 +87,7 @@ export class PullRequestListingResolver implements PullRequestListingPort {
     repository: WorkspaceRepository,
     budget: ReadBudget,
   ): Promise<RepositoryPulls<PullRequestSnapshot>> {
-    const read = await this.openRead(scope, repository);
+    const read = await this.source.open(scope, repository);
     if (!read.ok) return refusedRepository(repository, read.refusal);
     // Kept under the key each pull request's own screen looks for, so opening
     // one from the queue reads nothing but its `updated_at`.
@@ -143,71 +132,6 @@ export class PullRequestListingResolver implements PullRequestListingPort {
     };
   }
 
-  /**
-   * A repository's open pull requests as far as one read answers them: the
-   * ones it gave whole, and the ones still to fill, with the detail already
-   * read for each where there is one. The GraphQL read is the source; one it
-   * fails for any reason but a rate limit falls back to the REST listing,
-   * which leaves every pull request to fill.
-   */
-  private async openRead(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-  ): Promise<
-    | {
-        ok: true;
-        credential: GithubCredential;
-        whole: PullRequestSnapshot[];
-        unfilled: GithubPullRequestSummary[];
-        known: Map<number, GithubPullRequestDetail>;
-      }
-    | { ok: false; refusal: GithubRefusal }
-  > {
-    let credential: GithubCredential;
-    try {
-      credential = await this.access.readCredential(scope, repository);
-    } catch (error) {
-      return { ok: false, refusal: refusalOf(error) };
-    }
-    try {
-      const read = await this.cache.getOrSet(
-        openListingKeys(credential, repository).graph,
-        OPEN_TTL_SECONDS,
-        () => this.pulls.listOpenPullRequests(credential, repository.fullName),
-      );
-      const whole: PullRequestSnapshot[] = [];
-      const known = new Map<number, GithubPullRequestDetail>();
-      for (const entry of read) {
-        const snapshot = wholeSnapshot(repository, entry);
-        if (snapshot) whole.push(snapshot);
-        else known.set(entry.pull.number, entry.pull);
-      }
-      return { ok: true, credential, whole, unfilled: [...known.values()], known };
-    } catch (error) {
-      const refusal = refusalOf(error);
-      if (refusal === 'rate_limited') return { ok: false, refusal };
-      // Logged, because a fallback that answers is otherwise invisible: a
-      // GraphQL answer this module misreads would quietly cost the old fan-out.
-      this.logger.warn(
-        {
-          message: 'The open pull requests read fell back to REST',
-          repository: repository.fullName,
-          refusal,
-        },
-        error instanceof Error ? error.stack : String(error),
-      );
-      const listing = await this.list(scope, repository, 'open', OPEN_TTL_SECONDS);
-      if (!listing.ok) return listing;
-      return {
-        ok: true,
-        credential: listing.credential,
-        whole: [],
-        unfilled: listing.pulls,
-        known: new Map(),
-      };
-    }
-  }
-
   async closedPullRequests(
     scope: AccessScope,
     repositories: WorkspaceRepository[],
@@ -221,7 +145,7 @@ export class PullRequestListingResolver implements PullRequestListingPort {
   }> {
     const listings = await Promise.all(
       repositories.map((repository) =>
-        this.list(scope, repository, 'closed', OPEN_TTL_SECONDS * 4),
+        this.source.listing(scope, repository, 'closed', OPEN_TTL_SECONDS * 4),
       ),
     );
     const plan = planClosedReads(
@@ -260,29 +184,6 @@ export class PullRequestListingResolver implements PullRequestListingPort {
     // medians and the lane mix deepen as later reads fill more (#247).
     const counted = plan.picks.flat();
     return { pulls, counted, complete: plan.complete };
-  }
-
-  /** One repository's newest page of pull requests in a state, or the refusal GitHub gave. */
-  private async list(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-    state: 'open' | 'closed',
-    ttlSeconds: number,
-  ): Promise<
-    | { ok: true; credential: GithubCredential; pulls: GithubPullRequestSummary[] }
-    | { ok: false; refusal: GithubRefusal }
-  > {
-    try {
-      const credential = await this.access.readCredential(scope, repository);
-      const pulls = await this.cache.getOrSet(
-        listingKey(credential, repository, state),
-        ttlSeconds,
-        () => this.pulls.listPullRequests(credential, repository.fullName, state, 1),
-      );
-      return { ok: true, credential, pulls };
-    } catch (error) {
-      return { ok: false, refusal: refusalOf(error) };
-    }
   }
 
   /**
@@ -358,23 +259,4 @@ function refusedRepository(
   refusal: GithubRefusal,
 ): RepositoryPulls<PullRequestSnapshot> {
   return { repository, snapshots: [], deferred: 0, gaps: [{ what: 'repository', refusal }] };
-}
-
-/**
- * A pull request the one read answered whole, or null when a part ran past
- * its page: a part cut short is never shown as all of it (#244).
- */
-function wholeSnapshot(
-  repository: WorkspaceRepository,
-  entry: GithubOpenPullRequest,
-): PullRequestSnapshot | null {
-  const files = settled(entry.files);
-  const checks = settled(entry.checks);
-  const reviews = settled(entry.reviews);
-  if (!files || !checks || !reviews) return null;
-  return { repository, pull: entry.pull, files, checks, reviews };
-}
-
-function settled<T>(part: GithubPart<T>): Part<T> | null {
-  return part.refusal === 'past_page' ? null : part;
 }

@@ -130,6 +130,15 @@ export class BotApprovalEventResponseDto {
     description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    required: false,
+    description:
+      'The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.',
+  })
+  approvalId?: string;
 }
 
 /** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */

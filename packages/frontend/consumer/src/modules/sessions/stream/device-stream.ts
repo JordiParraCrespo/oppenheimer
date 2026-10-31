@@ -1,9 +1,13 @@
+import { ATTACH_CLOSE_CODES, type AttachDeviceInput } from '@oppenheimer/shared/protocol';
 import {
-  ATTACH_CLOSE_CODES,
-  type AttachDeviceInput,
-  attachServerMessageSchema,
-} from '@oppenheimer/shared/protocol';
-import { attachSocketUrl } from './session-stream';
+  openAttachSocket,
+  readAttachMessage,
+  reconnectDelay,
+  type Schedule,
+  type SocketFactory,
+  timeoutSchedule,
+  webSocketFactory,
+} from './attach-socket';
 
 /** Which device a session has, as its host names it. */
 export interface DeviceInfo {
@@ -43,13 +47,10 @@ export interface DeviceStreamOptions {
   issueTicket: () => Promise<{ ticket: string; url: string }>;
   apiBaseUrl?: string;
   /** Injected in tests; `WebSocket` otherwise. */
-  socketFactory?: (url: string, protocols: string[]) => WebSocket;
+  socketFactory?: SocketFactory;
   /** Injected in tests; `setTimeout` otherwise. */
-  schedule?: (fn: () => void, ms: number) => () => void;
+  schedule?: Schedule;
 }
-
-/** Waits between dials after a socket that failed or dropped. */
-const RETRY_MS = [1_000, 2_000, 5_000, 10_000];
 
 /** Close codes no reconnect can change. */
 const FINAL = new Map<number, DeviceStatus>([
@@ -67,8 +68,8 @@ export class AttachDeviceStream implements DeviceStream {
   private readonly frameListeners = new Set<(frame: Blob, drawn: () => void) => void>();
   private readonly deviceListeners = new Set<(device: DeviceInfo) => void>();
   private readonly statusListeners = new Set<(status: DeviceStatus) => void>();
-  private readonly socketFactory: (url: string, protocols: string[]) => WebSocket;
-  private readonly schedule: (fn: () => void, ms: number) => () => void;
+  private readonly socketFactory: SocketFactory;
+  private readonly schedule: Schedule;
   private status: DeviceStatus = 'connecting';
   private device: DeviceInfo | null = null;
   private socket: WebSocket | null = null;
@@ -77,14 +78,8 @@ export class AttachDeviceStream implements DeviceStream {
   private cancelRetry: (() => void) | null = null;
 
   constructor(private readonly options: DeviceStreamOptions) {
-    this.socketFactory =
-      options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
-    this.schedule =
-      options.schedule ??
-      ((fn, ms) => {
-        const timer = setTimeout(fn, ms);
-        return () => clearTimeout(timer);
-      });
+    this.socketFactory = options.socketFactory ?? webSocketFactory;
+    this.schedule = options.schedule ?? timeoutSchedule;
     void this.connect();
   }
 
@@ -127,10 +122,7 @@ export class AttachDeviceStream implements DeviceStream {
       return;
     }
     if (this.disposed) return;
-    const socket = this.socketFactory(attachSocketUrl(ticket.url, this.options.apiBaseUrl), [
-      ticket.ticket,
-    ]);
-    socket.binaryType = 'arraybuffer';
+    const socket = openAttachSocket(this.socketFactory, ticket, this.options.apiBaseUrl);
     this.socket = socket;
     socket.onmessage = (event) => {
       if (this.socket !== socket) return;
@@ -150,17 +142,11 @@ export class AttachDeviceStream implements DeviceStream {
   }
 
   private onControl(raw: string): void {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    const message = attachServerMessageSchema.safeParse(parsed);
-    if (!message.success) return;
-    switch (message.data.type) {
+    const message = readAttachMessage(raw);
+    if (!message) return;
+    switch (message.type) {
       case 'device': {
-        const { type: _type, ...device } = message.data;
+        const { type: _type, ...device } = message;
         this.device = device;
         this.attempt = 0;
         for (const listener of this.deviceListeners) listener(device);
@@ -168,7 +154,7 @@ export class AttachDeviceStream implements DeviceStream {
         return;
       }
       case 'hint':
-        if (message.data.kind === 'host_offline') this.setStatus('offline');
+        if (message.kind === 'host_offline') this.setStatus('offline');
         return;
       default:
         return;
@@ -190,7 +176,7 @@ export class AttachDeviceStream implements DeviceStream {
   private retry(): void {
     if (this.disposed) return;
     if (this.status === 'live') this.setStatus('connecting');
-    const wait = RETRY_MS[Math.min(this.attempt, RETRY_MS.length - 1)] ?? 10_000;
+    const wait = reconnectDelay(this.attempt);
     this.attempt += 1;
     this.cancelRetry = this.schedule(() => void this.connect(), wait);
   }

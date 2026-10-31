@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireApp } from '../../../github/application/app-address.policy';
 import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
 import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
 import { AddPullRequestCommentCommand } from './add-pull-request-comment.command';
@@ -15,6 +16,6 @@ export class AddPullRequestCommentCommandHandler
   ) {}
 
   async execute({ scope, address, comment }: AddPullRequestCommentCommand): Promise<void> {
-    await this.writes.addComment(scope, scope.userId, this.writes.requireApp(address), comment);
+    await this.writes.addComment(scope, scope.userId, requireApp(address), comment);
   }
 }

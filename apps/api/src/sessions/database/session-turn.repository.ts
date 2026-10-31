@@ -1,7 +1,7 @@
 import type { EntityManager } from 'typeorm';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import type { WorkSessionMapper } from '../work-session.mapper';
+import { SessionTurnMapper } from '../session-turn.mapper';
 import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
 
 /**
@@ -10,15 +10,13 @@ import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
  * the append holds, on its transaction.
  */
 export class SessionTurnRepository {
-  constructor(private readonly mapper: WorkSessionMapper) {}
-
   /** The latest turn is folded like the row, so it is read under the same lock. */
   async findLatest(manager: EntityManager, sessionId: string): Promise<SessionTurnFold | null> {
     const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
       `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
       [sessionId],
     );
-    return latestTurn ? this.mapper.turnToDomain(latestTurn) : null;
+    return latestTurn ? SessionTurnMapper.toDomain(latestTurn) : null;
   }
 
   /**
@@ -27,7 +25,7 @@ export class SessionTurnRepository {
    */
   async writeChanged(manager: EntityManager, session: WorkSessionEntity): Promise<void> {
     for (const turn of session.takeChangedTurns()) {
-      const row = this.mapper.turnToPersistence(session, turn);
+      const row = SessionTurnMapper.toPersistence(session, turn);
       await manager.query(
         `INSERT INTO "session_turn"
            ("organizationId", "sessionId", "seq", "origin", "drive", "state", "prompt",
