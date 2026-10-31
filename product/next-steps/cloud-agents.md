@@ -44,8 +44,10 @@ of the `cloud` place with the agent `codex`
   `codex cloud exec --env=<environment> --branch <base> <task>` and the
   host's own ChatGPT sign-in. Codex reads the branch from GitHub, so
   nothing is fetched or checked out. Which environment is "Which Codex
-  environment", below; on 2026-10-29 it was the repository's full name and
-  then its bare name, tried as labels.
+  environment", below; until 2026-10-31 it was the repository's full name
+  and then its bare name, tried as labels, and one named neither has been
+  `SESS_010` since then (below); any other refusal is the CLI's, in its
+  words (`SESS_009`).
 - **Status comes from the host, not the browser.** Unlike `claude`, the
   Codex CLI answers it: the runner reads `codex cloud list --json` once a
   minute while a task it started in the last week has not settled, and
@@ -72,7 +74,46 @@ of the `cloud` place with the agent `codex`
   the transcript. That is our VM slice, not this one, and keeping a ChatGPT
   login in our control plane is what F23 rules out.
 
-## Which Codex environment (2026-10-31)
+### Environments the CLI cannot reach (2026-10-31)
+
+Starts failed with "environment 'oppenheimer' not found" on a repository
+whose environment existed, and nobody could tell why. ChatGPT has two lists
+of Codex environments. The one `codex cloud exec --env` resolves is the
+older list at `/wham/environments`, the one the `codex cloud` TUI browses.
+The newer one, ChatGPT Settings → Codex Cloud
+(`chatgpt.com/settings/codex-cloud`, with publish and snapshots), is
+invisible to the CLI as of codex-cli 0.166.0, the latest: there the owner's
+CLI saw `adri-rodrigo-seo-crm`, `kallista` and
+`woocommerce-elementor-ai-template`, while Settings showed `oppenheimer`
+and `xrp-mobile`, published and unusable. Decided:
+
+- **Its own code.** A start that every label refuses as "not found" is
+  `SESS_010`, not the CLI's words under `SESS_009`. Its detail names the
+  labels tried, says that Settings → Codex Cloud environments are not
+  reachable by the CLI yet, and lists the environment labels on the
+  account's twenty newest tasks.
+- **That list is partial, on purpose.** codex-cli has no command that lists
+  environments outside its interactive TUI (`codex cloud` has `exec`,
+  `status`, `list`, `apply` and `diff`); the only non-interactive view is
+  `environment_label` on `codex cloud list --json`. Reading
+  `/wham/environments` ourselves would mean reading the CLI's
+  `auth.json`: the CLI owns its credential, and the host never reads it
+  (brief, "never"). An environment no recent task ran in is missing from the
+  list, and the full one is `codex cloud` on the host.
+- **The console explains it.** The failed start's pane says, in the
+  reader's language, that the CLI reaches only the environments
+  `codex cloud` lists and that Settings → Codex Cloud ones are not among
+  them yet, with a link to that settings page; the host's detail stays the
+  secondary line.
+- **The place picker does not predict it.** Marking the Codex row
+  unavailable for a repository with no environment the CLI can see would
+  need that list, cached per host. The only list there is is the partial
+  one above, so the mark would be wrong for every environment no recent
+  task ran in, and would hide a start that works; it is not built. It comes
+  back when the CLI lists environments non-interactively, or reads the
+  Settings ones.
+
+### Which Codex environment (2026-10-31)
 
 A Codex task runs in one of the ChatGPT account's environments, and an
 environment is named by its owner on chatgpt.com/codex: nothing makes it
@@ -97,19 +138,21 @@ person pick another.
   account's recent tasks ran in, off `codex cloud list --json`, which names
   each task's (`source: tasks`). The owner chose this knowing the endpoints
   are unpublished; whether reading the CLI's token for this one read is
-  within OpenAI's terms is the open question below.
+  within OpenAI's terms is the open question below. It also contradicts
+  "Environments the CLI cannot reach" above, which decided the host never
+  reads `auth.json`; which of the two holds is the owner's to decide.
 - **With none picked, the linked one.** Among the environments linked to
   the repository the runner takes the only one, else the pinned one, else
   the one with the most tasks: what Codex's own picker does
   (`pick_environment_row`), passed by id. With none linked, the one
   labelled with the repository's full name, then its bare name, still by
-  id; with neither, the start is refused, saying what to do and naming the
-  account's environments. The CLI is handed the names as labels only when
+  id; with neither, the start is `SESS_010`, naming every environment the
+  CLI can reach (that list is complete here, not the tasks' partial one). The CLI is handed the names as labels only when
   the account's whole list could not be read.
 - **The composer's Environment chip.** A Codex cloud session with one
   repository shows an Environment chip after Branch, asked of the host
   when it shows (`GET /v1/hosts/:id/codex-environments?repository=`, live,
-  nothing cached; `SESSIONS_044`–`046`). Its first row, Auto, is the host's
+  nothing cached; `SESSIONS_044`–`047`). Its first row, Auto, is the host's
   pick and names the linked environment; the others are the account's,
   linked ones first. A pick is kept with the host and the repository it was
   made for, since each host lists its own ChatGPT account's environments, and
@@ -118,7 +161,7 @@ person pick another.
   account. A 429 pauses that account for its `Retry-After` (a minute when it
   names none); nothing else is asked in its place, and a start in the pause
   is refused too, since the CLI would read the same list. The runner's
-  `SESS_010` is the API's `SESSIONS_047`, a 429.
+  `SESS_011` is the API's `SESSIONS_047`, a 429.
 - **The pick is part of the launch.** `codexEnvironment` on
   `POST /sessions` is folded from `session.requested` into
   `work_session.launchEnvironment` with the model, permission and effort,

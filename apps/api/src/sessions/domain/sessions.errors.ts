@@ -369,7 +369,7 @@ export const SessionErrors = {
   },
   /**
    * ChatGPT refused the host's read of its Codex environments for rate
-   * (`SESS_010`): the host asks nothing more of that account until the time
+   * (`SESS_011`): the host asks nothing more of that account until the time
    * it named, which the runner's words carry as the detail.
    */
   CODEX_ENVIRONMENTS_RATE_LIMITED: {

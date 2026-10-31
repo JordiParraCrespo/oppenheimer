@@ -22,7 +22,7 @@ package cloud
 // or starts a Codex cloud session without picking, never on a timer. A 429 is
 // ChatGPT saying stop: the account is paused for its Retry-After (a minute
 // when it names none), nothing else is asked in its place (not the account's
-// list, not `codex cloud list`), and the refusal is SESS_010, which the API
+// list, not `codex cloud list`), and the refusal is SESS_011, which the API
 // answers with a 429 code of its own.
 
 import (

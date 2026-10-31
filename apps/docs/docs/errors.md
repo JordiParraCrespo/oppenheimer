@@ -198,6 +198,7 @@ would confirm the id.
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 | `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
+| `HOSTS_009` <a id="hosts_009" /> | The host changed while this was being saved  | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -227,6 +228,14 @@ unaffected.
 `HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
 with no live link: the request goes down the link, so there is nothing to send
 it on. A runner that is offline checks for updates itself when it comes back.
+
+`HOSTS_009` is optimistic concurrency on the host row. Renaming, unpairing and
+the runner's own uninstall each write the host only at the version they read;
+one that loses to another write reads the host again and decides once more, so
+a rename keeps an unpair that landed first, and an unpair or uninstall that
+finds the host already unpaired writes nothing. Only losing that second try as
+well answers `HOSTS_009`: nothing was changed, and reading the host again shows
+what the other write did.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
@@ -618,7 +627,7 @@ so lookaround and backreferences are refused (`SESSIONS_042`), and a session hol
 own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
 session still starts there, in an environment guessed from the repository's name.
 `046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
-code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_010`):
+code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
 the runner asks nothing more of that ChatGPT account until the time it named, which the
 `detail` says. A runner that did not answer in time is `SESSIONS_031`.
 
@@ -837,7 +846,9 @@ is never sent is deleted after a day.
 how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
 catalog does not have. `BOTS_030` asks to always allow a tool that is decided
 call by call (merging a pull request), whether as its Allow or as a yes that
-reaches past this call, or asks a yes to reach a thing the card did not name.
+reaches past this call, or asks a yes to reach a thing the card did not name:
+a decision outside the card's `availableDecisions` (`approve_always`,
+`approve_for_subject` where it offers neither).
 `BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
 its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
 that is not this bot's, not in the caller's workspace, or already removed.
@@ -1156,7 +1167,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
-| `SESS_010` <a id="sess_010" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
+| `SESS_010` <a id="sess_010" />         | No Codex cloud environment the CLI can reach is named for the repository | 404 |
+| `SESS_011` <a id="sess_011" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1179,6 +1191,19 @@ the service (`systemctl --user restart oppenheimer-runner` or
 `launchctl kickstart -k gui/$(id -u)/dev.oppenheimer.runner`). A directory
 another account owns is fixed with `chown`; a mode looser than `0700` is
 tightened by the runner itself.
+
+`SESS_010` is `codex cloud exec` refusing every label a Codex cloud session
+was tried under (the repository's `owner/name`, then its bare name) as "not
+found". ChatGPT has two lists of Codex environments: the one `codex cloud`
+browses (`/wham/environments`), and the newer one in ChatGPT's Settings →
+Codex Cloud, with publish and snapshots, which codex-cli does not read yet
+(0.166.0). An environment that exists only in the second is not one the CLI
+can start a task in. The detail names the labels tried and the environment
+labels the CLI showed in the account's twenty newest tasks
+(`codex cloud list --json`): codex-cli has no command that lists environments
+outside its interactive TUI, so that list is partial, and the full one is
+`codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
+words.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
@@ -1204,6 +1229,13 @@ with their own codes rather than as a blanket 500:
 | `GENERIC.ARGUMENT_OUT_OF_RANGE` <a id="generic_argument_out_of_range" /> | 400  |
 | `GENERIC.CONFLICT` <a id="generic_conflict" />                           | 409  |
 | `GENERIC.NOT_FOUND` <a id="generic_not_found" />                         | 404  |
+| `GENERIC.VERSION_CONFLICT` <a id="generic_version_conflict" />         | 409  |
+
+`GENERIC.VERSION_CONFLICT` is a versioned write (`writeVersioned`) refused
+because the row moved past the version the aggregate was loaded at. A handler
+that faces a person usually retries once on a fresh read and answers its own
+module's code when that loses too (`HOSTS_009`); one that does not lets this
+code through. Nothing was written either way.
 
 ## Handling errors as a client
 

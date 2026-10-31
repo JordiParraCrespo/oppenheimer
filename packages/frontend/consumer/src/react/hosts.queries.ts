@@ -1,12 +1,7 @@
 'use client';
 
-import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import {
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
+import { type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   HostCodexEnvironments,
   HostEntity,
@@ -16,6 +11,7 @@ import type {
 } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
 import { type Poll, type PollKeys, usePollWhile } from './live-poll';
+import { mutation } from './mutation';
 
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
@@ -275,47 +271,24 @@ export function usePairingTokens(
   });
 }
 
-export function useRemoveHost(
-  options?: UseMutationOptions<void, Error, { id: string; wipe?: boolean }>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, wipe }) => app.hosts.remove(id, wipe),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-    }),
-  });
-}
+export const useRemoveHost = mutation<void, { id: string; wipe?: boolean }>({
+  run: (app, { id, wipe }) => app.hosts.remove(id, wipe),
+  invalidates: () => [hostsKeys.lists()],
+});
 
 /**
  * Nothing to refresh on success: the version on the row changes only once the
  * runner has restarted and said hello, which the list's own polling picks up.
  */
-export function useUpdateHostRunner(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-
-  return useMutation({
-    mutationFn: (id: string) => app.hosts.updateRunner(id),
-    ...options,
-  });
-}
+export const useUpdateHostRunner = mutation<void, string>({
+  run: (app, id) => app.hosts.updateRunner(id),
+});
 
 /**
  * The list is refreshed rather than patched: the row's status and counts come
  * back from the same read, so one source says what a host is.
  */
-export function useRenameHost(
-  options?: UseMutationOptions<HostEntity, Error, { id: string; name: string }>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => app.hosts.rename(id, name),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-    }),
-  });
-}
+export const useRenameHost = mutation<HostEntity, { id: string; name: string }>({
+  run: (app, { id, name }) => app.hosts.rename(id, name),
+  invalidates: () => [hostsKeys.lists()],
+});

@@ -5,12 +5,12 @@ import type {
   HostCodexEnvironmentsOutcome,
 } from './host-codex-environments.port';
 
-/** The runner's refusal when ChatGPT asked it to wait (`SESS_010`). */
-const RUNNER_RATE_LIMITED = 'SESS_010';
+/** The runner's refusal when ChatGPT asked it to wait (`SESS_011`). */
+const RUNNER_RATE_LIMITED = 'SESS_011';
 
 /**
  * The environments a host answered with, or the problem for why there are
- * none. A refusal of the runner's is ChatGPT's rate limit (`SESS_010`), a 429
+ * none. A refusal of the runner's is ChatGPT's rate limit (`SESS_011`), a 429
  * of its own, or else Codex's (`SESS_009`: no `codex`, no sign-in); either way
  * the runner's code is kept as `upstreamCode` and its words are the detail.
  */

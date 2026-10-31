@@ -75,7 +75,7 @@ func TestCodexStartReadsTheTaskTheCLINamed(t *testing.T) {
 // People name a Codex environment after the repository either way; the CLI
 // says which label it has not got, and the bare name is tried next.
 func TestCodexStartTriesTheRepositorysBareNameNext(t *testing.T) {
-	bin, args := fakeCodex(t, `[ "$3" = --env=xrp-mobile ] || { echo "Error: environment '$4' not found; run codex cloud to list available environments" >&2; exit 1; }
+	bin, args := fakeCodex(t, `[ "$3" = --env=xrp-mobile ] || { echo "Error: environment '${3#--env=}' not found; run codex cloud to list available environments" >&2; exit 1; }
 echo 'https://chatgpt.com/codex/tasks/task_e_1'`)
 	started, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	if err != nil {
@@ -86,6 +86,72 @@ echo 'https://chatgpt.com/codex/tasks/task_e_1'`)
 	}
 	if got := readArgs(t, args); len(got) != 12 || got[2] != "--env=acme-labs/xrp-mobile" || got[8] != "--env=xrp-mobile" {
 		t.Fatalf("args = %q, want the full name tried before the bare name", got)
+	}
+}
+
+// An environment made in ChatGPT's Settings → Codex Cloud is invisible to
+// `codex cloud exec`, so a repository whose only environment is there fails
+// under every label. That is its own code, naming the labels tried, the ones
+// the CLI shows in recent tasks and where the newer environments live.
+func TestCodexStartSaysWhichEnvironmentsTheCLICanSee(t *testing.T) {
+	bin, args := fakeCodex(t, `if [ "$2" = list ]; then cat <<'JSON'
+{"tasks": [
+  {"id": "task_e_3", "url": "u", "title": "a", "status": "ready", "environment_label": "kallista"},
+  {"id": "task_e_2", "url": "u", "title": "b", "status": "ready", "environment_label": "woocommerce-elementor-ai-template"},
+  {"id": "task_e_1", "url": "u", "title": "c", "status": "ready", "environment_label": "Kallista"},
+  {"id": "task_e_0", "url": "u", "title": "d", "status": "error", "environment_label": "Oppenheimer"}
+], "cursor": ""}
+JSON
+exit 0; fi
+echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	for _, want := range []string{
+		"acme-labs/oppenheimer or oppenheimer",
+		"recent tasks: kallista, woocommerce-elementor-ai-template (",
+		"Settings → Codex Cloud are not reachable by the CLI",
+	} {
+		if !strings.Contains(pe.Detail, want) {
+			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
+		}
+	}
+	// One page read for the environments, the two tries, and one page read
+	// for the refusal.
+	if got := strings.Join(readArgs(t, args)[17:], " "); got != "cloud list --json --limit 20" {
+		t.Fatalf("args after the two tries = %q, want one page of tasks read", got)
+	}
+}
+
+// The labels are a courtesy: a list the CLI cannot answer still ends in the
+// same code, saying it could not read them.
+func TestCodexStartNamesNoEnvironmentsWhenTheyCannotBeRead(t *testing.T) {
+	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Not signed in." >&2; exit 1; }
+echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if !strings.Contains(pe.Detail, "recent tasks: could not be read") {
+		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// Only the CLI's own "environment '<label>' not found" for the label just
+// tried is a missing environment. Another refusal that also says "not found"
+// is the CLI's answer, in its words, and no other label is tried.
+func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
+	bin, args := fakeCodex(t, `echo "Error: branch 'main' not found on the remote" >&2; exit 1`)
+	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+	}
+	if got := readArgs(t, args); len(got) != 6 {
+		t.Fatalf("args = %q, want one try", got)
 	}
 }
 

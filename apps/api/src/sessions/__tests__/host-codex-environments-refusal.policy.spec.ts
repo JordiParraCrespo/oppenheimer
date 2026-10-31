@@ -3,7 +3,7 @@ import { codexEnvironmentsOrThrow } from '../application/host-codex-environments
 /**
  * What the composer's Codex environment picker answers for each way the host's
  * list can fail. The part worth a test is the runner's refusal: ChatGPT's rate
- * limit (`SESS_010`) is a 429 of its own, never folded into "Codex could not
+ * limit (`SESS_011`) is a 429 of its own, never folded into "Codex could not
  * list", which would tell the person to check a sign-in that works.
  */
 describe('codexEnvironmentsOrThrow', () => {
@@ -12,14 +12,14 @@ describe('codexEnvironmentsOrThrow', () => {
   it('answers ChatGPT’s rate limit with SESSIONS_047, keeping the runner’s words and code', () => {
     expect(() =>
       codexEnvironmentsOrThrow(
-        { kind: 'failed', code: 'SESS_010', detail: 'try again in 30s' },
+        { kind: 'failed', code: 'SESS_011', detail: 'try again in 30s' },
         HOST,
       ),
     ).toThrow(
       expect.objectContaining({
         code: 'SESSIONS_047',
         detail: 'try again in 30s',
-        extensions: { upstreamCode: 'SESS_010' },
+        extensions: { upstreamCode: 'SESS_011' },
       }),
     );
   });

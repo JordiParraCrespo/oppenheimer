@@ -1,109 +1,41 @@
 import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
-import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
-import {
-  type CloudSessionState,
-  type CreateSessionDto,
-  placeOfCreate,
-  SESSION_SORTS,
-  type SessionAttachmentDto,
-  type SessionDecision,
-  type SessionSortDto,
-  type StartCloudSessionDto,
-  sessionDecisionSchema,
-} from '@oppenheimer/shared';
-import { effortLevelFor } from '@oppenheimer/shared/agents';
-import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
-import type { CloudAgentLaunch } from '../cloud-agents/application/cloud-runs.port';
+import type { Mapper } from '@oppenheimer/backend-ddd';
+import { type SessionDecision, sessionDecisionSchema } from '@oppenheimer/shared';
 import type { HostCodexEnvironments } from './application/host-codex-environments.port';
 import type { HostFolderListing } from './application/host-folders.port';
-import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
-import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
-import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
-import type { SessionUsageWeek } from './database/session-usage.repository.port';
+import type { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import type { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
-import type {
-  NewSessionEvent,
-  RecentFolder,
-  SessionListCursor,
-  SessionListPage,
-} from './database/work-session.repository.port';
-import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
-import { cloudRunLogEntries } from './domain/cloud-session-sync.policy';
-import type { CloudTaskFile } from './domain/cloud-task.policy';
-import { SessionCheckoutEntity } from './domain/session-checkout.entity';
-import { type CloudRunReport, SessionCloudRunEntity } from './domain/session-cloud-run.entity';
-import type { SessionLaunchFile } from './domain/session-launch-file.types';
+import type { RecentFolder, SessionListPage } from './database/work-session.repository.port';
+import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
-  type AgentObservedState,
   launchPermissionFor,
-  SESSION_EVENT_KINDS,
   type SessionAgent,
   type SessionFold,
-  type SessionLaunchFold,
 } from './domain/session-state.policy';
-import {
-  SESSION_ORIGINS,
-  type SessionTurnFold,
-  TURN_DRIVES,
-  TURN_ORIGINS,
-  TURN_STATES,
-  type TurnDrive,
-  type TurnOrigin,
-  type TurnState,
-} from './domain/session-turn.policy';
+import { SESSION_ORIGINS } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
-import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { HostCodexEnvironmentsResponseDto } from './dtos/host-codex-environments.response.dto';
 import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
-import {
-  SessionCheckoutResponseDto,
-  SessionCloudRunResponseDto,
-  SessionPageMetaDto,
-  SessionResponseDto,
-} from './dtos/session.response.dto';
+import { SessionPageMetaDto, SessionResponseDto } from './dtos/session.response.dto';
 import type { SessionDecisionResponseDto } from './dtos/session-decision.response.dto';
-import { SessionEventResponseDto } from './dtos/session-event.response.dto';
+import { SessionCheckoutMapper } from './session-checkout.mapper';
+import { SessionCloudRunMapper } from './session-cloud-run.mapper';
 
 /**
- * One row the batched append's `INSERT … RETURNING` answers, beside the count of
- * rows it meant to insert. `id` is null on the single row that comes back when
- * nothing landed at all.
- */
-export interface AppendedEventRow {
-  expected: number;
-  id: string | null;
-  seq: number;
-  idempotencyKey: string;
-  source: WorkSessionEventOrmEntity['source'];
-  kind: string;
-  payload: unknown;
-  occurredAt: Date;
-  recordedAt: Date;
-}
-
-/**
- * One mapper for the whole aggregate (session, checkouts, log entries), so three
- * files cannot disagree about how a bigint crosses a boundary.
- *
- * `githubRepoId` travels everywhere as the string the driver exchanges a bigint as,
- * never coerced: GitHub's ids fit in a number today and the column says they are not
- * promised to.
+ * The session's root row across the boundary, and the aggregate assembled from
+ * it: its checkouts and its cloud run each cross with their own mapper
+ * (`SessionCheckoutMapper`, `SessionCloudRunMapper`), as do its turns and its
+ * log entries (`SessionTurnMapper`, `WorkSessionEventMapper`), which the
+ * repository reads apart from the session.
  *
  * `state` on the wire is the **derived group**, not the stored lifecycle: the
  * committed client contract (the sidebar shows what needs you). It is computed from
  * the row alone, every input being a column the fold projects, so a listing needs no
  * log walk and a mapper cannot be handed an observation the log never recorded.
  */
-const CLOUD_OBSERVED: Record<CloudSessionState, AgentObservedState> = {
-  running: 'working',
-  'needs-input': 'blocked',
-  failed: 'blocked',
-  done: 'done',
-  stopped: 'done',
-};
-
 @Injectable()
 export class WorkSessionMapper
   implements Mapper<WorkSessionEntity, WorkSessionOrmEntity, SessionResponseDto>
@@ -166,7 +98,7 @@ export class WorkSessionMapper
         folderPath: record.folderPath,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
-        cloudRun: cloudRun ? this.cloudRunToDomain(cloudRun) : null,
+        cloudRun: cloudRun ? SessionCloudRunMapper.toDomain(cloudRun) : null,
         origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
           ? record.origin
           : 'person',
@@ -177,7 +109,8 @@ export class WorkSessionMapper
         projectId: record.projectId,
       },
     });
-    for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
+    for (const checkout of checkouts)
+      session.attachCheckout(SessionCheckoutMapper.toDomain(checkout));
     return session;
   }
 
@@ -207,22 +140,6 @@ export class WorkSessionMapper
    * branches and an absent `truncated` are spelled out, so a client never has to
    * tell "no" from "not said".
    */
-  toFoldersResponse(listing: HostFolderListing, recent: RecentFolder[]): HostFoldersResponseDto {
-    const dto = new HostFoldersResponseDto();
-    dto.path = listing.path;
-    dto.parent = listing.parent;
-    dto.home = listing.home;
-    dto.branch = listing.branch ?? null;
-    dto.entries = listing.entries.map((entry) => ({
-      name: entry.name,
-      path: posix.join(listing.path, entry.name),
-      branch: entry.branch ?? null,
-    }));
-    dto.truncated = listing.truncated ?? false;
-    dto.recent = recent.map((folder) => ({ path: folder.path, lastUsedAt: folder.lastUsedAt }));
-    return dto;
-  }
-
   /** The Codex environment picker's answer, absent labels and recommendation spelled as null. */
   toCodexEnvironmentsResponse(listing: HostCodexEnvironments): HostCodexEnvironmentsResponseDto {
     const dto = new HostCodexEnvironmentsResponseDto();
@@ -237,83 +154,20 @@ export class WorkSessionMapper
     return dto;
   }
 
-  /** A stored turn as the fold reads it. Values outside the unions read as their safest member. */
-  turnToDomain(record: SessionTurnOrmEntity): SessionTurnFold {
-    return {
-      seq: record.seq,
-      origin: (TURN_ORIGINS as readonly string[]).includes(record.origin)
-        ? (record.origin as TurnOrigin)
-        : 'person',
-      drive: (TURN_DRIVES as readonly string[]).includes(record.drive)
-        ? (record.drive as TurnDrive)
-        : 'interactive',
-      state: (TURN_STATES as readonly string[]).includes(record.state)
-        ? (record.state as TurnState)
-        : 'queued',
-      prompt: record.prompt,
-      observedWorking: record.observedWorking,
-      startedAt: record.startedAt ? new Date(record.startedAt) : null,
-      endedAt: record.endedAt ? new Date(record.endedAt) : null,
-      exitCode: record.exitCode,
-      agentSessionId: record.agentSessionId,
-      result: record.result,
-      failureDetail: record.failureDetail,
-      costUsd: record.costUsd === null ? null : Number(record.costUsd),
-      permissionDenials: record.permissionDenials,
-      outputRef: record.outputRef,
-      model: record.model,
-      inputTokens: tokenCount(record.inputTokens),
-      outputTokens: tokenCount(record.outputTokens),
-      cacheReadTokens: tokenCount(record.cacheReadTokens),
-      cacheWriteTokens: tokenCount(record.cacheWriteTokens),
-    };
-  }
-
-  /**
-   * One row of the weekly usage aggregate. Postgres sums `bigint` and `numeric`
-   * into `numeric`, which `pg` returns as a string, so every figure is read
-   * here once rather than at each caller.
-   */
-  usageWeekToRead(row: unknown): SessionUsageWeek {
-    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
-    return {
-      weekStart: String(record.weekStart),
-      projectId: String(record.projectId),
-      model: typeof record.model === 'string' ? record.model : null,
-      inputTokens: summed(record.inputTokens),
-      outputTokens: summed(record.outputTokens),
-      cacheReadTokens: summed(record.cacheReadTokens),
-      cacheWriteTokens: summed(record.cacheWriteTokens),
-      costUsd: summed(record.costUsd),
-      turns: summed(record.turns),
-    };
-  }
-
-  turnToPersistence(session: WorkSessionEntity, turn: SessionTurnFold): SessionTurnOrmEntity {
-    const record = new SessionTurnOrmEntity();
-    record.organizationId = session.organizationId;
-    record.sessionId = session.id;
-    record.seq = turn.seq;
-    record.origin = turn.origin;
-    record.drive = turn.drive;
-    record.state = turn.state;
-    record.prompt = turn.prompt;
-    record.observedWorking = turn.observedWorking;
-    record.startedAt = turn.startedAt;
-    record.endedAt = turn.endedAt;
-    record.exitCode = turn.exitCode;
-    record.agentSessionId = turn.agentSessionId;
-    record.result = turn.result;
-    record.failureDetail = turn.failureDetail;
-    record.costUsd = turn.costUsd === null ? null : turn.costUsd.toFixed(6);
-    record.permissionDenials = turn.permissionDenials;
-    record.outputRef = turn.outputRef;
-    record.model = turn.model;
-    record.inputTokens = turn.inputTokens === null ? null : String(turn.inputTokens);
-    record.outputTokens = turn.outputTokens === null ? null : String(turn.outputTokens);
-    record.cacheReadTokens = turn.cacheReadTokens === null ? null : String(turn.cacheReadTokens);
-    record.cacheWriteTokens = turn.cacheWriteTokens === null ? null : String(turn.cacheWriteTokens);
-    return record;
+  toFoldersResponse(listing: HostFolderListing, recent: RecentFolder[]): HostFoldersResponseDto {
+    const dto = new HostFoldersResponseDto();
+    dto.path = listing.path;
+    dto.parent = listing.parent;
+    dto.home = listing.home;
+    dto.branch = listing.branch ?? null;
+    dto.entries = listing.entries.map((entry) => ({
+      name: entry.name,
+      path: posix.join(listing.path, entry.name),
+      branch: entry.branch ?? null,
+    }));
+    dto.truncated = listing.truncated ?? false;
+    dto.recent = recent.map((folder) => ({ path: folder.path, lastUsedAt: folder.lastUsedAt }));
+    return dto;
   }
 
   /**
@@ -355,328 +209,14 @@ export class WorkSessionMapper
     };
   }
 
-  /**
-   * The entries a create request owes its log: one action, one transaction. They
-   * live here because they *are* the session's columns (the fold projects them), and
-   * building them beside the persistence shape keeps the two saying the same thing.
-   *
-   * At most three. `session.requested` states the launch, which the launch columns
-   * project, and for a folder session the folder. `session.cwd_set` is an entry,
-   * not a column write, because a later "work in this checkout instead" is the same
-   * entry; a folder session has no checkout to work in, so it gets none.
-   * `prompt.first` carries the composer's task, and is absent rather than empty
-   * when there was none.
-   */
-  /**
-   * What the extension saw a cloud session doing on claude.ai, in the observed
-   * vocabulary a runner's screen reading uses, so its dot is drawn by the same
-   * rules as any other (`session-group.policy.ts`). A failed turn waits on the
-   * person as a question does; a finished one is ready for a prompt.
-   */
-  cloudObservedState(cloudState: CloudSessionState): AgentObservedState {
-    return CLOUD_OBSERVED[cloudState];
-  }
-
-  /** The extension's report as the log's `agent.observed`, keyed to its command and session. */
-  toCloudObservedEvent(
-    commandId: string,
-    session: WorkSessionEntity,
-    cloudState: CloudSessionState,
-  ): NewSessionEvent {
-    return {
-      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-        `${commandId}:${session.id}`,
-        SESSION_EVENT_KINDS.AGENT_OBSERVED,
-      ),
-      source: 'api',
-      kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
-      payload: { state: this.cloudObservedState(cloudState), cloudState },
-    };
-  }
-
-  toRequestEvents(props: {
-    commandId: string;
-    userId: string;
-    input: CreateSessionDto;
-    /** The first task's images, already parked for the host. */
-    images?: readonly SessionLaunchFile[];
-    checkouts: number;
-    cwdCheckoutId: string | null;
-  }): NewSessionEvent[] {
-    const { input } = props;
-    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
-    const events: NewSessionEvent[] = [
-      {
-        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.REQUESTED,
-        payload: {
-          agent: input.agent,
-          hostId: input.hostId,
-          checkouts: props.checkouts,
-          place: placeOfCreate(input),
-          ...(input.folder ? { folder: input.folder } : {}),
-          requestedByUserId: props.userId,
-          launch: this.toLaunch(input.agent, input.launch, input.codexEnvironment),
-        },
-      },
-    ];
-    if (!input.folder) {
-      events.push({
-        idempotencyKey: key(SESSION_EVENT_KINDS.CWD_SET),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.CWD_SET,
-        payload: { checkoutId: props.cwdCheckoutId },
-      });
-    }
-    if (input.prompt) {
-      events.push({
-        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
-        payload: {
-          text: input.prompt,
-          ...(props.images?.length ? { images: props.images.map(toFileRecord) } : {}),
-        },
-      });
-    }
-    return events;
-  }
-
-  /**
-   * A cloud session's files as its task lists them: each file's type beside
-   * the link it is downloaded from, in order (`cloudTaskWithFiles`).
-   */
-  static toCloudTaskFiles(
-    files: readonly { mediaType: SessionFileMediaType }[],
-    urls: readonly string[],
-  ): CloudTaskFile[] {
-    return files.map((file, i) => ({ url: urls[i] ?? '', mediaType: file.mediaType }));
-  }
-
-  /**
-   * The images a `prompt.first` entry names, for a create sent again. An entry
-   * written before images existed, or one a runner wrote off the transcript,
-   * names none; a malformed item is dropped rather than sent to a host.
-   */
-  static filesOf(payload: unknown): SessionLaunchFile[] {
-    const listed = (payload as { images?: unknown } | null)?.images;
-    if (!Array.isArray(listed)) return [];
-    return listed.flatMap((item: { imageId?: unknown; mediaType?: unknown }) =>
-      typeof item?.imageId === 'string' &&
-      (SESSION_FILE_MEDIA_TYPES as readonly unknown[]).includes(item.mediaType)
-        ? [{ imageId: item.imageId, mediaType: item.mediaType as SessionFileMediaType }]
-        : [],
-    );
-  }
-
-  /** What `POST /sessions/attachments` answers for an upload it staged. */
-  static toAttachmentResponse(
-    id: string,
-    mediaType: SessionFileMediaType,
-    data: Buffer,
-  ): SessionAttachmentDto {
-    return { id, mediaType, size: data.length };
-  }
-
-  /**
-   * The launch a request states, with the absences filled in.
-   *
-   * An absent level is `ask` — the one that asks before every action — and never
-   * anything else: a default that escalated is the single mistake this field must
-   * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
-   * approvals records no level at all (`launchPermissionFor`), and an effort
-   * the model does not offer is not recorded (`effortLevelFor`).
-   */
-  toLaunch(
-    agent: SessionAgent,
-    launch: CreateSessionDto['launch'],
-    environment?: string,
-  ): SessionLaunchFold {
-    return {
-      model: launch?.model ?? null,
-      permission: launchPermissionFor(agent, launch?.permission),
-      effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
-      environment: environment ?? null,
-    };
-  }
-
-  /**
-   * What keys the `prompt.first` entry of a create request — and therefore the
-   * name derived from it, so the title is keyed on the prompt that caused it.
-   */
-  static promptKeyFor(commandId: string): string {
-    return WorkSessionEntity.apiIdempotencyKey(commandId, SESSION_EVENT_KINDS.PROMPT_FIRST);
-  }
-
-  checkoutToPersistence(entity: SessionCheckoutEntity): SessionCheckoutOrmEntity {
-    const record = new SessionCheckoutOrmEntity();
-    record.id = entity.id;
-    record.organizationId = entity.organizationId;
-    record.sessionId = entity.sessionId;
-    record.installationId = entity.installationId;
-    record.githubRepoId = entity.githubRepoId;
-    record.repositoryFullName = entity.repositoryFullName;
-    record.storeDirectoryName = entity.storeDirectoryName;
-    record.directoryName = entity.directoryName;
-    record.mode = entity.mode;
-    record.baseBranch = entity.baseBranch;
-    record.branch = entity.branch;
-    record.worktreeCreatedAt = entity.worktreeCreatedAt;
-    record.pushedAt = entity.pushedAt;
-    record.removedAt = entity.removedAt;
-    return record;
-  }
-
-  checkoutToDomain(record: SessionCheckoutOrmEntity): SessionCheckoutEntity {
-    return SessionCheckoutEntity.create({
-      id: record.id,
-      createdAt: record.createdAt,
-      updatedAt: record.createdAt,
-      props: {
-        organizationId: record.organizationId,
-        sessionId: record.sessionId,
-        installationId: record.installationId,
-        githubRepoId: record.githubRepoId,
-        repositoryFullName: record.repositoryFullName,
-        storeDirectoryName: record.storeDirectoryName,
-        directoryName: record.directoryName,
-        mode: record.mode,
-        baseBranch: record.baseBranch,
-        branch: record.branch,
-        worktreeCreatedAt: record.worktreeCreatedAt,
-        pushedAt: record.pushedAt,
-        removedAt: record.removedAt,
-      },
-    });
-  }
-
-  eventToPersistence(entity: WorkSessionEventEntity): WorkSessionEventOrmEntity {
-    const record = new WorkSessionEventOrmEntity();
-    record.id = entity.id;
-    record.sessionId = entity.sessionId;
-    record.seq = entity.seq;
-    record.idempotencyKey = entity.idempotencyKey;
-    record.source = entity.source;
-    record.kind = entity.kind;
-    record.payload = entity.payload;
-    record.occurredAt = entity.occurredAt;
-    record.recordedAt = entity.recordedAt;
-    return record;
-  }
-
-  /**
-   * A batch as the append's single `INSERT` reads it: a JSON array for
-   * `jsonb_to_recordset`, each entry numbered so the statement can keep the
-   * caller's order when it hands out `seq`. An absent payload is `{}`, an absent
-   * `occurredAt` is now.
-   */
-  toAppendRecordset(events: readonly NewSessionEvent[]): string {
-    const now = new Date();
-    return JSON.stringify(
-      events.map((event, ord) => ({
-        ord,
-        idempotencyKey: event.idempotencyKey,
-        source: event.source,
-        kind: event.kind,
-        payload: event.payload ?? {},
-        occurredAt: (event.occurredAt ?? now).toISOString(),
-      })),
-    );
-  }
-
-  /** A row the batched append landed, as the log entry the fold reads. */
-  appendedToDomain(sessionId: string, row: AppendedEventRow): WorkSessionEventEntity {
-    return WorkSessionEventEntity.create({
-      id: row.id ?? '',
-      createdAt: row.recordedAt,
-      updatedAt: row.recordedAt,
-      props: {
-        sessionId,
-        seq: row.seq,
-        idempotencyKey: row.idempotencyKey,
-        source: row.source,
-        kind: row.kind,
-        payload: row.payload,
-        occurredAt: row.occurredAt,
-        recordedAt: row.recordedAt,
-      },
-    });
-  }
-
-  /**
-   * The list's cursor as the client holds it: opaque, base64url JSON of the sort
-   * it was issued for, the last row's sort key and its id. The key is the text
-   * Postgres printed, never a JavaScript `Date`, because a `Date` keeps
-   * milliseconds and a `timestamptz` keeps microseconds — a truncated key would
-   * skip the rows that share its millisecond.
-   */
-  toListCursor(cursor: SessionListCursor): string {
-    return Buffer.from(
-      JSON.stringify({ s: cursor.sort, k: cursor.key, i: cursor.id }),
-      'utf8',
-    ).toString('base64url');
-  }
-
-  /**
-   * A cursor back from the client, for the sort it is now asking in. Anything
-   * that is not one this API issued for that sort is a 400: a cursor issued
-   * for `recent` compared against `name` keys would page through nonsense.
-   */
-  fromListCursor(text: string, sort: SessionSortDto): SessionListCursor {
-    const invalid = () =>
-      new ArgumentInvalidException('`cursor` is not a cursor this list issued for this sort');
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(Buffer.from(text, 'base64url').toString('utf8'));
-    } catch {
-      throw invalid();
-    }
-    if (typeof parsed !== 'object' || parsed === null) throw invalid();
-    const { s, k, i } = parsed as { s?: unknown; k?: unknown; i?: unknown };
-    if (
-      typeof s !== 'string' ||
-      !(SESSION_SORTS as readonly string[]).includes(s) ||
-      typeof k !== 'string' ||
-      typeof i !== 'string' ||
-      !UUID_PATTERN.test(i)
-    ) {
-      throw invalid();
-    }
-    if (s !== sort) {
-      throw new ArgumentInvalidException(
-        `\`cursor\` was issued for sort \`${s}\`; this request sorts by \`${sort}\``,
-      );
-    }
-    return { sort, key: k, id: i };
-  }
-
   toPageMeta(page: SessionListPage): SessionPageMetaDto {
     const meta = new SessionPageMetaDto();
     meta.limit = page.limit;
-    meta.nextCursor = page.nextCursor ? this.toListCursor(page.nextCursor) : null;
+    meta.nextCursor = page.nextCursor ? encodeSessionListCursor(page.nextCursor) : null;
     if (page.total !== undefined && page.page !== undefined) {
       Object.assign(meta, toPageMeta({ count: page.total, page: page.page, limit: page.limit }));
     }
     return meta;
-  }
-
-  eventToDomain(record: WorkSessionEventOrmEntity): WorkSessionEventEntity {
-    return WorkSessionEventEntity.create({
-      id: record.id,
-      createdAt: record.recordedAt,
-      updatedAt: record.recordedAt,
-      props: {
-        sessionId: record.sessionId,
-        seq: record.seq,
-        idempotencyKey: record.idempotencyKey,
-        source: record.source,
-        kind: record.kind,
-        payload: record.payload,
-        occurredAt: record.occurredAt,
-        recordedAt: record.recordedAt,
-      },
-    });
   }
 
   /**
@@ -728,8 +268,10 @@ export class WorkSessionMapper
     dto.decision = this.decisionToResponse(entity.pendingDecision);
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
-    dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));
-    dto.cloud = entity.cloudRun ? this.cloudRunToResponse(entity.cloudRun) : null;
+    dto.checkouts = entity.liveCheckouts.map((checkout) =>
+      SessionCheckoutMapper.toResponse(checkout),
+    );
+    dto.cloud = entity.cloudRun ? SessionCloudRunMapper.toResponse(entity.cloudRun) : null;
     return dto;
   }
 
@@ -759,185 +301,4 @@ export class WorkSessionMapper
       options: decision.options.map((option) => ({ label: option.label })),
     };
   }
-
-  cloudRunToDomain(record: SessionCloudRunOrmEntity): SessionCloudRunEntity {
-    return SessionCloudRunEntity.create({
-      id: record.sessionId,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-      props: {
-        organizationId: record.organizationId,
-        provider: record.provider,
-        externalId: record.externalId,
-        url: record.url,
-        repositoryUrl: record.repositoryUrl,
-        latestRunId: record.latestRunId,
-        status: record.status,
-        branch: record.branch,
-        pullRequestUrl: record.pullRequestUrl,
-        summary: record.summary,
-        syncedAt: record.syncedAt,
-      },
-    });
-  }
-
-  cloudRunToPersistence(entity: SessionCloudRunEntity): SessionCloudRunOrmEntity {
-    const record = new SessionCloudRunOrmEntity();
-    record.sessionId = entity.sessionId;
-    record.organizationId = entity.organizationId;
-    record.provider = entity.provider;
-    record.externalId = entity.externalId;
-    record.url = entity.url;
-    record.repositoryUrl = entity.repositoryUrl;
-    record.latestRunId = entity.latestRunId;
-    record.status = entity.status;
-    record.branch = entity.branch;
-    record.pullRequestUrl = entity.pullRequestUrl;
-    record.summary = entity.summary;
-    record.syncedAt = entity.syncedAt;
-    return record;
-  }
-
-  cloudRunToResponse(entity: SessionCloudRunEntity): SessionCloudRunResponseDto {
-    const dto = new SessionCloudRunResponseDto();
-    dto.provider = entity.provider;
-    dto.url = entity.url;
-    dto.repositoryUrl = entity.repositoryUrl;
-    dto.status = entity.status;
-    dto.branch = entity.branch;
-    dto.pullRequestUrl = entity.pullRequestUrl;
-    dto.syncedAt = entity.syncedAt;
-    return dto;
-  }
-
-  /** What a cloud session asks its vendor to start, under the session's own id. */
-  toCloudLaunch(
-    sessionId: string,
-    input: StartCloudSessionDto,
-    source: { repositoryUrl: string; startingRef: string },
-  ): CloudAgentLaunch {
-    return {
-      id: sessionId,
-      prompt: input.prompt,
-      repositoryUrl: source.repositoryUrl,
-      startingRef: source.startingRef,
-      model: input.model ?? null,
-    };
-  }
-
-  /** The run the vendor started, as the session's vendor half keeps it. */
-  toLaunchedCloudRun(
-    session: { id: string; organizationId: string },
-    input: StartCloudSessionDto,
-    launched: { externalId: string; url: string | null; run: CloudRunReport },
-    repositoryUrl: string,
-    now: Date,
-  ): SessionCloudRunEntity {
-    return SessionCloudRunEntity.launched(
-      {
-        organizationId: session.organizationId,
-        sessionId: session.id,
-        provider: input.provider,
-        externalId: launched.externalId,
-        url: launched.url,
-        repositoryUrl,
-        run: launched.run,
-      },
-      now,
-    );
-  }
-
-  /** The entries a vendor's report owes the log (`cloudRunLogEntries`), as the API writes them. */
-  toCloudRunEvents(report: CloudRunReport, now: Date): NewSessionEvent[] {
-    return cloudRunLogEntries(report.runId, report.status).map((entry) => ({
-      ...entry,
-      source: 'api',
-      occurredAt: now,
-    }));
-  }
-
-  /**
-   * A cloud session's first entries: the request, as a host session's says it
-   * (no host, the place `cloud`), and the first task. The vendor's first answer
-   * follows as entries of its own (`cloudRunLogEntries`).
-   */
-  toCloudRequestEvents(props: {
-    commandId: string;
-    userId: string;
-    agent: SessionAgent;
-    input: StartCloudSessionDto;
-  }): NewSessionEvent[] {
-    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
-    return [
-      {
-        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.REQUESTED,
-        payload: {
-          agent: props.agent,
-          provider: props.input.provider,
-          place: 'cloud',
-          requestedByUserId: props.userId,
-          launch: this.toLaunch(props.agent, { model: props.input.model }),
-        },
-      },
-      {
-        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
-        payload: { text: props.input.prompt },
-      },
-    ];
-  }
-
-  checkoutToResponse(entity: SessionCheckoutEntity): SessionCheckoutResponseDto {
-    const dto = new SessionCheckoutResponseDto();
-    dto.id = entity.id;
-    dto.installationId = entity.installationId;
-    dto.githubRepoId = entity.githubRepoId;
-    dto.repositoryFullName = entity.repositoryFullName;
-    dto.directoryName = entity.directoryName;
-    dto.storeDirectoryName = entity.storeDirectoryName;
-    dto.mode = entity.mode;
-    dto.baseBranch = entity.baseBranch;
-    dto.branch = entity.branch;
-    return dto;
-  }
-
-  eventToResponse(entity: WorkSessionEventEntity): SessionEventResponseDto {
-    const dto = new SessionEventResponseDto();
-    dto.id = entity.id;
-    dto.sessionId = entity.sessionId;
-    dto.seq = entity.seq;
-    dto.source = entity.source;
-    dto.kind = entity.kind;
-    dto.payload = entity.payload;
-    dto.occurredAt = entity.occurredAt;
-    dto.recordedAt = entity.recordedAt;
-    return dto;
-  }
-}
-
-/** What `fromListCursor` accepts as a session id, before Postgres casts it. */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
-  return { imageId: image.imageId, mediaType: image.mediaType };
-}
-
-/**
- * A `bigint` column as the fold reads it. `pg` returns bigint as a string so
- * that nothing past 2^53 is silently rounded; a token count never gets there,
- * and one that somehow did reads as unmeasured rather than as a wrong number.
- */
-function tokenCount(value: string | null): number | null {
-  if (value === null) return null;
-  const count = Number(value);
-  return Number.isSafeInteger(count) && count >= 0 ? count : null;
-}
-
-/** A sum as the aggregate returns it: a numeric string, a number, or null for nothing summed. */
-function summed(value: unknown): number {
-  const total = typeof value === 'number' ? value : Number(value ?? 0);
-  return Number.isFinite(total) ? total : 0;
 }

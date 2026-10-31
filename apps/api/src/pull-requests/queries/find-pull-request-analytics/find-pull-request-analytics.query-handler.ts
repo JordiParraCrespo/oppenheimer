@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestDirectoryPort } from '../../../github/application/pull-request-directory.port';
+import type { PullRequestListingPort } from '../../../github/application/pull-request-listing.port';
+import { PULL_REQUEST_DIRECTORY, PULL_REQUEST_LISTINGS } from '../../../github/github.di-tokens';
 import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
 import { analyticsWindow, CLOSED_CEILING } from '../../domain/pull-request-analytics.policy';
 import type { PullRequestAnalyticsResponseDto } from '../../dtos/pull-request-analytics.response.dto';
@@ -19,8 +20,10 @@ export class FindPullRequestAnalyticsQueryHandler
   implements IQueryHandler<FindPullRequestAnalyticsQuery, PullRequestAnalyticsResponseDto>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_DIRECTORY)
+    private readonly directory: PullRequestDirectoryPort,
+    @Inject(PULL_REQUEST_LISTINGS)
+    private readonly listings: PullRequestListingPort,
     private readonly watched: WatchedRepositoriesResolver,
     private readonly mapper: PullRequestMapper,
   ) {}
@@ -46,11 +49,11 @@ export class FindPullRequestAnalyticsQueryHandler
         unreadable: [],
       });
     }
-    const openBudget = this.access.readBudget();
-    const closedBudget = this.access.readBudget();
+    const openBudget = this.listings.readBudget();
+    const closedBudget = this.listings.readBudget();
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
-      this.access.viewerLogin(scope),
+      this.directory.viewerLogin(scope),
     ]);
     // The closed reads are capped, newest first, so a page view costs the window
     // and not the installation (#247). The counts and the day chart are the
@@ -67,10 +70,10 @@ export class FindPullRequestAnalyticsQueryHandler
     const [open, closed] = await Promise.all([
       Promise.all(
         repositories.map((repository) =>
-          this.access.openPullRequests(scope, repository, openBudget),
+          this.listings.openPullRequests(scope, repository, openBudget),
         ),
       ),
-      this.access.closedPullRequests(
+      this.listings.closedPullRequests(
         scope,
         repositories,
         window.previousFrom,

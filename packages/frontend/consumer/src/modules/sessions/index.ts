@@ -12,7 +12,6 @@ export {
   type ChatTodo,
   type ChatTodoStatus,
   type ChatToolCall,
-  type ChatToolKind,
   type ChatTranscriptImage,
   type ChatTurn,
   SessionChat,

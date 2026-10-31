@@ -1,4 +1,10 @@
 export type { Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
+export {
+  ConfigKeySealer,
+  type ConfigKeySealerOptions,
+  configKeySealer,
+  type KeySealer,
+} from './crypto/config-key-sealer';
 export { openBlob, sealBlob } from './crypto/sealed-blob';
 export { likeContains } from './database/like-contains';
 export {
@@ -83,6 +89,16 @@ export {
   type ConcurrencyLimitOptions,
   ConcurrencyLimitSaturatedError,
 } from './upstream/concurrency-limit';
+export {
+  GOOGLE_PROJECT_BUCKET,
+  type GoogleAccessToken,
+  type GoogleBucket,
+  type GoogleCodeGrant,
+  GoogleOAuthClient,
+  type GoogleOAuthClientOptions,
+  type GoogleQuota,
+  googleBucketsOf,
+} from './upstream/google-oauth.client';
 export {
   type RateLimitedResponse,
   type RateLimitSignal,

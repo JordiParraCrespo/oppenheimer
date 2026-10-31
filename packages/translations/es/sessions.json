@@ -628,7 +628,11 @@
       "waiting": "Esperando tu respuesta",
       "dismissed": "Descartaste las preguntas",
       "noAnswer": "No se pudo leer la respuesta"
-    }
+    },
+    "explored": {
+      "title": "Explorado"
+    },
+    "exploring": "Explorando"
   },
   "preview": {
     "show": "Mostrar vista previa",

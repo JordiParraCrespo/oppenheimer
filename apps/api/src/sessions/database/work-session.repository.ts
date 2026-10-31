@@ -3,10 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
+import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
-import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -16,10 +15,10 @@ import {
   type WorkSessionEventEntity,
 } from '../domain/work-session-event.entity';
 import { SessionResource } from '../sessions.resource';
-import { type AppendedEventRow, WorkSessionMapper } from '../work-session.mapper';
-import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
-import { SessionCloudRunOrmEntity } from './session-cloud-run.orm-entity';
-import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
+import { WorkSessionMapper } from '../work-session.mapper';
+import { SessionCheckoutRepository } from './session-checkout.repository';
+import { SessionCloudRunRepository } from './session-cloud-run.repository';
+import { SessionTurnRepository } from './session-turn.repository';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
 import type {
   HostSessionRow,
@@ -33,11 +32,11 @@ import type {
   SessionListPage,
   WorkSessionRepositoryPort,
 } from './work-session.repository.port';
-import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
+import { WorkSessionEventRepository } from './work-session-event.repository';
 
 /**
  * The append's locking and batching rules are the port's (`appendEvents`) and
- * `insertBatch`'s.
+ * `WorkSessionEventRepository.insertBatch`'s.
  *
  * **The reads carry no tenant clause of their own**: `ScopedRepositoryBase` with
  * `SessionResource` is the whole of it, so a query and `ability.can()` cannot
@@ -50,6 +49,13 @@ export class WorkSessionRepository
 {
   protected readonly resource = SessionResource;
   protected readonly alias = 'session';
+  // The aggregate's other tables, each in a file of its own. They are not
+  // providers: nothing but this adapter writes them, always on the
+  // transaction it opened.
+  private readonly checkouts: SessionCheckoutRepository;
+  private readonly cloudRuns: SessionCloudRunRepository;
+  private readonly turns: SessionTurnRepository;
+  private readonly log: WorkSessionEventRepository;
 
   constructor(
     @InjectRepository(WorkSessionOrmEntity)
@@ -59,6 +65,10 @@ export class WorkSessionRepository
     private readonly outbox: OutboxService,
   ) {
     super();
+    this.checkouts = new SessionCheckoutRepository(repository.manager);
+    this.cloudRuns = new SessionCloudRunRepository(repository.manager);
+    this.turns = new SessionTurnRepository();
+    this.log = new WorkSessionEventRepository(repository.manager);
   }
 
   async createIfUnclaimed(
@@ -142,15 +152,10 @@ export class WorkSessionRepository
       );
       if (inserted.length === 0) return 'taken' as const;
 
-      const checkouts = manager.getRepository(SessionCheckoutOrmEntity);
       for (const checkout of session.checkouts) {
-        await checkouts.insert(this.mapper.checkoutToPersistence(checkout));
+        await this.checkouts.insert(manager, checkout);
       }
-      if (session.cloudRun) {
-        await manager
-          .getRepository(SessionCloudRunOrmEntity)
-          .insert(this.mapper.cloudRunToPersistence(session.cloudRun));
-      }
+      if (session.cloudRun) await this.cloudRuns.insert(manager, session.cloudRun);
       await this.appendWithin(manager, session, events);
       return 'created' as const;
     });
@@ -174,12 +179,8 @@ export class WorkSessionRepository
     return { session, created: true, refused: null };
   }
 
-  async saveCloudRunIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean> {
-    const { sessionId, organizationId, ...changes } = this.mapper.cloudRunToPersistence(run);
-    const result = await this.repository.manager
-      .getRepository(SessionCloudRunOrmEntity)
-      .update({ sessionId, organizationId, latestRunId: runIdAtLoad }, changes);
-    return result.affected === 1;
+  saveCloudRunIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean> {
+    return this.cloudRuns.saveIf(run, runIdAtLoad);
   }
 
   async appendEvents(
@@ -224,12 +225,7 @@ export class WorkSessionRepository
       // the append never writes a checkout, `validate()` does not read them, and
       // `session.checkout_removed` is the one entry whose fold touches them.
       const retires = events.some((event) => event.kind === SESSION_EVENT_KINDS.CHECKOUT_REMOVED);
-      const checkouts = retires
-        ? await manager.getRepository(SessionCheckoutOrmEntity).find({
-            where: { sessionId },
-            order: { createdAt: 'ASC' },
-          })
-        : [];
+      const checkouts = retires ? await this.checkouts.findForSession(manager, sessionId) : [];
       const session = this.mapper.toDomain(locked, checkouts);
       const outcome = await this.appendLocked(manager, session, events);
       return { session, outcome };
@@ -265,9 +261,7 @@ export class WorkSessionRepository
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
     const outcome = await this.outbox.transaction(async (manager) => {
-      await manager
-        .getRepository(SessionCheckoutOrmEntity)
-        .insert(this.mapper.checkoutToPersistence(checkout));
+      await this.checkouts.insert(manager, checkout);
       return this.appendWithin(manager, session, events);
     });
     session.clearEvents();
@@ -284,9 +278,7 @@ export class WorkSessionRepository
       // child and steps the agent out of it, so `removedAt` below is written from
       // what the log said rather than from a value the caller set beside it.
       const appended = await this.appendWithin(manager, session, events);
-      await manager
-        .getRepository(SessionCheckoutOrmEntity)
-        .update({ id: checkout.id }, { removedAt: checkout.removedAt ?? new Date() });
+      await this.checkouts.retire(manager, checkout);
       return appended;
     });
     session.clearEvents();
@@ -314,7 +306,7 @@ export class WorkSessionRepository
     const sort = filters.sort ?? 'recent';
     const key = SORT_KEYS[sort];
     applySort(query, sort);
-    // The sort key as Postgres prints it, for the next cursor (see `toListCursor`).
+    // The sort key as Postgres prints it, for the next cursor (see `encodeSessionListCursor`).
     query.addSelect(`(${key.expression})::text`, 'sortKey');
 
     if (filters.cursor) {
@@ -395,23 +387,10 @@ export class WorkSessionRepository
     if (records.length === 0) return [];
 
     const ids = records.map((record) => record.id);
-    const [checkouts, prompts] = await Promise.all([
-      this.checkoutsFor(ids),
-      this.repository.manager.getRepository(WorkSessionEventOrmEntity).find({
-        where: { sessionId: In(ids), kind: SESSION_EVENT_KINDS.PROMPT_FIRST },
-        select: { sessionId: true, payload: true },
-      }),
+    const [checkouts, firstPrompts] = await Promise.all([
+      this.checkouts.findForSessions(ids),
+      this.log.findFirstPrompts(ids),
     ]);
-    const firstPrompts = new Map<string, { prompt: string; images: SessionLaunchFile[] }>();
-    for (const event of prompts) {
-      const text = (event.payload as { text?: unknown } | null)?.text;
-      if (typeof text === 'string' && !firstPrompts.has(event.sessionId)) {
-        firstPrompts.set(event.sessionId, {
-          prompt: text,
-          images: WorkSessionMapper.filesOf(event.payload),
-        });
-      }
-    }
     return records.flatMap((record) => {
       const first = firstPrompts.get(record.id);
       return [
@@ -432,7 +411,7 @@ export class WorkSessionRepository
       .orderBy('session.createdAt', 'ASC')
       .getMany();
     if (records.length === 0) return [];
-    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    const checkouts = await this.checkouts.findForSessions(records.map((record) => record.id));
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
   }
 
@@ -445,7 +424,7 @@ export class WorkSessionRepository
       .orderBy('session.createdAt', 'ASC')
       .getMany();
     if (records.length === 0) return [];
-    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    const checkouts = await this.checkouts.findForSessions(records.map((record) => record.id));
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
   }
 
@@ -475,57 +454,22 @@ export class WorkSessionRepository
         [organizationId],
       );
       // Children first: the log and the checkouts refuse to lose their session.
-      await manager
-        .createQueryBuilder()
-        .delete()
-        .from(WorkSessionEventOrmEntity)
-        .where(
-          `"sessionId" IN (SELECT "id" FROM "work_session" WHERE "organizationId" = :organizationId)`,
-          { organizationId },
-        )
-        .execute();
-      await manager.delete(SessionCheckoutOrmEntity, { organizationId });
+      await this.log.deleteForOrganization(manager, organizationId);
+      await this.checkouts.deleteForOrganization(manager, organizationId);
       await manager.delete(WorkSessionOrmEntity, { organizationId });
     });
   }
 
-  async findEvents(
+  findEvents(
     session: WorkSessionEntity,
     afterSeq: number | undefined,
     limit: number,
   ): Promise<SessionEventPage> {
-    const sessionId = session.id;
-    const query = this.repository.manager
-      .getRepository(WorkSessionEventOrmEntity)
-      .createQueryBuilder('event')
-      .where('event.sessionId = :sessionId', { sessionId })
-      .orderBy('event.seq', 'ASC')
-      // One more than asked for, so "is there another page" needs no second count
-      // over a table that only ever grows.
-      .take(limit + 1);
-    if (afterSeq !== undefined) query.andWhere('event.seq > :afterSeq', { afterSeq });
-
-    const records = await query.getMany();
-    const page = records.slice(0, limit);
-    return {
-      events: page.map((record) => this.mapper.eventToDomain(record)),
-      nextSeq: records.length > limit ? (page[page.length - 1]?.seq ?? null) : null,
-    };
+    return this.log.findPage(session.id, afterSeq, limit);
   }
 
-  async findLatestEvents(
-    session: WorkSessionEntity,
-    limit: number,
-  ): Promise<WorkSessionEventEntity[]> {
-    // Backwards along IDX_work_session_event_session_seq, then put back in order.
-    const records = await this.repository.manager
-      .getRepository(WorkSessionEventOrmEntity)
-      .createQueryBuilder('event')
-      .where('event.sessionId = :sessionId', { sessionId: session.id })
-      .orderBy('event.seq', 'DESC')
-      .take(limit)
-      .getMany();
-    return records.reverse().map((record) => this.mapper.eventToDomain(record));
+  findLatestEvents(session: WorkSessionEntity, limit: number): Promise<WorkSessionEventEntity[]> {
+    return this.log.findLatest(session.id, limit);
   }
 
   async findRecentFolders(
@@ -586,20 +530,16 @@ export class WorkSessionRepository
     return locked[0] ?? null;
   }
 
+  /** The latest turn is folded like the row, so it is read under the same lock. */
+  private async reseatLatestTurn(manager: EntityManager, session: WorkSessionEntity) {
+    session.reseatLatestTurn(await this.turns.findLatest(manager, session.id));
+  }
+
   /**
    * Everything after the lock, for an aggregate whose fold is the locked row's:
    * the latest turn, the one `INSERT` for the batch, the fold over what landed,
    * the row update, the turns and the outbox.
    */
-  /** The latest turn is folded like the row, so it is read under the same lock. */
-  private async reseatLatestTurn(manager: EntityManager, session: WorkSessionEntity) {
-    const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
-      `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
-      [session.id],
-    );
-    session.reseatLatestTurn(latestTurn ? this.mapper.turnToDomain(latestTurn) : null);
-  }
-
   private async appendLocked(
     manager: EntityManager,
     session: WorkSessionEntity,
@@ -630,7 +570,7 @@ export class WorkSessionRepository
     // `SessionAppendOutcome`.
     const accepted = candidates.map((event) => event.idempotencyKey);
 
-    const appended = fresh.length > 0 ? await this.insertBatch(manager, session.id, fresh) : [];
+    const appended = fresh.length > 0 ? await this.log.insertBatch(manager, session.id, fresh) : [];
     for (const entity of appended) {
       session.recordEvent({
         seq: entity.seq,
@@ -685,128 +625,11 @@ export class WorkSessionRepository
           record.launchEnvironment,
         ],
       );
-      await this.writeTurns(manager, session);
+      await this.turns.writeChanged(manager, session);
       await this.outbox.stageEvents(manager, session.domainEvents);
     }
 
     return { accepted, rejected, appended };
-  }
-
-  /**
-   * The batch in **one statement**: skip the keys already logged, number the rest
-   * after the current maximum in the caller's order, insert them, and return the new
-   * entries in `seq` order.
-   *
-   * It must run **after** the `FOR UPDATE` statement has returned, never folded into
-   * it. Under READ COMMITTED a statement's snapshot is taken before it blocks on a row
-   * lock, so a `MAX("seq")` in the locking statement would miss the appender ahead of
-   * us, and every waiter would allocate the same numbers. Started once the lock is
-   * held, its `MAX`, "already present" check and insert all read one snapshot that
-   * sees every earlier appender.
-   *
-   * Under the lock nobody else inserts this session's keys and the batch has no
-   * duplicates, so `ON CONFLICT` should never fire; if it did, `seq` would gap, so a
-   * short count throws and the transaction rolls back.
-   */
-  private async insertBatch(
-    manager: EntityManager,
-    sessionId: string,
-    events: NewSessionEvent[],
-  ): Promise<WorkSessionEventEntity[]> {
-    const rows: AppendedEventRow[] = await manager.query(
-      `WITH input AS (
-         SELECT e."ord", e."idempotencyKey", e."source", e."kind", e."payload", e."occurredAt"
-           FROM jsonb_to_recordset($2::jsonb)
-             AS e("ord" integer, "idempotencyKey" text, "source" text, "kind" text,
-                  "payload" jsonb, "occurredAt" timestamptz)
-       ),
-       fresh AS (
-         SELECT i.* FROM input i
-          WHERE NOT EXISTS (SELECT 1 FROM "work_session_event" x
-                             WHERE x."sessionId" = $1 AND x."idempotencyKey" = i."idempotencyKey")
-       ),
-       base AS (
-         SELECT COALESCE(MAX("seq"), 0) AS "seq" FROM "work_session_event" WHERE "sessionId" = $1
-       ),
-       landed AS (
-         INSERT INTO "work_session_event"
-           ("sessionId", "seq", "idempotencyKey", "source", "kind", "payload", "occurredAt")
-         SELECT $1, base."seq" + row_number() OVER (ORDER BY f."ord"),
-                f."idempotencyKey", f."source", f."kind", f."payload", f."occurredAt"
-           FROM fresh f CROSS JOIN base
-         ON CONFLICT ("sessionId", "idempotencyKey") DO NOTHING
-         RETURNING "id", "seq", "idempotencyKey", "source", "kind", "payload",
-                   "occurredAt", "recordedAt"
-       )
-       -- One row even when nothing landed, so the count of what should have is
-       -- always there to check against.
-       SELECT (SELECT count(*) FROM fresh)::integer AS "expected", landed.*
-         FROM (SELECT 1) AS one LEFT JOIN landed ON true
-        ORDER BY landed."seq"`,
-      [sessionId, this.mapper.toAppendRecordset(events)],
-    );
-    const landed = rows.filter((row) => row.id !== null);
-    const expected = rows[0]?.expected ?? 0;
-    if (landed.length !== expected) {
-      throw new Error(
-        `Session ${sessionId}: ${expected} new log entries were numbered but ${landed.length} landed`,
-      );
-    }
-    return landed.map((row) => this.mapper.appendedToDomain(sessionId, row));
-  }
-
-  /**
-   * Write back the turns this append's folds moved: an upsert on
-   * `(sessionId, seq)`, because a fold both opens turns and moves them.
-   */
-  private async writeTurns(manager: EntityManager, session: WorkSessionEntity): Promise<void> {
-    for (const turn of session.takeChangedTurns()) {
-      const row = this.mapper.turnToPersistence(session, turn);
-      await manager.query(
-        `INSERT INTO "session_turn"
-           ("organizationId", "sessionId", "seq", "origin", "drive", "state", "prompt",
-            "observedWorking", "startedAt", "endedAt", "exitCode", "agentSessionId",
-            "result", "failureDetail", "costUsd", "permissionDenials", "outputRef",
-            "model", "inputTokens", "outputTokens", "cacheReadTokens", "cacheWriteTokens")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,
-                 $18,$19,$20,$21,$22)
-         ON CONFLICT ("sessionId", "seq") DO UPDATE SET
-           "drive" = EXCLUDED."drive", "state" = EXCLUDED."state",
-           "prompt" = EXCLUDED."prompt", "observedWorking" = EXCLUDED."observedWorking",
-           "startedAt" = EXCLUDED."startedAt", "endedAt" = EXCLUDED."endedAt",
-           "exitCode" = EXCLUDED."exitCode", "agentSessionId" = EXCLUDED."agentSessionId",
-           "result" = EXCLUDED."result", "failureDetail" = EXCLUDED."failureDetail",
-           "costUsd" = EXCLUDED."costUsd", "permissionDenials" = EXCLUDED."permissionDenials",
-           "outputRef" = EXCLUDED."outputRef", "model" = EXCLUDED."model",
-           "inputTokens" = EXCLUDED."inputTokens", "outputTokens" = EXCLUDED."outputTokens",
-           "cacheReadTokens" = EXCLUDED."cacheReadTokens",
-           "cacheWriteTokens" = EXCLUDED."cacheWriteTokens", "updatedAt" = now()`,
-        [
-          row.organizationId,
-          row.sessionId,
-          row.seq,
-          row.origin,
-          row.drive,
-          row.state,
-          row.prompt,
-          row.observedWorking,
-          row.startedAt,
-          row.endedAt,
-          row.exitCode,
-          row.agentSessionId,
-          row.result,
-          row.failureDetail,
-          row.costUsd,
-          row.permissionDenials,
-          row.outputRef,
-          row.model,
-          row.inputTokens,
-          row.outputTokens,
-          row.cacheReadTokens,
-          row.cacheWriteTokens,
-        ],
-      );
-    }
   }
 
   /** A page of rows with the sort key each was selected with, in the query's order. */
@@ -824,8 +647,8 @@ export class WorkSessionRepository
   /** The sessions with their members: checkouts, and a cloud session's run. */
   private async withCheckoutsAll(records: WorkSessionOrmEntity[]): Promise<WorkSessionEntity[]> {
     const [checkouts, runs] = await Promise.all([
-      this.checkoutsFor(records.map((record) => record.id)),
-      this.cloudRunsFor(records),
+      this.checkouts.findForSessions(records.map((record) => record.id)),
+      this.cloudRuns.findForSessions(records),
     ]);
     return records.map((record) =>
       this.mapper.toDomain(record, checkouts.get(record.id) ?? [], runs.get(record.id) ?? null),
@@ -838,25 +661,6 @@ export class WorkSessionRepository
     if (!record) return None as Option<WorkSessionEntity>;
     const [session] = await this.withCheckoutsAll([record]);
     return Some(session);
-  }
-
-  /**
-   * The cloud runs of a page's sessions launched at a vendor, by the primary
-   * key; no query for none. Only those have a run: no host started them.
-   */
-  private async cloudRunsFor(
-    records: WorkSessionOrmEntity[],
-  ): Promise<Map<string, SessionCloudRunOrmEntity>> {
-    const sessionIds = records
-      .filter((record) => record.place === 'cloud' && record.hostId === null)
-      .map((r) => r.id);
-    if (sessionIds.length === 0) return new Map();
-    const runs = await this.repository.manager
-      .getRepository(SessionCloudRunOrmEntity)
-      .createQueryBuilder('run')
-      .where('run.sessionId IN (:...sessionIds)', { sessionIds })
-      .getMany();
-    return new Map(runs.map((run) => [run.sessionId, run]));
   }
 
   private async findOneByKeyUnscoped(
@@ -881,26 +685,6 @@ export class WorkSessionRepository
     return this.unscopedQuery(reason)
       .where('session.state IN (:...runningStates)', { runningStates: ['starting', 'open'] })
       .andWhere('session.stoppedAt IS NULL');
-  }
-
-  /** Checkouts for a page of sessions, in one query rather than one per row. */
-  private async checkoutsFor(
-    sessionIds: string[],
-  ): Promise<Map<string, SessionCheckoutOrmEntity[]>> {
-    const byId = new Map<string, SessionCheckoutOrmEntity[]>();
-    if (sessionIds.length === 0) return byId;
-    const records = await this.repository.manager
-      .getRepository(SessionCheckoutOrmEntity)
-      .createQueryBuilder('checkout')
-      .where('checkout.sessionId IN (:...sessionIds)', { sessionIds })
-      .orderBy('checkout.createdAt', 'ASC')
-      .getMany();
-    for (const record of records) {
-      const existing = byId.get(record.sessionId);
-      if (existing) existing.push(record);
-      else byId.set(record.sessionId, [record]);
-    }
-    return byId;
   }
 }
 

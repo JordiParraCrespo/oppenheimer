@@ -134,25 +134,29 @@ func TestCodexStartUsesThePickedEnvironment(t *testing.T) {
 	}
 }
 
-// When no environment is linked and none is labelled after the repository,
-// the refusal says what to do and names the environments the account has.
+// When the account's whole list was read and no environment in it is linked
+// to or named for the repository, the start is SESS_010 naming every
+// environment the CLI can reach, and the CLI is not asked to guess.
 func TestCodexStartNamesTheAccountsEnvironmentsWhenNoneFits(t *testing.T) {
 	server := chatGPT(t, `[]`, `[{"id": "e_docs", "label": "docs"}, {"id": "e_api"}]`)
-	bin, _ := fakeCodex(t, `echo "Error: environment 'x' not found; run codex cloud to list available environments" >&2; exit 1`)
+	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_9'`)
 	_, err := Codex{Command: bin, Home: signedIn(t), BaseURL: server.URL}.Start(
 		context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 
 	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
 	}
-	if !strings.Contains(pe.Detail, "No Codex environment is linked to acme-labs/xrp-mobile") ||
-		!strings.Contains(pe.Detail, "This account has: e_api, docs.") {
+	if !strings.Contains(pe.Detail, "labelled acme-labs/xrp-mobile or xrp-mobile") ||
+		!strings.Contains(pe.Detail, "Environments the CLI can reach: e_api, docs.") {
 		t.Fatalf("detail = %q", pe.Detail)
+	}
+	if _, statErr := os.Stat(args); statErr == nil {
+		t.Fatalf("the CLI was run: %q", readArgs(t, args))
 	}
 }
 
-// A 429 from ChatGPT is its "stop": the refusal is SESS_010, nothing else is
+// A 429 from ChatGPT is its "stop": the refusal is SESS_011, nothing else is
 // asked in its place (not the account's list, not `codex cloud list`), and the
 // account is not asked again until the Retry-After it named has passed.
 func TestCodexEnvironmentsStopsAtARateLimitUntilItsRetryAfter(t *testing.T) {
