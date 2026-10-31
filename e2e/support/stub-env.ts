@@ -82,6 +82,10 @@ const lines = [
   '# to the loopback in every browser, so the API serves them with no DNS.',
   `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3011'}`,
   '',
+  "# Better Auth's limiter is on by default; the suites sign in hundreds of times",
+  '# from one address, which is exactly what it is there to refuse.',
+  'AUTH_RATE_LIMIT_ENABLED=false',
+  '',
 ].join('\n');
 
 process.stdout.write(lines);

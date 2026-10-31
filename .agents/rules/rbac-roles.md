@@ -114,6 +114,14 @@ export class PublishArticleHttpController {
   `@CheckPolicies` nor `@NoPolicy('reason')` is refused (`AUTHZ_002`), and
   `route-policy-coverage.spec.ts` fails the build. A route open to any
   authenticated caller says so with `@NoPolicy` (e.g. `GET /users/me`).
+  The same spec fails a `@CheckPolicies` on a controller that does not run
+  `PoliciesGuard` after `ApiAuthGuard`: nothing else would read it.
+- **Authentication is per controller, so its absence is a build failure.**
+  `route-auth-coverage.spec.ts` fails a route behind no authenticating guard
+  (`ApiAuthGuard`, `HostPrincipalGuard`) unless its `PUBLIC` ledger says what
+  stands in for a signed-in caller; `OptionalApiAuthGuard` routes are listed
+  there too. A new `upgrade` listener or WebSocket server goes in its
+  `UPGRADES` ledger, with how the handshake authenticates.
 
 ### An endpoint a client gates a destination on declares its rules once
 

@@ -1,20 +1,11 @@
 'use client';
 
-import {
-  refetchEverythingForNewIdentity,
-  useQuery,
-  withCacheOnSuccess,
-} from '@oppenheimer/frontend-core/react';
-import {
-  skipToken,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { refetchEverythingForNewIdentity, useQuery } from '@oppenheimer/frontend-core/react';
+import { skipToken, type UseQueryOptions } from '@tanstack/react-query';
 import { CONSUMER_CONFIG } from '../config';
 import type { OrganizationEntity } from '../modules/organizations/organization.entity';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 export const organizationsKeys = {
   all: ['organizations'] as const,
@@ -80,22 +71,17 @@ export interface ClaimPersonalWorkspaceVariables {
  * reply is seeded into the list first, so even a failed refetch no longer says
  * that. Naming an existing row changes only that row, so it is patched in.
  */
-export function useClaimPersonalWorkspace(
-  options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
-      app.organizations.claimPersonalWorkspace(variables),
-    ...withCacheOnSuccess(options, async (organization, { existing }) => {
-      queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
-        current?.some((row) => row.id === organization.id)
-          ? current.map((row) => (row.id === organization.id ? organization : row))
-          : [...(current ?? []), organization],
-      );
-      if (!existing) await refetchEverythingForNewIdentity(queryClient);
-    }),
-  });
-}
+export const useClaimPersonalWorkspace = mutation<
+  OrganizationEntity,
+  ClaimPersonalWorkspaceVariables
+>({
+  run: (app, variables) => app.organizations.claimPersonalWorkspace(variables),
+  update: async (queryClient, organization, { existing }) => {
+    queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
+      current?.some((row) => row.id === organization.id)
+        ? current.map((row) => (row.id === organization.id ? organization : row))
+        : [...(current ?? []), organization],
+    );
+    if (!existing) await refetchEverythingForNewIdentity(queryClient);
+  },
+});

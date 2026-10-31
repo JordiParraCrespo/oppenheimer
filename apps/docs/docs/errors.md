@@ -198,6 +198,7 @@ would confirm the id.
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 | `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
+| `HOSTS_009` <a id="hosts_009" /> | The host changed while this was being saved  | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -227,6 +228,14 @@ unaffected.
 `HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
 with no live link: the request goes down the link, so there is nothing to send
 it on. A runner that is offline checks for updates itself when it comes back.
+
+`HOSTS_009` is optimistic concurrency on the host row. Renaming, unpairing and
+the runner's own uninstall each write the host only at the version they read;
+one that loses to another write reads the host again and decides once more, so
+a rename keeps an unpair that landed first, and an unpair or uninstall that
+finds the host already unpaired writes nothing. Only losing that second try as
+well answers `HOSTS_009`: nothing was changed, and reading the host again shows
+what the other write did.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
@@ -1206,6 +1215,13 @@ with their own codes rather than as a blanket 500:
 | `GENERIC.ARGUMENT_OUT_OF_RANGE` <a id="generic_argument_out_of_range" /> | 400  |
 | `GENERIC.CONFLICT` <a id="generic_conflict" />                           | 409  |
 | `GENERIC.NOT_FOUND` <a id="generic_not_found" />                         | 404  |
+| `GENERIC.VERSION_CONFLICT` <a id="generic_version_conflict" />         | 409  |
+
+`GENERIC.VERSION_CONFLICT` is a versioned write (`writeVersioned`) refused
+because the row moved past the version the aggregate was loaded at. A handler
+that faces a person usually retries once on a fresh read and answers its own
+module's code when that loses too (`HOSTS_009`); one that does not lets this
+code through. Nothing was written either way.
 
 ## Handling errors as a client
 

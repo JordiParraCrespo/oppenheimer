@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
-import { WorkSessionMapper } from '../../../work-session.mapper';
 import { RecordCloudStatusCommand } from '../record-cloud-status.command';
 import { RecordCloudStatusCommandHandler } from '../record-cloud-status.command-handler';
 
@@ -66,10 +65,7 @@ describe('RecordCloudStatusCommandHandler', () => {
           },
         ),
     };
-    handler = new RecordCloudStatusCommandHandler(
-      sessions as unknown as WorkSessionRepositoryPort,
-      new WorkSessionMapper(),
-    );
+    handler = new RecordCloudStatusCommandHandler(sessions as unknown as WorkSessionRepositoryPort);
   });
 
   const report = (state: 'running' | 'needs-input' | 'failed' | 'done' | 'stopped') =>

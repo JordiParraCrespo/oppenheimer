@@ -108,7 +108,7 @@ export function BotTurn({
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotActivity key={message.id} steps={message.steps} />
+            <BotActivity key={message.id} steps={message.steps} live={active} />
           ) : message.attachments.length > 0 ? (
             <div key={message.id} className="flex flex-col gap-3">
               {message.content ? <BotReply content={message.content} /> : null}

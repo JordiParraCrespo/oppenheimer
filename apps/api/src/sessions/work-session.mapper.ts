@@ -1,20 +1,14 @@
 import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
-import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
+import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
-  type CloudSessionState,
-  type CreateSessionDto,
-  placeOfCreate,
-  SESSION_SORTS,
   type SessionAttachmentDto,
   type SessionDecision,
-  type SessionSortDto,
   type StartCloudSessionDto,
   sessionDecisionSchema,
 } from '@oppenheimer/shared';
-import { effortLevelFor } from '@oppenheimer/shared/agents';
-import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { CloudAgentLaunch } from '../cloud-agents/application/cloud-runs.port';
 import type { HostFolderListing } from './application/host-folders.port';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
@@ -25,22 +19,17 @@ import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import type {
   NewSessionEvent,
   RecentFolder,
-  SessionListCursor,
   SessionListPage,
 } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
-import { cloudRunLogEntries } from './domain/cloud-session-sync.policy';
 import type { CloudTaskFile } from './domain/cloud-task.policy';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import { type CloudRunReport, SessionCloudRunEntity } from './domain/session-cloud-run.entity';
-import type { SessionLaunchFile } from './domain/session-launch-file.types';
+import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
-  type AgentObservedState,
   launchPermissionFor,
-  SESSION_EVENT_KINDS,
   type SessionAgent,
   type SessionFold,
-  type SessionLaunchFold,
 } from './domain/session-state.policy';
 import {
   SESSION_ORIGINS,
@@ -94,14 +83,6 @@ export interface AppendedEventRow {
  * the row alone, every input being a column the fold projects, so a listing needs no
  * log walk and a mapper cannot be handed an observation the log never recorded.
  */
-const CLOUD_OBSERVED: Record<CloudSessionState, AgentObservedState> = {
-  running: 'working',
-  'needs-input': 'blocked',
-  failed: 'blocked',
-  done: 'done',
-  stopped: 'done',
-};
-
 @Injectable()
 export class WorkSessionMapper
   implements Mapper<WorkSessionEntity, WorkSessionOrmEntity, SessionResponseDto>
@@ -338,94 +319,6 @@ export class WorkSessionMapper
   }
 
   /**
-   * The entries a create request owes its log: one action, one transaction. They
-   * live here because they *are* the session's columns (the fold projects them), and
-   * building them beside the persistence shape keeps the two saying the same thing.
-   *
-   * At most three. `session.requested` states the launch, which the launch columns
-   * project, and for a folder session the folder. `session.cwd_set` is an entry,
-   * not a column write, because a later "work in this checkout instead" is the same
-   * entry; a folder session has no checkout to work in, so it gets none.
-   * `prompt.first` carries the composer's task, and is absent rather than empty
-   * when there was none.
-   */
-  /**
-   * What the extension saw a cloud session doing on claude.ai, in the observed
-   * vocabulary a runner's screen reading uses, so its dot is drawn by the same
-   * rules as any other (`session-group.policy.ts`). A failed turn waits on the
-   * person as a question does; a finished one is ready for a prompt.
-   */
-  cloudObservedState(cloudState: CloudSessionState): AgentObservedState {
-    return CLOUD_OBSERVED[cloudState];
-  }
-
-  /** The extension's report as the log's `agent.observed`, keyed to its command and session. */
-  toCloudObservedEvent(
-    commandId: string,
-    session: WorkSessionEntity,
-    cloudState: CloudSessionState,
-  ): NewSessionEvent {
-    return {
-      idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-        `${commandId}:${session.id}`,
-        SESSION_EVENT_KINDS.AGENT_OBSERVED,
-      ),
-      source: 'api',
-      kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
-      payload: { state: this.cloudObservedState(cloudState), cloudState },
-    };
-  }
-
-  toRequestEvents(props: {
-    commandId: string;
-    userId: string;
-    input: CreateSessionDto;
-    /** The first task's images, already parked for the host. */
-    images?: readonly SessionLaunchFile[];
-    checkouts: number;
-    cwdCheckoutId: string | null;
-  }): NewSessionEvent[] {
-    const { input } = props;
-    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
-    const events: NewSessionEvent[] = [
-      {
-        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.REQUESTED,
-        payload: {
-          agent: input.agent,
-          hostId: input.hostId,
-          checkouts: props.checkouts,
-          place: placeOfCreate(input),
-          ...(input.folder ? { folder: input.folder } : {}),
-          requestedByUserId: props.userId,
-          launch: this.toLaunch(input.agent, input.launch),
-        },
-      },
-    ];
-    if (!input.folder) {
-      events.push({
-        idempotencyKey: key(SESSION_EVENT_KINDS.CWD_SET),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.CWD_SET,
-        payload: { checkoutId: props.cwdCheckoutId },
-      });
-    }
-    if (input.prompt) {
-      events.push({
-        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
-        payload: {
-          text: input.prompt,
-          ...(props.images?.length ? { images: props.images.map(toFileRecord) } : {}),
-        },
-      });
-    }
-    return events;
-  }
-
-  /**
    * A cloud session's files as its task lists them: each file's type beside
    * the link it is downloaded from, in order (`cloudTaskWithFiles`).
    */
@@ -436,22 +329,6 @@ export class WorkSessionMapper
     return files.map((file, i) => ({ url: urls[i] ?? '', mediaType: file.mediaType }));
   }
 
-  /**
-   * The images a `prompt.first` entry names, for a create sent again. An entry
-   * written before images existed, or one a runner wrote off the transcript,
-   * names none; a malformed item is dropped rather than sent to a host.
-   */
-  static filesOf(payload: unknown): SessionLaunchFile[] {
-    const listed = (payload as { images?: unknown } | null)?.images;
-    if (!Array.isArray(listed)) return [];
-    return listed.flatMap((item: { imageId?: unknown; mediaType?: unknown }) =>
-      typeof item?.imageId === 'string' &&
-      (SESSION_FILE_MEDIA_TYPES as readonly unknown[]).includes(item.mediaType)
-        ? [{ imageId: item.imageId, mediaType: item.mediaType as SessionFileMediaType }]
-        : [],
-    );
-  }
-
   /** What `POST /sessions/attachments` answers for an upload it staged. */
   static toAttachmentResponse(
     id: string,
@@ -459,31 +336,6 @@ export class WorkSessionMapper
     data: Buffer,
   ): SessionAttachmentDto {
     return { id, mediaType, size: data.length };
-  }
-
-  /**
-   * The launch a request states, with the absences filled in.
-   *
-   * An absent level is `ask` — the one that asks before every action — and never
-   * anything else: a default that escalated is the single mistake this field must
-   * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
-   * approvals records no level at all (`launchPermissionFor`), and an effort
-   * the model does not offer is not recorded (`effortLevelFor`).
-   */
-  toLaunch(agent: SessionAgent, launch: CreateSessionDto['launch']): SessionLaunchFold {
-    return {
-      model: launch?.model ?? null,
-      permission: launchPermissionFor(agent, launch?.permission),
-      effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
-    };
-  }
-
-  /**
-   * What keys the `prompt.first` entry of a create request — and therefore the
-   * name derived from it, so the title is keyed on the prompt that caused it.
-   */
-  static promptKeyFor(commandId: string): string {
-    return WorkSessionEntity.apiIdempotencyKey(commandId, SESSION_EVENT_KINDS.PROMPT_FIRST);
   }
 
   checkoutToPersistence(entity: SessionCheckoutEntity): SessionCheckoutOrmEntity {
@@ -581,57 +433,10 @@ export class WorkSessionMapper
     });
   }
 
-  /**
-   * The list's cursor as the client holds it: opaque, base64url JSON of the sort
-   * it was issued for, the last row's sort key and its id. The key is the text
-   * Postgres printed, never a JavaScript `Date`, because a `Date` keeps
-   * milliseconds and a `timestamptz` keeps microseconds — a truncated key would
-   * skip the rows that share its millisecond.
-   */
-  toListCursor(cursor: SessionListCursor): string {
-    return Buffer.from(
-      JSON.stringify({ s: cursor.sort, k: cursor.key, i: cursor.id }),
-      'utf8',
-    ).toString('base64url');
-  }
-
-  /**
-   * A cursor back from the client, for the sort it is now asking in. Anything
-   * that is not one this API issued for that sort is a 400: a cursor issued
-   * for `recent` compared against `name` keys would page through nonsense.
-   */
-  fromListCursor(text: string, sort: SessionSortDto): SessionListCursor {
-    const invalid = () =>
-      new ArgumentInvalidException('`cursor` is not a cursor this list issued for this sort');
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(Buffer.from(text, 'base64url').toString('utf8'));
-    } catch {
-      throw invalid();
-    }
-    if (typeof parsed !== 'object' || parsed === null) throw invalid();
-    const { s, k, i } = parsed as { s?: unknown; k?: unknown; i?: unknown };
-    if (
-      typeof s !== 'string' ||
-      !(SESSION_SORTS as readonly string[]).includes(s) ||
-      typeof k !== 'string' ||
-      typeof i !== 'string' ||
-      !UUID_PATTERN.test(i)
-    ) {
-      throw invalid();
-    }
-    if (s !== sort) {
-      throw new ArgumentInvalidException(
-        `\`cursor\` was issued for sort \`${s}\`; this request sorts by \`${sort}\``,
-      );
-    }
-    return { sort, key: k, id: i };
-  }
-
   toPageMeta(page: SessionListPage): SessionPageMetaDto {
     const meta = new SessionPageMetaDto();
     meta.limit = page.limit;
-    meta.nextCursor = page.nextCursor ? this.toListCursor(page.nextCursor) : null;
+    meta.nextCursor = page.nextCursor ? encodeSessionListCursor(page.nextCursor) : null;
     if (page.total !== undefined && page.page !== undefined) {
       Object.assign(meta, toPageMeta({ count: page.total, page: page.page, limit: page.limit }));
     }
@@ -824,49 +629,6 @@ export class WorkSessionMapper
     );
   }
 
-  /** The entries a vendor's report owes the log (`cloudRunLogEntries`), as the API writes them. */
-  toCloudRunEvents(report: CloudRunReport, now: Date): NewSessionEvent[] {
-    return cloudRunLogEntries(report.runId, report.status).map((entry) => ({
-      ...entry,
-      source: 'api',
-      occurredAt: now,
-    }));
-  }
-
-  /**
-   * A cloud session's first entries: the request, as a host session's says it
-   * (no host, the place `cloud`), and the first task. The vendor's first answer
-   * follows as entries of its own (`cloudRunLogEntries`).
-   */
-  toCloudRequestEvents(props: {
-    commandId: string;
-    userId: string;
-    agent: SessionAgent;
-    input: StartCloudSessionDto;
-  }): NewSessionEvent[] {
-    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
-    return [
-      {
-        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.REQUESTED,
-        payload: {
-          agent: props.agent,
-          provider: props.input.provider,
-          place: 'cloud',
-          requestedByUserId: props.userId,
-          launch: this.toLaunch(props.agent, { model: props.input.model }),
-        },
-      },
-      {
-        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
-        payload: { text: props.input.prompt },
-      },
-    ];
-  }
-
   checkoutToResponse(entity: SessionCheckoutEntity): SessionCheckoutResponseDto {
     const dto = new SessionCheckoutResponseDto();
     dto.id = entity.id;
@@ -893,13 +655,6 @@ export class WorkSessionMapper
     dto.recordedAt = entity.recordedAt;
     return dto;
   }
-}
-
-/** What `fromListCursor` accepts as a session id, before Postgres casts it. */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
-  return { imageId: image.imageId, mediaType: image.mediaType };
 }
 
 /**

@@ -5,8 +5,8 @@ import type {
   SessionListPage,
   WorkSessionRepositoryPort,
 } from '../../database/work-session.repository.port';
+import { decodeSessionListCursor } from '../../domain/session-list-cursor.policy';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { FindSessionsQuery } from './find-sessions.query';
 
 /**
@@ -19,7 +19,6 @@ export class FindSessionsQueryHandler implements IQueryHandler<FindSessionsQuery
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
-    private readonly mapper: WorkSessionMapper,
     private readonly cloud: CloudSessionSyncResolver,
   ) {}
 
@@ -35,7 +34,7 @@ export class FindSessionsQueryHandler implements IQueryHandler<FindSessionsQuery
       agent: query.agent,
       sort,
       // A cursor issued for another sort, or not by this list at all, is a 400.
-      cursor: query.cursor ? this.mapper.fromListCursor(query.cursor, sort) : undefined,
+      cursor: query.cursor ? decodeSessionListCursor(query.cursor, sort) : undefined,
     });
     await this.cloud.syncPage(page.data, new Date());
     return page;

@@ -4,7 +4,7 @@ import {
   type GoogleCalendarEventResponseDto,
   heyApiSdk,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { CalendarErrors } from './calendar.errors';
 import {
@@ -46,86 +46,72 @@ function toEvent(
 
 @injectable()
 export class CalendarRepository {
-  @MapApiError(CalendarErrors.FETCH_EVENTS_FAILED)
-  async findEvents(range: CalendarRange): Promise<CalendarEventEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findCalendarEvents({ query: range }),
-      CalendarErrors.FETCH_EVENTS_FAILED,
-    );
-    return data.map(toEvent);
+  findEvents(range: CalendarRange): Promise<CalendarEventEntity[]> {
+    return callApi(CalendarErrors.FETCH_EVENTS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findCalendarEvents({ query: range }));
+      return data.map(toEvent);
+    });
   }
 
-  @MapApiError(CalendarErrors.SAVE_EVENT_FAILED)
-  async createEvent(input: CalendarEventInput): Promise<CalendarEventEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createCalendarEvent({ body: { busy: true, ...input } }),
-      CalendarErrors.SAVE_EVENT_FAILED,
-    );
-    return toEvent(data);
+  createEvent(input: CalendarEventInput): Promise<CalendarEventEntity> {
+    return callApi(CalendarErrors.SAVE_EVENT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createCalendarEvent({ body: { busy: true, ...input } }),
+      );
+      return toEvent(data);
+    });
   }
 
-  @MapApiError(CalendarErrors.SAVE_EVENT_FAILED)
-  async updateEvent(id: string, input: Partial<CalendarEventInput>): Promise<CalendarEventEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateCalendarEvent({ path: { id }, body: input }),
-      CalendarErrors.SAVE_EVENT_FAILED,
-    );
-    return toEvent(data);
+  updateEvent(id: string, input: Partial<CalendarEventInput>): Promise<CalendarEventEntity> {
+    return callApi(CalendarErrors.SAVE_EVENT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateCalendarEvent({ path: { id }, body: input }));
+      return toEvent(data);
+    });
   }
 
-  @MapApiError(CalendarErrors.DELETE_EVENT_FAILED)
-  async removeEvent(id: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteCalendarEvent({ path: { id } }),
-      CalendarErrors.DELETE_EVENT_FAILED,
-    );
+  removeEvent(id: string): Promise<void> {
+    return callApi(CalendarErrors.DELETE_EVENT_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteCalendarEvent({ path: { id } }));
+    });
   }
 
-  @MapApiError(CalendarErrors.FETCH_GOOGLE_FAILED)
-  async findGoogleConnections(): Promise<GoogleCalendarConnectionEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findGoogleCalendarConnections(),
-      CalendarErrors.FETCH_GOOGLE_FAILED,
-    );
-    return data.map(toConnection);
+  findGoogleConnections(): Promise<GoogleCalendarConnectionEntity[]> {
+    return callApi(CalendarErrors.FETCH_GOOGLE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findGoogleCalendarConnections());
+      return data.map(toConnection);
+    });
   }
 
-  @MapApiError(CalendarErrors.FETCH_GOOGLE_FAILED)
-  async findGoogleEvents(range: CalendarRange & { timeZone: string }): Promise<GoogleCalendarRead> {
-    const data = await unwrapBody(
-      heyApiSdk.findGoogleCalendarEvents({ query: range }),
-      CalendarErrors.FETCH_GOOGLE_FAILED,
-    );
-    return {
-      events: data.events.map(toEvent),
-      accounts: data.accounts.map(({ id, status }) => ({ id, status })),
-    };
+  findGoogleEvents(range: CalendarRange & { timeZone: string }): Promise<GoogleCalendarRead> {
+    return callApi(CalendarErrors.FETCH_GOOGLE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findGoogleCalendarEvents({ query: range }));
+      return {
+        events: data.events.map(toEvent),
+        accounts: data.accounts.map(({ id, status }) => ({ id, status })),
+      };
+    });
   }
 
   /** Google's consent page, for a new account or to reconnect one; the browser goes there. */
-  @MapApiError(CalendarErrors.CONNECT_GOOGLE_FAILED)
-  async startGoogleConnection(connectionId?: string): Promise<string> {
-    const data = await unwrapBody(
-      heyApiSdk.startGoogleCalendarConnection({ body: connectionId ? { connectionId } : {} }),
-      CalendarErrors.CONNECT_GOOGLE_FAILED,
-    );
-    return data.url;
+  startGoogleConnection(connectionId?: string): Promise<string> {
+    return callApi(CalendarErrors.CONNECT_GOOGLE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.startGoogleCalendarConnection({ body: connectionId ? { connectionId } : {} }),
+      );
+      return data.url;
+    });
   }
 
-  @MapApiError(CalendarErrors.CONNECT_GOOGLE_FAILED)
-  async connectGoogle(code: string, state: string): Promise<GoogleCalendarConnectionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.connectGoogleCalendar({ body: { code, state } }),
-      CalendarErrors.CONNECT_GOOGLE_FAILED,
-    );
-    return toConnection(data);
+  connectGoogle(code: string, state: string): Promise<GoogleCalendarConnectionEntity> {
+    return callApi(CalendarErrors.CONNECT_GOOGLE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.connectGoogleCalendar({ body: { code, state } }));
+      return toConnection(data);
+    });
   }
 
-  @MapApiError(CalendarErrors.REMOVE_GOOGLE_FAILED)
-  async removeGoogleConnection(id: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.removeGoogleCalendarConnection({ path: { id } }),
-      CalendarErrors.REMOVE_GOOGLE_FAILED,
-    );
+  removeGoogleConnection(id: string): Promise<void> {
+    return callApi(CalendarErrors.REMOVE_GOOGLE_FAILED, async (api) => {
+      await api.result(heyApiSdk.removeGoogleCalendarConnection({ path: { id } }));
+    });
   }
 }
