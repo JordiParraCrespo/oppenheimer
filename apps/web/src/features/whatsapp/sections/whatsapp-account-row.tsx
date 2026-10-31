@@ -5,7 +5,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WhatsappQrCard } from '@/features/whatsapp/components/whatsapp-qr-card';
-import { WhatsappStatusBadge } from '@/features/whatsapp/components/whatsapp-status-badge';
+import { WhatsappStatus } from '@/features/whatsapp/components/whatsapp-status';
 import { UnlinkWhatsappNumberDialog } from '@/features/whatsapp/dialogs/unlink-whatsapp-number';
 import { useQrModules } from '@/features/whatsapp/hooks/use-qr-modules';
 
@@ -44,7 +44,7 @@ export function WhatsappAccountRow({
         align="center"
         data-testid="whatsapp-account"
         meta={meta}
-        kind={<WhatsappStatusBadge status={account.status} hostOnline={account.hostOnline} />}
+        kind={<WhatsappStatus status={account.status} hostOnline={account.hostOnline} />}
         actions={
           <>
             <Button
