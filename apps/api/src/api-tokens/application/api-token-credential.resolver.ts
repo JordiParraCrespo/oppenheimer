@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppError, describeError } from '@oppenheimer/backend-core';
+import { AppError, describeError, requireFound } from '@oppenheimer/backend-core';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { CredentialResolverPort } from '../../auth/application/credential-resolver.port';
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
@@ -39,9 +39,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
 
   async resolve(secret: string, request: ScopedRequest): Promise<ScopeContext> {
     const found = await this.apiTokens.findOneByHash(hashApiTokenSecret(secret));
-    if (found.isNone()) throw new AppError(AuthErrors.INVALID_CREDENTIAL);
-
-    const token = found.unwrap();
+    const token = requireFound(found, AuthErrors.INVALID_CREDENTIAL);
     const rejection = token.rejectionReason({
       now: new Date(),
       ipAddress: sourceAddress(request),

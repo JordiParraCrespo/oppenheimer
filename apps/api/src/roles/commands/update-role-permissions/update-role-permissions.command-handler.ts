@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { RoleGrantPolicy } from '../../application/role-grant.policy';
 import type { RoleRepositoryPort } from '../../database/role.repository.port';
@@ -34,9 +34,7 @@ export class UpdateRolePermissionsCommandHandler
     );
 
     const found = await this.roleRepository.findOneById(command.roleId, command.organizationId);
-    if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
-
-    const role = found.unwrap();
+    const role = requireFound(found, RoleErrors.NOT_FOUND);
     await this.grantPolicy.assertCanModify(
       command.actorId
         ? {

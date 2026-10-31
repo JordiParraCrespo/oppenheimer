@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireTenant } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { GmailConnectStateResolver } from '../../application/gmail-connect-state.resolver';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
 import { canConnectAnotherGmailAccount } from '../../domain/gmail-accounts.policy';
@@ -59,8 +59,7 @@ export class StartGmailConnectionCommandHandler
   ): Promise<string | undefined> {
     if (connectionId) {
       const found = await this.connections.findOwnById(scope, connectionId);
-      if (found.isNone()) throw new AppError(MailErrors.GMAIL_NOT_CONNECTED);
-      return found.unwrap().accountEmail;
+      return requireFound(found, MailErrors.GMAIL_NOT_CONNECTED).accountEmail;
     }
     const held = await this.connections.findAllOwn(scope);
     if (!canConnectAnotherGmailAccount(held.length)) {

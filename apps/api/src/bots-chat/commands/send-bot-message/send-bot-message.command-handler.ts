@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { botDefaultModel } from '@oppenheimer/shared';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import {
@@ -54,12 +54,14 @@ export class SendBotMessageCommandHandler
   }: SendBotMessageCommand): Promise<string> {
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
-    if ((await this.credentials.findOne(scope, bot.provider)).isNone()) {
-      throw new AppError(BotErrors.PROVIDER_KEY_MISSING, {
+    requireFound(
+      await this.credentials.findOne(scope, bot.provider),
+      BotErrors.PROVIDER_KEY_MISSING,
+      {
         detail: `The workspace has no ${bot.provider} key`,
         extensions: { provider: bot.provider },
-      });
-    }
+      },
+    );
     const attachments = await this.images.sendable(bot, attachmentIds);
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
