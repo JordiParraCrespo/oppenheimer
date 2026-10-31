@@ -11,9 +11,9 @@
  * everything that reads `dist/` waits for it.
  */
 
-export const JOBS = ['lint', 'go', 'test', 'services', 'integration', 'e2e'];
+export const JOBS = ['lint', 'evals', 'go', 'test', 'services', 'integration', 'e2e'];
 /** The jobs `--skip` accepts; `services` follows from integration and e2e. */
-export const SKIPPABLE = ['lint', 'go', 'test', 'integration', 'e2e'];
+export const SKIPPABLE = ['lint', 'evals', 'go', 'test', 'integration', 'e2e'];
 
 const BUILD = 'test/turbo build';
 const STACK_UP = 'services/stack up';
@@ -100,13 +100,14 @@ export function plan(
   // oppenheimer:begin web
   // The frontend audit's fixtures: each case still typechecks, and the
   // mechanical checks fail only where the case says they should. Slow (a
-  // worktree and a typecheck per case), so it runs when the eval changes and
-  // on the scheduled run, which catches the console moving under a case.
+  // worktree and a typecheck per case, six minutes), so it is a job of its
+  // own, and runs when the eval changes and on the scheduled run, which
+  // catches the console moving under a case.
   if (
     !dirty &&
     (scope === 'all' || lintOnly.some((f) => f.startsWith('scripts/evals/frontend-audit/')))
   ) {
-    add('lint', 'Frontend audit eval fixtures', 'node', [
+    add('evals', 'Frontend audit eval fixtures', 'node', [
       'scripts/evals/frontend-audit/run.mjs',
       '--validate',
     ]);

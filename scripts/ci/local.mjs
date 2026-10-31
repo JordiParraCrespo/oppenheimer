@@ -17,8 +17,9 @@
  *
  *   lint         Biome, the design-system lint, architecture, typecheck,
  *                structure, flags, React singletons (one installed copy each),
- *                compiler bail-outs, unused code, translations, eval anchors,
+ *                compiler bail-outs, unused code, translations, the hexagon eval's anchors,
  *                this pipeline's own tests, starter manifest
+ *   evals        the frontend audit eval's fixtures (a full run, or its cases changed)
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, backend public API, generated files committed, unit tests, bundle budget
  *   services     the stack's Postgres, Redis and stubs, then the API built here

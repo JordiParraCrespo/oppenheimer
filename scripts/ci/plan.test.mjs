@@ -82,7 +82,7 @@ test('a translations change checks the assembled catalogs', () => {
 
 // oppenheimer:begin web
 test('the frontend audit eval runs when its cases change and on a full run, not otherwise', () => {
-  const id = 'lint/Frontend audit eval fixtures';
+  const id = 'evals/Frontend audit eval fixtures';
   assert.equal(step(plan(affected('@oppenheimer/web')), id), undefined);
   const edited = {
     ...affected(),
