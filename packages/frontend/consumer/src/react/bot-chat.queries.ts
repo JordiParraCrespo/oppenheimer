@@ -1,26 +1,25 @@
 'use client';
 
-import {
-  useQueries,
-  useQuery,
-  useSuspenseQuery,
-  withCacheOnSuccess,
-} from '@oppenheimer/frontend-core/react';
+import { useQueries, useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
-import {
-  type QueryClient,
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
+  BotApprovalEntity,
   BotConversationEntity,
   BotMessageEntity,
   BotRoomLeft,
   BotTurnEntity,
   BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
+import {
+  BotLiveApprovals,
+  type BotResolvedApprovals,
+  botResolvedApprovals,
+  NO_RESOLVED_APPROVALS,
+  noteResolvedApproval,
+  withoutClosedApproval,
+} from '../modules/bots/live-approvals';
 import {
   type BotLiveSubagents,
   type BotSubagentFrames,
@@ -38,13 +37,14 @@ import {
   botLiveText,
   clearBotRetry,
   forgetEndedBotTurns,
-  markBotStreamGap,
   NO_BOT_RETRIES,
   NO_BOT_TEXT,
   noteBotRetry,
+  putBotSnapshot,
 } from '../modules/bots/live-text';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * A bot's chat (`product/versions/mvp/25-bots.md` §3): the stored
@@ -112,34 +112,23 @@ async function piecesOf(
  * together; the pieces become the file. The finished file is still a whole
  * `Blob` in the browser, which is what a download needs.
  */
-export function useExportBotConversation(
-  options?: UseMutationOptions<Blob, Error, ExportBotConversationVariables>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: async ({ id, header, chunk, type }: ExportBotConversationVariables) =>
-      new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
-    ...options,
-  });
-}
+export const useExportBotConversation = mutation<Blob, ExportBotConversationVariables>({
+  run: async (app, { id, header, chunk, type }) =>
+    new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
+});
 
 /**
  * Clear history. The chat, its card, the sidebar's last line and the bot's
  * own read are read again, all empty of it now.
  */
-export function useClearBotConversation(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.bots.clearConversation(id),
-    ...withCacheOnSuccess(options, (_data, id) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
-      ]),
-    ),
-  });
-}
+export const useClearBotConversation = mutation<void, string>({
+  run: (app, id) => app.bots.clearConversation(id),
+  update: (queryClient, _data, id) =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
+      queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
+    ]),
+});
 
 /**
  * The turn Stop applies to, for a reader that draws nothing while the chat
@@ -206,20 +195,16 @@ export interface SendBotMessageVariables {
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
   attachmentIds?: readonly string[];
+  /** Into the turn under way, at its next tool call, rather than after it. */
+  steer?: boolean;
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
-export function useSendBotMessage(
-  options?: UseMutationOptions<BotTurnEntity, Error, SendBotMessageVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, content, attachmentIds }: SendBotMessageVariables) =>
-      app.bots.sendMessage(id, content, attachmentIds),
-    ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
-  });
-}
+export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
+  run: (app, { id, content, attachmentIds, steer }) =>
+    app.bots.sendMessage(id, content, attachmentIds, steer),
+  update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
+});
 
 export interface UploadBotImageVariables {
   id: string;
@@ -232,15 +217,9 @@ export interface UploadBotImageVariables {
  * the person is still writing. Nothing is read again: nothing on screen
  * holds it until the message is sent.
  */
-export function useUploadBotImage(
-  options?: UseMutationOptions<BotAttachment, Error, UploadBotImageVariables>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: ({ id, file }: UploadBotImageVariables) => app.bots.uploadImage(id, file),
-    ...options,
-  });
-}
+export const useUploadBotImage = mutation<BotAttachment, UploadBotImageVariables>({
+  run: (app, { id, file }) => app.bots.uploadImage(id, file),
+});
 
 /** A message's images, as `useBotImages` reads them: each one's bytes once they are in. */
 export interface BotImageReads {
@@ -282,16 +261,10 @@ export interface CancelBotTurnVariables {
 }
 
 /** Stop: a queued turn ends now, a running one at its next step. */
-export function useCancelBotTurn(
-  options?: UseMutationOptions<BotTurnEntity, Error, CancelBotTurnVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, turnId }: CancelBotTurnVariables) => app.bots.cancelTurn(id, turnId),
-    ...withCacheOnSuccess(options, (turn, { id }) => refetchChat(queryClient, id, !turn.isActive)),
-  });
-}
+export const useCancelBotTurn = mutation<BotTurnEntity, CancelBotTurnVariables>({
+  run: (app, { id, turnId }) => app.bots.cancelTurn(id, turnId),
+  update: (queryClient, turn, { id }) => refetchChat(queryClient, id, !turn.isActive),
+});
 
 export type { BotLiveRetries, BotLiveSubagents, BotLiveText };
 
@@ -303,21 +276,32 @@ export interface BotLive {
   retrying: BotLiveRetries;
   /** Where each child of a running `delegate` call is, by the call's id. */
   subagents: BotLiveSubagents;
+  /** Cards decided while the chat is open, by any tab or device, whose line is not stored yet. */
+  resolved: BotResolvedApprovals;
 }
 
 /**
  * The chat, live, while the screen is up: the text each running turn is
  * writing that the stored conversation does not hold yet, which turns wait
  * on a provider that refused a call (until they write again), and where the
- * children of a running `delegate` call are. The stream's text is kept as it
- * arrived ({@link BotTextBuffers}); what is drawn is derived from it and the
- * conversation in render ({@link botLiveText}), so a read landing early or
- * late never draws stored text twice or drops it. A call's children are its
+ * children of a running `delegate` call are. The stream's text is kept by
+ * block ({@link BotTextBuffers}): deltas the turn's text already holds are
+ * dropped by `seq`, and the `snapshot` the stream sends as it comes up
+ * replaces the block being written, so what was published while it was down
+ * is not lost. What is drawn is derived from it and the conversation in
+ * render ({@link botLiveText}), so a read landing early or late never draws
+ * stored text twice or drops it. A call's children are its
  * newest frame until its stored step ends it ({@link botLiveSubagents}).
  *
  * The conversation is read again the moment a message is stored or a turn
  * moves, and each time the stream comes up (the first connect included) for
  * what the gap may have missed.
+ *
+ * Needs input cards: one some tab or device decided (`approval_resolved`)
+ * leaves the card at once, before the approvals are read again, and its
+ * decided line is drawn until the stored one lands ({@link botResolvedApprovals}).
+ * One raised while the text is half a line waits for the line to end, or
+ * 600 ms ({@link BotApprovalHold}).
  */
 export function useBotLive(id: string): BotLive {
   const app = useConsumerApp();
@@ -331,6 +315,10 @@ export function useBotLive(id: string): BotLive {
   const [waits, setWaits] = useState<{ id: string; retries: BotLiveRetries }>({
     id,
     retries: NO_BOT_RETRIES,
+  });
+  const [decided, setDecided] = useState<{ id: string; resolved: BotResolvedApprovals }>({
+    id,
+    resolved: NO_RESOLVED_APPROVALS,
   });
 
   // Subscribes to the bot's stream, an outside system, while the chat is open.
@@ -366,48 +354,82 @@ export function useBotLive(id: string): BotLive {
       });
     const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
       change((state) => ({ ...state, buffers: next(state.buffers) }));
+    // A decided card is retired for good the first time a read holds its line.
+    const retireStored = (read: BotConversationEntity | undefined) =>
+      setDecided((current) => {
+        if (current.id !== id || !read) return current;
+        const resolved = botResolvedApprovals(current.resolved, read);
+        return resolved === current.resolved ? current : { id, resolved };
+      });
+    const conversationKey = JSON.stringify(key);
+    const offStored = queryClient.getQueryCache().subscribe((cached) => {
+      if (cached.type !== 'updated' || JSON.stringify(cached.query.queryKey) !== conversationKey) {
+        return;
+      }
+      retireStored(cached.query.state.data as BotConversationEntity | undefined);
+    });
+    const approvals = new BotLiveApprovals({
+      readCards: () => void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
+      closeCard: (approvalId) =>
+        queryClient.setQueryData<BotApprovalEntity | null>(botsKeys.pendingApproval(id), (card) =>
+          withoutClosedApproval(card, approvalId),
+        ),
+      keepLine: (frame) =>
+        setDecided((current) => {
+          const noted = noteResolvedApproval(
+            current.id === id ? current.resolved : NO_RESOLVED_APPROVALS,
+            frame,
+          );
+          const read = queryClient.getQueryData<BotConversationEntity>(key);
+          const resolved = read ? botResolvedApprovals(noted, read) : noted;
+          return current.id === id && resolved === current.resolved ? current : { id, resolved };
+        }),
+    });
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
       const now = status === 'live';
       if (now && !up) {
-        update(markBotStreamGap);
         void refetchChat(queryClient, id, false);
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
       }
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
-      if (event.type === 'retrying') {
-        retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
-        return;
+      if (approvals.see(event)) return;
+      switch (event.type) {
+        case 'retrying':
+          retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
+          return;
+        case 'text':
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          update((buffers) => appendBotText(buffers, event));
+          return;
+        case 'snapshot':
+          update((buffers) => putBotSnapshot(buffers, event));
+          return;
+        case 'subagents':
+          change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
+          return;
+        case 'question':
+          void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
+          return;
+        case 'message':
+        case 'turn': {
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          const ended =
+            event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
+          void refetchChat(queryClient, id, ended);
+          return;
+        }
       }
-      if (event.type === 'text') {
-        retry((retries) => clearBotRetry(retries, event.turnId));
-        update((buffers) => appendBotText(buffers, event.turnId, event.text));
-        return;
-      }
-      if (event.type === 'subagents') {
-        change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
-        return;
-      }
-      if (event.type === 'approval') {
-        void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
-        return;
-      }
-      if (event.type === 'question') {
-        void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
-        return;
-      }
-      retry((retries) => clearBotRetry(retries, event.turnId));
-      const ended =
-        event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
-      void refetchChat(queryClient, id, ended);
     });
     stream.open();
     return () => {
       offStatus();
       offEvent();
+      offStored();
+      approvals.dispose();
       stream.dispose();
     };
   }, [app, queryClient, id]);
@@ -417,5 +439,9 @@ export function useBotLive(id: string): BotLive {
     text: botLiveText(mine ? streamed.buffers : NO_BOT_TEXT, conversation),
     retrying: botLiveRetries(waits.id === id ? waits.retries : NO_BOT_RETRIES, conversation),
     subagents: botLiveSubagents(mine ? streamed.frames : NO_BOT_SUBAGENTS, conversation),
+    resolved: botResolvedApprovals(
+      decided.id === id ? decided.resolved : NO_RESOLVED_APPROVALS,
+      conversation,
+    ),
   };
 }

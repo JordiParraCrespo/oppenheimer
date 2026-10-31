@@ -182,7 +182,9 @@ test('the caps bite, and only on the file kind they name', () => {
 
 test('a ledger entry silences exactly its own (path, kind), and nothing else', () => {
   const broken = { ...CONFORMING, 'widget/widget.service.ts': '' };
-  const ledger = [{ path: 'src/widget/widget.service.ts', kind: 'service-at-module-root' }];
+  const ledger = [
+    { path: 'src/widget/widget.service.ts', kind: 'service-at-module-root', reason: 'owed' },
+  ];
   assert.deepEqual(check(broken, { ledger }).outstanding, []);
 
   // A finding the entry does not name, at another path, is still reported.
@@ -193,8 +195,65 @@ test('a ledger entry silences exactly its own (path, kind), and nothing else', (
 });
 
 test('a ledger entry that no longer matches is itself an error', () => {
-  const ledger = [{ path: 'src/widget/gone.service.ts', kind: 'service-at-module-root' }];
+  const ledger = [
+    { path: 'src/widget/gone.service.ts', kind: 'service-at-module-root', reason: 'owed' },
+  ];
   assert.deepEqual(kinds(check(CONFORMING, { ledger })), ['stale-ledger-entry']);
+});
+
+test('a ledger entry says why it is owed, or it is itself an error', () => {
+  const broken = { ...CONFORMING, 'widget/widget.service.ts': '' };
+  for (const reason of [undefined, '', '   ']) {
+    const ledger = [
+      { path: 'src/widget/widget.service.ts', kind: 'service-at-module-root', reason },
+    ];
+    assert.deepEqual(kinds(check(broken, { ledger })), ['ledger-entry-without-reason'], reason);
+  }
+});
+
+test('a mapper maps: under its cap, and building no domain event', () => {
+  const long = (n) => `${'// x\n'.repeat(n)}export class WidgetMapper {}`;
+  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.mapper.ts': long(300) })), [
+    'mapper-over-cap',
+  ]);
+  // At the cap is within it.
+  assert.deepEqual(check({ ...CONFORMING, 'widget/widget.mapper.ts': long(299) }).outstanding, []);
+
+  // The event classes are the domain's to raise; a mapper may still read an
+  // entity, a policy's types or a DTO.
+  const raising = [
+    "import { WidgetCreated } from './domain/events/widget-created.domain-event';",
+    "import {\n  WidgetCreated,\n} from './domain/events/widget-created.domain-event';",
+    'import type { WidgetCreated } from "./domain/events/widget-created.domain-event";',
+  ];
+  for (const line of raising) {
+    const mapper = `${line}\nexport class WidgetMapper {}`;
+    assert.deepEqual(
+      kinds(check({ ...CONFORMING, 'widget/widget.mapper.ts': mapper })),
+      ['mapper-imports-domain-event'],
+      line,
+    );
+  }
+  const mapping = [
+    "import { WidgetEntity } from './domain/widget.entity';",
+    "import type { DomainEvent } from '@oppenheimer/backend-ddd';",
+    '// a domain-event is mentioned here, not imported',
+  ].join('\n');
+  assert.deepEqual(
+    check({ ...CONFORMING, 'widget/widget.mapper.ts': `${mapping}\nexport class M {}` })
+      .outstanding,
+    [],
+  );
+
+  // The rule is the mapper's: a handler that names an event is not a mapper.
+  assert.deepEqual(
+    check({
+      ...CONFORMING,
+      'widget/commands/create-widget/create-widget.command-handler.ts':
+        "import { WidgetCreated } from '../../domain/events/widget-created.domain-event';",
+    }).outstanding,
+    [],
+  );
 });
 
 test('the CLI checks apps/api against the ledger in the script, and it is current', () => {

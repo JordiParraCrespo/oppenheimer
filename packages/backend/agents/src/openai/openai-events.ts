@@ -111,17 +111,12 @@ export class OpenAiEventTranslator {
         ];
       case 'tool_output': {
         if (raw.type !== 'function_call_result' || !raw.callId || !raw.name) return [];
-        const data = this.made.take(raw.callId);
-        return [
-          {
-            type: 'tool.finished',
-            callId: raw.callId,
-            name: raw.name,
-            output: outputText(event.item.output),
-            isError: this.toolFailed(raw.callId),
-            ...(data ? { data } : {}),
-          },
-        ];
+        return this.made.finished({
+          callId: raw.callId,
+          name: raw.name,
+          output: outputText(event.item.output),
+          isError: this.toolFailed(raw.callId),
+        });
       }
       default:
         return [];

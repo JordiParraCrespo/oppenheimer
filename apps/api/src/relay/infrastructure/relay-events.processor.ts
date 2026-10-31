@@ -72,6 +72,7 @@ export class RelayEventsProcessor {
     const outcome = await this.reconciliation.reconcile(
       link.hostId,
       link.runId,
+      link.epoch,
       hello.sessions.map((session) => session.sessionId),
     );
     this.logger.log({

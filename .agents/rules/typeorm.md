@@ -70,6 +70,29 @@ How a table is designed (keys, types, indexes, constraints, migrations) is
   Auth table), leave the rest unset in `toPersistence()` so `save()` doesn't
   clobber columns another system manages
 
+## An existing row is written at the version it was loaded at
+
+`Repository.save` is an upsert keyed on the primary key: it re-reads the row
+and writes whatever the instance holds, whatever the row holds now, so a copy
+loaded before another writer's change silently puts the old columns back. The
+default write of an existing aggregate is `writeVersioned` from
+`@oppenheimer/backend-ddd` (`TypeOrmRepositoryBase.saveVersioned` for a
+non-tenant repository): the entity declares
+
+```typescript
+@VersionColumn({ default: 1 })
+version!: number;
+```
+
+the migration adds `"version" integer NOT NULL DEFAULT 1`, and the write is
+one `UPDATE … SET <record>, "version" = "version" + 1 WHERE id = $1 AND
+"version" = $2` that throws `VersionConflictException` unless it affected one
+row. The `SET` list is the mapper's record minus its id, its version and
+every `undefined` field. How a handler answers the conflict is
+`nestjs-architecture.md` ("Writing an existing aggregate: versioned by
+default"). `save` stays for the repositories that predate this, until they
+move.
+
 ## A racing state transition is a conditional `UPDATE`, not a `save`
 
 `Repository.save` is an upsert keyed on the primary key: it writes whatever

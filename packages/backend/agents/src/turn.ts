@@ -2,10 +2,14 @@ import type {
   BotEngineEvent,
   BotEngineFailure,
   BotEngineTool,
+  BotSteer,
+  BotSteering,
   BotToolData,
   BotTurnImage,
   BotTurnRequest,
 } from './bot-engine';
+
+type ToolFinished = Extract<BotEngineEvent, { type: 'tool.finished' }>;
 
 type DoneEvent = Extract<BotEngineEvent, { type: 'done' }>;
 
@@ -256,13 +260,19 @@ function toolData(raw: unknown): BotToolData | undefined {
 /**
  * What our tools' calls made, by call id, from the run of each call until
  * the engine reports its end: an SDK's own report of a call carries only
- * its words, so the adapter records the data as it runs the tool.
+ * its words, so the adapter records the data as it runs the tool, and the
+ * messages the person sent that rode its result (`deliverSteers`).
  */
 export class ToolCallData {
   private readonly byCall = new Map<string, BotToolData>();
+  private readonly steersByCall = new Map<string, readonly BotSteer[]>();
 
   record(callId: unknown, data: BotToolData | undefined): void {
     if (typeof callId === 'string' && data) this.byCall.set(callId, data);
+  }
+
+  recordSteers(callId: string, steers: readonly BotSteer[]): void {
+    this.steersByCall.set(callId, steers);
   }
 
   /** The call's data, handed out once. */
@@ -271,6 +281,67 @@ export class ToolCallData {
     this.byCall.delete(callId);
     return data;
   }
+
+  /**
+   * A call's end as the engine reports it: `tool.finished` with the call's
+   * data and the tool's own output (the steer note the model read after it
+   * taken off), then `steered` when messages rode its result.
+   */
+  finished(event: Omit<ToolFinished, 'type' | 'data'>): BotEngineEvent[] {
+    const data = this.take(event.callId);
+    const steers = this.steersByCall.get(event.callId);
+    this.steersByCall.delete(event.callId);
+    const output = steers ? withoutSteerNote(event.output, steers) : event.output;
+    const finished: BotEngineEvent = {
+      type: 'tool.finished',
+      ...event,
+      output,
+      ...(data ? { data } : {}),
+    };
+    return steers ? [finished, { type: 'steered', callId: event.callId, steers }] : [finished];
+  }
+}
+
+/**
+ * What the model reads after a call's result when the person sent messages
+ * while it worked: each one, marked as theirs and as newer than what the
+ * turn opened with, the way Claude Code tells its model of a message typed
+ * mid-turn.
+ */
+export function steerNote(steers: readonly BotSteer[]): string {
+  const said = steers.map((steer) => `<message>\n${steer.text}\n</message>`).join('\n');
+  return `\n\n<person-sent-while-you-worked>\nThe person sent this while you were working. It is newer than their message that opened this turn: take it into account from here on.\n${said}\n</person-sent-while-you-worked>`;
+}
+
+/** `output` without the note `steerNote` added to its end; as it is when the note is not there. */
+function withoutSteerNote(output: string, steers: readonly BotSteer[]): string {
+  const note = steerNote(steers);
+  return output.endsWith(note) ? output.slice(0, -note.length) : output;
+}
+
+/**
+ * Hands what the person sent meanwhile to the model with a call's result
+ * (`BotSteering`): asked once the call ran, unless the turn was stopped or
+ * the SDK named no call to report it on, so nothing is taken that the turn
+ * cannot say it delivered. The result's content with the note after it;
+ * as it was when nothing was sent, or the ask failed.
+ */
+export async function deliverSteers(
+  content: string,
+  context: { steering?: BotSteering; signal: AbortSignal; callId?: unknown },
+  made: ToolCallData,
+): Promise<string> {
+  const { steering, signal, callId } = context;
+  if (!steering || typeof callId !== 'string' || signal.aborted) return content;
+  let steers: readonly BotSteer[];
+  try {
+    steers = await steering.take();
+  } catch {
+    return content;
+  }
+  if (steers.length === 0) return content;
+  made.recordSteers(callId, steers);
+  return `${content}${steerNote(steers)}`;
 }
 
 /**

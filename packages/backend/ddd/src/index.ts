@@ -24,6 +24,7 @@ export {
   ExceptionBase,
   GenericErrorCode,
   NotFoundException,
+  VersionConflictException,
 } from './exceptions';
 export { Guard } from './guard';
 export type { Mapper } from './mapper.interface';
@@ -58,3 +59,8 @@ export {
   type Primitives,
   ValueObject,
 } from './value-object.base';
+export {
+  type CreateVersionedEntityProps,
+  VersionedAggregateRoot,
+} from './versioned-aggregate-root.base';
+export { retryOnVersionConflict, type Versioned, writeVersioned } from './versioned-write';

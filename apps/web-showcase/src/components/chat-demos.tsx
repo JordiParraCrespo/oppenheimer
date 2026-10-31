@@ -87,7 +87,7 @@ import {
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
 import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
-import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
+import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
 import { DropdownMenuItem } from '@oppenheimer/design-system-web/dropdown-menu';
@@ -232,6 +232,17 @@ function ChatTranscriptBody() {
 function ChatWorkBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-4">
+      <ToolCallGroup icon={<SearchIcon />} summary="Explored" detail="Read cancel.ts, step.ts · Searched abortSignal · Listed runner" defaultOpen>
+        <ToolCallRow icon={<FileTextIcon />} verb="Read" target="gateway/cancel.ts" />
+        <ToolCallRow icon={<SearchIcon />} verb="Searched" target="abortSignal" meta="14 results" />
+        <ToolCallRow icon={<FileTextIcon />} verb="Read" target="runner/step.ts" />
+        <ToolCallRow
+          icon={<TerminalIcon />}
+          verb="Ran"
+          target="ls runner"
+          output={<ToolCallOutput>{'cancel.test.ts\nstep.test.ts\nstep.ts\nregistry.ts\nlog.ts\nindex.ts\nREADME.md\ntsconfig.json'}</ToolCallOutput>}
+        />
+      </ToolCallGroup>
       <ToolCallGroup summary="Read 3 files, searched 2 patterns, ran 2 commands" failed="1 failed" defaultOpen>
         <ToolCallRow icon={<FileTextIcon />} verb="Read" target="gateway/cancel.ts" meta="L1–96" />
         <ToolCallRow icon={<SearchIcon />} verb="Searched" target="abortSignal" meta="14 results" />
@@ -1170,7 +1181,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />

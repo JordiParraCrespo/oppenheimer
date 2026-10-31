@@ -590,7 +590,56 @@ describe('the work in a turn', () => {
     input: { file_path: file },
   });
 
-  it('keeps a run of calls folded to its summary while the agent is still in it', () => {
+  it('folds reads into one Explored line naming each file once, which an edit ends', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Fix it' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a',
+          message: {
+            role: 'assistant',
+            content: [
+              call('t1', 'src/a.ts'),
+              { type: 'tool_use', id: 't2', name: 'Grep', input: { pattern: 'cancel' } },
+              call('t3', 'src/a.ts'),
+              { type: 'tool_use', id: 't4', name: 'Edit', input: { file_path: 'src/a.ts' } },
+            ],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: ['t1', 't2', 't3', 't4'].map((id) => ({
+              type: 'tool_result',
+              tool_use_id: id,
+              content: 'ok',
+            })),
+          },
+        }),
+        entry({
+          type: 'assistant',
+          uuid: 'b',
+          message: { role: 'assistant', content: [{ type: 'text', text: 'Done.' }] },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} readOnly={false} />);
+    const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
+    expect(explored.textContent).toContain('common.chat.explored.read a.ts');
+    expect(explored.textContent).toContain('common.chat.explored.search cancel');
+    expect(explored.textContent?.match(/a\.ts/g)).toHaveLength(1);
+    // The edit is its own row after the group, not one of its calls.
+    expect(screen.getByText('sessions.chat.verb.edit')).toBeTruthy();
+    fireEvent.click(explored);
+    expect(screen.getAllByText('sessions.chat.verb.read')).toHaveLength(2);
+  });
+
+  it('keeps a run of reads folded under Exploring while the agent is still in it', () => {
     const chat = new Chat();
     chat.apply({
       reset: true,
@@ -618,10 +667,10 @@ describe('the work in a turn', () => {
       ],
     });
     render(<SessionChat chat={chat} readOnly={false} />);
-    // The two done are one folded line; the one in flight says so under it.
-    const summary = screen.getByRole('button', { name: /sessions\.chat\.summary\.read/i });
+    // The two done are one folded line naming them; the one in flight says so under it.
+    const summary = screen.getByRole('button', { name: /sessions\.chat\.exploring/ });
     expect(summary.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByText('a.ts')).toBeNull();
+    expect(summary.textContent).toContain('common.chat.explored.read a.ts, b.ts');
     expect(screen.getByText('c.ts')).toBeTruthy();
   });
 });

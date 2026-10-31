@@ -22,7 +22,9 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * 15px growing from two lines to eight, then a foot row: `tools` (the
  * approval level) on the left, `engine` (model, effort) on the right, and
  * the 34px send. While `busy` the send is the stop, a small square on the
- * ink. Enter sends, Shift+Enter makes a new line.
+ * ink. Enter sends, Shift+Enter makes a new line; `onAltSubmit` gives
+ * Alt+Enter a second way to send (a bot's "queue it for after" while
+ * Enter steers the turn under way), named for the caller to say.
  *
  * It shares the send rules and the send button with `Composer`, the prompt
  * box: `sendBlockedReason` keeps the draft writable and the send off, and
@@ -45,6 +47,7 @@ function ChatComposer({
   onValueChange,
   onSubmit,
   onStop,
+  onAltSubmit,
   busy = false,
   disabled = false,
   sendBlockedReason,
@@ -66,6 +69,8 @@ function ChatComposer({
   onValueChange: (value: string) => void;
   onSubmit: (value: string) => void;
   onStop?: () => void;
+  /** Alt+Enter: a second way to send, under the same rules as Enter. */
+  onAltSubmit?: (value: string) => void;
   busy?: boolean;
   disabled?: boolean;
   /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
@@ -105,6 +110,7 @@ function ChatComposer({
     allowEmpty,
     onSubmit,
     onStop,
+    onAltSubmit,
   });
 
   const inline = layout === 'inline';

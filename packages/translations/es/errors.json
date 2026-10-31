@@ -156,6 +156,7 @@
     "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
     "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
     "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
+    "HOSTS_009": "Alguien cambió este host mientras lo guardabas. Vuelve a cargarlo e inténtalo de nuevo.",
     "INBOX_001": "La bandeja de entrada necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
     "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
     "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
@@ -310,7 +311,14 @@
   "code": "Código: {{code}}",
   "startFailure": {
     "codes": {
-      "SESS_002": "Este host crea sesiones con un solo repositorio."
+      "SESS_002": "Este host crea sesiones con un solo repositorio.",
+      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+    },
+    "help": {
+      "SESS_010": {
+        "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos que lista codex cloud. Los entornos creados en Configuración de ChatGPT → Codex Cloud todavía no son accesibles para la CLI, así que uno de ahí con el nombre de este repositorio no se puede usar desde aquí. Ejecuta codex cloud en el host para ver los entornos que puede usar.",
+        "link": "Abrir la configuración de Codex Cloud"
+      }
     },
     "details": "Detalles del host: {{detail}}"
   }

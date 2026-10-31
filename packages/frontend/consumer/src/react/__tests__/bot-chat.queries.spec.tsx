@@ -7,7 +7,7 @@ import type {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import {
   BotConversationEntity,
@@ -15,6 +15,7 @@ import {
   type BotStreamStatus,
   BotTurnEntity,
 } from '../../modules/bots';
+import { BotApprovalEntity } from '../../modules/bots/bot-conversation.entity';
 import { useBotLive } from '../bot-chat.queries';
 import { fakeKernel } from './fake-kernel';
 
@@ -74,6 +75,7 @@ function setup() {
     );
   }
   return {
+    queryClient,
     stream,
     order,
     openStream,
@@ -90,7 +92,14 @@ function setup() {
   };
 }
 
-const text = (value: string): BotStreamEvent => ({ type: 'text', turnId: 't1', text: value });
+/** A delta of turn `t1`'s `block`, the turn's `seq`th text write. */
+const text = (value: string, seq = 1, block = 0): BotStreamEvent => ({
+  type: 'text',
+  turnId: 't1',
+  block,
+  seq,
+  text: value,
+});
 
 /** A `delegate` call's frame: one child, in `state`, having called `tools`. */
 const frame = (state: BotSubagentProgress['state'], ...tools: string[]): BotStreamEvent => ({
@@ -156,8 +165,8 @@ describe('useBotLive', () => {
   it('gathers a turn’s text as it streams', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('Hel'));
-    await chat.send(text('lo'));
+    await chat.send(text('Hel', 1));
+    await chat.send(text('lo', 2));
     expect(result.current.text).toEqual({ t1: 'Hello' });
   });
 
@@ -169,11 +178,11 @@ describe('useBotLive', () => {
   it('keeps text live until the read that stores it lands, then only what came after', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('First.'));
+    await chat.send(text('First.', 1, 0));
     await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
-    await chat.send(text(' Second'));
+    await chat.send(text(' Second', 2, 1));
     expect(chat.invalidated).toEqual([CONVERSATION, GOAL]);
-    expect(result.current.text).toEqual({ t1: 'First. Second' });
+    expect(result.current.text).toEqual({ t1: 'First.\n\nSecond' });
     await chat.land(read('running', 'First.'));
     expect(result.current.text).toEqual({ t1: 'Second' });
   });
@@ -187,6 +196,23 @@ describe('useBotLive', () => {
     await chat.status('down');
     await chat.status('live');
     expect(result.current.text).toEqual({ t1: 'Partial rep' });
+  });
+
+  /**
+   * The regression this guards: what the turn wrote while the stream was down
+   * left a hole in the reply until the next stored message.
+   */
+  it('fills in what was written while the stream was down from the snapshot, and draws nothing twice', async () => {
+    const chat = setup();
+    const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+    await chat.status('live');
+    await chat.send(text('Hel', 1));
+    await chat.status('down');
+    await chat.status('live');
+    await chat.send({ type: 'snapshot', turnId: 't1', block: 0, seq: 3, text: 'Hello, world' });
+    await chat.send(text('world', 3));
+    await chat.send(text('!', 4));
+    expect(result.current.text).toEqual({ t1: 'Hello, world!' });
   });
 
   // What breaks this: a turn that waited once still saying "retrying" after
@@ -236,5 +262,51 @@ describe('useBotLive', () => {
     expect(Object.keys(result.current.subagents)).toEqual(['c1']);
     await chat.land(delegated('running'));
     expect(result.current.subagents).toEqual({});
+  });
+
+  describe('Needs input cards', () => {
+    const PENDING = [...APPROVALS, 'pending'];
+    afterEach(() => vi.useRealTimers());
+
+    it('takes down a card another tab decided at once, and draws its line until the stored one lands', async () => {
+      const chat = setup();
+      const card = new BotApprovalEntity('a1', 't1', 'start_session', 'Start', 'pending', null, at);
+      chat.queryClient.setQueryData(PENDING, card);
+      const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+      await chat.send({
+        type: 'approval_resolved',
+        approvalId: 'a1',
+        outcome: 'stopped',
+        tool: 'start_session',
+        summary: 'Start',
+      });
+      expect(chat.queryClient.getQueryData(PENDING)).toBeNull();
+      expect(result.current.resolved).toMatchObject([{ outcome: 'stopped', approvalId: 'a1' }]);
+      const line = new BotMessageEntity('m9', null, 'event', 'You stopped', [], at, {
+        kind: 'approval',
+        outcome: 'stopped',
+        tool: 'start_session',
+        summary: 'Start',
+        sessionId: null,
+        approvalId: 'a1',
+      });
+      await chat.land(new BotConversationEntity([line], [], 1));
+      expect(result.current.resolved).toEqual([]);
+
+      // The stored line scrolls out of the read's window: the early line stays retired.
+      await chat.land(read('completed', 'Something newer'));
+      expect(result.current.resolved).toEqual([]);
+    });
+
+    it('reads a card raised mid-sentence only once the line ends', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const chat = setup();
+      renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+      await chat.send(text('I will start a ses'));
+      await chat.send({ type: 'approval', approvalId: 'a1', status: 'pending' });
+      expect(chat.invalidated).toEqual([]);
+      await chat.send(text('sion.\n'));
+      expect(chat.invalidated).toEqual([APPROVALS]);
+    });
   });
 });

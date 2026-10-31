@@ -488,7 +488,7 @@ export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
  * (`25-bots.md` §4.6); or a session the bot follows that needs it
  * (`27-bot-subscriptions.md`). The words stay in the message for the bot.
  */
-export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'failed'] as const;
+export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'stopped', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
 
 export interface BotApprovalEvent {
@@ -500,6 +500,12 @@ export interface BotApprovalEvent {
   summary: string;
   /** The session the approved call started, for the chat to link to; null when it started none. */
   sessionId: string | null;
+  /**
+   * The card it decided, so a chat that drew the decision early (from the
+   * stream's `approval_resolved`) knows the stored line is the same one.
+   * Absent on lines written before it was kept.
+   */
+  approvalId?: string;
 }
 
 /** How a card of questions was decided: answered, or dismissed. */
@@ -810,6 +816,13 @@ export const sendBotMessageSchema = z
      * the time there, so "tomorrow at 9" means the sender's 9. UTC when absent.
      */
     timeZone: z.string().min(1).max(64).refine(isValidTimeZone).optional(),
+    /**
+     * Steer the turn under way (Codex's `turn/steer`): the running turn takes
+     * the message at its next tool call, rather than it waiting for its own
+     * turn. One that turn never reaches runs as a turn of its own, as does a
+     * message that carries images, which the running turn would not read.
+     */
+    steer: z.boolean().default(false),
   })
   .refine((body) => body.content.length > 0 || body.attachmentIds.length > 0, {
     path: ['content'],
@@ -854,8 +867,25 @@ export const BOT_APPROVAL_STATUSES = [
 ] as const;
 export type BotApprovalStatus = (typeof BOT_APPROVAL_STATUSES)[number];
 
-export const BOT_APPROVAL_DECISIONS = ['approve', 'deny'] as const;
+/**
+ * What a card may offer, in the order it offers them (`25-bots.md` §5): a
+ * yes to this call; a yes that stands for the call's subject, or for the
+ * tool; a no the bot is told about and carries on from; and a no that stops
+ * the turn, the bot getting no turn back. The API chooses which a card offers
+ * (`availableDecisions`) and accepts only those.
+ */
+export const BOT_APPROVAL_DECISIONS = [
+  'approve',
+  'approve_for_subject',
+  'approve_always',
+  'deny',
+  'stop',
+] as const;
 export type BotApprovalDecision = (typeof BOT_APPROVAL_DECISIONS)[number];
+
+/** How a card closed, as the stream says it (`approval_resolved`): decided, or retired. */
+export const BOT_APPROVAL_RESOLUTIONS = ['approved', 'denied', 'stopped', 'expired'] as const;
+export type BotApprovalResolution = (typeof BOT_APPROVAL_RESOLUTIONS)[number];
 
 /** What the person may add to a decision: why they denied it, or what to do instead. */
 export const BOT_APPROVAL_NOTE_MAX = 1_000;
@@ -948,7 +978,12 @@ export const dismissBotQuestionSchema = z.object({
 });
 export type DismissBotQuestionDto = z.infer<typeof dismissBotQuestionSchema>;
 
-/** `POST /bots/:id/approvals/:approvalId/decision`. `reach` applies to a yes; a no ignores it. */
+/**
+ * `POST /bots/:id/approvals/:approvalId/decision`: one of the card's
+ * `availableDecisions`. `reach` is the older way to say how far a yes goes
+ * (`approve` with `tool` is `approve_always`, with `subject`
+ * `approve_for_subject`); a no ignores it.
+ */
 export const decideBotApprovalSchema = z.object({
   decision: z.enum(BOT_APPROVAL_DECISIONS),
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
@@ -1010,6 +1045,21 @@ export const createBotPermissionRuleSchema = z.object({
 export type CreateBotPermissionRuleDto = z.infer<typeof createBotPermissionRuleSchema>;
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
+/**
+ * The decision a `decideBotApprovalSchema` body names, the older shape read
+ * once at the edge: `approve` with `reach` `tool` is `approve_always`, with
+ * `subject` `approve_for_subject`. A named decision wins over a reach.
+ */
+export function namedBotApprovalDecision({
+  decision,
+  reach,
+}: Pick<DecideBotApprovalDto, 'decision' | 'reach'>): BotApprovalDecision {
+  if (decision !== 'approve') return decision;
+  if (reach === 'tool') return 'approve_always';
+  if (reach === 'subject') return 'approve_for_subject';
+  return 'approve';
+}
+
 /** What the console's Deny asks for: the note alone, optional. */
 export const denyBotApprovalSchema = decideBotApprovalSchema.pick({ note: true });
 export type DenyBotApprovalDto = z.infer<typeof denyBotApprovalSchema>;
@@ -1036,6 +1086,20 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
+ * Where a piece of a turn's streamed text belongs. `block` counts the blocks
+ * of text the turn stored before this one (a block of only whitespace is not
+ * stored, and does not count), so a block is drawn live until the
+ * conversation holds that many of the turn's assistant messages with text.
+ * `seq` counts the turn's text writes, 1 for the first: a piece at or below
+ * what a reader already holds is one it has.
+ */
+const botStreamTextPlace = {
+  turnId: z.string(),
+  block: z.number().int().nonnegative(),
+  seq: z.number().int().nonnegative(),
+};
+
+/**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
  * turn writes it, that it waits on a provider that refused a call, where a running `delegate` call's children are, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is
@@ -1044,7 +1108,15 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
  */
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
-  z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
+  /** A delta of the block being written, the turn's `seq`th text write. */
+  z.object({ type: z.literal('text'), ...botStreamTextPlace, text: z.string() }),
+  /**
+   * The whole of the block a running turn is writing and has not stored, as
+   * of its `seq`th write: sent once per running turn right after `ready`, in
+   * place of what the reader held for that block, so a reconnect loses no
+   * text. Deltas at or below `seq` that follow are already in it.
+   */
+  z.object({ type: z.literal('snapshot'), ...botStreamTextPlace, text: z.string() }),
   /**
    * The provider refused a call and the turn waits to try it again: a rate
    * limit, or the provider overloaded or down. Until the turn writes again.
@@ -1060,6 +1132,18 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('approval'),
     approvalId: z.string(),
     status: z.enum(BOT_APPROVAL_STATUSES),
+  }),
+  /**
+   * A card closed, by whichever tab, device or token decided it, or retired
+   * by a new message: every open chat takes the card down at once, without
+   * waiting to read the approvals again, and draws how it went.
+   */
+  z.object({
+    type: z.literal('approval_resolved'),
+    approvalId: z.string(),
+    outcome: z.enum(BOT_APPROVAL_RESOLUTIONS),
+    tool: z.string(),
+    summary: z.string(),
   }),
   /** A card of questions (`ask_user`) was raised, answered, dismissed or retired. */
   z.object({
@@ -1080,6 +1164,8 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
   }),
 ]);
 export type BotStreamEvent = z.infer<typeof botStreamEventSchema>;
+export type BotStreamText = Extract<BotStreamEvent, { type: 'text' }>;
+export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';

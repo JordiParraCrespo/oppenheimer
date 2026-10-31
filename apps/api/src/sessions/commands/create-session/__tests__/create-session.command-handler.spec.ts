@@ -20,7 +20,6 @@ import type { SessionNamingResolver } from '../../../application/session-naming.
 import { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
-import { WorkSessionMapper } from '../../../work-session.mapper';
 import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
 
@@ -175,7 +174,6 @@ describe('CreateSessionCommandHandler', () => {
       plan,
       launches(cloudFiles),
       naming as unknown as SessionNamingResolver,
-      new WorkSessionMapper(),
       new SessionAttachmentsResolver(store, links),
       new CloudAttachmentsResolver(store, cloudFiles, new CloudTaskFactory(cloudFiles)),
       links,

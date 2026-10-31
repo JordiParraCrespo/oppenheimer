@@ -11,6 +11,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import {
   ATTACH_CLOSE_CODES,
+  ATTACHMENT_CREDIT_WINDOW_BYTES,
   helloSchema,
   PROTOCOL_VERSION,
   RUNNER_LINK_CLOSE_CODES,
@@ -112,6 +113,7 @@ interface Harness {
   registry: InProcessLinkRegistry;
   replies: InProcessLinkReplies;
   browsers: BrowserAttachGateway;
+  runners: RunnerLinkGateway;
   close(): Promise<void>;
 }
 
@@ -129,7 +131,9 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
         await slowAssertion.answer();
         return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
       }
-      throw new Error('rejected');
+      // The store behind the replay guard is down: a fault, not a verdict.
+      if (bearer === 'valid.outage') throw new Error('connect ECONNREFUSED 127.0.0.1:6379');
+      throw new AppError(HostErrors.ASSERTION_REJECTED);
     },
   };
   const presence: HostPresencePort = {
@@ -254,6 +258,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     registry,
     replies,
     browsers,
+    runners,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }
@@ -386,6 +391,17 @@ describe('runner link', () => {
     sockets.push(runner);
     runner.on('error', () => {});
     await expect(refused(runner)).resolves.toBe(401);
+  });
+
+  it('answers 503, not 401, when the assertion cannot be verified for want of a store', async () => {
+    // A 401 tells the runner its key is refused; a 503 is a redial on its ladder.
+    const runner = ws(h.origin, '/api/v1/relay/runner', {
+      headers: { authorization: 'Bearer valid.outage' },
+    });
+    sockets.push(runner);
+    runner.on('error', () => {});
+    await expect(refused(runner)).resolves.toBe(503);
+    expect(h.registry.find(HOST)).toBeUndefined();
   });
 
   it('refuses an unpaired host with 410 before the upgrade, so it stops dialling', async () => {
@@ -832,6 +848,17 @@ describe('runner link', () => {
     expect(vi.mocked(h.events.record).mock.calls[0][0].batchId).toBe('b-after');
   });
 
+  it('closes the link with 1013 when the hello cannot be recorded, and never reconciles its snapshot twice', async () => {
+    // A retry on the same link reused the hello's snapshot: a launch the failed
+    // pass had sent could be running by then, absent from that snapshot, and
+    // recorded stopped. The runner redials and its fresh hello is reconciled.
+    vi.mocked(h.reconciliation.reconcile).mockRejectedValueOnce(new Error('deadlock detected'));
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    await expect(closed(runner)).resolves.toMatchObject({ code: 1013 });
+    expect(h.reconciliation.reconcile).toHaveBeenCalledTimes(1);
+  });
+
   it('replaces an older link from the same host and unregisters it on close', async () => {
     const first = await runnerUp(h);
     sockets.push(first);
@@ -1143,6 +1170,85 @@ describe('browser attach socket', () => {
     await expect(closed(browser)).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.LINK_LOST });
   });
 
+  it('terminates an attach socket that stops answering pings, and detaches it', async () => {
+    h.browsers.pingIntervalMs = 20;
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    // A peer that went away without a close: nothing answers the relay's pings.
+    const browser = ws(h.origin, '/api/v1/relay/attach', { autoPong: false }, [issueTicket(h)]);
+    sockets.push(browser);
+    await opened(browser);
+    const attach = nextMessage(runner);
+    browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+    await attach;
+    const detach = nextMessage(runner);
+    await expect(closed(browser)).resolves.toMatchObject({ code: 1006 });
+    expect((await detach).text).toMatchObject({ type: 'session.detach', attachmentId: 1 });
+  });
+
+  it('keeps an attach socket that answers its pings', async () => {
+    h.browsers.pingIntervalMs = 20;
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(browser);
+    await opened(browser);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(browser.readyState).toBe(WebSocket.OPEN);
+  });
+
+  describe('a browser flooding control frames', () => {
+    async function attachedBrowser() {
+      const runner = await runnerUp(h);
+      sockets.push(runner);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+      sockets.push(browser);
+      await opened(browser);
+      const attach = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+      await attach;
+      const received: { type: string; bytes?: number; cols?: number }[] = [];
+      runner.on('message', (data, isBinary) => {
+        if (!isBinary) received.push(JSON.parse(String(data)));
+      });
+      return { runner, browser, received };
+    }
+
+    it('reaches the link as a bounded number of frames, its credit summed and its last size kept', async () => {
+      // Regression guard: every frame went to the link, which is closed at
+      // 8 MiB buffered, taking every terminal on the host down with one tab.
+      const { browser, received } = await attachedBrowser();
+      for (let i = 0; i < 1_000; i++) {
+        browser.send(JSON.stringify({ type: 'credit', bytes: 100 }));
+        browser.send(JSON.stringify({ type: 'resize', cols: 81 + (i % 50), rows: 24 }));
+      }
+      browser.send(JSON.stringify({ type: 'resize', cols: 200, rows: 50 }));
+      const credited = () =>
+        received
+          .filter((m) => m.type === 'attachment.credit')
+          .reduce((n, m) => n + (m.bytes ?? 0), 0);
+      await vi.waitFor(() => expect(credited()).toBe(100_000), { timeout: 3_000 });
+      await vi.waitFor(() =>
+        expect(received.filter((m) => m.type === 'session.resize').at(-1)).toMatchObject({
+          cols: 200,
+          rows: 50,
+        }),
+      );
+      expect(received.filter((m) => m.type === 'attachment.credit').length).toBeLessThan(100);
+      expect(received.filter((m) => m.type === 'session.resize').length).toBeLessThan(20);
+    });
+
+    it('clamps a credit no browser could owe', async () => {
+      const { browser, received } = await attachedBrowser();
+      browser.send(JSON.stringify({ type: 'credit', bytes: 2 ** 40 }));
+      await vi.waitFor(() =>
+        expect(received.find((m) => m.type === 'attachment.credit')).toMatchObject({
+          bytes: 2 * ATTACHMENT_CREDIT_WINDOW_BYTES,
+        }),
+      );
+    });
+  });
+
   it('survives a frame over maxPayload while its ticket is judged', async () => {
     const warn = vi.spyOn(Logger.prototype, 'warn');
     const membership = held(true);
@@ -1403,6 +1509,8 @@ describe('browser attach socket', () => {
   });
 
   describe('the direct path', () => {
+    /** A runner that answers offers and proves itself on every channel (31). */
+    const DIRECT = ['attachment.direct', 'attachment.direct.proof'];
     const OFFER = 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n';
 
     async function attached(capabilities: string[], ticket = issueTicket(h)) {
@@ -1420,11 +1528,11 @@ describe('browser attach socket', () => {
 
     it('offers it to a person the flag is on for, on a runner that can answer, with the ICE servers', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { attached: told } = await attached(['attachment.direct']);
+      const { attached: told } = await attached(DIRECT);
       expect(told).toEqual({
         type: 'attached',
         window: 0,
-        direct: { iceServers: ['stun:stun.example.com:3478'] },
+        direct: { iceServers: ['stun:stun.example.com:3478'], hostId: HOST },
       });
       expect(h.flags.isEnabled).toHaveBeenCalledWith('terminal_direct_path', {
         userId: USER,
@@ -1432,11 +1540,17 @@ describe('browser attach socket', () => {
       });
     });
 
-    it('does not offer it on a runner that cannot answer, or while the flag is off', async () => {
+    it('does not offer it on a runner that cannot answer or cannot prove itself, or while the flag is off', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
       expect((await attached([])).attached).toEqual({ type: 'attached', window: 0 });
-      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      // A runner from before the host proof: the console would refuse its
+      // channel, so it is never invited.
       expect((await attached(['attachment.direct'])).attached).toEqual({
+        type: 'attached',
+        window: 0,
+      });
+      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      expect((await attached(DIRECT)).attached).toEqual({
         type: 'attached',
         window: 0,
       });
@@ -1444,7 +1558,7 @@ describe('browser attach socket', () => {
 
     it('relays the offer, the answer and both offsets between browser and runner', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
 
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
@@ -1473,7 +1587,7 @@ describe('browser attach socket', () => {
 
     it('tells the browser when the runner refuses, and the attachment stays on the relay', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       await offer;
@@ -1498,7 +1612,7 @@ describe('browser attach socket', () => {
 
     it('never forwards an offer it did not invite, or a second one', async () => {
       // The flag is off: the browser was not told it could offer.
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const refusal = nextMessage(browser);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await refusal).text).toMatchObject({ type: 'direct.unavailable' });
@@ -1510,7 +1624,7 @@ describe('browser attach socket', () => {
       expect((await next).text).toMatchObject({ type: 'session.resize' });
 
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const invited = await attached(['attachment.direct']);
+      const invited = await attached(DIRECT);
       const first = nextMessage(invited.runner);
       invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await first).text).toMatchObject({ type: 'attachment.direct.offer' });
@@ -1605,7 +1719,9 @@ describe('browser attach socket', () => {
     it('never offers a direct path through a share, whatever the flag says', async () => {
       shareIs(true);
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const runner = await runnerUp(h, { capabilities: ['attachment.direct'] });
+      const runner = await runnerUp(h, {
+        capabilities: ['attachment.direct', 'attachment.direct.proof'],
+      });
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
       sockets.push(browser);
@@ -1643,6 +1759,18 @@ describe('browser attach socket', () => {
       browser.send(Buffer.from('rm -rf ~\r'), { binary: true });
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
       expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
+    });
+
+    it('relays a read share’s credit, without which its own pane stalls after one window', async () => {
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true));
+      const credit = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'credit', bytes: 4096 }));
+      expect((await credit).text).toEqual({
+        type: 'attachment.credit',
+        attachmentId: 1,
+        bytes: 4096,
+      });
     });
 
     it('forwards a write share’s keystrokes, judged as the person who shared it', async () => {

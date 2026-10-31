@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { isVisual, visualChange } from './visual-change.mjs';
+import { isVisual, substance, visualChange } from './visual-change.mjs';
 
 const HOOK = fileURLToPath(new URL('./screenshot-guard.mjs', import.meta.url));
 
@@ -42,6 +42,56 @@ describe('isVisual', () => {
     'packages/translations/scripts/assemble.mjs',
   ])
     it(`skips ${path}`, () => assert.equal(isVisual(path), false));
+});
+
+describe('substance, what the fingerprint hashes', () => {
+  const tsx = (text) => substance('a.tsx', text);
+  const view = 'export function A() {\n  return <p className="x">Hello world {n}</p>;\n}\n';
+
+  it('ignores comments, quotes, semicolons and layout', () => {
+    const reformatted =
+      "/** The greeting. */\nexport function A() { return (\n    <p className='x'>\n      Hello world {n}\n    </p>\n  ) } // done";
+    assert.equal(tsx(reformatted), tsx(view));
+  });
+
+  it('counts a change to the copy, a URL in JSX text included', () => {
+    assert.notEqual(tsx(view.replace('Hello world', 'Hello there')), tsx(view));
+    assert.notEqual(
+      tsx('const a = <p>See https://x.dev/a</p>;'),
+      tsx('const a = <p>See https://x.dev/b</p>;'),
+    );
+  });
+
+  it('counts a change to a class name or a string', () => {
+    assert.notEqual(tsx(view.replace('"x"', '"y"')), tsx(view));
+  });
+
+  it('counts a template literal and a JSX expression by what they say', () => {
+    assert.notEqual(tsx('const a = `Hello ${name}`;'), tsx('const a = `Hi ${name}`;'));
+    assert.notEqual(tsx('const a = <p>{count} left</p>;'), tsx('const a = <p>{total} left</p>;'));
+    assert.equal(
+      tsx('const a = <p className={cn("a", b)}>{count}</p>;'),
+      tsx("const a = (\n  <p className={cn('a', b)}>\n    {count}\n  </p>\n);"),
+    );
+  });
+
+  it('keeps a space that JSX renders, and drops one it does not', () => {
+    assert.notEqual(tsx('const a = <p>Hi {name}</p>;'), tsx('const a = <p>Hi{name}</p>;'));
+    assert.equal(tsx('const a = <p>\n  Hi\n</p>;'), tsx('const a = <p>Hi</p>;'));
+  });
+
+  it('reads a stylesheet without comments, keeping strings whole', () => {
+    assert.equal(substance('a.css', '.a {\n  color: red; /* brand */\n}'), '.a { color: red; }');
+    assert.notEqual(substance('a.css', '.a{content:"/* a */"}'), substance('a.css', '.a{content:"/* b */"}'));
+  });
+
+  it('reads JSON by value', () => {
+    assert.equal(substance('a.json', '{\n  "a": "b"\n}\n'), substance('a.json', '{"a":"b"}'));
+  });
+
+  it('takes a script that does not parse as it is', () => {
+    assert.equal(tsx('const = ;'), 'const = ;');
+  });
 });
 
 describe('the hook', () => {
@@ -121,6 +171,11 @@ describe('the hook', () => {
   it('stays answered by a commit, a touch or a checkout that changes no content', () => {
     git('commit', '-q', '--allow-empty', '-m', 'later commit');
     utimesSync(join(root, 'apps/web/src/features/hosts/sections/list.tsx'), new Date(), new Date());
+    assert.equal(stop(), null);
+  });
+
+  it('stays answered by an edit to a comment', () => {
+    write('apps/web/src/features/hosts/sections/list.tsx', '// a note\nx');
     assert.equal(stop(), null);
   });
 
