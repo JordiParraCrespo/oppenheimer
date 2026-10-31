@@ -9,7 +9,7 @@ import {
   TraceStep,
 } from '@oppenheimer/design-system-web';
 import { Globe, ListTodo, Search, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
-import type { BotToolStep } from '@oppenheimer/frontend-consumer';
+import { type BotToolStep, todosOf } from '@oppenheimer/frontend-consumer';
 import { useExploredLine } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
@@ -20,14 +20,13 @@ import { type TraceRun, traceRuns } from '@/features/bots/lib/explored-steps';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
   groupSummary,
-  planItems,
   readableOutput,
   sharedKind,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
 
-const PLAN_MARK = { done: '✓', active: '→', pending: '○' } as const;
+const PLAN_MARK = { completed: '✓', in_progress: '→', pending: '○' } as const;
 
 /** How much of a call's output shows before "+N lines", as Codex's transcript caps a call. */
 const OUTPUT_LINES = 5;
@@ -101,12 +100,12 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
     title: (t) => ({ title: t('bots.chat.activity.planned') }),
     // The to-do list it wrote, read from its input.
     detail: (step, t, labels) => {
-      const items = planItems(step.input);
+      const items = todosOf(step.input.todos);
       if (items.length === 0) return rawDetail(step, t, labels);
       return {
         body: (
           <TraceNote>
-            {items.map((item) => `${PLAN_MARK[item.state]} ${item.text}`).join('\n')}
+            {items.map((item) => `${PLAN_MARK[item.status]} ${item.text}`).join('\n')}
           </TraceNote>
         ),
       };

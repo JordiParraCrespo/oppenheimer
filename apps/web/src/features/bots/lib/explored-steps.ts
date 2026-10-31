@@ -1,5 +1,6 @@
 import {
   type BotToolStep,
+  classifyTool,
   cutRuns,
   type ExploredPart,
   type ExploreTarget,
@@ -11,8 +12,9 @@ import {
  * Which of a bot's calls only look around, for the product package's fold
  * (`cutRuns`, `exploredParts`), and the runs its trace draws. A bot has no
  * file tools, so its read-only calls are known by name: a `read_`, `get_`,
- * `list_` or `search_` tool, the web search and fetch, and the few that only
- * look (`peek`, `recall`, `run_history`). Any other call ends the run.
+ * `list_` or `search_` tool, the few that only look (`peek`, `recall`,
+ * `run_history`), and a web call, which the shared `classifyTool` knows (a
+ * search, or a fetch that opens a page). Any other call ends the run.
  */
 
 /** How an MCP tool's name reaches the chat: `mcp__<server>__<tool>`. */
@@ -26,21 +28,15 @@ const PREFIXES: [string, ExploreVerb][] = [
 ];
 
 /**
- * Read-only tools whose name says no verb. The web search is named by what
- * it searched for and a fetch by the site it read; the rest by their name.
+ * Read-only tools of ours whose name says no verb, named by their name; our
+ * `web_fetch`, which `classifyTool` does not take for a web call, by its site.
  */
 const NAMED: Record<string, ExploreVerb> = {
-  web_search: 'search',
-  websearch: 'search',
-  web_search_preview: 'search',
   web_fetch: 'read',
-  webfetch: 'read',
   peek: 'read',
   recall: 'search',
   run_history: 'read',
 };
-const WEB_SEARCH = new Set(['web_search', 'websearch', 'web_search_preview']);
-const WEB_FETCH = new Set(['web_fetch', 'webfetch']);
 
 const QUERY_MAX = 40;
 
@@ -68,17 +64,20 @@ function siteOf(input: Record<string, unknown>): string {
  * something. Two reads of one kind of thing are one name.
  */
 export function stepExplore(step: Pick<BotToolStep, 'name' | 'input'>): ExploreTarget | null {
+  const web = classifyTool(step.name, step.input, 'bot');
   const key = step.name.replace(MCP_PREFIX, '').toLowerCase();
   const named = NAMED[key];
   const prefixed = PREFIXES.find(([prefix]) => key.startsWith(prefix));
-  const base = named
-    ? {
-        verb: named,
-        object: WEB_SEARCH.has(key) ? '' : WEB_FETCH.has(key) ? siteOf(step.input) : key,
-      }
-    : prefixed
-      ? { verb: prefixed[1], object: key.slice(prefixed[0].length) }
-      : null;
+  const base =
+    web.kind === 'web'
+      ? web.opensPage
+        ? { verb: 'read' as const, object: siteOf(step.input) }
+        : { verb: 'search' as const, object: '' }
+      : named
+        ? { verb: named, object: key === 'web_fetch' ? siteOf(step.input) : key }
+        : prefixed
+          ? { verb: prefixed[1], object: key.slice(prefixed[0].length) }
+          : null;
   if (!base) return null;
   const query = base.verb === 'search' ? queryOf(step.input) : undefined;
   const label = [base.object.replaceAll('_', ' '), query ? `“${query}”` : '']

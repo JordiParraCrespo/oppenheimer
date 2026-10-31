@@ -17,7 +17,7 @@ there.
 | 0.4 | [Slack](0.4-slack.md) | The Slack integration; now the Slack channel of [Channels](channels.md) |
 | 0.5 | [Mobile](0.5-mobile.md) | Mobile |
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
-| 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
+| 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md), [The chat's model and protocol](0.7-chat-protocol.md) | Improve the terminal, and a chat display beside it; one item model and stream for both chats |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
 | — | [Mail](mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
@@ -114,3 +114,6 @@ where these land is the first open question below.
   (started by a host) and Cursor's (launched by the control plane, no host)
   are two kinds of the one `cloud` place; Grok's comes after them
   ([Cloud agents](cloud-agents.md), "Two kinds of cloud session").
+- 2026-10-31: 0.7 gains a second document, [the chat's model and
+  protocol](0.7-chat-protocol.md), with six slices drawn from a read of
+  Codex and Grok.

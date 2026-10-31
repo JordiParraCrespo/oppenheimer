@@ -108,7 +108,7 @@ describe('blocksOf', () => {
     expect(
       blocks.flatMap((block) => ('calls' in block ? block.calls : [])).map((call) => call.name),
     ).toEqual(['Read', 'Grep', 'Bash']);
-    expect(latestTodos(turn)).toEqual([{ content: 'One', status: 'completed' }]);
+    expect(latestTodos(turn)).toEqual([{ text: 'One', status: 'completed' }]);
   });
 });
 

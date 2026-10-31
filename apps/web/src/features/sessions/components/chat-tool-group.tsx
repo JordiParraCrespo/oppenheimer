@@ -3,7 +3,7 @@ import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
 import { useExploredLine } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { formatChatElapsed, groupKindOf, sharedKindOf, summaryOf } from '../lib/chat-blocks';
-import { CHAT_TOOL_ICONS } from '../lib/chat-icons';
+import { chatToolIcon } from '../lib/chat-icons';
 import { exploredPartsOf } from '../lib/explored';
 import { ChatToolRow } from './chat-tool-row';
 import { ChatToolTarget } from './chat-tool-target';
@@ -33,7 +33,7 @@ export function ChatToolGroup({
   const running = live ? [...calls].reverse().find((call) => call.status === 'running') : undefined;
   const done = calls.filter((call) => call !== running);
   const failed = calls.filter((call) => call.status === 'failed').length;
-  const Icon = explored ? CHAT_TOOL_ICONS.search : CHAT_TOOL_ICONS[sharedKindOf(calls)];
+  const Icon = chatToolIcon(explored ? 'search' : sharedKindOf(calls));
   const runningKind = running ? groupKindOf(running.kind) : 'other';
   const [only] = done;
   // A run still exploring keeps its heading over the one call it has done.

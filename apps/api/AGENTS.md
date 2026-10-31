@@ -190,7 +190,8 @@ pnpm --filter @oppenheimer/api dev                # watch mode
 pnpm --filter @oppenheimer/api arch               # dependency-cruiser boundary check
 pnpm --filter @oppenheimer/api test               # unit tests
 pnpm --filter @oppenheimer/api test:integration   # needs Docker (Postgres + Redis)
-pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # generate a migration (name/path is required)
+pnpm migration:new <PascalName>                   # start a migration: src/migrations/<now>-<Name>.ts
+pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # diff entities against a database (foreign keys are not in the entities)
 pnpm --filter @oppenheimer/api migration:run
 pnpm --filter @oppenheimer/api generate:openapi   # emit openapi.json
 ```

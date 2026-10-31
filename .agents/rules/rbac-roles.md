@@ -1,7 +1,10 @@
 ---
 paths:
   - "apps/api/**/*"
-  - "packages/shared/**/*"
+  - "packages/shared/src/permissions/**/*"
+  - "packages/shared/src/constants/**/*"
+  - "packages/shared/src/schemas/role.schema.ts"
+  - "packages/shared/src/schemas/authz.schema.ts"
 ---
 
 # Roles & Authorization (RBAC) Rules
