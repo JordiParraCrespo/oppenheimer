@@ -9,11 +9,7 @@
     "exports",
     "duplicates"
   ],
-  "ignore": [
-    "apps/api/**",
-    "packages/backend/llm/**",
-    "packages/backend/agents/**"
-  ],
+  "ignore": ["apps/api/**", "packages/backend/llm/**", "packages/backend/agents/**"],
   "workspaces": {
     "apps/api": {
       "entry": [
