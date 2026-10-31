@@ -13,6 +13,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:relay-e2e": "vitest run --config vitest.e2e.config.ts",
     "typeorm": "TS_NODE_PROJECT=tsconfig.typeorm.json typeorm-ts-node-commonjs",
     "migration:generate": "pnpm typeorm migration:generate -d src/config/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/config/data-source.ts",

@@ -35,7 +35,16 @@ packages/backend/<pkg>/src/**/__tests__/*.spec.ts
   `<name>.integration.spec.ts`. The suffix is what separates them:
   `apps/api/vitest.config.ts` excludes `*.integration.spec.ts`, so
   `pnpm test` never needs Docker, and `vitest.integration.config.ts` runs only
-  them.
+  them. A spec that needs a real binary or the network beyond Docker (the relay
+  against the Go runner) is `<name>.e2e.spec.ts`, left out the same way and
+  run by `vitest.e2e.config.ts` (`pnpm test:relay-e2e`).
+- `apps/api`'s unit specs share one module graph per worker
+  (`isolate: false`), because importing Nest, not the tests, is most of the
+  suite's time. A spec that calls `vi.mock`/`vi.doMock` is moved to an
+  isolated project by `vitest.config.ts` itself, from its source. Any other
+  spec that leaves fake timers on, `process.env` changed or a global such as
+  `fetch` replaced fails, by `vitest.shared-guard.ts`: undo it in
+  `afterEach`, or use `vi.stubEnv`/`vi.stubGlobal`, which the config undoes.
 - `apps/api` runs with `globals: true` and the SWC plugin, which emits the
   decorator metadata Nest's constructor injection needs; packages import
   `describe`/`it`/`vi` from `vitest`.

@@ -36,12 +36,16 @@ describe('withDeadline', () => {
         fail = reject;
       });
 
-      await expect(withDeadline('PostgreSQL', 5, () => late)).rejects.toBeInstanceOf(
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const timedOut = expect(withDeadline('PostgreSQL', 5, () => late)).rejects.toBeInstanceOf(
         DependencyTimeoutError,
       );
+      await vi.advanceTimersByTimeAsync(5);
+      await timedOut;
       fail(new Error('Connection terminated after the probe gave up'));
-      // Give Node a full turn to report an unhandled rejection, if there is one.
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      // Node reports an unhandled rejection once the microtasks drain, before
+      // the event loop's next turn.
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(unhandled).toEqual([]);
     } finally {
