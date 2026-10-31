@@ -2,6 +2,8 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { configKeySealer } from '@oppenheimer/backend-core';
+import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { CloudAgentResolver } from './application/cloud-agent.resolver';
 import { CloudAgentProviderRegistry } from './application/cloud-agent-provider.registry';
 import { CloudRunsResolver } from './application/cloud-runs.resolver';
@@ -20,7 +22,7 @@ import { RemoveCloudAgentCredentialCommandHandler } from './commands/remove-clou
 import { RemoveCloudAgentCredentialHttpController } from './commands/remove-cloud-agent-credential/remove-cloud-agent-credential.http.controller';
 import { CloudAgentCredentialOrmEntity } from './database/cloud-agent-credential.orm-entity';
 import { CloudAgentCredentialRepository } from './database/cloud-agent-credential.repository';
-import { AesKeySealerAdapter } from './infrastructure/aes-key-sealer.adapter';
+
 import { CursorCloudAgentsGateway } from './infrastructure/cursor-cloud-agents.gateway';
 import { FindCloudAgentModelsHttpController } from './queries/find-cloud-agent-models/find-cloud-agent-models.http.controller';
 import { FindCloudAgentModelsQueryHandler } from './queries/find-cloud-agent-models/find-cloud-agent-models.query-handler';
@@ -78,7 +80,11 @@ const queryHandlers: Provider[] = [
       useFactory: (cursor: CursorCloudAgentResolver) => new CloudAgentProviderRegistry([cursor]),
     },
     { provide: CLOUD_AGENT_CREDENTIAL_REPOSITORY, useClass: CloudAgentCredentialRepository },
-    { provide: KEY_SEALER, useClass: AesKeySealerAdapter },
+    configKeySealer(KEY_SEALER, {
+      configKey: 'cloudAgents.sealKey',
+      envName: 'CLOUD_AGENTS_KEY',
+      keyOf: cloudAgentsSealKeyOf,
+    }),
     { provide: CURSOR_CLOUD_AGENTS, useClass: CursorCloudAgentsGateway },
     { provide: CLOUD_RUNS, useClass: CloudRunsResolver },
   ],

@@ -66,6 +66,24 @@ pnpm check:bundle                 # after pnpm --filter @oppenheimer/web build
 pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec in e2e/tests/web/
 ```
 
+- The critical path is budgeted: `pnpm check:bundle` fails past the number
+  in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately, in
+  its own diff.
+
+## Serving
+
+Compression, cache headers and the Content-Security-Policy live in
+`nginx.conf`. A new third-party origin goes in `CSP_EXTRA_ORIGINS`; anything
+the browser must run before React is a file in `public/`, because the policy
+admits no inline script.
+
+## Sign-up
+
+Sign-up creates the account and its personal workspace in one go
+(`product/versions/mvp/08-auth.md`). The `/onboarding` screen is only the
+recovery path for an account that ended up with no workspace. Only
+`/register` passes the social `sign-up` intent.
+
 ## Patterns agents get wrong
 
 - Naming a feature after the page (`settings`, `console`) instead of the module

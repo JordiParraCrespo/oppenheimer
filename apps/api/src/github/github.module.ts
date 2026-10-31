@@ -2,6 +2,8 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { configKeySealer } from '@oppenheimer/backend-core';
+import { githubUserTokenKeyOf } from '../config/github.config';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { GithubAccessResolver } from './application/github-access.resolver';
 import { GithubTokenResolver } from './application/github-token.resolver';
@@ -55,7 +57,7 @@ import {
 import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
 import { GithubTokenMapper } from './github-token.mapper';
-import { AesUserTokenSealerAdapter } from './infrastructure/aes-user-token-sealer.adapter';
+
 import { GithubEventSource } from './infrastructure/github-event-source.adapter';
 import { GithubHttp } from './infrastructure/github-http.adapter';
 import { GithubIssuesAdapter } from './infrastructure/github-issues.adapter';
@@ -131,7 +133,11 @@ const adapters: Provider[] = [
   { provide: GITHUB_APP, useClass: GithubRestAdapter },
   { provide: REPOSITORY_ACCESS, useClass: RepositoryAccessResolver },
   { provide: GITHUB_USER_GRANT_REPOSITORY, useClass: GithubUserGrantRepository },
-  { provide: USER_TOKEN_SEALER, useClass: AesUserTokenSealerAdapter },
+  configKeySealer(USER_TOKEN_SEALER, {
+    configKey: 'githubApp.userTokenKey',
+    envName: 'GITHUB_USER_TOKEN_KEY',
+    keyOf: githubUserTokenKeyOf,
+  }),
   { provide: GITHUB_PULLS, useClass: GithubPullsAdapter },
   { provide: PULL_REQUEST_ACCESS, useClass: PullRequestAccessResolver },
   { provide: GITHUB_ISSUES, useClass: GithubIssuesAdapter },

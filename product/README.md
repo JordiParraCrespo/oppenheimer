@@ -885,6 +885,17 @@ earlier note:
   host, not the browser extension, reports its status off
   `codex cloud list --json`, since Codex's CLI answers it
   (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
+- `next-steps/cloud-agents.md` had a Codex environment named neither for
+  the repository's full name nor its bare name be the CLI's refusal, in its
+  words (`SESS_009`). On 2026-10-31 starts failed "not found" on
+  environments made in ChatGPT Settings → Codex Cloud, which codex-cli
+  0.166.0 cannot reach (it resolves only the list `codex cloud` browses).
+  That is now `SESS_010`, naming the labels tried and the labels on the
+  account's recent tasks, the one non-interactive view codex-cli offers,
+  partial; the failed start's pane explains it with a link to Settings →
+  Codex Cloud. The place picker does not mark the Codex row for it, since
+  a partial list would hide starts that work
+  (`next-steps/cloud-agents.md`, "Environments the CLI cannot reach").
 - A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
   Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
   9), it can also wake on a line the terminal prints that matches a
@@ -932,6 +943,9 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- 2026-10-31: the owner took the six chat slices drawn from a read of Codex
+  and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
+  in `next-steps/0.7-chat-protocol.md`.
 - The bot stream was lossy by design: text published while the browser was
   away was gone, and the console matched what it streamed against stored
   text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
