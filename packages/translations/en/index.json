@@ -1545,11 +1545,17 @@
         "always": "Always allow",
         "alwaysFor": "Always allow for {{subject}}",
         "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
-        "fullRequest": "Show the full request"
+        "fullRequest": "Show the full request",
+        "stop": "Deny and stop",
+        "stopping": "Stopping…",
+        "denyHint": "{{name}} is told why and carries on",
+        "stopHint": "Nothing runs, and {{name}} stops this turn",
+        "shortcut": "Press {{key}}"
       },
       "event": {
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",
+        "stopped": "You denied and stopped the turn: {{summary}}",
         "failed": "You approved, and it failed: {{summary}}",
         "routine": "Routine · {{name}}",
         "routineSaved": "Created routine “{{name}}”",

@@ -1,4 +1,5 @@
 import type {
+  BotApprovalDecision,
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
@@ -223,6 +224,11 @@ export interface BotApprovalDetails {
   reaches: readonly BotApprovalReach[];
   /** How far the yes went, once decided. */
   reach: BotApprovalReach | null;
+  /**
+   * What the card offers, in the order to draw it, as the API chose them for
+   * this call: the only decisions it accepts.
+   */
+  decisions: readonly BotApprovalDecision[];
 }
 
 const NO_APPROVAL_DETAILS: BotApprovalDetails = {
@@ -232,6 +238,7 @@ const NO_APPROVAL_DETAILS: BotApprovalDetails = {
   reviewNote: null,
   reaches: ['once'],
   reach: null,
+  decisions: ['approve', 'deny', 'stop'],
 };
 
 export class BotApprovalEntity {

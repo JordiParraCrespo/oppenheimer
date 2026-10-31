@@ -21,13 +21,13 @@ import {
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
+  BOT_APPROVAL_DECISIONS,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
   type BotApprovalDecision,
-  type BotApprovalReach,
   type BotAttachment,
   type BotDocumentName,
   type BotGoal,
@@ -213,6 +213,7 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             tool: dto.tool,
             summary: dto.summary,
             sessionId: dto.sessionId ?? null,
+            ...(dto.approvalId && { approvalId: dto.approvalId }),
           }
         : null;
     }
@@ -327,6 +328,9 @@ function toApproval(dto: BotApprovalResponseDto): BotApprovalEntity {
       reviewNote: dto.reviewNote,
       reaches: dto.reaches,
       reach: dto.reach,
+      decisions: dto.availableDecisions.filter((decision) =>
+        BOT_APPROVAL_DECISIONS.includes(decision),
+      ),
     },
     mailOf(dto.tool, dto.input),
   );
@@ -528,21 +532,22 @@ export class BotsRepository {
   }
 
   /**
-   * Answers a card: `approve` runs the call the bot asked for, `deny` runs
-   * nothing; either way the bot is told, with the note, and reports back.
+   * Answers a card with one of the decisions it offers: a yes runs the call
+   * the bot asked for (and may stand for its subject or the tool), `deny`
+   * runs nothing and the bot is told, with the note, and carries on; `stop`
+   * runs nothing and ends the turn.
    */
   decideApproval(
     id: string,
     approvalId: string,
     decision: BotApprovalDecision,
     note?: string,
-    reach: BotApprovalReach = 'once',
   ): Promise<BotApprovalEntity> {
     return callApi(BotsErrors.DECIDE_APPROVAL_FAILED, async (api) => {
       const data = await api.body(
         heyApiSdk.decideBotApproval({
           path: { id, approvalId },
-          body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
+          body: { decision, ...(note?.trim() ? { note: note.trim() } : {}) },
         }),
       );
       return toApproval(data);

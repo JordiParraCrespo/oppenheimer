@@ -953,6 +953,15 @@ earlier note:
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.
+- `versions/mvp/25-bots.md` §5 (2026-10-15) had every no on a Needs input
+  card give the bot a turn that tells it, so it always carried on. On
+  2026-10-31 the card took Codex's `available_decisions`: the API chooses
+  the decisions a card offers (approve, approve for its subject, always
+  allow, deny, deny and stop) and accepts only those. *Deny* still gives
+  the bot a turn; *Deny and stop* gives it none, writes the decision as a
+  line outside any turn, and stops the asking turn if it still runs. Every
+  decision is broadcast as `approval_resolved`, so every open tab takes the
+  card down at once (25 §5).
 - `versions/mvp/25-bots.md` §3 had a message written while a bot works
   wait over the composer for the turn after. On 2026-10-31, from Codex's
   `turn/steer`, Enter steers the running turn instead: the turn takes the
