@@ -105,28 +105,38 @@ const secondParagraph = {
 export const incidentLive: BotRecording = {
   botId: 'bot-oncall',
   frames: [
-    { read: { messageCount: 1, turns: [turn('running', null)], messages: [asked] } },
-    { ready: true },
-    { mark: 'opened' },
-    { bot: { type: 'text', turnId: 't9', text: 'The deploy at 02:10 ' } },
-    { bot: { type: 'text', turnId: 't9', text: 'failed its health check.' } },
-    { mark: 'writing' },
+    {
+      type: 'read',
+      conversation: { messageCount: 1, turns: [turn('running', null)], messages: [asked] },
+    },
+    { type: 'ready' },
+    { type: 'mark', name: 'opened' },
+    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'The deploy at 02:10 ' } },
+    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'failed its health check.' } },
+    { type: 'mark', name: 'writing' },
     // The block ends and is stored; the stream has already moved on.
     {
-      read: { messageCount: 2, turns: [turn('running', null)], messages: [asked, firstParagraph] },
+      type: 'read',
+      conversation: {
+        messageCount: 2,
+        turns: [turn('running', null)],
+        messages: [asked, firstParagraph],
+      },
     },
-    { bot: { type: 'message', turnId: 't9', messageId: 'm2' } },
-    { mark: 'stored' },
+    { type: 'bot', event: { type: 'message', turnId: 't9', messageId: 'm2' } },
+    { type: 'mark', name: 'stored' },
     {
-      read: {
+      type: 'read',
+      conversation: {
         messageCount: 2,
         turns: [turn('running', null)],
         messages: [asked, firstParagraph, delegate(null)],
       },
     },
-    { bot: { type: 'message', turnId: 't9', messageId: 'm3' } },
+    { type: 'bot', event: { type: 'message', turnId: 't9', messageId: 'm3' } },
     {
-      bot: {
+      type: 'bot',
+      event: {
         type: 'subagents',
         turnId: 't9',
         callId: 'c1',
@@ -148,29 +158,31 @@ export const incidentLive: BotRecording = {
         ],
       },
     },
-    { mark: 'delegating' },
+    { type: 'mark', name: 'delegating' },
     // A frame from a newer API: the stream drops it, and the chat goes on.
-    { bot: { type: 'reaction', turnId: 't9', emoji: 'eyes' } },
+    { type: 'bot', event: { type: 'reaction', turnId: 't9', emoji: 'eyes' } },
     {
-      read: {
+      type: 'read',
+      conversation: {
         messageCount: 2,
         turns: [turn('running', null)],
         messages: [asked, firstParagraph, delegate('2 subagents ran')],
       },
     },
-    { bot: { type: 'message', turnId: 't9', messageId: 'm3' } },
-    { bot: { type: 'retrying', turnId: 't9', reason: 'rate_limit' } },
-    { mark: 'waiting' },
-    { bot: { type: 'text', turnId: 't9', text: 'It ran out of memory, ' } },
-    { mark: 'resumed' },
-    { bot: { type: 'text', turnId: 't9', text: 'and was rolled back at 02:20.' } },
+    { type: 'bot', event: { type: 'message', turnId: 't9', messageId: 'm3' } },
+    { type: 'bot', event: { type: 'retrying', turnId: 't9', reason: 'rate_limit' } },
+    { type: 'mark', name: 'waiting' },
+    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'It ran out of memory, ' } },
+    { type: 'mark', name: 'resumed' },
+    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'and was rolled back at 02:20.' } },
     {
-      read: {
+      type: 'read',
+      conversation: {
         messageCount: 3,
         turns: [turn('completed', '2026-10-30T09:00:31.000Z')],
         messages: [asked, firstParagraph, delegate('2 subagents ran'), secondParagraph],
       },
     },
-    { bot: { type: 'turn', turnId: 't9', status: 'completed' } },
+    { type: 'bot', event: { type: 'turn', turnId: 't9', status: 'completed' } },
   ],
 };

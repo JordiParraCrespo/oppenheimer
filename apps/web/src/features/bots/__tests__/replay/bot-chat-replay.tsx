@@ -4,8 +4,8 @@ import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { BOT_STREAM_EVENT, BOT_STREAM_READY } from '@oppenheimer/shared/schemas/bot';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render } from '@testing-library/react';
-import { vi } from 'vitest';
+import { act, render, waitFor } from '@testing-library/react';
+import { expect, vi } from 'vitest';
 import { BotChatScroller } from '../../components/bot-chat-scroller';
 import { BotTranscript } from '../../sections/bot-transcript';
 
@@ -26,13 +26,16 @@ export interface BotRecording {
 
 export type BotFrame =
   /** The conversation `GET …/conversation` answers from here on (its response DTO, as JSON). */
-  | { read: unknown }
+  | { type: 'read'; conversation: unknown }
   /** The stream's `ready` frame: it is live, and the chat reads the conversation again. */
-  | { ready: true }
+  | { type: 'ready' }
   /** A `bot` frame's data, as the API sent it; one this build cannot read is dropped by the stream. */
-  | { bot: unknown }
+  | { type: 'bot'; event: unknown }
   /** A point the spec plays to, then looks. */
-  | { mark: string };
+  | { type: 'mark'; name: string };
+
+/** Where a stretch of the recording ends: before the stream's first frame, at a mark, or at its end. */
+type Stop = { at: 'stream' } | { at: 'mark'; name: string } | { at: 'end' };
 
 const API = 'http://api.test';
 
@@ -115,20 +118,38 @@ export async function replayBotChat(recording: BotRecording) {
     return Response.json(answer);
   });
 
-  const take = (until: (frame: BotFrame) => boolean) => {
+  /** The frames from the cursor up to `stop`, which stays unread. */
+  const take = (stop: Stop) => {
     const taken: BotFrame[] = [];
-    while (cursor < recording.frames.length) {
+    for (; cursor < recording.frames.length; cursor += 1) {
       const frame = recording.frames[cursor] as BotFrame;
-      if (until(frame)) break;
+      switch (frame.type) {
+        case 'read':
+          break;
+        case 'ready':
+        case 'bot':
+          if (stop.at === 'stream') return taken;
+          break;
+        case 'mark':
+          if (stop.at === 'stream' || (stop.at === 'mark' && frame.name === stop.name)) {
+            return taken;
+          }
+          break;
+      }
       taken.push(frame);
-      cursor += 1;
     }
     return taken;
   };
 
-  // What the API held when the chat opened.
-  for (const frame of take((frame) => 'ready' in frame || 'bot' in frame || 'mark' in frame)) {
-    if ('read' in frame) answer = frame.read;
+  // What the API held when the chat opened: its reads, before the stream says anything.
+  for (const frame of take({ at: 'stream' })) {
+    switch (frame.type) {
+      case 'read':
+        answer = frame.conversation;
+        break;
+      default:
+        throw new Error(`a recording opens on reads, not a ${frame.type} frame`);
+    }
   }
 
   const app = OppenheimerApp.create({
@@ -144,7 +165,7 @@ export async function replayBotChat(recording: BotRecording) {
         <BotChatScroller>
           <QueryState>
             <QueryState.Pending>
-              <p>loading</p>
+              <p data-replay="pending">loading</p>
             </QueryState.Pending>
             <QueryState.Error fallback="failed" />
             <QueryState.Data>
@@ -157,19 +178,38 @@ export async function replayBotChat(recording: BotRecording) {
   );
   await settle();
 
-  /** Lets the reads a frame set off land, and the cache tell its readers. */
+  /**
+   * Waits until every read a frame set off has landed and the chat has drawn
+   * it: the transcript out of its placeholder (the first read suspends it, and
+   * React may start that read after the render it was asked in), no query
+   * fetching, then one macrotask, because TanStack Query hands a landed read
+   * to its readers on `setTimeout(0)` (`notifyManager`'s default scheduler),
+   * after `isFetching` already reads 0.
+   */
   async function settle() {
-    for (let tick = 0; tick < 6; tick++) {
-      await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
-    }
+    await waitFor(() => {
+      expect(view.container.querySelector('[data-replay="pending"]')).toBeNull();
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
   }
 
   async function play(frames: readonly BotFrame[]) {
     for (const frame of frames) {
-      if ('read' in frame) answer = frame.read;
       const source = sources.at(-1);
-      if ('ready' in frame) act(() => source?.send(BOT_STREAM_READY, ''));
-      if ('bot' in frame) act(() => source?.send(BOT_STREAM_EVENT, JSON.stringify(frame.bot)));
+      switch (frame.type) {
+        case 'read':
+          answer = frame.conversation;
+          continue;
+        case 'ready':
+          act(() => source?.send(BOT_STREAM_READY, ''));
+          break;
+        case 'bot':
+          act(() => source?.send(BOT_STREAM_EVENT, JSON.stringify(frame.event)));
+          break;
+        case 'mark':
+          continue;
+      }
       await settle();
     }
   }
@@ -178,12 +218,12 @@ export async function replayBotChat(recording: BotRecording) {
     ...view,
     /** Plays every frame up to `mark`, and steps past it. */
     async playTo(mark: string) {
-      await play(take((frame) => 'mark' in frame && frame.mark === mark));
+      await play(take({ at: 'mark', name: mark }));
       if (cursor >= recording.frames.length) throw new Error(`no mark "${mark}" in the recording`);
       cursor += 1;
     },
     async playAll() {
-      await play(take(() => false).filter((frame) => !('mark' in frame)));
+      await play(take({ at: 'end' }));
     },
     get reads() {
       return reads;

@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { words } from '@/__tests__/support/words';
 import flakySignIn from './replay/flaky-sign-in.jsonl?raw';
 import { replaySessionChat } from './replay/session-chat-replay';
 
@@ -48,18 +49,6 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
 });
-
-/** An element's words, a space between each run of text. */
-function words(element: Element | null | undefined): string {
-  if (!element) return '';
-  const runs: string[] = [];
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const run = node.textContent?.trim();
-    if (run) runs.push(run);
-  }
-  return runs.join(' ');
-}
 
 /** What each part of a turn is, as the outline names it. */
 const PARTS: Record<string, string> = {

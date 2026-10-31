@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { words } from '@/__tests__/support/words';
 import { replayBotChat } from './replay/bot-chat-replay';
 import { incidentLive } from './replay/incident-live.recording';
 import { releaseWeek } from './replay/release-week.recording';
@@ -52,18 +53,6 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
-
-/** An element's words, a space between each run of text. */
-function words(element: Element | null | undefined): string {
-  if (!element) return '';
-  const runs: string[] = [];
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const run = node.textContent?.trim();
-    if (run) runs.push(run);
-  }
-  return runs.join(' ');
-}
 
 /**
  * The transcript as a reader scans it, top to bottom: the dividers, your

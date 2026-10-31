@@ -53,7 +53,8 @@ export const releaseWeek: BotRecording = {
   botId: 'bot-release',
   frames: [
     {
-      read: {
+      type: 'read',
+      conversation: {
         messageCount: 11,
         turns: [
           turn('t1', '2026-10-28T09:00:00.000Z', '2026-10-28T09:00:42.000Z'),
@@ -185,6 +186,6 @@ export const releaseWeek: BotRecording = {
         ],
       },
     },
-    { ready: true },
+    { type: 'ready' },
   ],
 };
