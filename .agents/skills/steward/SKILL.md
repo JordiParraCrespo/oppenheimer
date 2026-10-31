@@ -40,6 +40,11 @@ answer. There is nothing to wait for
 on GitHub: do not poll for checks, and do not push an empty commit to start
 one.
 
+Ready is not merged. Whether a ready pull request merges, and when, is its
+lane in the `ship` skill: a `fix` merges once the `verify-pr` workflow passes
+its head, a feature waits for Jordi to accept it, research waits for him to
+merge it.
+
 ## After a merge from main
 
 A merge of `origin/main` into the branch is a new head. Run `pnpm ci:local`

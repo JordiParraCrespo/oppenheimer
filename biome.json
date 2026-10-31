@@ -65,6 +65,7 @@
       "!scripts/evals/*/results",
       "!**/node-compile-cache",
       "!!**/.claude/worktrees",
+      "!**/.claude/workflows",
       "!**/.agents",
       "!**/*.md",
       "!**/*.css",
