@@ -3706,7 +3706,7 @@ export type ChatgptLoginStatusResponseDto = {
 
 export type BotApprovalEventResponseDto = {
     kind: 'approval';
-    outcome: 'approved' | 'denied' | 'failed';
+    outcome: 'approved' | 'denied' | 'stopped' | 'failed';
     /**
      * The tool the decided call was for.
      */
@@ -3719,6 +3719,10 @@ export type BotApprovalEventResponseDto = {
      * The session the approved call started; null when it started none.
      */
     sessionId: string | null;
+    /**
+     * The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.
+     */
+    approvalId?: string;
 };
 
 export type BotAnsweredQuestionResponseDto = {
@@ -4098,6 +4102,10 @@ export type BotApprovalResponseDto = {
      */
     reaches: Array<'once' | 'tool' | 'subject'>;
     /**
+     * What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.
+     */
+    availableDecisions: Array<'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop'>;
+    /**
      * How far the yes went.
      */
     reach: 'once' | 'tool' | 'subject' | null;
@@ -4156,6 +4164,10 @@ export type WorkspaceBotApprovalResponseDto = {
      */
     reaches: Array<'once' | 'tool' | 'subject'>;
     /**
+     * What the card offers, in the order to show it, chosen for this call: `approve`; `approve_for_subject` and `approve_always` where a yes may stand; `deny`, which the bot is told and carries on from; `stop`, which ends the turn and gives the bot none back. The decision endpoint accepts only these.
+     */
+    availableDecisions: Array<'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop'>;
+    /**
      * How far the yes went.
      */
     reach: 'once' | 'tool' | 'subject' | null;
@@ -4177,7 +4189,7 @@ export type WorkspaceBotApprovalResponseDto = {
 };
 
 export type DecideBotApprovalRequest = {
-    decision: 'approve' | 'deny';
+    decision: 'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop';
     note?: string;
     reach?: 'once' | 'tool' | 'subject';
 };
@@ -14220,7 +14232,7 @@ export type DecideBotApprovalErrors = {
      */
     409: ProblemDetailsDto;
     /**
-     * BOTS_030 — A reach the card does not offer
+     * BOTS_030 — A decision or reach the card does not offer
      */
     422: ProblemDetailsDto;
 };

@@ -1525,11 +1525,17 @@
         "always": "Permitir siempre",
         "alwaysFor": "Permitir siempre para {{subject}}",
         "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
-        "fullRequest": "Ver la solicitud completa"
+        "fullRequest": "Ver la solicitud completa",
+        "stop": "Denegar y detener",
+        "stopping": "Deteniendo…",
+        "denyHint": "{{name}} sabrá por qué y seguirá",
+        "stopHint": "No se ejecuta nada y {{name}} detiene este turno",
+        "shortcut": "Pulsa {{key}}"
       },
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
+        "stopped": "Denegaste y detuviste el turno: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
         "routine": "Rutina · {{name}}",
         "routineSaved": "Rutina creada: “{{name}}”",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { BotApprovalDecision, BotApprovalReach } from '@oppenheimer/shared/schemas/bot';
+import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.queries';
@@ -40,15 +40,15 @@ export function usePendingBotApprovalsQuery() {
 export interface DecideBotApprovalVariables {
   id: string;
   approvalId: string;
+  /** One of the card's `details.decisions`. */
   decision: BotApprovalDecision;
   note?: string;
-  /** How far a yes goes; this call only when not given. */
-  reach?: BotApprovalReach;
 }
 
 /**
- * Approves or denies the card. The card and the chat are read again: the
- * bot has a new turn queued that reports what came of it.
+ * Answers the card with one of the decisions it offers. The card and the
+ * chat are read again: a yes or a no gives the bot a turn that reports what
+ * came of it; a stop writes its line and gives none.
  */
 export function useDecideBotApproval(
   options?: UseMutationOptions<BotApprovalEntity, Error, DecideBotApprovalVariables>,
@@ -56,8 +56,8 @@ export function useDecideBotApproval(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, approvalId, decision, note, reach }: DecideBotApprovalVariables) =>
-      app.bots.decideApproval(id, approvalId, decision, note, reach),
+    mutationFn: ({ id, approvalId, decision, note }: DecideBotApprovalVariables) =>
+      app.bots.decideApproval(id, approvalId, decision, note),
     ...withCacheOnSuccess(options, (_approval, { id }) =>
       Promise.all([
         // A yes that reached past the call changed what Settings → Permissions shows.

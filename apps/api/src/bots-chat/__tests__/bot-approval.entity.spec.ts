@@ -1,5 +1,11 @@
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
-import { approvalEvent, approvalEventOf } from '../domain/bot-approval.policy';
+import {
+  approvalEvent,
+  approvalEventOf,
+  approvalResolved,
+  decisionOf,
+  stoppedLine,
+} from '../domain/bot-approval.policy';
 import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
 
 /**
@@ -10,7 +16,10 @@ import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-cha
  */
 const NOW = new Date('2026-10-15T10:00:00Z');
 
-function pending(summary = 'Start Claude Code on build-02') {
+function pending(
+  summary = 'Start Claude Code on build-02',
+  extra: Partial<Parameters<typeof BotApprovalEntity.request>[0]> = {},
+) {
   return BotApprovalEntity.request({
     organizationId: 'org-1',
     botId: 'bot-1',
@@ -18,6 +27,7 @@ function pending(summary = 'Start Claude Code on build-02') {
     tool: 'start_session',
     input: { task: 'Fix it' },
     summary,
+    ...extra,
   });
 }
 
@@ -173,5 +183,74 @@ describe('approvalEventOf', () => {
     const denied = pending();
     denied.deny('user-1', NOW, null);
     expect(approvalEventOf(denied)).toMatchObject({ outcome: 'denied', sessionId: null });
+  });
+});
+
+describe('availableDecisions', () => {
+  it('offers, in order, a yes, the yes for its subject and for the tool, a no that carries on and a no that stops', () => {
+    const card = pending('Start it', { subject: { kind: 'project', key: 'p-1', label: 'XRP' } });
+    expect(card.availableDecisions).toEqual([
+      'approve',
+      'approve_for_subject',
+      'approve_always',
+      'deny',
+      'stop',
+    ]);
+  });
+
+  it('offers no yes that stands for a tool decided call by call, nor for a subject the card does not name', () => {
+    expect(pending('Merge it', { perCallOnly: true }).availableDecisions).toEqual([
+      'approve',
+      'deny',
+      'stop',
+    ]);
+    expect(pending().availableDecisions).toEqual(['approve', 'approve_always', 'deny', 'stop']);
+  });
+});
+
+describe('decisionOf', () => {
+  it('reads the older approve with a reach as the decision it meant, and a named decision as itself', () => {
+    expect(decisionOf('approve', 'once')).toBe('approve');
+    expect(decisionOf('approve', 'tool')).toBe('approve_always');
+    expect(decisionOf('approve', 'subject')).toBe('approve_for_subject');
+    expect(decisionOf('stop', 'tool')).toBe('stop');
+    expect(decisionOf('approve_always', 'once')).toBe('approve_always');
+  });
+});
+
+describe('a no that stops the turn', () => {
+  it('is a line outside any turn, saying who stopped what, with the note, naming its card', () => {
+    const approval = pending();
+    approval.deny('user-1', NOW, 'Not today');
+    const line = stoppedLine(approval, 'Ana');
+    expect(line).toMatchObject({
+      turnId: null,
+      role: 'event',
+      content:
+        'Ana denied and stopped your turn: Start Claude Code on build-02\nTheir note: Not today',
+      event: { kind: 'approval', outcome: 'stopped', approvalId: approval.id },
+    });
+    expect(approval.status).toBe('denied');
+  });
+});
+
+describe('approvalResolved', () => {
+  it('tells every chat which card closed and how, with its line', () => {
+    const approval = pending();
+    const of = (decision: Parameters<typeof approvalResolved>[1]) =>
+      approvalResolved(approval, decision).outcome;
+    expect(approvalResolved(approval, 'approve')).toEqual({
+      type: 'approval_resolved',
+      approvalId: approval.id,
+      outcome: 'approved',
+      tool: 'start_session',
+      summary: 'Start Claude Code on build-02',
+    });
+    expect([of('approve_always'), of('deny'), of('stop'), of('expired')]).toEqual([
+      'approved',
+      'denied',
+      'stopped',
+      'expired',
+    ]);
   });
 });

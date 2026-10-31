@@ -292,6 +292,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       tool: String(raw.tool ?? ''),
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
+      ...(typeof raw.approvalId === 'string' && { approvalId: raw.approvalId }),
     };
   }
   if (raw.kind === 'question') {

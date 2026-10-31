@@ -6,6 +6,7 @@ import {
 } from '../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../database/bot-approval.repository.port';
 import type { BotQuestionRepositoryPort } from '../database/bot-question.repository.port';
+import { approvalResolved } from '../domain/bot-approval.policy';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 
 /**
@@ -34,6 +35,7 @@ export class BotWaitingCardResolver {
           approvalId: card.id,
           status: 'expired',
         });
+        await this.stream.publish(botId, approvalResolved(card, 'expired'));
       }
     }
     const question = await this.questions.findPending(organizationId, botId);

@@ -62,6 +62,7 @@ import { BotSubscriptionRepository } from '../database/bot-subscription.reposito
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
+import { stoppedLine } from '../domain/bot-approval.policy';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
@@ -983,6 +984,37 @@ describe('bots chat (integration)', () => {
       [bot.id],
     );
     expect(lastMessagePreview).toBe('Before');
+  });
+
+  it('writes a stopping no’s line with the decision, outside any turn, and queues no turn; a loser writes none', async () => {
+    const bot = await create('Stopper');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const [first, second] = await Promise.all([
+      approvals.findOne(scope(), bot.id, card.id),
+      approvals.findOne(scope(), bot.id, card.id),
+    ]);
+    const winner = first.unwrap();
+    winner.deny(userId, new Date(), 'Not now');
+    const line = stoppedLine(winner, 'Ana');
+    expect(await approvals.saveTransition(winner, { line })).toBe(true);
+    const loser = second.unwrap();
+    loser.deny(userId, new Date());
+    const lost = stoppedLine(loser, 'Ana');
+    expect(await approvals.saveTransition(loser, { line: lost })).toBe(false);
+
+    const [{ count }]: { count: number }[] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1`,
+      [bot.id],
+    );
+    expect(count).toBe(1);
+    const conversation = await messages.findConversation(scope(), bot.id, 10);
+    expect(conversation.find((message) => message.id === line.id)).toMatchObject({
+      turnId: null,
+      role: 'event',
+      event: { kind: 'approval', outcome: 'stopped', approvalId: card.id },
+    });
+    expect(conversation.some((message) => message.id === lost.id)).toBe(false);
   });
 
   it('deletes a bot’s approvals with it', async () => {

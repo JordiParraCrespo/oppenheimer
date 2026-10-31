@@ -1,4 +1,12 @@
-import { type BotMessageEvent, expandScopes, type Scope } from '@oppenheimer/shared';
+import {
+  type BotApprovalDecision,
+  type BotApprovalReach,
+  type BotEventOutcome,
+  type BotMessageEvent,
+  type BotStreamEvent,
+  expandScopes,
+  type Scope,
+} from '@oppenheimer/shared';
 import type { BotApprovalEntity } from './bot-approval.entity';
 import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
@@ -37,16 +45,47 @@ export function waitingForApproval(pendingSummary: string): string {
 }
 
 /**
+ * The decision a request names. The older shape said how far a yes goes in
+ * `reach`: `approve` with `tool` meant Always allow, with `subject` Always
+ * allow for its subject. A named decision wins over a reach.
+ */
+export function decisionOf(
+  decision: BotApprovalDecision,
+  reach: BotApprovalReach,
+): BotApprovalDecision {
+  if (decision !== 'approve') return decision;
+  if (reach === 'tool') return 'approve_always';
+  if (reach === 'subject') return 'approve_for_subject';
+  return 'approve';
+}
+
+/** How far a yes reaches; null for a no. */
+export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null {
+  switch (decision) {
+    case 'approve':
+      return 'once';
+    case 'approve_for_subject':
+      return 'subject';
+    case 'approve_always':
+      return 'tool';
+    default:
+      return null;
+  }
+}
+
+/**
  * A decided approval as the event that opens the bot's next turn. Its first
  * line is what the chat shows ("Ana approved: Start Claude Code on
  * build-02…"); what follows is what the bot needs to report back: the call's
  * answer, or the person's note. `by` is who decided, by name.
  */
-export function approvalEvent(approval: BotApprovalEntity, by: string): string {
+export function approvalEvent(approval: BotApprovalEntity, by: string, stopped = false): string {
   const who = by.trim() || 'The person';
   if (approval.status === 'denied') {
     return [
-      `${who} denied: ${approval.summary}`,
+      stopped
+        ? `${who} denied and stopped your turn: ${approval.summary}`
+        : `${who} denied: ${approval.summary}`,
       approval.note ? `Their note: ${approval.note}` : null,
     ]
       .filter(Boolean)
@@ -60,16 +99,68 @@ export function approvalEvent(approval: BotApprovalEntity, by: string): string {
  * What the chat draws for a decided approval, without reading the event's
  * words: with the session the approved call started, so the line links to it.
  */
-export function approvalEventOf(approval: BotApprovalEntity): BotMessageEvent {
-  const outcome =
-    approval.status === 'denied' ? 'denied' : approval.status === 'failed' ? 'failed' : 'approved';
+export function approvalEventOf(approval: BotApprovalEntity, stopped = false): BotMessageEvent {
+  const outcome: BotEventOutcome =
+    approval.status === 'denied'
+      ? stopped
+        ? 'stopped'
+        : 'denied'
+      : approval.status === 'failed'
+        ? 'failed'
+        : 'approved';
   return {
     kind: 'approval',
     outcome,
     tool: approval.tool,
     summary: approval.summary,
     sessionId: approval.sessionId,
+    approvalId: approval.id,
   };
+}
+
+/**
+ * What every open chat hears when a card closes (Codex's
+ * `serverRequest/resolved`): which card, how, and its line, so a tab that did
+ * not decide takes it down at once and draws the decision before it reads
+ * anything again. `expired` when a new message retired it.
+ */
+export function approvalResolved(
+  approval: BotApprovalEntity,
+  decision: BotApprovalDecision | 'expired',
+): Extract<BotStreamEvent, { type: 'approval_resolved' }> {
+  const outcome =
+    decision === 'expired'
+      ? 'expired'
+      : reachOf(decision)
+        ? 'approved'
+        : decision === 'stop'
+          ? 'stopped'
+          : 'denied';
+  return {
+    type: 'approval_resolved',
+    approvalId: approval.id,
+    outcome,
+    tool: approval.tool,
+    summary: approval.summary,
+  };
+}
+
+/**
+ * A no that stops the turn, as a line of the chat outside any turn: the bot
+ * gets no turn back, but reads the line in its history the next time you
+ * write, so it knows what was refused and why.
+ */
+export function stoppedLine(approval: BotApprovalEntity, by: string): BotMessageEntity {
+  return BotMessageEntity.createNew({
+    organizationId: approval.organizationId,
+    botId: approval.botId,
+    turnId: null,
+    role: 'event',
+    content: approvalEvent(approval, by, true),
+    event: approvalEventOf(approval, true),
+    steps: [],
+    position: 0,
+  });
 }
 
 /**
