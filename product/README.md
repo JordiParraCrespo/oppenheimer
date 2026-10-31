@@ -932,3 +932,6 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- 2026-10-31: the owner took the six chat slices drawn from a read of Codex
+  and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
+  in `next-steps/0.7-chat-protocol.md`.
