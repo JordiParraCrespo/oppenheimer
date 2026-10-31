@@ -1,3 +1,4 @@
+// uncatalogued: Settings' navigation, drawn by the kit's settings sidebar
 'use client';
 
 import { useRender } from '@base-ui/react/use-render';

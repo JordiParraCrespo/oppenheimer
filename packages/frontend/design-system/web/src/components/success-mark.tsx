@@ -1,3 +1,4 @@
+// uncatalogued: the onboarding Ready step's mark; no other screen draws it
 import { CheckIcon } from 'lucide-react';
 import type * as React from 'react';
 

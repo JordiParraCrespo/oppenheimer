@@ -168,8 +168,9 @@
       "neededBy": ["web"]
     },
     "scripts/ui-catalog.mjs": {
-      "identifiers": ["ui-catalog.mjs"],
-      "neededBy": ["web"]
+      "identifiers": ["ui-catalog.mjs", "check:ui-catalog"],
+      "neededBy": ["web"],
+      "scripts": ["check:ui-catalog"]
     },
     "scripts/ui-catalog.test.mjs": {
       "identifiers": ["ui-catalog.test.mjs"],
