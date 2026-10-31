@@ -27,7 +27,7 @@ nothing imports, and a documented contract with no caller yet carries
 - **modules/feature-flags** — `FeatureFlagsService`, `FeatureFlagsModule`, the
   `FeatureFlagsClientContext` an app passes to
   `OppenheimerApp.create({ featureFlags })`.
-- **modules/core** — `AppError`, `callApi`, `unwrap` / `unwrapBody`,
+- **modules/core** — `AppError`, `callApi`, `unwrapBody`,
   `createErrorMessageResolver`, the `IStorageService` port.
 - **modules/user-settings** / **modules/users** — their service and module.
 - **validation** (`./validation`) — `createZodErrorMap`,

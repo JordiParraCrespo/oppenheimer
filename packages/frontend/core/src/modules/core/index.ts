@@ -14,7 +14,6 @@ export {
   callApi,
   type ErrorDefinition,
   type SdkResult,
-  unwrap,
   unwrapBody,
 } from './errors';
 export {
