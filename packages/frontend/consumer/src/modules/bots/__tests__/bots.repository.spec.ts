@@ -207,7 +207,7 @@ describe('BotsRepository', () => {
     expect(conversation.activeTurn?.id).toBe('t2');
   });
 
-  it('reads the room left off the newest turns that said, and your messages waiting behind the running turn', async () => {
+  it('reads the room left off the newest turns that said, and your messages waiting behind the running turn, steers marked', async () => {
     const turn = (id: string, status: string, extra: Record<string, unknown> = {}) => ({
       id,
       status,
@@ -220,6 +220,7 @@ describe('BotsRepository', () => {
       contextWindow: null,
       planLimits: null,
       cancelRequested: false,
+      steer: false,
       createdAt: '2026-10-15T09:00:00.000Z',
       startedAt: null,
       endedAt: null,
@@ -235,7 +236,11 @@ describe('BotsRepository', () => {
     });
     sdk.findBotConversation.mockResolvedValue(
       ok({
-        messages: [asked('m3', 't3', 'Look first'), asked('m4', 't4', 'Then ship it')],
+        messages: [
+          asked('m3', 't3', 'Look first'),
+          asked('m4', 't4', 'Then ship it'),
+          asked('m6', 't6', 'Skip the tests'),
+        ],
         turns: [
           turn('t1', 'completed', {
             contextTokens: 9_000,
@@ -249,6 +254,7 @@ describe('BotsRepository', () => {
           turn('t3', 'running'),
           turn('t4', 'queued'),
           turn('t5', 'queued'),
+          turn('t6', 'queued', { steer: true }),
         ],
       }),
     );
@@ -262,7 +268,8 @@ describe('BotsRepository', () => {
     });
     // t5 was opened by no message of yours (a routine): it stays in the transcript.
     expect(conversation.waitingMessages).toEqual([
-      { turnId: 't4', text: 'Then ship it', images: 0 },
+      { turnId: 't4', text: 'Then ship it', images: 0, steer: false },
+      { turnId: 't6', text: 'Skip the tests', images: 0, steer: true },
     ]);
   });
 
