@@ -12,6 +12,7 @@ import {
   type BotQuestionResponseDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
+  type BotSkillResponseDto,
   type BotTurnPlanLimitsDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
@@ -54,12 +55,15 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
+  type CreateBotSkillInput,
   ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
+  type UpdateBotSkillInput,
 } from './bot.entity';
 import {
   BotApprovalEntity,
@@ -169,6 +173,20 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.tier,
     dto.scope,
     dto.botId,
+    new Date(dto.createdAt),
+    new Date(dto.updatedAt),
+  );
+}
+
+function toSkill(dto: BotSkillResponseDto): BotSkillEntity {
+  return new BotSkillEntity(
+    dto.id,
+    dto.name,
+    dto.description,
+    dto.body,
+    dto.userInvocable,
+    dto.modelInvocable,
+    dto.source,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
   );
@@ -801,6 +819,45 @@ export class BotsRepository {
   @MapApiError(BotsErrors.CLEAR_MEMORY_FAILED)
   async clearMemory(id: string): Promise<void> {
     await unwrap(heyApiSdk.clearBotMemory({ path: { id } }), BotsErrors.CLEAR_MEMORY_FAILED);
+  }
+
+  @MapApiError(BotsErrors.FETCH_SKILLS_FAILED)
+  async findSkills(id: string): Promise<BotSkillEntity[]> {
+    const data = await unwrapBody(
+      heyApiSdk.findBotSkills({ path: { id } }),
+      BotsErrors.FETCH_SKILLS_FAILED,
+    );
+    return data.map(toSkill);
+  }
+
+  @MapApiError(BotsErrors.SAVE_SKILL_FAILED)
+  async addSkill(id: string, skill: CreateBotSkillInput): Promise<BotSkillEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.createBotSkill({ path: { id }, body: skill }),
+      BotsErrors.SAVE_SKILL_FAILED,
+    );
+    return toSkill(data);
+  }
+
+  @MapApiError(BotsErrors.SAVE_SKILL_FAILED)
+  async updateSkill(
+    id: string,
+    skillId: string,
+    change: UpdateBotSkillInput,
+  ): Promise<BotSkillEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.updateBotSkill({ path: { id, skillId }, body: change }),
+      BotsErrors.SAVE_SKILL_FAILED,
+    );
+    return toSkill(data);
+  }
+
+  @MapApiError(BotsErrors.DELETE_SKILL_FAILED)
+  async removeSkill(id: string, skillId: string): Promise<void> {
+    await unwrap(
+      heyApiSdk.deleteBotSkill({ path: { id, skillId } }),
+      BotsErrors.DELETE_SKILL_FAILED,
+    );
   }
 
   @MapApiError(BotsErrors.FETCH_PERMISSIONS_FAILED)

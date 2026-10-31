@@ -751,6 +751,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_035` <a id="bots_035" />       | Questions not found | 404  |
 | `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
 | `BOTS_037` <a id="bots_037" />       | The questions were already answered | 409  |
+| `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
+| `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
+| `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -836,6 +839,12 @@ question, an option the question does not have, two picks where one is
 taken, or a question left unanswered; its `detail` names which. `BOTS_037` is
 a card already answered or dismissed, or retired because a message reached
 the bot first.
+
+`BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
+own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
+skill's name is its slash command, so rename one of them. `BOTS_040` is a
+skill past the bot's fifty: delete one first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

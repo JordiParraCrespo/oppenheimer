@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotTurnImage } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { type BotSlashCommand, parseBotSlashCommand } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import {
@@ -19,6 +20,11 @@ import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-fi
 export interface BotTurnOpening {
   prompt: string;
   images: BotTurnImage[];
+  /**
+   * The `/<name>` your message opens with, when it does (`25-bots.md` §4.1):
+   * only a person's message runs a skill, never an event's text.
+   */
+  command: BotSlashCommand | null;
 }
 
 /**
@@ -39,7 +45,10 @@ export class BotTurnOpeningResolver {
 
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
-    if (!opening?.attachments.length) return { prompt: botTurnPrompt(opening), images: [] };
+    const command = opening?.role === 'user' ? parseBotSlashCommand(opening.content) : null;
+    if (!opening?.attachments.length) {
+      return { prompt: botTurnPrompt(opening), images: [], command };
+    }
     const prompt = [botTurnPrompt(opening).trim(), attachedImagesNote(opening.attachments)]
       .filter(Boolean)
       .join('\n\n');
@@ -58,6 +67,6 @@ export class BotTurnOpeningResolver {
         return this.mapper.toTurnImage(attachment, data);
       }),
     );
-    return { prompt, images };
+    return { prompt, images, command };
   }
 }

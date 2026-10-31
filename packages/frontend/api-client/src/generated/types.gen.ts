@@ -3632,6 +3632,52 @@ export type UpdateBotMemoryFactRequest = {
     scope?: 'bot' | 'person';
 };
 
+export type BotSkillResponseDto = {
+    id: string;
+    /**
+     * Lowercase letters, digits and hyphens: the slash command that runs it.
+     */
+    name: string;
+    /**
+     * When to use it; every turn of the bot lists it.
+     */
+    description: string;
+    /**
+     * The skill itself, in Markdown: the steps, the checks, what to report.
+     */
+    body: string;
+    /**
+     * The person may run it by typing `/<name>` in the chat.
+     */
+    userInvocable: boolean;
+    /**
+     * The bot's prompt lists it, so the bot may use it unasked.
+     */
+    modelInvocable: boolean;
+    /**
+     * Who wrote it last.
+     */
+    source: 'user' | 'bot';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateBotSkillRequest = {
+    name: string;
+    description: string;
+    body: string;
+    userInvocable?: boolean;
+    modelInvocable?: boolean;
+};
+
+export type UpdateBotSkillRequest = {
+    name?: string;
+    description?: string;
+    body?: string;
+    userInvocable?: boolean;
+    modelInvocable?: boolean;
+};
+
 export type BotGroupResponseDto = {
     id: string;
     name: string;
@@ -13399,6 +13445,148 @@ export type UpdateBotMemoryFactResponses = {
 };
 
 export type UpdateBotMemoryFactResponse = UpdateBotMemoryFactResponses[keyof UpdateBotMemoryFactResponses];
+
+export type FindBotSkillsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills';
+};
+
+export type FindBotSkillsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotSkillsError = FindBotSkillsErrors[keyof FindBotSkillsErrors];
+
+export type FindBotSkillsResponses = {
+    200: Array<BotSkillResponseDto>;
+};
+
+export type FindBotSkillsResponse = FindBotSkillsResponses[keyof FindBotSkillsResponses];
+
+export type CreateBotSkillData = {
+    body: CreateBotSkillRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills';
+};
+
+export type CreateBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_039 — The name is taken
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_040 — The bot has as many skills as it can keep
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateBotSkillError = CreateBotSkillErrors[keyof CreateBotSkillErrors];
+
+export type CreateBotSkillResponses = {
+    201: BotSkillResponseDto;
+};
+
+export type CreateBotSkillResponse = CreateBotSkillResponses[keyof CreateBotSkillResponses];
+
+export type DeleteBotSkillData = {
+    body?: never;
+    path: {
+        id: string;
+        skillId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills/{skillId}';
+};
+
+export type DeleteBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_038 — Skill not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotSkillError = DeleteBotSkillErrors[keyof DeleteBotSkillErrors];
+
+export type DeleteBotSkillResponses = {
+    204: void;
+};
+
+export type DeleteBotSkillResponse = DeleteBotSkillResponses[keyof DeleteBotSkillResponses];
+
+export type UpdateBotSkillData = {
+    body: UpdateBotSkillRequest;
+    path: {
+        id: string;
+        skillId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills/{skillId}';
+};
+
+export type UpdateBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_038 — Skill not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_039 — The name is taken
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateBotSkillError = UpdateBotSkillErrors[keyof UpdateBotSkillErrors];
+
+export type UpdateBotSkillResponses = {
+    200: BotSkillResponseDto;
+};
+
+export type UpdateBotSkillResponse = UpdateBotSkillResponses[keyof UpdateBotSkillResponses];
 
 export type FindBotGroupsData = {
     body?: never;

@@ -6,12 +6,15 @@ export {
   BotMemoryFactEntity,
   BotRoutineEntity,
   type BotRoutineLastRun,
+  BotSkillEntity,
   type ChatgptLoginEntity,
   type ChatgptLoginState,
+  type CreateBotSkillInput,
   documentConflictRevision,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
+  type UpdateBotSkillInput,
 } from './bot.entity';
 export {
   type BotApprovalDetails,

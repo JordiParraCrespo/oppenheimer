@@ -264,6 +264,11 @@
       "progress": "{{step}} of {{limit}} continuations",
       "stop": "Stop goal",
       "stopFailed": "Could not stop the goal. Try again."
+    },
+    "slash": {
+      "label": "Skills",
+      "menu": "Skills you can run",
+      "pick": "Use /{{name}}"
     }
   },
   "settings": {
@@ -275,6 +280,7 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
+      "skills": "Skills",
       "permissions": "Permissions",
       "routines": "Routines",
       "homeHost": "Home host"
@@ -393,6 +399,42 @@
       "toProfile": "Keep it in mind in every chat",
       "toPerson": "Share it with all your bots",
       "toBot": "Keep it to this bot"
+    },
+    "skills": {
+      "title": "Skills",
+      "subtitle": "Saved ways of doing a task. Run one by typing / and its name in the chat; the bot uses one on its own when a request fits.",
+      "count_one": "Skills · {{count}}",
+      "count_other": "Skills · {{count}}",
+      "empty": "No skills yet. Add one, or ask the bot to save how it did something as a skill.",
+      "add": "Add skill",
+      "edit": "Edit {{name}}",
+      "delete": "Delete {{name}}",
+      "byYou": "Saved by you · {{date}}",
+      "byBot": "Saved by the bot · {{date}}",
+      "onlyYou": "Only you run it",
+      "onlyBot": "Only the bot uses it",
+      "loadFailed": "Could not load the skills.",
+      "deleteFailed": "Could not delete the skill.",
+      "dialog": {
+        "newTitle": "New skill",
+        "editTitle": "Edit /{{name}}",
+        "description": "A skill is a recipe the bot follows: when it applies, the steps, how to check the result and what to report.",
+        "name": "Name",
+        "nameHint": "Lowercase letters, digits and hyphens. You run it as /{{name}}.",
+        "summary": "Description",
+        "summaryHint": "One sentence on what it does and when to use it. The bot reads this in every chat.",
+        "summaryPlaceholder": "Writes release notes from the pull requests merged since the last tag",
+        "body": "Instructions",
+        "bodyPlaceholder": "1. List the pull requests merged since the last tag.\n2. Group them by area.\n3. Write the notes in Markdown and share them here.",
+        "userInvocable": "I can run it from the chat with its command",
+        "modelInvocable": "The bot can use it on its own when a request fits",
+        "save": "Save skill",
+        "saving": "Saving…",
+        "saveFailed": "Could not save the skill."
+      },
+      "deleteTitle": "Delete /{{name}}?",
+      "deleteBody": "The bot can no longer use it, and /{{name}} stops working in the chat.",
+      "deleting": "Deleting…"
     },
     "routines": {
       "title": "Routines",

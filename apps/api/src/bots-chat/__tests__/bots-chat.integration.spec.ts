@@ -9,6 +9,7 @@ import { TurnCredentialsResolver } from '../../bots/application/turn-credentials
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotMemoryFactMapper } from '../../bots/bot-memory-fact.mapper';
+import { BotSkillMapper } from '../../bots/bot-skill.mapper';
 import { BotOrmEntity } from '../../bots/database/bot.orm-entity';
 import { BotRepository } from '../../bots/database/bot.repository';
 import { BotDocumentOrmEntity } from '../../bots/database/bot-document.orm-entity';
@@ -16,12 +17,15 @@ import { BotDocumentRepository } from '../../bots/database/bot-document.reposito
 import { BotDocumentRevisionOrmEntity } from '../../bots/database/bot-document-revision.orm-entity';
 import { BotMemoryFactOrmEntity } from '../../bots/database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from '../../bots/database/bot-memory-fact.repository';
+import { BotSkillOrmEntity } from '../../bots/database/bot-skill.orm-entity';
+import { BotSkillRepository } from '../../bots/database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../../bots/database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../../bots/database/model-provider-credential.repository';
 import { BotEntity } from '../../bots/domain/bot.entity';
 import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
 import { BotMemoryFactEntity } from '../../bots/domain/bot-memory-fact.entity';
+import { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
@@ -104,6 +108,7 @@ describe('bots chat (integration)', () => {
   let bots: BotRepository;
   let documents: BotDocumentRepository;
   let memory: BotMemoryFactRepository;
+  let skills: BotSkillRepository;
   let credentials: ModelProviderCredentialRepository;
   let turns: BotTurnRepository;
   let messages: BotMessageRepository;
@@ -147,6 +152,7 @@ describe('bots chat (integration)', () => {
         BotDocumentOrmEntity,
         BotDocumentRevisionOrmEntity,
         BotMemoryFactOrmEntity,
+        BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
         BotTurnOrmEntity,
         BotMessageOrmEntity,
@@ -178,6 +184,11 @@ describe('bots chat (integration)', () => {
       dataSource.getRepository(BotMemoryFactOrmEntity),
       dataSource,
       new BotMemoryFactMapper(),
+    );
+    skills = new BotSkillRepository(
+      dataSource.getRepository(BotSkillOrmEntity),
+      dataSource,
+      new BotSkillMapper(),
     );
     credentials = new ModelProviderCredentialRepository(
       dataSource.getRepository(ModelProviderCredentialOrmEntity),
@@ -632,6 +643,7 @@ describe('bots chat (integration)', () => {
       new BotModelAccessResolver(bots, new TurnCredentialsResolver(credentials, sealer, chatgpt)),
       documents,
       memory,
+      skills,
       messages,
       summaries,
       owners,
@@ -696,6 +708,37 @@ describe('bots chat (integration)', () => {
     expect(context.systemPrompt).not.toContain('their secret');
     expect(context.message).toContain("The person's hosts could not be read just now");
     expect(context.tools).toEqual([]);
+  });
+
+  it("runs the skill a person's /<name> names, read in the turn's workspace and never another's", async () => {
+    const skill = (botId: string, organization: string, body: string) =>
+      BotSkillEntity.createNew({
+        organizationId: organization,
+        botId,
+        name: 'triage',
+        description: 'Sorts a failing build.',
+        body,
+        actor: userActor(userId),
+      });
+    const other = await insertOrganization();
+    const theirs = await create('Theirs', { organization: other });
+    await skills.insert(skill(theirs.id, other, 'their steps'), 50);
+    const mine = await create('Mine');
+    await skills.insert(skill(mine.id, organizationId, 'Read the log, then label it.'), 50);
+    await credentials.put(credential('my-key-1234'));
+    const { turn, message } = sent(mine, '/triage the nightly build');
+    await turns.enqueue(turn, message, null);
+
+    const context = await contextResolver().resolve(turn, new Date());
+    expect(context.message).toContain(
+      'The person ran your skill /triage. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="triage">\nRead the log, then label it.\n</skill>\n\n/triage the nightly build',
+    );
+    expect(context.message).not.toContain('their steps');
+    // What is stored is what the person typed; the skill rides this turn only.
+    const [stored] = await dataSource.query(`SELECT content FROM bot_message WHERE id = $1`, [
+      message.id,
+    ]);
+    expect(stored.content).toBe('/triage the nightly build');
   });
   async function asked(bot: BotEntity, summary = 'Start Claude Code on build-02') {
     const { turn, message } = sent(bot, 'Start it');
