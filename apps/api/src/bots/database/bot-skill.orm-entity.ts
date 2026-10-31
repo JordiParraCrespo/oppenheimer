@@ -18,7 +18,7 @@ import {
 @Index('UQ_bot_skill_name', ['organizationId', 'botId', 'name'], { unique: true })
 @Check('CHK_bot_skill_name', `"name" ~ '^[a-z0-9][a-z0-9-]{0,31}$'`)
 @Check('CHK_bot_skill_description', `char_length(btrim("description")) > 0`)
-@Check('CHK_bot_skill_body', `char_length(btrim("body")) > 0 AND char_length("body") <= 16384`)
+@Check('CHK_bot_skill_body', `char_length(btrim("body")) > 0 AND char_length("body") <= 10000`)
 @Check('CHK_bot_skill_source', `"source" IN ('user', 'bot')`)
 export class BotSkillOrmEntity {
   @PrimaryGeneratedColumn('uuid')

@@ -40,7 +40,7 @@ export class AddBotSkills1791005700000 implements MigrationInterface {
         CONSTRAINT "PK_bot_skill" PRIMARY KEY (id),
         CONSTRAINT "CHK_bot_skill_name" CHECK (name ~ '^[a-z0-9][a-z0-9-]{0,31}$'),
         CONSTRAINT "CHK_bot_skill_description" CHECK (char_length(btrim(description)) > 0),
-        CONSTRAINT "CHK_bot_skill_body" CHECK (char_length(btrim(body)) > 0 AND char_length(body) <= 16384),
+        CONSTRAINT "CHK_bot_skill_body" CHECK (char_length(btrim(body)) > 0 AND char_length(body) <= 10000),
         CONSTRAINT "CHK_bot_skill_source" CHECK (source IN ('user', 'bot'))
       )`,
     );

@@ -1,6 +1,11 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import {
+  BOT_SKILL_BODY_MAX,
+  BOT_SKILL_DESCRIPTION_MAX,
+  BOT_SKILL_NAME_MAX,
+} from '@oppenheimer/shared';
 import { CreateBotSkillCommand } from '../../../bots/commands/create-bot-skill/create-bot-skill.command';
 import { DeleteBotSkillCommand } from '../../../bots/commands/delete-bot-skill/delete-bot-skill.command';
 import { UpdateBotSkillCommand } from '../../../bots/commands/update-bot-skill/update-bot-skill.command';
@@ -97,6 +102,21 @@ describe('BotSkillToolsFactory', () => {
     expect(result.content).toBe(
       'Skill "triage": Does triage. Follow it for this request.\n\n<skill name="triage">\nSteps for triage.\n</skill>',
     );
+  });
+
+  it('hands back a skill of the longest body allowed whole, never cut to fit a tool answer', async () => {
+    const long = BotSkillEntity.createNew({
+      organizationId: 'org-1',
+      botId: BOT_ID,
+      name: 'a'.repeat(BOT_SKILL_NAME_MAX),
+      description: 'd'.repeat(BOT_SKILL_DESCRIPTION_MAX),
+      body: `start ${'x'.repeat(BOT_SKILL_BODY_MAX - 10)} end`,
+      actor: { kind: 'user', userId: 'owner-1' },
+    });
+    const { call } = setup([long]);
+    const result = await call('use_skill', { name: long.name });
+    expect(result.content).toContain(long.body);
+    expect(result.content).not.toContain('cut from the middle');
   });
 
   it('keeps the body of a skill only the person runs, and says how they run it', async () => {

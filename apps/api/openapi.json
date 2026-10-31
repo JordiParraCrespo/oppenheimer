@@ -31446,7 +31446,7 @@
           "body": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 16384
+            "maxLength": 10000
           },
           "userInvocable": {
             "type": "boolean"
@@ -31474,7 +31474,7 @@
           "body": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 16384
+            "maxLength": 10000
           },
           "userInvocable": {
             "type": "boolean"

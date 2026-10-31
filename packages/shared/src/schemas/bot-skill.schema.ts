@@ -17,8 +17,13 @@ export const BOT_SKILL_NAME_MAX = 32;
 export const BOT_SKILL_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/;
 /** What the prompt's skills list shows, so it says when to reach for the skill. */
 export const BOT_SKILL_DESCRIPTION_MAX = 280;
-/** The skill itself, in Markdown: the steps, the checks, what to report. */
-export const BOT_SKILL_BODY_MAX = 16_384;
+/**
+ * The skill itself, in Markdown: the steps, the checks, what to report. Under
+ * the 12,000 characters a bot's tool answer holds, with room for its name and
+ * description around it, so `use_skill` always hands the whole skill back and
+ * never one with its middle cut out.
+ */
+export const BOT_SKILL_BODY_MAX = 10_000;
 /** How many skills one bot keeps: every name and description is in each turn's prompt. */
 export const BOT_SKILLS_MAX = 50;
 
