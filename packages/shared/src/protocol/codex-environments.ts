@@ -43,8 +43,9 @@ export type CodexEnvironment = z.infer<typeof codexEnvironmentSchema>;
  * The environments, those linked to the repository first, then pinned, then
  * by label. `recommended` is the id the runner starts a task in when the
  * create names none: the only linked one, else the pinned linked one, else
- * the linked one with the most tasks, as Codex's own picker chooses; absent
- * when none is linked. `source` says where the list came from: `chatgpt`,
+ * the linked one with the most tasks, as Codex's own picker chooses; with none
+ * linked, one labelled with the repository's full name, then its bare name;
+ * absent when none is. `source` says where the list came from: `chatgpt`,
  * the account's environments as chatgpt.com lists them, or `tasks`, only those
  * the account's recent tasks ran in, when the host could not ask ChatGPT.
  */

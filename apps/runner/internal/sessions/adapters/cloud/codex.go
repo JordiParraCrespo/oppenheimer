@@ -93,24 +93,26 @@ var codexTaskURL = regexp.MustCompile(`https?://\S+/codex/tasks/([A-Za-z0-9_-]+)
 
 // Start creates a task for prompt in a Codex cloud environment for
 // repository (`owner/name`) on branch, and answers it once the CLI has named
-// it. environment is the one the person picked, by id or label; empty, the
-// environment linked to the repository is used (Environments' Recommended),
-// and with none linked the repository's full name and then its bare name are
-// tried as labels, which `codex cloud exec` matches without regard to case.
-// An environment found none of those ways is the CLI's refusal, with the
-// environments the account does have.
+// it. environment is the one the person picked, by id or label; empty, it is
+// the account's pick for the repository (Environments' Recommended: the one
+// linked to it, else one labelled with its name). With none, the refusal says
+// what to do and names the account's environments. Only when the account's
+// whole list could not be read (none, or only its tasks' environments) are
+// the repository's names handed to the CLI as labels.
 func (c Codex) Start(ctx context.Context, repository, branch, prompt, environment string) (Started, error) {
 	if environment != "" {
 		return c.exec(ctx, environment, branch, prompt)
 	}
 	envs, listErr := c.Environments(ctx, repository)
+	switch {
 	// The CLI resolves a label by reading the same environments, so a refusal
 	// for rate is not worked around by asking it instead.
-	if isRateLimited(listErr) {
+	case isRateLimited(listErr):
 		return Started{}, listErr
-	}
-	if listErr == nil && envs.Recommended != "" {
+	case listErr == nil && envs.Recommended != "":
 		return c.exec(ctx, envs.Recommended, branch, prompt)
+	case listErr == nil && envs.Source == CodexSourceChatGPT:
+		return Started{}, noEnvironment(repository, envs, nil)
 	}
 	var refusal error
 	for _, env := range codexEnvironments(repository) {
@@ -123,7 +125,7 @@ func (c Codex) Start(ctx context.Context, repository, branch, prompt, environmen
 			return Started{}, err
 		}
 	}
-	return Started{}, noEnvironment(repository, envs, listErr, refusal)
+	return Started{}, noEnvironment(repository, envs, refusal)
 }
 
 // exec runs `codex cloud exec` in env. The value rides `--env=`, so one that
@@ -142,7 +144,7 @@ func (c Codex) exec(ctx context.Context, env, branch, prompt string) (Started, e
 
 // noEnvironment is the refusal for a repository no environment was found
 // for: what to do about it, and the environments the account has, by label.
-func noEnvironment(repository string, envs CodexEnvironments, listErr, refusal error) error {
+func noEnvironment(repository string, envs CodexEnvironments, refusal error) error {
 	var names []string
 	for _, env := range envs.Environments {
 		name := env.Label
@@ -159,7 +161,7 @@ func noEnvironment(repository string, envs CodexEnvironments, listErr, refusal e
 	switch {
 	case len(names) > 0:
 		detail += " This account has: " + strings.Join(names, ", ") + "."
-	case listErr == nil:
+	case refusal == nil:
 		detail += " This account has no environments yet."
 	}
 	return domain.ErrCodexCloudStart.WithDetail("%s", detail).WithCause(refusal)

@@ -199,3 +199,22 @@ func TestCodexEnvironmentsStopsAtARateLimitUntilItsRetryAfter(t *testing.T) {
 		t.Fatalf("requests = %d, want ChatGPT asked again once the pause passed", requests)
 	}
 }
+
+// With none linked, an environment labelled with the repository's name (any
+// case, full name first) is the pick, by id: the CLI is not asked to guess.
+func TestCodexStartUsesTheEnvironmentLabelledWithTheRepositorysName(t *testing.T) {
+	server := chatGPT(t, `[]`, `[{"id": "e_docs", "label": "docs"}, {"id": "e_app", "label": "XRP-Mobile"}]`)
+	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_9'`)
+	codex := Codex{Command: bin, Home: signedIn(t), BaseURL: server.URL}
+
+	envs, err := codex.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if err != nil || envs.Recommended != "e_app" {
+		t.Fatalf("recommended = %q, err = %v", envs.Recommended, err)
+	}
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", ""); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if got := strings.Join(readArgs(t, args), " "); got != "cloud exec --env=e_app --branch main task" {
+		t.Fatalf("args = %q", got)
+	}
+}

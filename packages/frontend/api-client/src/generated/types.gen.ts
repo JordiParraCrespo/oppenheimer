@@ -2036,7 +2036,7 @@ export type HostCodexEnvironmentsResponseDto = {
      */
     environments: Array<HostCodexEnvironmentResponseDto>;
     /**
-     * The environment a session started with none picked runs in: the one linked to the repository. Null when none is linked.
+     * The environment a session started with none picked runs in: the one linked to the repository, else one labelled with its name. Null when none is.
      */
     recommended?: string | null;
     /**

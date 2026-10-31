@@ -101,9 +101,11 @@ person pick another.
 - **With none picked, the linked one.** Among the environments linked to
   the repository the runner takes the only one, else the pinned one, else
   the one with the most tasks: what Codex's own picker does
-  (`pick_environment_row`), passed by id. With none linked it tries the
-  repository's full name and bare name as labels, as before, and a refusal
-  then says what to do and names the account's environments.
+  (`pick_environment_row`), passed by id. With none linked, the one
+  labelled with the repository's full name, then its bare name, still by
+  id; with neither, the start is refused, saying what to do and naming the
+  account's environments. The CLI is handed the names as labels only when
+  the account's whole list could not be read.
 - **The composer's Environment chip.** A Codex cloud session with one
   repository shows an Environment chip after Branch, asked of the host
   when it shows (`GET /v1/hosts/:id/codex-environments?repository=`, live,

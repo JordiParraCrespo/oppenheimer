@@ -77,7 +77,8 @@ type CodexEnvironment struct {
 type CodexEnvironments struct {
 	Environments []CodexEnvironment
 	// Recommended is the id a task for the repository starts in when none is
-	// picked; empty when no environment is linked to it.
+	// picked: the one linked to it, else one labelled with its full name, else
+	// its bare name; empty when none is.
 	Recommended string
 	// Source is CodexSourceChatGPT or CodexSourceTasks.
 	Source string
@@ -163,18 +164,35 @@ var errNoChatGPTSignIn = errors.New("no ChatGPT sign-in in the Codex auth file")
 // a task for it starts in when none is picked.
 func (c Codex) Environments(ctx context.Context, repository string) (CodexEnvironments, error) {
 	envs, err := c.chatGPTEnvironments(ctx, repository)
-	if err == nil {
-		return envs, nil
-	}
 	if isRateLimited(err) {
 		return CodexEnvironments{}, err
 	}
-	fromTasks, taskErr := c.taskEnvironments(ctx)
-	if taskErr != nil {
-		return CodexEnvironments{}, domain.ErrCodexCloudStart.WithDetail(
-			"Codex could not list its environments: %v; and from its tasks: %s", err, problemDetail(taskErr)).WithCause(taskErr)
+	if err != nil {
+		fromTasks, taskErr := c.taskEnvironments(ctx)
+		if taskErr != nil {
+			return CodexEnvironments{}, domain.ErrCodexCloudStart.WithDetail(
+				"Codex could not list its environments: %v; and from its tasks: %s", err, problemDetail(taskErr)).WithCause(taskErr)
+		}
+		envs = fromTasks
 	}
-	return fromTasks, nil
+	if envs.Recommended == "" {
+		envs.Recommended = byName(envs.Environments, repository)
+	}
+	return envs, nil
+}
+
+// byName is the environment labelled with repository's full name, else its
+// bare name, without regard to case, as `codex cloud exec --env` matches a
+// label; empty when none is.
+func byName(envs []CodexEnvironment, repository string) string {
+	for _, name := range codexEnvironments(repository) {
+		for _, env := range envs {
+			if env.Label != "" && strings.EqualFold(env.Label, name) {
+				return env.ID
+			}
+		}
+	}
+	return ""
 }
 
 // chatGPTEnvironments asks the ChatGPT backend, as the CLI's own picker does.
