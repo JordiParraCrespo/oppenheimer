@@ -31,8 +31,10 @@ scheduled run is what catches a report that was wrong.
    route the change shows on. Look at each one, send them to the user, and
    give the description a `## Screenshots` section naming the routes,
    themes, widths and the commit they were taken on. A change there that is
-   not visual says why in that section instead. Take them again after a
-   push that changes how it looks.
+   not visual says why in that section instead (`pnpm screens --not-visual
+   "<why>"` records it). Take them again after a change to how it looks.
+   `.agents/hooks/screenshot-guard.mjs` refuses the push and the pull
+   request's creation or update until the pictures are of the code as it is.
 
 A pull request is ready when the report's commit is its head, every row is
 green, a visual change has its screenshots, and every review thread has an

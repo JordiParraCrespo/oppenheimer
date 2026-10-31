@@ -1,6 +1,7 @@
 // What counts as a change to what the console shows, and a fingerprint of
 // that change. The one definition: the screenshot guard
-// (`screenshot-guard.mjs`), the camera (`scripts/stack/screens.mjs`) and the
+// (`screenshot-guard.mjs`, which asks it before a push or a pull request is
+// opened or updated), the camera (`scripts/stack/screens.mjs`) and the
 // pr-screenshots eval all import it, and the prose in AGENTS.md, the
 // `local-stack` and `steward` skills and `.agents/rules/frontend-ui.md`
 // points here rather than restating the list.
@@ -46,7 +47,8 @@ function git(root, ...args) {
  * A checkout's `origin/main` can be older than the `main` the branch was cut
  * from, and diffing against it counts main's own commits as the branch's. So
  * it is fetched first, briefly, at most every ten minutes; offline, the refs
- * already here are used.
+ * already here are used. The guard asks only when the branch is about to be
+ * published, so the fetch is never in the way of a turn.
  */
 export function refreshMain(root) {
   const stamp = join(git(root, 'rev-parse', '--absolute-git-dir').trim(), 'visual-change-fetch');

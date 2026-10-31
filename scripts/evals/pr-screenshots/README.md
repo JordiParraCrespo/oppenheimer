@@ -4,8 +4,9 @@ Does an agent that changes what the console shows take screenshots of it on
 the local stack, look at them and put them in its pull request, without
 being asked to? And does it leave a change that is not visual alone? The
 rule lives in `AGENTS.md`, the `local-stack` and `steward` skills,
-`.agents/rules/frontend-ui.md` and the Stop hook
-`.agents/hooks/screenshot-guard.mjs`. This measures that they work together,
+`.agents/rules/frontend-ui.md` and the PreToolUse hook
+`.agents/hooks/screenshot-guard.mjs`, which refuses a push or a pull request
+without them. This measures that they work together,
 and `--ref` measures the same tasks against the rules before them.
 
 A case in `cases.json` is a task, worded the way a person would ask for it,
