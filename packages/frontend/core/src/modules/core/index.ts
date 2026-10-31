@@ -17,4 +17,10 @@ export {
   unwrap,
   unwrapBody,
 } from './errors';
+export {
+  type EventSourceLike,
+  ServerEventStream,
+  type ServerEventStreamOptions,
+  type ServerEventStreamStatus,
+} from './server-event-stream';
 export type { IStorageService } from './storage.service';
