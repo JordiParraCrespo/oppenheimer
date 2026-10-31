@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { InboxMarkRepositoryPort } from '../../database/inbox-mark.repository.port';
 import { InboxErrors } from '../../domain/inbox.errors';
@@ -19,7 +20,7 @@ export class DeleteInboxMarkCommandHandler
   constructor(@Inject(INBOX_MARK_REPOSITORY) private readonly marks: InboxMarkRepositoryPort) {}
 
   async execute({ organizationId, userId, itemKey }: DeleteInboxMarkCommand): Promise<void> {
-    if (!organizationId) throw new AppError(InboxErrors.NO_ACTIVE_ORGANIZATION);
+    requireOrganization(organizationId);
     if (!isInboxItemKey(itemKey)) {
       throw new AppError(InboxErrors.INVALID_ITEM_KEY, { detail: `${itemKey} is not an item key` });
     }

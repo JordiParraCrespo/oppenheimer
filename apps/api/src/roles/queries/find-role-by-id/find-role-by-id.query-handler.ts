@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { RoleRepositoryPort } from '../../database/role.repository.port';
 import type { RoleEntity } from '../../domain/role.entity';
 import { RoleErrors } from '../../domain/role.errors';
@@ -16,7 +16,6 @@ export class FindRoleByIdQueryHandler implements IQueryHandler<FindRoleByIdQuery
 
   async execute(query: FindRoleByIdQuery): Promise<RoleEntity> {
     const found = await this.roleRepository.findOneById(query.roleId, query.organizationId);
-    if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, RoleErrors.NOT_FOUND);
   }
 }

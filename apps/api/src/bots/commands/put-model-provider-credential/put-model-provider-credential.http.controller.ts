@@ -43,8 +43,8 @@ export class PutModelProviderCredentialHttpController {
   @ApiResponse({ status: 204 })
   @ApiProblemResponse({
     status: 400,
-    description: 'Bots belong to an organization',
-    code: 'BOTS_002',
+    description: 'No active workspace',
+    code: 'TENANT_001',
   })
   @ApiProblemResponse({ status: 404, description: 'No such model provider', code: 'BOTS_012' })
   @ApiProblemResponse({

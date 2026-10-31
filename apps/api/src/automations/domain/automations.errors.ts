@@ -7,11 +7,6 @@ export const AutomationErrors = {
     message: 'Automation not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'AUTOMATIONS_002',
-    message: 'Automations belong to an organization',
-    httpStatus: 400,
-  },
   /** Somebody saved the automation since this editor loaded it. */
   VERSION_CONFLICT: {
     code: 'AUTOMATIONS_003',

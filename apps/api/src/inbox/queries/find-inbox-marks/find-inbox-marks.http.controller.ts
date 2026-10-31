@@ -36,7 +36,7 @@ export class FindInboxMarksHttpController {
     description: `What you did to Inbox items in this workspace, the newest changed first, at most ${INBOX_MARKS_MAX}. A snooze whose end has passed is left out: its item is back.`,
   })
   @ApiResponse({ status: 200, type: InboxMarkResponseDto, isArray: true })
-  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'INBOX_001' })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   async find(
     @Req() request: ScopedRequest,
     @CurrentUser('id') userId: string,

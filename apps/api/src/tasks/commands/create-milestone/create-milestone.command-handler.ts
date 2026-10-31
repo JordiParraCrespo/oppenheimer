@@ -1,11 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { TaskFilingResolver } from '../../application/task-filing.resolver';
 import type { MilestoneRepositoryPort } from '../../database/milestone.repository.port';
 import { MilestoneEntity } from '../../domain/milestone.entity';
-import { TaskErrors } from '../../domain/tasks.errors';
 import { MILESTONE_REPOSITORY } from '../../tasks.di-tokens';
 import { CreateMilestoneCommand } from './create-milestone.command';
 
@@ -27,7 +26,7 @@ export class CreateMilestoneCommandHandler
     idempotencyKey,
     input,
   }: CreateMilestoneCommand): Promise<AggregateID> {
-    if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const milestone = MilestoneEntity.createNew({
       organizationId: scope.organizationId,
       projectId: await this.filing.activeProject(scope, input.projectId),
