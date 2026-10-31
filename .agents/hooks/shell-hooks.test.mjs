@@ -48,10 +48,7 @@ describe('arch-check.sh', () => {
     '#!/bin/sh\npwd >> "$CRUISED"\nif [ -f src/VIOLATION ]; then echo "error no-way: src/VIOLATION"; exit 1; fi\n',
     0o755,
   );
-  const packages = ['apps/api'];
-  // oppenheimer:begin web
-  packages.push('packages/frontend/core');
-  // oppenheimer:end web
+  const packages = ['apps/api', 'packages/lib'];
   for (const pkg of packages) {
     write(`${pkg}/package.json`, '{}');
     write(`${pkg}/.dependency-cruiser.cjs`, '');
@@ -81,12 +78,25 @@ describe('arch-check.sh', () => {
     assert.deepEqual(stop().where, []);
   });
 
-  // oppenheimer:begin web
-  it('leaves the API alone when only a frontend package changed', () => {
-    write('packages/frontend/core/src/index.ts', 'y');
-    assert.deepEqual(stop().where, ['packages/frontend/core']);
+  it('cruises again when an untracked file moves, though its content does not change', () => {
+    write('apps/api/src/adapters/new.ts', 'same');
+    assert.deepEqual(stop().where, ['apps/api']);
+    rmSync(join(root, 'apps/api/src/adapters'), { recursive: true });
+    write('apps/api/src/domain/new.ts', 'same');
+    assert.deepEqual(stop().where, ['apps/api']);
   });
-  // oppenheimer:end web
+
+  it('leaves the API alone when only another package changed', () => {
+    write('packages/lib/src/index.ts', 'y');
+    assert.deepEqual(stop().where, ['packages/lib']);
+  });
+
+  it('finds a package by its depcruise config, with no list to update', () => {
+    write('packages/new/package.json', '{}');
+    write('packages/new/.dependency-cruiser.cjs', '');
+    write('packages/new/src/index.ts');
+    assert.deepEqual(stop().where, ['packages/new']);
+  });
 
   it('blocks the stop on a violation, naming the package', () => {
     write('apps/api/src/VIOLATION');

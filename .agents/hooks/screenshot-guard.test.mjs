@@ -15,7 +15,7 @@ import { isVisual, visualChange } from './visual-change.mjs';
 const HOOK = fileURLToPath(new URL('./screenshot-guard.mjs', import.meta.url));
 
 describe('publishes', () => {
-  const bash = (command) => publishes('Bash', { command });
+  const bash = (command) => publishes('Bash', { command }, '/work/a')[0] ?? null;
   for (const command of [
     'git push',
     'git push -u origin claude/feature',
@@ -43,10 +43,23 @@ describe('publishes', () => {
     'mcp__github__update_pull_request',
     'mcp__plugin_engineering_github__create_pull_request',
   ])
-    it(`gates ${tool}`, () => assert.notEqual(publishes(tool, {}), null));
+    it(`gates ${tool}`, () => assert.equal(publishes(tool, {}, '/work/a').length, 1));
 
   for (const tool of ['mcp__github__pull_request_read', 'mcp__github__list_pull_requests', 'Edit'])
-    it(`lets ${tool} run`, () => assert.equal(publishes(tool, {}), null));
+    it(`lets ${tool} run`, () => assert.deepEqual(publishes(tool, {}, '/work/a'), []));
+
+  it('checks the checkout each command publishes from', () => {
+    const from = (command) => publishes('Bash', { command }, '/work/a').map((t) => t.directory);
+    assert.deepEqual(from('git push'), ['/work/a']);
+    assert.deepEqual(from('cd ../b && git push'), ['/work/b']);
+    assert.deepEqual(from('git -C ../c push'), ['/work/c']);
+    assert.deepEqual(from('cd ../b && git -C sub push && gh pr create'), ['/work/b/sub', '/work/b']);
+  });
+
+  it('falls back to the session’s checkout where the line does not say', () => {
+    const from = (command) => publishes('Bash', { command }, '/work/a').map((t) => t.directory);
+    assert.deepEqual(from('cd "$WORKTREE" && git push'), ['/work/a']);
+  });
 });
 
 // oppenheimer:begin web
@@ -138,6 +151,35 @@ describe('the hook', () => {
     const mcp = { tool_name: 'mcp__github__create_pull_request', tool_input: { head: 'feature' } };
     assert.equal(call(gh)?.decision, 'deny');
     assert.equal(call(mcp)?.decision, 'deny');
+  });
+
+  describe('from another checkout', () => {
+    // A worktree on a branch with no visual change, beside the one that has it.
+    const clean = mkdtempSync(join(tmpdir(), 'screenshot-guard-clean-'));
+    after(() => rmSync(clean, { recursive: true, force: true }));
+    const pushIn = (cwd, command) =>
+      call({ cwd, tool_name: 'Bash', tool_input: { command } })?.decision ?? null;
+    const prFrom = (cwd, head) =>
+      call({ cwd, tool_name: 'mcp__github__create_pull_request', tool_input: { head } })
+        ?.decision ?? null;
+
+    it('refuses `cd <visual checkout> && git push` from a clean one', () => {
+      rmSync(clean, { recursive: true, force: true });
+      git('worktree', 'add', '-q', '-b', 'clean', clean, 'HEAD');
+      assert.equal(pushIn(clean, 'git push'), null);
+      assert.equal(pushIn(clean, `cd ${root} && git push`), 'deny');
+      assert.equal(pushIn(clean, `git -C ${root} push`), 'deny');
+    });
+
+    it('lets a clean checkout push from the visual one’s session', () => {
+      assert.equal(pushIn(root, `cd ${clean} && git push`), null);
+      assert.equal(pushIn(root, `git -C ${clean} push`), null);
+    });
+
+    it('checks the worktree that has the pull request’s head', () => {
+      assert.equal(prFrom(clean, 'feature'), 'deny');
+      assert.equal(prFrom(root, 'owner:clean'), null);
+    });
   });
 
   it('lets every other call run on the same branch, so no turn is held', () => {

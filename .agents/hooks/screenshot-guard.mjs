@@ -8,8 +8,10 @@
 // It gates the moments the rule is about, and nothing else: a Bash call that
 // runs `git push` or `gh pr create`/`gh pr edit` (however it is spelled; the
 // command is read with `git-guard.mjs`'s parser), and the GitHub MCP tools
-// that create or update a pull request. A turn that ends, asks the user
-// something or is still mid-change is never held.
+// that create or update a pull request. It checks the checkout each of those
+// publishes from, which is not always the session's (`cd ../other && git
+// push`, `git -C`, a pull request whose head another worktree has). A turn
+// that ends, asks the user something or is still mid-change is never held.
 //
 // What is visual, and the fingerprint of the branch's visual change, are
 // `visual-change.mjs`. Two files answer it, when they carry the current
@@ -26,9 +28,9 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commands, gitInvocation } from './git-guard.mjs';
+import { ghInvocation, gitInvocation, located, moveTo } from './git-guard.mjs';
 import { visualChange } from './visual-change.mjs';
 
 const FINGERPRINT = /fingerprint[":\s]+([0-9a-f]{16})/;
@@ -43,25 +45,73 @@ function recorded(path) {
   }
 }
 
-/** Whether `words` run `gh pr create` or `gh pr edit`. */
-function ghPullRequest(words) {
-  let i = 0;
-  while (i < words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[i])) i += 1;
-  if (basename(words[i] ?? '') !== 'gh') return false;
-  // `gh -R owner/repo pr create`: global options may come before `pr`.
-  const pr = words.indexOf('pr', i + 1);
-  return pr !== -1 && ['create', 'edit'].includes(words[pr + 1]);
+const PUSH = 'pushes the branch';
+const PULL_REQUEST = 'opens or updates a pull request';
+
+/** What a parsed command publishes, or null. */
+function publishing(words) {
+  if (gitInvocation(words)?.subcommand === 'push') return PUSH;
+  const gh = ghInvocation(words);
+  if (gh?.group === 'pr' && ['create', 'edit'].includes(gh.action)) return PULL_REQUEST;
+  return null;
 }
 
-/** What the tool call publishes, or null when it publishes nothing this guard covers. */
-export function publishes(toolName, toolInput) {
-  if (PULL_REQUEST_TOOL.test(toolName ?? '')) return 'opens or updates a pull request';
-  if (toolName !== 'Bash' || typeof toolInput?.command !== 'string') return null;
-  for (const words of commands(toolInput.command)) {
-    if (gitInvocation(words)?.subcommand === 'push') return 'pushes the branch';
-    if (ghPullRequest(words)) return 'opens or updates a pull request';
+/**
+ * The checkout a git or gh command acts on: the directory the line has `cd`d
+ * to, then git's `-C`s. Null when the line does not spell it out.
+ */
+function checkoutOf(words, directory) {
+  let where = directory;
+  for (const dir of gitInvocation(words)?.directories ?? []) where = moveTo(where, dir);
+  return where;
+}
+
+/** The checkout with `branch` checked out, among the worktrees of the repository at `cwd`. */
+function worktreeOf(cwd, branch) {
+  let list;
+  try {
+    list = execFileSync('git', ['worktree', 'list', '--porcelain'], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+  let path = null;
+  for (const line of list.split('\n')) {
+    if (line.startsWith('worktree ')) path = line.slice('worktree '.length);
+    else if (line === `branch refs/heads/${branch}`) return path;
   }
   return null;
+}
+
+/**
+ * What the tool call publishes, each with the checkout it publishes from
+ * (`directory`); empty when it publishes nothing this guard covers.
+ *
+ * - Bash: every `git push` and `gh pr create`/`edit` in the line, in the
+ *   directory `cd` and `-C` take it to (`located` in `git-guard.mjs`).
+ * - The GitHub MCP tools: the worktree that has the pull request's `head`
+ *   checked out; `update_pull_request` names no branch, so the session's.
+ *
+ * Where the line or the tool does not say (`cd "$DIR"`, a branch no worktree
+ * has), `directory` is the session's `cwd`. Failing closed there would refuse
+ * ordinary pushes whose directory a hook cannot read, and the session's
+ * checkout is almost always the one being published.
+ */
+export function publishes(toolName, toolInput, cwd = process.cwd()) {
+  if (PULL_REQUEST_TOOL.test(toolName ?? '')) {
+    const head = typeof toolInput?.head === 'string' ? toolInput.head.split(':').at(-1) : null;
+    return [{ action: PULL_REQUEST, directory: (head && worktreeOf(cwd, head)) || cwd }];
+  }
+  if (toolName !== 'Bash' || typeof toolInput?.command !== 'string') return [];
+  return located(toolInput.command, cwd)
+    .map(({ words, directory }) => ({
+      action: publishing(words),
+      directory: checkoutOf(words, directory) ?? cwd,
+    }))
+    .filter((target) => target.action);
 }
 
 /** The message that refuses the call, or null when the branch is covered. */
@@ -90,36 +140,46 @@ function main() {
   try {
     input = JSON.parse(readFileSync(0, 'utf8') || '{}');
   } catch {}
-  const action = publishes(input.tool_name, input.tool_input);
-  if (!action) return;
+  const cwd = input.cwd ?? process.cwd();
+  const targets = publishes(input.tool_name, input.tool_input, cwd);
+  if (targets.length === 0) return;
   // A run that photographs nothing by design (the audit eval's worktrees).
   if (process.env.OPPENHEIMER_SCREENSHOT_GUARD === 'off') return;
+  for (const { action, directory } of targets) {
+    const reason = refusal(directory);
+    if (!reason) continue;
+    const output = {
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: `This call ${action} from ${reason.root}. ${reason.text}`,
+      },
+    };
+    process.stdout.write(`${JSON.stringify(output)}\n`);
+    return;
+  }
+}
+
+/** Why publishing the checkout at `directory` is refused, or null. */
+function refusal(directory) {
   let root;
   try {
     root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      cwd: input.cwd ?? process.cwd(),
+      cwd: directory,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
   } catch {
-    return;
+    // Not a checkout (or not there): the command itself will fail.
+    return null;
   }
-  let reason = null;
   try {
-    reason = verdict(root);
+    const text = verdict(root);
+    return text ? { root, text } : null;
   } catch {
     // No main to compare against (a shallow clone): nothing to check.
-    return;
+    return null;
   }
-  if (!reason) return;
-  const output = {
-    hookSpecificOutput: {
-      hookEventName: 'PreToolUse',
-      permissionDecision: 'deny',
-      permissionDecisionReason: `This call ${action}. ${reason}`,
-    },
-  };
-  process.stdout.write(`${JSON.stringify(output)}\n`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
