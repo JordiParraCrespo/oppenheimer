@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { expandScopes, grantableScopes, ROLES, type Scope } from '@oppenheimer/shared';
-import { AbilityFactory } from '../../roles/application/ability.factory';
+import { AbilityFactory } from '../../authz/application/ability.factory';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 
 /**
  * What a bot's owner may do now, as scopes (`25-bots.md` §4): the scopes

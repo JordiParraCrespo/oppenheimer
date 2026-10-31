@@ -10,7 +10,7 @@ import {
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import type { CloudFile } from '../../application/cloud-files.port';
 import { FindCloudFileQuery } from './find-cloud-file.query';
 

@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';

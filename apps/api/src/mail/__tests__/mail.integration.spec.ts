@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { GmailConnectionOrmEntity } from '../database/gmail-connection.orm-entity';
 import { GmailConnectionRepository } from '../database/gmail-connection.repository';
 import { MailSendOrmEntity } from '../database/mail-send.orm-entity';

@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 export class DisconnectInstallationCommand extends CommandBase {
   /** The caller's resolved scope, so the write reads the row the same way a

@@ -11,7 +11,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Request } from 'express';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 
 /**

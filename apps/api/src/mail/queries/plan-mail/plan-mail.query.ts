@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { MailRequest } from '../../domain/mail-send.policy';
 
 /** What a requested message would be, every default resolved; nothing is written. */

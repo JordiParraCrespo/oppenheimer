@@ -1,4 +1,4 @@
-import { defineResource } from '@oppenheimer/backend-authz';
+import { defineResource } from '../authz/domain/resource-definition.types';
 
 /**
  * Mail is a person's own Gmail accounts, worked by their bots

@@ -1,5 +1,5 @@
 import type { CommandBus } from '@nestjs/cqrs';
-import { BotRateLimitError } from '@oppenheimer/backend-agents';
+import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { DelayedError, type Job } from 'bullmq';
 import { SummarizeBotConversationCommand } from '../../commands/summarize-bot-conversation/summarize-bot-conversation.command';
 import { SUMMARIZE_BOT_CONVERSATION_JOB } from '../../database/bot-conversation-summary.repository';
@@ -42,7 +42,7 @@ describe('BotSummariesProcessor', () => {
   it('delays the job until the provider’s reset on a refusal for rate, spending no attempt', async () => {
     const resetAt = new Date(Date.now() + 5 * 60_000);
     const { process, job } = setup(async () => {
-      throw new BotRateLimitError('429 rate limit reached', resetAt);
+      throw new LlmRateLimitError('anthropic', '429 rate limit reached', resetAt);
     });
     await expect(process()).rejects.toBeInstanceOf(DelayedError);
     expect(job.moveToDelayed).toHaveBeenCalledWith(resetAt.getTime(), 'token-1');
@@ -51,7 +51,7 @@ describe('BotSummariesProcessor', () => {
   it('delays a minute when the refusal named no reset', async () => {
     const before = Date.now();
     const { process, job } = setup(async () => {
-      throw new BotRateLimitError('quota exceeded', null);
+      throw new LlmRateLimitError('chatgpt', 'quota exceeded', null);
     });
     await expect(process()).rejects.toBeInstanceOf(DelayedError);
     const [at] = job.moveToDelayed.mock.calls[0] as unknown as [number];

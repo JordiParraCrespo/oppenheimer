@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { CHATGPT_AUTH, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
 import { ChatgptSignInMapper } from '../../chatgpt-sign-in.mapper';

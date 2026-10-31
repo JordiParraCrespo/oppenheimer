@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import type { BotProvider } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { BotResource } from '../bots.resource';
 import type { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { defaultBotProvider } from '../domain/model-provider-default.policy';

@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';

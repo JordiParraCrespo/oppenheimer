@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { type CreateSessionDto, placeOfCreate } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { runnerRefusal } from '../domain/runner-refusal.policy';

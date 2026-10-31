@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { ResourceDefinition } from './resource-definition';
+import type { ResourceDefinition } from '../domain/resource-definition.types';
 
 /** One group of resources, as the role builder renders them. */
 export interface ResourceGroup {

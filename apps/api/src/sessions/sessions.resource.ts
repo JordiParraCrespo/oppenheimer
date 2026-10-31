@@ -1,4 +1,4 @@
-import { defineResource } from '@oppenheimer/backend-authz';
+import { defineResource } from '../authz/domain/resource-definition.types';
 
 /**
  * Sessions are workspace-owned, and that is the whole of their scoping.

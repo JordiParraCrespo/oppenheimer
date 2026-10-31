@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /**
  * The scope is on the query because the installation is read the same way the

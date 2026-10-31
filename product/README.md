@@ -982,3 +982,10 @@ earlier note:
   connects, and the console reconciles by block and sequence number, the
   stored message being the authority (`versions/mvp/25-bots.md` §2,
   `next-steps/0.7-chat-protocol.md` slice 2).
+- `AUTHORIZATION.md` (the starter's kernel design, kept as history) put
+  row-level authorization in its own package, `@oppenheimer/backend-authz`.
+  On 2026-10-31 (#556) it was folded into `apps/api/src/authz/`, with
+  `AbilityFactory` (from `roles`) and `PoliciesGuard` (from `auth`): it had
+  one consumer and no second implementation of its one port, and
+  authorization had lived in four places. `.agents/rules/rbac-roles.md` is
+  the current map.

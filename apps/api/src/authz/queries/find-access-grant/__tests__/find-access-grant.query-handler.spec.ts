@@ -1,9 +1,9 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccessGrantRepositoryPort } from '../../../database/access-grant.repository.port';
 import type { AccessGrantEntity } from '../../../domain/access-grant.entity';
+import type { AccessScope } from '../../../domain/access-scope.types';
 import { FindAccessGrantQuery } from '../find-access-grant.query';
 import { FindAccessGrantQueryHandler } from '../find-access-grant.query-handler';
 

@@ -1,5 +1,5 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { OrganizeMailCommand } from '../../../mail/commands/organize-mail/organize-mail.command';
 import { TrashMailCommand } from '../../../mail/commands/trash-mail/trash-mail.command';
 import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';

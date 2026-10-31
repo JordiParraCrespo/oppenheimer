@@ -1,5 +1,4 @@
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
 import type {
@@ -12,6 +11,7 @@ import type {
   Scope,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import {
   ALLOWED_BY_DATA_KEY,

@@ -1,7 +1,7 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { VersionConflictException } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { HostRepositoryPort } from '../../../database/host.repository.port';
 import { HostUnpairedDomainEvent } from '../../../domain/events/host-unpaired.domain-event';
 import { HostEntity } from '../../../domain/host.entity';

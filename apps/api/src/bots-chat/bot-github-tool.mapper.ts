@@ -1,4 +1,4 @@
-import type { GithubInstallationEntity } from './../github/domain/github-installation.entity';
+import type { GithubInstallationEntity } from '../github/domain/github-installation.entity';
 import { type BotToolCallContext, describeToolFailure } from './application/bot-tool.factory';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 

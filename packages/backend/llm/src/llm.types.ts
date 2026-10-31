@@ -55,7 +55,11 @@ export interface LlmCompletion {
   text: string;
   /** The model that answered, as the provider reported it. */
   model: string;
-  provider: LlmProviderId;
+  /**
+   * Who answered: one of {@link LlmProviderId}, or a bot provider when the
+   * service is a bot engine's (`engineLlm` in `@oppenheimer/backend-agents`).
+   */
+  provider: string;
   /** The provider's own stop reason (`stop`, `end_turn`, `length`, …), verbatim. */
   finishReason: string | null;
   usage: LlmUsage | null;

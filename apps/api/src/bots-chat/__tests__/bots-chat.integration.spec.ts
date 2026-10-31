@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
 import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';

@@ -5,7 +5,6 @@ import { type AddressInfo, connect, type Socket } from 'node:net';
 import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { HttpAdapterHost } from '@nestjs/core';
-import type { ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
@@ -18,8 +17,9 @@ import {
 } from '@oppenheimer/shared/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
-import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import type { AbilityPort } from '../../authz/application/ability.port';
+import type { ScopeResolverPort } from '../../authz/application/scope-resolver.port';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';

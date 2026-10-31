@@ -4,7 +4,7 @@
  * waits, of either kind, leaving the person two things to answer; the tool
  * offered on a turn nobody is waiting on.
  */
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import type { BotQuestionRepositoryPort } from '../../database/bot-question.repository.port';
 import type { BotQuestionEntity } from '../../domain/bot-question.entity';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';

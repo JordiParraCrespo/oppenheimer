@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { PullRequestAnalyticsRange } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 export class FindPullRequestAnalyticsQuery extends QueryBase {
   readonly scope: AccessScope;

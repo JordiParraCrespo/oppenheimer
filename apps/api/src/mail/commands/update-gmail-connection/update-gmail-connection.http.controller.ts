@@ -10,14 +10,14 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { GmailConnectionEntity } from '../../domain/gmail-connection.entity';
 import { GmailConnectionResponseDto } from '../../dtos/gmail-connection.response.dto';

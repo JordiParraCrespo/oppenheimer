@@ -1,7 +1,4 @@
-import type { AccessScope } from './access-scope';
-
-/** DI token for the application's {@link ScopeResolverPort} implementation. */
-export const SCOPE_RESOLVER = Symbol('SCOPE_RESOLVER');
+import type { AccessScope } from '../domain/access-scope.types';
 
 export interface ResolveScopeInput {
   userId: string;

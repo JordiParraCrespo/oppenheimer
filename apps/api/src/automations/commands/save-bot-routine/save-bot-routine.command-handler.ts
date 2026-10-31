@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { type AggregateID, ArgumentInvalidException } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { BotRoutineResolver } from '../../application/bot-routine.resolver';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';

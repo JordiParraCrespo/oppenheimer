@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { BOT_MEMORY_FACTS_MAX } from '@oppenheimer/shared';
 import { Some } from 'oxide.ts';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import { BotLookupResolver } from '../../../application/bot-lookup.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../../database/bot-memory-fact.repository.port';

@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import {
-  canAccessRow,
-  describePermission,
-  ungrantablePermissions,
-} from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { PermissionDefinition } from '@oppenheimer/shared';
+import { AbilityFactory } from '../../authz/application/ability.factory';
+import { canAccessRow } from '../../authz/application/can-access-row.policy';
+import { describePermission, ungrantablePermissions } from '../../authz/domain/can-grant.policy';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleErrors } from '../domain/role.errors';
-import { AbilityFactory } from './ability.factory';
 
 export interface RoleActor {
   id: string;

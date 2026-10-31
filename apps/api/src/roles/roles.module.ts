@@ -1,10 +1,7 @@
 import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ABILITY } from '../auth/auth.di-tokens';
 import { UsersModule } from '../users/user.module';
-import { AbilityFactory } from './application/ability.factory';
-import { GlobalRoleRegistry } from './application/global-role.registry';
 import { RoleGrantPolicy } from './application/role-grant.policy';
 import { AssignDefaultRoleCommandHandler } from './commands/assign-default-role/assign-default-role.command-handler';
 import { AssignUserRolesCommandHandler } from './commands/assign-user-roles/assign-user-roles.command-handler';
@@ -69,10 +66,10 @@ const repositories: Provider[] = [
 ];
 
 /**
- * Roles / RBAC module. Marked `@Global` so the {@link AbilityFactory}, bound
- * here to the auth kernel's `ABILITY` port that `PoliciesGuard` reads in every
- * feature module, and the repository ports are available application-wide
- * without circular module imports.
+ * Roles / RBAC module: the roles, their assignments and the version counters
+ * every write to them bumps. Marked `@Global` so the repository ports — which
+ * `authz`'s `AbilityFactory` reads to build every request's ability — are
+ * available application-wide without circular module imports.
  */
 @Global()
 @Module({
@@ -87,21 +84,11 @@ const repositories: Provider[] = [
     UsersModule,
   ],
   controllers: [...httpControllers],
-  providers: [
-    ...commandHandlers,
-    ...queryHandlers,
-    ...mappers,
-    ...repositories,
-    GlobalRoleRegistry,
-    AbilityFactory,
-    { provide: ABILITY, useExisting: AbilityFactory },
-    RoleGrantPolicy,
-  ],
+  providers: [...commandHandlers, ...queryHandlers, ...mappers, ...repositories, RoleGrantPolicy],
   exports: [
     ROLE_REPOSITORY,
     USER_ROLE_REPOSITORY,
-    AbilityFactory,
-    ABILITY,
+    AUTHZ_VERSION_REPOSITORY,
     RoleGrantPolicy,
     RoleMapper,
     TypeOrmModule,

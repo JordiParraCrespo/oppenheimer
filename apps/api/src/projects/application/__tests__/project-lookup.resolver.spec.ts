@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import { ProjectEntity } from '../../domain/project.entity';
 import { ProjectLookupResolver } from '../project-lookup.resolver';

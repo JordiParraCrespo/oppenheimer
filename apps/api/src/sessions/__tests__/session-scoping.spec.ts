@@ -1,6 +1,12 @@
-import { type AccessScope, applyAccessScope, expectAbility } from '@oppenheimer/backend-authz';
-import type { PermissionDefinition } from '@oppenheimer/shared';
+import {
+  type AbilityContext,
+  defineAbilitiesFromPermissions,
+  type PermissionDefinition,
+} from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
+import { canAccessRow } from '../../authz/application/can-access-row.policy';
+import { applyAccessScope } from '../../authz/database/scoped.repository';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { SessionResource } from '../sessions.resource';
 
 /**
@@ -84,35 +90,68 @@ describe('session row scoping (SQL)', () => {
   });
 });
 
+/**
+ * Whether `permissions`, built for `userId` with `scope` behind the
+ * `${scope.*}` placeholders, allow `action` on one concrete row.
+ */
+function allows(
+  permissions: readonly PermissionDefinition[],
+  userId: string,
+  scope: AccessScope,
+  action: string,
+  subjectName: string,
+  row: Record<string, unknown>,
+): boolean {
+  const ability = defineAbilitiesFromPermissions([...permissions], {
+    user: { id: userId },
+    scope: {
+      organizationId: scope.organizationId,
+      teamIds: scope.teamIds,
+      grants: Object.fromEntries(
+        [...scope.grants].map(([subject, grant]) => [
+          subject,
+          grant === 'all' ? 'all' : [...grant],
+        ]),
+      ),
+    },
+  } as AbilityContext);
+  return canAccessRow(ability, action, subjectName, row);
+}
+
 describe('session capabilities (CASL)', () => {
   it('lets a workspace member run the sessions of their own workspace', () => {
-    expectAbility(WORKSPACE_SESSIONS, { user: { id: 'member-1' }, scope: scope() })
-      .canOn('read', 'Session', { organizationId: 'org-acme' })
-      .canOn('create', 'Session', { organizationId: 'org-acme' })
-      .canOn('update', 'Session', { organizationId: 'org-acme' })
-      .canOn('delete', 'Session', { organizationId: 'org-acme' });
+    for (const action of ['read', 'create', 'update', 'delete']) {
+      expect(
+        allows(WORKSPACE_SESSIONS, 'member-1', scope(), action, 'Session', {
+          organizationId: 'org-acme',
+        }),
+      ).toBe(true);
+    }
   });
 
   it('does not let them reach another workspace’s session', () => {
-    expectAbility(WORKSPACE_SESSIONS, {
-      user: { id: 'member-1' },
-      scope: scope(),
-    }).cannotOn('read', 'Session', { organizationId: 'org-other' });
+    expect(
+      allows(WORKSPACE_SESSIONS, 'member-1', scope(), 'read', 'Session', {
+        organizationId: 'org-other',
+      }),
+    ).toBe(false);
   });
 
   it('does not let them open a terminal on another workspace’s session', () => {
     // The one that matters most: a PTY on somebody else's machine.
-    expectAbility(WORKSPACE_SESSIONS, {
-      user: { id: 'member-1' },
-      scope: scope(),
-    }).cannotOn('update', 'Session', { organizationId: 'org-other' });
+    expect(
+      allows(WORKSPACE_SESSIONS, 'member-1', scope(), 'update', 'Session', {
+        organizationId: 'org-other',
+      }),
+    ).toBe(false);
   });
 
   it('gives a caller with no active workspace nothing', () => {
-    expectAbility(WORKSPACE_SESSIONS, {
-      user: { id: 'member-1' },
-      scope: scope({ organizationId: null }),
-    }).cannotOn('read', 'Session', { organizationId: 'org-acme' });
+    expect(
+      allows(WORKSPACE_SESSIONS, 'member-1', scope({ organizationId: null }), 'read', 'Session', {
+        organizationId: 'org-acme',
+      }),
+    ).toBe(false);
   });
 });
 

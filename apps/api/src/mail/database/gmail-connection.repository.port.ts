@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
 
 /**

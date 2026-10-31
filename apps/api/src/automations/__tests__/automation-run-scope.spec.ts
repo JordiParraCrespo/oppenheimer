@@ -1,7 +1,7 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import type { DataSource, Repository } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type { AutomationRunOrmEntity } from '../database/automation-run.orm-entity';

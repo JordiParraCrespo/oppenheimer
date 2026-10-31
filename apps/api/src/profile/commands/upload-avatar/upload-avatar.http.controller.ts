@@ -22,10 +22,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { ProfileResponseDto } from '../../dtos/profile.response.dto';
 import type { AvatarStoragePort } from '../../infrastructure/avatar-storage.port';
 import { AvatarFileInterceptor } from '../../interceptors/file-upload.interceptor';

@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { GmailConnectStateResolver } from '../../application/gmail-connect-state.resolver';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
 import { canConnectAnotherGmailAccount } from '../../domain/gmail-accounts.policy';

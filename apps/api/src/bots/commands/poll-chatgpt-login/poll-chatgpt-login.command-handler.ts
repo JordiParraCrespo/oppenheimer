@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireOrganization } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
 import { ChatgptCredentialResolver } from '../../application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { CHATGPT_AUTH, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';

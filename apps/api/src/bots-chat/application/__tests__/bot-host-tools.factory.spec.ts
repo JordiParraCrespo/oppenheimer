@@ -1,6 +1,6 @@
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { FindHostsQuery } from '../../../hosts/queries/find-hosts/find-hosts.query';
 import { FindProjectsQuery } from '../../../projects/queries/find-projects/find-projects.query';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';

@@ -1,8 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { githubUserTokenKeyOf } from '../config/github.config';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { GithubAccessResolver } from './application/github-access.resolver';

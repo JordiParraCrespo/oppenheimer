@@ -311,8 +311,8 @@ describe('authorization cache (integration)', () => {
     });
 
     it('a global role edited, seen by this process and by another replica', async () => {
-      const { AbilityFactory } = await import('../../roles/application/ability.factory');
-      const { GlobalRoleRegistry } = await import('../../roles/application/global-role.registry');
+      const { AbilityFactory } = await import('../application/ability.factory');
+      const { GlobalRoleRegistry } = await import('../application/global-role.registry');
       const { AUTHZ_VERSION_REPOSITORY, ROLE_REPOSITORY, USER_ROLE_REPOSITORY } = await import(
         '../../roles/roles.di-tokens'
       );

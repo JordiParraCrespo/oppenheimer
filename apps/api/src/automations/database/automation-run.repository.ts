@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { LISTED_RUN_STATUSES } from '@oppenheimer/shared/automations';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type {
@@ -253,7 +254,7 @@ export async function countRecentByWorkspaceWithin(
  * The runs list's tenant clause, on `run."organizationId"` itself, so the
  * planner bounds it by the window on IDX_automation_run_organization_created
  * instead of semi-joining every run the workspace kept. It restates what
- * `applyAccessScope` (packages/backend/authz/src/scope/apply-access-scope.ts)
+ * `applyAccessScope` (`authz/database/scoped.repository.ts`)
  * does for an organization-only resource — a bypass with no organization
  * reaches every workspace (audited upstream), any other scope with no
  * organization reaches nothing — and is

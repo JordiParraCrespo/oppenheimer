@@ -11,9 +11,10 @@ import { TranscribeVoiceCommandHandler } from './commands/transcribe-voice/trans
 import { TranscribeVoiceHttpController } from './commands/transcribe-voice/transcribe-voice.http.controller';
 import { ChatgptSpeechGateway } from './infrastructure/chatgpt-speech.gateway';
 import { OpenAiCompatibleSpeechGateway } from './infrastructure/openai-compatible-speech.gateway';
+import { PolishLlmAdapter } from './infrastructure/polish-llm.adapter';
 import { FindVoiceStatusHttpController } from './queries/find-voice-status/find-voice-status.http.controller';
 import { FindVoiceStatusQueryHandler } from './queries/find-voice-status/find-voice-status.query-handler';
-import { CHATGPT_SPEECH, KEYED_SPEECH, VOICE_POLISH_ENGINE } from './voice.di-tokens';
+import { CHATGPT_SPEECH, KEYED_SPEECH, POLISH_LLM, VOICE_POLISH_ENGINE } from './voice.di-tokens';
 
 /**
  * Dictation (`product/next-steps/voice.md`): a recording in, the text it
@@ -43,6 +44,7 @@ import { CHATGPT_SPEECH, KEYED_SPEECH, VOICE_POLISH_ENGINE } from './voice.di-to
     { provide: CHATGPT_SPEECH, useClass: ChatgptSpeechGateway },
     { provide: KEYED_SPEECH, useClass: OpenAiCompatibleSpeechGateway },
     { provide: VOICE_POLISH_ENGINE, useFactory: () => createBotEngine() },
+    { provide: POLISH_LLM, useClass: PolishLlmAdapter },
   ],
 })
 export class VoiceModule {}

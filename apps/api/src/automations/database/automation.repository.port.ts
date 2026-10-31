@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
 import type { WorkspaceLimits } from '../domain/automation-limits.policy';

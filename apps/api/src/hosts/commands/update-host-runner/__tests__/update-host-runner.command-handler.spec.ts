@@ -1,7 +1,7 @@
 import { generateKeyPairSync, randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { hostUpdateSchema } from '@oppenheimer/shared/protocol';
 import { None, Some } from 'oxide.ts';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type {
   LinkRegistryPort,
   RunnerLink,

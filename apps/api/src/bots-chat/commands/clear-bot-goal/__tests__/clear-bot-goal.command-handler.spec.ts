@@ -3,7 +3,7 @@
  * stop leaving no trace in the chat; a bot in another workspace reached. The
  * waiting continuation it cancels is `BotGoalResolver`'s, specced there.
  */
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
 import type { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { BotGoalResolver } from '../../../application/bot-goal.resolver';

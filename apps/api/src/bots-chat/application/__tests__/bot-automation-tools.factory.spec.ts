@@ -1,5 +1,5 @@
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { FindAutomationQuery } from '../../../automations/queries/find-automation/find-automation.query';
 import { FindAutomationRunsQuery } from '../../../automations/queries/find-automation-runs/find-automation-runs.query';
 import { FindAutomationsQuery } from '../../../automations/queries/find-automations/find-automations.query';

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { WorkspaceRepository } from '../../github/application/pull-request-access.port';
 import type { PullRequestDirectoryPort } from '../../github/application/pull-request-directory.port';
 import { addressKeyOf } from '../../github/domain/repository-address.policy';

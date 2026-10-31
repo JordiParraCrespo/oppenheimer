@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
 import type { InboxMarkRepositoryPort } from '../../database/inbox-mark.repository.port';
 import { InboxErrors } from '../../domain/inbox.errors';
 import { isInboxItemKey } from '../../domain/inbox-mark.policy';

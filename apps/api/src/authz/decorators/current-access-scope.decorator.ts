@@ -1,5 +1,5 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../domain/access-scope.types';
 
 /** Where `AccessScopeInterceptor` leaves the resolved scope. */
 export const ACCESS_SCOPE_KEY = 'accessScope';

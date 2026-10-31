@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { CredentialOwner } from '../../../auth/domain/scope-context.types';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { SessionShareEntity } from '../../domain/session-share.entity';
 
 /** What the query answers: the share, and who it acts as while their account is active. */

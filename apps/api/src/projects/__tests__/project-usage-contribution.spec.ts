@@ -1,7 +1,7 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it } from 'vitest';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ProjectUsagePort } from '../application/project-usage.port';
 import { ProjectUsageRegistry } from '../application/project-usage.registry';
 import { ProjectsModule } from '../projects.module';

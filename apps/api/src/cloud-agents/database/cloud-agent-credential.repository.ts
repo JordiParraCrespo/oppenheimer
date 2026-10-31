@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import type { CloudAgentProviderId } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { CloudAgentCredentialMapper } from '../cloud-agent-credential.mapper';
 import { CloudAgentResource } from '../cloud-agents.resource';
 import type { CloudAgentCredentialEntity } from '../domain/cloud-agent-credential.entity';

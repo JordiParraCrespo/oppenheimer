@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../domain/access-scope.types';
 
 export class RevokeAccessGrantCommand extends CommandBase {
   readonly scope: AccessScope;

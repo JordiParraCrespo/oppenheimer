@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { AccessGrantPrincipalType } from '../../domain/access-grant.entity';
+import type { AccessScope } from '../../domain/access-scope.types';
 
 export class CreateAccessGrantCommand extends CommandBase {
   /** The granter's own reach — what the new grant may not exceed. */

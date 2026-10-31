@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { planClosedReads } from '../domain/closed-read.policy';
 import type {
   GithubCredential,

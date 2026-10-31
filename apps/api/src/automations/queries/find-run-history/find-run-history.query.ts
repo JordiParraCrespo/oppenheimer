@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { RunHistoryQueryDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 export class FindRunHistoryQuery extends QueryBase {
   readonly scope: AccessScope;

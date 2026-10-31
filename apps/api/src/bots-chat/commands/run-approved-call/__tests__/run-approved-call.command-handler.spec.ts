@@ -1,7 +1,7 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { z } from 'zod/v4';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { BotRepositoryPort } from '../../../../bots/database/bot.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import { BotApprovedCallResolver } from '../../../application/bot-approved-call.resolver';

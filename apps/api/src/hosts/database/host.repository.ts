@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService, writeVersioned } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import type { HostEntity } from '../domain/host.entity';
 import { HostMapper } from '../host.mapper';
 import { HostResource } from '../hosts.resource';

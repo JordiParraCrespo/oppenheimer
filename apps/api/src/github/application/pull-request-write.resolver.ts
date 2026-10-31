@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { GithubErrors } from '../domain/github.errors';
 import { GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubCredential, GithubPullsPort } from '../infrastructure/github-pulls.port';

@@ -1,7 +1,7 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { type VoiceTranscriptionDto, vocabularyTerms } from '@oppenheimer/shared';
+import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
 import { VoicePolishResolver } from '../../application/voice-polish.resolver';
 import { VoiceTranscriptionResolver } from '../../application/voice-transcription.resolver';
 import { VoiceErrors } from '../../domain/voice.errors';

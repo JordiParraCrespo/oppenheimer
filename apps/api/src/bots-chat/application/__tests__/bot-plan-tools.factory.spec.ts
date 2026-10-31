@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectPlanSummary } from '@oppenheimer/shared/plan';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { ProjectEntity } from '../../../projects/domain/project.entity';
 import { FindProjectsQuery } from '../../../projects/queries/find-projects/find-projects.query';
 import { CreateTaskCommand } from '../../../tasks/commands/create-task/create-task.command';

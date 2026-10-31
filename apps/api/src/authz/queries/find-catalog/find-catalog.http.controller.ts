@@ -2,12 +2,12 @@ import { Controller, Get, Req, UseGuards, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../decorators/check-policies.decorator';
 import { AuthzCatalogResponseDto } from '../../dtos/authz-catalog.response.dto';
 import { FindAuthzCatalogQuery } from './find-catalog.query';
 

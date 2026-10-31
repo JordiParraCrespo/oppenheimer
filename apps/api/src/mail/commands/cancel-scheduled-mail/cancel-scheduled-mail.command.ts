@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Stops one of the caller's scheduled sends while it still waits. */
 export class CancelScheduledMailCommand extends CommandBase {

@@ -1,4 +1,4 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { InstallationPullRequestAddress, ReviewSubmission } from './pull-request-access.port';
 
 /**

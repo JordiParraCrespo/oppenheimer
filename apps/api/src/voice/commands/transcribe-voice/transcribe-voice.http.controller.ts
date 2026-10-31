@@ -24,12 +24,12 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { VOICE_AUDIO_MAX_BYTES, type VoiceTranscriptionDto } from '@oppenheimer/shared';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
 import { VoiceTranscriptionResponseDto } from '../../dtos/voice-transcription.response.dto';
 import { VoiceAudioInterceptor } from '../../interceptors/voice-audio.interceptor';

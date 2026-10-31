@@ -9,12 +9,14 @@ paths:
 
 # Roles & Authorization (RBAC) Rules
 
-> **The kernel.** Row-level authorization lives in `@oppenheimer/backend-authz`
-> (`packages/backend/authz`) — the resource registry, `AccessScope`, the SQL
-> predicate generator, the scoped repository base and the containment checks.
-> Read its README before adding a resource; the two-step recipe there
-> (`defineResource` + `ScopedRepositoryBase`) is the whole interface, and
-> `apps/api/src/projects/` is a worked example.
+> **One home.** All of authorization lives in `apps/api/src/authz/`: the
+> resource registry, `AccessScope` and the scope resolver, the SQL predicate and
+> the scoped repository base, the containment checks, the access grants, the
+> `AbilityFactory`, `PoliciesGuard` and `@CheckPolicies`. "Row-level
+> authorization" below is the whole interface for a new resource
+> (`defineResource` + `ScopedRepositoryBase`), and `apps/api/src/projects/` is
+> a worked example. The roles themselves (their tables, use cases and version
+> counters) are `apps/api/src/roles/`.
 >
 > Three rules that are easy to break and hard to notice:
 >
@@ -51,9 +53,58 @@ the system roles are seeded with, not a second source of truth.
 | ----------------------------------- | ------------------------------------------------------------------------------------------- |
 | Permission/ability building (CASL)  | `packages/shared/src/permissions` (`defineAbilitiesFromPermissions`)                        |
 | Role Zod schemas                    | `packages/shared/src/schemas/role.schema.ts`                                                |
-| Roles module (aggregate, use cases) | `apps/api/src/roles/`                                                                       |
-| Effective-ability resolution        | `apps/api/src/roles/application/ability.factory.ts`                                            |
-| Route guard + policy decorator      | `apps/api/src/auth/guards/policies.guard.ts`, `auth/decorators/check-policies.decorator.ts` |
+| Roles module (aggregate, use cases, version counters) | `apps/api/src/roles/` |
+| Effective-ability resolution (`ABILITY` port) | `apps/api/src/authz/application/ability.factory.ts`, `ability.port.ts` |
+| Route guard + policy decorator      | `apps/api/src/authz/guards/policies.guard.ts`, `authz/decorators/check-policies.decorator.ts` |
+| Resource declarations + registry    | `authz/domain/resource-definition.types.ts`, `authz/application/resource.registry.ts` |
+| `AccessScope`, its resolver, the access grants | `authz/domain/access-scope.types.ts`, `authz/application/scope.resolver.ts`, `authz/database/access-grant.*` |
+| SQL predicate + `ScopedRepositoryBase` | `authz/database/scoped.repository.ts` |
+| Containment (`canGrant`, `canGrantScope`) | `authz/domain/*.policy.ts` |
+| Row-level check against an ability (`canAccessRow`) | `authz/application/can-access-row.policy.ts` |
+
+## Row-level authorization
+
+Four questions, and all of them have to pass:
+
+| #      | Question                     | Mechanism                                        |
+| ------ | ---------------------------- | ------------------------------------------------ |
+| **Q0** | Is this a platform operator? | Better Auth admin role — skips Q2, never Q1      |
+| **Q1** | Which tenant's data?         | `organizationId` + the request's tenant          |
+| **Q2** | Which slice within it?       | `AccessScope`: team membership ∪ explicit grants |
+| **Q3** | What may you do to it?       | Dynamic CASL RBAC, org-scoped roles              |
+
+Q1 and Q2 decide **which rows**; Q3 decides **what you may do to them**.
+
+Adding a resource is two steps. First declare it, in the module that owns it
+(`<module>.resource.ts`), and register it with `AuthzModule.forFeature([...])`
+in that module:
+
+```ts
+export const LeadResource = defineResource({
+  subject: "Lead",
+  label: "Leads",
+  group: "crm",
+  actions: [{ name: "read" }, { name: "update" }, { name: "export", sensitive: true }],
+  keys: { organization: "organizationId", team: "teamId", owner: "ownerId" },
+  scopes: ["organization", "team", "own", "grant"],
+  credentialScope: "leads",
+});
+```
+
+`keys` is the load-bearing part: the CASL condition and the SQL predicate are
+both derived from it, so a query and an `ability.can()` cannot disagree about
+what a scope means. Then extend `ScopedRepositoryBase` and read through
+`this.scopedQuery(scope)`.
+
+It fails closed in three places where the obvious implementation is the
+dangerous one: `applyAccessScope` with no matching dimension emits `1 = 0`
+(returning the builder untouched would turn "no access" into "every row");
+`scopedQuery` throws without a scope (`unscopedQuery(reason)` is the named,
+greppable way out); an empty `teamIds` is `[]`, never `undefined`.
+
+The scope resolver is behind `SCOPE_RESOLVER` (`ScopeResolverPort`), so a
+hierarchical resolution (a manager seeing their reports' rows) replaces the
+default flat-membership one without touching a call site.
 
 ## Data model
 
@@ -128,7 +179,7 @@ export class PublishArticleHttpController {
 Some endpoints are the thing a client hides a link behind — members, roles, API
 tokens, admin, projects, sessions. Their `@CheckPolicies` is declared once, in
 `ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`),
-and asserted by `apps/api/src/auth/__tests__/endpoint-policies.spec.ts`: it
+and asserted by `apps/api/src/authz/__tests__/endpoint-policies.spec.ts`: it
 checks the handler exists, that it is mounted at the path the catalog names,
 and that its `@CheckPolicies` is exactly the rule list there. Change the policy
 on one of those handlers and the test fails until the catalog says the same
@@ -222,9 +273,12 @@ organization's role needs its `roleVersion`.
 
 ## Wiring notes
 
-- `RolesModule` is `@Global` so the `AbilityFactory` (needed by `PoliciesGuard`
-  in every feature module) and the repository ports are available app-wide
-  without circular module imports.
+- `AuthzModule` is `@Global` so `PoliciesGuard`, the `ABILITY` port (bound to
+  `AbilityFactory`) and `AccessScopeInterceptor` resolve in every feature
+  module without circular module imports. `RolesModule` is `@Global` too, for
+  the repository ports `AbilityFactory` reads.
+- `src/auth` knows nothing of `authz`: it authenticates and resolves the
+  credential, and `auth-is-a-kernel` keeps it that way.
 - The roles module follows the standard DDD-Hexagon layout
   (`nestjs-architecture.md`); permission editing goes through domain methods
   (`RoleEntity.replacePermissions`), never by mutating ORM records directly.

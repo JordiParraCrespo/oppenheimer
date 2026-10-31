@@ -1,5 +1,5 @@
 import type { AppAbility } from '@oppenheimer/shared';
-import type { TenantRequest } from '../domain/request-tenant.types';
+import type { TenantRequest } from '../../auth/domain/request-tenant.types';
 
 export interface AbilityRequest extends TenantRequest {
   user?: Record<string, unknown>;

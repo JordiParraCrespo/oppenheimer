@@ -1,6 +1,6 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import type { BotRepositoryPort } from '../../../bots/database/bot.repository.port';
 import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-document.repository.port';

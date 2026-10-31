@@ -10,22 +10,22 @@ import {
 } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, AppError } from '@oppenheimer/backend-core';
 import {
   WORKSPACE_STREAM_EVENT,
   WORKSPACE_STREAM_READY,
 } from '@oppenheimer/shared/workspace-events';
 import { map, type Observable } from 'rxjs';
-import type { AbilityPort, AbilityRequest } from '../../../auth/application/ability.port';
-import { ABILITY } from '../../../auth/auth.di-tokens';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
 import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { ScopeContext } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import type { AbilityPort, AbilityRequest } from '../../../authz/application/ability.port';
+import { ABILITY } from '../../../authz/authz.di-tokens';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
 import { readableTypes } from '../../application/workspace-event-access.policy';

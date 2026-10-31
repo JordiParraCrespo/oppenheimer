@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Run now, from a bot's Routines tab or its own tool: one run of that bot's routine. */
 export class RunBotRoutineCommand extends CommandBase {

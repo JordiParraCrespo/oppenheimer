@@ -1,8 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { CloudAgentResolver } from './application/cloud-agent.resolver';
 import { CloudAgentProviderRegistry } from './application/cloud-agent-provider.registry';

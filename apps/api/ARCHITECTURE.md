@@ -23,15 +23,13 @@ what is described here. When they disagree, fix the code or update both together
         │  └─────────────────────────────────────────┘  │
         │  Infrastructure   database (orm-entity, repository, ports)
         └───────────────────────────────────────────────┘
-        depends on ──►  @oppenheimer/backend-ddd, -authz, @oppenheimer/shared only (domain)
+        depends on ──►  @oppenheimer/backend-ddd, @oppenheimer/shared only (domain)
 ```
 
 - **Domain** depends on nothing but `@oppenheimer/backend-ddd`,
-  `@oppenheimer/backend-authz`, `@oppenheimer/shared` and node core. No NestJS, no
-  TypeORM, no `oxide.ts`, no `express`. (`backend-authz` is in that list
-  because the resource declaration a module's domain owns is written against
-  it; `domain-stays-pure` in `.dependency-cruiser.cjs` is the enforced
-  statement of this sentence.)
+  `@oppenheimer/shared`, another module's `domain/` and node core. No NestJS, no
+  TypeORM, no `oxide.ts`, no `express`, no CASL runtime. (`domain-stays-pure` in
+  `.dependency-cruiser.cjs` is the enforced statement of this sentence.)
 - **Application** (handlers) depends on the domain and on **repository ports**,
   never on the concrete repository.
 - **Infrastructure** (`database/`) implements the ports and maps domain ↔ ORM.
@@ -226,7 +224,7 @@ it extends depends on the aggregate:
   (`UserRepository.save` turns the username constraint into
   `USERNAME_TAKEN`; `UserSettingsRepository` sets `idColumn = 'userId'`).
 - **Tenant-scoped** (projects, sessions, hosts, automations): extend
-  `ScopedRepositoryBase` from `@oppenheimer/backend-authz`, whose reads all
+  `ScopedRepositoryBase` from `authz/database/scoped.repository.ts`, whose reads all
   take an `AccessScope`. The port does not extend `RepositoryPort`.
 
 A write that spans several statements (lock, check, write) runs them in one

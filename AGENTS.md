@@ -41,13 +41,13 @@ All research and decisions live in `product/`; start with `product/README.md`.
 ## Monorepo map
 
 ```
-apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
+apps/        api (NestJS control plane; authorization in src/authz) · web (Vite + TanStack Router console)
              runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
              web-showcase (Next.js gallery of the design system)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
              translations (i18n JSON)
-             backend/  agents authz cache core ddd email i18n llm queue storage
+             backend/  agents cache core ddd email i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
              go/       core config httpx auth health ws postgres selfupdate execx
@@ -58,7 +58,8 @@ Who uses whom:
 
 ```
 tsconfig → everything · env → api · shared → api, auth, backend/core, frontend/*
-backend/* → api (ddd depends on nothing; agents is the only code that imports an agent SDK)
+backend/* → api (ddd depends on nothing; agents is the only code that imports an agent SDK,
+             and depends on llm for the shared LlmService and LlmRateLimitError)
 translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
