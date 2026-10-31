@@ -1,3 +1,4 @@
+// uncatalogued: a submenu's search-and-list body; the filter-menu row covers the choice
 'use client';
 
 import { SearchIcon } from 'lucide-react';

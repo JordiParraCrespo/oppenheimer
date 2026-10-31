@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * The component catalog cannot drift from the design system.
  *
@@ -5,161 +6,219 @@
  * in `.agents/rules/frontend-ui.md` and the rest of it in
  * `.agents/reference/frontend-ui-catalog.md`. Its "Use" and "Not" columns are
  * judgement, which no export carries, so the table is written by hand. What a
- * script can hold is the link between the two:
+ * script can hold is the link between the two, read from the "Use" column
+ * only:
  *
- * - every component a row's "Use" column names is exported, from the design
- *   system's `src/index.ts` or, for "the kit's X", from the platform kit
- *   (`QueryState.Pending` and the other compound parts count as their root's);
- * - every module the design system's index exports components from is named
- *   in the table, or sits in `UNCATALOGUED` with the reason it has no row.
+ * - every component a row's "Use" column names is a public export of the
+ *   design system or of the platform kit, or a part of a public compound
+ *   (`QueryState.Pending`), resolved through each package's barrel by the
+ *   TypeScript compiler, `export *` included;
+ * - every design-system module that exports a component is named in some
+ *   row's "Use" column, or opens with `// uncatalogued: <why>`. A marker on a
+ *   module that has a row is stale, and fails too.
  *
- * A renamed or deleted component fails the first; a new one with no row fails
- * the second. Run by `pnpm check:structure`.
+ * Run: `pnpm check:ui-catalog`.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/** Design-system modules with no catalog row, and why. Keep it short: a row is the better answer. */
-export const UNCATALOGUED = new Map([
-  ['./components/brand-glyph', "brand art (providers' logos); nothing hand-built competes with it"],
-  [
-    './components/brand-mark',
-    "brand art (the product's mark); nothing hand-built competes with it",
-  ],
-  ['./components/wordmark', "brand art (the product's name); nothing hand-built competes with it"],
-  ['./components/sonner', '`Toaster` is mounted once, at the root of the console app'],
-  ['./components/kbd', 'a plain primitive with no hand-built rival to warn against'],
-  ['./components/link', 'a plain primitive with no hand-built rival to warn against'],
-  ['./components/tooltip', 'a plain primitive with no hand-built rival to warn against'],
-  ['./components/password-input', 'a plain primitive with no hand-built rival to warn against'],
-  ['./components/diff-stat', 'a +/- count; nothing hand-built competes with it'],
-  ['./components/inbox', "the Inbox screen's own parts; no other screen draws them"],
-  ['./components/success-mark', "the onboarding Ready step's mark; no other screen draws it"],
-  ['./components/image-carousel', "the sign-in page's art panel; no other screen draws it"],
-  ['./components/settings-nav', "Settings' navigation, drawn by the kit's settings sidebar"],
-  ['./components/chat-image', 'attachment parts ChatComposer, ChatTranscript and the kit draw'],
-  [
-    './components/search-list',
-    "a menu submenu's search-and-list body; the filter-menu row covers the choice",
-  ],
-]);
+const ts = createRequire(import.meta.url)('typescript');
 
-const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
+export const CATALOG_FILES = [
+  '.agents/rules/frontend-ui.md',
+  '.agents/reference/frontend-ui-catalog.md',
+];
+export const DESIGN_SYSTEM_INDEX = 'packages/frontend/design-system/web/src/index.ts';
+export const KIT_INDEX = 'packages/frontend/web/src/index.ts';
 
-function splitNames(list) {
-  return list
-    .split(',')
-    .map((part) => part.trim())
-    .filter((part) => part && !part.startsWith('type '))
-    .map((part) => part.split(/\s+as\s+/).pop());
+const MARKER = /^\s*\/\/\s*uncatalogued:(.*)$/m;
+const COMPONENT = /^[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*$/;
+
+/** A component's name: PascalCase with a lower-case letter, so not `AVATAR_GRADIENTS` or `badgeVariants`. */
+export const isComponentName = (name) => COMPONENT.test(name);
+
+const COMPILER_OPTIONS = {
+  jsx: ts.JsxEmit.ReactJSX,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  target: ts.ScriptTarget.ES2022,
+  lib: ['lib.es2022.d.ts'],
+  skipLibCheck: true,
+  noEmit: true,
+  types: [],
+};
+
+/**
+ * A program over `roots` that reads only the sources under `ownDirs` (and
+ * TypeScript's own lib). Everything else they import (React, Base UI, the
+ * kernel) resolves to an empty module: an export's name and the parts of a
+ * compound do not depend on it, and parsing it is most of the time a full
+ * program takes (about 3.5 s against 1.5 s).
+ */
+export function createCatalogProgram(roots, ownDirs) {
+  const own = ownDirs.map((dir) => `${resolve(dir)}/`);
+  const host = ts.createCompilerHost(COMPILER_OPTIONS);
+  const read = host.getSourceFile.bind(host);
+  host.getSourceFile = (file, language, ...rest) =>
+    own.some((dir) => resolve(file).startsWith(dir)) || /[\\/]typescript[\\/]lib[\\/]/.test(file)
+      ? read(file, language, ...rest)
+      : ts.createSourceFile(file, 'export {};', language);
+  return ts.createProgram(roots, COMPILER_OPTIONS, host);
 }
 
-/** Value exports of the design system's index, by the module they come from. */
-export function indexExports(source) {
-  const modules = new Map();
-  for (const match of source.matchAll(/export\s+(type\s+)?\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
-    if (match[1]) continue;
-    modules.set(match[3], [...(modules.get(match[3]) ?? []), ...splitNames(match[2])]);
-  }
-  return modules;
+/**
+ * Whether a barrel's export is a value the catalog can name. A symbol with no
+ * declarations is kept: it is a re-export from a stubbed module.
+ */
+export function isCataloguedValueExport(target) {
+  return !target.declarations?.length || Boolean(target.flags & ts.SymbolFlags.Value);
 }
 
-/** Names a source file exports, plus the parts of an `Object.assign(Root, { Part })` compound. */
-export function sourceExports(source) {
-  const names = new Set();
-  for (const match of source.matchAll(/export\s+(?:function|const|class)\s+([A-Za-z0-9_]+)/g))
-    names.add(match[1]);
-  for (const match of source.matchAll(/export\s+\{([^}]*)\}/g))
-    for (const name of splitNames(match[1])) names.add(name);
-  for (const match of source.matchAll(/Object\.assign\(\s*\w+\s*,\s*\{([^}]*)\}/g))
-    for (const key of match[1].matchAll(/(\w+)\s*(?=[:,]|\s*$)/g)) names.add(key[1]);
-  return names;
-}
-
-/** Every backticked PascalCase name in the text. */
-export function mentionedNames(text) {
-  const names = new Set();
-  for (const code of text.matchAll(/`([^`]+)`/g))
-    for (const word of code[1].matchAll(/\b[A-Z][A-Za-z0-9]*\b/g)) names.add(word[0]);
-  return names;
-}
-
-/** The leading PascalCase name of each backticked span in a catalog row's "Use" cell. */
+/** The leading PascalCase name of each backticked span in a table row's "Use" cell, with its line. */
 export function useColumnNames(text) {
-  const rows = [];
+  const names = [];
   text.split('\n').forEach((line, index) => {
     if (!line.startsWith('| ') || /^\|\s*-/.test(line) || /^\|\s*Need\s*\|/.test(line)) return;
     const use = line.split(' | ')[1];
     if (!use) return;
     for (const code of use.matchAll(/`([^`]+)`/g)) {
       const name = code[1].match(/^([A-Z][A-Za-z0-9]*)/)?.[1];
-      if (name) rows.push({ line: index + 1, name });
+      if (name) names.push({ line: index + 1, name });
     }
   });
-  return rows;
+  return names;
 }
 
 /**
- * The drift between the catalog and what is exported.
- * `docs` is `[{ file, text }]`; `designSystem` the index source; `kit` the set of names the kit exports.
+ * The value exports of each barrel, as the compiler resolves them.
+ * Returns `{ designSystem: Map<name, file>, kit: Set<name> }`: the design
+ * system's exports keyed to the module that declares them, and every name the
+ * kit makes public, compound parts of its public values included.
  */
-export function catalogProblems({ docs, designSystem, kit, uncatalogued = UNCATALOGUED }) {
-  const modules = indexExports(designSystem);
-  const exported = new Set([...modules.values()].flat());
-  const problems = [];
+export function publicExports(designSystemIndex, kitIndex) {
+  const roots = [designSystemIndex, kitIndex].filter((file) => file && existsSync(file));
+  const program = createCatalogProgram(
+    roots,
+    roots.map((file) => dirname(file)),
+  );
+  const checker = program.getTypeChecker();
 
-  for (const { file, text } of docs) {
-    for (const { line, name } of useColumnNames(text)) {
-      if (exported.has(name) || kit.has(name)) continue;
-      problems.push(
-        `${file}:${line}: \`${name}\` is not exported by @oppenheimer/design-system-web or @oppenheimer/frontend-web — rename the row or drop it with the component`,
-      );
-    }
+  function valueExports(file) {
+    const source = program.getSourceFile(file);
+    const module = source && checker.getSymbolAtLocation(source);
+    if (!module) return [];
+    return checker.getExportsOfModule(module).flatMap((symbol) => {
+      const target =
+        symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+      return isCataloguedValueExport(target) ? [{ name: symbol.getName(), symbol, target }] : [];
+    });
   }
 
-  const mentioned = new Set(docs.flatMap(({ text }) => [...mentionedNames(text)]));
-  for (const [module, names] of modules) {
-    const components = names.filter((name) => PASCAL.test(name) && /[a-z]/.test(name));
-    if (components.length === 0) continue;
-    const named = components.some((name) => mentioned.has(name));
-    if (named && uncatalogued.has(module)) {
-      problems.push(
-        `scripts/ui-catalog.mjs: ${module} has a catalog row now — take it off UNCATALOGUED`,
-      );
+  const designSystem = new Map();
+  for (const { name, target } of valueExports(designSystemIndex)) {
+    const file = target.declarations?.[0]?.getSourceFile().fileName;
+    if (file) designSystem.set(name, file);
+  }
+
+  const kit = new Set();
+  const source = program.getSourceFile(kitIndex);
+  for (const { name, symbol } of valueExports(kitIndex)) {
+    kit.add(name);
+    // A compound (`Object.assign(Root, { Part })`) carries its parts as
+    // properties of the exported value's type.
+    const type = checker.getTypeOfSymbolAtLocation(symbol, source);
+    for (const part of type.getProperties()) {
+      if (isComponentName(part.getName())) kit.add(part.getName());
     }
-    if (named || uncatalogued.has(module)) continue;
+  }
+  return { designSystem, kit };
+}
+
+/** The `// uncatalogued: <why>` marker at the top of a module: `null` when absent, the reason (maybe empty) otherwise. */
+export function uncataloguedReason(source) {
+  const head = source.split('\n').slice(0, 10).join('\n');
+  const match = head.match(MARKER);
+  return match ? match[1].trim() : null;
+}
+
+/**
+ * The drift between the catalog and the exports.
+ * `docs` is `[{ file, text }]`; `designSystem` a `Map<name, module file>`;
+ * `kit` a `Set` of public kit names; `readModule(file)` the module's source.
+ */
+export function catalogProblems({ docs, designSystem, kit, readModule, root = '' }) {
+  const problems = [];
+  const rows = docs.flatMap(({ file, text }) =>
+    useColumnNames(text).map((row) => ({ ...row, file })),
+  );
+
+  for (const { file, line, name } of rows) {
+    if (designSystem.has(name) || kit.has(name)) continue;
     problems.push(
-      `${module} (${components.join(', ')}): exported by the design system but in no catalog row — add one to .agents/reference/frontend-ui-catalog.md, or a reason to UNCATALOGUED in scripts/ui-catalog.mjs`,
+      `${file}:${line}: \`${name}\` is not a public export of @oppenheimer/design-system-web or @oppenheimer/frontend-web — rename the row or drop it with the component`,
     );
   }
-  for (const module of uncatalogued.keys()) {
-    if (!modules.has(module))
+
+  const modules = new Map();
+  for (const [name, file] of designSystem) {
+    if (isComponentName(name)) modules.set(file, [...(modules.get(file) ?? []), name]);
+  }
+  const named = new Set(rows.map(({ name }) => designSystem.get(name)).filter(Boolean));
+  for (const [file, components] of modules) {
+    const where = root ? relative(root, file) : file;
+    const reason = uncataloguedReason(readModule(file));
+    if (named.has(file)) {
+      if (reason !== null)
+        problems.push(
+          `${where}: has a catalog row, so its \`// uncatalogued:\` marker is stale — remove it`,
+        );
+      continue;
+    }
+    if (reason === null) {
       problems.push(
-        `scripts/ui-catalog.mjs: UNCATALOGUED lists ${module}, which the index no longer exports — remove it`,
+        `${where} (${components.join(', ')}): exported by the design system but no catalog row's Use column names it — add a row to .agents/reference/frontend-ui-catalog.md, or open the module with \`// uncatalogued: <why>\``,
       );
+    } else if (reason === '') {
+      problems.push(`${where}: \`// uncatalogued:\` needs a reason after the colon`);
+    }
   }
   return problems;
 }
 
-function kitNames(dir, names = new Set()) {
-  for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      if (entry !== '__tests__') kitNames(path, names);
-    } else if (/\.tsx?$/.test(entry) && !/\.(spec|test)\.tsx?$/.test(entry)) {
-      for (const name of sourceExports(readFileSync(path, 'utf8'))) names.add(name);
-    }
-  }
-  return names;
+/** The check against a checkout; empty when the catalog or the design system is not there. */
+export function repositoryCatalogProblems(root) {
+  const designSystemIndex = join(root, DESIGN_SYSTEM_INDEX);
+  if (
+    !CATALOG_FILES.every((file) => existsSync(join(root, file))) ||
+    !existsSync(designSystemIndex)
+  )
+    return [];
+  const docs = CATALOG_FILES.map((file) => ({
+    file,
+    text: readFileSync(join(root, file), 'utf8'),
+  }));
+  const { designSystem, kit } = publicExports(designSystemIndex, join(root, KIT_INDEX));
+  return catalogProblems({
+    docs,
+    designSystem,
+    kit,
+    readModule: (file) => readFileSync(file, 'utf8'),
+    root,
+  });
 }
 
-/** The check against the repository; empty when the catalog or the design system is not there. */
-export function repositoryCatalogProblems(root) {
-  const files = ['.agents/rules/frontend-ui.md', '.agents/reference/frontend-ui-catalog.md'];
-  const index = join(root, 'packages/frontend/design-system/web/src/index.ts');
-  const kitDir = join(root, 'packages/frontend/web/src');
-  if (!files.every((file) => existsSync(join(root, file))) || !existsSync(index)) return [];
-  const docs = files.map((file) => ({ file, text: readFileSync(join(root, file), 'utf8') }));
-  const kit = existsSync(kitDir) ? kitNames(kitDir) : new Set();
-  return catalogProblems({ docs, designSystem: readFileSync(index, 'utf8'), kit });
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const root = dirname(dirname(fileURLToPath(import.meta.url)));
+  const problems = repositoryCatalogProblems(root);
+  if (problems.length > 0) {
+    console.error(`UI catalog: ${problems.length} problem${problems.length === 1 ? '' : 's'}\n`);
+    for (const problem of problems) console.error(`  ✖ ${problem}`);
+    console.error('\nSee .agents/rules/frontend-ui.md, "Reach for the design system"');
+    process.exit(1);
+  }
+  console.log(
+    'UI catalog: every row names a public export, every component has a row or a reason.',
+  );
 }

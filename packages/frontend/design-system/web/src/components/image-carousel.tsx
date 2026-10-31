@@ -1,3 +1,4 @@
+// uncatalogued: the sign-in page's art panel; no other screen draws it
 'use client';
 
 import * as React from 'react';

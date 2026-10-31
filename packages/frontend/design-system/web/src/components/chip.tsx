@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive; ChipSelect and the facet rows cover picking
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
