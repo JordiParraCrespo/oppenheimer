@@ -50,6 +50,7 @@ import {
   LINK_PING_INTERVAL_MS,
   RunnerLinkGateway,
 } from '../infrastructure/runner-link.gateway';
+import { type Held, held, readByServer, settled } from './relay-sockets.spec-support';
 
 /**
  * The two sockets, end to end, minus Postgres and Redis: a runner that dials
@@ -307,54 +308,6 @@ async function runnerUp(h: Harness, overrides: Record<string, unknown> = {}): Pr
     keyFingerprint: FINGERPRINT,
   });
   return runner;
-}
-
-interface Held<T> {
-  /** The stand-in for a port method: it answers `value` once released. */
-  answer: () => Promise<T>;
-  /** Resolves when `answer` is first called: the relay is waiting on it. */
-  entered: Promise<void>;
-  release: () => void;
-}
-
-/**
- * A lookup that answers only when the test says so, so a frame can land while
- * a ticket is judged without racing a clock.
- */
-function held<T>(value: T): Held<T> {
-  let release!: () => void;
-  let enter!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  const entered = new Promise<void>((resolve) => {
-    enter = resolve;
-  });
-  return {
-    answer: async () => {
-      enter();
-      await gate;
-      return value;
-    },
-    entered,
-    release,
-  };
-}
-
-/**
- * Resolves once the server has read every frame sent before it: a peer answers
- * a ping in order with the frames ahead of it (RFC 6455 §5.5.2).
- */
-function readByServer(socket: WebSocket): Promise<void> {
-  return new Promise((resolve) => {
-    socket.once('pong', () => resolve());
-    socket.ping();
-  });
-}
-
-/** Lets the relay run what it has queued: the microtasks, then one turn of the event loop. */
-function settled(): Promise<void> {
-  return new Promise((resolve) => setImmediate(resolve));
 }
 
 /** A text frame with no mask: a protocol violation from a client (RFC 6455 §5.1). */

@@ -12,14 +12,28 @@ const exclude = ['src/**/*.integration.spec.ts', 'src/**/*.e2e.spec.ts'];
  * worker imports, so it cannot share a module graph. The list is read from the
  * sources, not kept by hand: a new spec that calls one of these lands in the
  * isolated project by itself. What a shared spec may still leave behind (fake
- * timers, `process.env`, a global assigned by hand) fails that spec, through
- * `vitest.shared-guard.ts`.
+ * timers, `process.env`, a global assigned by hand) is put back and fails that
+ * spec, through `vitest.shared-guard.ts`.
+ *
+ * Whitespace and line breaks may sit anywhere in the call (`vi\n  .mock(`).
+ * `vi.hoisted` replaces nothing on its own; it only feeds a `vi.mock` factory.
  */
-const NEEDS_ISOLATION = /\bvi\.(mock|doMock|unmock|doUnmock)\(/;
+const MODULE_MOCK = /\bvi\s*\.\s*(?:mock|doMock|unmock|doUnmock)\s*\(/;
 
-const isolated = globSync(include, { exclude }).filter((file) =>
-  NEEDS_ISOLATION.test(readFileSync(file, 'utf8')),
-);
+const mocks = (file: string) => MODULE_MOCK.test(readFileSync(file, 'utf8'));
+
+const isolated = globSync(include, { exclude }).filter(mocks);
+
+// The scan reads specs only, so a module mock written anywhere else (a helper
+// a spec imports) would leave that spec in the shared project with the mock
+// leaking out of it. Refuse to run instead.
+const hidden = globSync('src/**/*.ts', { exclude: ['src/**/*.spec.ts'] }).filter(mocks);
+if (hidden.length > 0) {
+  throw new Error(
+    `vi.mock outside a spec is invisible to the isolation scan: ${hidden.join(', ')}. ` +
+      'Call it in each spec that needs the mock.',
+  );
+}
 
 export default defineConfig({
   // The SWC plugin emits the decorator metadata NestJS relies on for

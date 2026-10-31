@@ -41,10 +41,14 @@ packages/backend/<pkg>/src/**/__tests__/*.spec.ts
 - `apps/api`'s unit specs share one module graph per worker
   (`isolate: false`), because importing Nest, not the tests, is most of the
   suite's time. A spec that calls `vi.mock`/`vi.doMock` is moved to an
-  isolated project by `vitest.config.ts` itself, from its source. Any other
-  spec that leaves fake timers on, `process.env` changed or a global such as
-  `fetch` replaced fails, by `vitest.shared-guard.ts`: undo it in
-  `afterEach`, or use `vi.stubEnv`/`vi.stubGlobal`, which the config undoes.
+  isolated project by `vitest.config.ts` itself, from its source; a module
+  mock anywhere else under `src/` stops the run, because the scan could not
+  see it. Any other spec that leaves fake timers on, `process.env` changed or
+  a global such as `fetch` replaced has it put back and fails, by
+  `vitest.shared-guard.ts`: undo it in `afterEach`, or use
+  `vi.stubEnv`/`vi.stubGlobal`, which the config undoes.
+- A helper a module's specs share is `__tests__/<name>.spec-support.ts`
+  beside them (`relay/__tests__/relay-sockets.spec-support.ts`).
 - `apps/api` runs with `globals: true` and the SWC plugin, which emits the
   decorator metadata Nest's constructor injection needs; packages import
   `describe`/`it`/`vi` from `vitest`.

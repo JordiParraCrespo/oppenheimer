@@ -149,6 +149,17 @@ test('an empty directory is a placeholder, not a layer', () => {
   );
 });
 
+test("a module's own __tests__/ admits a spec helper, a layer's does not", () => {
+  assert.deepEqual(
+    kinds(check({ ...CONFORMING, 'widget/__tests__/widget-sockets.spec-support.ts': '' })),
+    [],
+  );
+  assert.deepEqual(
+    kinds(check({ ...CONFORMING, 'widget/domain/__tests__/widget.spec-support.ts': '' })),
+    ['file-name-not-admitted'],
+  );
+});
+
 test('a file the layer does not admit reports its kind, wherever it is', () => {
   assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/domain/widget.repository.ts': '' })), [
     'file-name-not-admitted',

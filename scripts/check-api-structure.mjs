@@ -129,8 +129,8 @@ const LAYERS = {
     dirs: { __tests__: { files: [/\.spec\.ts$/] } },
   },
   __tests__: {
-    what: "tests for the module's own wiring",
-    files: [/\.spec\.ts$/],
+    what: "tests for the module's own wiring, and the helpers its specs share (*.spec-support.ts)",
+    files: [/\.spec\.ts$/, /\.spec-support\.ts$/],
     dirs: {},
   },
 };
