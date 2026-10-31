@@ -2,18 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import {
+  type ActionEmailParams,
   EmailService,
   type EmailVerificationEmailParams,
-  type HostNetworkChangedEmailParams,
-  type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
   type WelcomeEmailParams,
 } from './email.service';
 import {
+  renderActionEmail,
   renderEmailVerificationEmail,
-  renderHostNetworkChangedEmail,
-  renderHostPairedEmail,
   renderInvitationEmail,
   renderPasswordResetEmail,
   renderWelcomeEmail,
@@ -80,18 +78,8 @@ export class NodemailerEmailService extends EmailService {
     });
   }
 
-  async sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void> {
-    const html = await renderHostPairedEmail(params);
-    await this.transporter.sendMail({
-      from: this.configService.get('email.from'),
-      to,
-      subject: params.subject,
-      html,
-    });
-  }
-
-  async sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void> {
-    const html = await renderHostNetworkChangedEmail(params);
+  async sendAction(to: string, params: ActionEmailParams): Promise<void> {
+    const html = await renderActionEmail(params);
     await this.transporter.sendMail({
       from: this.configService.get('email.from'),
       to,

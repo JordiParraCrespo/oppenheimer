@@ -24,6 +24,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@bull-board/api": "^8.3.0",
+    "@bull-board/express": "^8.3.0",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
@@ -43,7 +45,6 @@
     "@oppenheimer/backend-email": "workspace:*",
     "@oppenheimer/backend-i18n": "workspace:*",
     "@oppenheimer/backend-llm": "workspace:*",
-    "@oppenheimer/backend-queue": "workspace:*",
     "@oppenheimer/backend-storage": "workspace:*",
     "@oppenheimer/env": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
