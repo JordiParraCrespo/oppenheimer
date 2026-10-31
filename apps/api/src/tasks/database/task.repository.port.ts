@@ -20,6 +20,11 @@ export interface TaskListFilter {
   sessionId?: string;
   dueFrom?: string;
   dueTo?: string;
+  /**
+   * At most this many Done tasks, the most recently ticked first; the other
+   * columns come whole. Unset reads Done whole too.
+   */
+  doneLimit?: number;
 }
 
 /** `stale-position` when the task to land after is not in that column any more. */
@@ -47,7 +52,10 @@ export type TaskAttachOutcome = 'attached' | 'session-not-found';
  * its events, in one transaction.
  */
 export interface TaskRepositoryPort {
-  /** Every task matching the filter, in board order (status, then rank), with its links. */
+  /**
+   * The tasks matching the filter, in board order (status, then rank), with
+   * their links: every one, or Done cut at `doneLimit`.
+   */
   findAll(scope: AccessScope, filter: TaskListFilter): Promise<TaskEntity[]>;
   /** `None` for a missing task and one outside the caller's scope alike. */
   findOneById(scope: AccessScope, id: string): Promise<Option<TaskEntity>>;

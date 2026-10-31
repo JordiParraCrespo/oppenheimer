@@ -139,6 +139,12 @@ card's session line needs no second request. Overdue has one owner, the
 client: it compares due dates with its own date (18, open question 1)
 over the tasks it already holds. The summary returns counts only.
 
+Done is the one column that only grows, so `GET /tasks` lists its
+1,000 most recently ticked tasks (`TASK_LIST_DONE_MAX`, by `rank`,
+which puts the latest tick first) and the other columns whole
+(2026-10-31, #556). Until then the board read every task the
+workspace ever finished on every load.
+
 Optimistic updates in the console (TanStack Query) for move, complete
 and edit; the board refreshes on the existing `live-poll` cadence like
 the session list. There is no push channel today, and Plan does not

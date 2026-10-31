@@ -2056,7 +2056,7 @@ export const streamWorkspaceEvents = <ThrowOnError extends boolean = false>(opti
 /**
  * List the board’s tasks
  *
- * In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).
+ * In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer). Done holds at most its 1000 most recently ticked tasks; the other columns come whole.
  */
 export const findTasks = <ThrowOnError extends boolean = false>(options?: Options<FindTasksData, ThrowOnError>): RequestResult<FindTasksResponses, FindTasksErrors, ThrowOnError> => (options?.client ?? client).get<FindTasksResponses, FindTasksErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

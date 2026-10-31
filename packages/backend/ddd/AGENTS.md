@@ -24,6 +24,9 @@ src/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE
 │   ├── outbox.service.ts       # transaction() + staging (wakes after commit), SKIP LOCKED leasing, retention delete
 │   └── outbox-relay.ts         # coalescing drain loop (wake + poll), publisher contract
+├── paging/
+│   ├── keyset.ts               # keysetAfter (the row comparison) + keysetPage (limit + 1 → page, next cursor)
+│   └── cursor-codec.ts         # the one wire cursor: base64url JSON; also reads the older `|`-joined form
 ├── request-context.service.ts  # request-scoped context
 ├── exceptions.ts               # domain exceptions
 ├── guard.ts                    # invariant guards

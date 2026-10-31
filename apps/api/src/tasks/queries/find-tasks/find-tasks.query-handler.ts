@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { TASK_LIST_DONE_MAX } from '@oppenheimer/shared';
 import type { TaskRepositoryPort } from '../../database/task.repository.port';
 import type { TaskEntity } from '../../domain/task.entity';
 import { TASK_REPOSITORY } from '../../tasks.di-tokens';
@@ -12,7 +13,11 @@ export class FindTasksQueryHandler implements IQueryHandler<FindTasksQuery, Task
     private readonly tasks: TaskRepositoryPort,
   ) {}
 
+  /**
+   * Done only grows, so the board reads its most recent `TASK_LIST_DONE_MAX`;
+   * the open columns are the work in hand and come whole.
+   */
   async execute({ scope, filter }: FindTasksQuery): Promise<TaskEntity[]> {
-    return this.tasks.findAll(scope, filter);
+    return this.tasks.findAll(scope, { ...filter, doneLimit: TASK_LIST_DONE_MAX });
   }
 }

@@ -677,6 +677,30 @@ describe('API tokens & scopes (integration)', () => {
       });
       expect(response.status).toBe(200);
     });
+
+    it('lists every usable token but only the latest revoked ones, however many pile up', async () => {
+      // Regression: the list read every token the owner ever revoked.
+      const kept = await mintToken({ name: 'kept', scopes: ['users:read'] });
+      const spent = await mintToken({ name: 'spent', scopes: ['users:read'] });
+      await call(`/api/v1/tokens/${spent.id}`, { method: 'DELETE', token: user.sessionToken });
+      // Sixty more revoked tokens, all newer than the one still in use.
+      await dataSource.query(
+        `INSERT INTO "api_token"
+         SELECT (jsonb_populate_record(NULL::"api_token", to_jsonb(t) || jsonb_build_object(
+           'id', gen_random_uuid(),
+           'tokenHash', md5(random()::text) || md5(random()::text),
+           'createdAt', t."createdAt" + make_interval(secs => g)))).*
+           FROM "api_token" t, generate_series(1, 60) g WHERE t.id = $1`,
+        [spent.id],
+      );
+
+      const listed = await call('/api/v1/tokens', { token: user.sessionToken });
+
+      expect(listed.status).toBe(200);
+      const tokens = listed.body as { id: string; revokedAt: string | null }[];
+      expect(tokens.map((token) => token.id)).toContain(kept.id);
+      expect(tokens.filter((token) => token.revokedAt !== null).length).toBeLessThanOrEqual(50);
+    });
   });
 
   describe('owner standing', () => {

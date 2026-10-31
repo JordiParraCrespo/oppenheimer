@@ -10105,7 +10105,7 @@ export type FindCloudAgentStatusData = {
 
 export type FindCloudAgentStatusErrors = {
     /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -10137,7 +10137,7 @@ export type RemoveCloudAgentCredentialData = {
 
 export type RemoveCloudAgentCredentialErrors = {
     /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -10173,7 +10173,7 @@ export type PutCloudAgentCredentialData = {
 
 export type PutCloudAgentCredentialErrors = {
     /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -10225,7 +10225,7 @@ export type FindCloudAgentModelsData = {
 
 export type FindCloudAgentModelsErrors = {
     /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -10277,7 +10277,7 @@ export type FindCloudAgentRepositoriesData = {
 
 export type FindCloudAgentRepositoriesErrors = {
     /**
-     * CLOUD_AGENTS_002 — Cloud agents belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -11592,7 +11592,7 @@ export type FindPlanStatsData = {
 
 export type FindPlanStatsErrors = {
     /**
-     * TASKS_003 — No active organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -12950,7 +12950,7 @@ export type CreateBotData = {
 
 export type CreateBotErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -13435,7 +13435,7 @@ export type CreateBotGroupData = {
 
 export type CreateBotGroupErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -13597,7 +13597,7 @@ export type PutModelProviderCredentialData = {
 
 export type PutModelProviderCredentialErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -13641,7 +13641,7 @@ export type SetDefaultModelProviderData = {
 
 export type SetDefaultModelProviderErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -13679,7 +13679,7 @@ export type StartChatgptLoginData = {
 
 export type StartChatgptLoginErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -13721,7 +13721,7 @@ export type PollChatgptLoginData = {
 
 export type PollChatgptLoginErrors = {
     /**
-     * BOTS_002 — Bots belong to an organization
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -14545,7 +14545,7 @@ export type TranscribeVoiceErrors = {
     /**
      * VOICE_002 — No audio attached
      *
-     * VOICE_001 — No active workspace
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -14623,7 +14623,7 @@ export type FindInboxMarksData = {
 
 export type FindInboxMarksErrors = {
     /**
-     * INBOX_001 — No active workspace
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -14660,7 +14660,7 @@ export type DeleteInboxMarkErrors = {
     /**
      * INBOX_002 — Not an Inbox item key
      *
-     * INBOX_001 — No active workspace
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**
@@ -14700,7 +14700,7 @@ export type PutInboxMarkErrors = {
     /**
      * INBOX_002 — Not an Inbox item key
      *
-     * INBOX_001 — No active workspace
+     * TENANT_001 — No active workspace
      */
     400: ProblemDetailsDto;
     /**

@@ -48,6 +48,14 @@ export {
   OutboxRelay,
   type OutboxRelayOptions,
 } from './outbox/outbox-relay';
+export { CursorCodec } from './paging/cursor-codec';
+export {
+  type KeysetCursor,
+  type KeysetOrder,
+  type KeysetPage,
+  keysetAfter,
+  keysetPage,
+} from './paging/keyset';
 export { QueryBase } from './query.base';
 export { Paginated, type RepositoryPort } from './repository.port';
 export { RequestContextService } from './request-context.service';

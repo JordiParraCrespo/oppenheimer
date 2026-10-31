@@ -56,7 +56,46 @@ export class TaskRepository
   }
 
   async findAll(scope: AccessScope, filter: TaskListFilter): Promise<TaskEntity[]> {
-    const query = this.scopedQuery(scope).orderBy('task.status').addOrderBy('task.rank');
+    const records =
+      filter.doneLimit === undefined
+        ? await this.filtered(scope, filter)
+            .orderBy('task.status')
+            .addOrderBy('task.rank')
+            .getMany()
+        : await this.withDoneCapped(scope, filter, filter.doneLimit);
+    const links = await this.linksOf(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, links.get(record.id)));
+  }
+
+  /**
+   * The open columns whole, and the first `doneLimit` of Done in its own order
+   * (the most recently ticked first), each served by `UQ_task_rank`'s
+   * `(organizationId, status, rank)`. Done is the column that only grows.
+   */
+  private async withDoneCapped(
+    scope: AccessScope,
+    filter: TaskListFilter,
+    doneLimit: number,
+  ): Promise<TaskOrmEntity[]> {
+    const [open, done] = await Promise.all([
+      this.filtered(scope, filter)
+        .andWhere(`task.status <> 'done'`)
+        .orderBy('task.status')
+        .addOrderBy('task.rank')
+        .getMany(),
+      this.filtered(scope, filter)
+        .andWhere(`task.status = 'done'`)
+        .orderBy('task.rank')
+        .take(doneLimit)
+        .getMany(),
+    ]);
+    // Board order is by status, then rank: Done goes where its status sorts.
+    const at = open.findIndex((record) => record.status > 'done');
+    return at === -1 ? [...open, ...done] : [...open.slice(0, at), ...done, ...open.slice(at)];
+  }
+
+  private filtered(scope: AccessScope, filter: TaskListFilter) {
+    const query = this.scopedQuery(scope);
     if (filter.projectId) query.andWhere('task.projectId = :projectId', filter);
     if (filter.milestoneId) query.andWhere('task.milestoneId = :milestoneId', filter);
     if (filter.dueFrom) query.andWhere('task.dueDate >= :dueFrom', filter);
@@ -69,9 +108,7 @@ export class TaskRepository
         filter,
       );
     }
-    const records = await query.getMany();
-    const links = await this.linksOf(records.map((record) => record.id));
-    return records.map((record) => this.mapper.toDomain(record, links.get(record.id)));
+    return query;
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<TaskEntity>> {

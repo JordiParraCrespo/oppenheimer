@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AggregateID, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { IsNull, MoreThan, type Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThan, Not, type Repository } from 'typeorm';
 import { ApiTokenMapper } from '../api-tokens.mapper';
 import { type ApiTokenEntity, LAST_USED_GRANULARITY_MS } from '../domain/api-token.entity';
 import { ApiTokenOrmEntity } from './api-token.orm-entity';
 import type { ApiTokenRepositoryPort, InsertOutcome } from './api-token.repository.port';
+
+/** How many revoked or expired tokens the list keeps, the latest first. */
+export const INACTIVE_TOKENS_LISTED = 50;
 
 @Injectable()
 export class ApiTokenRepository implements ApiTokenRepositoryPort {
@@ -34,12 +37,26 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async findByUserId(userId: string): Promise<ApiTokenEntity[]> {
-    const records = await this.repository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
-    return records.map((record) => this.mapper.toDomain(record));
+  async findByUserId(userId: string, now: Date): Promise<ApiTokenEntity[]> {
+    const [usable, spent] = await Promise.all([
+      this.repository.find({
+        where: [
+          { userId, revokedAt: IsNull(), expiresAt: IsNull() },
+          { userId, revokedAt: IsNull(), expiresAt: MoreThan(now) },
+        ],
+      }),
+      this.repository.find({
+        where: [
+          { userId, revokedAt: Not(IsNull()) },
+          { userId, expiresAt: LessThanOrEqual(now) },
+        ],
+        order: { createdAt: 'DESC', id: 'DESC' },
+        take: INACTIVE_TOKENS_LISTED,
+      }),
+    ]);
+    return [...usable, ...spent]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((record) => this.mapper.toDomain(record));
   }
 
   async insertWithinLimit(
