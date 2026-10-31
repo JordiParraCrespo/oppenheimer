@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { newMigrationFile, UNWRITTEN_MARKER } from '../migration-file';
+import {
+  newMigrationFile,
+  parseMigrationClass,
+  parseMigrationFileName,
+  UNWRITTEN_MARKER,
+} from '../migration-file';
 
 /**
  * What `pnpm migration:new` writes: a file and class the TypeORM loader and the
@@ -21,13 +26,19 @@ describe('newMigrationFile', () => {
     });
   });
 
-  it('writes a skeleton the meta-test reads as <Name><timestamp>, marked unwritten', () => {
+  it('writes a file whose name and class read back as the same name and timestamp', () => {
     const file = newMigrationFile('AddInvoices', NOW, EXISTING);
     if ('error' in file) throw new Error(file.error);
 
-    expect(file.source).toContain(
-      'export class AddInvoices1793450465389 implements MigrationInterface',
-    );
+    const stamp = { timestamp: '1793450465389', name: 'AddInvoices' };
+    expect(parseMigrationFileName(file.fileName)).toEqual(stamp);
+    expect(parseMigrationClass(file.source)).toEqual(stamp);
+  });
+
+  it('writes a skeleton marked unwritten until someone fills it in', () => {
+    const file = newMigrationFile('AddInvoices', NOW, EXISTING);
+    if ('error' in file) throw new Error(file.error);
+
     expect(file.source).toContain("name = 'AddInvoices1793450465389';");
     expect(file.source).toContain(
       "import type { MigrationInterface, QueryRunner } from 'typeorm';",
@@ -53,5 +64,16 @@ describe('newMigrationFile', () => {
 
   it('refuses a timestamp an existing migration already holds', () => {
     expect(newMigrationFile('AddInvoices', 1791005600000, EXISTING)).toHaveProperty('error');
+  });
+});
+
+describe('parseMigrationFileName', () => {
+  it.each([
+    '179100560000-AddMailTriggers.ts',
+    '1791005600000-addMailTriggers.ts',
+    '1791005600000-AddMailTriggers.js',
+    '1791005600000_AddMailTriggers.ts',
+  ])('reads %j as no migration', (file) => {
+    expect(parseMigrationFileName(file)).toBeNull();
   });
 });
