@@ -5,15 +5,12 @@ import {
   ErrorAlert,
   PageFrame,
   StartFailureDetail,
+  StartFailureHelp,
   useStartFailure,
 } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { CodexEnvironmentHelp } from '../components/codex-environment-help';
 import { ElapsedClock } from '../components/elapsed-clock';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
-
-/** The runner's code for a Codex cloud start that found no environment the CLI can reach. */
-const CODEX_NO_ENVIRONMENT = 'SESS_010';
 
 /**
  * A session that is not a terminal yet.
@@ -91,11 +88,12 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           status={t(failed ? 'sessions.provisioning.failed' : 'sessions.provisioning.working')}
         />
 
+        {/* What the reason cannot say in a line, for the codes that need it. */}
+        {failed && failure?.help ? (
+          <StartFailureHelp help={failure.help} className="mt-6.5" />
+        ) : null}
         {/* The host's own words, English and for whoever reads its logs: a
             secondary line under the translated reason, never the reason. */}
-        {failed && progress.data?.failure?.code === CODEX_NO_ENVIRONMENT ? (
-          <CodexEnvironmentHelp className="mt-6.5" />
-        ) : null}
         {failed && failure?.detail ? (
           <StartFailureDetail detail={failure.detail} className="mt-4" />
         ) : null}

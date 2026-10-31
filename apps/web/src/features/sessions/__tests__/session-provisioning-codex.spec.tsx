@@ -16,7 +16,11 @@ vi.mock('react-i18next', async (importOriginal) => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) =>
       values?.detail ? `${key}:${values.detail}` : key,
-    i18n: { exists: () => false, t: (key: string) => key },
+    // Only SESS_010 has help words, as in the catalog.
+    i18n: {
+      exists: (key: string) => key.startsWith('errors.startFailure.help.SESS_010'),
+      t: (key: string) => key,
+    },
   }),
 }));
 
@@ -56,8 +60,8 @@ describe('SessionProvisioning after a failed Codex cloud start', () => {
     failure = { code: 'SESS_010', detail: 'codex cloud exec found no environment labelled …' };
     render(<SessionProvisioning session={SESSION} />);
 
-    expect(screen.getByText(/sessions\.provisioning\.codexEnvironment\.body/)).toBeTruthy();
-    const link = screen.getByRole('link', { name: 'sessions.provisioning.codexEnvironment.link' });
+    expect(screen.getByText(/errors\.startFailure\.help\.SESS_010\.body/)).toBeTruthy();
+    const link = screen.getByRole('link', { name: 'errors.startFailure.help.SESS_010.link' });
     expect(link.getAttribute('href')).toBe('https://chatgpt.com/settings/codex-cloud');
     // The host's own words stay, as the secondary line.
     expect(screen.getByText(/found no environment labelled/)).toBeTruthy();
@@ -67,7 +71,7 @@ describe('SessionProvisioning after a failed Codex cloud start', () => {
     failure = { code: 'SESS_009', detail: "Not signed in. Please run 'codex login'" };
     render(<SessionProvisioning session={SESSION} />);
 
-    expect(screen.queryByText(/codexEnvironment/)).toBeNull();
+    expect(screen.queryByText(/startFailure\.help/)).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
   });
 });

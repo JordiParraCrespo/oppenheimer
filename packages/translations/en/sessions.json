@@ -36,11 +36,7 @@
         "shell": "Start shell"
       }
     },
-    "progressFailed": "Could not load how the start is going.",
-    "codexEnvironment": {
-      "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
-      "link": "Open Codex Cloud settings"
-    }
+    "progressFailed": "Could not load how the start is going."
   },
   "closed": {
     "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
