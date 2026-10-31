@@ -26,41 +26,30 @@ const LOOKS: Record<BotApprovalDecision, Omit<ApprovalDecisionLook, 'decision' |
   stop: { variant: 'ghost', shortcut: 'c', hint: 'stopHint' },
 };
 
+/** Each decision's label, by key under `bots.chat.approval`. */
+const LABELS: Record<BotApprovalDecision, ApprovalDecisionLook['label']> = {
+  approve: 'approve',
+  approve_for_subject: 'alwaysFor',
+  approve_always: 'always',
+  deny: 'deny',
+  stop: 'stop',
+};
+
 /**
- * The card's buttons, in the API's order. Always allow for … needs the
- * subject's name to say what it covers, so without one it is not drawn; a
- * plain yes says "once" when a wider yes stands beside it.
+ * The card's buttons: exactly the decisions the API offered, in its order.
+ * A plain yes says "once" when a wider yes stands beside it.
  */
 export function approvalDecisionLooks(
   decisions: readonly BotApprovalDecision[],
-  subjectLabel: string | null,
 ): ApprovalDecisionLook[] {
-  const offered = decisions.filter(
-    (decision) => decision !== 'approve_for_subject' || subjectLabel !== null,
-  );
-  const wider = offered.some(
+  const wider = decisions.some(
     (decision) => decision === 'approve_for_subject' || decision === 'approve_always',
   );
-  return offered.map((decision) => ({
+  return decisions.map((decision) => ({
     decision,
-    label: labelOf(decision, wider),
+    label: decision === 'approve' && wider ? 'approveOnce' : LABELS[decision],
     ...LOOKS[decision],
   }));
-}
-
-function labelOf(decision: BotApprovalDecision, wider: boolean): ApprovalDecisionLook['label'] {
-  switch (decision) {
-    case 'approve':
-      return wider ? 'approveOnce' : 'approve';
-    case 'approve_for_subject':
-      return 'alwaysFor';
-    case 'approve_always':
-      return 'always';
-    case 'deny':
-      return 'deny';
-    case 'stop':
-      return 'stop';
-  }
 }
 
 /**

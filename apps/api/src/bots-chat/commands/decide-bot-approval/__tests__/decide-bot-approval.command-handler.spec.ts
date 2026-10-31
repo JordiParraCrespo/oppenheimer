@@ -95,7 +95,6 @@ function setup(
     decision: BotApprovalDecision,
     note: string | null = null,
     credentialScopes: readonly Scope[] | null = null,
-    reach: 'once' | 'tool' | 'subject' = 'once',
   ) =>
     handler.execute(
       new DecideBotApprovalCommand({
@@ -103,7 +102,6 @@ function setup(
         botId: bot.id,
         approvalId: approval.id,
         decision,
-        reach,
         note,
         deciderName: 'Ana',
         credentialScopes,
@@ -182,7 +180,7 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('sets the tool to Allow with an “Always allow”, written with the decision', async () => {
     const { approval, decide, effects } = setup();
-    await decide('approve', null, null, 'tool');
+    await decide('approve_always');
     expect(approval.reach).toBe('tool');
     const { permission, maxGrants } = effects().standing ?? {};
     expect(maxGrants).toBe(100);
@@ -197,7 +195,7 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('grants the tool on the card’s subject with an “Always allow for …”', async () => {
     const { decide, effects } = setup();
-    await decide('approve', null, null, 'subject');
+    await decide('approve_for_subject');
     expect(effects().standing?.permission.getProps()).toMatchObject({
       tool: 'start_session',
       decision: 'allow',
@@ -207,7 +205,7 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('refuses a reach the card does not offer with BOTS_030, deciding nothing', async () => {
     const { approval, approvals, decide } = setup({ perCallOnly: true });
-    await expect(decide('approve', null, null, 'tool')).rejects.toMatchObject({
+    await expect(decide('approve_always')).rejects.toMatchObject({
       code: 'BOTS_030',
     });
     expect(approval.status).toBe('pending');

@@ -8,6 +8,7 @@ import {
 import {
   APPROVAL_HOLD_MAX_MS,
   BotApprovalHold,
+  BotLiveApprovals,
   botResolvedApprovals,
   NO_RESOLVED_APPROVALS,
   noteResolvedApproval,
@@ -146,5 +147,44 @@ describe('BotApprovalHold', () => {
     hold.dispose();
     vi.advanceTimersByTime(APPROVAL_HOLD_MAX_MS);
     expect(show).not.toHaveBeenCalled();
+  });
+});
+
+describe('BotLiveApprovals', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  function live() {
+    const actions = { readCards: vi.fn(), closeCard: vi.fn(), keepLine: vi.fn() };
+    return { actions, approvals: new BotLiveApprovals(actions) };
+  }
+
+  it('takes a resolved card down, keeps its line and reads the cards, leaving the caller nothing', () => {
+    const { actions, approvals } = live();
+    const frame = resolved('a1', 'denied');
+    expect(approvals.see(frame)).toBe(true);
+    expect(actions.closeCard).toHaveBeenCalledWith('a1');
+    expect(actions.keepLine).toHaveBeenCalledWith(frame);
+    expect(actions.readCards).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads a card raised mid-line once a stored message ends the line, and leaves text and messages to the caller', () => {
+    const { actions, approvals } = live();
+    expect(approvals.see({ type: 'text', turnId: 't1', text: 'Half a' })).toBe(false);
+    expect(approvals.see({ type: 'approval', approvalId: 'a1', status: 'pending' })).toBe(true);
+    expect(actions.readCards).not.toHaveBeenCalled();
+    expect(approvals.see({ type: 'message', turnId: 't1', messageId: 'm1' })).toBe(false);
+    expect(actions.readCards).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads a settled card at once, and holds nothing once disposed', () => {
+    const { actions, approvals } = live();
+    approvals.see({ type: 'approval', approvalId: 'a1', status: 'approved' });
+    expect(actions.readCards).toHaveBeenCalledTimes(1);
+    approvals.see({ type: 'text', turnId: 't1', text: 'Half' });
+    approvals.see({ type: 'approval', approvalId: 'a2', status: 'pending' });
+    approvals.dispose();
+    vi.advanceTimersByTime(APPROVAL_HOLD_MAX_MS);
+    expect(actions.readCards).toHaveBeenCalledTimes(1);
   });
 });

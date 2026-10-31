@@ -1,8 +1,9 @@
 import {
   type BotApprovalDecision,
+  type BotApprovalEvent,
   type BotApprovalReach,
+  type BotApprovalResolution,
   type BotEventOutcome,
-  type BotMessageEvent,
   type BotStreamEvent,
   expandScopes,
   type Scope,
@@ -44,21 +45,6 @@ export function waitingForApproval(pendingSummary: string): string {
   return `Not done: an earlier request of yours is still waiting for the person's approval ("${pendingSummary}"), and only one can wait at a time. End your turn now and say you are waiting for their answer.`;
 }
 
-/**
- * The decision a request names. The older shape said how far a yes goes in
- * `reach`: `approve` with `tool` meant Always allow, with `subject` Always
- * allow for its subject. A named decision wins over a reach.
- */
-export function decisionOf(
-  decision: BotApprovalDecision,
-  reach: BotApprovalReach,
-): BotApprovalDecision {
-  if (decision !== 'approve') return decision;
-  if (reach === 'tool') return 'approve_always';
-  if (reach === 'subject') return 'approve_for_subject';
-  return 'approve';
-}
-
 /** How far a yes reaches; null for a no. */
 export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null {
   switch (decision) {
@@ -79,44 +65,54 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
  * build-02…"); what follows is what the bot needs to report back: the call's
  * answer, or the person's note. `by` is who decided, by name.
  */
-export function approvalEvent(approval: BotApprovalEntity, by: string, stopped = false): string {
-  const who = by.trim() || 'The person';
-  if (approval.status === 'denied') {
-    return [
-      stopped
-        ? `${who} denied and stopped your turn: ${approval.summary}`
-        : `${who} denied: ${approval.summary}`,
-      approval.note ? `Their note: ${approval.note}` : null,
-    ]
-      .filter(Boolean)
-      .join('\n');
-  }
+export function approvalEvent(approval: BotApprovalEntity, by: string): string {
+  if (approval.status === 'denied') return denialWords(approval, `${who(by)} denied`);
   const answer = approval.status === 'failed' ? 'It ran and failed' : 'It ran';
-  return `${who} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
+  return `${who(by)} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
 }
+
+/** Who decided, by name, as the bot is told; "The person" when the name is unknown. */
+function who(by: string): string {
+  return by.trim() || 'The person';
+}
+
+/** A no in words: what was refused, then the person's note when they added one. */
+function denialWords(approval: BotApprovalEntity, lead: string): string {
+  return [`${lead}: ${approval.summary}`, approval.note ? `Their note: ${approval.note}` : null]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** How a decided approval's line reads, by the status it ended in. */
+const EVENT_OUTCOMES: Partial<Record<BotApprovalEntity['status'], BotEventOutcome>> = {
+  denied: 'denied',
+  failed: 'failed',
+};
 
 /**
  * What the chat draws for a decided approval, without reading the event's
  * words: with the session the approved call started, so the line links to it.
  */
-export function approvalEventOf(approval: BotApprovalEntity, stopped = false): BotMessageEvent {
-  const outcome: BotEventOutcome =
-    approval.status === 'denied'
-      ? stopped
-        ? 'stopped'
-        : 'denied'
-      : approval.status === 'failed'
-        ? 'failed'
-        : 'approved';
+export function approvalEventOf(approval: BotApprovalEntity): BotApprovalEvent {
   return {
     kind: 'approval',
-    outcome,
+    outcome: EVENT_OUTCOMES[approval.status] ?? 'approved',
     tool: approval.tool,
     summary: approval.summary,
     sessionId: approval.sessionId,
     approvalId: approval.id,
   };
 }
+
+/** How a card closed, by the decision that closed it. */
+const RESOLUTIONS: Record<BotApprovalDecision | 'expired', BotApprovalResolution> = {
+  approve: 'approved',
+  approve_for_subject: 'approved',
+  approve_always: 'approved',
+  deny: 'denied',
+  stop: 'stopped',
+  expired: 'expired',
+};
 
 /**
  * What every open chat hears when a card closes (Codex's
@@ -128,18 +124,10 @@ export function approvalResolved(
   approval: BotApprovalEntity,
   decision: BotApprovalDecision | 'expired',
 ): Extract<BotStreamEvent, { type: 'approval_resolved' }> {
-  const outcome =
-    decision === 'expired'
-      ? 'expired'
-      : reachOf(decision)
-        ? 'approved'
-        : decision === 'stop'
-          ? 'stopped'
-          : 'denied';
   return {
     type: 'approval_resolved',
     approvalId: approval.id,
-    outcome,
+    outcome: RESOLUTIONS[decision],
     tool: approval.tool,
     summary: approval.summary,
   };
@@ -156,8 +144,8 @@ export function stoppedLine(approval: BotApprovalEntity, by: string): BotMessage
     botId: approval.botId,
     turnId: null,
     role: 'event',
-    content: approvalEvent(approval, by, true),
-    event: approvalEventOf(approval, true),
+    content: denialWords(approval, `${who(by)} denied and stopped your turn`),
+    event: { ...approvalEventOf(approval), outcome: 'stopped' },
     steps: [],
     position: 0,
   });

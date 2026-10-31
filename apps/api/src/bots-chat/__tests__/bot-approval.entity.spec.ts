@@ -3,7 +3,6 @@ import {
   approvalEvent,
   approvalEventOf,
   approvalResolved,
-  decisionOf,
   stoppedLine,
 } from '../domain/bot-approval.policy';
 import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
@@ -205,16 +204,6 @@ describe('availableDecisions', () => {
       'stop',
     ]);
     expect(pending().availableDecisions).toEqual(['approve', 'approve_always', 'deny', 'stop']);
-  });
-});
-
-describe('decisionOf', () => {
-  it('reads the older approve with a reach as the decision it meant, and a named decision as itself', () => {
-    expect(decisionOf('approve', 'once')).toBe('approve');
-    expect(decisionOf('approve', 'tool')).toBe('approve_always');
-    expect(decisionOf('approve', 'subject')).toBe('approve_for_subject');
-    expect(decisionOf('stop', 'tool')).toBe('stop');
-    expect(decisionOf('approve_always', 'once')).toBe('approve_always');
   });
 });
 

@@ -1038,6 +1038,21 @@ export const createBotPermissionRuleSchema = z.object({
 export type CreateBotPermissionRuleDto = z.infer<typeof createBotPermissionRuleSchema>;
 export type DecideBotApprovalDto = z.infer<typeof decideBotApprovalSchema>;
 
+/**
+ * The decision a `decideBotApprovalSchema` body names, the older shape read
+ * once at the edge: `approve` with `reach` `tool` is `approve_always`, with
+ * `subject` `approve_for_subject`. A named decision wins over a reach.
+ */
+export function namedBotApprovalDecision({
+  decision,
+  reach,
+}: Pick<DecideBotApprovalDto, 'decision' | 'reach'>): BotApprovalDecision {
+  if (decision !== 'approve') return decision;
+  if (reach === 'tool') return 'approve_always';
+  if (reach === 'subject') return 'approve_for_subject';
+  return 'approve';
+}
+
 /** What the console's Deny asks for: the note alone, optional. */
 export const denyBotApprovalSchema = decideBotApprovalSchema.pick({ note: true });
 export type DenyBotApprovalDto = z.infer<typeof denyBotApprovalSchema>;

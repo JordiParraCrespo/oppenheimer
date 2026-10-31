@@ -130,3 +130,54 @@ export class BotApprovalHold {
     show?.();
   }
 }
+
+/** What {@link BotLiveApprovals} does to the chat, handed in by the hook that owns it. */
+export interface BotLiveApprovalsActions {
+  /** Read the bot's cards again. */
+  readCards: () => void;
+  /** Take a closed card down now, without a read. */
+  closeCard: (approvalId: string) => void;
+  /** Keep a closed card's decided line until its stored line lands. */
+  keepLine: (frame: ResolvedFrame) => void;
+}
+
+/**
+ * A bot's stream as the Needs input card sees it: every frame passes here
+ * first. A raised card is read once the half-written line ends
+ * ({@link BotApprovalHold}); a settled one is read at once; a resolved one
+ * is taken down now and kept as its line. Text, stored messages and turns
+ * only move the hold, and stay the caller's.
+ */
+export class BotLiveApprovals {
+  private readonly hold = new BotApprovalHold();
+
+  constructor(private readonly actions: BotLiveApprovalsActions) {}
+
+  /** Sees one frame; true when it was a card's, leaving the caller nothing to do. */
+  see(event: BotStreamEvent): boolean {
+    switch (event.type) {
+      case 'text':
+        this.hold.text(event.text);
+        return false;
+      case 'message':
+      case 'turn':
+        this.hold.lineEnded();
+        return false;
+      case 'approval':
+        if (event.status === 'pending') this.hold.raise(this.actions.readCards);
+        else this.actions.readCards();
+        return true;
+      case 'approval_resolved':
+        this.actions.closeCard(event.approvalId);
+        this.actions.keepLine(event);
+        this.actions.readCards();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  dispose(): void {
+    this.hold.dispose();
+  }
+}

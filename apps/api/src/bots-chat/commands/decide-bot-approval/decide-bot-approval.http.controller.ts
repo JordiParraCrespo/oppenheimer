@@ -12,6 +12,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { namedBotApprovalDecision } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
@@ -77,8 +78,7 @@ export class DecideBotApprovalHttpController {
         scope,
         botId,
         approvalId,
-        decision: body.decision,
-        reach: body.reach,
+        decision: namedBotApprovalDecision(body),
         note: body.note ?? null,
         deciderName: name ?? '',
         credentialScopes: credential ? credential.scopes : null,

@@ -23,7 +23,7 @@ import type {
   BotWaitingMessage,
 } from '../modules/bots/bot-conversation.entity';
 import {
-  BotApprovalHold,
+  BotLiveApprovals,
   type BotResolvedApprovals,
   botResolvedApprovals,
   NO_RESOLVED_APPROVALS,
@@ -387,7 +387,6 @@ export function useBotLive(id: string): BotLive {
       });
     const update = (next: (buffers: BotTextBuffers) => BotTextBuffers) =>
       change((state) => ({ ...state, buffers: next(state.buffers) }));
-    const hold = new BotApprovalHold();
     // A decided card is retired for good the first time a read holds its line.
     const retireStored = (read: BotConversationEntity | undefined) =>
       setDecided((current) => {
@@ -402,8 +401,23 @@ export function useBotLive(id: string): BotLive {
       }
       retireStored(cached.query.state.data as BotConversationEntity | undefined);
     });
-    const readApprovals = () =>
-      void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
+    const approvals = new BotLiveApprovals({
+      readCards: () => void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
+      closeCard: (approvalId) =>
+        queryClient.setQueryData<BotApprovalEntity | null>(botsKeys.pendingApproval(id), (card) =>
+          withoutClosedApproval(card, approvalId),
+        ),
+      keepLine: (frame) =>
+        setDecided((current) => {
+          const noted = noteResolvedApproval(
+            current.id === id ? current.resolved : NO_RESOLVED_APPROVALS,
+            frame,
+          );
+          const read = queryClient.getQueryData<BotConversationEntity>(key);
+          const resolved = read ? botResolvedApprovals(noted, read) : noted;
+          return current.id === id && resolved === current.resolved ? current : { id, resolved };
+        }),
+    });
     let up = false;
 
     const offStatus = stream.onStatus((status) => {
@@ -416,58 +430,37 @@ export function useBotLive(id: string): BotLive {
       up = now;
     });
     const offEvent = stream.onEvent((event) => {
-      if (event.type === 'retrying') {
-        retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
-        return;
+      if (approvals.see(event)) return;
+      switch (event.type) {
+        case 'retrying':
+          retry((retries) => noteBotRetry(retries, event.turnId, event.reason));
+          return;
+        case 'text':
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          update((buffers) => appendBotText(buffers, event.turnId, event.text));
+          return;
+        case 'subagents':
+          change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
+          return;
+        case 'question':
+          void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
+          return;
+        case 'message':
+        case 'turn': {
+          retry((retries) => clearBotRetry(retries, event.turnId));
+          const ended =
+            event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
+          void refetchChat(queryClient, id, ended);
+          return;
+        }
       }
-      if (event.type === 'text') {
-        retry((retries) => clearBotRetry(retries, event.turnId));
-        update((buffers) => appendBotText(buffers, event.turnId, event.text));
-        hold.text(event.text);
-        return;
-      }
-      if (event.type === 'subagents') {
-        change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));
-        return;
-      }
-      if (event.type === 'approval') {
-        if (event.status === 'pending') hold.raise(readApprovals);
-        else readApprovals();
-        return;
-      }
-      if (event.type === 'approval_resolved') {
-        queryClient.setQueryData<BotApprovalEntity | null>(botsKeys.pendingApproval(id), (card) =>
-          withoutClosedApproval(card, event.approvalId),
-        );
-        setDecided((current) => {
-          const noted = noteResolvedApproval(
-            current.id === id ? current.resolved : NO_RESOLVED_APPROVALS,
-            event,
-          );
-          const read = queryClient.getQueryData<BotConversationEntity>(key);
-          const resolved = read ? botResolvedApprovals(noted, read) : noted;
-          return current.id === id && resolved === current.resolved ? current : { id, resolved };
-        });
-        readApprovals();
-        return;
-      }
-      if (event.type === 'question') {
-        void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
-        return;
-      }
-      retry((retries) => clearBotRetry(retries, event.turnId));
-      // A stored message or a turn that moved ends whatever line was being written.
-      hold.lineEnded();
-      const ended =
-        event.type === 'turn' && event.status !== 'queued' && event.status !== 'running';
-      void refetchChat(queryClient, id, ended);
     });
     stream.open();
     return () => {
       offStatus();
       offEvent();
       offStored();
-      hold.dispose();
+      approvals.dispose();
       stream.dispose();
     };
   }, [app, queryClient, id]);

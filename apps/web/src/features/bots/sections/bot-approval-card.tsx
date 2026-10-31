@@ -34,9 +34,7 @@ export function BotApprovalCard({ botId, name }: { botId: string; name: string }
   const decide = useDecideBotApproval({ onError: () => void refetch() });
   const [denying, setDenying] = useState(false);
   const voice = useVoiceDictation();
-  const looks = approval
-    ? approvalDecisionLooks(approval.details.decisions, approval.details.subjectLabel)
-    : [];
+  const looks = approval ? approvalDecisionLooks(approval.details.decisions) : [];
 
   const answer = (decision: BotApprovalDecision, note?: string) => {
     if (!approval) return;
