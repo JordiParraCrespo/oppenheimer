@@ -1,4 +1,5 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
@@ -124,18 +125,7 @@ const MINUTE = 60_000;
 const START = Date.parse('2026-09-26T10:00:00Z');
 
 function session(id: string, minutesOld: number): SessionEntity {
-  return {
-    id,
-    name: id,
-    agent: 'claude-code',
-    hostId: 'host-1',
-    state: 'working',
-    lifecycle: 'running',
-    isProvisioning: false,
-    projectId: 'project-1',
-    checkouts: [],
-    createdAt: new Date(START - minutesOld * MINUTE),
-  } as unknown as SessionEntity;
+  return sessionEntity({ id, createdAt: new Date(START - minutesOld * MINUTE) });
 }
 
 const ROWS = ['alpha', 'bravo', 'charlie', 'delta', 'echo'].map((id, index) =>

@@ -9,7 +9,6 @@ import type { SessionPlanFactory } from '../../../application/session-plan.facto
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import type { WorkSessionEntity } from '../../../domain/work-session.entity';
-import { WorkSessionMapper } from '../../../work-session.mapper';
 import { StartCloudSessionCommand } from '../start-cloud-session.command';
 import { StartCloudSessionCommandHandler } from '../start-cloud-session.command-handler';
 
@@ -71,7 +70,6 @@ function setup(launch: CloudRunsPort['launch'], existing?: WorkSessionEntity) {
     runs,
     plan,
     naming,
-    new WorkSessionMapper(),
   );
   return { handler, sessions, runs };
 }

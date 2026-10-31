@@ -748,6 +748,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and everything under it. No migration: a session keeps the folder its
   state records, and a store left in `repos/` is cloned again on its next
   create.
+- 2026-10-31: **the relay's critical path hardened** (01, 03, #556): a hello
+  whose reconciliation fails closes the link with 1013 for a redial and a
+  fresh hello, instead of being logged; the handshake answers 503, not 401, when
+  the assertion's store is down; attach sockets are pinged like the link;
+  a browser's `resize` and `credit` are held to a rate per attachment and a
+  credit clamped; a lost pane's `session.stopped` is keyed by run and link
+  epoch and written only while the row is still open and not stopped. The
+  single API replica is written down as a known constraint (03, open
+  question 4).
 - 2026-10-31: **the host proves itself on every direct channel** (31, 22,
   01, 07 F30). Asked for: "as much p2p as possible … some handshake to make
   it more robust". 22 bound the data channel to the DTLS fingerprints in the

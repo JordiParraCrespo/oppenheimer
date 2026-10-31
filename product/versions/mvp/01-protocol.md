@@ -377,6 +377,19 @@ grounds can still fetch, verify and install the version that fixes it
   terminates a link that has not answered the previous ping. A TCP
   connection that died without a close (a NAT timeout, a sleeping
   laptop) is otherwise invisible until a write happens to time out.
+  The attach socket is pinged on the same interval and terminated the
+  same way (2026-10-31), terminal and device alike; a browser answers a
+  ping on its own, so the console sends nothing for it.
+- **A browser's control frames are held to a rate per attachment**
+  (2026-10-31). Every browser on a host shares its one link, and the
+  link is closed at 8 MB buffered, so one tab sending `resize` or
+  `credit` as fast as it can would take every pane on the host down. A
+  behaving pane's frames go straight through; past a burst, credits are
+  summed and resizes keep the last size until the budget refills. A
+  credit is clamped to two windows, the most a merged sum can honestly
+  owe. A read-only watcher's credit and resize still reach the runner:
+  the window is per attachment, and `ignore-size` keeps a watcher's
+  size off the window but tmux still draws the watcher's view at it.
 - Reconnect ladder 0.5 s, 1, 2, 5, 10, 30 with jitter, and an epoch
   that the control plane allocates on every accepted link and hands over
   in `welcome`; frames and callbacks from an older epoch are dropped

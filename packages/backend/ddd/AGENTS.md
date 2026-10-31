@@ -18,7 +18,9 @@ src/
 ├── command.base.ts             # CQRS command base
 ├── query.base.ts               # CQRS query base
 ├── repository.port.ts          # repository port interface (insert/save/findOneById/delete), Paginated
-├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents, saveIf (conditional write)
+├── typeorm-repository.base.ts  # non-tenant TypeORM adapter base: the port's four methods over writeWithEvents, saveVersioned (the default), saveIf (conditional write)
+├── versioned-aggregate-root.base.ts # VersionedAggregateRoot: the aggregate carries the version its row was loaded at
+├── versioned-write.ts          # writeVersioned (UPDATE … WHERE id AND version, else VersionConflictException), retryOnVersionConflict
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
 ├── outbox/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE

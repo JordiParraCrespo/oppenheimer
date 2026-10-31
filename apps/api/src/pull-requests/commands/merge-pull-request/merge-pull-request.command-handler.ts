@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import { requireApp } from '../../../github/application/app-address.policy';
+import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
+import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
 import { MergePullRequestCommand } from './merge-pull-request.command';
 
 /**
@@ -13,8 +14,8 @@ export class MergePullRequestCommandHandler
   implements ICommandHandler<MergePullRequestCommand, void>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_WRITES)
+    private readonly writes: PullRequestWritePort,
   ) {}
 
   async execute({
@@ -23,7 +24,7 @@ export class MergePullRequestCommandHandler
     method,
     expectedHeadSha,
   }: MergePullRequestCommand): Promise<void> {
-    const app = this.access.requireApp(address);
-    await this.access.merge(scope, scope.userId, app, method, expectedHeadSha);
+    const app = requireApp(address);
+    await this.writes.merge(scope, scope.userId, app, method, expectedHeadSha);
   }
 }

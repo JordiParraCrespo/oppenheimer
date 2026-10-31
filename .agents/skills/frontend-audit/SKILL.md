@@ -131,7 +131,9 @@ come up empty, so run it on every file in scope that returns JSX:
 
 1. **Design system first (`U1`).** Read
    `packages/frontend/design-system/web/src/index.ts` in full, then the table
-   under "Reach for the design system" in `.agents/rules/frontend-ui.md`. A
+   under "Reach for the design system" in `.agents/rules/frontend-ui.md` and
+   the rest of it in `.agents/reference/frontend-ui-catalog.md` (one table
+   in two files; `pnpm check:structure` holds both to the exports). A
    `div` or `p` styled as a callout, an empty state, a status dot, a chip or a
    summary, where the design system ships one, is `U1`. That holds even when
    every class is a token, because `lint:design` only checks the classes, not

@@ -8,27 +8,28 @@ import {
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
-import type { BotToolStep } from '@oppenheimer/frontend-consumer';
+import { Globe, ListTodo, Search, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
+import { type BotToolStep, todosOf } from '@oppenheimer/frontend-consumer';
+import { useExploredLine } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotSubagents } from '@/features/bots/components/bot-subagents';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
+import { type TraceRun, traceRuns } from '@/features/bots/lib/explored-steps';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
   groupSummary,
-  planItems,
   readableOutput,
   sharedKind,
   type ToolAction,
   toolAction,
 } from '@/features/bots/lib/tool-activity';
 
-const PLAN_MARK = { done: '✓', active: '→', pending: '○' } as const;
+const PLAN_MARK = { completed: '✓', in_progress: '→', pending: '○' } as const;
 
-/** How much of a call's output shows before "Show N more lines". */
-const OUTPUT_LINES = 20;
+/** How much of a call's output shows before "+N lines", as Codex's transcript caps a call. */
+const OUTPUT_LINES = 5;
 
 type Kind = ToolAction['kind'];
 
@@ -99,12 +100,12 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
     title: (t) => ({ title: t('bots.chat.activity.planned') }),
     // The to-do list it wrote, read from its input.
     detail: (step, t, labels) => {
-      const items = planItems(step.input);
+      const items = todosOf(step.input.todos);
       if (items.length === 0) return rawDetail(step, t, labels);
       return {
         body: (
           <TraceNote>
-            {items.map((item) => `${PLAN_MARK[item.state]} ${item.text}`).join('\n')}
+            {items.map((item) => `${PLAN_MARK[item.status]} ${item.text}`).join('\n')}
           </TraceNote>
         ),
       };
@@ -141,22 +142,32 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * line per call in plain verbs, failures in red, each opening to what it
  * returned, drawn by its kind's entry in `STEP_VIEWS`. Calls made together
  * fold into one line ("Used 5 tools"), under their kind's glyph when they
- * share one, that opens to those same lines.
- * A call that would have asked and ran says why on its line. A call
+ * share one, that opens to those same lines; calls that only looked around
+ * (a `get_`, `list_`, `read_` or `search_` tool, the web search) fold into
+ * their own "Explored" line that names what they read, "Exploring" while
+ * the call running now is one more of them, and any other call ends that
+ * run. A call that would have asked and ran says why on its line. A call
  * still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
  */
-export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
+export function BotTrace({
+  steps,
+  live = false,
+}: {
+  steps: readonly BotToolStep[];
+  /** The turn is still running, so a call with no output yet is in flight. */
+  live?: boolean;
+}) {
   const { t } = useTranslation();
+  const exploredLine = useExploredLine();
   const labels: TraceOutputLabels = {
     raw: t('bots.chat.activity.rawOutput'),
     more: (count) => t('bots.chat.activity.moreLines', { count }),
+    full: t('bots.chat.activity.fullLines'),
     less: t('bots.chat.activity.lessOutput'),
   };
-  const done = steps.filter((step) => step.output !== null);
-  if (done.length === 0) return null;
-  const lines = done.map((step) => {
+  const lineOf = (step: BotToolStep) => {
     const action = toolAction(step);
     const view = viewOf(action);
     const { meta, body } = view.detail(step, t, labels);
@@ -175,17 +186,53 @@ export function BotTrace({ steps }: { steps: readonly BotToolStep[] }) {
         {body}
       </TraceStep>
     );
-  });
-  if (lines.length === 1) return <Trace>{lines}</Trace>;
-  const failed = done.filter((step) => step.isError).length;
-  const actions = done.map(toolAction);
-  return (
-    <TraceGroup
-      icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
-      summary={t(groupSummary(actions), { count: done.length })}
-      failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
-    >
-      {lines}
-    </TraceGroup>
-  );
+  };
+  const failedOf = (run: TraceRun) => {
+    const failed = run.steps.filter((step) => step.isError).length;
+    return failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined;
+  };
+  const runOf = (run: TraceRun) => {
+    const [only] = run.steps;
+    switch (run.kind) {
+      case 'explored':
+        return only && run.steps.length === 1 && !run.exploring ? (
+          <Trace key={run.key}>{lineOf(only)}</Trace>
+        ) : (
+          <TraceGroup
+            key={run.key}
+            icon={<Search />}
+            summary={
+              run.exploring ? (
+                <span className="motion-safe:animate-shimmer">
+                  {t('bots.chat.activity.exploring')}
+                </span>
+              ) : (
+                t('bots.chat.activity.explored')
+              )
+            }
+            detail={exploredLine(run.parts)}
+            failed={failedOf(run)}
+          >
+            {run.steps.map(lineOf)}
+          </TraceGroup>
+        );
+      case 'tools': {
+        if (only && run.steps.length === 1) return <Trace key={run.key}>{lineOf(only)}</Trace>;
+        const actions = run.steps.map(toolAction);
+        return (
+          <TraceGroup
+            key={run.key}
+            icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
+            summary={t(groupSummary(actions), { count: run.steps.length })}
+            failed={failedOf(run)}
+          >
+            {run.steps.map(lineOf)}
+          </TraceGroup>
+        );
+      }
+    }
+  };
+  const runs = traceRuns(steps, live).map(runOf);
+  if (runs.length === 0) return null;
+  return runs.length === 1 ? runs[0] : <div className="flex flex-col">{runs}</div>;
 }

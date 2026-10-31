@@ -41,11 +41,12 @@ src/
   barrel: the API imports `@oppenheimer/shared/feature-flags`, the web tier
   `@oppenheimer/shared/feature-flags/catalog` (no Zod); see
   `.agents/rules/feature-flags.md`.
-- **Types**: `Role` (free-form role-name `string`), `PermissionDefinition`,
-  `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`,
-  `PaginatedResponse<T>`.
-- **Constants**: `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`,
-  `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`.
+- **Types**: `Role` (free-form role-name `string`), `PaginationParams`,
+  `PaginatedResponse<T>`, the deployment/client capability catalogs and the
+  RFC 7807 problem-details helpers; `PermissionDefinition` and
+  `SYSTEM_ROLE_PERMISSIONS` live in `permissions/`.
+- **Constants**: `PAGINATION`, `PASSWORD_MIN_LENGTH`, `ROLES`,
+  `SYSTEM_ROLES`, `MEMBERSHIP_ROLES`, `ORGANIZATION_ROLES`, `QUEUE_NAMES`.
 - **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
   frozen config record per agent. It is deliberately **not a table** — every
   entry carries behaviour the runner needs code for anyway, so a row would be a
