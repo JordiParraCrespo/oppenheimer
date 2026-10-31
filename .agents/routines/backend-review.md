@@ -38,11 +38,13 @@ Write each number down; the report quotes it next to the previous week's.
   - the commits whose only job was to repair a clash with `main` (a migration
     renumbered, a budget raised, a generated file regenerated, a merge of
     `main`).
-- **Local CI.** Run `pnpm ci:local --all` and keep `.ci-local/report.md`. Name
-  the three slowest rows.
-- **API unit tests.** Run `npx vitest run --reporter=json` in `apps/api`.
-  Compare the wall time with the sum of the test bodies. Name the slowest files
-  and any test that waits on the real clock.
+- **Local CI.** Do not run the pipeline. Read the per-row times from those
+  `## Local CI` tables and from the latest scheduled run on `main` (the
+  `ci.yml` workflow's log), and name the three slowest rows.
+- **API unit tests.** The CI tables give only the total, so run
+  `npx vitest run --reporter=json` in `apps/api` once (about two minutes).
+  Compare the wall time with the sum of the test bodies, and name the slowest
+  files and any test that waits on the real clock.
 - **Size and coupling.** For each `apps/api/src` module, record lines of code,
   number of handlers, largest file, and how many distinct classes it imports
   from other modules. Record every non-migration file over 500 lines.
@@ -128,17 +130,15 @@ Open at most six pull requests in a run, the highest payoff first. The rest
 wait for next week. A finding of size L, or one that is only plausible, stays
 in the issue.
 
-Give each fix its own subagent in its own worktree. Its branch is
-`backend-review/<yyyy-mm-dd>-<slug>`, and it works from `origin/main`. Tell
-each one to:
-1. Reproduce the finding first: a test that fails, or the measurement. If it
-   does not reproduce, stop and report back. The finding then leaves the
-   issue with that reason.
+Fix the findings one after another in this checkout, never in parallel. Each
+one gets its own branch, `backend-review/<yyyy-mm-dd>-<slug>`, made from
+`origin/main`, so every pull request stands alone. For each finding:
+1. Reproduce it first, with a test that fails or with the measurement. If it
+   does not reproduce, drop it from the issue and say why.
 2. Make the smallest fix the finding needs, following the rules that cover
    the code.
-3. Commit, staging files by path. Then run
-   `flock /tmp/oppenheimer-ci.lock pnpm ci:local`; the lock serialises the
-   subagents, which share the stack's ports. Push only on a green run.
+3. Commit, staging files by path, and run `pnpm ci:local`. Push only on a
+   green run.
 4. Open the pull request against `main`, ready for review, labelled
    `backend-review`, following the steward skill:
    - the `## Local CI` report;
@@ -147,5 +147,5 @@ each one to:
 5. Never merge.
 
 Link every pull request from its finding in the issue and from that day's
-comment. A subagent that could not get to green leaves no pull request;
-record why in the comment.
+comment. A fix that could not get to green leaves no pull request; record why
+in the comment.
