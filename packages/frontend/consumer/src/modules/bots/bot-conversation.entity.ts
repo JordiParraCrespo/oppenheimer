@@ -142,6 +142,8 @@ export class BotConversationEntity {
     public readonly turns: readonly BotTurnEntity[],
     /** How many messages the chat holds in all, past this window; activity lines not counted. */
     public readonly messageCount: number,
+    /** For each turn still queued or running, how many blocks of text it has stored in all. */
+    private readonly textBlocksStored: Readonly<Record<string, number>> = {},
   ) {}
 
   /** When the newest message was written; `null` for an empty chat. */
@@ -201,6 +203,30 @@ export class BotConversationEntity {
 
   turn(id: string): BotTurnEntity | undefined {
     return this.turns.find((turn) => turn.id === id);
+  }
+
+  /**
+   * How many blocks of text the turn has stored, which its streamed text is
+   * numbered from: the read's own count for a turn still running (a long
+   * turn's first blocks can fall outside this window), else its assistant
+   * messages with text in the window (an image the bot showed has none).
+   */
+  storedTextBlocks(turnId: string): number {
+    return (
+      this.textBlocksStored[turnId] ??
+      this.messages.filter(
+        (message) =>
+          message.turnId === turnId &&
+          message.role === 'assistant' &&
+          message.content.trim() !== '',
+      ).length
+    );
+  }
+
+  /** The conversation shows the turn ended; one it does not show yet is still running. */
+  hasEnded(turnId: string): boolean {
+    const turn = this.turn(turnId);
+    return turn !== undefined && !turn.isActive;
   }
 }
 

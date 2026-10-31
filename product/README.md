@@ -975,3 +975,10 @@ earlier note:
   message at its next tool call, and one it never reaches runs as its own
   turn; Alt+Enter still queues it for after
   (`next-steps/0.7-terminal-and-chat.md`, "Steer in the bots chat").
+- The bot stream was lossy by design: text published while the browser was
+  away was gone, and the console matched what it streamed against stored
+  text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
+  text is kept beside the channel and sent as a snapshot when the browser
+  connects, and the console reconciles by block and sequence number, the
+  stored message being the authority (`versions/mvp/25-bots.md` §2,
+  `next-steps/0.7-chat-protocol.md` slice 2).

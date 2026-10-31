@@ -399,6 +399,7 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
     dto.messages.map(toMessage),
     dto.turns.map(toTurn),
     dto.messageCount,
+    dto.storedTextBlocks,
   );
 }
 
