@@ -18,8 +18,8 @@ import {
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
+import { SessionCloudRunMapper } from '../../session-cloud-run.mapper';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { StartCloudSessionCommand } from './start-cloud-session.command';
 
 /**
@@ -45,7 +45,6 @@ export class StartCloudSessionCommandHandler
     private readonly runs: CloudRunsPort,
     private readonly plan: SessionPlanFactory,
     private readonly naming: SessionNamingResolver,
-    private readonly mapper: WorkSessionMapper,
   ) {}
 
   async execute(command: StartCloudSessionCommand): Promise<SessionCommandResult> {
@@ -64,14 +63,14 @@ export class StartCloudSessionCommandHandler
     const launched = await this.runs.launch(
       owner,
       input.provider,
-      this.mapper.toCloudLaunch(id, input, source),
+      SessionCloudRunMapper.toLaunch(id, input, source),
     );
 
     const now = new Date();
     const agent = CLOUD_PROVIDER_AGENT[input.provider];
     const session = WorkSessionEntity.requestCloud({
       id,
-      cloudRun: this.mapper.toLaunchedCloudRun(
+      cloudRun: SessionCloudRunMapper.toLaunched(
         { id, organizationId: scope.organizationId },
         input,
         launched,

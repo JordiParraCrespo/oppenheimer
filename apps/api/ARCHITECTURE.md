@@ -305,6 +305,11 @@ the log through `SessionCheckoutRepository`, `SessionCloudRunRepository`,
 `SessionTurnRepository` and `WorkSessionEventRepository`. Those are plain
 classes the adapter constructs, not providers: nothing else may write a
 member table, and every write runs on the transaction the adapter opened.
+Each member's shapes are its own mapper at the module root
+(`session-checkout.mapper.ts`, `session-cloud-run.mapper.ts`,
+`session-turn.mapper.ts`, `work-session-event.mapper.ts`), static and
+framework-free; `WorkSessionMapper` keeps the root row and assembles the
+aggregate from the members' mappers.
 
 ## Request flow
 

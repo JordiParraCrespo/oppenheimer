@@ -20,7 +20,7 @@ import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionEventPage } from '../../database/work-session.repository.port';
 import { SessionEventPageResponseDto } from '../../dtos/session-event.response.dto';
-import { WorkSessionMapper } from '../../work-session.mapper';
+import { WorkSessionEventMapper } from '../../work-session-event.mapper';
 import { FindSessionEventsQuery } from './find-session-events.query';
 import { FindSessionEventsRequest } from './find-session-events.request.dto';
 
@@ -31,10 +31,7 @@ import { FindSessionEventsRequest } from './find-session-events.request.dto';
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('sessions')
 export class FindSessionEventsHttpController {
-  constructor(
-    private readonly queryBus: QueryBus,
-    private readonly mapper: WorkSessionMapper,
-  ) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':id/events')
   @Version('1')
@@ -63,7 +60,7 @@ export class FindSessionEventsHttpController {
       new FindSessionEventsQuery({ scope, sessionId: id, ...query }),
     );
     return {
-      data: page.events.map((event) => this.mapper.eventToResponse(event)),
+      data: page.events.map((event) => WorkSessionEventMapper.toResponse(event)),
       nextSeq: page.nextSeq,
     };
   }

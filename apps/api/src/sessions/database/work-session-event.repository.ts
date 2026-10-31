@@ -1,9 +1,9 @@
 import { type EntityManager, In } from 'typeorm';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
-import { firstPromptFilesOf } from '../domain/session-log-entry.factory';
+import { readFirstPrompt } from '../domain/session-log-entry.factory';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
-import type { AppendedEventRow, WorkSessionMapper } from '../work-session.mapper';
+import { type AppendedEventRow, WorkSessionEventMapper } from '../work-session-event.mapper';
 import type { NewSessionEvent, SessionEventPage } from './work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
 
@@ -13,10 +13,7 @@ import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
  * session's adapter opened; the reads are the log's pages.
  */
 export class WorkSessionEventRepository {
-  constructor(
-    private readonly manager: EntityManager,
-    private readonly mapper: WorkSessionMapper,
-  ) {}
+  constructor(private readonly manager: EntityManager) {}
 
   /**
    * The batch in **one statement**: skip the keys already logged, number the rest
@@ -69,7 +66,7 @@ export class WorkSessionEventRepository {
        SELECT (SELECT count(*) FROM fresh)::integer AS "expected", landed.*
          FROM (SELECT 1) AS one LEFT JOIN landed ON true
         ORDER BY landed."seq"`,
-      [sessionId, this.mapper.toAppendRecordset(events)],
+      [sessionId, WorkSessionEventMapper.toAppendRecordset(events)],
     );
     const landed = rows.filter((row) => row.id !== null);
     const expected = rows[0]?.expected ?? 0;
@@ -78,7 +75,7 @@ export class WorkSessionEventRepository {
         `Session ${sessionId}: ${expected} new log entries were numbered but ${landed.length} landed`,
       );
     }
-    return landed.map((row) => this.mapper.appendedToDomain(sessionId, row));
+    return landed.map((row) => WorkSessionEventMapper.appendedToDomain(sessionId, row));
   }
 
   async findPage(
@@ -99,7 +96,7 @@ export class WorkSessionEventRepository {
     const records = await query.getMany();
     const page = records.slice(0, limit);
     return {
-      events: page.map((record) => this.mapper.eventToDomain(record)),
+      events: page.map((record) => WorkSessionEventMapper.toDomain(record)),
       nextSeq: records.length > limit ? (page[page.length - 1]?.seq ?? null) : null,
     };
   }
@@ -113,7 +110,7 @@ export class WorkSessionEventRepository {
       .orderBy('event.seq', 'DESC')
       .take(limit)
       .getMany();
-    return records.reverse().map((record) => this.mapper.eventToDomain(record));
+    return records.reverse().map((record) => WorkSessionEventMapper.toDomain(record));
   }
 
   /** Each session's first task, with the images it names, for those that have one. */
@@ -126,12 +123,9 @@ export class WorkSessionEventRepository {
     });
     const firstPrompts = new Map<string, { prompt: string; images: SessionLaunchFile[] }>();
     for (const event of prompts) {
-      const text = (event.payload as { text?: unknown } | null)?.text;
-      if (typeof text === 'string' && !firstPrompts.has(event.sessionId)) {
-        firstPrompts.set(event.sessionId, {
-          prompt: text,
-          images: firstPromptFilesOf(event.payload),
-        });
+      const first = readFirstPrompt(event.payload);
+      if (first && !firstPrompts.has(event.sessionId)) {
+        firstPrompts.set(event.sessionId, { prompt: first.text, images: first.images });
       }
     }
     return firstPrompts;

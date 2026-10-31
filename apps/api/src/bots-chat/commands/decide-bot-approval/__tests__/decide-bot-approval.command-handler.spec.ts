@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Scope } from '@oppenheimer/shared';
+import type { BotApprovalDecision, BotStreamEvent, Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
@@ -39,6 +39,7 @@ function setup(
     loses?: boolean;
     askedWith?: readonly Scope[] | null;
     perCallOnly?: boolean;
+    askingRuns?: boolean;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -71,6 +72,7 @@ function setup(
     subject: { kind: 'project', key: 'p-1', label: 'XRP' },
     perCallOnly: options.perCallOnly,
   });
+  if (options.askingRuns) asked.start(new Date());
   if (options.decided) approval.expire(new Date());
   const approvals = {
     findOne: vi.fn(async () => Some(approval)),
@@ -80,6 +82,7 @@ function setup(
   } satisfies Partial<BotApprovalRepositoryPort>;
   const turns = {
     findOne: vi.fn(async () => Some(asked)),
+    requestCancel: vi.fn(async () => true),
   } satisfies Partial<BotTurnRepositoryPort>;
   const stream: BotStreamPort = { publish: vi.fn(async () => undefined), subscribe: vi.fn() };
   const handler = new DecideBotApprovalCommandHandler(
@@ -89,10 +92,9 @@ function setup(
     stream,
   );
   const decide = (
-    decision: 'approve' | 'deny',
+    decision: BotApprovalDecision,
     note: string | null = null,
     credentialScopes: readonly Scope[] | null = null,
-    reach: 'once' | 'tool' | 'subject' = 'once',
   ) =>
     handler.execute(
       new DecideBotApprovalCommand({
@@ -100,14 +102,15 @@ function setup(
         botId: bot.id,
         approvalId: approval.id,
         decision,
-        reach,
         note,
         deciderName: 'Ana',
         credentialScopes,
       }),
     );
   const effects = () => approvals.saveTransition.mock.calls[0][1] as BotApprovalEffects;
-  return { bot, approval, approvals, stream, decide, effects };
+  const published = () =>
+    vi.mocked(stream.publish).mock.calls.map(([, event]) => event as BotStreamEvent);
+  return { bot, asked, approval, approvals, turns, stream, decide, effects, published };
 }
 
 describe('DecideBotApprovalCommandHandler', () => {
@@ -177,7 +180,7 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('sets the tool to Allow with an “Always allow”, written with the decision', async () => {
     const { approval, decide, effects } = setup();
-    await decide('approve', null, null, 'tool');
+    await decide('approve_always');
     expect(approval.reach).toBe('tool');
     const { permission, maxGrants } = effects().standing ?? {};
     expect(maxGrants).toBe(100);
@@ -192,7 +195,7 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('grants the tool on the card’s subject with an “Always allow for …”', async () => {
     const { decide, effects } = setup();
-    await decide('approve', null, null, 'subject');
+    await decide('approve_for_subject');
     expect(effects().standing?.permission.getProps()).toMatchObject({
       tool: 'start_session',
       decision: 'allow',
@@ -202,10 +205,62 @@ describe('DecideBotApprovalCommandHandler', () => {
 
   it('refuses a reach the card does not offer with BOTS_030, deciding nothing', async () => {
     const { approval, approvals, decide } = setup({ perCallOnly: true });
-    await expect(decide('approve', null, null, 'tool')).rejects.toMatchObject({
+    await expect(decide('approve_always')).rejects.toMatchObject({
       code: 'BOTS_030',
     });
     expect(approval.status).toBe('pending');
     expect(approvals.saveTransition).not.toHaveBeenCalled();
+  });
+
+  it('stops on a no that stops: its line outside any turn, no turn back, and the running turn asked to stop', async () => {
+    const { approval, asked, turns, decide, effects, published } = setup({ askingRuns: true });
+    await decide('stop', 'Not now');
+    expect(approval).toMatchObject({ status: 'denied', note: 'Not now' });
+    const { line, continuation, runCall } = effects();
+    expect(continuation).toBeUndefined();
+    expect(runCall).toBeUndefined();
+    expect(line).toMatchObject({
+      turnId: null,
+      role: 'event',
+      event: { kind: 'approval', outcome: 'stopped', approvalId: approval.id },
+    });
+    expect(turns.requestCancel).toHaveBeenCalledWith(asked, expect.any(Date));
+    expect(published()).toEqual([
+      { type: 'approval', approvalId: approval.id, status: 'denied' },
+      expect.objectContaining({ type: 'approval_resolved', outcome: 'stopped' }),
+      { type: 'message', turnId: null, messageId: line?.id },
+    ]);
+  });
+
+  it('asks no turn to stop on a plain no: the bot carries on in the turn it is given', async () => {
+    const { turns, decide, published } = setup({ askingRuns: true });
+    await decide('deny');
+    expect(turns.requestCancel).not.toHaveBeenCalled();
+    expect(published().map((event) => event.type)).toEqual([
+      'approval',
+      'approval_resolved',
+      'turn',
+    ]);
+  });
+
+  it('tells every open chat the card closed, by id, with how and its line', async () => {
+    const { approval, decide, published } = setup();
+    await decide('approve_always');
+    expect(approval.reach).toBe('tool');
+    expect(published()).toContainEqual({
+      type: 'approval_resolved',
+      approvalId: approval.id,
+      outcome: 'approved',
+      tool: 'start_session',
+      summary: approval.summary,
+    });
+  });
+
+  it('refuses a decision the card does not offer with BOTS_030, deciding and announcing nothing', async () => {
+    const { approval, approvals, stream, decide } = setup({ perCallOnly: true });
+    await expect(decide('approve_for_subject')).rejects.toMatchObject({ code: 'BOTS_030' });
+    expect(approval.status).toBe('pending');
+    expect(approvals.saveTransition).not.toHaveBeenCalled();
+    expect(stream.publish).not.toHaveBeenCalled();
   });
 });

@@ -24,10 +24,10 @@ export function ChatToolRow({ call }: { call: ChatToolCall }) {
   ) : call.diff ? (
     <DiffStat additions={call.diff.additions} deletions={call.diff.deletions} />
   ) : undefined;
-  const output = !call.output ? undefined : call.truncated ? (
-    `${call.output}\n… ${t('sessions.chat.truncated')}`
-  ) : (
-    <ChatToolOutput text={call.output} />
+  const output = !call.output ? undefined : (
+    <ChatToolOutput
+      text={call.truncated ? `${call.output}\n… ${t('sessions.chat.truncated')}` : call.output}
+    />
   );
   return (
     <div className="flex flex-col">

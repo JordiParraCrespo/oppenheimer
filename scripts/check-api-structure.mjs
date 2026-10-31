@@ -189,12 +189,6 @@ const HTTP_METHOD = /^\s*@(Get|Post|Put|Patch|Delete|All|Head|Options)\s*\(/m;
  */
 const LEDGER = [
   {
-    path: 'apps/api/src/sessions/work-session.mapper.ts',
-    kind: 'mapper-over-cap',
-    reason:
-      'one mapper for the whole session aggregate: the row, its checkouts, its cloud run, its turns, its log entries and the batched append, plus the folder picker and usage reads. Splitting it is one mapper per member table, after the cloud-run move to cloud-agents (#556)',
-  },
-  {
     path: 'apps/api/src/pull-requests/pull-request.mapper.ts',
     kind: 'mapper-over-cap',
     reason:

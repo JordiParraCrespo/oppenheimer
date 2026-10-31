@@ -1,24 +1,14 @@
 import type { AccessScope } from '../../authz/domain/access-scope.types';
-import type {
-  InstallationAddress,
-  InstallationPullRequestAddress,
-  RepositoryAddress,
-  ReviewSubmission,
-} from './pull-request-access.port';
+import type { InstallationPullRequestAddress, ReviewSubmission } from './pull-request-access.port';
 
 /**
  * What the Pull requests area does to a pull request on GitHub. Writes go
  * through the caller's own GitHub user token, so what GitHub records is what
  * that person did. With no user token a write is `GITHUB_012`, never somebody
- * else's.
+ * else's. Each takes an address the App reaches: `requireApp`
+ * (`app-address.policy.ts`) narrows one first.
  */
 export interface PullRequestWritePort {
-  /**
-   * The address narrowed to the App, for what only the App can do (writes in
-   * the caller's name, a session that clones); `GITHUB_022` for one read
-   * through a token.
-   */
-  requireApp<T extends RepositoryAddress>(address: T): Extract<T, InstallationAddress>;
   submitReview(
     scope: AccessScope,
     userId: string,

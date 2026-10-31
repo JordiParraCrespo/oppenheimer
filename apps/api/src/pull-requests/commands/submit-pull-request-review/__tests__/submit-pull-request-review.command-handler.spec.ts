@@ -2,11 +2,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { SubmitPullRequestReviewDto } from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { AccessScope } from '../../../../authz/domain/access-scope.types';
-import type {
-  InstallationAddress,
-  PullRequestAddress,
-  RepositoryAddress,
-} from '../../../../github/application/pull-request-access.port';
+import type { PullRequestAddress } from '../../../../github/application/pull-request-access.port';
 import type { PullRequestWritePort } from '../../../../github/application/pull-request-write.port';
 import { GithubErrors } from '../../../../github/domain/github.errors';
 import { SubmitPullRequestReviewCommand } from '../submit-pull-request-review.command';
@@ -37,13 +33,7 @@ function access(merge: () => Promise<void>, autoMerge = true) {
     submitReview: vi.fn().mockResolvedValue(undefined),
     merge: vi.fn(merge),
     enableAutoMerge: vi.fn().mockResolvedValue(autoMerge),
-    requireApp: vi.fn(<T extends RepositoryAddress>(address: T) => {
-      if (address.kind === 'installation') return address as Extract<T, InstallationAddress>;
-      throw new AppError(GithubErrors.READ_ONLY_REPOSITORY);
-    }),
-  } satisfies Pick<PullRequestWritePort, 'submitReview' | 'merge' | 'enableAutoMerge'> & {
-    requireApp: unknown;
-  };
+  } satisfies Pick<PullRequestWritePort, 'submitReview' | 'merge' | 'enableAutoMerge'>;
 }
 
 function submit(

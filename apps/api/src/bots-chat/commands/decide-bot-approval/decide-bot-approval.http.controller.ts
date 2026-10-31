@@ -11,6 +11,7 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { namedBotApprovalDecision } from '@oppenheimer/shared';
 import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -48,7 +49,7 @@ export class DecideBotApprovalHttpController {
   @ApiOperation({
     summary: "Answer a bot's Needs input card",
     description:
-      "`approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `reach` takes a yes past this call: `tool` sets the tool to Allow for the bot, `subject` allows it on what the call acts on; the card's `reaches` lists what it offers. `deny` runs nothing. Either way the bot gets a turn that tells it what was decided, with the note, under the same scopes, and it reports back in the chat.",
+      "`decision` is one of the card's `availableDecisions`. `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `approve_always` also sets the tool to Allow for the bot, `approve_for_subject` allows it on what the call acts on (the older `approve` with `reach` `tool` or `subject` says the same). `deny` runs nothing, and the bot gets a turn that tells it so, with the note, under the same scopes, and carries on. `stop` runs nothing and gives the bot no turn back: the running turn is asked to stop, and the chat keeps a line saying so. Every open chat hears the card closed (`approval_resolved` on the bot's stream).",
   })
   @ApiResponse({ status: 201, type: BotApprovalResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -60,7 +61,7 @@ export class DecideBotApprovalHttpController {
   })
   @ApiProblemResponse({
     status: 422,
-    description: 'A reach the card does not offer',
+    description: 'A decision or reach the card does not offer',
     code: 'BOTS_030',
   })
   @ApiProblemResponse({ status: 409, description: 'Too many standing grants', code: 'BOTS_034' })
@@ -77,8 +78,7 @@ export class DecideBotApprovalHttpController {
         scope,
         botId,
         approvalId,
-        decision: body.decision,
-        reach: body.reach,
+        decision: namedBotApprovalDecision(body),
         note: body.note ?? null,
         deciderName: name ?? '',
         credentialScopes: credential ? credential.scopes : null,

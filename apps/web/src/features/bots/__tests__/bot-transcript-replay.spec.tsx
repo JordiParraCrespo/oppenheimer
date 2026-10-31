@@ -10,7 +10,8 @@ import { releaseWeek } from './replay/release-week.recording';
  * A bot's chat replayed from recorded conversations, wire to screen: the
  * API's reads and the stream's frames go through the product package's
  * repository, stream and `useBotLive` into `BotTranscript`. What breaks
- * this: a turn's steps drawn out of the order they ran, a stored paragraph
+ * this: a turn's steps drawn out of the order they ran (two reads not
+ * folded into one Explored line), a stored paragraph
  * drawn again beside the live text that wrote it, the write head or the live
  * line left on a turn that ended, a running `delegate` call's children hidden
  * until it ends, an event this build cannot read dropped instead of shown as
@@ -109,7 +110,7 @@ describe('a settled week, replayed', () => {
     expect(outline(chat.container)).toEqual([
       'you: Draft the release notes for 2.4',
       'bot (completed)',
-      '  bots.chat.activity.group{"count":2}',
+      '  bots.chat.activity.explored common.chat.explored.read pull request',
       '  “Release 2.4 Dark mode in Settings A steadier sign-in”',
       '── bots.chat.event.approved{"summary":"Run the release checklist"} bots.chat.openSession ──',
       'bot (completed)',
@@ -129,14 +130,14 @@ describe('a settled week, replayed', () => {
     expect(chat.strays).toEqual([]);
   });
 
-  it('folds calls made together into one line that opens to each, in the order they ran', async () => {
+  it('folds reads made together into one Explored line, the same thing named once, that opens to each in the order they ran', async () => {
     const chat = await replayBotChat(releaseWeek);
 
-    const group = screen.getByRole('button', { name: 'bots.chat.activity.group{"count":2}' });
+    const group = screen.getByRole('button', { name: /^bots\.chat\.activity\.explored/ });
     expect(group.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(group);
     expect(outline(chat.container).slice(2, 5)).toEqual([
-      '  bots.chat.activity.group{"count":2}',
+      '  bots.chat.activity.explored common.chat.explored.read pull request',
       '    Read pull request',
       '    Read pull request',
     ]);

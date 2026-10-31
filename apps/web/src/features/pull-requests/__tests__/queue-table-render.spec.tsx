@@ -1,4 +1,5 @@
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
+import { pullRequestEntity } from '@oppenheimer/frontend-consumer/testing';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
@@ -78,25 +79,16 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 function pull(title: string, number: number): PullRequestEntity {
-  return {
+  return pullRequestEntity({
     title,
     number,
-    installationId: 'installation-1',
-    githubRepoId: 1,
     repository: 'acme/web',
-    reference: `acme/web#${number}`,
-    address: { installationId: 'installation-1', githubRepoId: 1, number },
     author: 'ada',
-    authorKind: 'person',
     headRef: `feature/${title}`,
-    lane: 'quick',
-    blocker: null,
     additions: 1,
     deletions: 1,
-    checks: 'passing',
-    hasConflicts: false,
     waitingSeconds: 60,
-  } as unknown as PullRequestEntity;
+  });
 }
 
 const TITLES = ['alpha', 'bravo', 'charlie', 'delta'];

@@ -66,10 +66,10 @@ export class WorkSessionRepository
     private readonly outbox: OutboxService,
   ) {
     super();
-    this.checkouts = new SessionCheckoutRepository(repository.manager, mapper);
-    this.cloudRuns = new SessionCloudRunRepository(repository.manager, mapper);
-    this.turns = new SessionTurnRepository(mapper);
-    this.log = new WorkSessionEventRepository(repository.manager, mapper);
+    this.checkouts = new SessionCheckoutRepository(repository.manager);
+    this.cloudRuns = new SessionCloudRunRepository(repository.manager);
+    this.turns = new SessionTurnRepository();
+    this.log = new WorkSessionEventRepository(repository.manager);
   }
 
   async createIfUnclaimed(
