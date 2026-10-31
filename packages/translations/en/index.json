@@ -121,6 +121,19 @@
         "previous": "Previous question",
         "nextQuestion": "Next question",
         "of": "{{n}} of {{total}}"
+      },
+      "output": {
+        "more_one": "+{{count}} line",
+        "more_other": "+{{count}} lines",
+        "full": "Show full lines",
+        "less": "Show less"
+      },
+      "explored": {
+        "read": "Read",
+        "search": "Searched",
+        "list": "Listed",
+        "more_one": "+{{count}} more",
+        "more_other": "+{{count}} more"
       }
     },
     "search": {
@@ -308,6 +321,7 @@
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
       "HOSTS_007": "No file is waiting for that command.",
       "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
+      "HOSTS_009": "Someone else changed this host while you were saving. Reload it and try again.",
       "INBOX_001": "The Inbox needs a workspace. Open one and try again.",
       "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
       "INBOX_003": "A snooze has to end in the future. Pick a later time.",
@@ -465,7 +479,14 @@
     "code": "Code: {{code}}",
     "startFailure": {
       "codes": {
-        "SESS_002": "This host makes sessions with one repository."
+        "SESS_002": "This host makes sessions with one repository.",
+        "SESS_010": "Codex's CLI has no cloud environment for this repository."
+      },
+      "help": {
+        "SESS_010": {
+          "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
+          "link": "Open Codex Cloud settings"
+        }
       },
       "details": "Details from the host: {{detail}}"
     }
@@ -1241,7 +1262,11 @@
         "waiting": "Waiting for your answer",
         "dismissed": "You dismissed the questions",
         "noAnswer": "No answer read"
-      }
+      },
+      "explored": {
+        "title": "Explored"
+      },
+      "exploring": "Exploring"
     },
     "preview": {
       "show": "Show preview",
@@ -1409,8 +1434,6 @@
         "results_one": "{{count}} result",
         "results_other": "{{count}} results",
         "rawOutput": "Show raw output",
-        "moreLines_one": "Show {{count}} more line",
-        "moreLines_other": "Show {{count}} more lines",
         "lessOutput": "Show less",
         "group_one": "Used {{count}} tool",
         "group_other": "Used {{count}} tools",
@@ -1435,7 +1458,12 @@
           "cancelled": "stopped",
           "timed_out": "timed out"
         },
-        "subagentTokens": "{{tokens}} tokens"
+        "subagentTokens": "{{tokens}} tokens",
+        "explored": "Explored",
+        "exploring": "Exploring",
+        "moreLines_one": "+{{count}} line",
+        "moreLines_other": "+{{count}} lines",
+        "fullLines": "Show full lines"
       },
       "suggest": {
         "task": {
@@ -1516,11 +1544,17 @@
         "always": "Always allow",
         "alwaysFor": "Always allow for {{subject}}",
         "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
-        "fullRequest": "Show the full request"
+        "fullRequest": "Show the full request",
+        "stop": "Deny and stop",
+        "stopping": "Stopping…",
+        "denyHint": "{{name}} is told why and carries on",
+        "stopHint": "Nothing runs, and {{name}} stops this turn",
+        "shortcut": "Press {{key}}"
       },
       "event": {
         "approved": "You approved: {{summary}}",
         "denied": "You denied: {{summary}}",
+        "stopped": "You denied and stopped the turn: {{summary}}",
         "failed": "You approved, and it failed: {{summary}}",
         "routine": "Routine · {{name}}",
         "routineSaved": "Created routine “{{name}}”",

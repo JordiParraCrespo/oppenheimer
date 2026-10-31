@@ -27,6 +27,7 @@ import {
 } from '../modules/bots/bot.entity';
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
+import { mutation } from './mutation';
 import { seedDetails } from './seed-details';
 
 /**
@@ -299,16 +300,10 @@ function isSharedFact(queryClient: QueryClient, id: string, factId: string): boo
 
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
-export function useCreateBot(
-  options?: UseMutationOptions<BotEntity, Error, BotSection[] | undefined>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (sections?: BotSection[]) => app.bots.create(sections),
-    ...withCacheOnSuccess(options, (added) => settleBot(queryClient, added, true)),
-  });
-}
+export const useCreateBot = mutation<BotEntity, BotSection[] | undefined>({
+  run: (app, sections) => app.bots.create(sections),
+  update: (queryClient, added) => settleBot(queryClient, added, true),
+});
 
 export interface UpdateBotVariables {
   id: string;
@@ -321,16 +316,10 @@ function reorders(input: UpdateBotInput): boolean {
 }
 
 /** Profile, the sidebar group, the home host, and the composer's model, effort and approval. */
-export function useUpdateBot(options?: UseMutationOptions<BotEntity, Error, UpdateBotVariables>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, input }: UpdateBotVariables) => app.bots.update(id, input),
-    ...withCacheOnSuccess(options, (saved, { input }) =>
-      settleBot(queryClient, saved, reorders(input)),
-    ),
-  });
-}
+export const useUpdateBot = mutation<BotEntity, UpdateBotVariables>({
+  run: (app, { id, input }) => app.bots.update(id, input),
+  update: (queryClient, saved, { input }) => settleBot(queryClient, saved, reorders(input)),
+});
 
 /** `bot` with the fields `input` sets; a field it leaves out keeps the bot's. */
 function withInput(bot: BotEntity, input: UpdateBotInput): BotEntity {
@@ -391,56 +380,36 @@ export function useUpdateBotOptimistically(
 }
 
 /** Delete: the bot, its documents and its memory. */
-export function useDeleteBot(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.bots.remove(id),
-    ...withCacheOnSuccess(options, (_data, id) => dropBot(queryClient, id)),
-  });
-}
+export const useDeleteBot = mutation<void, string>({
+  run: (app, id) => app.bots.remove(id),
+  update: (queryClient, _data, id) => dropBot(queryClient, id),
+});
 
 /** A new group, first in the sidebar's list, as the API lists them. */
-export function useCreateBotGroup(options?: UseMutationOptions<BotGroupEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (name: string) => app.bots.createGroup(name),
-    ...withCacheOnSuccess(options, (added) =>
-      settleGroups(queryClient, (rows) => [added, ...rows]),
-    ),
-  });
-}
+export const useCreateBotGroup = mutation<BotGroupEntity, string>({
+  run: (app, name) => app.bots.createGroup(name),
+  update: (queryClient, added) => settleGroups(queryClient, (rows) => [added, ...rows]),
+});
 
 export interface RenameBotGroupVariables {
   id: string;
   name: string;
 }
 
-export function useRenameBotGroup(
-  options?: UseMutationOptions<BotGroupEntity, Error, RenameBotGroupVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, name }: RenameBotGroupVariables) => app.bots.renameGroup(id, name),
-    ...withCacheOnSuccess(options, (saved) => settleGroups(queryClient, replaced(saved))),
-  });
-}
+export const useRenameBotGroup = mutation<BotGroupEntity, RenameBotGroupVariables>({
+  run: (app, { id, name }) => app.bots.renameGroup(id, name),
+  update: (queryClient, saved) => settleGroups(queryClient, replaced(saved)),
+});
 
 /** Its bots stay, ungrouped after the bots already there, so the bots are read again. */
-export function useDeleteBotGroup(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.bots.removeGroup(id),
-    ...withCacheOnSuccess(options, async (_data, id) => {
-      settleGroups(queryClient, without(id));
-      await queryClient.invalidateQueries({ queryKey: botsKeys.lists() });
-      await queryClient.invalidateQueries({ queryKey: botsKeys.details() });
-    }),
-  });
-}
+export const useDeleteBotGroup = mutation<void, string>({
+  run: (app, id) => app.bots.removeGroup(id),
+  update: async (queryClient, _data, id) => {
+    settleGroups(queryClient, without(id));
+    await queryClient.invalidateQueries({ queryKey: botsKeys.lists() });
+    await queryClient.invalidateQueries({ queryKey: botsKeys.details() });
+  },
+});
 
 export interface SaveBotDocumentVariables {
   id: string;
@@ -453,17 +422,10 @@ export interface SaveBotDocumentVariables {
  * (`documentConflictRevision` reads the revision it is at), and the documents
  * are left as they are until the editor asks for them again.
  */
-export function useSaveBotDocument(
-  options?: UseMutationOptions<BotDocumentEntity, Error, SaveBotDocumentVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, name, input }: SaveBotDocumentVariables) =>
-      app.bots.saveDocument(id, name, input),
-    ...withCacheOnSuccess(options, (saved, { id }) => settleDocument(queryClient, id, saved)),
-  });
-}
+export const useSaveBotDocument = mutation<BotDocumentEntity, SaveBotDocumentVariables>({
+  run: (app, { id, name, input }) => app.bots.saveDocument(id, name, input),
+  update: (queryClient, saved, { id }) => settleDocument(queryClient, id, saved),
+});
 
 export interface RevertBotDocumentVariables {
   id: string;
@@ -471,17 +433,10 @@ export interface RevertBotDocumentVariables {
   revision: number;
 }
 
-export function useRevertBotDocument(
-  options?: UseMutationOptions<BotDocumentEntity, Error, RevertBotDocumentVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, name, revision }: RevertBotDocumentVariables) =>
-      app.bots.revert(id, name, revision),
-    ...withCacheOnSuccess(options, (saved, { id }) => settleDocument(queryClient, id, saved)),
-  });
-}
+export const useRevertBotDocument = mutation<BotDocumentEntity, RevertBotDocumentVariables>({
+  run: (app, { id, name, revision }) => app.bots.revert(id, name, revision),
+  update: (queryClient, saved, { id }) => settleDocument(queryClient, id, saved),
+});
 
 /** The editor's Reload after a conflict: the pair as it is now, and its histories. */
 export function useReloadBotDocuments() {
@@ -494,71 +449,46 @@ export interface AddBotFactVariables {
   content: string;
 }
 
-export function useAddBotFact(
-  options?: UseMutationOptions<BotMemoryFactEntity, Error, AddBotFactVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, content }: AddBotFactVariables) => app.bots.addFact(id, content),
-    ...withCacheOnSuccess(options, (added, { id }) =>
-      settleFacts(queryClient, id, (rows) => [...rows, added]),
-    ),
-  });
-}
+export const useAddBotFact = mutation<BotMemoryFactEntity, AddBotFactVariables>({
+  run: (app, { id, content }) => app.bots.addFact(id, content),
+  update: (queryClient, added, { id }) => settleFacts(queryClient, id, (rows) => [...rows, added]),
+});
 
 export interface UpdateBotFactVariables extends UpdateBotFactInput {
   id: string;
   factId: string;
 }
 
-export function useUpdateBotFact(
-  options?: UseMutationOptions<BotMemoryFactEntity, Error, UpdateBotFactVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, factId, ...change }: UpdateBotFactVariables) =>
-      app.bots.updateFact(id, factId, change),
-    ...withCacheOnSuccess(options, (saved, { id, scope }) => {
-      settleFacts(queryClient, id, replaced(saved));
-      return saved.scope === 'person' || scope ? refreshSharedMemory(queryClient) : undefined;
-    }),
-  });
-}
+export const useUpdateBotFact = mutation<BotMemoryFactEntity, UpdateBotFactVariables>({
+  run: (app, { id, factId, ...change }) => app.bots.updateFact(id, factId, change),
+  update: (queryClient, saved, { id, scope }) => {
+    settleFacts(queryClient, id, replaced(saved));
+    return saved.scope === 'person' || scope ? refreshSharedMemory(queryClient) : undefined;
+  },
+});
 
 export interface DeleteBotFactVariables {
   id: string;
   factId: string;
 }
 
-export function useDeleteBotFact(
-  options?: UseMutationOptions<void, Error, DeleteBotFactVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, factId }: DeleteBotFactVariables) => app.bots.removeFact(id, factId),
-    ...withCacheOnSuccess(options, (_data, { id, factId }) => {
-      const shared = isSharedFact(queryClient, id, factId);
-      settleFacts(queryClient, id, without(factId));
-      return shared ? refreshSharedMemory(queryClient) : undefined;
-    }),
-  });
-}
+export const useDeleteBotFact = mutation<void, DeleteBotFactVariables>({
+  run: (app, { id, factId }) => app.bots.removeFact(id, factId),
+  update: (queryClient, _data, { id, factId }) => {
+    const shared = isSharedFact(queryClient, id, factId);
+    settleFacts(queryClient, id, without(factId));
+    return shared ? refreshSharedMemory(queryClient) : undefined;
+  },
+});
 
 /** Forget everything: the bot keeps its soul and instructions. */
-export function useClearBotMemory(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.bots.clearMemory(id),
-    ...withCacheOnSuccess(options, (_data, id) => {
-      const shared = queryClient
-        .getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id))
-        ?.some((row) => row.scope === 'person' && row.botId === id);
-      queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []);
-      return shared ? refreshSharedMemory(queryClient) : undefined;
-    }),
-  });
-}
+export const useClearBotMemory = mutation<void, string>({
+  run: (app, id) => app.bots.clearMemory(id),
+  update: (queryClient, _data, id) => {
+    const shared = queryClient
+      .getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id))
+      ?.some((row) => row.scope === 'person' && row.botId === id);
+    queryClient.setQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id), []);
+    return shared ? refreshSharedMemory(queryClient) : undefined;
+  },
+});

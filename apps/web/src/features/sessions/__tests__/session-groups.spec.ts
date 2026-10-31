@@ -1,4 +1,5 @@
 import { ProjectEntity, type SessionEntity } from '@oppenheimer/frontend-consumer';
+import { sessionCheckout, sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
@@ -35,13 +36,13 @@ const project = (id: string, repos: string[]) =>
     new Date(),
   );
 
-const session = (id: string, projectId: string, repos: string[], name = id) =>
-  ({
+const session = (id: string, projectId: string, repos: string[], name = id): SessionEntity =>
+  sessionEntity({
     id,
     projectId,
     name,
-    checkouts: repos.map((githubRepoId) => ({ githubRepoId })),
-  }) as unknown as SessionEntity;
+    checkouts: repos.map((githubRepoId) => sessionCheckout({ githubRepoId })),
+  });
 
 describe('groupByProject', () => {
   it('keeps the projects’ order, includes empty ones, and files orphans last', () => {

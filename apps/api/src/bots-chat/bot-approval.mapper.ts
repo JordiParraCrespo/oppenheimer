@@ -88,6 +88,7 @@ export class BotApprovalMapper
     dto.sharesOutside = entity.sharesOutside;
     dto.reviewNote = entity.reviewNote;
     dto.reaches = entity.reaches;
+    dto.availableDecisions = entity.availableDecisions;
     dto.reach = entity.reach;
     dto.decidedByUserId = entity.decidedByUserId;
     dto.decidedAt = entity.decidedAt?.toISOString() ?? null;

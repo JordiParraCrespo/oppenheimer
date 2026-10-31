@@ -1,15 +1,11 @@
 'use client';
 
-import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
-import {
-  skipToken,
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import type { CloudAgentModel, CloudAgentStatusEntity } from '../modules/cloud-agents';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 export const cloudAgentsKeys = {
   all: ['cloud-agents'] as const,
@@ -68,34 +64,20 @@ interface ConnectVariables {
  * Connects a vendor with the reader's key. The answer is the status with it
  * connected, written as is; the vendor's lists are read again on the new key.
  */
-export function useConnectCloudAgentProvider(
-  options?: UseMutationOptions<CloudAgentStatusEntity, Error, ConnectVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ provider, apiKey }: ConnectVariables) =>
-      app.cloudAgents.connect(provider, apiKey),
-    ...withCacheOnSuccess(options, (status) => {
-      queryClient.setQueryData(cloudAgentsKeys.status(), status);
-      return queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.providers() });
-    }),
-  });
-}
+export const useConnectCloudAgentProvider = mutation<CloudAgentStatusEntity, ConnectVariables>({
+  run: (app, { provider, apiKey }) => app.cloudAgents.connect(provider, apiKey),
+  update: (queryClient, status) => {
+    queryClient.setQueryData(cloudAgentsKeys.status(), status);
+    return queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.providers() });
+  },
+});
 
 /** Forgets the reader's key for a vendor. Their cloud sessions stay listed, as last heard of. */
-export function useDisconnectCloudAgentProvider(
-  options?: UseMutationOptions<void, Error, CloudAgentProviderId>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: CloudAgentProviderId) => app.cloudAgents.disconnect(provider),
-    ...withCacheOnSuccess(options, () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.status() }),
-        queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.providers() }),
-      ]),
-    ),
-  });
-}
+export const useDisconnectCloudAgentProvider = mutation<void, CloudAgentProviderId>({
+  run: (app, provider) => app.cloudAgents.disconnect(provider),
+  update: (queryClient) =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.status() }),
+      queryClient.invalidateQueries({ queryKey: cloudAgentsKeys.providers() }),
+    ]),
+});

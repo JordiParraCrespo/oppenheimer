@@ -5,24 +5,36 @@ import {
   FileText,
   Globe,
   Hammer,
+  ListTodo,
   type LucideIcon,
   MessageCircleQuestion,
   Plug,
   Search,
   SquareTerminal,
 } from '@oppenheimer/design-system-web/icons';
-import type { GroupKind } from './chat-blocks';
+import { type ChatToolIcon, type ChatToolKind, toolIcon } from '@oppenheimer/frontend-consumer';
+import { groupKindOf } from './chat-blocks';
 
-/** The glyph each kind of call wears, on its row and on a group of only that kind. */
-export const CHAT_TOOL_ICONS: Record<GroupKind, LucideIcon> = {
-  command: SquareTerminal,
-  read: FileText,
-  edit: FilePen,
-  write: FilePlus,
+/** The icon each glyph name the shared classification gives (`toolIcon`) draws in a session's chat. */
+const GLYPHS: Record<ChatToolIcon, LucideIcon> = {
+  terminal: SquareTerminal,
+  file: FileText,
+  'file-edit': FilePen,
+  'file-new': FilePlus,
   search: Search,
-  web: Globe,
-  agent: Bot,
+  globe: Globe,
+  todo: ListTodo,
+  subagent: Bot,
+  plan: ListTodo,
   question: MessageCircleQuestion,
-  mcp: Plug,
-  other: Hammer,
+  plug: Plug,
+  tool: Hammer,
 };
+
+/**
+ * The glyph a kind of call wears, on its row and on a group of only that
+ * kind: a plan or a task list folded into a group wears the group's own.
+ */
+export function chatToolIcon(kind: ChatToolKind): LucideIcon {
+  return GLYPHS[toolIcon(groupKindOf(kind))];
+}

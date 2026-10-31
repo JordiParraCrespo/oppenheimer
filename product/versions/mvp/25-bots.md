@@ -520,6 +520,7 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
+| `start_cloud_session` | Start a Claude Code cloud session (claude.ai/code) on a project's repository: the sessions' own create with `cloud`, so a host's runner runs `claude --cloud <task>` in a scratch checkout, exactly as the console's *Claude Code cloud* and a `claude-cloud` automation do; host chosen as `start_session`'s, scope `sessions:write`, origin `bot`. It waits (at most 120 s, the runner's own limit) for the host to report the `session_…` id and answers with its claude.ai URL; `get_session` shows the URL after. Claude Code only; no watch, since a cloud session is followed on claude.ai (added 2026-10-30) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
@@ -726,7 +727,11 @@ the tools of §4 grouped as there, each **Allow**, **Ask** or **Off**:
 - **Allow** runs without asking.
 - **Ask** stops the turn on a **Needs input** card: Approve once, Always
   allow, Deny, or tell it what to do instead. *Always allow* sets the tool
-  to Allow.
+  to Allow. Since 2026-10-31 the card draws the decisions the API offers
+  for that call (`availableDecisions`, in order: approve, approve for its
+  subject, always allow, deny, deny and stop), each with a key, and the
+  decide endpoint accepts only those; *Deny* gives the bot a turn to carry
+  on from, *Deny and stop* gives it none.
 - **Off** removes the tool; the model never sees it.
 
 The composer's approval chip is a preset over the list: **Ask for
@@ -1076,3 +1081,15 @@ The decisions it produced:
   model, and it fails closed**: an ask rule beats an allow rule, and a
   review that cannot say asks. It moves plain-language rules out of §7.
   From Grok Bot's reviewer (§9 row 7).
+- 2026-10-31: **a no can stop the turn, and the card's choices are the
+  server's.** A card carries `availableDecisions`, chosen for its call, and
+  the decide endpoint accepts exactly those (`BOTS_030` otherwise). *Deny*
+  still queues the turn that tells the bot, so it carries on; the new
+  *Deny and stop* writes the decision as a line of the chat outside any
+  turn, queues none, and asks the asking turn to stop if it still runs.
+  A decision is broadcast on the bot's stream as `approval_resolved`, so
+  every open tab takes the card down at once and draws the decided line,
+  and a card raised while the bot's text is half a line waits for the line
+  to end (at most 600 ms). From Codex's `available_decisions`,
+  `serverRequest/resolved` and its deferred approval modals. It refines
+  2026-10-15's card, whose no always gave the bot a turn.

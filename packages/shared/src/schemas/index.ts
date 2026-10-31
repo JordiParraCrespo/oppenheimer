@@ -6,6 +6,7 @@ export * from './automation.schema.js';
 export * from './bot.schema.js';
 export * from './bot-skill.schema.js';
 export * from './calendar.schema.js';
+export * from './chat-item.schema.js';
 export * from './cloud-agent.schema.js';
 export * from './github.schema.js';
 export * from './host.schema.js';

@@ -1,7 +1,9 @@
 ---
 paths:
   - "apps/api/src/**/*"
-  - "packages/shared/src/**/*"
+  - "packages/shared/src/schemas/voice.schema.ts"
+  - "packages/shared/src/schemas/bot.schema.ts"
+  - "packages/shared/src/schemas/cloud-agent.schema.ts"
 ---
 
 # Third-party services are providers behind one interface

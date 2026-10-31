@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-query';
 import type { ProfileEntity, UserSessionEntity } from '../modules/profile/profile.entity';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * Query keys for the signed-in user's own account.
@@ -101,19 +102,10 @@ export function useDeleteAvatar(options?: UseMutationOptions<ProfileEntity, Erro
  * The REST endpoint defaults to revoking the other sessions, so the session
  * list is invalidated on success.
  */
-export function useChangeOwnPassword(
-  options?: UseMutationOptions<void, Error, ChangeOwnPasswordDto>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (dto: ChangeOwnPasswordDto) => app.profile.changePassword(dto),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-    }),
-  });
-}
+export const useChangeOwnPassword = mutation<void, ChangeOwnPasswordDto>({
+  run: (app, dto) => app.profile.changePassword(dto),
+  invalidates: () => [profileKeys.sessions()],
+});
 
 /**
  * The browsers signed in to the account, read under a Suspense `QueryState`:
@@ -127,54 +119,30 @@ export function useSuspenseProfileSessions() {
   });
 }
 
-export function useRevokeProfileSession(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
+export const useRevokeProfileSession = mutation<void, string>({
+  run: (app, sessionId) => app.profile.revokeSession(sessionId),
+  invalidates: () => [profileKeys.sessions()],
+});
 
-  return useMutation({
-    mutationFn: (sessionId: string) => app.profile.revokeSession(sessionId),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-    }),
-  });
-}
-
-export function useRevokeOtherProfileSessions(options?: UseMutationOptions<void, Error, void>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => app.profile.revokeOtherSessions(),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-    }),
-  });
-}
+export const useRevokeOtherProfileSessions = mutation<void, void>({
+  run: (app) => app.profile.revokeOtherSessions(),
+  invalidates: () => [profileKeys.sessions()],
+});
 
 /**
  * Nothing is cached: the profile keeps its current address until the link
  * sent to the new one is followed, and that lands back on Settings with a
  * fresh load.
  */
-export function useChangeEmail(options?: UseMutationOptions<void, Error, ChangeEmailDto>) {
-  const app = useConsumerApp();
-
-  return useMutation({
-    mutationFn: (dto: ChangeEmailDto) => app.profile.changeEmail(dto),
-    ...options,
-  });
-}
+export const useChangeEmail = mutation<void, ChangeEmailDto>({
+  run: (app, dto) => app.profile.changeEmail(dto),
+});
 
 /**
  * Leaves the cache alone: the caller signs out next, and signing out is what
  * clears it — clearing here would re-fetch every mounted query as a 401 in the
  * moment between the two.
  */
-export function useDeleteAccount(options?: UseMutationOptions<void, Error, DeleteAccountDto>) {
-  const app = useConsumerApp();
-
-  return useMutation({
-    mutationFn: (dto: DeleteAccountDto) => app.profile.deleteAccount(dto),
-    ...options,
-  });
-}
+export const useDeleteAccount = mutation<void, DeleteAccountDto>({
+  run: (app, dto) => app.profile.deleteAccount(dto),
+});

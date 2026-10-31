@@ -121,6 +121,21 @@
         "previous": "Pregunta anterior",
         "nextQuestion": "Pregunta siguiente",
         "of": "{{n}} de {{total}}"
+      },
+      "output": {
+        "more_one": "+{{count}} línea",
+        "more_many": "+{{count}} líneas",
+        "more_other": "+{{count}} líneas",
+        "full": "Ver líneas completas",
+        "less": "Ver menos"
+      },
+      "explored": {
+        "read": "Leyó",
+        "search": "Buscó",
+        "list": "Listó",
+        "more_one": "+{{count}} más",
+        "more_many": "+{{count}} más",
+        "more_other": "+{{count}} más"
       }
     },
     "search": {
@@ -308,6 +323,7 @@
       "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
+      "HOSTS_009": "Alguien cambió este host mientras lo guardabas. Vuelve a cargarlo e inténtalo de nuevo.",
       "INBOX_001": "La bandeja de entrada necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
       "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
@@ -465,7 +481,14 @@
     "code": "Código: {{code}}",
     "startFailure": {
       "codes": {
-        "SESS_002": "Este host crea sesiones con un solo repositorio."
+        "SESS_002": "Este host crea sesiones con un solo repositorio.",
+        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+      },
+      "help": {
+        "SESS_010": {
+          "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos que lista codex cloud. Los entornos creados en Configuración de ChatGPT → Codex Cloud todavía no son accesibles para la CLI, así que uno de ahí con el nombre de este repositorio no se puede usar desde aquí. Ejecuta codex cloud en el host para ver los entornos que puede usar.",
+          "link": "Abrir la configuración de Codex Cloud"
+        }
       },
       "details": "Detalles del host: {{detail}}"
     }
@@ -1246,7 +1269,11 @@
         "waiting": "Esperando tu respuesta",
         "dismissed": "Descartaste las preguntas",
         "noAnswer": "No se pudo leer la respuesta"
-      }
+      },
+      "explored": {
+        "title": "Explorado"
+      },
+      "exploring": "Explorando"
     },
     "preview": {
       "show": "Mostrar vista previa",
@@ -1416,9 +1443,6 @@
         "results_many": "{{count}} resultados",
         "results_other": "{{count}} resultados",
         "rawOutput": "Ver la salida completa",
-        "moreLines_one": "Ver {{count}} línea más",
-        "moreLines_many": "Ver {{count}} líneas más",
-        "moreLines_other": "Ver {{count}} líneas más",
         "lessOutput": "Ver menos",
         "group_one": "Usó {{count}} herramienta",
         "group_many": "Usó {{count}} herramientas",
@@ -1447,7 +1471,13 @@
           "cancelled": "detenido",
           "timed_out": "sin tiempo"
         },
-        "subagentTokens": "{{tokens}} tokens"
+        "subagentTokens": "{{tokens}} tokens",
+        "explored": "Explorado",
+        "exploring": "Explorando",
+        "moreLines_one": "+{{count}} línea",
+        "moreLines_many": "+{{count}} líneas",
+        "moreLines_other": "+{{count}} líneas",
+        "fullLines": "Ver líneas completas"
       },
       "suggest": {
         "task": {
@@ -1528,11 +1558,17 @@
         "always": "Permitir siempre",
         "alwaysFor": "Permitir siempre para {{subject}}",
         "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
-        "fullRequest": "Ver la solicitud completa"
+        "fullRequest": "Ver la solicitud completa",
+        "stop": "Denegar y detener",
+        "stopping": "Deteniendo…",
+        "denyHint": "{{name}} sabrá por qué y seguirá",
+        "stopHint": "No se ejecuta nada y {{name}} detiene este turno",
+        "shortcut": "Pulsa {{key}}"
       },
       "event": {
         "approved": "Aprobaste: {{summary}}",
         "denied": "Denegaste: {{summary}}",
+        "stopped": "Denegaste y detuviste el turno: {{summary}}",
         "failed": "Aprobaste y falló: {{summary}}",
         "routine": "Rutina · {{name}}",
         "routineSaved": "Rutina creada: “{{name}}”",

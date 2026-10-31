@@ -15,12 +15,19 @@ export const GITHUB_USER_GRANT_REPOSITORY = Symbol('GITHUB_USER_GRANT_REPOSITORY
 export const USER_TOKEN_SEALER = Symbol('USER_TOKEN_SEALER');
 /** `GithubPullsPort`: GitHub's pull request endpoints, with a token the caller supplies. */
 export const GITHUB_PULLS = Symbol('GITHUB_PULLS');
-/**
- * `PullRequestAccessPort`: the one door the Pull requests area reaches GitHub
- * through — a workspace's repositories and pull requests, read through its
- * installations and written in the caller's own name.
+/*
+ * The four doors the Pull requests area reaches GitHub through: a workspace's
+ * repositories and pull requests, read through its installations (or the
+ * caller's own tokens) and written in the caller's own name.
  */
-export const PULL_REQUEST_ACCESS = Symbol('PULL_REQUEST_ACCESS');
+/** `PullRequestDirectoryPort`: the repositories the caller may read, and who they are on GitHub. */
+export const PULL_REQUEST_DIRECTORY = Symbol('PULL_REQUEST_DIRECTORY');
+/** `PullRequestListingPort`: the queue's and the figures' budgeted reads of many pull requests. */
+export const PULL_REQUEST_LISTINGS = Symbol('PULL_REQUEST_LISTINGS');
+/** `PullRequestReadPort`: one pull request, its files, comments and activity. */
+export const PULL_REQUEST_READS = Symbol('PULL_REQUEST_READS');
+/** `PullRequestWritePort`: reviews, comments and merges in the caller's own name. */
+export const PULL_REQUEST_WRITES = Symbol('PULL_REQUEST_WRITES');
 /** `GithubIssuesPort`: GitHub's issue endpoints, with a token the caller supplies. */
 export const GITHUB_ISSUES = Symbol('GITHUB_ISSUES');
 /**

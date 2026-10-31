@@ -7,10 +7,17 @@ import { BotTrace } from '@/features/bots/components/bot-trace';
  * made that the reader should see in full, under it (a saved draft's card).
  * What a step made is drawn here, so the turn maps messages and nothing else.
  */
-export function BotActivity({ steps }: { steps: readonly BotToolStep[] }) {
+export function BotActivity({
+  steps,
+  live = false,
+}: {
+  steps: readonly BotToolStep[];
+  /** The turn is still running. */
+  live?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-3">
-      <BotTrace steps={steps} />
+      <BotTrace steps={steps} live={live} />
       {steps.map((step) =>
         step.mailDraft ? <BotMailDraftCard key={step.callId} draft={step.mailDraft} /> : null,
       )}
