@@ -27,9 +27,9 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 356.1KB measured (2026-10-29, CI findings on a pull request's checks); what goes in a vendor group is the rule in
+    // 357.1KB measured (2026-10-31, the Codex environment chip's copy in the default catalog); what goes in a vendor group is the rule in
     // `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in git history.
-    budgetKB: 357,
+    budgetKB: 358,
   },
   // oppenheimer:end web
 ];
