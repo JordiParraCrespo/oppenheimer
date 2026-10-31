@@ -12,7 +12,6 @@ import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import { BOT_STEER_HELD_POSITION } from '../domain/bot-steer.policy';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
@@ -240,6 +239,22 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findHolding(
+    scope: AccessScope,
+    botId: string,
+    messageId: string,
+  ): Promise<Option<BotTurnEntity>> {
+    // PK_bot_message, then PK_bot_turn.
+    const record = await this.scopedQuery(scope)
+      .andWhere('turn.botId = :botId', { botId })
+      .andWhere(
+        `turn.id = (SELECT m."turnId" FROM bot_message m WHERE m."organizationId" = turn."organizationId" AND m.id = :messageId)`,
+        { messageId },
+      )
+      .getOne();
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async findForRun(turnId: string): Promise<Option<BotTurnEntity>> {
     const record = await this.repository.findOne({ where: { id: turnId } });
     return record ? Some(this.mapper.toDomain(record)) : None;
@@ -392,23 +407,10 @@ export class BotTurnRepository
         .addOrderBy('turn.id', 'ASC')
         .getMany();
       const taken: BotSteerTaken[] = [];
-      for (const waiting of records.map((record) => this.mapper.toDomain(record))) {
-        if (!takes(waiting)) continue;
-        // IDX_bot_message_turn. An UPDATE answers `[rows, affected]`.
-        const [moved]: [{ id: string; content: string }[], number] = await manager.query(
-          `UPDATE bot_message SET "turnId" = $3, "position" = $4
-            WHERE "organizationId" = $1 AND "turnId" = $2 AND "role" = 'user'
-              AND "attachments" = '[]'::jsonb
-            RETURNING id, content`,
-          [running.organizationId, waiting.id, running.id, BOT_STEER_HELD_POSITION],
-        );
-        const message = moved[0];
-        if (!message) continue;
-        await manager.query(
-          `DELETE FROM bot_turn WHERE "organizationId" = $1 AND id = $2 AND "status" = 'queued'`,
-          [running.organizationId, waiting.id],
-        );
-        taken.push({ turnId: waiting.id, messageId: message.id, text: message.content });
+      const waiting = records.map((record) => this.mapper.toDomain(record)).filter(takes);
+      for (const steer of waiting) {
+        const moved = await moveSteerWithin(manager, running, steer);
+        if (moved) taken.push(moved);
       }
       return taken;
     });
@@ -496,6 +498,41 @@ async function enqueueLocked(
   if (active > 0) return 'waiting';
   await stageRun(outbox, manager, turn.botId, turn.id, correlationId);
   return 'staged';
+}
+
+/**
+ * One steer moved into the running turn, in one statement under the caller's
+ * lock on the bot: its message becomes the turn's newest (after the turn's
+ * last stored position, as of now), so a worker that dies before the
+ * transcript places it still reads it in order, and its queued turn is
+ * deleted. Null, and nothing written, when the turn is no longer queued or
+ * its message carries images.
+ */
+async function moveSteerWithin(
+  manager: EntityManager,
+  running: Pick<BotTurnEntity, 'organizationId' | 'id'>,
+  steer: Pick<BotTurnEntity, 'id'>,
+): Promise<BotSteerTaken | null> {
+  // IDX_bot_message_turn for the move and the turn's last position; PK_bot_turn
+  // for the delete, whose cascade finds the message gone from the steer's turn.
+  const [moved]: { id: string; content: string }[] = await manager.query(
+    `WITH moved AS (
+       UPDATE bot_message SET "turnId" = $3, "createdAt" = now(),
+              "position" = (SELECT coalesce(max(m."position"), 0) + 1 FROM bot_message m
+                             WHERE m."organizationId" = $1 AND m."turnId" = $3)
+        WHERE "organizationId" = $1 AND "turnId" = $2 AND "role" = 'user'
+          AND "attachments" = '[]'::jsonb
+          AND EXISTS (SELECT 1 FROM bot_turn t
+                       WHERE t."organizationId" = $1 AND t.id = $2 AND t."status" = 'queued')
+        RETURNING id, content
+     ), gone AS (
+       DELETE FROM bot_turn
+        WHERE "organizationId" = $1 AND id = $2 AND EXISTS (SELECT 1 FROM moved)
+     )
+     SELECT id, content FROM moved`,
+    [running.organizationId, steer.id, running.id],
+  );
+  return moved ? { turnId: steer.id, messageId: moved.id, text: moved.content } : null;
 }
 
 /**

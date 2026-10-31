@@ -26,6 +26,7 @@ import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { BotTurnResponseDto } from '../../dtos/bot-turn.response.dto';
 import { FindBotTurnQuery } from '../../queries/find-bot-turn/find-bot-turn.query';
 import { SendBotMessageCommand } from './send-bot-message.command';
+import type { SentBotMessage } from './send-bot-message.command-handler';
 import { SendBotMessageRequest } from './send-bot-message.request.dto';
 
 @ApiTags('Bots')
@@ -80,7 +81,7 @@ export class SendBotMessageHttpController {
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Body() body: SendBotMessageRequest,
   ): Promise<BotTurnResponseDto> {
-    const turnId = await this.commandBus.execute<SendBotMessageCommand, string>(
+    const sent = await this.commandBus.execute<SendBotMessageCommand, SentBotMessage>(
       new SendBotMessageCommand({
         scope,
         botId,
@@ -93,7 +94,8 @@ export class SendBotMessageHttpController {
       }),
     );
     const turn = await this.queryBus.execute<FindBotTurnQuery, BotTurnEntity>(
-      new FindBotTurnQuery(scope, botId, turnId),
+      // A steer the running turn already took answers as that turn.
+      new FindBotTurnQuery(scope, botId, sent.turnId, sent.messageId),
     );
     return this.mapper.toResponse(turn);
   }

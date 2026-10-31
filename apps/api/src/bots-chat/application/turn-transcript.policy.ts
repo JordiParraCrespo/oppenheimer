@@ -59,6 +59,12 @@ export class TurnTranscript {
   private position = 1;
   private pending = '';
   private activity: BotMessageEntity | null = null;
+  /**
+   * The line each call still running was put on, by call id: a steer or a
+   * shown image closes the line for new calls, never for the calls on it,
+   * whose ends still land there.
+   */
+  private readonly running = new Map<string, BotMessageEntity>();
   private outcome: TranscriptOutcome = {
     reason: 'failed',
     error: 'The turn ended without saying how',
@@ -153,9 +159,11 @@ export class TurnTranscript {
     };
     if (this.activity) {
       this.activity.steps.push(step);
+      this.running.set(callId, this.activity);
       return [{ kind: 'steps', message: this.activity }];
     }
     this.activity = this.message('activity', '', [step]);
+    this.running.set(callId, this.activity);
     return [{ kind: 'insert', message: this.activity }];
   }
 
@@ -167,8 +175,10 @@ export class TurnTranscript {
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
     const { callId, output, isError, data } = event;
-    const step = this.activity?.steps.find((candidate) => candidate.callId === callId);
-    if (!this.activity || !step) return [];
+    const line = this.running.get(callId);
+    const step = line?.steps.find((candidate) => candidate.callId === callId);
+    if (!line || !step) return [];
+    this.running.delete(callId);
     step.output =
       output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
@@ -180,7 +190,7 @@ export class TurnTranscript {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;
     }
-    const writes: TranscriptWrite[] = [{ kind: 'steps', message: this.activity }];
+    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
     if (images.length > 0) {
       this.activity = null;
@@ -219,6 +229,13 @@ export function passedOnEvent(
   return write.kind === 'text'
     ? { type: 'text', turnId, text: write.text }
     : { type: 'retrying', turnId, reason: write.reason };
+}
+
+/** The message a stored write wrote: the one it inserted or grew, or the steer it placed. */
+export function storedMessageId(
+  write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' }>,
+): string {
+  return write.kind === 'steer' ? write.messageId : write.message.id;
 }
 
 /** Why a turn the time limit stopped failed, in words a person can act on. */

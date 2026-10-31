@@ -2,14 +2,6 @@ import type { Scope } from '@oppenheimer/shared';
 import type { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * Where a taken steer's message sits in the running turn until the turn's
- * transcript places it after the call it rode (`TurnTranscript`): past any
- * position a turn reaches, so a worker that dies between the two leaves it
- * at the end of that turn rather than over the bot's own words.
- */
-export const BOT_STEER_HELD_POSITION = 1_000_000;
-
-/**
  * Whether the running turn takes a waiting steer's message (Codex's
  * `turn/steer`): a message of yours sent as a steer to the same bot, still
  * queued, into a turn of yours on the same footing. The same sender and the

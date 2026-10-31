@@ -11,6 +11,8 @@ import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
+import { TurnWriteFactory } from '../../../application/turn-write.factory';
+import { BotMessageMapper } from '../../../bot-message.mapper';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type {
   BotSteerTaken,
@@ -97,13 +99,13 @@ function setup(
   >;
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
-    messages as unknown as BotMessageRepositoryPort,
     stream,
     new FakeBotEngine(script),
     context as unknown as BotTurnContextResolver,
     new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort),
     summaries as unknown as BotSummaryTriggerPolicy,
-    new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort),
+    new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
+    new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
   );
   return { handler, turns, messages, stream, summaries };
 }

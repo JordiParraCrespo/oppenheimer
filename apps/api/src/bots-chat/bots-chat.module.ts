@@ -50,6 +50,7 @@ import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
+import { TurnWriteFactory } from './application/turn-write.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
@@ -288,6 +289,7 @@ const queryHandlers: Provider[] = [
     BotTurnOpeningResolver,
     BotMessageAttachmentsResolver,
     BotSteeringFactory,
+    TurnWriteFactory,
     BotSummaryTriggerPolicy,
     BotModelAccessResolver,
     BotApprovalRequestFactory,

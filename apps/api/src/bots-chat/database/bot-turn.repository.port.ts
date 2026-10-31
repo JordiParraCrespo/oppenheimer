@@ -86,6 +86,8 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'>;
 
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The turn that holds a message now: a steer's is the running turn that took it. */
+  findHolding(scope: AccessScope, botId: string, messageId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
   /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
@@ -127,8 +129,10 @@ export interface BotTurnRepositoryPort {
    * the bot that `takes` allows, oldest first, moved into `running`: its
    * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
    * turn deleted, in one transaction, so a Stop, an edit or the worker that
-   * would run it sees it either waiting or gone. A steer whose message
-   * carries images stays queued: the running turn would not read them.
+   * would run it sees it either waiting or gone. The message becomes the
+   * running turn's newest, as of the take, until the transcript places it
+   * where the turn delivered it. A steer whose message carries images stays
+   * queued: the running turn would not read them.
    */
   takeSteers(
     running: BotTurnEntity,

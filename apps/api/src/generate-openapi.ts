@@ -5,6 +5,7 @@ import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createOpenApiDocument } from './openapi-document';
+import { formatOpenApiJson } from './openapi-json';
 
 async function generate() {
   const app = await NestFactory.create(AppModule, {
@@ -16,7 +17,7 @@ async function generate() {
 
   const document = createOpenApiDocument(app);
   const outputPath = resolve(__dirname, '../openapi.json');
-  writeFileSync(outputPath, JSON.stringify(document, null, 2));
+  writeFileSync(outputPath, formatOpenApiJson(document));
   console.log(`OpenAPI spec written to ${outputPath}`);
 
   await app.close();

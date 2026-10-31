@@ -30,9 +30,15 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * where the person can fix it, rather than failing in the worker. A card the
  * bot is waiting on expires: the person moved on.
  */
+/** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
+export interface SentBotMessage {
+  turnId: string;
+  messageId: string;
+}
+
 @CommandHandler(SendBotMessageCommand)
 export class SendBotMessageCommandHandler
-  implements ICommandHandler<SendBotMessageCommand, string>
+  implements ICommandHandler<SendBotMessageCommand, SentBotMessage>
 {
   constructor(
     @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
@@ -54,7 +60,7 @@ export class SendBotMessageCommandHandler
     credentialScopes,
     steer,
     metadata,
-  }: SendBotMessageCommand): Promise<string> {
+  }: SendBotMessageCommand): Promise<SentBotMessage> {
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
     if ((await this.credentials.findOne(scope, bot.provider)).isNone()) {
@@ -90,6 +96,6 @@ export class SendBotMessageCommandHandler
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.cards.retire(bot.organizationId, bot.id);
-    return turn.id;
+    return { turnId: turn.id, messageId: message.id };
   }
 }

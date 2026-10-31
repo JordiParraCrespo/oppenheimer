@@ -9,29 +9,21 @@ import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
-import {
-  passedOnEvent,
-  type TranscriptWrite,
-  TurnTranscript,
-  thrownFailure,
-} from '../../application/turn-transcript.policy';
-import {
-  BOT_ENGINE,
-  BOT_MESSAGE_REPOSITORY,
-  BOT_STREAM,
-  BOT_TURN_REPOSITORY,
-} from '../../bots-chat.di-tokens';
-import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
+import { TurnTranscript, thrownFailure } from '../../application/turn-transcript.policy';
+import { TurnWriteFactory } from '../../application/turn-write.factory';
+import { BOT_ENGINE, BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
- * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), runs the
- * engine on what it needs, stores and streams what it writes (steers included),
- * records how it ended, makes the next queued turn due and asks whether to
- * summarize. A turn found running lost its worker, and fails rather than rerun.
+ * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
+ * what it needs, runs the engine with its steering, hands what the transcript
+ * writes to the turn's writer (`TurnWriteFactory`), then records how it ended,
+ * makes the bot's next queued turn due and asks whether the conversation needs
+ * summarizing. A turn found running was a worker that died under it, and fails
+ * rather than running twice.
  */
 @CommandHandler(RunBotTurnCommand)
 export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnCommand, void> {
@@ -39,13 +31,13 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
 
   constructor(
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
-    @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
     @Inject(BOT_ENGINE) private readonly engine: BotEngine,
     private readonly context: BotTurnContextResolver,
     private readonly cancelWatch: TurnCancelWatchFactory,
     private readonly summaries: BotSummaryTriggerPolicy,
     private readonly steering: BotSteeringFactory,
+    private readonly writes: TurnWriteFactory,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -83,8 +75,9 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       const transcript = new TurnTranscript(turn);
       const steering = this.steering.steering(turn);
       const signal = watch.signal;
+      const write = this.writes.writer(turn);
       for await (const event of this.engine.run({ ...context, signal, scratchDir, steering })) {
-        for (const write of transcript.apply(event)) await this.apply(turn, write);
+        for (const written of transcript.apply(event)) await write(written);
       }
       transcript.endTurn(new Date(), watch.interruption);
     } catch (error) {
@@ -97,18 +90,6 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       watch.stop();
       if (scratchDir) await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
     }
-  }
-
-  private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
-    if (write.kind === 'text' || write.kind === 'retrying') {
-      await this.stream.publish(turn.botId, passedOnEvent(turn.id, write));
-      return;
-    }
-    if (write.kind === 'insert') await this.messages.insert(write.message);
-    else if (write.kind === 'steps') await this.messages.saveSteps(write.message);
-    else await this.messages.placeSteer(turn, write, new Date());
-    const messageId = write.kind === 'steer' ? write.messageId : write.message.id;
-    await this.stream.publish(turn.botId, { type: 'message', turnId: turn.id, messageId });
   }
 
   private async close(turn: BotTurnEntity, correlationId: string): Promise<void> {

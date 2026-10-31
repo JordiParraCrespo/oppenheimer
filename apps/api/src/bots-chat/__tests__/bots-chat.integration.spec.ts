@@ -74,7 +74,7 @@ import {
   routineSourceKey,
   routineTurn,
 } from '../domain/bot-routine.policy';
-import { BOT_STEER_HELD_POSITION, takesSteer } from '../domain/bot-steer.policy';
+import { takesSteer } from '../domain/bot-steer.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
@@ -82,6 +82,8 @@ import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import { OutboxBotStallChecksAdapter } from '../infrastructure/outbox-bot-stall-checks.adapter';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
+import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
+import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.query-handler';
 
 /**
  * A bot's chat against a real Postgres (`product/versions/mvp/25-bots.md`
@@ -631,11 +633,29 @@ describe('bots chat (integration)', () => {
     ]);
     expect((await turns.findForRun(steer.turn.id)).isNone()).toBe(true);
     expect((await turns.findForRun(waits.turn.id)).unwrap().status).toBe('queued');
+    // Taken and not placed yet (a worker that died here): it reads as the
+    // turn's newest message, after what was stored when it was taken.
     const [held]: { turnId: string; position: number }[] = await dataSource.query(
       `SELECT "turnId", position FROM bot_message WHERE id = $1`,
       [steer.message.id],
     );
-    expect(held).toEqual({ turnId: claimed.id, position: BOT_STEER_HELD_POSITION });
+    expect(held).toEqual({ turnId: claimed.id, position: 1 });
+    const unplaced = await messages.findConversation(scope(), bot.id, 10);
+    expect(unplaced.map((message) => message.content)).toEqual([
+      'What time is it?',
+      'And after that?',
+      'Use Tokyo time.',
+    ]);
+    // The send's answer, read after the take, is the turn that took it, never a 404.
+    const answer = await new FindBotTurnQueryHandler(turns).execute(
+      new FindBotTurnQuery(scope(), bot.id, steer.turn.id, steer.message.id),
+    );
+    expect(answer.id).toBe(claimed.id);
+    await expect(
+      new FindBotTurnQueryHandler(turns).execute(
+        new FindBotTurnQuery(scope(), bot.id, steer.turn.id),
+      ),
+    ).rejects.toMatchObject({ code: 'BOTS_014' });
 
     // Put where the turn delivered it: the chat then reads it in that place.
     const line = BotMessageEntity.createNew({

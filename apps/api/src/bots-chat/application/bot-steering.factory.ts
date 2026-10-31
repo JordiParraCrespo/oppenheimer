@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { BotSteer, BotSteering } from '@oppenheimer/backend-agents';
+import { BotMessageMapper } from '../bot-message.mapper';
 import { BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import { takesSteer } from '../domain/bot-steer.policy';
@@ -16,7 +17,10 @@ import type { BotTurnEntity } from '../domain/bot-turn.entity';
 export class BotSteeringFactory {
   private readonly logger = new Logger(BotSteeringFactory.name);
 
-  constructor(@Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort) {}
+  constructor(
+    @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
+    private readonly mapper: BotMessageMapper,
+  ) {}
 
   steering(turn: BotTurnEntity): BotSteering {
     return { take: () => this.take(turn) };
@@ -25,7 +29,7 @@ export class BotSteeringFactory {
   private async take(turn: BotTurnEntity): Promise<BotSteer[]> {
     try {
       const taken = await this.turns.takeSteers(turn, (waiting) => takesSteer(turn, waiting));
-      return taken.map(({ messageId, text }) => ({ id: messageId, text }));
+      return taken.map((steer) => this.mapper.toEngineSteer(steer));
     } catch (error) {
       this.logger.warn({
         message: 'Could not take the steers of a bot turn',
