@@ -23,8 +23,14 @@ rules.
   `idColumn` for a table keyed by something other than `id`). Tenant-scoped
   adapters use `ScopedRepositoryBase` from `@oppenheimer/backend-authz`
   instead.
+- **Optimistic concurrency, the default write of an existing aggregate**:
+  `VersionedAggregateRoot` (carries the row's version), `writeVersioned`
+  (one `UPDATE … WHERE id AND version` that bumps it, or throws
+  `VersionConflictException`), `TypeOrmRepositoryBase.saveVersioned` (the
+  same inside `writeWithEvents`), and `retryOnVersionConflict` for the
+  handler that decides again on a fresh read.
 - **Guards & exceptions**: `Guard`, `ExceptionBase`, `NotFoundException`,
-  `ConflictException`, `ArgumentInvalidException`, `ArgumentNotProvidedException`,
+  `ConflictException`, `VersionConflictException`, `ArgumentInvalidException`, `ArgumentNotProvidedException`,
   `ArgumentOutOfRangeException`.
 - **Transactional outbox**: `OutboxService` (`transaction(fn)` runs a
   multi-statement write and wakes the relay after commit when it staged

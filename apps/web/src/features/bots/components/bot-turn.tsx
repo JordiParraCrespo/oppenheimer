@@ -111,7 +111,7 @@ export function BotTurn({
       <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
         {block.answer.map((message) =>
           message.role === 'activity' ? (
-            <BotActivity key={message.id} steps={message.steps} />
+            <BotActivity key={message.id} steps={message.steps} live={active} />
           ) : message.role === 'user' ? (
             <BotSteerMessage
               key={message.id}

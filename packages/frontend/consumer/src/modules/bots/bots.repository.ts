@@ -19,7 +19,7 @@ import {
   type ModelProviderCredentialResponseDto,
   type WorkspaceBotApprovalResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
@@ -412,13 +412,11 @@ export class BotsRepository {
   ) {}
 
   /** The newest messages of the chat, oldest first, and their turns. */
-  @MapApiError(BotsErrors.FETCH_CONVERSATION_FAILED)
-  async findConversation(id: string): Promise<BotConversationEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotConversation({ path: { id } }),
-      BotsErrors.FETCH_CONVERSATION_FAILED,
-    );
-    return toConversation(data);
+  findConversation(id: string): Promise<BotConversationEntity> {
+    return callApi(BotsErrors.FETCH_CONVERSATION_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotConversation({ path: { id } }));
+      return toConversation(data);
+    });
   }
 
   /**
@@ -426,22 +424,20 @@ export class BotsRepository {
    * only the newest. The API sends one message per line, and each is handed
    * on as it arrives, so the conversation is never held here as a whole.
    */
-  @MapApiError(BotsErrors.EXPORT_CONVERSATION_FAILED)
-  async exportConversation(id: string): Promise<AsyncIterable<BotMessageEntity>> {
-    const body = await unwrapBody(
-      heyApiSdk.exportBotConversation({ path: { id }, parseAs: 'stream' }),
-      BotsErrors.EXPORT_CONVERSATION_FAILED,
-    );
-    return readMessages(body as unknown as ReadableStream<Uint8Array>);
+  exportConversation(id: string): Promise<AsyncIterable<BotMessageEntity>> {
+    return callApi(BotsErrors.EXPORT_CONVERSATION_FAILED, async (api) => {
+      const body = await api.body(
+        heyApiSdk.exportBotConversation({ path: { id }, parseAs: 'stream' }),
+      );
+      return readMessages(body as unknown as ReadableStream<Uint8Array>);
+    });
   }
 
   /** Clear history: the chat is erased; soul, instructions and memory stay. */
-  @MapApiError(BotsErrors.CLEAR_CONVERSATION_FAILED)
-  async clearConversation(id: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.clearBotConversation({ path: { id } }),
-      BotsErrors.CLEAR_CONVERSATION_FAILED,
-    );
+  clearConversation(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_CONVERSATION_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotConversation({ path: { id } }));
+    });
   }
 
   /**
@@ -451,148 +447,141 @@ export class BotsRepository {
    * alone). The browser's time zone goes with it, so the bot tells the time
    * where you are.
    */
-  @MapApiError(BotsErrors.SEND_FAILED)
-  async sendMessage(
+  sendMessage(
     id: string,
     content: string,
     attachmentIds: readonly string[] = [],
     steer = false,
   ): Promise<BotTurnEntity> {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const data = await unwrapBody(
-      heyApiSdk.sendBotMessage({
-        path: { id },
-        body: { content, attachmentIds: [...attachmentIds], timeZone, steer },
-      }),
-      BotsErrors.SEND_FAILED,
-    );
-    return toTurn(data);
+    return callApi(BotsErrors.SEND_FAILED, async (api) => {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const data = await api.body(
+        heyApiSdk.sendBotMessage({
+          path: { id },
+          body: { content, attachmentIds: [...attachmentIds], timeZone, steer },
+        }),
+      );
+      return toTurn(data);
+    });
   }
 
   /** An image picked for a message, stored until it is sent; the API judges its bytes. */
-  @MapApiError(BotsErrors.UPLOAD_IMAGE_FAILED)
-  async uploadImage(id: string, file: Blob): Promise<BotAttachment> {
-    return toAttachment(
-      await unwrapBody(
-        heyApiSdk.uploadBotAttachment({ path: { id }, body: { file } }),
-        BotsErrors.UPLOAD_IMAGE_FAILED,
-      ),
-    );
+  uploadImage(id: string, file: Blob): Promise<BotAttachment> {
+    return callApi(BotsErrors.UPLOAD_IMAGE_FAILED, async (api) => {
+      return toAttachment(
+        await api.body(heyApiSdk.uploadBotAttachment({ path: { id }, body: { file } })),
+      );
+    });
   }
 
   /** An image's bytes, for the chat to draw: the API serves them only to whoever may see them. */
-  @MapApiError(BotsErrors.READ_IMAGE_FAILED)
-  async readImage(id: string, attachmentId: string): Promise<Blob> {
-    const body = await unwrapBody(
-      heyApiSdk.readBotAttachment({ path: { id, attachmentId }, parseAs: 'blob' }),
-      BotsErrors.READ_IMAGE_FAILED,
-    );
-    return body as unknown as Blob;
+  readImage(id: string, attachmentId: string): Promise<Blob> {
+    return callApi(BotsErrors.READ_IMAGE_FAILED, async (api) => {
+      const body = await api.body(
+        heyApiSdk.readBotAttachment({ path: { id, attachmentId }, parseAs: 'blob' }),
+      );
+      return body as unknown as Blob;
+    });
   }
 
   /** Stop: a queued turn ends now, a running one at its next step. */
-  @MapApiError(BotsErrors.STOP_FAILED)
-  async cancelTurn(id: string, turnId: string): Promise<BotTurnEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.cancelBotTurn({ path: { id, turnId } }),
-      BotsErrors.STOP_FAILED,
-    );
-    return toTurn(data);
+  cancelTurn(id: string, turnId: string): Promise<BotTurnEntity> {
+    return callApi(BotsErrors.STOP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.cancelBotTurn({ path: { id, turnId } }));
+      return toTurn(data);
+    });
   }
 
   /** The workspace's pending cards across the bots the caller may read, newest first. */
-  @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
-  async findWorkspacePendingApprovals(): Promise<WorkspaceBotApprovalEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findWorkspaceBotApprovals({ query: { status: 'pending' } }),
-      BotsErrors.FETCH_APPROVALS_FAILED,
-    );
-    return data.map(toWorkspaceApproval);
+  findWorkspacePendingApprovals(): Promise<WorkspaceBotApprovalEntity[]> {
+    return callApi(BotsErrors.FETCH_APPROVALS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.findWorkspaceBotApprovals({ query: { status: 'pending' } }),
+      );
+      return data.map(toWorkspaceApproval);
+    });
   }
 
-  /** The card the bot waits on, if any: at most one is pending. */
-  @MapApiError(BotsErrors.FETCH_APPROVALS_FAILED)
   /** The goal the bot set itself and keeps working toward; null when it has none. */
-  @MapApiError(BotsErrors.FETCH_GOAL_FAILED)
-  async findGoal(id: string): Promise<BotGoal | null> {
-    const { goal } = await unwrapBody(
-      heyApiSdk.findBotGoal({ path: { id } }),
-      BotsErrors.FETCH_GOAL_FAILED,
-    );
-    return goal;
+  findGoal(id: string): Promise<BotGoal | null> {
+    return callApi(BotsErrors.FETCH_GOAL_FAILED, async (api) => {
+      const { goal } = await api.body(heyApiSdk.findBotGoal({ path: { id } }));
+      return goal;
+    });
   }
 
   /** Stops the bot's goal: no more continuation turns, and one still waiting is cancelled. */
-  @MapApiError(BotsErrors.CLEAR_GOAL_FAILED)
-  async clearGoal(id: string): Promise<void> {
-    await unwrap(heyApiSdk.clearBotGoal({ path: { id } }), BotsErrors.CLEAR_GOAL_FAILED);
+  clearGoal(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_GOAL_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotGoal({ path: { id } }));
+    });
   }
 
-  async findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotApprovals({ path: { id }, query: { status: 'pending' } }),
-      BotsErrors.FETCH_APPROVALS_FAILED,
-    );
-    return data[0] ? toApproval(data[0]) : null;
+  /** The card the bot waits on, if any: at most one is pending. */
+  findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
+    return callApi(BotsErrors.FETCH_APPROVALS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.findBotApprovals({ path: { id }, query: { status: 'pending' } }),
+      );
+      return data[0] ? toApproval(data[0]) : null;
+    });
   }
 
   /**
    * Answers a card: `approve` runs the call the bot asked for, `deny` runs
    * nothing; either way the bot is told, with the note, and reports back.
    */
-  @MapApiError(BotsErrors.DECIDE_APPROVAL_FAILED)
-  async decideApproval(
+  decideApproval(
     id: string,
     approvalId: string,
     decision: BotApprovalDecision,
     note?: string,
     reach: BotApprovalReach = 'once',
   ): Promise<BotApprovalEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.decideBotApproval({
-        path: { id, approvalId },
-        body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
-      }),
-      BotsErrors.DECIDE_APPROVAL_FAILED,
-    );
-    return toApproval(data);
+    return callApi(BotsErrors.DECIDE_APPROVAL_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.decideBotApproval({
+          path: { id, approvalId },
+          body: { decision, reach, ...(note?.trim() ? { note: note.trim() } : {}) },
+        }),
+      );
+      return toApproval(data);
+    });
   }
 
   /** The card of questions the bot waits on (`ask_user`); `null` when none does. */
-  @MapApiError(BotsErrors.FETCH_QUESTION_FAILED)
-  async findPendingQuestion(id: string): Promise<BotQuestionCardEntity | null> {
-    const data = await unwrapBody(
-      heyApiSdk.findPendingBotQuestion({ path: { id } }),
-      BotsErrors.FETCH_QUESTION_FAILED,
-    );
-    return data.question ? toQuestionCard(data.question) : null;
+  findPendingQuestion(id: string): Promise<BotQuestionCardEntity | null> {
+    return callApi(BotsErrors.FETCH_QUESTION_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPendingBotQuestion({ path: { id } }));
+      return data.question ? toQuestionCard(data.question) : null;
+    });
   }
 
   /** Answers a card of questions, one answer per question; the bot carries on with them. */
-  @MapApiError(BotsErrors.ANSWER_QUESTION_FAILED)
-  async answerQuestion(
+  answerQuestion(
     id: string,
     questionId: string,
     answers: readonly BotQuestionAnswer[],
   ): Promise<BotQuestionCardEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.answerBotQuestion({
-        path: { id, questionId },
-        body: { answers: answers.map((answer) => ({ ...answer, picks: [...answer.picks] })) },
-      }),
-      BotsErrors.ANSWER_QUESTION_FAILED,
-    );
-    return toQuestionCard(data);
+    return callApi(BotsErrors.ANSWER_QUESTION_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.answerBotQuestion({
+          path: { id, questionId },
+          body: { answers: answers.map((answer) => ({ ...answer, picks: [...answer.picks] })) },
+        }),
+      );
+      return toQuestionCard(data);
+    });
   }
 
   /** Declines a card of questions; the bot is told, and not to ask again. */
-  @MapApiError(BotsErrors.ANSWER_QUESTION_FAILED)
-  async dismissQuestion(id: string, questionId: string): Promise<BotQuestionCardEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.dismissBotQuestion({ path: { id, questionId }, body: {} }),
-      BotsErrors.ANSWER_QUESTION_FAILED,
-    );
-    return toQuestionCard(data);
+  dismissQuestion(id: string, questionId: string): Promise<BotQuestionCardEntity> {
+    return callApi(BotsErrors.ANSWER_QUESTION_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.dismissBotQuestion({ path: { id, questionId }, body: {} }),
+      );
+      return toQuestionCard(data);
+    });
   }
 
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
@@ -600,83 +589,78 @@ export class BotsRepository {
     return new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
   }
 
-  @MapApiError(BotsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<BotEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findBots(), BotsErrors.FETCH_LIST_FAILED);
-    return data.map(toBot);
+  findAll(): Promise<BotEntity[]> {
+    return callApi(BotsErrors.FETCH_LIST_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBots());
+      return data.map(toBot);
+    });
   }
 
-  @MapApiError(BotsErrors.FETCH_FAILED)
-  async findById(id: string): Promise<BotEntity> {
-    const data = await unwrapBody(heyApiSdk.findBot({ path: { id } }), BotsErrors.FETCH_FAILED);
-    return toBot(data);
+  findById(id: string): Promise<BotEntity> {
+    return callApi(BotsErrors.FETCH_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBot({ path: { id } }));
+      return toBot(data);
+    });
   }
 
   /**
    * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
    * the workspace's default provider, shown in `sections` beside Employees.
    */
-  @MapApiError(BotsErrors.SAVE_FAILED)
-  async create(sections?: BotSection[]): Promise<BotEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createBot({ body: { sections } }),
-      BotsErrors.SAVE_FAILED,
-    );
-    return toBot(data);
+  create(sections?: BotSection[]): Promise<BotEntity> {
+    return callApi(BotsErrors.SAVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createBot({ body: { sections } }));
+      return toBot(data);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_FAILED)
-  async update(id: string, input: UpdateBotInput): Promise<BotEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateBot({ path: { id }, body: input }),
-      BotsErrors.SAVE_FAILED,
-    );
-    return toBot(data);
+  update(id: string, input: UpdateBotInput): Promise<BotEntity> {
+    return callApi(BotsErrors.SAVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBot({ path: { id }, body: input }));
+      return toBot(data);
+    });
   }
 
-  @MapApiError(BotsErrors.DELETE_FAILED)
-  async remove(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteBot({ path: { id } }), BotsErrors.DELETE_FAILED);
+  remove(id: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBot({ path: { id } }));
+    });
   }
 
-  @MapApiError(BotsErrors.FETCH_GROUPS_FAILED)
-  async findGroups(): Promise<BotGroupEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findBotGroups(), BotsErrors.FETCH_GROUPS_FAILED);
-    return data.map(toGroup);
+  findGroups(): Promise<BotGroupEntity[]> {
+    return callApi(BotsErrors.FETCH_GROUPS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotGroups());
+      return data.map(toGroup);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_GROUP_FAILED)
-  async createGroup(name: string): Promise<BotGroupEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createBotGroup({ body: { name } }),
-      BotsErrors.SAVE_GROUP_FAILED,
-    );
-    return toGroup(data);
+  createGroup(name: string): Promise<BotGroupEntity> {
+    return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createBotGroup({ body: { name } }));
+      return toGroup(data);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_GROUP_FAILED)
-  async renameGroup(id: string, name: string): Promise<BotGroupEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateBotGroup({ path: { id }, body: { name } }),
-      BotsErrors.SAVE_GROUP_FAILED,
-    );
-    return toGroup(data);
+  renameGroup(id: string, name: string): Promise<BotGroupEntity> {
+    return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { name } }));
+      return toGroup(data);
+    });
   }
 
   /** Its bots stay, ungrouped. */
-  @MapApiError(BotsErrors.DELETE_GROUP_FAILED)
-  async removeGroup(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteBotGroup({ path: { id } }), BotsErrors.DELETE_GROUP_FAILED);
+  removeGroup(id: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_GROUP_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotGroup({ path: { id } }));
+    });
   }
 
   /** Both documents, soul first. */
-  @MapApiError(BotsErrors.FETCH_DOCUMENTS_FAILED)
-  async findDocuments(id: string): Promise<BotDocumentEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotDocuments({ path: { id } }),
-      BotsErrors.FETCH_DOCUMENTS_FAILED,
-    );
-    return data.map(toDocument);
+  findDocuments(id: string): Promise<BotDocumentEntity[]> {
+    return callApi(BotsErrors.FETCH_DOCUMENTS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotDocuments({ path: { id } }));
+      return data.map(toDocument);
+    });
   }
 
   /**
@@ -684,233 +668,199 @@ export class BotsRepository {
    * with `BOTS_006`, carrying the revision it is at
    * ({@link documentConflictRevision}).
    */
-  @MapApiError(BotsErrors.SAVE_DOCUMENT_FAILED)
-  async saveDocument(
+  saveDocument(
     id: string,
     name: BotDocumentName,
     input: SaveBotDocumentInput,
   ): Promise<BotDocumentEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateBotDocument({ path: { id, name }, body: input }),
-      BotsErrors.SAVE_DOCUMENT_FAILED,
-    );
-    return toDocument(data);
+    return callApi(BotsErrors.SAVE_DOCUMENT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBotDocument({ path: { id, name }, body: input }));
+      return toDocument(data);
+    });
   }
 
   /** Newest first. */
-  @MapApiError(BotsErrors.FETCH_REVISIONS_FAILED)
-  async findRevisions(id: string, name: BotDocumentName): Promise<BotDocumentRevisionEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotDocumentRevisions({ path: { id, name } }),
-      BotsErrors.FETCH_REVISIONS_FAILED,
-    );
-    return data.map(toRevision);
+  findRevisions(id: string, name: BotDocumentName): Promise<BotDocumentRevisionEntity[]> {
+    return callApi(BotsErrors.FETCH_REVISIONS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotDocumentRevisions({ path: { id, name } }));
+      return data.map(toRevision);
+    });
   }
 
   /** Writes that revision's content as the next revision; nothing in the history is lost. */
-  @MapApiError(BotsErrors.REVERT_FAILED)
-  async revert(id: string, name: BotDocumentName, revision: number): Promise<BotDocumentEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.revertBotDocument({ path: { id, name, revision } }),
-      BotsErrors.REVERT_FAILED,
-    );
-    return toDocument(data);
+  revert(id: string, name: BotDocumentName, revision: number): Promise<BotDocumentEntity> {
+    return callApi(BotsErrors.REVERT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.revertBotDocument({ path: { id, name, revision } }));
+      return toDocument(data);
+    });
   }
 
   /** A bot's routines, oldest first (`26-bot-routines.md` §7). */
-  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
-  async findRoutines(id: string): Promise<BotRoutineEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotRoutines({ path: { id } }),
-      BotsErrors.FETCH_ROUTINES_FAILED,
-    );
-    return data.map(toRoutine);
+  findRoutines(id: string): Promise<BotRoutineEntity[]> {
+    return callApi(BotsErrors.FETCH_ROUTINES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotRoutines({ path: { id } }));
+      return data.map(toRoutine);
+    });
   }
 
   /** Every bot's routines in the workspace, oldest first, for `/automations`. */
-  @MapApiError(BotsErrors.FETCH_ROUTINES_FAILED)
-  async findAllRoutines(): Promise<BotRoutineEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findRoutines(), BotsErrors.FETCH_ROUTINES_FAILED);
-    return data.map(toRoutine);
+  findAllRoutines(): Promise<BotRoutineEntity[]> {
+    return callApi(BotsErrors.FETCH_ROUTINES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findRoutines());
+      return data.map(toRoutine);
+    });
   }
 
   /** The tab's switch: off pauses the routine's triggers, on resumes them from now. */
-  @MapApiError(BotsErrors.SAVE_ROUTINE_FAILED)
-  async setRoutineEnabled(id: string, routineId: string, enabled: boolean): Promise<void> {
-    await unwrap(
-      heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: { enabled } }),
-      BotsErrors.SAVE_ROUTINE_FAILED,
-    );
+  setRoutineEnabled(id: string, routineId: string, enabled: boolean): Promise<void> {
+    return callApi(BotsErrors.SAVE_ROUTINE_FAILED, async (api) => {
+      await api.result(heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: { enabled } }));
+    });
   }
 
   /** Run now: one run, paused or not. */
-  @MapApiError(BotsErrors.RUN_ROUTINE_FAILED)
-  async runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.runBotRoutine({
-        path: { id, routineId },
-        headers: { 'Idempotency-Key': idempotencyKey },
-      }),
-      BotsErrors.RUN_ROUTINE_FAILED,
-    );
+  runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
+    return callApi(BotsErrors.RUN_ROUTINE_FAILED, async (api) => {
+      await api.result(
+        heyApiSdk.runBotRoutine({
+          path: { id, routineId },
+          headers: { 'Idempotency-Key': idempotencyKey },
+        }),
+      );
+    });
   }
 
-  @MapApiError(BotsErrors.DELETE_ROUTINE_FAILED)
-  async deleteRoutine(id: string, routineId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteBotRoutine({ path: { id, routineId } }),
-      BotsErrors.DELETE_ROUTINE_FAILED,
-    );
+  deleteRoutine(id: string, routineId: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_ROUTINE_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotRoutine({ path: { id, routineId } }));
+    });
   }
 
-  @MapApiError(BotsErrors.FETCH_MEMORY_FAILED)
-  async findMemory(id: string): Promise<BotMemoryFactEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotMemory({ path: { id } }),
-      BotsErrors.FETCH_MEMORY_FAILED,
-    );
-    return data.map(toFact);
+  findMemory(id: string): Promise<BotMemoryFactEntity[]> {
+    return callApi(BotsErrors.FETCH_MEMORY_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotMemory({ path: { id } }));
+      return data.map(toFact);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_FACT_FAILED)
-  async addFact(id: string, content: string): Promise<BotMemoryFactEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createBotMemoryFact({ path: { id }, body: { content } }),
-      BotsErrors.SAVE_FACT_FAILED,
-    );
-    return toFact(data);
+  addFact(id: string, content: string): Promise<BotMemoryFactEntity> {
+    return callApi(BotsErrors.SAVE_FACT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createBotMemoryFact({ path: { id }, body: { content } }),
+      );
+      return toFact(data);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_FACT_FAILED)
-  async updateFact(
-    id: string,
-    factId: string,
-    change: UpdateBotFactInput,
-  ): Promise<BotMemoryFactEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateBotMemoryFact({ path: { id, factId }, body: change }),
-      BotsErrors.SAVE_FACT_FAILED,
-    );
-    return toFact(data);
+  updateFact(id: string, factId: string, change: UpdateBotFactInput): Promise<BotMemoryFactEntity> {
+    return callApi(BotsErrors.SAVE_FACT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateBotMemoryFact({ path: { id, factId }, body: change }),
+      );
+      return toFact(data);
+    });
   }
 
-  @MapApiError(BotsErrors.DELETE_FACT_FAILED)
-  async removeFact(id: string, factId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteBotMemoryFact({ path: { id, factId } }),
-      BotsErrors.DELETE_FACT_FAILED,
-    );
+  removeFact(id: string, factId: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_FACT_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotMemoryFact({ path: { id, factId } }));
+    });
   }
 
-  @MapApiError(BotsErrors.CLEAR_MEMORY_FAILED)
-  async clearMemory(id: string): Promise<void> {
-    await unwrap(heyApiSdk.clearBotMemory({ path: { id } }), BotsErrors.CLEAR_MEMORY_FAILED);
+  clearMemory(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_MEMORY_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotMemory({ path: { id } }));
+    });
   }
 
-  @MapApiError(BotsErrors.FETCH_PERMISSIONS_FAILED)
-  async findPermissions(id: string): Promise<BotPermissionsEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findBotPermissions({ path: { id } }),
-      BotsErrors.FETCH_PERMISSIONS_FAILED,
-    );
-    return toPermissions(data);
+  findPermissions(id: string): Promise<BotPermissionsEntity> {
+    return callApi(BotsErrors.FETCH_PERMISSIONS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotPermissions({ path: { id } }));
+      return toPermissions(data);
+    });
   }
 
   /** One tool's Allow, Ask or Off; `default` follows the preset again. */
-  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
-  async setToolDecision(
+  setToolDecision(
     id: string,
     tool: string,
     decision: BotToolDecision | 'default',
   ): Promise<BotPermissionsEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.setBotToolDecision({ path: { id, tool }, body: { decision } }),
-      BotsErrors.SAVE_PERMISSION_FAILED,
-    );
-    return toPermissions(data);
+    return callApi(BotsErrors.SAVE_PERMISSION_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.setBotToolDecision({ path: { id, tool }, body: { decision } }),
+      );
+      return toPermissions(data);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
-  async addPermissionRule(
+  addPermissionRule(
     id: string,
     effect: BotPermissionRuleEffect,
     text: string,
   ): Promise<BotPermissionsEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createBotPermissionRule({ path: { id }, body: { effect, text } }),
-      BotsErrors.SAVE_PERMISSION_FAILED,
-    );
-    return toPermissions(data);
+    return callApi(BotsErrors.SAVE_PERMISSION_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createBotPermissionRule({ path: { id }, body: { effect, text } }),
+      );
+      return toPermissions(data);
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
-  async removePermissionRule(id: string, ruleId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteBotPermissionRule({ path: { id, ruleId } }),
-      BotsErrors.SAVE_PERMISSION_FAILED,
-    );
+  removePermissionRule(id: string, ruleId: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_PERMISSION_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotPermissionRule({ path: { id, ruleId } }));
+    });
   }
 
-  @MapApiError(BotsErrors.SAVE_PERMISSION_FAILED)
-  async removeToolGrant(id: string, grantId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteBotToolGrant({ path: { id, grantId } }),
-      BotsErrors.SAVE_PERMISSION_FAILED,
-    );
+  removeToolGrant(id: string, grantId: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_PERMISSION_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotToolGrant({ path: { id, grantId } }));
+    });
   }
 
-  @MapApiError(BotsErrors.FETCH_PROVIDERS_FAILED)
-  async findModelProviders(): Promise<ModelProviderEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findModelProviderCredentials(),
-      BotsErrors.FETCH_PROVIDERS_FAILED,
-    );
-    return data.map(toProvider);
+  findModelProviders(): Promise<ModelProviderEntity[]> {
+    return callApi(BotsErrors.FETCH_PROVIDERS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findModelProviderCredentials());
+      return data.map(toProvider);
+    });
   }
 
   /** Stores the workspace's key for `provider`, replacing the one there. The key is never read back. */
-  @MapApiError(BotsErrors.SAVE_PROVIDER_KEY_FAILED)
-  async putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
-      BotsErrors.SAVE_PROVIDER_KEY_FAILED,
-    );
+  putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
+      await api.result(
+        heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
+      );
+    });
   }
 
   /** Makes `provider`, which must have a key, the one new bots start on. */
-  @MapApiError(BotsErrors.SET_DEFAULT_PROVIDER_FAILED)
-  async setDefaultModelProvider(provider: BotProvider): Promise<void> {
-    await unwrap(
-      heyApiSdk.setDefaultModelProvider({ path: { provider } }),
-      BotsErrors.SET_DEFAULT_PROVIDER_FAILED,
-    );
+  setDefaultModelProvider(provider: BotProvider): Promise<void> {
+    return callApi(BotsErrors.SET_DEFAULT_PROVIDER_FAILED, async (api) => {
+      await api.result(heyApiSdk.setDefaultModelProvider({ path: { provider } }));
+    });
   }
 
-  @MapApiError(BotsErrors.DELETE_PROVIDER_KEY_FAILED)
-  async removeModelProviderKey(provider: BotProvider): Promise<void> {
-    await unwrap(
-      heyApiSdk.deleteModelProviderCredential({ path: { provider } }),
-      BotsErrors.DELETE_PROVIDER_KEY_FAILED,
-    );
+  removeModelProviderKey(provider: BotProvider): Promise<void> {
+    return callApi(BotsErrors.DELETE_PROVIDER_KEY_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteModelProviderCredential({ path: { provider } }));
+    });
   }
 
   /** Asks ChatGPT for a device code for the workspace's sign-in. Nothing is stored yet. */
-  @MapApiError(BotsErrors.START_CHATGPT_LOGIN_FAILED)
-  async startChatgptLogin(): Promise<ChatgptLoginEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.startChatgptLogin(),
-      BotsErrors.START_CHATGPT_LOGIN_FAILED,
-    );
-    return toChatgptLogin(data);
+  startChatgptLogin(): Promise<ChatgptLoginEntity> {
+    return callApi(BotsErrors.START_CHATGPT_LOGIN_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.startChatgptLogin());
+      return toChatgptLogin(data);
+    });
   }
 
   /** One poll of a sign-in: `connected` once the person approved it and the API stored it. */
-  @MapApiError(BotsErrors.POLL_CHATGPT_LOGIN_FAILED)
-  async pollChatgptLogin(flowId: string): Promise<Exclude<ChatgptLoginState, 'expired'>> {
-    const data = await unwrapBody(
-      heyApiSdk.pollChatgptLogin({ body: { flowId } }),
-      BotsErrors.POLL_CHATGPT_LOGIN_FAILED,
-    );
-    return data.status;
+  pollChatgptLogin(flowId: string): Promise<Exclude<ChatgptLoginState, 'expired'>> {
+    return callApi(BotsErrors.POLL_CHATGPT_LOGIN_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.pollChatgptLogin({ body: { flowId } }));
+      return data.status;
+    });
   }
 }

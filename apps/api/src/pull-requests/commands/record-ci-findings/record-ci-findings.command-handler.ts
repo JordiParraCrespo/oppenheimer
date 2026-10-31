@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestReadPort } from '../../../github/application/pull-request-read.port';
+import { PULL_REQUEST_READS } from '../../../github/github.di-tokens';
 import type { CiFindingRepositoryPort } from '../../database/ci-finding.repository.port';
 import { CiFindingEntity } from '../../domain/ci-finding.entity';
 import { PullRequestsErrors } from '../../domain/pull-requests.errors';
@@ -22,7 +22,7 @@ export class RecordCiFindingsCommandHandler
   implements ICommandHandler<RecordCiFindingsCommand, string>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS) private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_READS) private readonly reads: PullRequestReadPort,
     @Inject(CI_FINDING_REPOSITORY) private readonly findings: CiFindingRepositoryPort,
   ) {}
 
@@ -30,7 +30,7 @@ export class RecordCiFindingsCommandHandler
     const { scope, address } = command;
     const { organizationId } = scope;
     if (!organizationId) throw new AppError(PullRequestsErrors.NO_ACTIVE_ORGANIZATION);
-    const snapshot = await this.access.pullRequest(scope, address);
+    const snapshot = await this.reads.pullRequest(scope, address);
     if (!snapshot.checks.value) {
       throw new AppError(PullRequestsErrors.CHECKS_UNREADABLE, {
         detail: `GitHub refused: ${snapshot.checks.refusal}`,

@@ -1,11 +1,11 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotApprovalDecision, BotApprovalReach } from '@oppenheimer/shared/schemas/bot';
-import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * A bot's Needs input card (`product/versions/mvp/25-bots.md` §5): the one
@@ -50,23 +50,16 @@ export interface DecideBotApprovalVariables {
  * Approves or denies the card. The card and the chat are read again: the
  * bot has a new turn queued that reports what came of it.
  */
-export function useDecideBotApproval(
-  options?: UseMutationOptions<BotApprovalEntity, Error, DecideBotApprovalVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, approvalId, decision, note, reach }: DecideBotApprovalVariables) =>
-      app.bots.decideApproval(id, approvalId, decision, note, reach),
-    ...withCacheOnSuccess(options, (_approval, { id }) =>
-      Promise.all([
-        // A yes that reached past the call changed what Settings → Permissions shows.
-        queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
-        // The Inbox's list across bots, which the workspace stream also announces.
-        queryClient.invalidateQueries({ queryKey: botsKeys.pendingApprovals() }),
-      ]),
-    ),
-  });
-}
+export const useDecideBotApproval = mutation<BotApprovalEntity, DecideBotApprovalVariables>({
+  run: (app, { id, approvalId, decision, note, reach }) =>
+    app.bots.decideApproval(id, approvalId, decision, note, reach),
+  update: (queryClient, _approval, { id }) =>
+    Promise.all([
+      // A yes that reached past the call changed what Settings → Permissions shows.
+      queryClient.invalidateQueries({ queryKey: botsKeys.permissions(id) }),
+      queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }),
+      queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+      // The Inbox's list across bots, which the workspace stream also announces.
+      queryClient.invalidateQueries({ queryKey: botsKeys.pendingApprovals() }),
+    ]),
+});
