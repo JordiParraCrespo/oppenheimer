@@ -5,8 +5,8 @@ import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
+import { sessionsKeys } from '../sessions.keys';
 import {
-  sessionsKeys,
   useCloseSession,
   useCreateSession,
   useRenameSession,

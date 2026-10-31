@@ -114,7 +114,8 @@ it. The steps are the "Add a module to a product package" cookbook in
 5. **Query hooks** in `src/react/<module>.queries.ts`:
    - A **key factory with one function per level**
      (`all → lists() → list(filters) → details() → detail(id)`, nested
-     resources under their detail as in `installations.queries.ts`).
+     resources under their detail as in `installations.keys.ts`), in
+     `src/react/<module>.keys.ts` beside the hooks.
    - `skipToken` for a missing input, never `enabled` beside a `queryFn`.
    - `useQuery` / `useQueries` come from `@oppenheimer/frontend-core/react`,
      which share entities across refetches. A list hook takes a narrowing

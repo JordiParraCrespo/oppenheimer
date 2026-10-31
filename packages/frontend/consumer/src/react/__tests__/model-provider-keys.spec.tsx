@@ -10,9 +10,9 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
-import { botsKeys } from '../bots.queries';
+import { botsKeys } from '../bots.keys';
 import { usePutModelProviderKey, useRemoveModelProviderKey } from '../model-providers.queries';
-import { voiceKeys } from '../voice.queries';
+import { voiceKeys } from '../voice.keys';
 import { fakeKernel } from './fake-kernel';
 
 function setup() {

@@ -4,8 +4,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
+import { profileKeys } from '../profile.keys';
 import {
-  profileKeys,
   useChangeOwnPassword,
   useDeleteAvatar,
   useMyProfile,

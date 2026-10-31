@@ -9,16 +9,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CloudAgentModel, CloudAgentStatusEntity } from '../modules/cloud-agents';
+import { cloudAgentsKeys } from './cloud-agents.keys';
 import { useConsumerApp } from './context';
-
-export const cloudAgentsKeys = {
-  all: ['cloud-agents'] as const,
-  status: () => [...cloudAgentsKeys.all, 'status'] as const,
-  providers: () => [...cloudAgentsKeys.all, 'provider'] as const,
-  provider: (provider: CloudAgentProviderId) => [...cloudAgentsKeys.providers(), provider] as const,
-  models: (provider: CloudAgentProviderId) =>
-    [...cloudAgentsKeys.provider(provider), 'models'] as const,
-};
 
 /**
  * Whether the reader can start a cloud session, and on which vendors

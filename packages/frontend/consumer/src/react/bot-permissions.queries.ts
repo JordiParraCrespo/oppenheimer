@@ -4,7 +4,7 @@ import { useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core
 import type { BotPermissionRuleEffect, BotToolDecision } from '@oppenheimer/shared/schemas/bot';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotPermissionsEntity } from '../modules/bots/bot-permissions.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**

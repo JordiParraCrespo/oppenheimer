@@ -43,7 +43,7 @@ import {
   NO_BOT_TEXT,
   noteBotRetry,
 } from '../modules/bots/live-text';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**

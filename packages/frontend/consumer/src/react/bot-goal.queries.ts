@@ -3,7 +3,7 @@
 import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { BotGoal } from '@oppenheimer/shared/schemas/bot';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**

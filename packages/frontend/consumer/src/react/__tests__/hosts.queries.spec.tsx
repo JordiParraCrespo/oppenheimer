@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { HostEntity, HostPairing } from '../../modules/hosts/host.entity';
+import { hostsKeys } from '../hosts.keys';
 import {
-  hostsKeys,
   useCurrentPairing,
   useHostPresence,
   useHosts,

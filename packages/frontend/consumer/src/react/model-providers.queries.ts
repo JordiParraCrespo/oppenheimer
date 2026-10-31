@@ -10,9 +10,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { ModelProviderEntity } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
-import { voiceKeys } from './voice.queries';
+import { voiceKeys } from './voice.keys';
 
 /**
  * The workspace's model providers (Settings → Model providers): which have a

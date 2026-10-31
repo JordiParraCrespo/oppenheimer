@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import { ChatgptLoginEntity } from '../../modules/bots/bot.entity';
 import { useChatgptLogin } from '../bots.chatgpt-login';
-import { botsKeys } from '../bots.queries';
-import { voiceKeys } from '../voice.queries';
+import { botsKeys } from '../bots.keys';
+import { voiceKeys } from '../voice.keys';
 import { fakeKernel } from './fake-kernel';
 
 /**

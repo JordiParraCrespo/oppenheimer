@@ -19,20 +19,9 @@ import type { StartedTaskSession, StartTaskSessionInput } from '../modules/tasks
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
 import { useProjectListQuery } from './projects.queries';
-import { sessionsKeys, useSessionListPoll, useSessionListQuery } from './sessions.queries';
-
-/**
- * One list, the whole board: every column, count and card reads it, and a
- * session's tasks are a `select` over it. A filtered read would be a second
- * leaf with its own segment, not an object `{}` would fuzzy-match.
- */
-export const tasksKeys = {
-  all: ['tasks'] as const,
-  lists: () => [...tasksKeys.all, 'list'] as const,
-  list: () => [...tasksKeys.lists()] as const,
-  milestones: () => [...tasksKeys.all, 'milestones'] as const,
-  milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
-};
+import { sessionsKeys } from './sessions.keys';
+import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
+import { tasksKeys } from './tasks.keys';
 
 /**
  * Every task on the board, in board order. One read serves the columns, the

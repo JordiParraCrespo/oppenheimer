@@ -3,7 +3,7 @@
 import { useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotRoutineEntity } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
 

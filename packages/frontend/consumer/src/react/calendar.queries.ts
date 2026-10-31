@@ -16,18 +16,8 @@ import type {
   GoogleCalendarConnectionEntity,
   GoogleCalendarRead,
 } from '../modules/calendar/calendar-event.entity';
+import { calendarKeys } from './calendar.keys';
 import { useConsumerApp } from './context';
-
-export const calendarKeys = {
-  all: ['calendar'] as const,
-  events: () => [...calendarKeys.all, 'events'] as const,
-  eventRange: (range: CalendarRange) => [...calendarKeys.events(), range] as const,
-  google: () => [...calendarKeys.all, 'google'] as const,
-  googleConnections: () => [...calendarKeys.google(), 'connections'] as const,
-  googleReads: () => [...calendarKeys.google(), 'events'] as const,
-  googleEvents: (range: CalendarRange, timeZone: string) =>
-    [...calendarKeys.googleReads(), range, timeZone] as const,
-};
 
 /** How long Google's month stays fresh before a focus reads it again. */
 const GOOGLE_FRESH_MS = 2 * 60_000;

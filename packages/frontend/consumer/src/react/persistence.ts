@@ -1,17 +1,17 @@
-import { automationsKeys } from './automations.queries';
-import { botsKeys } from './bots.queries';
-import { calendarKeys } from './calendar.queries';
-import { cloudAgentsKeys } from './cloud-agents.queries';
-import { hostsKeys } from './hosts.queries';
+import { automationsKeys } from './automations.keys';
+import { botsKeys } from './bots.keys';
+import { calendarKeys } from './calendar.keys';
+import { cloudAgentsKeys } from './cloud-agents.keys';
+import { hostsKeys } from './hosts.keys';
 import { inboxKeys } from './inbox.keys';
-import { installationsKeys } from './installations.queries';
-import { mailKeys } from './mail.queries';
-import { profileKeys } from './profile.queries';
-import { projectsKeys } from './projects.queries';
-import { pullRequestsKeys } from './pull-requests.queries';
-import { sessionsKeys } from './sessions.queries';
-import { tasksKeys } from './tasks.queries';
-import { voiceKeys } from './voice.queries';
+import { installationsKeys } from './installations.keys';
+import { mailKeys } from './mail.keys';
+import { profileKeys } from './profile.keys';
+import { projectsKeys } from './projects.keys';
+import { pullRequestsKeys } from './pull-requests.keys';
+import { sessionsKeys } from './sessions.keys';
+import { tasksKeys } from './tasks.keys';
+import { voiceKeys } from './voice.keys';
 
 /**
  * Consumer features that never reach the persisted query cache: a session
