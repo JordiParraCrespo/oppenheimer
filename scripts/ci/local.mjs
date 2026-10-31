@@ -96,6 +96,30 @@ function selection() {
   };
 }
 
+// oppenheimer:begin extension
+/**
+ * The extension's Playwright suite. With `CI_EXTENSION_IN_DOCKER` set it runs
+ * in Playwright's own image for the installed version, which carries Chromium
+ * and the system libraries it loads: the CI runner has neither, nor the root
+ * to install them. The checkout is mounted at its own path so pnpm's links
+ * resolve, and the container runs as this user so what it writes stays ours.
+ */
+function extensionSuite() {
+  if (!process.env.CI_EXTENSION_IN_DOCKER) {
+    return ['pnpm', ['--filter', '@oppenheimer/extension', 'e2e']];
+  }
+  const dir = join(ROOT, 'apps', 'extension');
+  const { version } = JSON.parse(
+    readFileSync(join(dir, 'node_modules', '@playwright', 'test', 'package.json'), 'utf8'),
+  );
+  const user = `${process.getuid()}:${process.getgid()}`;
+  const image = `mcr.microsoft.com/playwright:v${version}-noble`;
+  const mount = `${ROOT}:${ROOT}`;
+  const run = ['run', '--rm', '--ipc=host', '--user', user, '-e', 'HOME=/tmp', '-v', mount];
+  return ['docker', [...run, '-w', dir, image, 'node_modules/.bin/playwright', 'test']];
+}
+// oppenheimer:end extension
+
 // ---------------------------------------------------------------------- steps
 
 const rows = [];
@@ -272,7 +296,7 @@ if (any) {
     // The built extension in Chromium against a fake claude.ai: the page
     // tap, the poll, the badge, the notifications and the popup.
     ...(touches(packages, '@oppenheimer/extension')
-      ? [['Extension in Chromium', 'pnpm', ['--filter', '@oppenheimer/extension', 'e2e']]]
+      ? [['Extension in Chromium', ...extensionSuite()]]
       : []),
     // oppenheimer:end extension
     // oppenheimer:begin web

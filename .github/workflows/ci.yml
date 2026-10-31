@@ -78,16 +78,16 @@ jobs:
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.5.0
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
-      # oppenheimer:begin extension
-      # The extension's suite launches Chromium; a contributor has it from
-      # scripts/dev/bootstrap.sh, the runner does not. No --with-deps: the
-      # runner has no passwordless sudo, and its image carries the libraries.
-      - run: pnpm --filter @oppenheimer/extension exec playwright install chromium
-      # oppenheimer:end extension
       - id: images
         run: node scripts/ci/affected.mjs
       - name: pnpm ci:local --all
         run: pnpm ci:local --all
+        # oppenheimer:begin extension
+        # The runner lacks Chromium's system libraries and the sudo to install
+        # them, so the extension's suite runs in Playwright's image.
+        env:
+          CI_EXTENSION_IN_DOCKER: '1'
+        # oppenheimer:end extension
       - name: Report
         if: ${{ !cancelled() }}
         run: cat .ci-local/report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
