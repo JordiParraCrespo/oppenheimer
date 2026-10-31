@@ -932,3 +932,10 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- `AUTHORIZATION.md` (the starter's kernel design, kept as history) put
+  row-level authorization in its own package, `@oppenheimer/backend-authz`.
+  On 2026-10-31 (#556) it was folded into `apps/api/src/authz/`, with
+  `AbilityFactory` (from `roles`) and `PoliciesGuard` (from `auth`): it had
+  one consumer and no second implementation of its one port, and
+  authorization had lived in four places. `.agents/rules/rbac-roles.md` is
+  the current map.
