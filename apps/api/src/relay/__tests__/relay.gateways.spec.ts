@@ -1471,6 +1471,8 @@ describe('browser attach socket', () => {
   });
 
   describe('the direct path', () => {
+    /** A runner that answers offers and proves itself on every channel (31). */
+    const DIRECT = ['attachment.direct', 'attachment.direct.proof'];
     const OFFER = 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n';
 
     async function attached(capabilities: string[], ticket = issueTicket(h)) {
@@ -1488,11 +1490,11 @@ describe('browser attach socket', () => {
 
     it('offers it to a person the flag is on for, on a runner that can answer, with the ICE servers', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { attached: told } = await attached(['attachment.direct']);
+      const { attached: told } = await attached(DIRECT);
       expect(told).toEqual({
         type: 'attached',
         window: 0,
-        direct: { iceServers: ['stun:stun.example.com:3478'] },
+        direct: { iceServers: ['stun:stun.example.com:3478'], hostId: HOST },
       });
       expect(h.flags.isEnabled).toHaveBeenCalledWith('terminal_direct_path', {
         userId: USER,
@@ -1500,11 +1502,17 @@ describe('browser attach socket', () => {
       });
     });
 
-    it('does not offer it on a runner that cannot answer, or while the flag is off', async () => {
+    it('does not offer it on a runner that cannot answer or cannot prove itself, or while the flag is off', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
       expect((await attached([])).attached).toEqual({ type: 'attached', window: 0 });
-      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      // A runner from before the host proof: the console would refuse its
+      // channel, so it is never invited.
       expect((await attached(['attachment.direct'])).attached).toEqual({
+        type: 'attached',
+        window: 0,
+      });
+      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      expect((await attached(DIRECT)).attached).toEqual({
         type: 'attached',
         window: 0,
       });
@@ -1512,7 +1520,7 @@ describe('browser attach socket', () => {
 
     it('relays the offer, the answer and both offsets between browser and runner', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
 
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
@@ -1541,7 +1549,7 @@ describe('browser attach socket', () => {
 
     it('tells the browser when the runner refuses, and the attachment stays on the relay', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       await offer;
@@ -1566,7 +1574,7 @@ describe('browser attach socket', () => {
 
     it('never forwards an offer it did not invite, or a second one', async () => {
       // The flag is off: the browser was not told it could offer.
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const refusal = nextMessage(browser);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await refusal).text).toMatchObject({ type: 'direct.unavailable' });
@@ -1578,7 +1586,7 @@ describe('browser attach socket', () => {
       expect((await next).text).toMatchObject({ type: 'session.resize' });
 
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const invited = await attached(['attachment.direct']);
+      const invited = await attached(DIRECT);
       const first = nextMessage(invited.runner);
       invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await first).text).toMatchObject({ type: 'attachment.direct.offer' });
@@ -1674,7 +1682,9 @@ describe('browser attach socket', () => {
     it('never offers a direct path through a share, whatever the flag says', async () => {
       shareIs(true);
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const runner = await runnerUp(h, { capabilities: ['attachment.direct'] });
+      const runner = await runnerUp(h, {
+        capabilities: ['attachment.direct', 'attachment.direct.proof'],
+      });
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
       sockets.push(browser);
