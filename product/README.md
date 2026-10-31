@@ -932,10 +932,6 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
-- 2026-10-31, from a read of Codex and Grok
-  (`research/lessons-from-codex-and-grok-chat.md`): the owner took all six
-  of its proposals for the chat. Both chats move to one item model, and
-  the bots stream stops dropping text on reconnect. Exploration folds,
-  approvals become requests that close everywhere once answered, and a
-  mid-turn message can steer. The rendering gets tests. Each is a slice in
-  `next-steps/0.7-chat-protocol.md`.
+- 2026-10-31: the owner took the six chat slices drawn from a read of Codex
+  and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
+  in `next-steps/0.7-chat-protocol.md`.

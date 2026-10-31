@@ -15,7 +15,8 @@ how do they organise the code behind it?
   The Grok Bot desktop app is a different product, read in
   [`lessons-from-grok-bot.md`](lessons-from-grok-bot.md).
 
-The note decides nothing. What it led to is
+The note decides nothing. Its observations are not a closed list of
+proposals; the six slices drawn from them are
 [`next-steps/0.7-chat-protocol.md`](../next-steps/0.7-chat-protocol.md).
 
 ## 1. The one fact worth the read

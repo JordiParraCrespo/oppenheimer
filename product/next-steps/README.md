@@ -114,8 +114,6 @@ where these land is the first open question below.
   (started by a host) and Cursor's (launched by the control plane, no host)
   are two kinds of the one `cloud` place; Grok's comes after them
   ([Cloud agents](cloud-agents.md), "Two kinds of cloud session").
-- 2026-10-31: 0.7 gains a second document, the chat's model and protocol,
-  from a read of Codex and Grok (`../research/lessons-from-codex-and-grok-chat.md`):
-  one item model for both chats, a stream that loses nothing on reconnect,
-  folded exploration and bounded output, approvals as requests, steer and
-  rewind, and rendering tests; six slices, each its own pull request.
+- 2026-10-31: 0.7 gains a second document, [the chat's model and
+  protocol](0.7-chat-protocol.md), with six slices drawn from a read of
+  Codex and Grok.
