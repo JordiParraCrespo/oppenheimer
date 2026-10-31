@@ -8,7 +8,8 @@ import { replaySessionChat } from './replay/session-chat-replay';
  * A Claude Code session's chat replayed from its recorded transcript: a
  * read, a command that failed, a question the person answered, a task list,
  * an edit and a reply, then a second prompt whose command runs. What breaks
- * this: a turn's steps drawn out of the order the agent took them, an
+ * this: a turn's steps drawn out of the order the agent took them (a read
+ * folded together with the failed command after it, which is not looking), an
  * older turn left open (or the newest folded) once the next prompt passes
  * it, a question that waits without taking the composer's place, the task
  * list lost from the composer, the call in flight drawn as done, or a turn
@@ -106,7 +107,8 @@ describe('a session replayed from its transcript', () => {
       'you: The sign-in test is flaky — find out why',
       '… sessions.chat.turn.working 50s',
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
-      '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
+      '  call: sessions.chat.verb.read sign-in.spec.ts tests',
+      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  note: sessions.chat.question.waiting',
     ]);
     // The picker holds the terminal's input: a message typed now would land in it.
@@ -124,7 +126,8 @@ describe('a session replayed from its transcript', () => {
       'you: The sign-in test is flaky — find out why',
       `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
-      '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
+      '  call: sessions.chat.verb.read sign-in.spec.ts tests',
+      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
@@ -135,17 +138,22 @@ describe('a session replayed from its transcript', () => {
     expect(screen.getByText('Run the whole suite')).toBeTruthy();
   });
 
-  it('opens a run of calls to each, the failure in red with its first line', () => {
+  it('draws the read apart from the command that failed, which opens to its output, the failure in red', () => {
     const chat = replaySessionChat(flakySignIn);
     chat.playTo('answered');
 
-    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.summary\.read/i }));
-    expect(outline(chat.container).slice(3, 6)).toEqual([
-      '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
-      '    call: sessions.chat.verb.read sign-in.spec.ts tests',
-      '    call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
+    // A read alone is its own row, and the failed command ends any run of reads.
+    expect(outline(chat.container).slice(3, 5)).toEqual([
+      '  call: sessions.chat.verb.read sign-in.spec.ts tests',
+      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
     ]);
+    expect(screen.queryByRole('button', { name: /sessions\.chat\.explored/ })).toBeNull();
+    // Its first line in red under the row, and the whole output once it opens.
     expect(screen.getByText('3 of 20 runs failed')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /pnpm test sign-in --repeat 20/ }));
+    expect(chat.container.querySelector('[data-slot="tool-call-output"]')?.textContent).toContain(
+      'Timeout waiting for the toast',
+    );
   });
 
   it('folds the older turn to its words and cards once the next prompt passes it, the newest live', () => {
@@ -181,11 +189,12 @@ describe('a session replayed from its transcript', () => {
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked 1m 20s/ }));
-    expect(outline(chat.container).slice(0, 8)).toEqual([
+    expect(outline(chat.container).slice(0, 9)).toEqual([
       'you: The sign-in test is flaky — find out why',
       `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
-      '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
+      '  call: sessions.chat.verb.read sign-in.spec.ts tests',
+      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
