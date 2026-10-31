@@ -1,5 +1,5 @@
 import { heyApiSdk, type WhatsappAccountResponseDto } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { WhatsappErrors } from './whatsapp.errors';
 import { WhatsappAccountEntity } from './whatsapp-account.entity';
@@ -27,27 +27,26 @@ function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
  */
 @injectable()
 export class WhatsappRepository {
-  @MapApiError(WhatsappErrors.FETCH_ACCOUNTS_FAILED)
-  async findAccounts(): Promise<WhatsappAccountEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findWhatsappAccounts(),
-      WhatsappErrors.FETCH_ACCOUNTS_FAILED,
-    );
-    return data.map(toAccount);
+  findAccounts(): Promise<WhatsappAccountEntity[]> {
+    return callApi(WhatsappErrors.FETCH_ACCOUNTS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWhatsappAccounts());
+      return data.map(toAccount);
+    });
   }
 
   /** Links a number on a host, or pairs the reader's number there again. */
-  @MapApiError(WhatsappErrors.LINK_FAILED)
-  async link(hostId: string, label?: string): Promise<WhatsappAccountEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.linkWhatsapp({ body: { hostId, ...(label ? { label } : {}) } }),
-      WhatsappErrors.LINK_FAILED,
-    );
-    return toAccount(data);
+  link(hostId: string, label?: string): Promise<WhatsappAccountEntity> {
+    return callApi(WhatsappErrors.LINK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.linkWhatsapp({ body: { hostId, ...(label ? { label } : {}) } }),
+      );
+      return toAccount(data);
+    });
   }
 
-  @MapApiError(WhatsappErrors.UNLINK_FAILED)
-  async unlink(id: string): Promise<void> {
-    await unwrap(heyApiSdk.removeWhatsappAccount({ path: { id } }), WhatsappErrors.UNLINK_FAILED);
+  unlink(id: string): Promise<void> {
+    return callApi(WhatsappErrors.UNLINK_FAILED, async (api) => {
+      await api.result(heyApiSdk.removeWhatsappAccount({ path: { id } }));
+    });
   }
 }
