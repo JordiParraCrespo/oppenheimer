@@ -28,12 +28,6 @@ export const TASK_NOTES_MAX = 10_000;
 export const MILESTONE_NAME_MAX = 200;
 /** Why a task is blocked, in a sentence. */
 export const TASK_BLOCKED_REASON_MAX = 500;
-/**
- * How many Done tasks `GET /tasks` lists, the most recently ticked first. The
- * other columns are the work in hand and come whole; Done is the one that only
- * grows (`product/versions/mvp/19-plan-tasks-and-goals.md` §4).
- */
-export const TASK_LIST_DONE_MAX = 1000;
 /** A client's `Idempotency-Key` on a create, so a retried request makes one row. */
 export const IDEMPOTENCY_KEY_MAX = 128;
 

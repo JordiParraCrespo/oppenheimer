@@ -932,8 +932,3 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
-- `versions/mvp/19-plan-tasks-and-goals.md` §4 had `GET /tasks` return
-  every task, Done included, so a workspace's board grew with everything
-  it ever finished. On 2026-10-31 (#556) Done is cut at its 1,000 most
-  recently ticked tasks; the open columns still come whole, and the
-  response shape is unchanged.

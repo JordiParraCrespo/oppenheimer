@@ -291,24 +291,6 @@ describe('tasks: the board (integration)', () => {
     expect(await tasks.findAll(scope(), { sessionId })).toEqual([]);
   });
 
-  it('cuts Done at doneLimit, latest tick first, and keeps the open columns whole in board order', async () => {
-    await add('doing', 'doing');
-    await add('later', 'later');
-    await add('todo');
-    const ticked = [await add('first'), await add('second'), await add('third')];
-    for (const task of ticked) {
-      expect(
-        await tasks.move(await reload(task.id), { status: 'done', after: { kind: 'first' } }),
-      ).toBe('placed');
-    }
-    const titles = async (filter: Parameters<TaskRepository['findAll']>[1]) =>
-      (await tasks.findAll(scope(), filter)).map((t) => t.title);
-
-    expect(await titles({ doneLimit: 2 })).toEqual(['doing', 'third', 'second', 'later', 'todo']);
-    expect(await titles({})).toEqual(['doing', 'third', 'second', 'first', 'later', 'todo']);
-    expect(await titles({ doneLimit: 2, projectId: otherProjectId })).toEqual([]);
-  });
-
   it('shows another workspace nothing', async () => {
     const task = await add('t');
     const foreign = { ...scope(), organizationId: randomUUID() };

@@ -3,7 +3,6 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import { TASK_LIST_DONE_MAX } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -34,7 +33,8 @@ export class FindTasksHttpController {
   @RequireScopes('tasks:read')
   @ApiOperation({
     summary: 'List the board’s tasks',
-    description: `In board order: grouped by status, each column by \`rank\` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer). Done holds at most its ${TASK_LIST_DONE_MAX} most recently ticked tasks; the other columns come whole.`,
+    description:
+      'In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).',
   })
   @ApiQuery({
     name: 'projectId',

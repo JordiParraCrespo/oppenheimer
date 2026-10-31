@@ -13477,7 +13477,7 @@
     },
     "/api/v1/tasks": {
       "get": {
-        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer). Done holds at most its 1000 most recently ticked tasks; the other columns come whole.",
+        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).",
         "operationId": "findTasks",
         "parameters": [
           {
