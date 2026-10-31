@@ -167,9 +167,9 @@ Nothing moves before its second consumer appears; nothing is written twice.
    satisfies Record<string, ErrorDefinition>`, codes `THINGS_CLIENT_001…`.
    They apply only when the API sent no problem document; `toAppError` keeps
    the server's `code` otherwise.
-3. `src/modules/things/things.repository.ts` — `@injectable()`, calls
-   `heyApiSdk` through `unwrap` / `unwrapBody`, maps DTOs to entities, each
-   method under `@MapApiError(ThingsErrors.X)`.
+3. `src/modules/things/things.repository.ts` — `@injectable()`, each
+   method one `callApi(ThingsErrors.X, async (api) => …)` that calls
+   `heyApiSdk` through `api.body` / `api.result` and maps DTOs to entities.
 4. **A service only when there is a use case to hold.**
    `src/modules/things/things.service.ts` — `@injectable()`, injects the
    repository through `TOKENS.ThingsRepository` — exists when a method does
