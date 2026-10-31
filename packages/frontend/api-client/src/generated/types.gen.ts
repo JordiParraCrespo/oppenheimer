@@ -7526,6 +7526,10 @@ export type UninstallHostErrors = {
      * HOSTS_005 — No valid host assertion was presented
      */
     401: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UninstallHostError = UninstallHostErrors[keyof UninstallHostErrors];
@@ -7590,6 +7594,10 @@ export type UnpairHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UnpairHostError = UnpairHostErrors[keyof UnpairHostErrors];
@@ -7657,6 +7665,10 @@ export type RenameHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type RenameHostError = RenameHostErrors[keyof RenameHostErrors];

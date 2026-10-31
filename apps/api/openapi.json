@@ -6171,6 +6171,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "HOSTS_009 — Someone else wrote the host meanwhile, again on the retry",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6356,6 +6366,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "HOSTS_009 — Someone else wrote the host meanwhile, again on the retry",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6405,6 +6425,16 @@
           },
           "404": {
             "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "HOSTS_009 — Someone else wrote the host meanwhile, again on the retry",
             "content": {
               "application/problem+json": {
                 "schema": {
