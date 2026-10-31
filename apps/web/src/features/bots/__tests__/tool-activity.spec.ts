@@ -2,15 +2,12 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
-  humaniseToolName,
   liveLabel,
   liveWords,
-  planItems,
   readableOutput,
   runningStep,
   sharedKind,
   toolAction,
-  toolTarget,
 } from '../lib/tool-activity';
 
 describe('readableOutput', () => {
@@ -114,15 +111,6 @@ describe('liveLabel', () => {
   });
 });
 
-describe('humaniseToolName', () => {
-  it('splits snake, kebab and camel case, keeps acronyms, and drops the MCP prefix', () => {
-    expect(humaniseToolName('remember_fact')).toBe('Remember fact');
-    expect(humaniseToolName('createGitHubIssue')).toBe('Create git hub issue');
-    expect(humaniseToolName('fetch-URL')).toBe('Fetch URL');
-    expect(humaniseToolName('mcp__my_server__list-events')).toBe('List events');
-  });
-});
-
 describe('runningStep', () => {
   const activity = (outputs: (string | null)[]) =>
     ({
@@ -135,36 +123,6 @@ describe('runningStep', () => {
     expect(running?.callId).toBe('1');
     expect(runningStep([activity(['ok', ''])])).toBeUndefined();
     expect(runningStep([{ role: 'assistant' } as BotMessageEntity])).toBeUndefined();
-  });
-});
-
-describe('toolTarget', () => {
-  it('is the first text the call was given, on one line and cut short', () => {
-    expect(toolTarget({ limit: 3, path: 'src/index.ts' })).toBe('src/index.ts');
-    expect(toolTarget({ command: 'ls\npwd' })).toBe('ls');
-    expect(toolTarget({ query: 'x'.repeat(100) })).toBe(`${'x'.repeat(80)}…`);
-    expect(toolTarget({ limit: 3 })).toBeUndefined();
-  });
-});
-
-describe('planItems', () => {
-  it('reads the to-do list with each item’s state, skipping what is not an item', () => {
-    expect(
-      planItems({
-        todos: [
-          { content: 'Search', status: 'completed' },
-          { content: 'Compare', status: 'in_progress' },
-          { content: 'Write it up', status: 'pending' },
-          { status: 'pending' },
-          'junk',
-        ],
-      }),
-    ).toEqual([
-      { text: 'Search', state: 'done' },
-      { text: 'Compare', state: 'active' },
-      { text: 'Write it up', state: 'pending' },
-    ]);
-    expect(planItems({})).toEqual([]);
   });
 });
 

@@ -41,6 +41,13 @@ a service fronts it, its repository stay inside the package.
   `SessionStream` (the attach socket, its reconnect ladder, a fresh ticket per
   dial and the byte credit), and `createResizeCoalescer` sits beside it. The
   app only renders what the stream delivers.
+- **modules/chat** — what both chats share, with no repository of its own:
+  `classifyTool` (a tool call's kind, chat item type, glyph name, name in
+  words and target, for a coding agent's tools and a bot's), `toolIcon`,
+  `humaniseToolName`, `toolLine`, `todosOf` (a `TodoWrite` list, for both
+  chats), and the per-kind builder the two adapters
+  (`sessions/chat/session-chat-items.ts`, `bots/bot-chat-items.ts`) use to
+  read their source into `@oppenheimer/shared/schemas/chat-item`.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
   `OrganizationsModule`, `isProvisionalSlug`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
@@ -52,8 +59,8 @@ a service fronts it, its repository stay inside the package.
 
 The named hooks the console imports — one `<module>.queries.ts` per module
 behind them, `usePermissionCatalog` among them for OAuth consent — and
-`CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an app keeps out of the
-persisted query cache. Key factories stay in their files: nothing outside the
+`CONSUMER_PERSISTED_FEATURES`, the plain-data prefixes an app lets into the
+persisted query cache (nothing else is stored). Key factories stay in their files: nothing outside the
 package names a key. The barrel is the catalog; it is not repeated here.
 
 ## How to use it
@@ -68,14 +75,14 @@ const organizations = useOrganizations();
 const organization = organizations.data?.[0];
 ```
 
-`apps/web/src/providers/query-provider.tsx` names the features that never
-reach the persisted cache:
+`apps/web/src/providers/query-provider.tsx` names the features whose reads
+may reach the persisted cache:
 
 ```ts
-import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
+import { CONSUMER_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
 
 ...createQueryPersistOptions(__APP_VERSION__, {
-  nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+  persistedFeatures: CONSUMER_PERSISTED_FEATURES,
 }),
 ```
 

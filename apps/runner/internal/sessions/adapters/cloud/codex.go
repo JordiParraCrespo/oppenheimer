@@ -12,7 +12,16 @@ package cloud
 //
 // answers the newest tasks of the account with their status. Both are
 // labelled experimental in OpenAI's source (codex-rs/cloud-tasks), so what is
-// read from them is kept to the task's address, id and status.
+// read from them is kept to the task's address, id, status and the label of
+// its environment.
+//
+// `--env` resolves only against the environments the CLI's TUI lists
+// (`/wham/environments`). ChatGPT's newer Settings → Codex Cloud keeps its
+// environments elsewhere, and codex-cli (0.166.0) cannot reach them, so a
+// repository whose only environment is there fails as "not found" however it
+// is named. The CLI has no command that lists environments outside the TUI;
+// the labels on the account's recent tasks are the one non-interactive view
+// of them, partial by construction.
 
 import (
 	"bytes"
@@ -53,6 +62,9 @@ type CodexTask struct {
 	URL    string `json:"url"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
+	// EnvironmentLabel is the label of the environment the task ran in, as
+	// the CLI names it; empty when it gave none.
+	EnvironmentLabel string `json:"environment_label"`
 }
 
 // CodexPage is one answer of `codex cloud list --json`: the tasks, newest
@@ -80,11 +92,12 @@ var codexTaskURL = regexp.MustCompile(`https?://\S+/codex/tasks/([A-Za-z0-9_-]+)
 // repository (`owner/name`) on branch, and answers it once the CLI has named
 // it. The environment is named by its label, which `codex cloud exec`
 // matches without regard to case: the repository's full name first, then its
-// bare name, the two ways people name one. An environment named neither is
-// the CLI's own refusal, in its words.
+// bare name, the two ways people name one. When the CLI has neither, the
+// start is a domain.CodexEnvironmentRefusal; any other refusal is the CLI's
+// own, in its words.
 func (c Codex) Start(ctx context.Context, repository, branch, prompt string) (Started, error) {
-	var refusal error
-	for _, env := range codexEnvironments(repository) {
+	tried := codexEnvironments(repository)
+	for _, env := range tried {
 		out, err := c.run(ctx, "cloud", "exec", "--env", env, "--branch", branch, prompt)
 		if err == nil {
 			if match := codexTaskURL.FindStringSubmatch(out); match != nil {
@@ -93,12 +106,61 @@ func (c Codex) Start(ctx context.Context, repository, branch, prompt string) (St
 			return Started{}, domain.ErrCodexCloudStart.WithDetail(
 				"codex cloud exec named no task: %s", lastWords(out))
 		}
-		refusal = err
-		if !strings.Contains(err.Error(), "not found") {
+		if !codexEnvironmentMissing(err, env) {
+			return Started{}, err
+		}
+	}
+	return Started{}, c.environmentRefusal(ctx, tried).Problem()
+}
+
+// codexMissing is the CLI's refusal of a label it has no environment for
+// (codex-rs/cloud-tasks, 0.166.0): "environment '<label>' not found; run
+// `codex cloud` to list available environments".
+var codexMissing = regexp.MustCompile(`environment '([^']*)' not found`)
+
+// codexEnvironmentMissing reports whether err is the CLI refusing env itself
+// as missing, and not some other refusal that happens to say "not found".
+func codexEnvironmentMissing(err error, env string) bool {
+	match := codexMissing.FindStringSubmatch(err.Error())
+	return match != nil && match[1] == env
+}
+
+// codexVisibleMax bounds how many labels a refusal names.
+const codexVisibleMax = 8
+
+// environmentRefusal is what the CLI can see when it has nothing under the
+// labels tried, read off one page of the account's newest tasks; a read that
+// fails leaves the refusal unlisted rather than failing differently.
+func (c Codex) environmentRefusal(ctx context.Context, tried []string) domain.CodexEnvironmentRefusal {
+	refusal := domain.CodexEnvironmentRefusal{Tried: tried}
+	if page, err := c.List(ctx, ""); err == nil {
+		refusal.Listed = true
+		refusal.Visible = codexLabels(page.Tasks, tried)
+	}
+	return refusal
+}
+
+// codexLabels is the environment labels tasks ran in, each once, in the order
+// first seen, leaving out the labels the CLI just refused, at most
+// codexVisibleMax of them.
+func codexLabels(tasks []CodexTask, refused []string) []string {
+	seen := make(map[string]bool, len(tasks)+len(refused))
+	for _, label := range refused {
+		seen[strings.ToLower(label)] = true
+	}
+	var labels []string
+	for _, task := range tasks {
+		key := strings.ToLower(task.EnvironmentLabel)
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		labels = append(labels, task.EnvironmentLabel)
+		if len(labels) == codexVisibleMax {
 			break
 		}
 	}
-	return Started{}, refusal
+	return labels
 }
 
 // List answers one page of the account's tasks, newest first; cursor is the

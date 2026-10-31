@@ -156,8 +156,8 @@ describe('toTurns', () => {
     expect(calls[0]?.diff).toEqual({ additions: 4, deletions: 3 });
     expect(calls[1]?.diff).toEqual({ additions: 2, deletions: 0 });
     expect(calls[2]?.todos).toEqual([
-      { content: 'Read', status: 'completed' },
-      { content: 'Fix', status: 'in_progress' },
+      { text: 'Read', status: 'completed' },
+      { text: 'Fix', status: 'in_progress' },
     ]);
     expect(calls[3]?.plan).toBe('1. Do it');
   });

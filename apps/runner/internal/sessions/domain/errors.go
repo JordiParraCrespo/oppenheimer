@@ -40,6 +40,12 @@ var (
 	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
 	// old to know the command. Its detail is the CLI's own last words.
 	ErrCodexCloudStart = problem.New("SESS_009", http.StatusBadGateway, "Codex could not start the task in the cloud")
+	// ErrCodexCloudEnvironment is `codex cloud exec` finding no environment
+	// under any label tried for the repository. The CLI resolves only the
+	// environments its TUI lists; one made in ChatGPT's Settings → Codex
+	// Cloud is not among them yet. Its detail names the labels tried and the
+	// ones the CLI showed in the account's recent tasks.
+	ErrCodexCloudEnvironment = problem.New("SESS_010", http.StatusNotFound, "No Codex cloud environment the CLI can reach is named for the repository")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.

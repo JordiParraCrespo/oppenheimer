@@ -1,8 +1,13 @@
 ---
 paths:
-  - "apps/**/*"
   - "packages/shared/src/feature-flags/**/*"
-  - "packages/frontend/**/*"
+  - "apps/api/src/**/*"
+  - "apps/web/src/**/*"
+  - "packages/frontend/core/src/**/*"
+  - "packages/frontend/consumer/src/**/*"
+  - "packages/frontend/web/src/**/*"
+  - "scripts/check-feature-flags.mjs"
+  - "scripts/evals/feature-flags/**/*"
 ---
 
 # Feature Flags Rules
