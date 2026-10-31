@@ -57,7 +57,7 @@ export function toBase64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-export function fromBase64Url(text: string): Uint8Array | null {
+function fromBase64Url(text: string): Uint8Array | null {
   if (!/^[A-Za-z0-9_-]*$/.test(text)) return null;
   try {
     const binary = atob(text.replace(/-/g, '+').replace(/_/g, '/'));
@@ -85,7 +85,7 @@ export async function hostKeyFingerprint(key: Uint8Array): Promise<string> {
  * malformed, and false where this browser has no Ed25519: a proof it cannot
  * check is a proof it does not accept, and the pane stays on the relay.
  */
-export async function verifyHostProof(
+async function verifyHostProof(
   key: Uint8Array,
   signature: Uint8Array,
   transcript: Uint8Array,
