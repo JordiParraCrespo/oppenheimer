@@ -14,3 +14,4 @@ export * from './pull-requests';
 export * from './sessions';
 export * from './tasks';
 export * from './voice';
+export * from './whatsapp';

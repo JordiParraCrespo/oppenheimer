@@ -79,6 +79,8 @@ import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 /**
  * Data source used by the TypeORM CLI (`migration:generate` / `migration:run` /
@@ -137,6 +139,8 @@ export default new DataSource({
     CalendarConnectionOrmEntity,
     GmailConnectionOrmEntity,
     MailSendOrmEntity,
+    WhatsappAccountOrmEntity,
+    WhatsappMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,

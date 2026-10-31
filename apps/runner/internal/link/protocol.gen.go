@@ -80,6 +80,7 @@ const (
 	CapabilitySessionCloud        = "session.cloud"
 	CapabilitySessionCloudCodex   = "session.cloud.codex"
 	CapabilitySessionWatch        = "session.watch"
+	CapabilityWhatsapp            = "whatsapp"
 )
 
 // The `type` of every message on the link.
@@ -128,6 +129,13 @@ const (
 	TypePortOpen                = "port.open"
 	TypePortOpened              = "port.opened"
 	TypePortClose               = "port.close"
+	TypeWhatsappLink            = "whatsapp.link"
+	TypeWhatsappUnlink          = "whatsapp.unlink"
+	TypeWhatsappState           = "whatsapp.state"
+	TypeWhatsappMessages        = "whatsapp.messages"
+	TypeWhatsappAck             = "whatsapp.ack"
+	TypeWhatsappSend            = "whatsapp.send"
+	TypeWhatsappSent            = "whatsapp.sent"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -176,6 +184,13 @@ var MessageTypes = []string{
 	TypePortOpen,
 	TypePortOpened,
 	TypePortClose,
+	TypeWhatsappLink,
+	TypeWhatsappUnlink,
+	TypeWhatsappState,
+	TypeWhatsappMessages,
+	TypeWhatsappAck,
+	TypeWhatsappSend,
+	TypeWhatsappSent,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -270,6 +285,20 @@ func NewMessage(messageType string) (any, bool) {
 		return new(PortOpened), true
 	case TypePortClose:
 		return new(PortClose), true
+	case TypeWhatsappLink:
+		return new(WhatsappLink), true
+	case TypeWhatsappUnlink:
+		return new(WhatsappUnlink), true
+	case TypeWhatsappState:
+		return new(WhatsappState), true
+	case TypeWhatsappMessages:
+		return new(WhatsappMessages), true
+	case TypeWhatsappAck:
+		return new(WhatsappAck), true
+	case TypeWhatsappSend:
+		return new(WhatsappSend), true
+	case TypeWhatsappSent:
+		return new(WhatsappSent), true
 	}
 	return nil, false
 }
@@ -722,6 +751,73 @@ type PortOpened struct {
 type PortClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// WhatsappLink is the `whatsapp.link` message.
+type WhatsappLink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+}
+
+// WhatsappUnlink is the `whatsapp.unlink` message.
+type WhatsappUnlink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+}
+
+// WhatsappState is the `whatsapp.state` message.
+type WhatsappState struct {
+	Type        string     `json:"type"`
+	State       string     `json:"state"`
+	Qr          string     `json:"qr,omitempty"`
+	QrExpiresAt *time.Time `json:"qrExpiresAt,omitempty"`
+	Phone       string     `json:"phone,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	Reason      string     `json:"reason,omitempty"`
+}
+
+// WhatsappMessages is the `whatsapp.messages` message.
+type WhatsappMessages struct {
+	Type     string            `json:"type"`
+	Messages []WhatsappInbound `json:"messages"`
+}
+
+// WhatsappInbound is WhatsappMessages.Messages.
+type WhatsappInbound struct {
+	Key        string    `json:"key"`
+	ID         string    `json:"id"`
+	ChatID     string    `json:"chatId"`
+	ChatKind   string    `json:"chatKind"`
+	ChatName   string    `json:"chatName,omitempty"`
+	SenderID   string    `json:"senderId"`
+	SenderName string    `json:"senderName,omitempty"`
+	FromMe     bool      `json:"fromMe"`
+	Text       string    `json:"text"`
+	Media      string    `json:"media,omitempty"`
+	QuotedID   string    `json:"quotedId,omitempty"`
+	SentAt     time.Time `json:"sentAt"`
+}
+
+// WhatsappAck is the `whatsapp.ack` message.
+type WhatsappAck struct {
+	Type string   `json:"type"`
+	Keys []string `json:"keys"`
+}
+
+// WhatsappSend is the `whatsapp.send` message.
+type WhatsappSend struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	Text      string `json:"text"`
+}
+
+// WhatsappSent is the `whatsapp.sent` message.
+type WhatsappSent struct {
+	Type      string    `json:"type"`
+	CommandID string    `json:"commandId"`
+	ID        string    `json:"id"`
+	SentAt    time.Time `json:"sentAt"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

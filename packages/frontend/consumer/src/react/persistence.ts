@@ -12,6 +12,7 @@ import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';
 import { voiceKeys } from './voice.queries';
+import { whatsappKeys } from './whatsapp.queries';
 
 /**
  * Consumer features that never reach the persisted query cache: a session
@@ -25,7 +26,8 @@ import { voiceKeys } from './voice.queries';
  * memory are what someone told it about their work. Whether a workspace can
 dictate says whether it has a ChatGPT sign-in. A cloud agent names a
  * repository and what someone asked of it, and its status says which vendor
- * keys they hold. A consumer app passes this
+ * keys they hold. A linked WhatsApp number names a phone and its QR code
+ * pairs it. A consumer app passes this
  * to `createQueryPersistOptions`.
  *
  * The review period's numbers are the one read of that feature which is kept:
@@ -46,6 +48,7 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   calendarKeys.all[0],
   cloudAgentsKeys.all[0],
   mailKeys.all[0],
+  whatsappKeys.all[0],
   pullRequestsKeys.all[0],
   voiceKeys.all[0],
   inboxKeys.all[0],

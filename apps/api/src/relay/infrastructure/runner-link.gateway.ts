@@ -26,6 +26,7 @@ import { type AppendQueueLimits, type AppendRun, LinkAppendQueue } from './link-
 import { RelayEventsProcessor } from './relay-events.processor';
 import { SocketRunnerLink } from './socket-runner-link.adapter';
 import { refuseUpgrade } from './upgrade.util';
+import { WhatsappLinkProcessor } from './whatsapp-link.processor';
 
 /** The path a runner dials, under the API's global prefix and version. */
 export const RUNNER_LINK_PATH = '/api/v1/relay/runner';
@@ -116,6 +117,7 @@ export class RunnerLinkGateway {
     private readonly configService: ConfigService,
     @Inject(LINK_REPLIES)
     private readonly replies: LinkRepliesPort,
+    private readonly whatsapp: WhatsappLinkProcessor,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -370,6 +372,7 @@ export class RunnerLinkGateway {
         return;
       case 'fs.listing':
       case 'port.listing':
+      case 'whatsapp.sent':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {
@@ -419,6 +422,10 @@ export class RunnerLinkGateway {
         return;
       case 'credentials.token':
         return this.credentials.onToken(link, message);
+      case 'whatsapp.state':
+        return this.whatsapp.onState(link, message);
+      case 'whatsapp.messages':
+        return this.whatsapp.onMessages(link, message);
       case 'hello':
         // A second hello on an open link is a runner bug, not a reconnect.
         link.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello already received');

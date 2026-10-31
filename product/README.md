@@ -932,3 +932,10 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- `next-steps/channels.md` placed WhatsApp third among the channels, after
+  email and contacts, and as a channel (people write to a bot). On
+  2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
+  bots can see and talk with people: it was built as a connector in mail's
+  shape on the channels note's runner transport, and the control plane now
+  keeps the messages a linked number sees for 90 days
+  (`next-steps/whatsapp.md`). The channel comes after, on the same device.

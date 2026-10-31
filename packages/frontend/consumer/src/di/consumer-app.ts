@@ -31,6 +31,8 @@ import type { TasksRepository } from '../modules/tasks';
 import { TasksModule } from '../modules/tasks';
 import type { VoiceRepository } from '../modules/voice';
 import { VoiceModule } from '../modules/voice';
+import type { WhatsappRepository } from '../modules/whatsapp';
+import { WhatsappModule } from '../modules/whatsapp';
 import { TOKENS } from './tokens';
 
 /**
@@ -47,6 +49,7 @@ export const consumerModules = [
   CalendarModule,
   CloudAgentsModule,
   MailModule,
+  WhatsappModule,
   HostsModule,
   InboxModule,
   InstallationsModule,
@@ -133,6 +136,11 @@ export class ConsumerApp {
 
   get mail(): MailRepository {
     return this.kernel.container.get(TOKENS.MailRepository);
+  }
+
+  /** The reader's WhatsApp numbers, linked as devices on their hosts for their bots. */
+  get whatsapp(): WhatsappRepository {
+    return this.kernel.container.get(TOKENS.WhatsappRepository);
   }
 
   /** Dictation: a recording in, the text it says out. */
