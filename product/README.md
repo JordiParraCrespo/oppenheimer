@@ -932,3 +932,10 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- The bot stream was lossy by design: text published while the browser was
+  away was gone, and the console matched what it streamed against stored
+  text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
+  text is kept beside the channel and sent as a snapshot when the browser
+  connects, and the console reconciles by block and sequence number, the
+  stored message being the authority (`versions/mvp/25-bots.md` §2,
+  `next-steps/0.7-chat-protocol.md` slice 2).
