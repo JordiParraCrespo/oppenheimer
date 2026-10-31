@@ -140,10 +140,16 @@ export function plan(
     !dirty &&
     (scope === 'all' || lintOnly.some((f) => f.startsWith('scripts/evals/frontend-audit/')))
   ) {
-    add('evals', 'Frontend audit eval fixtures', 'node', [
-      'scripts/evals/frontend-audit/run.mjs',
-      '--validate',
-    ]);
+    // After the unit tests, not beside them: the two are the run's heaviest
+    // CPU, and together on four cores a synchronous 300ms test hit vitest's
+    // five-second timeout.
+    add(
+      'evals',
+      'Frontend audit eval fixtures',
+      'node',
+      ['scripts/evals/frontend-audit/run.mjs', '--validate'],
+      any && !skip.has('test') ? { after: ['test/turbo test'] } : {},
+    );
   }
   // oppenheimer:end web
   // oppenheimer:begin starter

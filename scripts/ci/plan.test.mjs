@@ -89,7 +89,8 @@ test('the frontend audit eval runs when its cases change and on a full run, not 
     lintOnly: ['scripts/evals/frontend-audit/cases/u7-slab/case.json'],
   };
   assert.ok(step(plan(edited), id));
-  assert.ok(step(plan(everything('@oppenheimer/web')), id));
+  // After the unit tests: run beside them it starved them past their timeouts.
+  assert.deepEqual(step(plan(everything('@oppenheimer/web')), id).after, ['test/turbo test']);
 });
 // oppenheimer:end web
 
