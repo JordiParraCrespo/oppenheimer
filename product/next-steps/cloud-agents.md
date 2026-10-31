@@ -44,8 +44,9 @@ of the `cloud` place with the agent `codex`
   `codex cloud exec --env <repository> --branch <base> <task>` and the
   host's own ChatGPT sign-in. Codex reads the branch from GitHub, so
   nothing is fetched or checked out. The environment is named by its label:
-  the repository's full name, then its bare name; one named neither is the
-  CLI's refusal, in its words (`SESS_009`).
+  the repository's full name, then its bare name. One named neither is
+  `SESS_010` since 2026-10-31 (below); any other refusal is the CLI's, in
+  its words (`SESS_009`).
 - **Status comes from the host, not the browser.** Unlike `claude`, the
   Codex CLI answers it: the runner reads `codex cloud list --json` once a
   minute while a task it started in the last week has not settled, and
@@ -71,6 +72,45 @@ of the `cloud` place with the agent `codex`
   Crabbox, while the Gateway keeps the app-server, the ChatGPT login and
   the transcript. That is our VM slice, not this one, and keeping a ChatGPT
   login in our control plane is what F23 rules out.
+
+### Environments the CLI cannot reach (2026-10-31)
+
+Starts failed with "environment 'oppenheimer' not found" on a repository
+whose environment existed, and nobody could tell why. ChatGPT has two lists
+of Codex environments. The one `codex cloud exec --env` resolves is the
+older list at `/wham/environments`, the one the `codex cloud` TUI browses.
+The newer one, ChatGPT Settings → Codex Cloud
+(`chatgpt.com/settings/codex-cloud`, with publish and snapshots), is
+invisible to the CLI as of codex-cli 0.166.0, the latest: there the owner's
+CLI saw `adri-rodrigo-seo-crm`, `kallista` and
+`woocommerce-elementor-ai-template`, while Settings showed `oppenheimer`
+and `xrp-mobile`, published and unusable. Decided:
+
+- **Its own code.** A start that every label refuses as "not found" is
+  `SESS_010`, not the CLI's words under `SESS_009`. Its detail names the
+  labels tried, says that Settings → Codex Cloud environments are not
+  reachable by the CLI yet, and lists the environment labels on the
+  account's twenty newest tasks.
+- **That list is partial, on purpose.** codex-cli has no command that lists
+  environments outside its interactive TUI (`codex cloud` has `exec`,
+  `status`, `list`, `apply` and `diff`); the only non-interactive view is
+  `environment_label` on `codex cloud list --json`. Reading
+  `/wham/environments` ourselves would mean reading the CLI's
+  `auth.json`: the CLI owns its credential, and the host never reads it
+  (brief, "never"). An environment no recent task ran in is missing from the
+  list, and the full one is `codex cloud` on the host.
+- **The console explains it.** The failed start's pane says, in the
+  reader's language, that the CLI reaches only the environments
+  `codex cloud` lists and that Settings → Codex Cloud ones are not among
+  them yet, with a link to that settings page; the host's detail stays the
+  secondary line.
+- **The place picker does not predict it.** Marking the Codex row
+  unavailable for a repository with no environment the CLI can see would
+  need that list, cached per host. The only list there is is the partial
+  one above, so the mark would be wrong for every environment no recent
+  task ran in, and would hide a start that works; it is not built. It comes
+  back when the CLI lists environments non-interactively, or reads the
+  Settings ones.
 
 ## What landed (2026-10-26)
 

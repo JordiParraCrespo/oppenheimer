@@ -2,6 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   helloSchema,
   knownCapabilities,
@@ -137,8 +138,20 @@ export class RunnerLinkGateway {
     let unpaired: boolean;
     try {
       ({ hostId, unpaired } = await this.assertions.verify(bearer));
-    } catch {
-      refuseUpgrade(socket, 401, 'boot assertion rejected');
+    } catch (error) {
+      // The port's refusal is its own 4xx problem. Anything else is the store
+      // behind it failing, which says nothing about the credential: a 503 sends
+      // the runner down its ladder, where a 401 would be logged on the host as
+      // a key it should not trust.
+      if (error instanceof AppError && error.getStatus() < 500) {
+        refuseUpgrade(socket, 401, 'boot assertion rejected');
+        return;
+      }
+      this.logger.error({
+        message: 'a boot assertion could not be verified',
+        error: String(error),
+      });
+      refuseUpgrade(socket, 503, 'the control plane cannot verify assertions right now');
       return;
     }
     if (unpaired) {
@@ -304,10 +317,34 @@ export class RunnerLinkGateway {
         epoch: link.epoch,
       }),
     );
+    await this.recordHello(link, hello, address);
+  }
+
+  /**
+   * The hello's reconciliation is the only place owed launches and closes go
+   * out again, lost panes are recorded stopped and terminal watches are sent
+   * again, so one that fails must not leave the link up as if it had run: a
+   * database blip would keep sessions `starting` until the next reconnect. The
+   * link is closed with 1013, which the runner redials, and its next hello is
+   * reconciled afresh. Never retried here: the snapshot is what the runner held
+   * when it said hello, and a launch the failed attempt already sent may be
+   * running by now, so a second pass over the same snapshot would record it
+   * stopped.
+   */
+  private async recordHello(
+    link: SocketRunnerLink,
+    hello: ReturnType<typeof helloSchema.parse>,
+    address: string | null,
+  ): Promise<void> {
     try {
       await this.events.onHello(link, hello, link.connectedAt, address);
     } catch (error) {
-      this.logger.error({ message: 'hello could not be recorded', hostId, error: String(error) });
+      this.logger.error({
+        message: 'hello could not be recorded; closing the link so the runner redials',
+        hostId: link.hostId,
+        error: String(error),
+      });
+      link.close(LINK_OVERLOADED, 'hello could not be recorded; try again later');
     }
   }
 

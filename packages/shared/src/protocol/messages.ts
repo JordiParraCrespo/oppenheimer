@@ -77,6 +77,15 @@ export const RUNNER_CAPABILITIES = [
    */
   'attachment.direct',
   /**
+   * Proves itself on every direct channel before a byte crosses it: it signs
+   * both DTLS fingerprints and the browser's nonce with its host key
+   * (`product/versions/mvp/31-peer-to-peer-and-the-host-proof.md`). The relay
+   * invites a direct path only to a runner naming this beside
+   * `attachment.direct`, because the console refuses a channel that is not
+   * proved.
+   */
+  'attachment.direct.proof',
+  /**
    * Takes a `session.create` with a `folder` instead of checkouts: a session in
    * a folder already on the host, nothing cloned and nothing written
    * (`product/versions/mvp/24-session-places.md`).

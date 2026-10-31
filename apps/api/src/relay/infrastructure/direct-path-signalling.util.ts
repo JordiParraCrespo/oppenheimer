@@ -4,6 +4,8 @@ import type { AttachmentSignal, RunnerLink } from '../../links/application/link-
 /** What an attachment may offer its browser for a direct path (`directPathFor`). */
 export interface DirectPathOffer {
   iceServers: string[];
+  /** The host the channel reaches: the browser pins its key under this (31). */
+  hostId: string;
 }
 
 type BrowserSignal = Extract<AttachClientMessage, { type: 'direct.offer' | 'direct.path' }>;
@@ -29,7 +31,9 @@ export class DirectPathSignalling {
 
   /** What `attached` carries: the invitation, when there is one. */
   invitation(): { direct?: DirectPathOffer } {
-    return this.offer ? { direct: { iceServers: this.offer.iceServers } } : {};
+    return this.offer
+      ? { direct: { iceServers: this.offer.iceServers, hostId: this.offer.hostId } }
+      : {};
   }
 
   /** A `direct.*` message from the browser, for the attachment `attachmentId` (null before one exists). */

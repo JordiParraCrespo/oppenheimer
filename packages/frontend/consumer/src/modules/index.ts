@@ -1,6 +1,7 @@
 export * from './automations';
 export * from './bots';
 export * from './calendar';
+export * from './chat';
 export * from './cloud-agents';
 export * from './hosts';
 export * from './inbox';

@@ -167,6 +167,14 @@
       "identifiers": ["query-state-slots"],
       "neededBy": ["web"]
     },
+    "scripts/ui-catalog.mjs": {
+      "identifiers": ["ui-catalog.mjs"],
+      "neededBy": ["web"]
+    },
+    "scripts/ui-catalog.test.mjs": {
+      "identifiers": ["ui-catalog.test.mjs"],
+      "neededBy": ["web"]
+    },
     "scripts/check-react-compiler.mjs": {
       "identifiers": ["check-react-compiler", "check:compiler"],
       "neededBy": ["web"],

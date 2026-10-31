@@ -95,11 +95,12 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.SessionsService);
   }
 
-  /** The bodies of work sessions belong to, and what New session is prefilled with. */
+  /** The caller's Inbox marks: an item done, snoozed, lowered or deleted. */
   get inbox(): InboxRepository {
     return this.kernel.container.get(TOKENS.InboxRepository);
   }
 
+  /** The bodies of work sessions belong to, and what New session is prefilled with. */
   get projects(): ProjectsRepository {
     return this.kernel.container.get(TOKENS.ProjectsRepository);
   }

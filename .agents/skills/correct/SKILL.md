@@ -83,7 +83,7 @@ check and its config into it. Run the check, paste the failure, then drop the
 replay. A check that has never failed on real code proves nothing.
 
 Run the same command locally and in CI. CI is local here, so a new check is a
-step in `scripts/ci/local.mjs` and nowhere else, behind the root
+step in `scripts/ci/plan.mjs` and nowhere else, behind the root
 `package.json` script a contributor would type.
 
 An exception goes on the offending line with its reason (`biome-ignore
@@ -98,7 +98,7 @@ where it is written, what fails when it is broken, and where that runs (the
 shell hook, the Stop hook, a `ci:local` step). Rules nothing enforces sit
 first, under an "Open" heading. If the file does not exist yet, create it,
 starting with the rules this run touched, and point at it from the
-agent-guardrails paragraph of the root `AGENTS.md`. Each correction updates
+guardrails rule ("Stage files by path") of the root `AGENTS.md`. Each correction updates
 it:
 
 - a new rule gets a row naming its enforcer and the command that runs it;

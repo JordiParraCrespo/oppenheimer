@@ -39,6 +39,8 @@
     "startFrom": "Prueba a pedir",
     "hello": "{{name}} está listo. ¿En qué trabajamos?",
     "placeholder": "Escribe a {{name}}",
+    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+    "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
     "noKey": "{{provider}} aún no tiene clave en este espacio de trabajo. Añade una para hablar con este bot.",
@@ -106,9 +108,6 @@
       "results_many": "{{count}} resultados",
       "results_other": "{{count}} resultados",
       "rawOutput": "Ver la salida completa",
-      "moreLines_one": "Ver {{count}} línea más",
-      "moreLines_many": "Ver {{count}} líneas más",
-      "moreLines_other": "Ver {{count}} líneas más",
       "lessOutput": "Ver menos",
       "group_one": "Usó {{count}} herramienta",
       "group_many": "Usó {{count}} herramientas",
@@ -137,7 +136,13 @@
         "cancelled": "detenido",
         "timed_out": "sin tiempo"
       },
-      "subagentTokens": "{{tokens}} tokens"
+      "subagentTokens": "{{tokens}} tokens",
+      "explored": "Explorado",
+      "exploring": "Explorando",
+      "moreLines_one": "+{{count}} línea",
+      "moreLines_many": "+{{count}} líneas",
+      "moreLines_other": "+{{count}} líneas",
+      "fullLines": "Ver líneas completas"
     },
     "suggest": {
       "task": {
@@ -218,11 +223,17 @@
       "always": "Permitir siempre",
       "alwaysFor": "Permitir siempre para {{subject}}",
       "sharesOutside": "Esto envía lo que escribe fuera de Oppenheimer, en tu nombre.",
-      "fullRequest": "Ver la solicitud completa"
+      "fullRequest": "Ver la solicitud completa",
+      "stop": "Denegar y detener",
+      "stopping": "Deteniendo…",
+      "denyHint": "{{name}} sabrá por qué y seguirá",
+      "stopHint": "No se ejecuta nada y {{name}} detiene este turno",
+      "shortcut": "Pulsa {{key}}"
     },
     "event": {
       "approved": "Aprobaste: {{summary}}",
       "denied": "Denegaste: {{summary}}",
+      "stopped": "Denegaste y detuviste el turno: {{summary}}",
       "failed": "Aprobaste y falló: {{summary}}",
       "routine": "Rutina · {{name}}",
       "routineSaved": "Rutina creada: “{{name}}”",

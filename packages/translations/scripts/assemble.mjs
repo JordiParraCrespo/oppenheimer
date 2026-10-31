@@ -4,12 +4,28 @@
  * without the namespaces no browser reads — from the per-area namespace files.
  * The namespace files are the source of truth; the merged `index.json` is what
  * the API's translator loads, every locale at once.
+ *
+ * `--check` writes nothing and fails when a committed file differs from what
+ * it would write: the lint job's check that the catalogs were reassembled.
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const check = process.argv.includes('--check');
+const stale = [];
+
+function emit(locale, name, catalog) {
+  const file = join(root, locale, name);
+  const text = `${JSON.stringify(catalog, null, 2)}\n`;
+  if (!check) {
+    writeFileSync(file, text);
+    console.log(`assembled ${locale}/${name}`);
+  } else if (!existsSync(file) || readFileSync(file, 'utf8') !== text) {
+    stale.push(`${locale}/${name}`);
+  }
+}
 const namespaces = JSON.parse(readFileSync(join(root, 'namespaces.json'), 'utf8'));
 
 /**
@@ -33,11 +49,17 @@ for (const locale of readdirSync(root, { withFileTypes: true })
     const file = join(root, locale, `${ns}.json`);
     catalog[ns] = JSON.parse(readFileSync(file, 'utf8'));
   }
-  writeFileSync(join(root, locale, 'index.json'), `${JSON.stringify(catalog, null, 2)}\n`);
-  console.log(`assembled ${locale}/index.json`);
+  emit(locale, 'index.json', catalog);
   const browser = Object.fromEntries(
     Object.entries(catalog).filter(([ns]) => !NOT_IN_BROWSER.includes(ns)),
   );
-  writeFileSync(join(root, locale, 'browser.json'), `${JSON.stringify(browser, null, 2)}\n`);
-  console.log(`assembled ${locale}/browser.json`);
+  emit(locale, 'browser.json', browser);
 }
+
+if (stale.length) {
+  console.error(
+    `Not assembled from their namespaces: ${stale.join(', ')}. Run \`pnpm --filter @oppenheimer/translations assemble\`.`,
+  );
+  process.exit(1);
+}
+if (check) console.log('every catalog matches its namespaces');

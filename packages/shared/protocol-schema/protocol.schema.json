@@ -2137,6 +2137,7 @@
       "session.files",
       "repository.prepare",
       "attachment.direct",
+      "attachment.direct.proof",
       "session.folder",
       "fs.list",
       "attachment.chat",

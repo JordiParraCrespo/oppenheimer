@@ -75,8 +75,11 @@ pnpm --filter @oppenheimer/extension e2e     # Playwright: dist/ in Chromium, cl
 pnpm --filter @oppenheimer/extension lint
 ```
 
-`e2e` needs a build first and Playwright's Chromium
+`e2e` needs a build first and a Chromium: the one `PLAYWRIGHT_CHROMIUM_PATH`
+names, else the machine's own at `/opt/pw-browsers/chromium` (a cloud
+sandbox ships one), else Playwright's
 (`pnpm --filter @oppenheimer/extension exec playwright install chromium`).
+`scripts/chromium.mjs` resolves it, for every Playwright run in the repo.
 `pnpm ci:local` runs it when the extension changed.
 
 ## Layout

@@ -15,8 +15,10 @@ export interface HostReconciliationOutcome {
 export interface SessionReconciliationPort {
   reconcile(
     hostId: string,
-    /** The runner's process id, which keys the entries this writes. */
+    /** The runner's process id, which with the epoch keys the entries this writes. */
     runId: string,
+    /** The link's epoch: one reconciliation per link, however often it is retried. */
+    epoch: number,
     heldSessionIds: readonly string[],
   ): Promise<HostReconciliationOutcome>;
 }

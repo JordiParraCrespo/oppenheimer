@@ -12,6 +12,7 @@ import type {
 import type { ChatUsageContext } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
+import { exploredRuns } from './explored';
 import type { FileHandOff } from './file-hand-off';
 
 /** How a session pane reads its session: the grid, or the chat (0.7). */
@@ -51,7 +52,10 @@ export interface ChangedFile {
 /**
  * How a turn of the chat view is drawn: its steps in blocks. A run of tool
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
- * commands"), the way Synara and Codex fold work; a plan is a card of its
+ * commands"), the way Synara and Codex fold work, and a run of calls that
+ * only look around (reads, searches, listings, `ls` and `rg`) is an
+ * `explored` group of its own, which names what it looked at; a call of
+ * the other sort ends either run. A plan is a card of its
  * own, and so are questions the agent asked, with what was answered; the
  * images a call's result carried (a screenshot the agent read) follow its
  * group as tiles that open; a turn that has settled after changing files ends on the
@@ -62,6 +66,7 @@ export type ChatBlock =
   | { kind: 'reply'; id: string; text: string }
   | { kind: 'thinking'; id: string; text: string; seconds: number | null }
   | { kind: 'tools'; id: string; calls: ChatToolCall[] }
+  | { kind: 'explored'; id: string; calls: ChatToolCall[] }
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
@@ -85,8 +90,19 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
   const files = turn.working ? [] : changedFiles(turn.steps);
   if (files.length > 0) blocks.push({ kind: 'changes', id: `${turn.id}:changes`, files });
   return blocks.flatMap((block) =>
-    block.kind === 'tools' ? [block, ...imagesOf(block)] : [block],
+    block.kind === 'tools' ? runsOf(block).flatMap((run) => [run, ...imagesOf(run)]) : [block],
   );
+}
+
+type CallsBlock = Extract<ChatBlock, { kind: 'tools' | 'explored' }>;
+
+/** A run of calls as the blocks it is: each stretch of exploring calls `explored`, the rest `tools`. */
+function runsOf(group: Extract<ChatBlock, { kind: 'tools' }>): CallsBlock[] {
+  return exploredRuns(group.calls).map((run, index) => ({
+    kind: run.explored ? 'explored' : 'tools',
+    id: index === 0 ? group.id : (run.items[0]?.id ?? group.id),
+    calls: run.items,
+  }));
 }
 
 /**
@@ -94,7 +110,7 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
  * placed once the calls are folded, so a call that read a picture never
  * splits the run it belongs to.
  */
-function imagesOf(group: Extract<ChatBlock, { kind: 'tools' }>): ChatBlock[] {
+function imagesOf(group: CallsBlock): ChatBlock[] {
   return group.calls.flatMap((call) => {
     const images = shownImages(call.images);
     return images.length > 0

@@ -21,18 +21,23 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Each app's critical-path budget, in KB of gzipped bytes. */
+/**
+ * Each app's critical-path budget, in KB of gzipped bytes. The number lives in
+ * the app (`bundle-budget.json`), so raising it is a change to that app and
+ * selects its checks alone; what goes in a vendor group is the rule in
+ * `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in
+ * git history.
+ */
 const APPS = [
   // oppenheimer:begin web
-  {
-    name: '@oppenheimer/web',
-    dist: 'apps/web/dist',
-    // 356.1KB measured (2026-10-29, CI findings on a pull request's checks); what goes in a vendor group is the rule in
-    // `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in git history.
-    budgetKB: 359,
-  },
+  { name: '@oppenheimer/web', dir: 'apps/web' },
   // oppenheimer:end web
-];
+].map((app) => ({
+  ...app,
+  dist: `${app.dir}/dist`,
+  budgetFile: `${app.dir}/bundle-budget.json`,
+  budgetKB: JSON.parse(readFileSync(join(ROOT, app.dir, 'bundle-budget.json'), 'utf8')).firstLoadKB,
+}));
 
 /** Script and stylesheet URLs the entry HTML pulls in, as site-root paths. */
 function initialAssets(html) {
@@ -93,7 +98,7 @@ for (const app of APPS) {
 if (failed) {
   console.error(
     '\nFirst load is over budget. Either find the regression (`npx vite build` prints per-chunk' +
-      ' sizes) or raise the budget in scripts/check-bundle-size.mjs on purpose.',
+      " sizes) or raise the budget in the app's bundle-budget.json on purpose.",
   );
   process.exit(1);
 }

@@ -1,3 +1,5 @@
+// @vitest-environment node
+// A body is a `ReadableStream`, which jsdom does not have and Node does.
 import { describe, expect, it } from 'vitest';
 import { readNdjson } from '../ndjson';
 

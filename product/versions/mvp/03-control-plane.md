@@ -421,13 +421,24 @@ with the snapshot: a `starting` session on this host the runner does not
 hold is dispatched again, with its prompt read back from the log (the
 runner is idempotent by session id); an `open` one it does not hold is
 recorded `session.stopped` with `source: api`, keyed by the runner's
-`runId` so a replayed hello writes it once; a session with a close still owed
+`runId` and the link's epoch, and written only while the row, under its lock,
+is still open and not stopped (2026-10-31: keyed by `runId` alone, the same
+pane lost again after a restart, on a later link of the same runner process,
+was merged into the first loss and never recorded, and the decision was
+written from rows read before every dispatch the reconciliation awaited); a session with a close still owed
 is sent `session.close` again with the `acceptUnpushedWork` it was asked with,
 whether or not the runner holds it (the runner answers `session.closed` even for
 a session it has no record of) — a `failed` one included, since a person may
 delete it — and a `starting` one with a close owed is closed, never built
 first; anything the runner holds that the rows do not know is logged and left
-alone.
+alone. It is the only place those things are sent again, so a hello that
+cannot be recorded (a database or Redis blip) closes the link with 1013,
+which the runner redials, rather than being logged and left up unreconciled
+until the next reconnect (2026-10-31). It is never retried on the same link:
+a launch the failed pass already sent may be running by the retry, absent
+from the hello's snapshot, and would be recorded stopped.
+The handshake tells a refused assertion (401) from a store that could not
+verify one (503, logged as an error), which the runner also redials.
 
 **The attach socket.** The ticket in the subprotocol is redeemed with a
 `GETDEL` (single use), and what it authorised is re-checked at redemption:
@@ -570,6 +581,18 @@ is what `hosts/` publishes.
 4. ~~Relay fan-out: in-process only for the MVP, Redis when the relay
    splits. Confirm.~~ Confirmed: `links/`' registry is an in-process map,
    and it is the one file that changes when the relay splits.
+   **Known constraint: the API runs as one replica.** Three things the
+   relay depends on live in that process's memory and nowhere else: the
+   link registry (which host has a socket here), the pending replies a
+   request waits on (`LinkRepliesPort`: a folder or port listing, a
+   refusal), and the inventory the presence resolver last recorded
+   (`HostPresenceResolver`). A second replica behind the same balancer
+   would answer `host_offline` for a host linked to its sibling, time out
+   a listing whose reply landed there, and rewrite inventory the other had
+   already written. Scaling out is therefore a change, not a setting: the
+   registry and the replies move to Redis together (10, "One replica,
+   decided", names the upgrade), and until then a deployment runs one
+   `api` container (2026-10-31).
 5. Backups: Postgres dump nightly to Hetzner object storage. Enough?
 6. Where the release host lives, and whether it is the same origin as
    the install script (see "Hosting split"). Cheapest that is still

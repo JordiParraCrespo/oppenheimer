@@ -48,6 +48,11 @@ export class RenameHostHttpController {
   })
   @ApiResponse({ status: 200, type: HostResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Someone else wrote the host meanwhile, again on the retry',
+    code: 'HOSTS_009',
+  })
   async rename(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

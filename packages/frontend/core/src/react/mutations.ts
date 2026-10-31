@@ -1,8 +1,15 @@
 'use client';
 
-import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  type QueryKey,
+  type UseMutationOptions,
+  type UseMutationResult,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 
-type HookMutationOptions<TData, TError, TVariables, TOnMutateResult> = Omit<
+export type HookMutationOptions<TData, TError, TVariables, TOnMutateResult = unknown> = Omit<
   UseMutationOptions<TData, TError, TVariables, TOnMutateResult>,
   'mutationFn'
 >;
@@ -53,4 +60,58 @@ export function withCacheOnSuccess<TData, TError, TVariables, TOnMutateResult = 
  */
 export function refetchEverythingForNewIdentity(queryClient: QueryClient): Promise<void> {
   return queryClient.invalidateQueries();
+}
+
+/** What a mutation hook made by {@link defineMutation} does. */
+export interface MutationSpec<TApp, TData, TVariables> {
+  /** The write, against the app the hook reads. */
+  run: (app: TApp, variables: TVariables) => Promise<TData>;
+  /** The reads the write makes stale, refetched in the background. */
+  invalidates?: (data: TData, variables: TVariables) => readonly QueryKey[];
+  /**
+   * The cache writes the hook makes itself, awaited before the caller's
+   * `onSuccess`: return a refetch's promise to hold the mutation pending
+   * until it lands.
+   */
+  update?: (queryClient: QueryClient, data: TData, variables: TVariables) => unknown;
+}
+
+/**
+ * The mutation hooks of one product, from what each one does. `useApp` is
+ * how the product reads its app (`useConsumerApp`); the kernel never imports
+ * a product, so the product binds it once:
+ *
+ * ```ts
+ * export const mutation = defineMutation(useConsumerApp);
+ *
+ * export const useArchiveProject = mutation({
+ *   run: (app, id: string) => app.projects.archive(id),
+ *   invalidates: () => [projectsKeys.lists()],
+ * });
+ * ```
+ *
+ * The hook takes the caller's options, with its own cache work in front of
+ * their `onSuccess` ({@link withCacheOnSuccess}). A hook whose write also
+ * needs `onMutate` or `onError` of its own writes `useMutation` out.
+ */
+export function defineMutation<TApp>(useApp: () => TApp) {
+  return function mutation<TData, TVariables = void>(
+    spec: MutationSpec<TApp, TData, TVariables>,
+  ): (
+    options?: HookMutationOptions<TData, Error, TVariables>,
+  ) => UseMutationResult<TData, Error, TVariables> {
+    return function useDefinedMutation(options) {
+      const app = useApp();
+      const queryClient = useQueryClient();
+      return useMutation({
+        mutationFn: (variables: TVariables) => spec.run(app, variables),
+        ...withCacheOnSuccess(options, (data, variables) => {
+          for (const queryKey of spec.invalidates?.(data, variables) ?? []) {
+            void queryClient.invalidateQueries({ queryKey });
+          }
+          return spec.update?.(queryClient, data, variables);
+        }),
+      });
+    };
+  };
 }
