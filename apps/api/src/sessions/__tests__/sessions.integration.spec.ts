@@ -309,7 +309,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           kind: SESSION_EVENT_KINDS.REQUESTED,
           payload: {
             agent: 'claude-code',
-            launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' },
+            launch: {
+              model: 'claude-opus-5-5',
+              permission: 'auto',
+              effort: 'high',
+              environment: 'e_6845a1b2c3d4',
+            },
           },
         },
         {
@@ -340,6 +345,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.launchModel).toBe('claude-opus-5-5');
       expect(row.launchPermission).toBe('auto');
       expect(row.launchEffort).toBe('high');
+      // A Codex cloud session's picked environment, which a create sent again reads.
+      expect(row.launchEnvironment).toBe('e_6845a1b2c3d4');
       // The observation columns the derived group is computed from.
       expect(row.lastObservedState).toBe('blocked');
       expect(row.reportHash).toBe('abc123');
@@ -353,6 +360,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
+        environment: 'e_6845a1b2c3d4',
       });
     });
 

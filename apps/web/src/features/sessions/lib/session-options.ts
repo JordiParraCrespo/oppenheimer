@@ -566,7 +566,7 @@ export function toCreateInput(
  * the repository it starts from, or none — the host's pick, the environment
  * linked to the repository — when nothing was picked for that repository.
  */
-export function codexEnvironmentFor(
+function codexEnvironmentFor(
   draft: Pick<NewSessionDraft, 'where' | 'agent' | 'scope' | 'codexEnvironment'>,
 ): string | null {
   const [first] = draft.scope;
