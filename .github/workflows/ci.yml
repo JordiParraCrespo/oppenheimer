@@ -82,6 +82,12 @@ jobs:
         run: node scripts/ci/affected.mjs
       - name: pnpm ci:local --all
         run: pnpm ci:local --all
+        # oppenheimer:begin extension
+        # The runner lacks Chromium's system libraries and the sudo to install
+        # them, so the extension's suite runs in Playwright's image.
+        env:
+          CI_EXTENSION_IN_DOCKER: '1'
+        # oppenheimer:end extension
       - name: Report
         if: ${{ !cancelled() }}
         run: cat .ci-local/report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true

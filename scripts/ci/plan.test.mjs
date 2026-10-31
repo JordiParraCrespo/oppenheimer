@@ -127,3 +127,16 @@ test('an API reached only through copy it never reads runs no suite, but its uni
   assert.ok(steps.every((s) => !['services', 'integration', 'e2e'].includes(s.job)));
   assert.ok(step(steps, 'test/turbo test').args.includes('--filter=@oppenheimer/api'));
 });
+
+// oppenheimer:begin extension
+test("the extension's suite runs in Playwright's image where CI asks for it", () => {
+  const id = 'test/Extension in Chromium';
+  assert.equal(step(plan(affected('@oppenheimer/extension'), { env: {} }), id).command, 'pnpm');
+  const docker = step(
+    plan(affected('@oppenheimer/extension'), { env: { CI_EXTENSION_IN_DOCKER: '1' } }),
+    id,
+  );
+  assert.equal(docker.command, 'docker');
+  assert.match(docker.args.join(' '), /mcr\.microsoft\.com\/playwright:v\d+\.\d+\.\d+-noble/);
+});
+// oppenheimer:end extension
