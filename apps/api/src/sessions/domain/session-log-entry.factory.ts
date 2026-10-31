@@ -114,8 +114,8 @@ export function requestEntries(props: {
       kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
       payload: {
         text: input.prompt,
-        ...(props.images?.length ? { images: props.images.map(toFileRecord) } : {}),
-      },
+        ...(props.images?.length ? { images: [...props.images] } : {}),
+      } satisfies FirstPromptPayload,
     });
   }
   return events;
@@ -192,22 +192,33 @@ export function firstPromptKey(commandId: string): string {
   return WorkSessionEntity.apiIdempotencyKey(commandId, SESSION_EVENT_KINDS.PROMPT_FIRST);
 }
 
-/**
- * The images a `prompt.first` entry names, for a create sent again. An entry
- * written before images existed, or one a runner wrote off the transcript,
- * names none; a malformed item is dropped rather than sent to a host.
- */
-export function firstPromptFilesOf(payload: unknown): SessionLaunchFile[] {
-  const listed = (payload as { images?: unknown } | null)?.images;
-  if (!Array.isArray(listed)) return [];
-  return listed.flatMap((item: { imageId?: unknown; mediaType?: unknown }) =>
-    typeof item?.imageId === 'string' &&
-    (SESSION_FILE_MEDIA_TYPES as readonly unknown[]).includes(item.mediaType)
-      ? [{ imageId: item.imageId, mediaType: item.mediaType as SessionFileMediaType }]
-      : [],
-  );
+/** What a `prompt.first` entry carries: the task's text, and the images it names. */
+export interface FirstPromptPayload {
+  text: string;
+  images?: SessionLaunchFile[];
 }
 
-function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
-  return { imageId: image.imageId, mediaType: image.mediaType };
+/**
+ * A `prompt.first` payload read back, for a create sent again. Null when it
+ * carries no text. An entry written before images existed, or one a runner
+ * wrote off the transcript, names none; an item that is not a file this build
+ * knows is dropped rather than sent to a host.
+ */
+export function readFirstPrompt(payload: unknown): Required<FirstPromptPayload> | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const { text, images } = payload as { [K in keyof FirstPromptPayload]?: unknown };
+  if (typeof text !== 'string') return null;
+  return { text, images: Array.isArray(images) ? images.flatMap(launchFileOf) : [] };
+}
+
+/** One listed image as the host is sent it, or none when it is not one. */
+function launchFileOf(item: unknown): SessionLaunchFile[] {
+  if (typeof item !== 'object' || item === null) return [];
+  const { imageId, mediaType } = item as { [K in keyof SessionLaunchFile]?: unknown };
+  if (typeof imageId !== 'string' || !isSessionFileMediaType(mediaType)) return [];
+  return [{ imageId, mediaType }];
+}
+
+function isSessionFileMediaType(value: unknown): value is SessionFileMediaType {
+  return (SESSION_FILE_MEDIA_TYPES as readonly unknown[]).includes(value);
 }
