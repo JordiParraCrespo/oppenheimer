@@ -121,6 +121,19 @@
         "previous": "Previous question",
         "nextQuestion": "Next question",
         "of": "{{n}} of {{total}}"
+      },
+      "output": {
+        "more_one": "+{{count}} line",
+        "more_other": "+{{count}} lines",
+        "full": "Show full lines",
+        "less": "Show less"
+      },
+      "explored": {
+        "read": "Read",
+        "search": "Searched",
+        "list": "Listed",
+        "more_one": "+{{count}} more",
+        "more_other": "+{{count}} more"
       }
     },
     "search": {
@@ -1246,7 +1259,11 @@
         "waiting": "Waiting for your answer",
         "dismissed": "You dismissed the questions",
         "noAnswer": "No answer read"
-      }
+      },
+      "explored": {
+        "title": "Explored"
+      },
+      "exploring": "Exploring"
     },
     "preview": {
       "show": "Show preview",
@@ -1414,8 +1431,6 @@
         "results_one": "{{count}} result",
         "results_other": "{{count}} results",
         "rawOutput": "Show raw output",
-        "moreLines_one": "Show {{count}} more line",
-        "moreLines_other": "Show {{count}} more lines",
         "lessOutput": "Show less",
         "group_one": "Used {{count}} tool",
         "group_other": "Used {{count}} tools",
@@ -1440,7 +1455,12 @@
           "cancelled": "stopped",
           "timed_out": "timed out"
         },
-        "subagentTokens": "{{tokens}} tokens"
+        "subagentTokens": "{{tokens}} tokens",
+        "explored": "Explored",
+        "exploring": "Exploring",
+        "moreLines_one": "+{{count}} line",
+        "moreLines_other": "+{{count}} lines",
+        "fullLines": "Show full lines"
       },
       "suggest": {
         "task": {

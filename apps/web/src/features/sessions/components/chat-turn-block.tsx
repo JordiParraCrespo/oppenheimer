@@ -28,7 +28,8 @@ const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
  * One block of an agent's turn, drawn as what it is: words as markdown, a
  * plan, what it asked and the files changed as cards, the images a call
  * read as tiles that open, thinking as a fold that is open while
- * it is what the agent is doing, calls as a group, a stop, a compaction or a
+ * it is what the agent is doing, calls as a group (the ones that only looked
+ * around as an Explored one), a stop, a compaction or a
  * background task that ended as a note. `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
@@ -79,6 +80,8 @@ export function ChatTurnBlock({
     }
     case 'tools':
       return <ChatToolGroup calls={block.calls} live={live && last} />;
+    case 'explored':
+      return <ChatToolGroup calls={block.calls} live={live && last} explored />;
     case 'notice':
       return (
         <ChatMarker icon={block.notice === 'compacted' ? <Archive /> : <CircleStop />}>

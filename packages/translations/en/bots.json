@@ -104,8 +104,6 @@
       "results_one": "{{count}} result",
       "results_other": "{{count}} results",
       "rawOutput": "Show raw output",
-      "moreLines_one": "Show {{count}} more line",
-      "moreLines_other": "Show {{count}} more lines",
       "lessOutput": "Show less",
       "group_one": "Used {{count}} tool",
       "group_other": "Used {{count}} tools",
@@ -130,7 +128,12 @@
         "cancelled": "stopped",
         "timed_out": "timed out"
       },
-      "subagentTokens": "{{tokens}} tokens"
+      "subagentTokens": "{{tokens}} tokens",
+      "explored": "Explored",
+      "exploring": "Exploring",
+      "moreLines_one": "+{{count}} line",
+      "moreLines_other": "+{{count}} lines",
+      "fullLines": "Show full lines"
     },
     "suggest": {
       "task": {
