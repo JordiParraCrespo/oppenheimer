@@ -15,7 +15,7 @@ export interface ClippedOutput {
 }
 
 /** Where a long line is cut: past this many characters, it keeps its head and tail. */
-export const LINE_MAX = 240;
+export const LINE_MAX = 120;
 
 /** A line past `max` characters as its head, an ellipsis and its tail; any other as it is. */
 export function clipLine(line: string, max = LINE_MAX): string {
