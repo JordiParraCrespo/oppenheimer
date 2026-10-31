@@ -4,10 +4,9 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import type { HostPresencePort } from '../application/host-presence.port';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
 import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../hosts.di-tokens';
@@ -30,8 +29,6 @@ describe('Hosts & pairing (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   /** Signed-in owner of the hosts under test. */
   let user: { id: string; email: string; sessionToken: string };
@@ -40,27 +37,9 @@ describe('Hosts & pairing (integration)', () => {
   const controlPlane = generateKeyPairSync('ed25519');
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
     // Without the key, the release base and the installer, minting and
@@ -71,8 +50,6 @@ describe('Hosts & pairing (integration)', () => {
     process.env.RUNNER_RELEASE_BASE_URL = 'https://releases.example.test';
     process.env.RUNNER_INSTALL_URL = 'https://releases.example.test/install.sh';
     process.env.RUNNER_RELEASE_CHANNEL = 'stable';
-
-    await runAllMigrations();
 
     const { AppModule } = await import('../../app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -100,7 +77,6 @@ describe('Hosts & pairing (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   interface CallOptions {

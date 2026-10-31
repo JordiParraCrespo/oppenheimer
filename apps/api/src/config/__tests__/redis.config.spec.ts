@@ -5,7 +5,7 @@ import {
   redisConnectionOptions,
 } from '../redis.config';
 
-const REDIS_VARS = ['REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD'];
+const REDIS_VARS = ['REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD', 'REDIS_DB'];
 
 function withEnv(values: Record<string, string>) {
   for (const [key, value] of Object.entries(values)) process.env[key] = value;
@@ -24,6 +24,7 @@ describe('redis config', () => {
       host: 'localhost',
       port: 6379,
       password: undefined,
+      db: 0,
     });
   });
 
@@ -35,6 +36,15 @@ describe('redis config', () => {
     );
 
     expect(options).toMatchObject({ host: 'redis.internal', port: 6380, password: 's3cret' });
+  });
+
+  it('selects the configured logical database on the queue and command connections alike', () => {
+    // Two files, or two deployments, on one Redis keep apart only if BullMQ
+    // and the cache both select it; one on db 0 would share the other's keys.
+    const config = withEnv({ REDIS_DB: '3' });
+
+    expect(redisConnectionOptions(config).db).toBe(3);
+    expect(redisCommandClientOptions(config).db).toBe(3);
   });
 
   it('makes the command client fail fast instead of queueing during an outage', () => {

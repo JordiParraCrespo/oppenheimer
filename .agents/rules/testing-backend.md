@@ -68,10 +68,24 @@ the bug (`typeorm.md`).
 
 **Integration specs** run the adapter, or the module, against real
 infrastructure started by **testcontainers** (`postgres:16-alpine`,
-`redis:7-alpine`):
+`redis:7-alpine`), once per run rather than once per file:
 
-- the schema is built by `runAllMigrations()` (`src/__tests__/run-migrations.ts`),
-  never `synchronize`, so a broken migration fails here and not in production;
+- `vitest.integration.config.ts`'s `globalSetup`
+  (`src/__tests__/integration-global-setup.ts`) starts one Postgres and one
+  Redis, or uses the pair `DB_HOST`/`REDIS_HOST` (with their `_PORT`,
+  `_USERNAME`, `_PASSWORD`) already name, and migrates once into a template
+  database with `runAllMigrations()` (`src/__tests__/run-migrations.ts`), never
+  `synchronize`, so a broken migration fails here and not in production;
+- a file takes its own copy of that database and, if it touches Redis, a
+  logical Redis database of its own, from `src/__tests__/integration-services.ts`:
+  `useTestDatabase()` / `useTestRedis()` point `DB_*` / `REDIS_*` at them for a
+  spec that boots the app, `createTestDatabase()` returns the URL for a bare
+  `DataSource`, and `createTestDatabase({ empty: true })` is a database with no
+  schema, for a spec whose subject is the migrations. Files share nothing
+  else, so they run in parallel workers and may truncate, lock or count what
+  they like. Never start a container in a spec, except for what is
+  server-wide in Redis: `CLIENT PAUSE` stalls every client, so
+  `session-cache.integration.spec.ts` starts a Redis of its own;
 - prefer a bare `DataSource` over the entities under test, with a real
   `OutboxService`, to booting the application: the app adds Redis and Better
   Auth to what can make the suite red. Boot the app only when the wiring is
