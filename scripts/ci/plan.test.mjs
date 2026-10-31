@@ -142,3 +142,18 @@ test("the extension's suite runs in Playwright's image where CI asks for it", ()
   assert.match(docker.args.join(' '), /mcr\.microsoft\.com\/playwright:v\d+\.\d+\.\d+-noble/);
 });
 // oppenheimer:end extension
+
+// oppenheimer:begin runner
+test('Go waits for every step that rewrites the generated Go files', () => {
+  const steps = plan(affected('@oppenheimer/shared', '@oppenheimer/runner'));
+  assert.deepEqual(step(steps, 'go/go vet').after, [
+    'test/turbo build',
+    'test/Generated files unchanged',
+  ]);
+  for (const id of step(steps, 'go/go vet').after) assert.ok(step(steps, id), id);
+  // A Go change alone regenerates nothing: it waits for the build only.
+  assert.deepEqual(step(plan(affected('@oppenheimer/go-core')), 'go/go vet').after, [
+    'test/turbo build',
+  ]);
+});
+// oppenheimer:end runner

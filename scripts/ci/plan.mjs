@@ -171,7 +171,14 @@ export function plan(
   goTouched ||= touches('@oppenheimer/e2e');
   // oppenheimer:end e2e
   if (goTouched) {
-    add('go', 'go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...']);
+    // After the build and the generated-files check: both have
+    // `packages/shared` write the runner's `*.gen.go`, and a Go step reading
+    // one mid-write fails to parse it.
+    const regenerates = touches('@oppenheimer/shared') || touches('@oppenheimer/runner');
+    const goAfter = afterBuild().after
+      ? { after: [BUILD, ...(regenerates ? ['test/Generated files unchanged'] : [])] }
+      : {};
+    add('go', 'go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...'], goAfter);
     // NUL-delimited, like `packages/go/Makefile`: unquoted, the module
     // directories split on the spaces in a checkout path and golangci-lint
     // lints nothing while reporting `0 issues`.
