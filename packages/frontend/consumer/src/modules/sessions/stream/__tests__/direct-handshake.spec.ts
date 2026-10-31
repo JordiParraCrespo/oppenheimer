@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   browserHostKeyPins,
   type HostKeyPins,
@@ -103,5 +103,17 @@ describe('the host proof', () => {
   it('keeps pins in this browser across streams', () => {
     browserHostKeyPins().set('host-1', 'ab');
     expect(browserHostKeyPins().get('host-1')).toBe('ab');
+  });
+
+  it('shares the page-lifetime fallback across pin stores when storage refuses writes', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    try {
+      browserHostKeyPins().set('host-2', 'cd');
+      expect(browserHostKeyPins().get('host-2')).toBe('cd');
+    } finally {
+      setItem.mockRestore();
+    }
   });
 });

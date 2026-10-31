@@ -47,6 +47,12 @@ export class PathSwitch {
   private direct: DirectPath | null = null;
   /** Keystroke bytes sent on this socket. */
   private relaySent = 0;
+  /**
+   * Output bytes the relay delivered on this socket. The host's output offset
+   * counts from the attachment's start, so a path that loads after some of
+   * them arrived starts from this count, not from zero.
+   */
+  private relayReceived = 0;
   private path: RelayPath = 'relay';
   private failures = 0;
   /** The host keys pinned so far; this browser's storage, once the path loads. */
@@ -111,6 +117,7 @@ export class PathSwitch {
           },
         });
         this.direct = direct;
+        direct.relayDelivered(this.relayReceived);
         void direct.start();
       },
     );
@@ -145,6 +152,7 @@ export class PathSwitch {
 
   /** `bytes` arrived on the relay, after the terminal was handed them. */
   relayDelivered(bytes: number): void {
+    this.relayReceived += bytes;
     this.direct?.relayDelivered(bytes);
   }
 
@@ -152,6 +160,7 @@ export class PathSwitch {
   reset(): void {
     this.drop();
     this.relaySent = 0;
+    this.relayReceived = 0;
   }
 
   dispose(): void {

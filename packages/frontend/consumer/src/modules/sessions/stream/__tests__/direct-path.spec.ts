@@ -152,7 +152,12 @@ function channelOf(peers: FakePeer[], index: number): FakeChannel {
   return channel;
 }
 
+/** Pins outlive a stream on the page; every harness meets a host of its own. */
+let hosts = 0;
+
 function harness(direct = true) {
+  hosts += 1;
+  const hostId = `host-${hosts}`;
   const sockets: FakeSocket[] = [];
   const peers: FakePeer[] = [];
   const chunks: string[] = [];
@@ -190,9 +195,7 @@ function harness(direct = true) {
     socket.text({
       type: 'attached',
       window: 0,
-      ...(offered
-        ? { direct: { iceServers: ['stun:stun.example.com:3478'], hostId: 'host-1' } }
-        : {}),
+      ...(offered ? { direct: { iceServers: ['stun:stun.example.com:3478'], hostId } } : {}),
     });
     await settle();
     return socket;
@@ -216,7 +219,7 @@ function harness(direct = true) {
     for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setTimeout(resolve, 0));
     return channel;
   };
-  return { stream, sockets, peers, chunks, paths, settle, attach, prove };
+  return { stream, sockets, peers, chunks, paths, settle, attach, prove, hostId };
 }
 
 beforeEach(() => {
@@ -395,5 +398,24 @@ describe('the direct path', () => {
     socket.text({ type: 'attached', window: 0, direct: { iceServers: [] } });
     await h.settle();
     expect(h.peers).toHaveLength(0);
+  });
+
+  it('counts relay output that arrives while the path is still loading toward the offset', async () => {
+    const h = harness();
+    await h.settle();
+    const socket = h.sockets.at(-1) as FakeSocket;
+    socket.open();
+    socket.text({
+      type: 'attached',
+      window: 0,
+      direct: { iceServers: [], hostId: h.hostId },
+    });
+    // Before the direct path's modules have loaded.
+    socket.bytes('early');
+    await h.settle();
+    const channel = await h.prove();
+    socket.text({ type: 'direct.path', offset: 5 });
+    channel.bytes('!');
+    expect(h.chunks.join('')).toBe('early!');
   });
 });

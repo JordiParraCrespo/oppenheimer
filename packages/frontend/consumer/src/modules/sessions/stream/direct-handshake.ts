@@ -127,10 +127,15 @@ const PINS_KEY = 'oppenheimer.direct.hostKeys';
 /**
  * Pins kept in this browser's storage, so they outlive the tab. Where storage
  * is unavailable (a private window that refuses it) they last as long as the
- * page: a weaker pin, never a missing check.
+ * page, shared by every stream on it: a weaker pin, never a missing check.
  */
+/**
+ * The page's own record, shared by every pin store on it: where storage is
+ * refused, a second stream to the same host must still meet the first pin.
+ */
+const memory = new Map<string, string>();
+
 export function browserHostKeyPins(): HostKeyPins {
-  const memory = new Map<string, string>();
   const read = (): Record<string, string> => {
     try {
       const raw = globalThis.localStorage?.getItem(PINS_KEY);
