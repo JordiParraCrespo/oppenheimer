@@ -106,10 +106,12 @@ test('--skip leaves a job out, and skipping both suites starts no stack', () => 
   assert.equal(teardown(steps), null);
 });
 
-test('the stack comes down after the run unless it was up before', () => {
+test('the stack is asked to come down after the run, keeping a console it serves', () => {
   const steps = plan(affected('@oppenheimer/api'));
-  assert.deepEqual(teardown(steps), ['node', ['scripts/stack/stack.mjs', 'down']]);
-  assert.equal(teardown(steps, { keepStack: true }), null);
+  assert.deepEqual(teardown(steps), [
+    'node',
+    ['scripts/stack/stack.mjs', 'down', '--keep-console'],
+  ]);
 });
 
 test('step ids are unique, and every wait names a step of the plan', () => {

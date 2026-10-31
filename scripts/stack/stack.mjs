@@ -4,7 +4,7 @@
  *
  *   node scripts/stack/stack.mjs up [--web] [--no-build] [--no-api]
  *   node scripts/stack/stack.mjs status
- *   node scripts/stack/stack.mjs down [--api]
+ *   node scripts/stack/stack.mjs down [--api | --keep-console]
  *   node scripts/stack/stack.mjs api-port-free
  *
  * `up` is Postgres and Redis, the GitHub, namer and Cursor stubs (`e2e/support`), the
@@ -24,8 +24,9 @@
  *
  * Everything it starts is recorded in `.stack/`, with a log per process;
  * `down` stops exactly that, and `down --api` only the API it started, which
- * is how `pnpm ci:local` swaps in the API it built and leaves a console that
- * `up --web` started for the screenshots. `up --no-api` stops short of the
+ * is how `pnpm ci:local` swaps in the API it built; `down --keep-console`
+ * stops nothing while a console that `up --web` started is up, which is how
+ * it leaves the screenshots' stack in place. `up --no-api` stops short of the
  * API: the services, so they can start while the API is still being built.
  * `api-port-free` fails when something the stack did not start answers on the
  * API's port.
@@ -373,6 +374,13 @@ async function stop(pid) {
 
 async function down(flags) {
   const state = readState();
+  // A console this stack serves (`up --web`, for the screenshots) is in use:
+  // `down --keep-console` then leaves the whole stack up, with whatever API it
+  // runs now. `pnpm ci:local` ends with it.
+  if (flags.has('--keep-console') && state.pids.web && groupAlive(state.pids.web)) {
+    log('a console is up on this stack; leaving the stack up');
+    return;
+  }
   if (flags.has('--api')) {
     if (state.pids.api) await stop(state.pids.api);
     delete state.pids.api;
@@ -431,7 +439,7 @@ switch (command) {
     break;
   default:
     console.error(
-      'usage: stack.mjs up [--web] [--no-build] [--no-api] | status | down [--api] | api-port-free',
+      'usage: stack.mjs up [--web] [--no-build] [--no-api] | status | down [--api | --keep-console] | api-port-free',
     );
     process.exit(2);
 }

@@ -63,16 +63,14 @@ export async function runSteps(
   );
   const settled = new Map(steps.map((s) => [s.id, deferred()]));
   const running = new Map();
-  const killed = new Set();
+  /** The steps this run stopped, and the end of each one's process group. */
+  const killed = new Map();
   let stopping = false;
 
   const stopAll = () => {
     if (stopping) return;
     stopping = true;
-    for (const [id, child] of running) {
-      killed.add(id);
-      kill(child);
-    }
+    for (const [id, child] of running) killed.set(id, stopGroup(child.pid));
   };
   signal?.addEventListener('abort', stopAll, { once: true });
 
@@ -97,6 +95,9 @@ export async function runSteps(
       child.once('exit', (status, sig) => done({ status, signal: sig }));
     });
     running.delete(step.id);
+    // The step's own process can exit on SIGTERM while something it started
+    // ignores it: the run is not over until the whole group is.
+    await killed.get(step.id);
     closeSync(fd);
     row.seconds = Math.round((Date.now() - started) / 1000);
     if (code.status === 0) row.status = 'passed';
@@ -152,17 +153,34 @@ export async function runSteps(
   return steps.map((s) => rows.get(s.id));
 }
 
-/** A process group, asked to stop and then made to. */
-function kill(child) {
-  const group = -child.pid;
+const GRACE_MS = 5_000;
+
+function groupAlive(pgid) {
   try {
-    process.kill(group, 'SIGTERM');
+    process.kill(-pgid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A process group, asked to stop and then made to: SIGTERM, then SIGKILL to
+ * whatever is left after {@link GRACE_MS}. Resolves once the group is gone
+ * (or, for a process that cannot be killed, a moment after SIGKILL).
+ */
+async function stopGroup(pgid) {
+  try {
+    process.kill(-pgid, 'SIGTERM');
   } catch {
     return;
   }
-  setTimeout(() => {
-    try {
-      process.kill(group, 'SIGKILL');
-    } catch {}
-  }, 5_000).unref();
+  const pause = () => new Promise((r) => setTimeout(r, 100));
+  const deadline = Date.now() + GRACE_MS;
+  while (groupAlive(pgid) && Date.now() < deadline) await pause();
+  if (!groupAlive(pgid)) return;
+  try {
+    process.kill(-pgid, 'SIGKILL');
+  } catch {}
+  for (let i = 0; i < 20 && groupAlive(pgid); i += 1) await pause();
 }

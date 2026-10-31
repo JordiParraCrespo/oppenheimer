@@ -113,3 +113,29 @@ test('an abort stops the run like a failure would', async () => {
   assert.equal(rows['a/long'].status, 'stopped');
   assert.equal(rows['a/next'].status, 'not run');
 });
+
+test('fail-fast waits out a step whose child ignores SIGTERM, and kills it', async () => {
+  const pidFile = join(tmpdir(), `ci-run-stubborn-${process.pid}`);
+  // The step's own process exits on SIGTERM; the child it started does not.
+  const stubborn = `
+    const { spawn } = require('child_process');
+    const child = spawn(process.execPath, ['-e', 'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+    require('fs').writeFileSync(${JSON.stringify(pidFile)}, String(child.pid));
+    setInterval(() => {}, 1000);`;
+  const rows = await run(
+    [node('a', 'stubborn', stubborn), node('b', 'fails', `setTimeout(() => process.exit(1), 400)`)],
+    { failFast: true },
+  );
+  const pid = Number(readFileSync(pidFile, 'utf8'));
+  rmSync(pidFile, { force: true });
+  assert.equal(rows['a/stubborn'].status, 'stopped');
+  const alive = (() => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  assert.equal(alive, false, 'the child that ignored SIGTERM outlived the run');
+});

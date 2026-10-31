@@ -136,15 +136,6 @@ if (!dirty && git('status', '--porcelain') !== '') {
 const head = git('rev-parse', 'HEAD');
 const chosen = selection();
 const steps = plan(chosen, { dirty, skip });
-// A console up before this run (`stack.mjs up --web`, for the screenshots)
-// is in use: the run swaps the API and leaves the rest up.
-const keepStack = (() => {
-  try {
-    return Boolean(JSON.parse(readFileSync(join(ROOT, '.stack', 'state.json'), 'utf8')).pids?.web);
-  } catch {
-    return false;
-  }
-})();
 
 const logDir = join(OUT, dirty ? 'dirty-logs' : 'logs');
 rmSync(logDir, { recursive: true, force: true });
@@ -163,7 +154,7 @@ try {
     signal: aborted.signal,
   });
 } finally {
-  const down = teardown(steps, { keepStack });
+  const down = teardown(steps);
   if (down) spawnSync(down[0], down[1], { cwd: ROOT, stdio: 'inherit' });
 }
 const wall = Math.round((Date.now() - started) / 1000);

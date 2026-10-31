@@ -66,6 +66,20 @@ describe('substance, what the fingerprint hashes', () => {
     assert.notEqual(tsx(view.replace('"x"', '"y"')), tsx(view));
   });
 
+  it('counts a template literal and a JSX expression by what they say', () => {
+    assert.notEqual(tsx('const a = `Hello ${name}`;'), tsx('const a = `Hi ${name}`;'));
+    assert.notEqual(tsx('const a = <p>{count} left</p>;'), tsx('const a = <p>{total} left</p>;'));
+    assert.equal(
+      tsx('const a = <p className={cn("a", b)}>{count}</p>;'),
+      tsx("const a = (\n  <p className={cn('a', b)}>\n    {count}\n  </p>\n);"),
+    );
+  });
+
+  it('keeps a space that JSX renders, and drops one it does not', () => {
+    assert.notEqual(tsx('const a = <p>Hi {name}</p>;'), tsx('const a = <p>Hi{name}</p>;'));
+    assert.equal(tsx('const a = <p>\n  Hi\n</p>;'), tsx('const a = <p>Hi</p>;'));
+  });
+
   it('reads a stylesheet without comments, keeping strings whole', () => {
     assert.equal(substance('a.css', '.a {\n  color: red; /* brand */\n}'), '.a { color: red; }');
     assert.notEqual(substance('a.css', '.a{content:"/* a */"}'), substance('a.css', '.a{content:"/* b */"}'));

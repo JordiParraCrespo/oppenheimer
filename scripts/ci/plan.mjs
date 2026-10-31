@@ -286,10 +286,9 @@ export function plan(
 }
 
 /** What to run once every step has finished, whatever happened. */
-export function teardown(steps, { keepStack = false } = {}) {
+export function teardown(steps) {
   if (!steps.some((s) => s.job === 'services')) return null;
-  // A stack that was up before the run (`up --web` for the screenshots) stays
-  // up, with the API this run built; one the run started comes down.
-  if (keepStack) return null;
-  return ['node', ['scripts/stack/stack.mjs', 'down']];
+  // The stack decides: a console it serves (`up --web`, for the screenshots)
+  // keeps it up, with the API this run built; otherwise it comes down.
+  return ['node', ['scripts/stack/stack.mjs', 'down', '--keep-console']];
 }
