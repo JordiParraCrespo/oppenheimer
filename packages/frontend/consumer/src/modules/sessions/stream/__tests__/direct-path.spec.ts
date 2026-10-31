@@ -178,8 +178,9 @@ function harness(direct = true) {
     consumed();
   });
   stream.onPath?.((path) => paths.push(path));
+  // Macrotasks, not microtasks: the path is a dynamic import on the invitation.
   const settle = async () => {
-    for (let i = 0; i < 5; i += 1) await Promise.resolve();
+    for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setTimeout(resolve, 0));
   };
   /** A socket attached with a direct path on offer. */
   const attach = async (offered = true) => {

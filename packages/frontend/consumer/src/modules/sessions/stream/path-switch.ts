@@ -1,6 +1,6 @@
 import type { AttachClientMessage, AttachServerMessage } from '@oppenheimer/shared/protocol';
-import { browserHostKeyPins, type HostKeyPins } from './direct-handshake';
-import { DirectPath, directPathSupported, type PeerFactory } from './direct-path';
+import type { HostKeyPins } from './direct-handshake';
+import type { DirectPath, PeerFactory } from './direct-path';
 
 /**
  * Which way the terminal's bytes travel: through the relay, or on a direct
@@ -49,10 +49,13 @@ export class PathSwitch {
   private relaySent = 0;
   private path: RelayPath = 'relay';
   private failures = 0;
-  private readonly pins: HostKeyPins;
+  /** The host keys pinned so far; this browser's storage, once the path loads. */
+  private pins: HostKeyPins | null;
+  /** Moves on every drop, so a path still loading for an older socket is not started. */
+  private generation = 0;
 
   constructor(private readonly options: PathSwitchOptions) {
-    this.pins = options.pins ?? browserHostKeyPins();
+    this.pins = options.pins ?? null;
   }
 
   onPath(listener: (path: RelayPath) => void): () => void {
@@ -68,39 +71,49 @@ export class PathSwitch {
   invited(iceServers: readonly string[], hostId: string | undefined): void {
     if (!hostId) return;
     if (!this.options.want?.() || this.failures >= MAX_DIRECT_FAILURES) return;
-    if (!this.options.peerFactory && !directPathSupported()) return;
-    const direct = new DirectPath({
-      iceServers,
-      hostId,
-      pins: this.pins,
-      peerFactory: this.options.peerFactory,
-      schedule: this.options.schedule,
-      hooks: {
-        offer: (sdp) => this.options.tell({ type: 'direct.offer', sdp }),
-        opened: () => {
-          if (this.direct !== direct) return;
-          // Everything typed so far went on the relay; the host types what
-          // the channel carries only after that many bytes.
-          this.options.tell({ type: 'direct.path', offset: this.relaySent });
-          this.setPath('direct');
-        },
-        deliver: (bytes) => {
-          if (this.direct === direct) this.options.deliver(bytes);
-        },
-        ended: (distrusted) => {
-          if (this.direct !== direct) return;
-          // A path that never opened, or one that closed under the terminal:
-          // either way the relay carries on, and the host repaints whatever
-          // the channel lost. A host whose proof was refused is not asked
-          // again by this stream: what answered may not be the host.
-          this.direct = null;
-          this.failures = distrusted ? MAX_DIRECT_FAILURES : this.failures + 1;
-          this.setPath('relay');
-        },
+    if (!this.options.peerFactory && typeof RTCPeerConnection === 'undefined') return;
+    // Loaded on the invitation: a pane on the relay, which is every pane
+    // before its first offer, never downloads the peer or the proof.
+    const generation = this.generation;
+    void Promise.all([import('./direct-path'), import('./direct-handshake')]).then(
+      ([{ DirectPath }, { browserHostKeyPins }]) => {
+        if (generation !== this.generation || this.direct) return;
+        this.pins ??= browserHostKeyPins();
+        const direct: DirectPath = new DirectPath({
+          iceServers,
+          hostId,
+          pins: this.pins,
+          peerFactory: this.options.peerFactory,
+          schedule: this.options.schedule,
+          hooks: {
+            offer: (sdp) => this.options.tell({ type: 'direct.offer', sdp }),
+            opened: () => {
+              if (this.direct !== direct) return;
+              // Everything typed so far went on the relay; the host types what
+              // the channel carries only after that many bytes.
+              this.options.tell({ type: 'direct.path', offset: this.relaySent });
+              this.setPath('direct');
+            },
+            deliver: (bytes) => {
+              if (this.direct === direct) this.options.deliver(bytes);
+            },
+            ended: (distrusted) => {
+              if (this.direct !== direct) return;
+              // A path that never opened, or one that closed under the
+              // terminal: either way the relay carries on, and the host
+              // repaints whatever the channel lost. A host whose proof was
+              // refused is not asked again by this stream: what answered may
+              // not be the host.
+              this.direct = null;
+              this.failures = distrusted ? MAX_DIRECT_FAILURES : this.failures + 1;
+              this.setPath('relay');
+            },
+          },
+        });
+        this.direct = direct;
+        void direct.start();
       },
-    });
-    this.direct = direct;
-    void direct.start();
+    );
   }
 
   /** The relay's `direct.*` messages for this attachment. */
@@ -148,6 +161,7 @@ export class PathSwitch {
 
   /** Ends the direct path without counting it against the stream. */
   private drop(): void {
+    this.generation += 1;
     const direct = this.direct;
     this.direct = null;
     direct?.close();
