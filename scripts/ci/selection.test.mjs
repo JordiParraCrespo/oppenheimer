@@ -90,7 +90,7 @@ test("the console's copy alone gives the API's suites nothing to check", () => {
         'packages/translations/es/sessions.json',
         'packages/translations/en/index.json',
         'packages/translations/en/browser.json',
-        'apps/web/src/features/sessions/screens/list.tsx',
+        'packages/translations/es/index.json',
       ],
       API_DIRS,
     ),
