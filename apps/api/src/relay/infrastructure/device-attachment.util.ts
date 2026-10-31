@@ -13,7 +13,11 @@ import type {
   RunnerLink,
 } from '../../links/application/link-registry.port';
 import type { AttachTicket } from '../../sessions/application/session-lookup.port';
-import { clampCredit, creditSender } from './coalescing-sender.util';
+import {
+  attachmentCreditSender,
+  type CoalescingSender,
+  clampCredit,
+} from './coalescing-sender.util';
 
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 
@@ -44,10 +48,8 @@ export class DeviceAttachment implements AttachmentSink {
   private finished = false;
   /** A read-only share watches: its input is dropped here. */
   private readonly readOnly: boolean;
-  private readonly credits = creditSender((bytes) => {
-    if (this.attachmentId === null) return;
-    this.link.send({ type: 'attachment.credit', attachmentId: this.attachmentId, bytes });
-  });
+  /** Its credit onto the link, held to a rate and clamped as a terminal's is. */
+  private readonly credits: CoalescingSender<number>;
 
   constructor(
     private readonly ws: WebSocket,
@@ -60,6 +62,7 @@ export class DeviceAttachment implements AttachmentSink {
     },
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
+    this.credits = attachmentCreditSender(link, () => this.attachmentId);
   }
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */

@@ -49,7 +49,12 @@ import {
   type SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
-import { CoalescingSender, clampCredit, creditSender, RESIZE_RATE } from './coalescing-sender.util';
+import {
+  attachmentCreditSender,
+  CoalescingSender,
+  clampCredit,
+  RESIZE_RATE,
+} from './coalescing-sender.util';
 import { DeviceAttachment } from './device-attachment.util';
 import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
 import { keepSocketAlive } from './socket-keepalive.util';
@@ -467,10 +472,7 @@ class BrowserAttachment implements AttachmentSink {
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
     this.directPath = new DirectPathSignalling(direct, link, (message) => this.tell(message));
-    this.credits = creditSender((bytes) => {
-      if (this.attachmentId === null) return;
-      this.link.send({ type: 'attachment.credit', attachmentId: this.attachmentId, bytes });
-    });
+    this.credits = attachmentCreditSender(link, () => this.attachmentId);
     this.resizes = new CoalescingSender({
       ...RESIZE_RATE,
       // The size the browser has now is the only one that matters.

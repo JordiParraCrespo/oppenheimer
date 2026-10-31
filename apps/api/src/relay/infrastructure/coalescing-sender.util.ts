@@ -1,4 +1,7 @@
 import { ATTACHMENT_CREDIT_WINDOW_BYTES } from '@oppenheimer/shared/protocol';
+import type { RunnerLink } from '../../links/application/link-registry.port';
+
+const MILLI = 1_000;
 
 /**
  * One attachment's stream of one kind of control frame (its credit, its
@@ -15,7 +18,8 @@ import { ATTACHMENT_CREDIT_WINDOW_BYTES } from '@oppenheimer/shared/protocol';
  * the buffer and takes down every other terminal on the host.
  */
 export class CoalescingSender<T> {
-  private tokens: number;
+  /** In thousandths of a frame, so the refill is integer milliseconds × the rate, exactly. */
+  private milliTokens: number;
   private refilledAt = Date.now();
   private pending: T | null = null;
   private timer: NodeJS.Timeout | null = null;
@@ -32,7 +36,7 @@ export class CoalescingSender<T> {
       send: (value: T) => void;
     },
   ) {
-    this.tokens = options.burst;
+    this.milliTokens = options.burst * MILLI;
   }
 
   push(value: T): void {
@@ -59,16 +63,17 @@ export class CoalescingSender<T> {
 
   private take(): boolean {
     const now = Date.now();
-    const refill = ((now - this.refilledAt) / 1_000) * this.options.perSecond;
-    this.tokens = Math.min(this.options.burst, this.tokens + refill);
+    // A rate in frames per second refills that many thousandths per millisecond.
+    const refill = (now - this.refilledAt) * this.options.perSecond;
+    this.milliTokens = Math.min(this.options.burst * MILLI, this.milliTokens + refill);
     this.refilledAt = now;
-    if (this.tokens < 1) return false;
-    this.tokens -= 1;
+    if (this.milliTokens < MILLI) return false;
+    this.milliTokens -= MILLI;
     return true;
   }
 
   private schedule(): void {
-    const waitMs = Math.ceil(((1 - this.tokens) / this.options.perSecond) * 1_000);
+    const waitMs = Math.ceil((MILLI - this.milliTokens) / this.options.perSecond);
     this.timer = setTimeout(() => this.flush(), Math.max(1, waitMs));
     this.timer.unref();
   }
@@ -112,11 +117,22 @@ export function clampCredit(bytes: number): number {
   return Math.min(bytes, MAX_CREDIT_BYTES);
 }
 
-/** An attachment's credit onto the link: summed while it waits, and clamped. */
-export function creditSender(send: (bytes: number) => void): CoalescingSender<number> {
+/**
+ * An attachment's credit onto the link, as `attachment.credit` under the id it
+ * holds when the credit goes out (none once it detached): summed while it waits,
+ * and clamped.
+ */
+export function attachmentCreditSender(
+  link: RunnerLink,
+  attachmentId: () => number | null,
+): CoalescingSender<number> {
   return new CoalescingSender({
     ...CREDIT_RATE,
     merge: (pending, next) => clampCredit(pending + next),
-    send,
+    send: (bytes) => {
+      const id = attachmentId();
+      if (id === null) return;
+      link.send({ type: 'attachment.credit', attachmentId: id, bytes });
+    },
   });
 }
