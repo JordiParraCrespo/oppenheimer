@@ -16,15 +16,9 @@ import type {
   RepositoryPulls,
   WorkspaceRepository,
 } from './pull-request-access.port';
+import { OPEN_TTL_SECONDS, refusalOf, snapshotKey, ttlFor } from './pull-request-cache.policy';
 import type { PullRequestListingPort } from './pull-request-listing.port';
-import {
-  OPEN_TTL_SECONDS,
-  PullRequestSnapshotResolver,
-  partGaps,
-  refusalOf,
-  snapshotKey,
-  ttlFor,
-} from './pull-request-snapshot.resolver';
+import { PullRequestSnapshotResolver, partGaps } from './pull-request-snapshot.resolver';
 import { PullRequestSourceResolver } from './pull-request-source.resolver';
 
 /** A closed pull request no longer changes: its snapshot is kept for most of a day. */
