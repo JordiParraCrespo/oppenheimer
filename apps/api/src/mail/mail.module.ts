@@ -1,7 +1,9 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { configKeySealer } from '@oppenheimer/backend-core';
 import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
+import { mailTokenKeyOf } from '../config/mail.config';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { QueueModule } from '../queue/queue.module';
 import { GmailCallResolver } from './application/gmail-call.resolver';
@@ -33,7 +35,7 @@ import { GmailConnectionRepository } from './database/gmail-connection.repositor
 import { MailSendOrmEntity } from './database/mail-send.orm-entity';
 import { MailSendRepository } from './database/mail-send.repository';
 import { GmailConnectionMapper } from './gmail-connection.mapper';
-import { AesTokenSealerAdapter } from './infrastructure/aes-token-sealer.adapter';
+
 import { DocumentAttachmentReaderAdapter } from './infrastructure/document-attachment-reader.adapter';
 import { GmailGateway } from './infrastructure/gmail.gateway';
 import { GmailEventSource } from './infrastructure/gmail-event-source.adapter';
@@ -135,7 +137,11 @@ const queryHandlers: Provider[] = [
     { provide: MAIL_SEND_REPOSITORY, useClass: MailSendRepository },
     { provide: GMAIL_CONNECTION_REPOSITORY, useClass: GmailConnectionRepository },
     { provide: GMAIL_PROVIDER, useClass: GmailGateway },
-    { provide: MAIL_TOKEN_SEALER, useClass: AesTokenSealerAdapter },
+    configKeySealer(MAIL_TOKEN_SEALER, {
+      configKey: 'mail.tokenKey',
+      envName: 'MAIL_TOKEN_KEY',
+      keyOf: mailTokenKeyOf,
+    }),
     { provide: ATTACHMENT_READER, useClass: DocumentAttachmentReaderAdapter },
   ],
 })

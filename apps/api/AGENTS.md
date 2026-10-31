@@ -20,6 +20,12 @@ mapper — not inline in a service, handler, or controller.** This includes:
 - Normalizing an external API result into a DTO (coercion, date parsing,
   unwrapping `{ member }` / `{ users }` envelopes).
 
+What a mapper does **not** build is what the domain decides: the entries a
+request owes an aggregate's log, its domain events, a default the domain
+picks. Those are an entity method, a `domain/*.policy.ts` or a
+`domain/*.factory.ts`, and `pnpm check:api-structure` fails a mapper that
+imports a domain event or passes 300 lines (`ARCHITECTURE.md`, "Mapper").
+
 Services and controllers stay thin: they orchestrate and delegate to a mapper
 for the transform. Keep mappers **pure** (framework-free, no DI) so they are
 trivially unit-testable and reusable.
@@ -190,7 +196,8 @@ pnpm --filter @oppenheimer/api dev                # watch mode
 pnpm --filter @oppenheimer/api arch               # dependency-cruiser boundary check
 pnpm --filter @oppenheimer/api test               # unit tests
 pnpm --filter @oppenheimer/api test:integration   # needs Docker (Postgres + Redis)
-pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # generate a migration (name/path is required)
+pnpm migration:new <PascalName>                   # start a migration: src/migrations/<now>-<Name>.ts
+pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # diff entities against a database (foreign keys are not in the entities)
 pnpm --filter @oppenheimer/api migration:run
 pnpm --filter @oppenheimer/api generate:openapi   # emit openapi.json
 ```

@@ -52,8 +52,15 @@ import {
   type SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
+import {
+  attachmentCreditSender,
+  CoalescingSender,
+  clampCredit,
+  RESIZE_RATE,
+} from './coalescing-sender.util';
 import { DeviceAttachment } from './device-attachment.util';
 import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
+import { keepSocketAlive } from './socket-keepalive.util';
 import { refuseUpgrade } from './upgrade.util';
 
 /** The path the console opens, the one `POST /sessions/{id}/attach-ticket` names. */
@@ -90,6 +97,14 @@ const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 export const REAUTHORIZE_INTERVAL_MS = 60_000;
 
 /**
+ * How often the relay pings an attach socket, terminal or device; one that has
+ * not answered the previous ping by the next is terminated. The runner link's
+ * `LINK_PING_INTERVAL_MS`, for the same reason: a peer that died without a
+ * close is otherwise invisible until a write times out.
+ */
+export const ATTACH_PING_INTERVAL_MS = 15_000;
+
+/**
  * The browser attach socket: one per attachment, unmultiplexed.
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
@@ -112,6 +127,8 @@ export const REAUTHORIZE_INTERVAL_MS = 60_000;
 export class BrowserAttachGateway {
   /** `REAUTHORIZE_INTERVAL_MS`; a field only so a test can shorten it. */
   reauthorizeIntervalMs = REAUTHORIZE_INTERVAL_MS;
+  /** `ATTACH_PING_INTERVAL_MS`; a field only so a test can shorten it. */
+  pingIntervalMs = ATTACH_PING_INTERVAL_MS;
   private readonly logger = new Logger(BrowserAttachGateway.name);
   private readonly server = new WebSocketServer({
     noServer: true,
@@ -160,6 +177,9 @@ export class BrowserAttachGateway {
       ws.on('error', (error) => {
         this.logger.warn({ message: 'browser attach socket error', error: error.message });
       });
+      // From the upgrade, not the attach: a socket that vanished while its
+      // ticket was judged is as dead as one that vanished mid-stream.
+      keepSocketAlive(ws, this.pingIntervalMs);
       void this.redeem(ws, ticket).catch((error: unknown) => {
         this.logger.error({ message: 'attach ticket could not be judged', error: String(error) });
         // No `closed` message: every reason it can carry is a final verdict,
@@ -434,6 +454,9 @@ class BrowserAttachment implements AttachmentSink {
   private readonly readOnly: boolean;
   /** The direct path's signalling, which this attachment only hands messages to. */
   private readonly directPath: DirectPathSignalling;
+  /** This attachment's control frames onto the link, held to a rate. */
+  private readonly credits: CoalescingSender<number>;
+  private readonly resizes: CoalescingSender<{ cols: number; rows: number }>;
 
   constructor(
     private readonly ws: WebSocket,
@@ -452,6 +475,23 @@ class BrowserAttachment implements AttachmentSink {
   ) {
     this.readOnly = claim.share?.readOnly ?? false;
     this.directPath = new DirectPathSignalling(direct, link, (message) => this.tell(message));
+    this.credits = attachmentCreditSender(link, () => this.attachmentId);
+    this.resizes = new CoalescingSender({
+      ...RESIZE_RATE,
+      // The size the browser has now is the only one that matters.
+      merge: (_pending, next) => next,
+      send: ({ cols, rows }) => {
+        if (this.attachmentId === null) return;
+        this.link.send({
+          type: 'session.resize',
+          commandId: randomUUID(),
+          sessionId: this.claim.sessionId,
+          attachmentId: this.attachmentId,
+          cols,
+          rows,
+        });
+      },
+    });
   }
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -558,27 +598,18 @@ class BrowserAttachment implements AttachmentSink {
     if (!message.success) return;
     switch (message.data.type) {
       case 'resize':
+        // A watcher's resize is kept: tmux ignores its size for the window
+        // (`ignore-size`) but still draws the watcher's own view at it.
         if (!this.attached) {
           this.attach(message.data);
-        } else if (this.attachmentId !== null) {
-          this.link.send({
-            type: 'session.resize',
-            commandId: randomUUID(),
-            sessionId: this.claim.sessionId,
-            attachmentId: this.attachmentId,
-            cols: message.data.cols,
-            rows: message.data.rows,
-          });
+        } else {
+          this.resizes.push({ cols: message.data.cols, rows: message.data.rows });
         }
         return;
       case 'credit':
-        if (this.attachmentId !== null) {
-          this.link.send({
-            type: 'attachment.credit',
-            attachmentId: this.attachmentId,
-            bytes: message.data.bytes,
-          });
-        }
+        // A watcher's credit is kept too: the window is per attachment, and
+        // without it a read-only pane stalls after its first 256 KB.
+        this.credits.push(clampCredit(message.data.bytes));
         return;
       case 'direct.offer':
       case 'direct.path':
@@ -631,6 +662,8 @@ class BrowserAttachment implements AttachmentSink {
   private detach(): void {
     if (this.viewportTimer) clearTimeout(this.viewportTimer);
     if (this.recheckTimer) clearInterval(this.recheckTimer);
+    this.credits.dispose();
+    this.resizes.dispose();
     if (this.attachmentId === null) return;
     const id = this.attachmentId;
     this.attachmentId = null;

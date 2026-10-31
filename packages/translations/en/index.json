@@ -308,6 +308,7 @@
       "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
       "HOSTS_007": "No file is waiting for that command.",
       "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
+      "HOSTS_009": "Someone else changed this host while you were saving. Reload it and try again.",
       "INBOX_001": "The Inbox needs a workspace. Open one and try again.",
       "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
       "INBOX_003": "A snooze has to end in the future. Pick a later time.",
@@ -462,7 +463,14 @@
     "code": "Code: {{code}}",
     "startFailure": {
       "codes": {
-        "SESS_002": "This host makes sessions with one repository."
+        "SESS_002": "This host makes sessions with one repository.",
+        "SESS_010": "Codex's CLI has no cloud environment for this repository."
+      },
+      "help": {
+        "SESS_010": {
+          "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
+          "link": "Open Codex Cloud settings"
+        }
       },
       "details": "Details from the host: {{detail}}"
     }

@@ -1,3 +1,4 @@
+import { VersionConflictException } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccessScope } from '../../../../authz/domain/access-scope.types';
@@ -11,7 +12,7 @@ function scope(): AccessScope {
   return { userId: 'jordi', organizationId: null, teamIds: [], grants: new Map(), bypass: false };
 }
 
-function host() {
+function host(unpairedAt: Date | null = null) {
   return HostEntity.create({
     id: 'host-1',
     props: {
@@ -25,7 +26,7 @@ function host() {
       publicKey: 'a'.repeat(44),
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: null,
-      unpairedAt: null,
+      unpairedAt,
     },
   });
 }
@@ -66,5 +67,31 @@ describe('UnpairHostCommandHandler', () => {
     vi.mocked(hosts.findOneById).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_001' });
+  });
+
+  it('writes nothing for a host that is already unpaired', async () => {
+    vi.mocked(hosts.findOneById).mockResolvedValue(Some(host(new Date())));
+
+    await expect(handler.execute(command())).resolves.toBe('host-1');
+    expect(hosts.save).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing more when the machine’s uninstall unpaired it first', async () => {
+    vi.mocked(hosts.findOneById)
+      .mockResolvedValueOnce(Some(host()))
+      .mockResolvedValueOnce(Some(host(new Date())));
+    vi.mocked(hosts.save).mockRejectedValueOnce(new VersionConflictException('stale'));
+
+    await expect(handler.execute(command())).resolves.toBe('host-1');
+    // Only the losing attempt reached save; the unpair is raised once, by the winner.
+    expect(hosts.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers HOSTS_009 when it loses on the retry too', async () => {
+    vi.mocked(hosts.findOneById).mockImplementation(async () => Some(host()));
+    vi.mocked(hosts.save).mockRejectedValue(new VersionConflictException('stale'));
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_009' });
+    expect(hosts.save).toHaveBeenCalledTimes(2);
   });
 });

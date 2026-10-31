@@ -1,7 +1,9 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { configKeySealer } from '@oppenheimer/backend-core';
 import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
+import { calendarTokenKeyOf } from '../config/calendar.config';
 import { GoogleConnectStateResolver } from './application/google-connect-state.resolver';
 import {
   CALENDAR_CONNECTION_REPOSITORY,
@@ -28,7 +30,7 @@ import { CalendarConnectionOrmEntity } from './database/calendar-connection.orm-
 import { CalendarConnectionRepository } from './database/calendar-connection.repository';
 import { CalendarEventOrmEntity } from './database/calendar-event.orm-entity';
 import { CalendarEventRepository } from './database/calendar-event.repository';
-import { AesTokenSealerAdapter } from './infrastructure/aes-token-sealer.adapter';
+
 import { GoogleCalendarGateway } from './infrastructure/google-calendar.gateway';
 import { FindCalendarEventQueryHandler } from './queries/find-calendar-event/find-calendar-event.query-handler';
 import { FindCalendarEventsHttpController } from './queries/find-calendar-events/find-calendar-events.http.controller';
@@ -90,7 +92,11 @@ const queryHandlers: Provider[] = [
     { provide: CALENDAR_EVENT_REPOSITORY, useClass: CalendarEventRepository },
     { provide: CALENDAR_CONNECTION_REPOSITORY, useClass: CalendarConnectionRepository },
     { provide: CALENDAR_PROVIDER, useClass: GoogleCalendarGateway },
-    { provide: TOKEN_SEALER, useClass: AesTokenSealerAdapter },
+    configKeySealer(TOKEN_SEALER, {
+      configKey: 'calendar.tokenKey',
+      envName: 'CALENDAR_TOKEN_KEY',
+      keyOf: calendarTokenKeyOf,
+    }),
   ],
 })
 export class CalendarModule {}

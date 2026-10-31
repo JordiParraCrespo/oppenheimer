@@ -1,12 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AccessScope } from '../../authz/domain/access-scope.types';
-import type {
-  PullRequestAccessPort,
-  WorkspaceRepository,
-} from '../../github/application/pull-request-access.port';
+import type { WorkspaceRepository } from '../../github/application/pull-request-access.port';
+import type { PullRequestDirectoryPort } from '../../github/application/pull-request-directory.port';
 import { addressKeyOf } from '../../github/domain/repository-address.policy';
-import { PULL_REQUEST_ACCESS } from '../../github/github.di-tokens';
+import { PULL_REQUEST_DIRECTORY } from '../../github/github.di-tokens';
 import type { WatchedRepositoryRepositoryPort } from '../database/watched-repository.repository.port';
 import { PullRequestsErrors } from '../domain/pull-requests.errors';
 import { WATCHED_REPOSITORY_REPOSITORY } from '../pull-requests.di-tokens';
@@ -19,8 +17,8 @@ import { WATCHED_REPOSITORY_REPOSITORY } from '../pull-requests.di-tokens';
 @Injectable()
 export class WatchedRepositoriesResolver {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_DIRECTORY)
+    private readonly directory: PullRequestDirectoryPort,
     @Inject(WATCHED_REPOSITORY_REPOSITORY)
     private readonly watches: WatchedRepositoryRepositoryPort,
   ) {}
@@ -29,7 +27,7 @@ export class WatchedRepositoriesResolver {
   async all(scope: AccessScope): Promise<{ repository: WorkspaceRepository; watching: boolean }[]> {
     if (!scope.organizationId) throw new AppError(PullRequestsErrors.NO_ACTIVE_ORGANIZATION);
     const [repositories, watches] = await Promise.all([
-      this.access.repositories(scope),
+      this.directory.repositories(scope),
       this.watches.findOwn(scope),
     ]);
     const watched = new Set(watches.map(addressKeyOf));

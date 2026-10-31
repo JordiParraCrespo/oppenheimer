@@ -1,7 +1,9 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { configKeySealer } from '@oppenheimer/backend-core';
 import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
+import { botsProviderKeyOf } from '../config/bots.config';
 import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';
 import { ChatgptCredentialResolver } from './application/chatgpt-credential.resolver';
@@ -70,7 +72,7 @@ import { BotMemoryFactOrmEntity } from './database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from './database/bot-memory-fact.repository';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from './database/model-provider-credential.repository';
-import { AesProviderKeySealerAdapter } from './infrastructure/aes-provider-key-sealer.adapter';
+
 import { OpenAiChatgptAuthAdapter } from './infrastructure/openai-chatgpt-auth.adapter';
 import { ModelProviderCredentialMapper } from './model-provider-credential.mapper';
 import { FindBotHttpController } from './queries/find-bot/find-bot.http.controller';
@@ -185,7 +187,11 @@ const queryHandlers: Provider[] = [
     ModelProviderResolver,
     NewBotProviderResolver,
     ChatgptCredentialResolver,
-    { provide: PROVIDER_KEY_SEALER, useClass: AesProviderKeySealerAdapter },
+    configKeySealer(PROVIDER_KEY_SEALER, {
+      configKey: 'bots.providerKey',
+      envName: 'BOTS_PROVIDER_KEY',
+      keyOf: botsProviderKeyOf,
+    }),
     { provide: CHATGPT_AUTH, useClass: OpenAiChatgptAuthAdapter },
     TurnCredentialsResolver,
     { provide: TURN_CREDENTIALS, useExisting: TurnCredentialsResolver },

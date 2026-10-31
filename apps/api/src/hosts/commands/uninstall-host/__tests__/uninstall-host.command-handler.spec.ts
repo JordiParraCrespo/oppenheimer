@@ -1,3 +1,4 @@
+import { VersionConflictException } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostRepositoryPort } from '../../../database/host.repository.port';
@@ -57,5 +58,15 @@ describe('UninstallHostCommandHandler', () => {
 
     await expect(handler.execute(command())).resolves.toBeUndefined();
     expect(hosts.save).not.toHaveBeenCalled();
+  });
+
+  it('succeeds, writing nothing more, when the console unpaired it between the read and the write', async () => {
+    vi.mocked(hosts.findOneByIdForMachine)
+      .mockResolvedValueOnce(Some(host()))
+      .mockResolvedValueOnce(Some(host(new Date())));
+    vi.mocked(hosts.save).mockRejectedValueOnce(new VersionConflictException('stale'));
+
+    await expect(handler.execute(command())).resolves.toBeUndefined();
+    expect(hosts.save).toHaveBeenCalledTimes(1);
   });
 });

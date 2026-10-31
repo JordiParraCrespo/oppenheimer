@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestDirectoryPort } from '../../../github/application/pull-request-directory.port';
+import type { PullRequestListingPort } from '../../../github/application/pull-request-listing.port';
+import { PULL_REQUEST_DIRECTORY, PULL_REQUEST_LISTINGS } from '../../../github/github.di-tokens';
 import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
 import type { PullRequestQueueResponseDto } from '../../dtos/pull-request.response.dto';
 import { PullRequestMapper } from '../../pull-request.mapper';
@@ -27,8 +28,10 @@ export class FindPullRequestsQueryHandler
   implements IQueryHandler<FindPullRequestsQuery, PullRequestQueueResponseDto>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_DIRECTORY)
+    private readonly directory: PullRequestDirectoryPort,
+    @Inject(PULL_REQUEST_LISTINGS)
+    private readonly listings: PullRequestListingPort,
     private readonly watched: WatchedRepositoriesResolver,
     private readonly mapper: PullRequestMapper,
   ) {}
@@ -42,14 +45,14 @@ export class FindPullRequestsQueryHandler
     }
     const [repositories, viewerLogin] = await Promise.all([
       this.watched.watched(scope),
-      this.access.viewerLogin(scope),
+      this.directory.viewerLogin(scope),
     ]);
     // A repository GitHub will not answer costs its own rows, not the queue (#244).
     // One budget for the whole view: the rows all draw, and as many of them as
     // it allows come back filled, the rest on the reads after this one (#247).
-    const budget = this.access.readBudget();
+    const budget = this.listings.readBudget();
     const reads = await Promise.all(
-      repositories.map((repository) => this.access.openPullRequests(scope, repository, budget)),
+      repositories.map((repository) => this.listings.openPullRequests(scope, repository, budget)),
     );
     const now = new Date();
     const rows = reads.flatMap((read) =>

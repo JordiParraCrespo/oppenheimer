@@ -93,9 +93,16 @@ they are the ones that decay first:
 4. **A probe is not a use case.** `/health` and `/ready` report on the process
    itself: there is no command or query behind them and never will be, so they
    live in `probes/` rather than owing a slice they would leave empty.
-5. **Caps.** A controller is 110 lines, a handler 120. They are not style
-   preferences: past them, a controller has started deciding things and a
-   handler has started doing them.
+5. **Caps.** A controller is 110 lines, a handler 120, a mapper 300. They are
+   not style preferences: past them, a controller has started deciding
+   things, a handler has started doing them, and a mapper has started holding
+   rules.
+6. **A mapper maps.** It imports no domain event (`*.domain-event.ts`): the
+   aggregate raises its events, and what a request owes the domain — a log
+   entry, an event, a default the domain decides — is built in `domain/`
+   (an entity method, a `*.policy.ts` or a `*.factory.ts`). A wire format
+   with rules of its own, such as a list cursor, is a small module of its
+   own, not a mapper method.
 
 `pnpm check:api-structure` is this table, executable.
 
@@ -283,6 +290,22 @@ domain input props (e.g. a gateway's `NormalizedSubscription` →
 `SyncSubscriptionProps` via `toSyncProps`). A mapper may add methods beyond the
 three interface ones for these cross-boundary shapes.
 
+A mapper does not build what the domain decides. The entries a create request
+owes a session's log are `domain/session-log-entry.factory.ts`, not a
+`toRequestEvents` on the mapper, and the session list's cursor codec is
+`domain/session-list-cursor.policy.ts`. The structure check holds a mapper to
+300 lines and to importing no domain event; the mappers past either are
+ledgered in `scripts/check-api-structure.mjs`, each with the reason it is
+still owed.
+
+An aggregate stored across several tables keeps **one repository port**, and
+its adapter may keep each member table in a file of its own: `sessions`'
+`WorkSessionRepository` writes the checkouts, the cloud run, the turns and
+the log through `SessionCheckoutRepository`, `SessionCloudRunRepository`,
+`SessionTurnRepository` and `WorkSessionEventRepository`. Those are plain
+classes the adapter constructs, not providers: nothing else may write a
+member table, and every write runs on the transaction the adapter opened.
+
 ## Request flow
 
 ```
@@ -405,7 +428,9 @@ graph can still be unnavigable.
 
 - **`scripts/check-api-structure.mjs`** is the module contract above, executable
   — the closed directory set, the file names each admits, use-case slice
-  completeness, the dissolved buckets, the route rule and the line caps. Run
+  completeness, the dissolved buckets, the route rule, the line caps and the
+  mapper rule. Its `LEDGER` lists the known breaches, each with a reason, and
+  fails on an entry with none or one that no longer matches. Run
   `pnpm check:api-structure`.
 - **`.dependency-cruiser.cjs`** encodes the boundaries (domain purity, no
   outward domain imports, handlers use ports not adapters, controllers go

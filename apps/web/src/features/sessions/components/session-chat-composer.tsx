@@ -107,7 +107,7 @@ export function SessionChatComposer({
         <ComposerTaskList
           tasks={todos.map((todo, index) => ({
             id: String(index),
-            label: todo.content,
+            label: todo.text,
             state:
               todo.status === 'completed'
                 ? 'done'

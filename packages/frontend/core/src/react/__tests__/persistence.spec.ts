@@ -2,8 +2,10 @@ import { type Query, QueryClient, type QueryKey, type QueryState } from '@tansta
 import { describe, expect, it } from 'vitest';
 import { authKeys } from '../auth.queries';
 
-/** A product query key: any feature the kernel does not know about persists by default. */
+/** A product query key: a feature nobody listed, which stays out of storage. */
 const organizationsList = ['organizations', 'list'] as const;
+/** A kernel feature that is listed: the flags the console renders with on a cold start. */
+const flags = ['featureFlags', 'evaluated', { anonymous: true }] as const;
 
 import { PERSIST_META } from '../persist-meta';
 import {
@@ -32,8 +34,23 @@ function query(
 }
 
 describe('shouldDehydrateQuery', () => {
-  it('persists ordinary feature queries', () => {
-    expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
+  it("persists the kernel's plain-data features", () => {
+    expect(shouldDehydrateQuery(query(flags))).toBe(true);
+    expect(shouldDehydrateQuery(query(['capabilities', 'deployment']))).toBe(true);
+  });
+
+  // The regression an allow-list prevents: a feature nobody listed used to be
+  // stored, and an entity restored from storage is plain JSON. The workspace
+  // list came back with `createdAt` a string, and a session's Intl formatter
+  // throws "Invalid time value" on one.
+  it('keeps a feature nobody listed out of storage', () => {
+    expect(shouldDehydrateQuery(query(organizationsList))).toBe(false);
+    expect(shouldDehydrateQuery(query(['profile', 'me']))).toBe(false);
+  });
+
+  it('persists a product feature the app lists', () => {
+    expect(shouldDehydrateQuery(query(['permissions', 'catalog']), ['permissions'])).toBe(true);
+    expect(shouldDehydrateQuery(query(organizationsList), ['permissions'])).toBe(false);
   });
 
   it('never persists the auth session or credential data', () => {
@@ -41,7 +58,7 @@ describe('shouldDehydrateQuery', () => {
   });
 
   // The record names the person: their email and name stay out of storage,
-  // while the permissions the nav reads on a warm start opt back in.
+  // while the permissions the nav reads on a warm start opt in.
   it('keeps the signed-in user out of storage but not their permissions', () => {
     expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(false);
     expect(shouldDehydrateQuery(query(usersKeys.permissions(), 'success', PERSIST_META))).toBe(
@@ -49,17 +66,9 @@ describe('shouldDehydrateQuery', () => {
     );
   });
 
-  // Profile and session results are entities. A restored session turns its
-  // Date fields into strings and the sessions pane's Intl formatter throws
-  // "Invalid time value" on a warm start.
-  it('keeps a product feature out of storage when the app names it', () => {
-    expect(shouldDehydrateQuery(query(['profile', 'me']), ['auth', 'profile'])).toBe(false);
-    expect(shouldDehydrateQuery(query(['profile', 'me']))).toBe(true);
-  });
-
   it('only persists successful queries', () => {
-    expect(shouldDehydrateQuery(query(organizationsList, 'error'))).toBe(false);
-    expect(shouldDehydrateQuery(query(organizationsList, 'pending'))).toBe(false);
+    expect(shouldDehydrateQuery(query(flags, 'error'))).toBe(false);
+    expect(shouldDehydrateQuery(query(flags, 'pending'))).toBe(false);
   });
 
   it('ignores keys that do not start with a feature string', () => {
@@ -72,12 +81,15 @@ describe('createQueryPersistOptions', () => {
     const options = createQueryPersistOptions('1.2.3');
 
     expect(options.maxAge).toBe(QUERY_PERSIST_MAX_AGE);
-    expect(options.buster).toBe('1.2.3:4');
+    expect(options.buster).toBe('1.2.3:5');
     const { shouldDehydrateQuery: dehydrate } = options.dehydrateOptions;
     expect(dehydrate(query(authKeys.session()))).toBe(false);
-    expect(dehydrate(query(organizationsList))).toBe(true);
-    const named = createQueryPersistOptions('1.2.3', { nonPersistedFeatures: ['profile'] });
-    expect(named.dehydrateOptions.shouldDehydrateQuery(query(['profile', 'me']))).toBe(false);
+    expect(dehydrate(query(flags))).toBe(true);
+    expect(dehydrate(query(['permissions', 'catalog']))).toBe(false);
+    const named = createQueryPersistOptions('1.2.3', { persistedFeatures: ['permissions'] });
+    expect(named.dehydrateOptions.shouldDehydrateQuery(query(['permissions', 'catalog']))).toBe(
+      true,
+    );
   });
 
   it('keeps queries alive at least as long as they are persisted', () => {

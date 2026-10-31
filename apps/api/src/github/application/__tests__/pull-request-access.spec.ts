@@ -12,7 +12,11 @@ import { GithubAccessResolver } from '../github-access.resolver';
 import type { GithubTokenResolver } from '../github-token.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
 import type { WorkspaceRepository } from '../pull-request-access.port';
-import { PullRequestAccessResolver } from '../pull-request-access.resolver';
+import { PullRequestDirectoryResolver } from '../pull-request-directory.resolver';
+import { PullRequestListingResolver } from '../pull-request-listing.resolver';
+import { PullRequestReadResolver } from '../pull-request-read.resolver';
+import { PullRequestSnapshotResolver } from '../pull-request-snapshot.resolver';
+import { PullRequestWriteResolver } from '../pull-request-write.resolver';
 
 /**
  * #244: one repository's checks refused with a 403 took the whole queue down
@@ -60,7 +64,7 @@ const PULL = {
 };
 
 it('keeps the refusal GitHub gave for a pull request it would not read, beside the ones it did', async () => {
-  const { resolver, repository } = build({
+  const { listings, repository } = build({
     ...BY_REST(),
     listPullRequests: vi.fn().mockResolvedValue([PULL, { ...PULL, number: 13 }]),
     readPullRequest: vi.fn(async (_t: string, _r: string, number: number) => {
@@ -74,7 +78,7 @@ it('keeps the refusal GitHub gave for a pull request it would not read, beside t
     listReviews: vi.fn().mockResolvedValue([]),
   });
 
-  const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+  const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
   expect(read.snapshots.map((s) => s.pull.number)).toEqual([12]);
   expect(read.gaps).toEqual([{ what: 'pull_requests', refusal: 'forbidden' }]);
@@ -125,20 +129,21 @@ function build(
   // The GraphQL read is the queue's: it answers nothing unless a spec gives it
   // something, and a spec about the REST read says so with `BY_REST`.
   const withGraph = { listOpenPullRequests: vi.fn().mockResolvedValue([]), ...pulls };
-  const resolver = new PullRequestAccessResolver(
+  const port = withGraph as unknown as GithubPullsPort;
+  const redis = cache as unknown as CacheService;
+  const access = new GithubAccessResolver(
     installations,
     app,
-    withGraph as unknown as GithubPullsPort,
     grants,
-    cache as unknown as CacheService,
-    new GithubAccessResolver(
-      installations,
-      app,
-      grants,
-      cache as unknown as CacheService,
-      tokens as GithubTokenResolver,
-    ),
+    redis,
+    tokens as GithubTokenResolver,
   );
+  // One snapshot resolver behind both reads, as the module binds it: the queue
+  // and a pull request's own screen share its cache keys and its single flight.
+  const snapshots = new PullRequestSnapshotResolver(port, redis);
+  const listings = new PullRequestListingResolver(port, redis, access, snapshots);
+  const reads = new PullRequestReadResolver(port, redis, access, snapshots);
+  const writes = new PullRequestWriteResolver(port, redis, access);
   const repository: WorkspaceRepository = {
     kind: 'installation',
     installationId: connected.id,
@@ -148,12 +153,12 @@ function build(
     defaultBranch: 'main',
     private: true,
   };
-  return { resolver, repository, store };
+  return { listings, reads, writes, repository, store };
 }
 
 describe('a pull request GitHub answers only in part', () => {
   it('keeps the pull request, its files and reviews when its checks are refused, and says why', async () => {
-    const { resolver, repository, store } = build({
+    const { listings, repository, store } = build({
       ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue([PULL]),
       readPullRequest: vi.fn().mockResolvedValue(PULL),
@@ -162,7 +167,7 @@ describe('a pull request GitHub answers only in part', () => {
       listReviews: vi.fn().mockResolvedValue([]),
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.snapshots).toHaveLength(1);
     const [snapshot] = read.snapshots;
@@ -174,19 +179,19 @@ describe('a pull request GitHub answers only in part', () => {
   });
 
   it('names a repository whose listing GitHub refuses instead of failing the read', async () => {
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       ...BY_REST(),
       listPullRequests: vi.fn().mockRejectedValue(refused(404)),
     });
 
-    await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
+    await expect(listings.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
       snapshots: [],
       gaps: [{ what: 'repository', refusal: 'not_found' }],
     });
   });
 
   it('reads a rate limit as "wait", not as GitHub failing', async () => {
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       ...BY_REST(),
       listPullRequests: vi
         .fn()
@@ -195,7 +200,7 @@ describe('a pull request GitHub answers only in part', () => {
         ),
     });
 
-    await expect(resolver.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
+    await expect(listings.openPullRequests(SCOPE, repository)).resolves.toMatchObject({
       gaps: [{ what: 'repository', refusal: 'rate_limited' }],
     });
   });
@@ -219,7 +224,7 @@ describe('the open pull requests read in one request', () => {
   it('answers every pull request whole on the first read, asking nothing per pull request', async () => {
     const readPullRequest = vi.fn();
     const listFiles = vi.fn();
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       listOpenPullRequests: vi
         .fn()
         .mockResolvedValue(Array.from({ length: 30 }, (_, i) => whole(i + 1))),
@@ -227,7 +232,7 @@ describe('the open pull requests read in one request', () => {
       listFiles,
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.snapshots).toHaveLength(30);
     expect(read.deferred).toBe(0);
@@ -239,7 +244,7 @@ describe('the open pull requests read in one request', () => {
   it('reads a pull request whose files ran past the page the long way, without re-reading its detail', async () => {
     const readPullRequest = vi.fn();
     const listFiles = vi.fn().mockResolvedValue([{ path: 'a.ts' }, { path: 'b.ts' }]);
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       listOpenPullRequests: vi
         .fn()
         .mockResolvedValue([
@@ -252,7 +257,7 @@ describe('the open pull requests read in one request', () => {
       listReviews: vi.fn().mockResolvedValue([]),
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     const long = read.snapshots.find((snapshot) => snapshot.pull.number === 2);
     expect(long?.files).toEqual({ value: ['a.ts', 'b.ts'], refusal: null });
@@ -261,13 +266,13 @@ describe('the open pull requests read in one request', () => {
   });
 
   it('keeps a part GitHub refused as that part’s gap, and the snapshot only briefly', async () => {
-    const { resolver, repository, store } = build({
+    const { listings, repository, store } = build({
       listOpenPullRequests: vi
         .fn()
         .mockResolvedValue([{ ...whole(12), checks: { value: null, refusal: 'forbidden' } }]),
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.snapshots).toHaveLength(1);
     expect(read.gaps).toEqual([{ what: 'checks', refusal: 'forbidden' }]);
@@ -278,7 +283,7 @@ describe('the open pull requests read in one request', () => {
   // the same installation's budget on the refusal.
   it('answers a rate limit as the repository’s gap and does not fall back to REST', async () => {
     const listPullRequests = vi.fn();
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       listOpenPullRequests: vi
         .fn()
         .mockRejectedValue(
@@ -287,14 +292,14 @@ describe('the open pull requests read in one request', () => {
       listPullRequests,
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.gaps).toEqual([{ what: 'repository', refusal: 'rate_limited' }]);
     expect(listPullRequests).not.toHaveBeenCalled();
   });
 
   it('falls back to the REST read when the GraphQL read fails', async () => {
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue([PULL]),
       readPullRequest: vi.fn().mockResolvedValue(PULL),
@@ -303,7 +308,7 @@ describe('the open pull requests read in one request', () => {
       listReviews: vi.fn().mockResolvedValue([]),
     });
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.snapshots.map((snapshot) => snapshot.pull.number)).toEqual([12]);
   });
@@ -311,14 +316,14 @@ describe('the open pull requests read in one request', () => {
   // Opening a pull request from the queue used to read all its parts again.
   it('leaves each snapshot where the pull request’s own screen finds it', async () => {
     const listFiles = vi.fn();
-    const { resolver, repository } = build({
+    const { listings, reads, repository } = build({
       listOpenPullRequests: vi.fn().mockResolvedValue([whole(12)]),
       readPullRequest: vi.fn().mockResolvedValue({ ...PULL, nodeId: 'PR_12' }),
       listFiles,
     });
-    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
-    const snapshot = await resolver.pullRequest(SCOPE, {
+    const snapshot = await reads.pullRequest(SCOPE, {
       kind: 'installation' as const,
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
@@ -343,7 +348,7 @@ describe('the closed pull requests Analytics reads', () => {
       ...PULL,
       number,
     }));
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       listPullRequests: vi.fn().mockResolvedValue(closed),
       readPullRequest,
       listFiles: vi.fn().mockResolvedValue([]),
@@ -353,12 +358,12 @@ describe('the closed pull requests Analytics reads', () => {
       listReviews: vi.fn().mockResolvedValue([]),
     });
 
-    const { pulls, complete } = await resolver.closedPullRequests(
+    const { pulls, complete } = await listings.closedPullRequests(
       SCOPE,
       [repository],
       new Date('2026-09-01T00:00:00Z'),
       2,
-      resolver.readBudget(),
+      listings.readBudget(),
     );
 
     expect(complete).toBe(false);
@@ -379,12 +384,11 @@ describe('who the reader is on GitHub', () => {
     installations: GithubInstallationEntity[],
     tokenLogin: string | null = null,
   ) =>
-    new PullRequestAccessResolver(
+    new PullRequestDirectoryResolver(
       {
         findAll: vi.fn().mockResolvedValue(installations),
       } as unknown as GithubInstallationRepositoryPort,
       {} as GithubAppPort,
-      {} as GithubPullsPort,
       { loginOf: vi.fn().mockResolvedValue(grantLogin) } as unknown as GithubUserGrantResolver,
       {} as CacheService,
       {
@@ -404,37 +408,37 @@ describe('who the reader is on GitHub', () => {
     });
 
   it('is the login their stored grant carries', async () => {
-    const resolver = viewerResolver('ana-dev', [personal('ana')]);
+    const directory = viewerResolver('ana-dev', [personal('ana')]);
 
-    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
+    expect(await directory.viewerLogin(SCOPE)).toBe('ana-dev');
   });
 
   // GitHub lets nobody but the account install an App on a user account, so the
   // personal installation this person connected is this person.
   it('is the account of a personal installation they connected, with no grant', async () => {
-    const resolver = viewerResolver(null, [personal('ana')]);
+    const directory = viewerResolver(null, [personal('ana')]);
 
-    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
+    expect(await directory.viewerLogin(SCOPE)).toBe('ana-dev');
   });
 
   it('is nobody when the only installation is an organization’s', async () => {
-    const resolver = viewerResolver(null, [installation()]);
+    const directory = viewerResolver(null, [installation()]);
 
-    expect(await resolver.viewerLogin(SCOPE)).toBeNull();
+    expect(await directory.viewerLogin(SCOPE)).toBeNull();
   });
 
   // GitHub answered `GET /user` with the token when it was added: it is theirs.
   it('is the login one of their own tokens belongs to, with no grant', async () => {
-    const resolver = viewerResolver(null, [installation()], 'ana-dev');
+    const directory = viewerResolver(null, [installation()], 'ana-dev');
 
-    expect(await resolver.viewerLogin(SCOPE)).toBe('ana-dev');
+    expect(await directory.viewerLogin(SCOPE)).toBe('ana-dev');
   });
 
   // Another person's personal installation says who *they* are, never who asked.
   it('is nobody when the personal installation is somebody else’s', async () => {
-    const resolver = viewerResolver(null, [personal('bruno')]);
+    const directory = viewerResolver(null, [personal('bruno')]);
 
-    expect(await resolver.viewerLogin(SCOPE)).toBeNull();
+    expect(await directory.viewerLogin(SCOPE)).toBeNull();
   });
 });
 
@@ -458,7 +462,7 @@ describe('what one read spends', () => {
       pullNumbered(number),
     );
     const pulls = Array.from({ length: count }, (_, i) => pullNumbered(i + 1));
-    const { resolver, repository } = build({
+    const { listings, repository } = build({
       ...BY_REST(),
       listPullRequests: vi.fn().mockResolvedValue(pulls),
       readPullRequest,
@@ -466,7 +470,7 @@ describe('what one read spends', () => {
       readChecks,
       listReviews,
     });
-    return { resolver, repository, listFiles, readChecks, listReviews, readPullRequest };
+    return { listings, repository, listFiles, readChecks, listReviews, readPullRequest };
   }
 
   /**
@@ -477,9 +481,9 @@ describe('what one read spends', () => {
   const BUDGET = 5;
 
   it('fills as many pull requests as the budget allows and says it is still filling', async () => {
-    const { resolver, repository, listFiles } = budgeted(30);
+    const { listings, repository, listFiles } = budgeted(30);
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.snapshots).toHaveLength(BUDGET);
     expect(listFiles).toHaveBeenCalledTimes(BUDGET);
@@ -492,9 +496,9 @@ describe('what one read spends', () => {
    * lane, a checks state and a blocker nobody read (#244).
    */
   it('leaves a pull request out rather than answering with parts nobody read', async () => {
-    const { resolver, repository } = budgeted(30);
+    const { listings, repository } = budgeted(30);
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     for (const snapshot of read.snapshots) {
       expect(snapshot.files.value).not.toBeNull();
@@ -510,12 +514,12 @@ describe('what one read spends', () => {
    * not filled yet — the fan-out the budget exists to stop.
    */
   it('does not read the detail of a pull request it defers, on this poll or the next', async () => {
-    const { resolver, repository, readPullRequest } = budgeted(30);
+    const { listings, repository, readPullRequest } = budgeted(30);
 
-    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    await listings.openPullRequests(SCOPE, repository, listings.readBudget());
     expect(readPullRequest).toHaveBeenCalledTimes(BUDGET);
 
-    await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    await listings.openPullRequests(SCOPE, repository, listings.readBudget());
     // The first five are cached now, so the second read spends on the next
     // five and never re-reads the twenty-five it is still deferring.
     expect(readPullRequest).toHaveBeenCalledTimes(BUDGET * 2);
@@ -523,9 +527,9 @@ describe('what one read spends', () => {
 
   // An unasked part is not a refused one: it owes the reader no notice.
   it('reports no gap for a pull request it never asked about', async () => {
-    const { resolver, repository } = budgeted(30);
+    const { listings, repository } = budgeted(30);
 
-    const read = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const read = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(read.gaps).toEqual([]);
   });
@@ -533,12 +537,12 @@ describe('what one read spends', () => {
   // The budget is the view's: two repositories share it, or an account with
   // eighty of them has no ceiling at all.
   it('spends one budget across repositories', async () => {
-    const { resolver, repository, listFiles } = budgeted(10);
+    const { listings, repository, listFiles } = budgeted(10);
     const second = { ...repository, githubRepoId: repository.githubRepoId + 1 };
-    const budget = resolver.readBudget();
+    const budget = listings.readBudget();
 
-    await resolver.openPullRequests(SCOPE, repository, budget);
-    await resolver.openPullRequests(SCOPE, second, budget);
+    await listings.openPullRequests(SCOPE, repository, budget);
+    await listings.openPullRequests(SCOPE, second, budget);
 
     expect(listFiles).toHaveBeenCalledTimes(BUDGET);
   });
@@ -546,10 +550,10 @@ describe('what one read spends', () => {
   // A pull request already in the cache is free, and never takes a place from
   // one that would cost a read: that is what lets the next view fill more.
   it('spends nothing on a pull request it has already filled', async () => {
-    const { resolver, repository, listFiles } = budgeted(BUDGET);
+    const { listings, repository, listFiles } = budgeted(BUDGET);
 
-    const first = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
-    const second = await resolver.openPullRequests(SCOPE, repository, resolver.readBudget());
+    const first = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
+    const second = await listings.openPullRequests(SCOPE, repository, listings.readBudget());
 
     expect(first.snapshots).toHaveLength(BUDGET);
     expect(second.snapshots).toHaveLength(BUDGET);
@@ -562,11 +566,11 @@ describe('what one read spends', () => {
    * same pull request, because `get` → read → `set` is not single-flight.
    */
   it('reads a pull request once when two polls overlap', async () => {
-    const { resolver, repository, listFiles } = budgeted(BUDGET);
+    const { listings, repository, listFiles } = budgeted(BUDGET);
 
     await Promise.all([
-      resolver.openPullRequests(SCOPE, repository, resolver.readBudget()),
-      resolver.openPullRequests(SCOPE, repository, resolver.readBudget()),
+      listings.openPullRequests(SCOPE, repository, listings.readBudget()),
+      listings.openPullRequests(SCOPE, repository, listings.readBudget()),
     ]);
 
     expect(listFiles).toHaveBeenCalledTimes(BUDGET);
@@ -591,18 +595,18 @@ describe('a merge pinned to the head it was decided on', () => {
   }
 
   it('merges nothing, with GITHUB_014, once a push has moved the head on', async () => {
-    const { resolver, merge, address } = forMerge();
+    const { writes, merge, address } = forMerge();
 
-    await expect(resolver.merge(SCOPE, 'ana', address, 'squash', 'abc')).rejects.toMatchObject({
+    await expect(writes.merge(SCOPE, 'ana', address, 'squash', 'abc')).rejects.toMatchObject({
       code: 'GITHUB_014',
     });
     expect(merge).not.toHaveBeenCalled();
   });
 
   it('merges at the head it was decided on while that is still the head', async () => {
-    const { resolver, merge, address } = forMerge();
+    const { writes, merge, address } = forMerge();
 
-    await resolver.merge(SCOPE, 'ana', address, 'squash', 'def');
+    await writes.merge(SCOPE, 'ana', address, 'squash', 'def');
 
     expect(merge).toHaveBeenCalledWith(
       { token: 'gho_ana', bucket: 'user:1' },
@@ -641,7 +645,7 @@ describe('a repository read through the person’s own token', () => {
 
   it('reads the pull request with the token that opens the repository', async () => {
     const readPullRequest = vi.fn().mockResolvedValue({ ...PULL, number: 5 });
-    const { resolver } = build(
+    const { reads } = build(
       {
         readPullRequest,
         listFiles: vi.fn().mockResolvedValue([]),
@@ -654,7 +658,7 @@ describe('a repository read through the person’s own token', () => {
       tokens(),
     );
 
-    const snapshot = await resolver.pullRequest(SCOPE, address);
+    const snapshot = await reads.pullRequest(SCOPE, address);
 
     expect(snapshot.repository).toMatchObject({ kind: 'tokens', fullName: 'other-org/billing' });
     expect(readPullRequest).toHaveBeenCalledWith(
@@ -673,7 +677,7 @@ describe('a repository read through the person’s own token', () => {
       .fn()
       .mockResolvedValueOnce({ token: 'github_pat_a', bucket: 'user:1', cacheScope: 'token:a' })
       .mockResolvedValueOnce({ token: 'github_pat_b', bucket: 'user:1', cacheScope: 'token:b' });
-    const { resolver } = build(
+    const { reads } = build(
       {
         readPullRequest: vi.fn().mockResolvedValue({ ...PULL, number: 5 }),
         listFiles,
@@ -686,28 +690,28 @@ describe('a repository read through the person’s own token', () => {
       { ...tokens(), credentialFor },
     );
 
-    await resolver.pullRequest(SCOPE, address);
-    await resolver.pullRequest({ ...SCOPE, userId: 'bruno' } as AccessScope, address);
+    await reads.pullRequest(SCOPE, address);
+    await reads.pullRequest({ ...SCOPE, userId: 'bruno' } as AccessScope, address);
 
     expect(listFiles).toHaveBeenCalledTimes(2);
   });
 
   // A review session clones through the App, which a token repository has none of.
   it('gives no installation to start a session on, with GITHUB_022', () => {
-    const { resolver } = build({});
+    const { writes } = build({});
 
-    expect(() => resolver.requireApp(address)).toThrow(
+    expect(() => writes.requireApp(address)).toThrow(
       expect.objectContaining({ code: 'GITHUB_022' }),
     );
     const app = { ...address, kind: 'installation' as const, installationId: 'inst' };
-    expect(resolver.requireApp(app)).toBe(app);
+    expect(writes.requireApp(app)).toBe(app);
   });
 
   it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {
-    const { resolver } = build({ readPullRequest: vi.fn() }, {}, tokens());
+    const { reads } = build({ readPullRequest: vi.fn() }, {}, tokens());
 
     await expect(
-      resolver.pullRequest(SCOPE, { kind: 'tokens', githubRepoId: 7, number: 1 }),
+      reads.pullRequest(SCOPE, { kind: 'tokens', githubRepoId: 7, number: 1 }),
     ).rejects.toMatchObject({ code: 'GITHUB_023' });
   });
 });
