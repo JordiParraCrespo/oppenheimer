@@ -1187,13 +1187,23 @@ describe('browser attach socket', () => {
   });
 
   it('keeps an attach socket that answers its pings', async () => {
-    h.browsers.pingIntervalMs = 20;
+    // Each ping after the first is sent only once the last one was answered,
+    // so a third ping proves two rounds kept the socket. A fixed sleep with a
+    // 20 ms interval lost the pong to a busy event loop under the full CI run.
+    h.browsers.pingIntervalMs = 100;
     const runner = await runnerUp(h);
     sockets.push(runner);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
     sockets.push(browser);
+    const pinged = new Promise<void>((resolve) => {
+      let pings = 0;
+      browser.on('ping', () => {
+        pings += 1;
+        if (pings === 3) resolve();
+      });
+    });
     await opened(browser);
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await pinged;
     expect(browser.readyState).toBe(WebSocket.OPEN);
   });
 
