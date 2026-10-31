@@ -12,6 +12,8 @@ export {
   type BotPlanWindow,
   type BotProvider,
   BotRateLimitError,
+  type BotSteer,
+  type BotSteering,
   type BotToolData,
   type BotTurnContext,
   type BotTurnImage,

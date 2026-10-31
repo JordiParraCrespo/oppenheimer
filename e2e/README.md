@@ -17,7 +17,7 @@ needs none.
 
 The **`web` project passes but is not a CI row yet.** Run
 `pnpm --filter @oppenheimer/e2e e2e:web` locally when you touch the browser
-journeys. Adding it to `scripts/ci/local.mjs` is a separate CI decision: the
+journeys. Adding it to `scripts/ci/plan.mjs` is a separate CI decision: the
 scheduled workflow would need a Chromium.
 
 The **`terminal` project** needs Chromium and nothing else: no stack. It is the

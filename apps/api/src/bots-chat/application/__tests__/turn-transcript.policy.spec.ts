@@ -63,6 +63,33 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: a chat that reconnects mid-turn drawing a stored block
+  // again, because the block it was told it is in counts one the conversation
+  // never stored (only whitespace) or misses one it did.
+  it('places each delta in the block it belongs to, counting only blocks it stored', () => {
+    const { writes } = run([
+      { type: 'text.delta', text: 'One' },
+      { type: 'text.done', text: 'One' },
+      { type: 'text.delta', text: '  ' },
+      { type: 'text.done', text: '  ' },
+      { type: 'tool.started', callId: 'a', name: 'web_search', input: {} },
+      { type: 'text.delta', text: 'Two' },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(
+      writes.flatMap((write) =>
+        write.kind === 'text'
+          ? [[write.block, write.text]]
+          : write.kind === 'settled'
+            ? ['settled']
+            : [],
+      ),
+    ).toEqual([[0, 'One'], 'settled', [1, '  '], 'settled', [1, 'Two']]);
+    expect(writes.findIndex((write) => write.kind === 'settled')).toBeGreaterThan(
+      writes.findIndex((write) => write.kind === 'insert'),
+    );
+  });
+
   it('gathers a run of tool calls into one activity line and fills in what each answered', () => {
     const { writes } = run([
       { type: 'tool.started', callId: 'a', name: 'web_search', input: { q: 'x' } },
@@ -288,6 +315,40 @@ describe('TurnTranscript', () => {
       ['activity', 1, []],
       ['assistant', 2, [image]],
       ['activity', 3, []],
+    ]);
+  });
+
+  // What breaks this: a steer closing the line while a second call on it
+  // still runs, so that call's end found no line and was dropped with its
+  // session, images and subagents (Claude Code reports two calls, then each end).
+  it('keeps the end of a call still running when a steer closes its line, and opens a new line after the steer', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'web_fetch', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+      { type: 'tool.finished', callId: 'a', name: 'web_fetch', output: 'page', isError: false },
+      { type: 'steered', callId: 'a', steers: [{ id: 'message-1', text: 'Use Tokyo time.' }] },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'start_session',
+        output: 'Started',
+        isError: false,
+        data: { sessionId: 'session-1' },
+      },
+      { type: 'tool.started', callId: 'c', name: 'web_fetch', input: {} },
+    ]);
+    const line = inserted(writes)[0];
+    expect(line?.steps.map((step) => [step.callId, step.output, step.sessionId])).toEqual([
+      ['a', 'page', null],
+      ['b', 'Started', 'session-1'],
+    ]);
+    expect(writes.filter((write) => write.kind === 'steer')).toEqual([
+      { kind: 'steer', messageId: 'message-1', position: 2 },
+    ]);
+    // The call after the steer is a line of its own, after it.
+    expect(inserted(writes).map((message) => [message.role, message.position])).toEqual([
+      ['activity', 1],
+      ['activity', 3],
     ]);
   });
 

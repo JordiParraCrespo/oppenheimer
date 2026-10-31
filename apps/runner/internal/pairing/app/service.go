@@ -1,7 +1,9 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -164,6 +166,30 @@ func (s *Service) Unseal(sealed []byte) ([]byte, error) {
 		return nil, domain.ErrKeyStore.WithDetail("the sealed credential could not be opened").WithCause(err)
 	}
 	return plain, nil
+}
+
+// directProofContext is the prefix every transcript ProveDirect signs must
+// begin with (internal/direct's ProofContext). The host key also signs boot
+// tokens; refusing anything else keeps this from being a signing oracle for
+// them.
+const directProofContext = "oppenheimer/direct/v1/"
+
+// ProveDirect signs a direct path's host proof with the host key, and returns
+// the public half beside the signature (product/versions/mvp/31). Like
+// Unseal, the key never leaves this package.
+func (s *Service) ProveDirect(transcript []byte) (ed25519.PublicKey, []byte, error) {
+	if !bytes.HasPrefix(transcript, []byte(directProofContext)) {
+		return nil, nil, domain.ErrKeyStore.WithDetail("refusing to sign something that is not a direct path's host proof")
+	}
+	_, key, err := s.store.Load()
+	if err != nil {
+		return nil, nil, domain.ErrNotRegistered.WithCause(err)
+	}
+	pub, ok := key.Public().(ed25519.PublicKey)
+	if !ok {
+		return nil, nil, domain.ErrKeyStore.WithDetail("the host key is not Ed25519")
+	}
+	return pub, ed25519.Sign(key, transcript), nil
 }
 
 // SetChannel switches the release channel this host follows.

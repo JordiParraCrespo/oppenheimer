@@ -74,7 +74,9 @@
         "queued": "En cola",
         "sendNow": "Enviar ahora",
         "edit": "Editar",
-        "remove": "Quitar de la cola"
+        "remove": "Quitar de la cola",
+        "steer": "Reconducir",
+        "steerHint": "Entra en el turno en curso en su próxima llamada a una herramienta. Si el turno acaba antes, va a continuación."
       },
       "json": {
         "tree": "Árbol",
@@ -1373,6 +1375,8 @@
       "startFrom": "Prueba a pedir",
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
+      "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+      "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
       "stop": "Detener",
       "noKey": "{{provider}} aún no tiene clave en este espacio de trabajo. Añade una para hablar con este bot.",

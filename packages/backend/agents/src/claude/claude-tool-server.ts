@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import type { BotEngineTool } from '../bot-engine';
-import { runTool, type ToolCallData } from '../turn';
+import type { BotEngineTool, BotSteering } from '../bot-engine';
+import { deliverSteers, runTool, type ToolCallData } from '../turn';
 
 /** Where Claude Code names, in a call's `_meta`, the tool use the call answers. */
 const TOOL_USE_ID_META = 'claudecode/toolUseId';
@@ -25,11 +25,12 @@ export function botToolName(name: string): string {
  * tools' JSON Schemas as they are, rather than through zod shapes the SDK
  * would turn back into JSON Schema. What a call made goes into `made`
  * under the tool use Claude Code names in the call's `_meta`, for the
- * translator to put on that call's `tool.finished`.
+ * translator to put on that call's `tool.finished`, and so do the messages
+ * the person sent meanwhile, which ride the call's result (`deliverSteers`).
  */
 export function createToolServer(
   tools: BotEngineTool[],
-  turn: { signal: AbortSignal; apiKey: string },
+  turn: { signal: AbortSignal; apiKey: string; steering?: BotSteering },
   made: ToolCallData,
 ): McpServer {
   const mcp = new McpServer(
@@ -63,7 +64,12 @@ export function createToolServer(
       ...(typeof callId === 'string' ? { callId } : {}),
     });
     made.record(callId, result.data);
-    return { content: [{ type: 'text' as const, text: result.content }], isError: result.isError };
+    const text = await deliverSteers(
+      result.content,
+      { steering: turn.steering, signal: turn.signal, callId },
+      made,
+    );
+    return { content: [{ type: 'text' as const, text }], isError: result.isError };
   });
 
   return mcp;

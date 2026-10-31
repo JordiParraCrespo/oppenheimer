@@ -57,6 +57,25 @@ describe('chatTurns', () => {
     ]);
   });
 
+  // What breaks this: a message steered into a turn drawn as the turn's
+  // opening, above work the bot did before it took it.
+  it('keeps a message you steered in inside the answer, where the bot took it', () => {
+    const blocks = chatTurns(
+      conversation(
+        [
+          message('m1', 't1', 'user'),
+          message('m2', 't1', 'activity'),
+          message('s1', 't1', 'user'),
+          message('m3', 't1', 'activity'),
+        ],
+        [turn('t1')],
+      ),
+    );
+    expect(
+      blocks.map((block) => [block.asked.map((row) => row.id), block.answer.map((row) => row.id)]),
+    ).toEqual([[['m1'], ['m2', 's1', 'm3']]]);
+  });
+
   // What breaks this: a message sent while the bot works drawn twice, in the
   // transcript as a queued turn and on the composer as waiting.
   it('leaves out a message waiting behind the turn under way, which the composer shows', () => {

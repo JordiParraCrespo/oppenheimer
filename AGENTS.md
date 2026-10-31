@@ -83,12 +83,15 @@ When you add a file that mentions an optional app (CI, compose,
 ## Hard rules
 
 - **CI is local.** No git hooks and no CI on pull requests. The pipeline is
-  `scripts/ci/local.mjs` (what it selects is `scripts/ci/affected.mjs`); a
-  new CI step goes there and nowhere else. Before you push: commit, run
-  `pnpm ci:local`, push only on a green run, and paste `.ci-local/report.md`
-  into the pull request. `.github/workflows/ci.yml` runs `pnpm ci:local --all`
-  on `main` on a schedule; a red run opens a `main-red` issue, which comes
-  before new work. Driving a pull request is the `/steward` skill.
+  `scripts/ci/plan.mjs`, run by `pnpm ci:local` (`scripts/ci/local.mjs`), its
+  jobs side by side and stopping at the first failure; what it selects is
+  `scripts/ci/affected.mjs` and `selection.mjs`. A new CI step goes in the
+  plan and nowhere else. Before you push: commit, run `pnpm ci:local`, push
+  only on a green run, and paste `.ci-local/report.md` into the pull request;
+  while working, `pnpm ci:local --dirty` lints uncommitted work.
+  `.github/workflows/ci.yml` runs `pnpm ci:local --all` on `main` on a
+  schedule; a red run opens a `main-red` issue, which comes before new work.
+  Driving a pull request, and the order of its steps, is the `/steward` skill.
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for
@@ -154,7 +157,7 @@ pnpm check:flags          # Feature flags: none past expiry, none declared but u
 pnpm check:singletons     # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
 # oppenheimer:end web
 pnpm docker:dev           # Start Postgres + Redis
-pnpm ci:local             # CI, locally: what the branch touches (--all for everything)
+pnpm ci:local             # CI, locally: what the branch touches (--all for everything, --dirty to lint uncommitted work)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e

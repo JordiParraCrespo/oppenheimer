@@ -27,6 +27,9 @@ const ChannelLabel = "pty"
 const (
 	defaultMaxPeers      = 8
 	defaultGatherTimeout = 3 * time.Second
+	// A channel whose browser has not finished the host proof by then is
+	// closed: nothing it sends before is a keystroke.
+	defaultHandshakeTimeout = 5 * time.Second
 	// A data channel holding this much unsent is a slow reader: Send waits
 	// until it drains to bufferLow, which pauses the PTY read the way the
 	// link's per-attachment queue does.
@@ -40,6 +43,11 @@ var (
 	ErrTooManyPeers = errors.New("too many direct peers on this host")
 	// ErrClosed is a send on a channel that has closed.
 	ErrClosed = errors.New("direct channel closed")
+	// ErrNoProver is an Answerer built without a way to sign the host proof;
+	// it answers nothing, since a browser would refuse its channel anyway.
+	ErrNoProver = errors.New("direct: no host key to prove this host with")
+	// ErrNoFingerprint is an offer with no DTLS fingerprint to bind to.
+	ErrNoFingerprint = errors.New("direct: the offer names no DTLS fingerprint")
 )
 
 // Options configures an Answerer.
@@ -50,12 +58,19 @@ type Options struct {
 	// answer carries every candidate (no trickle), so a STUN server that does
 	// not answer must not hold the offer forever.
 	GatherTimeout time.Duration
-	Logger        *slog.Logger
+	// HandshakeTimeout bounds the host proof once the channel is open.
+	HandshakeTimeout time.Duration
+	// Prove signs the host proof (handshake.go) with the host key. Required:
+	// without it every offer is refused.
+	Prove  Prover
+	Logger *slog.Logger
 }
 
 // Handlers are a channel's events. Open is called once the channel can carry
-// bytes; Message for every binary message from the browser; Closed once, when
-// the channel or its peer connection ends, whichever is first.
+// bytes, which is after the browser has accepted the host proof, never at the
+// data channel's own open; Message for every binary message from the browser
+// after that; Closed once, when the channel or its peer connection ends,
+// whichever is first.
 type Handlers struct {
 	Open    func(*Channel)
 	Message func([]byte)
@@ -77,6 +92,9 @@ func NewAnswerer(opts Options) *Answerer {
 	if opts.GatherTimeout <= 0 {
 		opts.GatherTimeout = defaultGatherTimeout
 	}
+	if opts.HandshakeTimeout <= 0 {
+		opts.HandshakeTimeout = defaultHandshakeTimeout
+	}
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
@@ -89,6 +107,13 @@ func NewAnswerer(opts Options) *Answerer {
 // either way, and the peer's slot under MaxPeers is given back. Closing the
 // Channel before it opens is how a caller abandons a negotiation.
 func (a *Answerer) Answer(ctx context.Context, offer string, iceServers []string, h Handlers) (string, *Channel, error) {
+	if a.opts.Prove == nil {
+		return "", nil, ErrNoProver
+	}
+	offerFingerprints := Fingerprints(offer)
+	if offerFingerprints == "" {
+		return "", nil, ErrNoFingerprint
+	}
 	if !a.take() {
 		return "", nil, ErrTooManyPeers
 	}
@@ -101,7 +126,10 @@ func (a *Answerer) Answer(ctx context.Context, offer string, iceServers []string
 		a.give()
 		return "", nil, fmt.Errorf("direct: peer connection: %w", err)
 	}
-	ch := &Channel{pc: pc, low: make(chan struct{}, 1), done: make(chan struct{})}
+	ch := &Channel{
+		pc: pc, low: make(chan struct{}, 1), done: make(chan struct{}),
+		hs: &handshake{prove: a.opts.Prove, offer: offerFingerprints},
+	}
 	var once sync.Once
 	ch.end = func() {
 		first := false
@@ -145,17 +173,8 @@ func (a *Answerer) Answer(ctx context.Context, offer string, iceServers []string
 			default:
 			}
 		})
-		dc.OnOpen(func() {
-			if h.Open != nil {
-				h.Open(ch)
-			}
-		})
-		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			if msg.IsString || h.Message == nil {
-				return
-			}
-			h.Message(msg.Data)
-		})
+		dc.OnOpen(func() { ch.awaitProof(a.opts.HandshakeTimeout, a.opts.Logger) })
+		dc.OnMessage(func(msg webrtc.DataChannelMessage) { ch.receive(dc, msg, h, a.opts.Logger) })
 		dc.OnClose(ch.end)
 	})
 
@@ -164,6 +183,16 @@ func (a *Answerer) Answer(ctx context.Context, offer string, iceServers []string
 		ch.end()
 		return "", nil, err
 	}
+	answerFingerprints := Fingerprints(answer)
+	if answerFingerprints == "" {
+		ch.end()
+		return "", nil, errors.New("direct: the answer names no DTLS fingerprint")
+	}
+	// Set before the answer leaves: the browser cannot open the channel, and
+	// so cannot send hello, until it has the answer.
+	ch.mu.Lock()
+	ch.hs.answer = answerFingerprints
+	ch.mu.Unlock()
 	return answer, ch, nil
 }
 
@@ -230,6 +259,66 @@ type Channel struct {
 	low  chan struct{}
 	done chan struct{}
 	end  func()
+	// hs is the host proof's state, guarded by mu; bytes flow once it is
+	// ready.
+	hs *handshake
+}
+
+func (c *Channel) isReady() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.hs.ready
+}
+
+// awaitProof closes the channel if the browser has not finished the host
+// proof within timeout: one that never does holds a peer slot that long and
+// no longer.
+func (c *Channel) awaitProof(timeout time.Duration, logger *slog.Logger) {
+	timer := time.AfterFunc(timeout, func() {
+		if !c.isReady() {
+			logger.Info("direct: the browser did not finish the host proof in time")
+			c.end()
+		}
+	})
+	go func() {
+		<-c.done
+		timer.Stop()
+	}()
+}
+
+// receive is one message from the browser. Until the proof is accepted only
+// the handshake's text messages are taken, and anything else closes the
+// channel; after it, binary messages are keystrokes and text is ignored.
+func (c *Channel) receive(dc *webrtc.DataChannel, msg webrtc.DataChannelMessage, h Handlers, logger *slog.Logger) {
+	ready := c.isReady()
+	switch {
+	case ready && !msg.IsString:
+		if h.Message != nil {
+			h.Message(msg.Data)
+		}
+		return
+	case ready:
+		return
+	case !msg.IsString:
+		// Bytes before the proof are not keystrokes: the handshake is the
+		// first thing a browser sends.
+		c.end()
+		return
+	}
+	c.mu.Lock()
+	reply, done, err := c.hs.receive(msg.Data)
+	c.mu.Unlock()
+	switch {
+	case err != nil:
+		logger.Info("direct: host proof refused", slog.Any("error", err))
+		c.end()
+	case reply != nil:
+		if err := dc.SendText(string(reply)); err != nil {
+			c.end()
+		}
+	case done && h.Open != nil:
+		h.Open(c)
+	}
 }
 
 // Send writes bytes to the browser. It waits while the channel holds more
@@ -238,9 +327,9 @@ type Channel struct {
 // returns.
 func (c *Channel) Send(ctx context.Context, bytes []byte) error {
 	c.mu.Lock()
-	dc := c.dc
+	dc, ready := c.dc, c.hs.ready
 	c.mu.Unlock()
-	if dc == nil {
+	if dc == nil || !ready {
 		return ErrClosed
 	}
 	for dc.BufferedAmount() > bufferHigh {
