@@ -35,6 +35,7 @@ test("the frontend's checks and their helpers select nothing", () => {
     'scripts/check-react-compiler.mjs',
     'scripts/skeleton-slab-debt.mjs',
     'scripts/query-state-slots.test.mjs',
+    'scripts/ui-catalog.mjs',
   ];
   assert.deepEqual(classify(files), { global: [], lintOnly: files, owners: [] });
 });

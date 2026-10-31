@@ -47,7 +47,7 @@ export const LINT_ONLY_PATHS = [
   /^scripts\/check-(api-structure|feature-flags)(\.test)?\.mjs$/,
   // oppenheimer:begin web
   /^scripts\/check-(frontend-structure|react-compiler|singletons)(\.test)?\.mjs$/,
-  /^scripts\/(query-state-slots|skeleton-shape|skeleton-slab-debt)(\.test)?\.mjs$/,
+  /^scripts\/(query-state-slots|skeleton-shape|skeleton-slab-debt|ui-catalog)(\.test)?\.mjs$/,
   // oppenheimer:end web
   /^scripts\/evals\//,
 ];
