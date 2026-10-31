@@ -22,6 +22,7 @@
     "check:structure": "node scripts/check-frontend-structure.mjs && node --test scripts/check-frontend-structure.test.mjs scripts/query-state-slots.test.mjs scripts/skeleton-shape.test.mjs scripts/ui-catalog.test.mjs",
     "check:compiler": "node scripts/check-react-compiler.mjs",
     "check:unused": "knip --workspace apps/web --workspace packages/frontend/core --workspace packages/frontend/consumer --workspace packages/frontend/web",
+    "check:unused:backend": "knip --config knip.backend.json --workspace apps/api --workspace packages/backend/agents --workspace packages/backend/authz --workspace packages/backend/cache --workspace packages/backend/core --workspace packages/backend/ddd --workspace packages/backend/email --workspace packages/backend/i18n --workspace packages/backend/llm --workspace packages/backend/storage",
     "check:hooks": "node --test .agents/hooks/git-guard.test.mjs .agents/hooks/screenshot-guard.test.mjs",
     "check:bootstrap": "node --test scripts/dev/bootstrap.test.mjs",
     "check:singletons": "node scripts/check-singletons.mjs && node --test scripts/check-singletons.test.mjs",

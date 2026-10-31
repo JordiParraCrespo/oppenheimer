@@ -1,3 +1,9 @@
+/**
+ * The Bull Board dashboard's mount: each queue resolved by its BullMQ token,
+ * the router at the adapter's own base path, and the Basic-auth gate with its
+ * per-address failure limit in front of it. A regression here is a board with
+ * no queues, a page that 404s on its assets, or a dashboard open to guessing.
+ */
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,7 +32,9 @@ vi.mock('@bull-board/express', () => ({
   },
 }));
 
-const { BULL_BOARD_MIN_PASSWORD_LENGTH, setupBullBoard } = await import('./bull-board.setup');
+const { BULL_BOARD_MIN_PASSWORD_LENGTH, setupBullBoard } = await import(
+  '../infrastructure/bull-board.util'
+);
 
 function app() {
   const use = vi.fn();
