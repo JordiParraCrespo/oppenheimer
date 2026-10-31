@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sessionEntity } from '../../../testing';
 import {
   repositoryNameOf,
   SessionCheckoutEntity,
@@ -130,6 +131,25 @@ describe('the checkouts a session carries', () => {
     expect(work.isFolder).toBe(true);
     expect(work.scopeLabel).toBe('/home/jordi/code/atlas');
     expect(work.inProject('project-2').folderPath).toBe('/home/jordi/code/atlas');
+  });
+});
+
+// A move draws the session in its new project while the request is on its
+// way; the regression is a copy that drops a field it was not told about.
+describe('SessionEntity.inProject', () => {
+  it('carries every field but the project, defaulted ones included', () => {
+    const work = sessionEntity({
+      projectId: 'project-1',
+      stateSeq: 4,
+      cloudSessionId: 'session_01',
+      closeRefusal: { code: 'GIT_003', detail: null },
+    });
+
+    const moved = work.inProject('project-2');
+
+    expect(moved).toBeInstanceOf(SessionEntity);
+    expect({ ...moved }).toEqual({ ...work, projectId: 'project-2' });
+    expect(moved.cloudUrl).toBe('https://claude.ai/code/session_01');
   });
 });
 

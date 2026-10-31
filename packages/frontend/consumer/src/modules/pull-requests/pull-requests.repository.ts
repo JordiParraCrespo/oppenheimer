@@ -18,6 +18,7 @@ import {
   type PullRequestComment,
   PullRequestDetailEntity,
   PullRequestEntity,
+  type PullRequestEntityProps,
   type PullRequestFile,
   type PullRequestQueue,
   type PullRequestQueueName,
@@ -49,7 +50,11 @@ function laneReasonOf(dto: PullRequestRowDto['laneReason']): LaneReason {
 }
 
 function toEntity(dto: PullRequestRowDto): PullRequestEntity {
-  return new PullRequestEntity({
+  return new PullRequestEntity(toEntityProps(dto));
+}
+
+function toEntityProps(dto: PullRequestRowDto): PullRequestEntityProps {
+  return {
     installationId: sourceOf(dto.installationId),
     githubRepoId: dto.githubRepoId,
     repository: dto.repository,
@@ -73,7 +78,7 @@ function toEntity(dto: PullRequestRowDto): PullRequestEntity {
     unread: dto.unread,
     headSha: dto.headSha,
     openedAt: new Date(Math.floor(Date.now() / 1000) * 1000 - dto.waitingSeconds * 1000),
-  });
+  };
 }
 
 function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
@@ -91,30 +96,30 @@ function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {
 }
 
 function toDetail(dto: PullRequestDetailResponseDto): PullRequestDetailEntity {
-  return new PullRequestDetailEntity(
-    toEntity(dto),
-    dto.body,
-    dto.baseRef,
-    dto.fromFork,
-    dto.state,
-    dto.changedFiles,
-    dto.folders,
-    {
+  return new PullRequestDetailEntity({
+    ...toEntityProps(dto),
+    body: dto.body,
+    baseRef: dto.baseRef,
+    fromFork: dto.fromFork,
+    state: dto.state,
+    changedFiles: dto.changedFiles,
+    folders: dto.folders,
+    checkCounts: {
       total: dto.checkCounts.total,
       passed: dto.checkCounts.passed,
       failed: dto.checkCounts.failed,
       pending: dto.checkCounts.pending,
     },
-    dto.gates,
-    dto.reviewers,
-    dto.viewerLogin ?? null,
-    dto.checkCounts.failing.map(({ name, url, title }) => ({ name, url, title })),
-    dto.ciFindings.map((finding) => ({
+    gates: dto.gates,
+    reviewers: dto.reviewers,
+    viewerLogin: dto.viewerLogin ?? null,
+    failingChecks: dto.checkCounts.failing.map(({ name, url, title }) => ({ name, url, title })),
+    ciFindings: dto.ciFindings.map((finding) => ({
       ...finding,
       evidence: [...finding.evidence],
       updatedAt: new Date(finding.updatedAt),
     })),
-  );
+  });
 }
 
 function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics {

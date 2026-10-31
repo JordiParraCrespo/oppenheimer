@@ -382,33 +382,15 @@ export class SessionEntity {
 
   /** The same session in another project: what a list draws while a move to it is on its way. */
   inProject(projectId: string): SessionEntity {
-    return new SessionEntity({
-      id: this.id,
-      organizationId: this.organizationId,
-      projectId,
-      hostId: this.hostId,
-      name: this.name,
-      slug: this.slug,
-      agent: this.agent,
-      launch: this.launch,
-      state: this.state,
-      lifecycle: this.lifecycle,
-      cwdCheckoutId: this.cwdCheckoutId,
-      checkouts: this.checkouts,
-      stoppedAt: this.stoppedAt,
-      hints: this.hints,
-      createdAt: this.createdAt,
-      place: this.place,
-      folderPath: this.folderPath,
-      closeRequest: this.closeRequest,
-      closeRefusal: this.closeRefusal,
-      observedSince: this.observedSince,
-      lastEventAt: this.lastEventAt,
-      stateSeq: this.stateSeq,
-      decision: this.decision,
-      cloud: this.cloud,
-      cloudSessionId: this.cloudSessionId,
-    });
+    return this.with({ projectId });
+  }
+
+  /**
+   * A copy with `overrides` applied. The copy is of every field the session
+   * holds, so a field added later is carried without being listed here.
+   */
+  with(overrides: Partial<SessionEntityProps>): SessionEntity {
+    return new SessionEntity({ ...this, ...overrides });
   }
 }
 

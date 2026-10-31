@@ -220,29 +220,46 @@ export interface CiFinding {
 }
 
 /** The briefing: the row, and what the page around it reads. */
+/** What a {@link PullRequestDetailEntity} is made from: its row's props and its own fields. */
+export type PullRequestDetailEntityProps = PullRequestEntityProps &
+  Pick<
+    PullRequestDetailEntity,
+    | 'body'
+    | 'baseRef'
+    | 'fromFork'
+    | 'state'
+    | 'changedFiles'
+    | 'folders'
+    | 'checkCounts'
+    | 'gates'
+    | 'reviewers'
+    | 'viewerLogin'
+  > &
+  Partial<Pick<PullRequestDetailEntity, 'failingChecks' | 'ciFindings'>>;
+
 export class PullRequestDetailEntity extends PullRequestEntity {
-  constructor(
-    row: PullRequestEntity,
-    /** The description, as written (Markdown). */
-    public readonly body: string,
-    public readonly baseRef: string,
-    /** The head branch is in a fork, which a session cannot check out yet. */
-    public readonly fromFork: boolean,
-    public readonly state: 'open' | 'merged' | 'closed',
-    public readonly changedFiles: number,
-    /** Top-level directories, most files first. */
-    public readonly folders: string[],
-    public readonly checkCounts: { total: number; passed: number; failed: number; pending: number },
-    public readonly gates: { id: MergeGateId; state: MergeGateState }[],
-    public readonly reviewers: PullRequestReviewer[],
-    public readonly viewerLogin: string | null,
-    /** The checks that failed on the head; empty when none did or they were not read. */
-    public readonly failingChecks: PullRequestFailingCheck[] = [],
-    /** What the head's failing checks came to, one per check looked into. */
-    public readonly ciFindings: CiFinding[] = [],
-  ) {
-    // The row is an entity of its own, so it is all the fields its props need.
-    super(row);
+  /** The description, as written (Markdown). */
+  readonly body!: string;
+  readonly baseRef!: string;
+  /** The head branch is in a fork, which a session cannot check out yet. */
+  readonly fromFork!: boolean;
+  readonly state!: 'open' | 'merged' | 'closed';
+  readonly changedFiles!: number;
+  /** Top-level directories, most files first. */
+  readonly folders!: string[];
+  readonly checkCounts!: { total: number; passed: number; failed: number; pending: number };
+  readonly gates!: { id: MergeGateId; state: MergeGateState }[];
+  readonly reviewers!: PullRequestReviewer[];
+  readonly viewerLogin!: string | null;
+  /** The checks that failed on the head; empty when none did or they were not read. */
+  readonly failingChecks: PullRequestFailingCheck[] = [];
+  /** What the head's failing checks came to, one per check looked into. */
+  readonly ciFindings: CiFinding[] = [];
+
+  constructor(props: PullRequestDetailEntityProps) {
+    super(props);
+    // A subclass's fields are defined after `super` returns, so its own are set here.
+    assignProps(this, props);
   }
 
   get isOpen(): boolean {

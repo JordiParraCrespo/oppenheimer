@@ -25,4 +25,20 @@ describe('assignProps', () => {
     expect(thing.tags).toEqual([]);
     expect(thing.seq).toBe(0);
   });
+
+  // `Reflect.set` returned false on a getter and the field was silently not
+  // set; a plain assignment refuses it.
+  it('refuses a prop that names a getter instead of skipping it', () => {
+    class Named {
+      readonly id!: string;
+      get label(): string {
+        return this.id;
+      }
+      constructor(props: Partial<Named>) {
+        assignProps(this, props);
+      }
+    }
+
+    expect(() => new Named({ id: 'n-1', label: 'x' })).toThrow(TypeError);
+  });
 });
