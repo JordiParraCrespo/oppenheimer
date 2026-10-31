@@ -7,7 +7,7 @@ import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
 import { usePollWhile } from './live-poll';
 
-export const whatsappKeys = {
+const whatsappKeys = {
   all: ['whatsapp'] as const,
   accounts: () => [...whatsappKeys.all, 'accounts'] as const,
 };
