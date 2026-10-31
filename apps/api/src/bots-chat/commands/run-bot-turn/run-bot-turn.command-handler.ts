@@ -93,6 +93,8 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
   }
 
   private async close(turn: BotTurnEntity, correlationId: string): Promise<void> {
+    // Before it reads as ended: a chat that connects after never gets a snapshot of it.
+    await this.stream.forget(turn.botId, turn.id);
     if (!(await this.turns.finish(turn, correlationId))) return;
     await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
     await this.summaries.afterTurn(turn, correlationId);

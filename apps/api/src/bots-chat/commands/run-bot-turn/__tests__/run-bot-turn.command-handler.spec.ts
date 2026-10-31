@@ -77,7 +77,24 @@ function setup(
     saveSteps: vi.fn(async () => undefined),
     placeSteer: vi.fn(async () => undefined),
   } satisfies Partial<BotMessageRepositoryPort>;
-  const stream: BotStreamPort = { publish: vi.fn(async () => undefined), subscribe: vi.fn() };
+  /** What reached the bot's stream, in order. */
+  const heard: string[] = [];
+  const stream = {
+    publish: vi.fn(async (_botId: string, event: { type: string }) => {
+      heard.push(event.type);
+    }),
+    write: vi.fn(async (_botId: string, _turnId: string, block: number, text: string) => {
+      heard.push(`write ${block} ${text}`);
+    }),
+    settle: vi.fn(async () => {
+      heard.push('settle');
+    }),
+    forget: vi.fn(async () => {
+      heard.push('forget');
+    }),
+    inFlight: vi.fn(async () => []),
+    subscribe: vi.fn(),
+  } satisfies BotStreamPort;
   const context = {
     resolve: vi.fn(async () => {
       if (options.resolve) throw options.resolve;
@@ -107,7 +124,7 @@ function setup(
     new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
   );
-  return { handler, turns, messages, stream, summaries };
+  return { handler, turns, messages, stream, summaries, heard };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
@@ -116,7 +133,7 @@ const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
 describe('RunBotTurnCommandHandler', () => {
   it('claims the turn, stores the reply, and ends completed with its usage', async () => {
     const turn = queued();
-    const { handler, turns, messages, stream, summaries } = setup(turn, () => [
+    const { handler, turns, messages, heard, summaries } = setup(turn, () => [
       { type: 'text.delta', text: 'Hello' },
       { type: 'text.done', text: 'Hello' },
       { type: 'usage', inputTokens: 12, outputTokens: 3 },
@@ -131,12 +148,8 @@ describe('RunBotTurnCommandHandler', () => {
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
     // Once it has ended, whether the conversation needs summarizing.
     expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));
-    expect(vi.mocked(stream.publish).mock.calls.map(([, event]) => event.type)).toEqual([
-      'turn',
-      'text',
-      'message',
-      'turn',
-    ]);
+    // The block is kept until it is stored, and nothing of the turn once it reads as ended.
+    expect(heard).toEqual(['turn', 'write 0 Hello', 'message', 'settle', 'forget', 'turn']);
   });
 
   it('stores a tool call as an activity line whose step fills in when the call finishes', async () => {

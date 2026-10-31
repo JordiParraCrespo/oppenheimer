@@ -1086,6 +1086,20 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
+ * Where a piece of a turn's streamed text belongs. `block` counts the blocks
+ * of text the turn stored before this one (a block of only whitespace is not
+ * stored, and does not count), so a block is drawn live until the
+ * conversation holds that many of the turn's assistant messages with text.
+ * `seq` counts the turn's text writes, 1 for the first: a piece at or below
+ * what a reader already holds is one it has.
+ */
+const botStreamTextPlace = {
+  turnId: z.string(),
+  block: z.number().int().nonnegative(),
+  seq: z.number().int().nonnegative(),
+};
+
+/**
  * What `GET /bots/:id/stream` sends, as the `data` of a `bot` event: text as a
  * turn writes it, that it waits on a provider that refused a call, where a running `delegate` call's children are, a nudge to read the conversation again when a message
  * lands or a turn changes, and one to read the approvals when a card is
@@ -1094,7 +1108,15 @@ export const WORKSPACE_BOT_APPROVALS_MAX = 100;
  */
 export const botStreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn'), turnId: z.string(), status: z.enum(BOT_TURN_STATUSES) }),
-  z.object({ type: z.literal('text'), turnId: z.string(), text: z.string() }),
+  /** A delta of the block being written, the turn's `seq`th text write. */
+  z.object({ type: z.literal('text'), ...botStreamTextPlace, text: z.string() }),
+  /**
+   * The whole of the block a running turn is writing and has not stored, as
+   * of its `seq`th write: sent once per running turn right after `ready`, in
+   * place of what the reader held for that block, so a reconnect loses no
+   * text. Deltas at or below `seq` that follow are already in it.
+   */
+  z.object({ type: z.literal('snapshot'), ...botStreamTextPlace, text: z.string() }),
   /**
    * The provider refused a call and the turn waits to try it again: a rate
    * limit, or the provider overloaded or down. Until the turn writes again.
@@ -1142,6 +1164,8 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
   }),
 ]);
 export type BotStreamEvent = z.infer<typeof botStreamEventSchema>;
+export type BotStreamText = Extract<BotStreamEvent, { type: 'text' }>;
+export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';

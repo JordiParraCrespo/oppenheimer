@@ -92,7 +92,14 @@ function setup() {
   };
 }
 
-const text = (value: string): BotStreamEvent => ({ type: 'text', turnId: 't1', text: value });
+/** A delta of turn `t1`'s `block`, the turn's `seq`th text write. */
+const text = (value: string, seq = 1, block = 0): BotStreamEvent => ({
+  type: 'text',
+  turnId: 't1',
+  block,
+  seq,
+  text: value,
+});
 
 /** A `delegate` call's frame: one child, in `state`, having called `tools`. */
 const frame = (state: BotSubagentProgress['state'], ...tools: string[]): BotStreamEvent => ({
@@ -158,8 +165,8 @@ describe('useBotLive', () => {
   it('gathers a turn’s text as it streams', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('Hel'));
-    await chat.send(text('lo'));
+    await chat.send(text('Hel', 1));
+    await chat.send(text('lo', 2));
     expect(result.current.text).toEqual({ t1: 'Hello' });
   });
 
@@ -171,11 +178,11 @@ describe('useBotLive', () => {
   it('keeps text live until the read that stores it lands, then only what came after', async () => {
     const chat = setup();
     const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
-    await chat.send(text('First.'));
+    await chat.send(text('First.', 1, 0));
     await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
-    await chat.send(text(' Second'));
+    await chat.send(text(' Second', 2, 1));
     expect(chat.invalidated).toEqual([CONVERSATION, GOAL]);
-    expect(result.current.text).toEqual({ t1: 'First. Second' });
+    expect(result.current.text).toEqual({ t1: 'First.\n\nSecond' });
     await chat.land(read('running', 'First.'));
     expect(result.current.text).toEqual({ t1: 'Second' });
   });
@@ -189,6 +196,23 @@ describe('useBotLive', () => {
     await chat.status('down');
     await chat.status('live');
     expect(result.current.text).toEqual({ t1: 'Partial rep' });
+  });
+
+  /**
+   * The regression this guards: what the turn wrote while the stream was down
+   * left a hole in the reply until the next stored message.
+   */
+  it('fills in what was written while the stream was down from the snapshot, and draws nothing twice', async () => {
+    const chat = setup();
+    const { result } = renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
+    await chat.status('live');
+    await chat.send(text('Hel', 1));
+    await chat.status('down');
+    await chat.status('live');
+    await chat.send({ type: 'snapshot', turnId: 't1', block: 0, seq: 3, text: 'Hello, world' });
+    await chat.send(text('world', 3));
+    await chat.send(text('!', 4));
+    expect(result.current.text).toEqual({ t1: 'Hello, world!' });
   });
 
   // What breaks this: a turn that waited once still saying "retrying" after

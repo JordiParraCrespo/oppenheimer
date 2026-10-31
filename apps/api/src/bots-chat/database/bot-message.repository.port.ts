@@ -43,6 +43,13 @@ export interface BotMessageRepositoryPort {
   /** How many messages the chat holds in all: yours, the bot's and events, not activity lines. */
   countConversation(scope: AccessScope, botId: string): Promise<number>;
   /**
+   * How many blocks of text each of these turns has stored, in all: its
+   * assistant messages with words (an image the bot showed has none). A
+   * running turn's streamed text is numbered by it, and a long turn's
+   * first blocks can fall outside the conversation's window.
+   */
+  countTextBlocks(scope: AccessScope, turnIds: readonly string[]): Promise<Map<string, number>>;
+  /**
    * One page of the whole chat for an export, oldest first: up to `limit`
    * messages after `after` (the last of the page before; null from the start).
    */

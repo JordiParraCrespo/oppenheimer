@@ -1,6 +1,6 @@
 import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotAttachment, BotStreamEvent, BotTurnFailure } from '@oppenheimer/shared';
+import type { BotAttachment, BotTurnFailure } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import { toMailDraft, toShownImages, toSubagentRuns } from '../bot-message.mapper';
@@ -18,13 +18,17 @@ import {
   type BotTurnEntity,
   type BotTurnPlanLimits,
 } from '../domain/bot-turn.entity';
+import type { BotStreamNudge } from '../infrastructure/bot-stream.port';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
 /** What one engine event asks the runner to do. */
 export type TranscriptWrite =
   | { kind: 'insert'; message: BotMessageEntity }
   | { kind: 'steps'; message: BotMessageEntity }
-  | { kind: 'text'; text: string }
+  /** A delta of the turn's `block`th block of text, passed on and kept until the block is stored. */
+  | { kind: 'text'; block: number; text: string }
+  /** The block being written ended (stored, or only whitespace): what was kept of it goes. */
+  | { kind: 'settled' }
   /** A message the person steered in, put after the call whose result carried it to the model. */
   | { kind: 'steer'; messageId: string; position: number }
   /** The engine waits to try a refused call again; passed on, never stored. */
@@ -50,14 +54,18 @@ export interface TranscriptOutcome {
  * between two of them is one activity line whose steps fill in as the calls
  * finish. The images a `show_image` call stored are a message of the bot's
  * of their own, after the line, which the next call does not join. Text as
- * it streams is only passed on. Your message is position 0,
- * so the bot's start at 1. A message you steered in while it worked takes
- * the next position once the call that delivered it has ended, and the next
- * call opens a line of its own after it.
+ * it streams is passed on with the number of blocks stored before it, and
+ * kept until its block ends, so a chat that connects mid-block reads it
+ * whole. Your message is position 0, so the bot's start at 1. A message
+ * you steered in while it worked takes the next position once the call
+ * that delivered it has ended, and the next call opens a line of its own
+ * after it.
  */
 export class TurnTranscript {
   private position = 1;
   private pending = '';
+  /** The blocks of text stored so far. */
+  private blocks = 0;
   private activity: BotMessageEntity | null = null;
   /**
    * The line each call still running was put on, by call id: a steer or a
@@ -82,10 +90,11 @@ export class TurnTranscript {
       case 'text.delta':
         this.activity = null;
         this.pending += event.text;
-        return [{ kind: 'text', text: event.text }];
+        return [{ kind: 'text', block: this.blocks, text: event.text }];
       case 'text.done':
         this.pending = '';
-        return this.say(event.text);
+        // Stored first, then forgotten: a chat that connects between the two reads both.
+        return [...this.say(event.text), { kind: 'settled' }];
       case 'tool.started':
         return this.started(event.callId, event.name, event.input);
       case 'tool.finished':
@@ -142,6 +151,7 @@ export class TurnTranscript {
   private say(text: string): TranscriptWrite[] {
     if (!text.trim()) return [];
     this.activity = null;
+    this.blocks += 1;
     return [{ kind: 'insert', message: this.message('assistant', text, []) }];
   }
 
@@ -218,17 +228,12 @@ export class TurnTranscript {
   }
 }
 
-/**
- * A write that is passed on and never stored (text as it streams, a retry
- * wait), as the bot's stream says it.
- */
+/** A retry wait, passed on and never stored, as the bot's stream says it. */
 export function passedOnEvent(
   turnId: string,
-  write: Extract<TranscriptWrite, { kind: 'text' | 'retrying' }>,
-): BotStreamEvent {
-  return write.kind === 'text'
-    ? { type: 'text', turnId, text: write.text }
-    : { type: 'retrying', turnId, reason: write.reason };
+  write: Extract<TranscriptWrite, { kind: 'retrying' }>,
+): BotStreamNudge {
+  return { type: 'retrying', turnId, reason: write.reason };
 }
 
 /** The message a stored write wrote: the one it inserted or grew, or the steer it placed. */

@@ -7,7 +7,8 @@ import { passedOnEvent, storedMessageId, type TranscriptWrite } from './turn-tra
 
 /**
  * Carries out what a running turn's transcript writes (`TurnTranscript`):
- * one case per kind of write. What is only passed on goes to the stream;
+ * one case per kind of write. Text as it streams is written to the stream,
+ * which keeps it until its block settles; a retry wait is passed on;
  * what is stored (a new message, a line's steps, a steer placed where the
  * turn took it) is written, then announced as that message.
  */
@@ -26,6 +27,9 @@ export class TurnWriteFactory {
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
     switch (write.kind) {
       case 'text':
+        return this.stream.write(turn.botId, turn.id, write.block, write.text);
+      case 'settled':
+        return this.stream.settle(turn.botId, turn.id);
       case 'retrying':
         return this.stream.publish(turn.botId, passedOnEvent(turn.id, write));
       case 'insert':

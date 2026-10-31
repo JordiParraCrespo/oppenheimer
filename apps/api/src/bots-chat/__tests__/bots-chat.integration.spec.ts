@@ -1541,6 +1541,33 @@ describe('bots chat (integration)', () => {
     expect((await conversationRows(bot.id)).messages).toBe(2);
   });
 
+  // What breaks this: a long running turn whose first blocks fell out of the
+  // conversation's window, counted short, so the console drew them again live.
+  it('counts each turn’s stored blocks of text in all, not its activity lines', async () => {
+    const bot = await create('Blocks');
+    const { turn, message } = sent(bot, 'Write a lot');
+    await turns.enqueue(turn, message, null);
+    const line = (role: 'assistant' | 'activity', content: string, position: number) =>
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: turn.id,
+        role,
+        content,
+        steps: [],
+        position,
+      });
+    await messages.insert(line('assistant', 'One.', 1));
+    await messages.insert(line('activity', '', 2));
+    await messages.insert(line('assistant', 'Two.', 3));
+    expect(await messages.countTextBlocks(scope(), [turn.id, randomUUID()])).toEqual(
+      new Map([[turn.id, 2]]),
+    );
+    expect(await messages.countTextBlocks(scope(), [])).toEqual(new Map());
+    const other = await insertOrganization();
+    expect(await messages.countTextBlocks(scopeOf(other), [turn.id])).toEqual(new Map());
+  });
+
   it('counts the whole chat and reads it all back a page at a time, oldest first', async () => {
     const bot = await create('Long');
     await talked(bot, 10);
