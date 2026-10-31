@@ -11597,7 +11597,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11673,7 +11673,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11780,7 +11780,7 @@
             "description": ""
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11859,7 +11859,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11978,7 +11978,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13477,7 +13477,7 @@
     },
     "/api/v1/tasks": {
       "get": {
-        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer).",
+        "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a milestone, the tasks a session is on, or a range of due dates (the calendar’s layer). Done holds at most its 1000 most recently ticked tasks; the other columns come whole.",
         "operationId": "findTasks",
         "parameters": [
           {
@@ -14754,7 +14754,7 @@
             }
           },
           "400": {
-            "description": "TASKS_003 — No active organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17663,7 +17663,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18680,7 +18680,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18948,7 +18948,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19092,7 +19092,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19168,7 +19168,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19264,7 +19264,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20992,7 +20992,7 @@
             }
           },
           "400": {
-            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "description": "VOICE_002 — No audio attached\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21147,7 +21147,7 @@
             }
           },
           "400": {
-            "description": "INBOX_001 — No active workspace",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21223,7 +21223,7 @@
             }
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21290,7 +21290,7 @@
             "description": "The occurrence has no mark."
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
