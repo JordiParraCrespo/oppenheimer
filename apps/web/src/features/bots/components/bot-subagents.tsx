@@ -1,8 +1,8 @@
 import { Trace, TraceNote, TraceStep } from '@oppenheimer/design-system-web';
 import { Bot } from '@oppenheimer/design-system-web/icons';
+import { humaniseToolName } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentRun } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-import { humaniseToolName } from '@/features/bots/lib/tool-activity';
 
 /**
  * The subagents a `delegate` call ran (`25-bots.md` §4.7), under its line: a
