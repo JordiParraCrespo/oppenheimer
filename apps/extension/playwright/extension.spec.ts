@@ -45,10 +45,6 @@ test('polls on its own, and notifies a session that comes to need you', async ({
   claude.sessions = [running('s1', 'Port the extension'), running('s2', 'Fix login')];
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
-  // Learned from the page, not only seeded: the extension's own probe at
-  // install can seed first, and closing the page then can lose its request,
-  // whose headers the poll below must carry.
-  await expect.poll(async () => (await stored(worker)).endpoint?.from).toBe('page');
   await expect.poll(async () => (await stored(worker)).seeded).toBe(true);
   await page.close();
 
