@@ -89,9 +89,11 @@ A finding states:
 
 Before you keep a finding, check it against the code yourself. Drop any
 finding that:
-- an open pull request already fixes;
 - a person declined in the issue;
 - you cannot back with evidence.
+
+A finding whose fix pull request is still open stays in the report, with that
+pull request linked; it only gets no second pull request in step 5.
 
 ## 4. Report
 
