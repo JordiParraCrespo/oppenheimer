@@ -129,8 +129,8 @@
       "empty": "Ningún entorno coincide.",
       "loading": "Pidiendo al equipo sus entornos de Codex…",
       "auto": "Automático",
-      "autoLinked": "El vinculado al repositorio: {{name}}",
-      "autoByName": "Ningún entorno está vinculado al repositorio: el equipo prueba con su nombre",
+      "autoLinked": "{{name}}, vinculado al repositorio",
+      "autoByName": "Ninguno vinculado: prueba con el nombre del repositorio",
       "linked": "Vinculado a este repositorio",
       "pinned": "Fijado",
       "failed": "No se han podido listar los entornos de Codex del equipo."

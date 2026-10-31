@@ -758,8 +758,8 @@
         "empty": "No environment matches.",
         "loading": "Asking the host for its Codex environments…",
         "auto": "Auto",
-        "autoLinked": "The one linked to the repository: {{name}}",
-        "autoByName": "No environment is linked to the repository: the host tries its name",
+        "autoLinked": "{{name}}, linked to the repository",
+        "autoByName": "None linked: tries the repository’s name",
         "linked": "Linked to this repository",
         "pinned": "Pinned",
         "failed": "Could not list the host’s Codex environments."
