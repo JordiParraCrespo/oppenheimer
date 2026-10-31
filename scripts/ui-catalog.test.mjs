@@ -9,7 +9,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
-import { catalogProblems, publicExports, uncataloguedReason } from './ui-catalog.mjs';
+import {
+  catalogProblems,
+  createCatalogProgram,
+  publicExports,
+  uncataloguedReason,
+} from './ui-catalog.mjs';
 
 const dirs = [];
 after(() => {
@@ -138,4 +143,16 @@ test('a kit component its file exports but the barrel does not fails its row', (
   });
   assert.equal(problems.length, 1);
   assert.match(problems[0], /^catalog\.md:4: `ErrorAlert` is not a public export/);
+});
+
+test('the catalog program reads only the owned directories; a file outside them is an empty module', () => {
+  const root = fixture({
+    'own/src/index.ts':
+      "export { Badge } from './badge';\nexport { Outside } from '../../other/outside';\n",
+    'own/src/badge.tsx': 'export function Badge() { return null; }\n',
+    'other/outside.ts': 'export function Outside() { return null; }\n',
+  });
+  const program = createCatalogProgram([join(root, 'own/src/index.ts')], [join(root, 'own/src')]);
+  assert.match(program.getSourceFile(join(root, 'own/src/badge.tsx')).text, /function Badge/);
+  assert.equal(program.getSourceFile(join(root, 'other/outside.ts')).text, 'export {};');
 });

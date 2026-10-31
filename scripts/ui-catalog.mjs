@@ -36,6 +36,46 @@ export const KIT_INDEX = 'packages/frontend/web/src/index.ts';
 const MARKER = /^\s*\/\/\s*uncatalogued:(.*)$/m;
 const COMPONENT = /^[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*$/;
 
+/** A component's name: PascalCase with a lower-case letter, so not `AVATAR_GRADIENTS` or `badgeVariants`. */
+export const isComponentName = (name) => COMPONENT.test(name);
+
+const COMPILER_OPTIONS = {
+  jsx: ts.JsxEmit.ReactJSX,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  target: ts.ScriptTarget.ES2022,
+  lib: ['lib.es2022.d.ts'],
+  skipLibCheck: true,
+  noEmit: true,
+  types: [],
+};
+
+/**
+ * A program over `roots` that reads only the sources under `ownDirs` (and
+ * TypeScript's own lib). Everything else they import (React, Base UI, the
+ * kernel) resolves to an empty module: an export's name and the parts of a
+ * compound do not depend on it, and parsing it is most of the time a full
+ * program takes (about 3.5 s against 1.5 s).
+ */
+export function createCatalogProgram(roots, ownDirs) {
+  const own = ownDirs.map((dir) => `${resolve(dir)}/`);
+  const host = ts.createCompilerHost(COMPILER_OPTIONS);
+  const read = host.getSourceFile.bind(host);
+  host.getSourceFile = (file, language, ...rest) =>
+    own.some((dir) => resolve(file).startsWith(dir)) || /[\\/]typescript[\\/]lib[\\/]/.test(file)
+      ? read(file, language, ...rest)
+      : ts.createSourceFile(file, 'export {};', language);
+  return ts.createProgram(roots, COMPILER_OPTIONS, host);
+}
+
+/**
+ * Whether a barrel's export is a value the catalog can name. A symbol with no
+ * declarations is kept: it is a re-export from a stubbed module.
+ */
+export function isCataloguedValueExport(target) {
+  return !target.declarations?.length || Boolean(target.flags & ts.SymbolFlags.Value);
+}
+
 /** The leading PascalCase name of each backticked span in a table row's "Use" cell, with its line. */
 export function useColumnNames(text) {
   const names = [];
@@ -59,28 +99,10 @@ export function useColumnNames(text) {
  */
 export function publicExports(designSystemIndex, kitIndex) {
   const roots = [designSystemIndex, kitIndex].filter((file) => file && existsSync(file));
-  const options = {
-    jsx: ts.JsxEmit.ReactJSX,
-    module: ts.ModuleKind.ESNext,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-    target: ts.ScriptTarget.ES2022,
-    lib: ['lib.es2022.d.ts'],
-    skipLibCheck: true,
-    noEmit: true,
-    types: [],
-  };
-  // Only the two packages' own sources are read. Everything they import from
-  // elsewhere (React, Base UI, the kernel) is stubbed: an export's name and
-  // the parts of a compound do not depend on it, and parsing it is most of
-  // the time a full program takes (about 3.5 s against 1.5 s).
-  const own = roots.map((file) => `${dirname(resolve(file))}/`);
-  const host = ts.createCompilerHost(options);
-  const read = host.getSourceFile.bind(host);
-  host.getSourceFile = (file, language, ...rest) =>
-    own.some((dir) => resolve(file).startsWith(dir)) || /[\\/]typescript[\\/]lib[\\/]/.test(file)
-      ? read(file, language, ...rest)
-      : ts.createSourceFile(file, 'export {};', language);
-  const program = ts.createProgram(roots, options, host);
+  const program = createCatalogProgram(
+    roots,
+    roots.map((file) => dirname(file)),
+  );
   const checker = program.getTypeChecker();
 
   function valueExports(file) {
@@ -90,10 +112,7 @@ export function publicExports(designSystemIndex, kitIndex) {
     return checker.getExportsOfModule(module).flatMap((symbol) => {
       const target =
         symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-      // A name re-exported from a stubbed package resolves to nothing; keep it.
-      const unresolved = !target.declarations?.length;
-      if (!unresolved && !(target.flags & ts.SymbolFlags.Value)) return [];
-      return [{ name: symbol.getName(), symbol, target }];
+      return isCataloguedValueExport(target) ? [{ name: symbol.getName(), symbol, target }] : [];
     });
   }
 
@@ -111,7 +130,7 @@ export function publicExports(designSystemIndex, kitIndex) {
     // properties of the exported value's type.
     const type = checker.getTypeOfSymbolAtLocation(symbol, source);
     for (const part of type.getProperties()) {
-      if (COMPONENT.test(part.getName())) kit.add(part.getName());
+      if (isComponentName(part.getName())) kit.add(part.getName());
     }
   }
   return { designSystem, kit };
@@ -144,7 +163,7 @@ export function catalogProblems({ docs, designSystem, kit, readModule, root = ''
 
   const modules = new Map();
   for (const [name, file] of designSystem) {
-    if (COMPONENT.test(name)) modules.set(file, [...(modules.get(file) ?? []), name]);
+    if (isComponentName(name)) modules.set(file, [...(modules.get(file) ?? []), name]);
   }
   const named = new Set(rows.map(({ name }) => designSystem.get(name)).filter(Boolean));
   for (const [file, components] of modules) {
