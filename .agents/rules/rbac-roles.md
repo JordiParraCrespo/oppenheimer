@@ -56,7 +56,8 @@ convenience — application authorization goes through the database.
 | Resource declarations + registry    | `authz/domain/resource-definition.types.ts`, `authz/application/resource.registry.ts` |
 | `AccessScope`, its resolver, the access grants | `authz/domain/access-scope.types.ts`, `authz/application/scope.resolver.ts`, `authz/database/access-grant.*` |
 | SQL predicate + `ScopedRepositoryBase` | `authz/database/scoped.repository.ts` |
-| Containment (`canGrant`, `canGrantScope`), `canAccessRow` | `authz/domain/*.policy.ts` |
+| Containment (`canGrant`, `canGrantScope`) | `authz/domain/*.policy.ts` |
+| Row-level check against an ability (`canAccessRow`) | `authz/application/can-access-row.policy.ts` |
 
 ## Row-level authorization
 

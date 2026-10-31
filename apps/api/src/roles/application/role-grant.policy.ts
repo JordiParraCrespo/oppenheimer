@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { PermissionDefinition } from '@oppenheimer/shared';
 import { AbilityFactory } from '../../authz/application/ability.factory';
-import { canAccessRow } from '../../authz/domain/can-access-row.policy';
+import { canAccessRow } from '../../authz/application/can-access-row.policy';
 import { describePermission, ungrantablePermissions } from '../../authz/domain/can-grant.policy';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleErrors } from '../domain/role.errors';

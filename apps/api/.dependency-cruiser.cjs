@@ -27,6 +27,9 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // answer to "what may this principal do". Handlers that check grantability
   // ask it by design; it is published surface.
   '^src/authz/application/ability\\.factory\\.ts$',
+  // Its companion: a row-level check against the ability that factory built
+  // (tagging the row for CASL, which is why it is not in `domain/`).
+  '^src/authz/application/can-access-row\\.policy\\.ts$',
   // The base every tenant repository extends, and the predicate it applies:
   // row scoping is a persistence concern, so it lives in `authz/database/`.
   '^src/authz/database/scoped\\.repository\\.ts$',
@@ -65,19 +68,12 @@ module.exports = {
     {
       name: 'domain-stays-pure',
       comment:
-        'The domain layer may only depend on @oppenheimer/backend-ddd, @oppenheimer/shared, CASL and node core. No NestJS, TypeORM, oxide.ts, @oppenheimer/backend-core, or any other infrastructure.',
+        'The domain layer may only depend on @oppenheimer/backend-ddd, @oppenheimer/shared and node core. No NestJS, TypeORM, oxide.ts, @oppenheimer/backend-core, the CASL runtime, or any other infrastructure.',
       severity: 'error',
       from: { path: '^src/[^/]+/domain/' },
       to: {
         dependencyTypesNot: ['core'],
-        // CASL is the permission model itself (`@oppenheimer/shared` builds
-        // abilities on it); `authz/domain/can-access-row.policy.ts` tags a row
-        // for it.
-        pathNot: [
-          '^src/[^/]+/domain/',
-          'packages/(backend/ddd|shared)/',
-          'node_modules/@casl/ability/',
-        ],
+        pathNot: ['^src/[^/]+/domain/', 'packages/(backend/ddd|shared)/'],
       },
     },
     {

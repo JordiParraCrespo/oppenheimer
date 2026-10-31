@@ -82,8 +82,12 @@ export interface BotTurnRequest {
   /** Model round trips before the turn ends with `max_steps`. Default 25. */
   maxSteps?: number;
   signal: AbortSignal;
-  /** A directory the engine may write in for this turn; the caller creates and deletes it. */
-  scratchDir: string;
+  /**
+   * A directory the engine may write in for this turn; the caller creates and
+   * deletes it. Optional: only the Claude engine needs one (Claude Code runs
+   * in it), and without one it makes its own for the turn and removes it.
+   */
+  scratchDir?: string;
 }
 
 /** One of a subscription's usage windows: the share used, 0–100, and when it resets. */

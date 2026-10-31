@@ -11,9 +11,9 @@ import {
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
+import { canAccessRow } from '../../authz/application/can-access-row.policy';
 import { type ScopeResolverPort } from '../../authz/application/scope-resolver.port';
 import { SCOPE_RESOLVER } from '../../authz/authz.di-tokens';
-import { canAccessRow } from '../../authz/domain/can-access-row.policy';
 
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 

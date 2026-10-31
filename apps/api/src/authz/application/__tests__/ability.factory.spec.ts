@@ -8,8 +8,8 @@ import type { RoleRepositoryPort } from '../../../roles/database/role.repository
 import type { UserRoleRepositoryPort } from '../../../roles/database/user-role.repository.port';
 import { RoleEntity } from '../../../roles/domain/role.entity';
 import { Permission } from '../../../roles/domain/value-objects/permission.value-object';
-import { canAccessRow } from '../../domain/can-access-row.policy';
 import { AbilityFactory } from '../ability.factory';
+import { canAccessRow } from '../can-access-row.policy';
 import { GlobalRoleRegistry } from '../global-role.registry';
 
 function makeRole(

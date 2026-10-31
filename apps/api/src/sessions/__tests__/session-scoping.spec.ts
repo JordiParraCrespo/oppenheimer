@@ -4,9 +4,9 @@ import {
   type PermissionDefinition,
 } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
+import { canAccessRow } from '../../authz/application/can-access-row.policy';
 import { applyAccessScope } from '../../authz/database/scoped.repository';
 import type { AccessScope } from '../../authz/domain/access-scope.types';
-import { canAccessRow } from '../../authz/domain/can-access-row.policy';
 import { SessionResource } from '../sessions.resource';
 
 /**

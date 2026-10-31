@@ -1,6 +1,3 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
   type LlmCompletion,
   type LlmCompletionRequest,
@@ -9,7 +6,12 @@ import {
 } from '@oppenheimer/backend-llm';
 import type { BotEffort, BotEngine, BotProvider } from './bot-engine';
 
-/** The provider, credential and model a bot engine answers an `LlmService` call on. */
+/**
+ * The provider, credential and model a bot engine answers an `LlmService`
+ * call on. There is no temperature and no token cap here, and a request may
+ * not bring one: a bot engine runs its provider's agent SDK, which takes an
+ * effort, not sampling settings.
+ */
 export interface EngineLlmBinding {
   provider: BotProvider;
   /** The key, or for `chatgpt` the sign-in's access token, as `BotTurnRequest.apiKey`. */
@@ -26,11 +28,15 @@ export interface EngineLlmBinding {
  * that may run on a workspace's own model credential (a ChatGPT sign-in) or
  * on the deployment's LLM (`LLM_*`) holds one interface for both.
  *
- * One user message, no history: what `BotEngine.complete` answers. It rejects
- * as that does — `LlmRateLimitError` when the provider refused for rate, an
- * error with the turn's reason otherwise — and with `not_configured` before
- * any call when the binding has no key. `temperature` and `maxTokens` are not
- * settings a bot engine takes, and are ignored.
+ * What it takes of an `LlmCompletionRequest`: `system`, one user message (no
+ * history), `model`, `timeoutMs` and `signal`. `temperature` and `maxTokens`
+ * are not settings a bot engine has, so a request that sets either is
+ * refused with a `TypeError` before any call rather than run without them:
+ * a caller that may land here sends them only to the deployment's LLM.
+ *
+ * It rejects as `BotEngine.complete` does: `LlmRateLimitError` when the
+ * provider refused for rate, an error with the turn's reason otherwise, and
+ * `not_configured` before any call when the binding has no key.
  */
 export function engineLlm(engine: BotEngine, binding: EngineLlmBinding): LlmService {
   return new EngineLlmService(engine, binding);
@@ -54,36 +60,32 @@ class EngineLlmService extends LlmService {
   }
 
   async complete(request: LlmCompletionRequest): Promise<LlmCompletion> {
-    if (!this.isConfigured()) {
-      throw new LlmError('not_configured', this.provider, `${this.provider} has no credential`);
+    if (request.temperature !== undefined || request.maxTokens !== undefined) {
+      throw new TypeError('A bot engine takes no temperature or maxTokens');
     }
     const [message, ...rest] = request.messages;
     if (message?.role !== 'user' || rest.length > 0) {
       throw new TypeError('A bot engine completes one user message, with no history');
     }
+    if (!this.isConfigured()) {
+      throw new LlmError('not_configured', this.provider, `${this.provider} has no credential`);
+    }
     const model = request.model ?? this.defaultModel;
     const signals = [request.signal, timeout(request.timeoutMs)].filter(
       (signal): signal is AbortSignal => signal !== undefined,
     );
-    // The Claude engine runs Claude Code, which wants a directory of its own.
-    const scratchDir = await mkdtemp(join(tmpdir(), 'engine-llm-'));
-    try {
-      const text = await this.engine.complete({
-        provider: this.binding.provider,
-        apiKey: this.binding.apiKey,
-        accountId: this.binding.accountId,
-        baseUrl: this.binding.baseUrl,
-        model,
-        effort: this.binding.effort,
-        systemPrompt: request.system ?? '',
-        message: message.content,
-        signal: signals.length > 0 ? AbortSignal.any(signals) : new AbortController().signal,
-        scratchDir,
-      });
-      return { text, model, provider: this.provider, finishReason: null, usage: null };
-    } finally {
-      await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
-    }
+    const text = await this.engine.complete({
+      provider: this.binding.provider,
+      apiKey: this.binding.apiKey,
+      accountId: this.binding.accountId,
+      baseUrl: this.binding.baseUrl,
+      model,
+      effort: this.binding.effort,
+      systemPrompt: request.system ?? '',
+      message: message.content,
+      signal: signals.length > 0 ? AbortSignal.any(signals) : new AbortController().signal,
+    });
+    return { text, model, provider: this.provider, finishReason: null, usage: null };
   }
 }
 

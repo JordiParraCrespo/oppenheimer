@@ -27,9 +27,8 @@ what is described here. When they disagree, fix the code or update both together
 ```
 
 - **Domain** depends on nothing but `@oppenheimer/backend-ddd`,
-  `@oppenheimer/shared`, another module's `domain/` and node core (and CASL,
-  which `authz/domain/can-access-row.policy.ts` tags a row for). No NestJS, no
-  TypeORM, no `oxide.ts`, no `express`. (`domain-stays-pure` in
+  `@oppenheimer/shared`, another module's `domain/` and node core. No NestJS, no
+  TypeORM, no `oxide.ts`, no `express`, no CASL runtime. (`domain-stays-pure` in
   `.dependency-cruiser.cjs` is the enforced statement of this sentence.)
 - **Application** (handlers) depends on the domain and on **repository ports**,
   never on the concrete repository.
