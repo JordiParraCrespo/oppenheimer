@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
 import { BotErrors } from '../../../bots/domain/bots.errors';
@@ -30,8 +30,7 @@ export class FindBotAttachmentQueryHandler
   }: FindBotAttachmentQuery): Promise<BotAttachmentEntity> {
     const bot = await this.lookup.bot(scope, botId);
     const found = await this.attachments.findForBot(bot.organizationId, bot.id, attachmentId);
-    if (found.isNone()) throw new AppError(BotErrors.ATTACHMENT_NOT_FOUND);
-    const attachment = found.unwrap();
+    const attachment = requireFound(found, BotErrors.ATTACHMENT_NOT_FOUND);
     if (attachment.messageId === null && attachment.uploadedByUserId !== scope.userId) {
       throw new AppError(BotErrors.ATTACHMENT_NOT_FOUND);
     }

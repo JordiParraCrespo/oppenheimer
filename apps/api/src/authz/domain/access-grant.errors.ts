@@ -21,9 +21,4 @@ export const AccessGrantErrors = {
     message: 'The named principal does not belong to this organization',
     httpStatus: 400,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'GRANT_004',
-    message: 'Access grants are written inside an organization',
-    httpStatus: 400,
-  },
 } as const satisfies Record<string, ErrorDefinition>;

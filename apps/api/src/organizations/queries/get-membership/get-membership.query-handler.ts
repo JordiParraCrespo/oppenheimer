@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { MemberRepositoryPort } from '../../database/member.repository.port';
 import type { Membership } from '../../domain/membership.types';
 import { OrganizationErrors } from '../../domain/organization.errors';
@@ -21,11 +21,8 @@ export class GetMembershipQueryHandler implements IQueryHandler<GetMembershipQue
 
   async execute(query: GetMembershipQuery): Promise<Membership> {
     const membership = await this.members.findMembership(query.organizationId, query.userId);
-    if (membership.isNone()) {
-      throw new AppError(OrganizationErrors.NOT_A_MEMBER, {
-        detail: 'You hold no membership in this organization.',
-      });
-    }
-    return membership.unwrap();
+    return requireFound(membership, OrganizationErrors.NOT_A_MEMBER, {
+      detail: 'You hold no membership in this organization.',
+    });
   }
 }

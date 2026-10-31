@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import { type AccessScope, requireTenant } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
@@ -46,7 +46,7 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
 
   async execute(command: CreateBotCommand): Promise<AggregateID> {
     const { scope, input } = command;
-    if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     // A retry of a creation that landed: the bot it made, checking nothing again.
     const earlier = await this.madeWith(scope, command.idempotencyKey);
     if (earlier) return earlier;

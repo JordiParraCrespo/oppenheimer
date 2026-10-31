@@ -19,6 +19,7 @@ import { INBOUND_EVENT_REPOSITORY } from '../../inbound-events/inbound-events.di
 import { InboundEventsProcessor } from '../../inbound-events/infrastructure/inbound-events.processor';
 import { ProfileModule } from '../../profile/profile.module';
 import { EmailProcessor } from '../infrastructure/email.processor';
+import { OUTBOX_QUEUES } from '../queue.di-tokens';
 import { QueueModule } from '../queue.module';
 
 // The profile module's import graph reaches Better Auth, whose standalone
@@ -92,6 +93,25 @@ describe('queue registration', () => {
 
       expect(queue.opts.defaultJobOptions).toEqual(DURABLE_JOB_OPTIONS);
       expect(queue).toBe(moduleRef.get(getQueueToken(QUEUE_NAMES.INBOUND_EVENTS)));
+    });
+
+    it('hands the outbox relay every queue the outbox feeds, as the instance registered', () => {
+      const queues = moduleRef.get<ReadonlyMap<string, Queue>>(OUTBOX_QUEUES);
+
+      expect([...queues.keys()].sort()).toEqual(
+        [
+          QUEUE_NAMES.EMAIL,
+          QUEUE_NAMES.INBOUND_EVENTS,
+          QUEUE_NAMES.AUTOMATION_RUNS,
+          QUEUE_NAMES.BOT_TURNS,
+          QUEUE_NAMES.BOT_APPROVALS,
+          QUEUE_NAMES.BOT_SUMMARIES,
+          QUEUE_NAMES.BOT_STALL_CHECKS,
+        ].sort(),
+      );
+      for (const [name, queue] of queues) {
+        expect(queue).toBe(moduleRef.get(getQueueToken(name)));
+      }
     });
 
     it.each([

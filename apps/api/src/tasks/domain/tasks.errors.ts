@@ -13,11 +13,6 @@ export const TaskErrors = {
     message: 'Milestone not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'TASKS_003',
-    message: 'Tasks belong to an organization',
-    httpStatus: 400,
-  },
   /**
    * The project is missing, archived or in another workspace. Nothing new is
    * filed under a retired project.
