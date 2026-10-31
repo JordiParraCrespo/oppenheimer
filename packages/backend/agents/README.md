@@ -94,8 +94,9 @@ before the model reads it.
   it did not say. The Claude engine reads the SDK's `rate_limit` error, a
   `429` status, a rejected rate-limit event (its reset) and Claude Code's own
   retry wait; the OpenAI engine reads a `429` and its `Retry-After`.
-  `complete` throws it as `BotRateLimitError`. This package has no workspace
-  dependencies, so it cannot hold a shared pause itself
+  `complete` throws it as `LlmRateLimitError` from `@oppenheimer/backend-llm`,
+  the one rate-limit type both model stacks raise. This package depends on
+  nothing in the workspace but that one, so it cannot hold a shared pause itself
   (`.agents/rules/integrations.md`): the caller must not call the provider
   again with that key before `resetAt`, and a queued job is moved to delayed
   until then rather than retried on its own schedule.
@@ -145,6 +146,16 @@ const engine = new FakeBotEngine(() => [
   { type: 'text.done', text: 'Noted.' },
 ]);
 ```
+
+## A bot engine as an `LlmService`
+
+`engineLlm(engine, { provider, apiKey, accountId, model, effort })` puts a
+bot engine's `complete` behind `@oppenheimer/backend-llm`'s `LlmService`, so
+a caller that runs on a workspace's own credential or on the deployment's
+LLM holds one interface: voice's polish does
+(`apps/api/src/voice/infrastructure/polish-llm.adapter.ts`). One user
+message, no history; the scratch directory a turn needs is made and removed
+per call.
 
 ## Scripts
 

@@ -14,6 +14,7 @@ the same engine pointed at ChatGPT's Codex backend on a subscription sign-in). D
 src/
 ├── bot-engine.ts          # the port: request, tool, event types, abstract BotEngine (run, complete)
 ├── bot-engine.factory.ts  # createBotEngine: routes by provider
+├── engine-llm.ts          # engineLlm: a bot engine's completion as backend-llm's LlmService
 ├── fake-bot-engine.ts     # FakeBotEngine, for the API's tests
 ├── turn.ts                # guardTurn (the stream contract), runTool, key scrubbing
 ├── claude/                # Claude Agent SDK: options + env, MCP tool server, message translation
@@ -60,6 +61,10 @@ src/
 - **Model pinning has one owner.** `pinAllModels` sets every variable
   Claude Code picks a model through (`MODEL_VARIABLES`, read from the
   binary the SDK ships); recheck that list when the SDK is upgraded.
+- **One workspace dependency, `@oppenheimer/backend-llm`**, for the
+  contract both model stacks share: `LlmRateLimitError` (what `complete`
+  throws on a rate limit) and `LlmService` (what `engineLlm` returns).
+  Nothing else from the workspace.
 - Ships **CommonJS**.
 
 ## Commands

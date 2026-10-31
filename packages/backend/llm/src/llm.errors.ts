@@ -1,5 +1,3 @@
-import type { LlmProviderId, LlmProviderSetting } from './llm.types';
-
 /**
  * Why a completion did not come back.
  *
@@ -25,21 +23,44 @@ export type LlmErrorCode =
 /**
  * The one error this package throws. A caller that treats a completion as
  * best-effort catches it and moves on; a caller that needs to tell a rate limit
- * from a timeout reads `code` and `status`.
+ * from a timeout reads `code` and `status`, or checks for
+ * {@link LlmRateLimitError}.
+ *
+ * `provider` is any string, not only this package's provider ids, because the
+ * bot engines (`@oppenheimer/backend-agents`) raise the same rate-limit type.
  */
 export class LlmError extends Error {
-  override readonly name = 'LlmError';
-  /** When a `rate_limited` provider may be called again. */
-  readonly resetAt?: Date;
+  override readonly name: string = 'LlmError';
 
   constructor(
     readonly code: LlmErrorCode,
-    readonly provider: LlmProviderId | LlmProviderSetting,
+    readonly provider: string,
     message: string,
     readonly status?: number,
-    options?: { cause?: unknown; resetAt?: Date },
+    options?: { cause?: unknown },
   ) {
     super(message, options);
-    this.resetAt = options?.resetAt;
+  }
+}
+
+/**
+ * A provider refused for rate or quota: the `rate_limited` {@link LlmError}.
+ * The caller does not call it again before `resetAt`; `null` when the provider
+ * did not say until when, and the caller picks a wait of its own.
+ *
+ * It is the one rate-limit type both model stacks raise: this package's
+ * `complete`, and `BotEngine.complete` in `@oppenheimer/backend-agents`, so a
+ * caller maps a rate limit once, whichever stack refused.
+ */
+export class LlmRateLimitError extends LlmError {
+  override readonly name: string = 'LlmRateLimitError';
+
+  constructor(
+    provider: string,
+    message: string,
+    readonly resetAt: Date | null,
+    options?: { cause?: unknown },
+  ) {
+    super('rate_limited', provider, message, 429, options);
   }
 }

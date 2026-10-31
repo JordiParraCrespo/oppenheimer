@@ -85,7 +85,10 @@ and tells the person to reinstall something that works.
 - **A package with no workspace dependencies** (`backend-llm`,
   `backend-email`) cannot use the limiter. It still reports a rate limit as
   its own error type or code, carrying `resetAt`, and does not call the
-  provider again before then. Its README says what it does.
+  provider again before then. Its README says what it does. The two model
+  stacks share one such type, `LlmRateLimitError` (`backend-llm`, which
+  `backend-agents` also throws), so a caller handles a model's rate limit
+  once whichever stack refused.
 - **A background job** (BullMQ) does not retry a rate limit on its own
   schedule. When the limit covers the whole provider, the worker holds the
   queue with `queue.rateLimit(ms)` and throws `Worker.RateLimitError()`, which

@@ -11,7 +11,7 @@ One `LlmService` contract over several LLM providers, for the NestJS API.
 src/
 ├── llm.service.ts        # abstract LlmService (the port)
 ├── llm.types.ts          # request, completion, config, provider ids
-├── llm.errors.ts         # LlmError and its codes
+├── llm.errors.ts         # LlmError, its codes, and LlmRateLimitError (both model stacks raise it)
 ├── llm.config.ts         # llmIsConfigured: a pure read of the config
 ├── llm.factory.ts        # createLlmService: the only thing that news a provider
 ├── llm.module.ts         # @Global LlmModule.forRoot / forRootAsync
