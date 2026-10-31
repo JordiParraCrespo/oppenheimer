@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { ProjectOrmEntity } from '../database/project.orm-entity';
 import { ProjectRepository } from '../database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../database/project-repository.orm-entity';
@@ -17,7 +16,6 @@ import { ProjectMapper } from '../project.mapper';
  * not `synchronize`, so a mistake in a migration fails here rather than in production.
  */
 describe('projects: the saved scope (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let repository: ProjectRepository;
   let outbox: OutboxService;
@@ -43,28 +41,11 @@ describe('projects: the saved scope (integration)', () => {
   });
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       // No Nest container here on purpose: what is proved lives in the repository,
       // and booting the application would only add Redis and Better Auth to the
       // set of things that can make this suite red.
@@ -93,7 +74,6 @@ describe('projects: the saved scope (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {
@@ -108,6 +88,9 @@ describe('projects: the saved scope (integration)', () => {
     installationId = await insertInstallation(organizationId);
   });
 
+  /** Counted, not random: GitHub's installation ids are unique among live rows. */
+  let lastGithubInstallationId = 0;
+
   async function insertInstallation(org: string): Promise<string> {
     const id = randomUUID();
     const [user] = await dataSource.query(
@@ -120,7 +103,7 @@ describe('projects: the saved scope (integration)', () => {
          ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
        VALUES ($1, $2, $3, 'acme', 'Organization', 'all', $4)`,
-      [id, org, Math.floor(Math.random() * 1_000_000_000), user.id],
+      [id, org, ++lastGithubInstallationId, user.id],
     );
     return id;
   }

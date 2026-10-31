@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotOrmEntity } from '../../bots/database/bot.orm-entity';
@@ -31,7 +30,6 @@ import { BotToolPermissionEntity } from '../domain/bot-tool-permission.entity';
  * call is the policy spec's.
  */
 describe('bot permissions (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let bots: BotRepository;
   let settings: BotToolPermissionRepository;
@@ -48,22 +46,11 @@ describe('bot permissions (integration)', () => {
   });
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         BotOrmEntity,
         BotDocumentOrmEntity,
@@ -94,7 +81,6 @@ describe('bot permissions (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   beforeEach(async () => {
