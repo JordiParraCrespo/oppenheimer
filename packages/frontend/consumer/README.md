@@ -44,7 +44,8 @@ a service fronts it, its repository stay inside the package.
 - **modules/chat** — what both chats share, with no repository of its own:
   `classifyTool` (a tool call's kind, chat item type, glyph name, name in
   words and target, for a coding agent's tools and a bot's), `toolIcon`,
-  `humaniseToolName`, `toolLine`, and the builder the two adapters
+  `humaniseToolName`, `toolLine`, `todosOf` (a `TodoWrite` list, for both
+  chats), and the per-kind builder the two adapters
   (`sessions/chat/session-chat-items.ts`, `bots/bot-chat-items.ts`) use to
   read their source into `@oppenheimer/shared/schemas/chat-item`.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,

@@ -110,7 +110,7 @@ describe('blocksOf', () => {
       'Grep',
       'Bash',
     ]);
-    expect(latestTodos(turn)).toEqual([{ content: 'One', status: 'completed' }]);
+    expect(latestTodos(turn)).toEqual([{ text: 'One', status: 'completed' }]);
   });
 });
 

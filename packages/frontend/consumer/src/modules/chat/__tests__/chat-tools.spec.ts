@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { classifyTool, humaniseToolName, toolIcon, toolLine } from '../chat-tools';
+import {
+  classifyTool,
+  fieldOf,
+  humaniseToolName,
+  todosOf,
+  toolIcon,
+  toolLine,
+} from '../chat-tools';
 
 /**
  * One reading of a tool call for both chats. The regressions this guards: a
@@ -110,5 +117,48 @@ describe('toolLine', () => {
   it('is the first line, trimmed and cut short', () => {
     expect(toolLine('  ls\npwd')).toBe('ls');
     expect(toolLine('x'.repeat(100))).toBe(`${'x'.repeat(80)}…`);
+  });
+});
+
+describe('fieldOf', () => {
+  it('is the first of the keys the input holds as text, skipping blanks and non-text', () => {
+    expect(fieldOf({ description: '  ', prompt: 'Explore', n: 3 }, ['description', 'prompt'])).toBe(
+      'Explore',
+    );
+    expect(fieldOf({ n: 3 }, ['n', 'plan'])).toBeNull();
+  });
+});
+
+describe('todosOf', () => {
+  it('reads a TodoWrite list the same way for both chats: trimmed, blanks dropped, unknown status pending', () => {
+    expect(
+      todosOf([
+        { content: ' Search ', status: 'completed' },
+        { content: 'Compare', status: 'in_progress' },
+        { content: 'Write it up', status: 'later' },
+        { content: '  ', status: 'pending' },
+        { status: 'pending' },
+        'junk',
+      ]),
+    ).toEqual([
+      { text: 'Search', status: 'completed' },
+      { text: 'Compare', status: 'in_progress' },
+      { text: 'Write it up', status: 'pending' },
+    ]);
+    expect(todosOf(undefined)).toEqual([]);
+  });
+});
+
+describe('the origin’s reading of a tool the table does not know', () => {
+  it('keeps a bot’s own server out of MCP, and a third-party server in it', () => {
+    expect(classifyTool('mcp__oppenheimer__start_session', { task: 'x' }, 'bot').kind).toBe(
+      'other',
+    );
+    expect(classifyTool('mcp__notion__search', { query: 'q' }, 'bot')).toMatchObject({
+      kind: 'mcp',
+      label: 'Search',
+      target: 'q',
+    });
+    expect(classifyTool('mcp__oppenheimer__x', {}, 'agent').kind).toBe('mcp');
   });
 });

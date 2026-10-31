@@ -12,15 +12,13 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
-import { type ChatToolKind, classifyTool } from '../../chat';
+import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 
-export type ChatTodoStatus = 'pending' | 'in_progress' | 'completed';
-
-export interface ChatTodo {
-  content: string;
-  status: ChatTodoStatus;
-}
+/** One item of the agent's task list: the chat module's, which the bots chat reads too. */
+export type ChatTodo = ChatItemTodo;
+export type ChatTodoStatus = ChatItemTodo['status'];
 
 /** One question `AskUserQuestion` puts to the person, as the agent wrote it. */
 export interface ChatQuestion {
@@ -51,6 +49,8 @@ export interface ChatToolCall {
   label: string;
   /** What it acted on, in a line: a path, a command, a pattern, a URL. */
   target: string | null;
+  /** A web call that opens a page by its URL rather than searching for words. */
+  opensPage: boolean;
   /** What it was asked to do in words, when it says (a command's description, a subagent's task). */
   description: string | null;
   /** `running` until its result is in the transcript. */
@@ -704,26 +704,20 @@ function typedPrompt(raw: string): string | null {
 function toolCall(block: Loose): ChatToolCall {
   const name = text(block.name) ?? 'tool';
   const input = record(block.input) ?? {};
-  const { kind, label, target } = classifyTool(name, input, 'agent');
-  const field = (...keys: string[]) => {
-    for (const key of keys) {
-      const value = text(input[key]);
-      if (value) return value;
-    }
-    return null;
-  };
+  const { kind, label, target, opensPage } = classifyTool(name, input, 'agent');
   return {
     id: text(block.id) ?? name,
     name,
     kind,
     label,
     target,
-    description: field('description', 'prompt'),
+    opensPage,
+    description: fieldOf(input, ['description', 'prompt']),
     status: 'running',
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
-    plan: kind === 'plan' ? field('plan') : null,
+    plan: kind === 'plan' ? fieldOf(input, ['plan']) : null,
     questions: kind === 'question' ? questionsOf(input.questions) : null,
     answers: null,
     images: null,
@@ -829,16 +823,4 @@ function answersOf(output: string | null): Record<string, string> {
     if (question !== undefined && answer !== undefined) answers[question] = answer;
   }
   return answers;
-}
-
-function todosOf(value: unknown): ChatTodo[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((raw) => {
-    const todo = record(raw);
-    const content = text(todo?.content);
-    if (!content) return [];
-    const status: ChatTodoStatus =
-      todo?.status === 'completed' || todo?.status === 'in_progress' ? todo.status : 'pending';
-    return [{ content, status }];
-  });
 }

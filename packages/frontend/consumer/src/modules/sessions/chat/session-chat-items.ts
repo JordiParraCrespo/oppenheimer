@@ -105,7 +105,7 @@ function itemOf(step: ChatStep): ChatItem {
         },
         {
           diff: call.diff,
-          todos: call.todos?.map((todo) => ({ text: todo.content, status: todo.status })),
+          todos: call.todos,
           plan: call.plan,
           questions: call.questions?.map((question) => question.question),
         },

@@ -4,7 +4,6 @@ import {
   groupSummary,
   liveLabel,
   liveWords,
-  planItems,
   readableOutput,
   runningStep,
   sharedKind,
@@ -124,27 +123,6 @@ describe('runningStep', () => {
     expect(running?.callId).toBe('1');
     expect(runningStep([activity(['ok', ''])])).toBeUndefined();
     expect(runningStep([{ role: 'assistant' } as BotMessageEntity])).toBeUndefined();
-  });
-});
-
-describe('planItems', () => {
-  it('reads the to-do list with each item’s state, skipping what is not an item', () => {
-    expect(
-      planItems({
-        todos: [
-          { content: 'Search', status: 'completed' },
-          { content: 'Compare', status: 'in_progress' },
-          { content: 'Write it up', status: 'pending' },
-          { status: 'pending' },
-          'junk',
-        ],
-      }),
-    ).toEqual([
-      { text: 'Search', state: 'done' },
-      { text: 'Compare', state: 'active' },
-      { text: 'Write it up', state: 'pending' },
-    ]);
-    expect(planItems({})).toEqual([]);
   });
 });
 

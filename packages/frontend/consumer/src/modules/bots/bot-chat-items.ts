@@ -1,12 +1,7 @@
 import type { BotTurnStatus } from '@oppenheimer/shared/schemas/bot';
-import type {
-  ChatItem,
-  ChatItemTodo,
-  ChatItemTurn,
-  ChatTurnStatus,
-} from '@oppenheimer/shared/schemas/chat-item';
+import type { ChatItem, ChatItemTurn, ChatTurnStatus } from '@oppenheimer/shared/schemas/chat-item';
 import { isoOf, toolItem } from '../chat/chat-items';
-import { classifyTool } from '../chat/chat-tools';
+import { classifyTool, todosOf } from '../chat/chat-tools';
 import type {
   BotConversationEntity,
   BotMessageEntity,
@@ -105,18 +100,4 @@ function callOf(step: BotToolStep, startedAt: Date, turn: BotTurnEntity | undefi
       tasks: Array.isArray(step.input.tasks) ? step.input.tasks.length : undefined,
     },
   );
-}
-
-/** The task list a `TodoWrite` call wrote, off its input; empty when it holds none. */
-function todosOf(value: unknown): ChatItemTodo[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((raw): ChatItemTodo[] => {
-    if (typeof raw !== 'object' || raw === null) return [];
-    const row = raw as Record<string, unknown>;
-    const text = typeof row.content === 'string' ? row.content.trim() : '';
-    if (!text) return [];
-    const status =
-      row.status === 'completed' || row.status === 'in_progress' ? row.status : 'pending';
-    return [{ text, status }];
-  });
 }

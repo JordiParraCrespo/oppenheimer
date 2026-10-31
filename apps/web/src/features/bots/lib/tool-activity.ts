@@ -146,23 +146,3 @@ export function readableOutput(output: string): string {
     return output;
   }
 }
-
-/** One item of the bot's to-do list, as a plan call wrote it. */
-export interface PlanItem {
-  text: string;
-  state: 'pending' | 'active' | 'done';
-}
-
-/** The to-do list a plan call wrote, for its line's fold; empty when the input holds none. */
-export function planItems(input: Record<string, unknown>): PlanItem[] {
-  const todos = Array.isArray(input.todos) ? input.todos : [];
-  return todos.flatMap((todo): PlanItem[] => {
-    if (typeof todo !== 'object' || todo === null) return [];
-    const row = todo as Record<string, unknown>;
-    const text = typeof row.content === 'string' ? row.content.trim() : '';
-    if (!text) return [];
-    const state =
-      row.status === 'completed' ? 'done' : row.status === 'in_progress' ? 'active' : 'pending';
-    return [{ text, state }];
-  });
-}

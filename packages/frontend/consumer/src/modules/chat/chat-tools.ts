@@ -1,4 +1,4 @@
-import type { ChatToolItemType } from '@oppenheimer/shared/schemas/chat-item';
+import type { ChatItemTodo, ChatToolItemType } from '@oppenheimer/shared/schemas/chat-item';
 
 /**
  * What a tool call is, whichever chat it is in: a coding agent's session
@@ -97,7 +97,7 @@ const KINDS: Record<string, ChatToolKind> = {
 const PAGE_TOOLS: ReadonlySet<string> = new Set(['WebFetch']);
 
 /** A web call that opens a page by its URL rather than searching for words. */
-export function opensPage(name: string): boolean {
+function opensPage(name: string): boolean {
   return PAGE_TOOLS.has(name);
 }
 
@@ -179,43 +179,104 @@ export function toolLine(text: string): string {
   return line.length > TARGET_MAX ? `${line.slice(0, TARGET_MAX)}…` : line;
 }
 
-/** A coding agent's tool as the CLI names it; an MCP one as `server · tool`. */
-function cliLabel(name: string): string {
-  return name.replace(/^mcp__/, '').replaceAll('__', ' · ');
+/**
+ * The first of `keys` the input holds as text, as it was given; none when it
+ * holds none of them. Every target and every field a chat reads off a
+ * call's input goes through here.
+ */
+export function fieldOf(
+  input: Readonly<Record<string, unknown>>,
+  keys: readonly string[],
+): string | null {
+  for (const key of keys) {
+    const value = textOf(input[key]);
+    if (value) return value;
+  }
+  return null;
+}
+
+/** The first text a call was given, whichever field it is in. */
+function firstText(input: Readonly<Record<string, unknown>>): string | null {
+  return Object.values(input).map(textOf).find(Boolean) ?? null;
 }
 
 /**
- * What a call is, read off its tool's name and its input. A tool the table
- * does not know is an MCP server's when its name says so; otherwise, in a
- * bot's chat, it is one of Oppenheimer's own, pointed at the first text it
- * was given, and in a coding agent's, one of the CLI's the chat has no card
- * for.
+ * How each origin reads a name: the key the table is looked up by, the kind
+ * of a tool the table does not know, what such a tool was pointed at, and a
+ * tool's name in words. A coding agent's unknown tool is an MCP server's when
+ * its name says so, else one of the CLI's, aimed at a known field and named
+ * as the CLI names it. A bot's tools come through Oppenheimer's own server
+ * (`mcp__oppenheimer__<name>`, under Claude) or bare (under OpenAI): its
+ * unknown tool is one of ours, aimed at the first text it was given and
+ * named in words.
+ */
+interface OriginPolicy {
+  key: (name: string) => string;
+  unknownKind: (name: string) => 'mcp' | 'other';
+  unknownTarget: (input: Readonly<Record<string, unknown>>) => string | null;
+  label: (name: string) => string;
+}
+
+const ORIGINS: Record<ChatToolOrigin, OriginPolicy> = {
+  agent: {
+    key: (name) => name,
+    unknownKind: (name) => (name.startsWith('mcp__') ? 'mcp' : 'other'),
+    unknownTarget: (input) => fieldOf(input, DEFAULT_TARGET_FIELDS),
+    label: (name) => name.replace(/^mcp__/, '').replaceAll('__', ' · '),
+  },
+  bot: {
+    key: (name) => (name.startsWith(OWN_SERVER) ? name.slice(OWN_SERVER.length) : name),
+    unknownKind: (name) =>
+      name.startsWith('mcp__') && !name.startsWith(OWN_SERVER) ? 'mcp' : 'other',
+    unknownTarget: firstText,
+    label: humaniseToolName,
+  },
+};
+
+/**
+ * What a call is, read off its tool's name and its input: the table's kind
+ * and that kind's target fields for a tool it knows, the origin's reading
+ * (`ORIGINS`) for one it does not.
  */
 export function classifyTool(
   name: string,
   input: Readonly<Record<string, unknown>>,
   origin: ChatToolOrigin,
 ): ChatToolClass {
-  const own = origin === 'bot' && name.startsWith(OWN_SERVER);
-  const key = own ? name.slice(OWN_SERVER.length) : name;
-  const kind = KINDS[key] ?? (!own && name.startsWith('mcp__') ? 'mcp' : 'other');
-  const field = (keys: readonly string[]) => {
-    for (const k of keys) {
-      const value = textOf(input[k]);
-      if (value) return value;
-    }
-    return null;
-  };
-  const firstText = origin === 'bot' && (kind === 'other' || kind === 'mcp');
-  const target = firstText
-    ? (Object.values(input).map(textOf).find(Boolean) ?? null)
-    : field(TARGET_FIELDS[kind] ?? DEFAULT_TARGET_FIELDS);
+  const policy = ORIGINS[origin];
+  const key = policy.key(name);
+  const known = KINDS[key];
+  const kind = known ?? policy.unknownKind(name);
   return {
     kind,
     type: TYPES[kind],
     icon: ICONS[kind],
-    label: origin === 'bot' ? humaniseToolName(name) : cliLabel(name),
-    target,
+    label: policy.label(name),
+    target:
+      known === undefined
+        ? policy.unknownTarget(input)
+        : fieldOf(input, TARGET_FIELDS[known] ?? DEFAULT_TARGET_FIELDS),
     opensPage: opensPage(key),
   };
+}
+
+const TODO_STATUSES: ReadonlySet<unknown> = new Set(['pending', 'in_progress', 'completed']);
+
+/**
+ * The task list a to-do call wrote (`TodoWrite`'s `todos`, in both chats),
+ * each item's words trimmed and an item with none left out; a status it does
+ * not know reads as pending. Empty when the input holds no list.
+ */
+export function todosOf(value: unknown): ChatItemTodo[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw): ChatItemTodo[] => {
+    if (typeof raw !== 'object' || raw === null) return [];
+    const row = raw as Record<string, unknown>;
+    const text = typeof row.content === 'string' ? row.content.trim() : '';
+    if (!text) return [];
+    const status = TODO_STATUSES.has(row.status)
+      ? (row.status as ChatItemTodo['status'])
+      : 'pending';
+    return [{ text, status }];
+  });
 }
