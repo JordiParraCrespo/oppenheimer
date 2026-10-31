@@ -4,8 +4,10 @@ The rest of the table under "Reach for the design system before writing
 markup" in [`.agents/rules/frontend-ui.md`](../rules/frontend-ui.md), split
 out so the rule file stays short. Each row is a rule: when you need what the
 first column says, use the second, never the third. Read
-`packages/frontend/design-system/web/src/index.ts` in full as well; a
-component exported there and missing here is still the one to use.
+`packages/frontend/design-system/web/src/index.ts` in full as well.
+`pnpm check:structure` (`scripts/ui-catalog.mjs`) fails a row whose
+component is not exported, and a design-system component that has no row
+here or in the rule and no reason in the script's `UNCATALOGUED`.
 
 This page lives outside `.agents/rules/` on purpose: a file there without a
 `paths` frontmatter would load in every session.
