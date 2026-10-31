@@ -109,8 +109,14 @@ person pick another.
   when it shows (`GET /v1/hosts/:id/codex-environments?repository=`, live,
   nothing cached; `SESSIONS_044`–`046`). Its first row, Auto, is the host's
   pick and names the linked environment; the others are the account's,
-  linked ones first. A pick is kept with the repository it was made for and
+  linked ones first. A pick is kept with the host and the repository it was
+  made for, since each host lists its own ChatGPT account's environments, and
   remembered with the draft.
+- **ChatGPT's 429 is a stop.** The reads count against the host's ChatGPT
+  account. A 429 pauses that account for its `Retry-After` (a minute when it
+  names none); nothing else is asked in its place, and a start in the pause
+  is refused too, since the CLI would read the same list. The runner's
+  `SESS_010` is the API's `SESSIONS_047`, a 429.
 - **The pick is part of the launch.** `codexEnvironment` on
   `POST /sessions` is folded from `session.requested` into
   `work_session.launchEnvironment` with the model, permission and effort,

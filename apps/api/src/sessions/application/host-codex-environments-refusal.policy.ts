@@ -5,10 +5,14 @@ import type {
   HostCodexEnvironmentsOutcome,
 } from './host-codex-environments.port';
 
+/** The runner's refusal when ChatGPT asked it to wait (`SESS_010`). */
+const RUNNER_RATE_LIMITED = 'SESS_010';
+
 /**
  * The environments a host answered with, or the problem for why there are
- * none. Every refusal of the runner's is Codex's (`SESS_009`: no `codex`, no
- * sign-in), kept as `upstreamCode` with the runner's own words as the detail.
+ * none. A refusal of the runner's is ChatGPT's rate limit (`SESS_010`), a 429
+ * of its own, or else Codex's (`SESS_009`: no `codex`, no sign-in); either way
+ * the runner's code is kept as `upstreamCode` and its words are the detail.
  */
 export function codexEnvironmentsOrThrow(
   outcome: HostCodexEnvironmentsOutcome,
@@ -30,6 +34,12 @@ export function codexEnvironmentsOrThrow(
         detail: `Host ${hostId} did not list its Codex environments in time`,
       });
     case 'failed':
+      if (outcome.code === RUNNER_RATE_LIMITED) {
+        throw new AppError(SessionErrors.CODEX_ENVIRONMENTS_RATE_LIMITED, {
+          detail: outcome.detail ?? `ChatGPT asked host ${hostId} to wait`,
+          extensions: { upstreamCode: outcome.code },
+        });
+      }
       throw new AppError(SessionErrors.CODEX_ENVIRONMENTS_UNAVAILABLE, {
         detail: outcome.detail ?? `Host ${hostId} could not list its Codex environments`,
         extensions: { upstreamCode: outcome.code },

@@ -10122,6 +10122,10 @@ export type FindHostCodexEnvironmentsErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * SESSIONS_047 — ChatGPT asked to wait
+     */
+    429: ProblemDetailsDto;
+    /**
      * SESSIONS_046 — Codex could not list
      */
     502: ProblemDetailsDto;

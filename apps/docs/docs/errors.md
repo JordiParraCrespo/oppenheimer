@@ -553,6 +553,7 @@ are never reissued.
 | `SESSIONS_044` <a id="sessions_044" /> | This host's runner cannot list Codex environments | 409 |
 | `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
 | `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
+| `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -617,7 +618,9 @@ so lookaround and backreferences are refused (`SESSIONS_042`), and a session hol
 own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
 session still starts there, in an environment guessed from the repository's name.
 `046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
-code as `upstreamCode`. A runner that did not answer in time is `SESSIONS_031`.
+code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_010`):
+the runner asks nothing more of that ChatGPT account until the time it named, which the
+`detail` says. A runner that did not answer in time is `SESSIONS_031`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -1153,6 +1156,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
+| `SESS_010` <a id="sess_010" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

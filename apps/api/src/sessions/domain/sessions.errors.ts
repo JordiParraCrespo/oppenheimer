@@ -367,4 +367,14 @@ export const SessionErrors = {
     message: 'Codex on the host could not list its environments',
     httpStatus: 502,
   },
+  /**
+   * ChatGPT refused the host's read of its Codex environments for rate
+   * (`SESS_010`): the host asks nothing more of that account until the time
+   * it named, which the runner's words carry as the detail.
+   */
+  CODEX_ENVIRONMENTS_RATE_LIMITED: {
+    code: 'SESSIONS_047',
+    message: 'ChatGPT is limiting how often the host may list Codex environments',
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

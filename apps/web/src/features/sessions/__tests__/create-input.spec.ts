@@ -27,13 +27,13 @@ const extras = { prompt: 'Fix it', attachmentIds: [] };
 
 describe('toCreateInput', () => {
   // Codex's cloud runs the task in one of the account's environments: the one
-  // picked for this repository, or the host's pick when none was.
-  it('sends a Codex cloud session with the environment picked for its repository', () => {
+  // picked on this host for this repository, or the host's pick when none was.
+  it('sends a Codex cloud session with the environment picked for its host and repository', () => {
     const codex: NewSessionDraft = {
       ...draft,
       where: 'cloud',
       agent: 'codex',
-      codexEnvironment: { repository: 'installation-1:42', id: 'e_6845a1b2c3d4' },
+      codexEnvironment: { hostId: 'host-1', repository: 'installation-1:42', id: 'e_6845a1b2c3d4' },
     };
 
     expect(toCreateInput(codex, extras)).toMatchObject({
@@ -43,10 +43,17 @@ describe('toCreateInput', () => {
     });
     expect(
       toCreateInput(
-        { ...codex, codexEnvironment: { repository: 'installation-1:7', id: 'e_other' } },
+        {
+          ...codex,
+          codexEnvironment: { hostId: 'host-1', repository: 'installation-1:7', id: 'e_other' },
+        },
         extras,
       ),
     ).not.toHaveProperty('codexEnvironment');
+    // Another host is signed in to its own ChatGPT account, which may not have it.
+    expect(toCreateInput({ ...codex, hostId: 'host-2' }, extras)).not.toHaveProperty(
+      'codexEnvironment',
+    );
     expect(toCreateInput({ ...codex, where: 'worktree' }, extras)).not.toHaveProperty(
       'codexEnvironment',
     );

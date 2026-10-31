@@ -11569,6 +11569,16 @@
               }
             }
           },
+          "429": {
+            "description": "SESSIONS_047 — ChatGPT asked to wait",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "SESSIONS_046 — Codex could not list",
             "content": {

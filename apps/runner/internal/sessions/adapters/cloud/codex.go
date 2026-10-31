@@ -82,6 +82,8 @@ type Codex struct {
 	BaseURL string
 	// HTTP reads them; nil is http.DefaultClient.
 	HTTP *http.Client
+	// Now is the clock a rate-limit pause is read against; nil is time.Now.
+	Now func() time.Time
 }
 
 // codexTaskURL is where `codex cloud exec` says the task went:
@@ -102,6 +104,11 @@ func (c Codex) Start(ctx context.Context, repository, branch, prompt, environmen
 		return c.exec(ctx, environment, branch, prompt)
 	}
 	envs, listErr := c.Environments(ctx, repository)
+	// The CLI resolves a label by reading the same environments, so a refusal
+	// for rate is not worked around by asking it instead.
+	if isRateLimited(listErr) {
+		return Started{}, listErr
+	}
 	if listErr == nil && envs.Recommended != "" {
 		return c.exec(ctx, envs.Recommended, branch, prompt)
 	}

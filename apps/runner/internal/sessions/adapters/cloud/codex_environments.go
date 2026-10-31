@@ -16,9 +16,14 @@ package cloud
 // environments the account's recent tasks ran in are the list instead, read
 // off `codex cloud list --json`.
 //
-// The budget. OpenAI publishes no limit for these reads either. One list is
-// at most two GETs, asked when someone opens the composer's picker or starts
-// a Codex cloud session without picking, never on a timer.
+// The budget. OpenAI publishes no limit for these reads either; they count
+// against the ChatGPT account the host is signed in as, so that is the bucket.
+// One list is at most two GETs, asked when someone opens the composer's picker
+// or starts a Codex cloud session without picking, never on a timer. A 429 is
+// ChatGPT saying stop: the account is paused for its Retry-After (a minute
+// when it names none), nothing else is asked in its place (not the account's
+// list, not `codex cloud list`), and the refusal is SESS_010, which the API
+// answers with a 429 code of its own.
 
 import (
 	"context"
@@ -31,7 +36,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -92,6 +99,62 @@ type codexAuth struct {
 	} `json:"tokens"`
 }
 
+// codexRateLimitDefault is how long an account is paused after a 429 that
+// names no Retry-After.
+const codexRateLimitDefault = time.Minute
+
+// chatGPTPauses holds, by ChatGPT account, until when ChatGPT asked the host
+// not to read its environments. Process-wide: every Codex value reads it.
+var chatGPTPauses = struct {
+	sync.Mutex
+	until map[string]time.Time
+}{until: map[string]time.Time{}}
+
+// pausedUntil answers until when account is paused, or the zero time.
+func pausedUntil(account string, now time.Time) time.Time {
+	chatGPTPauses.Lock()
+	defer chatGPTPauses.Unlock()
+	until := chatGPTPauses.until[account]
+	if !until.After(now) {
+		delete(chatGPTPauses.until, account)
+		return time.Time{}
+	}
+	return until
+}
+
+// pause holds account until until, never shortening a longer pause.
+func pause(account string, until time.Time) {
+	chatGPTPauses.Lock()
+	defer chatGPTPauses.Unlock()
+	if until.After(chatGPTPauses.until[account]) {
+		chatGPTPauses.until[account] = until
+	}
+}
+
+// rateLimited is the refusal for an account paused until until.
+func rateLimited(until time.Time, now time.Time) error {
+	wait := until.Sub(now).Round(time.Second)
+	return domain.ErrCodexRateLimited.WithDetail(
+		"ChatGPT is limiting how often its Codex environments are read; try again in %s", wait)
+}
+
+// isRateLimited reports whether err is ChatGPT's refusal for rate.
+func isRateLimited(err error) bool {
+	pe := problem.From(err)
+	return pe != nil && pe.Code == domain.ErrCodexRateLimited.Code
+}
+
+// retryAfter reads a Retry-After header in seconds or as an HTTP date.
+func retryAfter(header string, now time.Time) time.Duration {
+	if seconds, err := strconv.Atoi(strings.TrimSpace(header)); err == nil && seconds > 0 {
+		return time.Duration(seconds) * time.Second
+	}
+	if at, err := http.ParseTime(header); err == nil && at.After(now) {
+		return at.Sub(now)
+	}
+	return codexRateLimitDefault
+}
+
 // errNoChatGPTSignIn is a host whose CLI keeps no ChatGPT sign-in on disk.
 var errNoChatGPTSignIn = errors.New("no ChatGPT sign-in in the Codex auth file")
 
@@ -102,6 +165,9 @@ func (c Codex) Environments(ctx context.Context, repository string) (CodexEnviro
 	envs, err := c.chatGPTEnvironments(ctx, repository)
 	if err == nil {
 		return envs, nil
+	}
+	if isRateLimited(err) {
+		return CodexEnvironments{}, err
 	}
 	fromTasks, taskErr := c.taskEnvironments(ctx)
 	if taskErr != nil {
@@ -125,8 +191,12 @@ func (c Codex) chatGPTEnvironments(ctx context.Context, repository string) (Code
 	if owner, name, ok := strings.Cut(repository, "/"); ok && owner != "" && name != "" {
 		path := "/wham/environments/by-repo/github/" + url.PathEscape(owner) + "/" + url.PathEscape(name)
 		// A repository with no environment, or a failed ask, still has the
-		// account's list to fall back on.
-		if rows, err := c.getEnvironments(ctx, auth, path); err == nil {
+		// account's list to fall back on; a refusal for rate does not.
+		rows, err := c.getEnvironments(ctx, auth, path)
+		if isRateLimited(err) {
+			return CodexEnvironments{}, err
+		}
+		if err == nil {
 			linked = rows
 			for _, row := range rows {
 				env := merge(byID, row)
@@ -135,7 +205,7 @@ func (c Codex) chatGPTEnvironments(ctx context.Context, repository string) (Code
 		}
 	}
 	all, err := c.getEnvironments(ctx, auth, "/wham/environments")
-	if err != nil && len(byID) == 0 {
+	if isRateLimited(err) || (err != nil && len(byID) == 0) {
 		return CodexEnvironments{}, err
 	}
 	for _, row := range all {
@@ -225,6 +295,10 @@ func sortEnvironments(envs []CodexEnvironment) []CodexEnvironment {
 
 // getEnvironments GETs one list of environments off the ChatGPT backend.
 func (c Codex) getEnvironments(ctx context.Context, auth codexAuth, path string) ([]codexEnvironmentRow, error) {
+	account := auth.Tokens.AccountID
+	if until := pausedUntil(account, c.now()); !until.IsZero() {
+		return nil, rateLimited(until, c.now())
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base()+path, nil)
 	if err != nil {
 		return nil, err
@@ -243,6 +317,11 @@ func (c Codex) getEnvironments(ctx context.Context, auth codexAuth, path string)
 	body, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode == http.StatusTooManyRequests {
+		until := c.now().Add(retryAfter(res.Header.Get("Retry-After"), c.now()))
+		pause(account, until)
+		return nil, rateLimited(until, c.now())
 	}
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ChatGPT answered %s for its environments", res.Status)
@@ -341,6 +420,13 @@ func (c Codex) client() *http.Client {
 		return c.HTTP
 	}
 	return http.DefaultClient
+}
+
+func (c Codex) now() time.Time {
+	if c.Now != nil {
+		return c.Now()
+	}
+	return time.Now()
 }
 
 func (c Codex) httpTimeout() time.Duration {

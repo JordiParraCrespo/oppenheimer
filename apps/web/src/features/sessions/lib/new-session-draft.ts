@@ -61,17 +61,19 @@ export interface NewSessionDraft {
    */
   efforts: EffortPicks;
   /**
-   * The Codex environment picked for a Codex cloud session, and the repository
-   * row it was picked for: it applies only while that repository is the one
-   * picked (`toCreateInput`), so changing the repository falls back to the
-   * host's pick without anything clearing it. Null is the host's pick, the
-   * environment linked to the repository.
+   * The Codex environment picked for a Codex cloud session, with the host and
+   * the repository row it was picked for: it applies only while that host and
+   * that repository are the ones picked (`toCreateInput`), since each host
+   * lists the environments of its own ChatGPT account. Changing either falls
+   * back to the host's pick without anything clearing it. Null is the host's
+   * pick, the environment linked to the repository.
    */
   codexEnvironment: CodexEnvironmentPick | null;
 }
 
-/** An environment picked for one repository row (`repositoryKey`). */
+/** An environment picked on one host for one repository row (`repositoryKey`). */
 export interface CodexEnvironmentPick {
+  hostId: string;
   repository: string;
   id: string;
 }
@@ -278,9 +280,12 @@ function rememberedChoices(): Partial<RememberedChoices> {
 /** A remembered environment pick, or none when storage holds another shape. */
 function codexEnvironmentPick(value: unknown): CodexEnvironmentPick | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const { repository, id } = value as Partial<CodexEnvironmentPick>;
-  return typeof repository === 'string' && typeof id === 'string' && id
-    ? { repository, id }
+  const { hostId, repository, id } = value as Partial<CodexEnvironmentPick>;
+  return typeof hostId === 'string' &&
+    typeof repository === 'string' &&
+    typeof id === 'string' &&
+    id
+    ? { hostId, repository, id }
     : undefined;
 }
 

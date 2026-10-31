@@ -145,7 +145,7 @@ describe('rememberDraft', () => {
       model: 'gpt-6-astra',
       permission: 'ask',
       efforts: { codex: 'low' },
-      codexEnvironment: { repository: 'x', id: 'e_1' },
+      codexEnvironment: { hostId: 'h1', repository: 'x', id: 'e_1' },
       // A caller holding the whole draft passes it; the folder must not be
       // written: it is remembered per host, on its own.
       ...({ folder: '/tmp' } as object),
@@ -172,7 +172,7 @@ describe('rememberDraft', () => {
       agent: 'codex',
       permission: 'ask',
       efforts: { codex: 'low' },
-      codexEnvironment: { repository: 'x', id: 'e_1' },
+      codexEnvironment: { hostId: 'h1', repository: 'x', id: 'e_1' },
     });
   });
 

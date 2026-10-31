@@ -284,6 +284,7 @@
     "SESSIONS_044": "This host’s runner is too old to list Codex environments. Update it, or start the session and let the host pick one.",
     "SESSIONS_045": "The host is offline, so its Codex environments can’t be listed.",
     "SESSIONS_046": "Codex on the host couldn’t list its environments. Check that codex is installed and signed in with ChatGPT.",
+    "SESSIONS_047": "ChatGPT is limiting how often its Codex environments can be listed. Wait a minute and try again, or start the session and let the host pick.",
     "VOICE_001": "Dictation needs a workspace. Open one and try again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",

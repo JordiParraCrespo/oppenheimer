@@ -562,16 +562,26 @@ export function toCreateInput(
 }
 
 /**
- * The Codex environment a Codex cloud session is sent with: the one picked for
- * the repository it starts from, or none — the host's pick, the environment
- * linked to the repository — when nothing was picked for that repository.
+ * The Codex environment a Codex cloud session is sent with: the one picked on
+ * its host for the repository it starts from, or none — the host's pick, the
+ * environment linked to the repository — when nothing was picked for that
+ * pair. A pick made on another host is another ChatGPT account's.
  */
 function codexEnvironmentFor(
-  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'scope' | 'codexEnvironment'>,
+  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'scope' | 'codexEnvironment'>,
 ): string | null {
   const [first] = draft.scope;
   if (draft.where !== 'cloud' || draft.agent !== 'codex' || !first) return null;
-  return draft.codexEnvironment?.repository === first.id ? draft.codexEnvironment.id : null;
+  return pickedEnvironment(draft.codexEnvironment, draft.hostId, first.id);
+}
+
+/** The environment picked on `hostId` for `repository`, or null when none was. */
+export function pickedEnvironment(
+  pick: NewSessionDraft['codexEnvironment'],
+  hostId: string | null,
+  repository: string,
+): string | null {
+  return pick && pick.hostId === hostId && pick.repository === repository ? pick.id : null;
 }
 
 /**

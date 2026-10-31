@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -148,5 +149,53 @@ func TestCodexStartNamesTheAccountsEnvironmentsWhenNoneFits(t *testing.T) {
 	if !strings.Contains(pe.Detail, "No Codex environment is linked to acme-labs/xrp-mobile") ||
 		!strings.Contains(pe.Detail, "This account has: e_api, docs.") {
 		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// A 429 from ChatGPT is its "stop": the refusal is SESS_010, nothing else is
+// asked in its place (not the account's list, not `codex cloud list`), and the
+// account is not asked again until the Retry-After it named has passed.
+func TestCodexEnvironmentsStopsAtARateLimitUntilItsRetryAfter(t *testing.T) {
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests++
+		w.Header().Set("Retry-After", "30")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	t.Cleanup(server.Close)
+	bin, args := fakeCodex(t, `echo '{"tasks": []}'`)
+	now := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
+	home := signedIn(t)
+	// Another test's account: the pause is per ChatGPT account.
+	auth := `{"tokens": {"access_token": "tok-1", "account_id": "acc-rate"}}`
+	if err := os.WriteFile(filepath.Join(home, "auth.json"), []byte(auth), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	codex := Codex{Command: bin, Home: home, BaseURL: server.URL, Now: func() time.Time { return now }}
+
+	_, err := codex.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if pe := problem.From(err); pe == nil || pe.Code != domain.ErrCodexRateLimited.Code {
+		t.Fatalf("err = %v, want ErrCodexRateLimited", err)
+	}
+	if requests != 1 {
+		t.Fatalf("requests = %d, want the refused one alone", requests)
+	}
+	if _, statErr := os.Stat(args); statErr == nil {
+		t.Fatalf("codex cloud list ran after a rate limit: %q", readArgs(t, args))
+	}
+
+	now = now.Add(20 * time.Second)
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", ""); problem.From(err) == nil ||
+		problem.From(err).Code != domain.ErrCodexRateLimited.Code {
+		t.Fatalf("Start during the pause = %v, want ErrCodexRateLimited", err)
+	}
+	if requests != 1 {
+		t.Fatalf("requests = %d, want none during the pause", requests)
+	}
+
+	now = now.Add(11 * time.Second)
+	_, _ = codex.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if requests != 2 {
+		t.Fatalf("requests = %d, want ChatGPT asked again once the pause passed", requests)
 	}
 }

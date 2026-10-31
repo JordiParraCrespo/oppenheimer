@@ -284,6 +284,7 @@
     "SESSIONS_044": "El runner de este equipo es demasiado antiguo para listar los entornos de Codex. Actualízalo, o inicia la sesión y deja que el equipo elija uno.",
     "SESSIONS_045": "El equipo está desconectado, así que no se pueden listar sus entornos de Codex.",
     "SESSIONS_046": "Codex no pudo listar sus entornos en el equipo. Comprueba que codex está instalado y con la sesión de ChatGPT iniciada.",
+    "SESSIONS_047": "ChatGPT está limitando cada cuánto se pueden listar sus entornos de Codex. Espera un minuto y vuelve a intentarlo, o inicia la sesión y deja que el equipo elija.",
     "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
