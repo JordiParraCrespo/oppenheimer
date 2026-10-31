@@ -1,17 +1,12 @@
 'use client';
 
-import { useQuery, useSuspenseQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
-import {
-  type QueryClient,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { ModelProviderEntity } from '../modules/bots/bot.entity';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 import { voiceKeys } from './voice.queries';
 
 /**
@@ -59,36 +54,19 @@ export function invalidateModelProviders(queryClient: QueryClient): Promise<unkn
 }
 
 /** Stores a provider's key. The answer carries no key, so the list is read again for its hint. */
-export function usePutModelProviderKey(
-  options?: UseMutationOptions<void, Error, ModelProviderKeyVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ provider, apiKey }: ModelProviderKeyVariables) =>
-      app.bots.putModelProviderKey(provider, apiKey),
-    ...withCacheOnSuccess(options, () => invalidateModelProviders(queryClient)),
-  });
-}
+export const usePutModelProviderKey = mutation<void, ModelProviderKeyVariables>({
+  run: (app, { provider, apiKey }) => app.bots.putModelProviderKey(provider, apiKey),
+  update: (queryClient) => invalidateModelProviders(queryClient),
+});
 
 /** Makes a provider, one with a key, the one new bots start on. */
-export function useSetDefaultModelProvider(options?: UseMutationOptions<void, Error, BotProvider>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: BotProvider) => app.bots.setDefaultModelProvider(provider),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
-    ),
-  });
-}
+export const useSetDefaultModelProvider = mutation<void, BotProvider>({
+  run: (app, provider) => app.bots.setDefaultModelProvider(provider),
+  update: (queryClient) => queryClient.invalidateQueries({ queryKey: botsKeys.providers() }),
+});
 
 /** Forgets a provider's key, and with it the default when it was the one. */
-export function useRemoveModelProviderKey(options?: UseMutationOptions<void, Error, BotProvider>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (provider: BotProvider) => app.bots.removeModelProviderKey(provider),
-    ...withCacheOnSuccess(options, () => invalidateModelProviders(queryClient)),
-  });
-}
+export const useRemoveModelProviderKey = mutation<void, BotProvider>({
+  run: (app, provider) => app.bots.removeModelProviderKey(provider),
+  update: (queryClient) => invalidateModelProviders(queryClient),
+});

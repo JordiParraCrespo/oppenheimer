@@ -111,17 +111,11 @@ Then:
 // packages/frontend/consumer/src/react/things.queries.ts
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import {
-  skipToken,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { shareEntities } from '@oppenheimer/frontend-core/react';
+import { skipToken, type UseQueryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateThingInput, ThingEntity } from '../modules/things/thing.entity';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * One function per level, each derived from the one above, so any subtree can
@@ -177,18 +171,22 @@ export function useThing(id: string | undefined) {
   });
 }
 
-export function useCreateThing(options?: UseMutationOptions<ThingEntity, Error, CreateThingInput>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: CreateThingInput) => app.things.create(input),
-    // The hook's cache write runs first and is awaited; the caller's onSuccess after it.
-    ...withCacheOnSuccess(options, (created) => {
-      queryClient.setQueryData(thingsKeys.detail(created.id), created);
-      return queryClient.invalidateQueries({ queryKey: thingsKeys.lists() });
-    }),
-  });
-}
+/** A write that only makes reads stale names them; they refetch in the background. */
+export const useArchiveThing = mutation<ThingEntity, string>({
+  run: (app, id) => app.things.archive(id),
+  invalidates: (_archived, id) => [thingsKeys.lists(), thingsKeys.detail(id)],
+});
+
+export const useCreateThing = mutation<ThingEntity, CreateThingInput>({
+  run: (app, input) => app.things.create(input),
+  // The hook's cache write runs first and is awaited (returning the refetch
+  // holds the mutation pending until the list is read); the caller's
+  // onSuccess runs after it.
+  update: (queryClient, created) => {
+    queryClient.setQueryData(thingsKeys.detail(created.id), created);
+    return queryClient.invalidateQueries({ queryKey: thingsKeys.lists() });
+  },
+});
 ```
 
 Export the keys and hooks by name from `src/react/index.ts`, then rebuild

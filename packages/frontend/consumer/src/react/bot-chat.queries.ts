@@ -1,18 +1,8 @@
 'use client';
 
-import {
-  useQueries,
-  useQuery,
-  useSuspenseQuery,
-  withCacheOnSuccess,
-} from '@oppenheimer/frontend-core/react';
+import { useQueries, useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
-import {
-  type QueryClient,
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
   BotConversationEntity,
@@ -45,6 +35,7 @@ import {
 } from '../modules/bots/live-text';
 import { botsKeys } from './bots.queries';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 
 /**
  * A bot's chat (`product/versions/mvp/25-bots.md` §3): the stored
@@ -112,34 +103,23 @@ async function piecesOf(
  * together; the pieces become the file. The finished file is still a whole
  * `Blob` in the browser, which is what a download needs.
  */
-export function useExportBotConversation(
-  options?: UseMutationOptions<Blob, Error, ExportBotConversationVariables>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: async ({ id, header, chunk, type }: ExportBotConversationVariables) =>
-      new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
-    ...options,
-  });
-}
+export const useExportBotConversation = mutation<Blob, ExportBotConversationVariables>({
+  run: async (app, { id, header, chunk, type }) =>
+    new Blob(await piecesOf(await app.bots.exportConversation(id), header, chunk), { type }),
+});
 
 /**
  * Clear history. The chat, its card, the sidebar's last line and the bot's
  * own read are read again, all empty of it now.
  */
-export function useClearBotConversation(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => app.bots.clearConversation(id),
-    ...withCacheOnSuccess(options, (_data, id) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
-      ]),
-    ),
-  });
-}
+export const useClearBotConversation = mutation<void, string>({
+  run: (app, id) => app.bots.clearConversation(id),
+  update: (queryClient, _data, id) =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
+      queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
+    ]),
+});
 
 /**
  * The turn Stop applies to, for a reader that draws nothing while the chat
@@ -209,17 +189,10 @@ export interface SendBotMessageVariables {
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
-export function useSendBotMessage(
-  options?: UseMutationOptions<BotTurnEntity, Error, SendBotMessageVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, content, attachmentIds }: SendBotMessageVariables) =>
-      app.bots.sendMessage(id, content, attachmentIds),
-    ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
-  });
-}
+export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
+  run: (app, { id, content, attachmentIds }) => app.bots.sendMessage(id, content, attachmentIds),
+  update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
+});
 
 export interface UploadBotImageVariables {
   id: string;
@@ -232,15 +205,9 @@ export interface UploadBotImageVariables {
  * the person is still writing. Nothing is read again: nothing on screen
  * holds it until the message is sent.
  */
-export function useUploadBotImage(
-  options?: UseMutationOptions<BotAttachment, Error, UploadBotImageVariables>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: ({ id, file }: UploadBotImageVariables) => app.bots.uploadImage(id, file),
-    ...options,
-  });
-}
+export const useUploadBotImage = mutation<BotAttachment, UploadBotImageVariables>({
+  run: (app, { id, file }) => app.bots.uploadImage(id, file),
+});
 
 /** A message's images, as `useBotImages` reads them: each one's bytes once they are in. */
 export interface BotImageReads {
@@ -282,16 +249,10 @@ export interface CancelBotTurnVariables {
 }
 
 /** Stop: a queued turn ends now, a running one at its next step. */
-export function useCancelBotTurn(
-  options?: UseMutationOptions<BotTurnEntity, Error, CancelBotTurnVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, turnId }: CancelBotTurnVariables) => app.bots.cancelTurn(id, turnId),
-    ...withCacheOnSuccess(options, (turn, { id }) => refetchChat(queryClient, id, !turn.isActive)),
-  });
-}
+export const useCancelBotTurn = mutation<BotTurnEntity, CancelBotTurnVariables>({
+  run: (app, { id, turnId }) => app.bots.cancelTurn(id, turnId),
+  update: (queryClient, turn, { id }) => refetchChat(queryClient, id, !turn.isActive),
+});
 
 export type { BotLiveRetries, BotLiveSubagents, BotLiveText };
 

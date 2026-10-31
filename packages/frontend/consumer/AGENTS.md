@@ -26,9 +26,11 @@ and the full "add a module" cookbook are
   Only after that may `apps/web/src/features/things/` exist —
   `pnpm check:structure` allows a feature name a module carries.
 - A new query hook → `src/react/things.queries.ts`, keys derived from
-  `thingsKeys.all`, hooks over `useConsumerApp()`, mutations invalidating by
-  prefix through `withCacheOnSuccess(options, update)` from
-  `@oppenheimer/frontend-core/react`; export by name from
+  `thingsKeys.all`, hooks over `useConsumerApp()`, mutations made with
+  `mutation({ run, invalidates | update })` (`src/react/mutation.ts`,
+  `defineMutation` from `@oppenheimer/frontend-core/react`), invalidating by
+  prefix; one that needs its own `onMutate` or `onError` writes `useMutation`
+  out over `withCacheOnSuccess`. Export by name from
   `src/react/index.ts` the hooks the app imports. The key factory stays in
   its file — `pnpm check:unused` fails an export nothing outside reads.
 - Data that must not be written to storage → its key prefix in

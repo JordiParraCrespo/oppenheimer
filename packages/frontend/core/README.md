@@ -47,7 +47,8 @@ nothing imports, and a documented contract with no caller yet carries
   `@oppenheimer/shared/feature-flags`; see `.agents/rules/feature-flags.md`.
 - Capabilities: `useDeploymentCapabilities`.
 - Queries and mutations: `useQuery` / `useQueries` (entities shared across
-  refetches), `withCacheOnSuccess`, `refetchEverythingForNewIdentity`.
+  refetches), `defineMutation`, `withCacheOnSuccess`,
+  `refetchEverythingForNewIdentity`.
 - Cache policy: `createQueryClient`, `defaultQueryClientOptions`,
   `createQueryPersistOptions`.
 
