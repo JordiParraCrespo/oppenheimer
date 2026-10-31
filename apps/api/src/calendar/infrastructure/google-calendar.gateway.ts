@@ -1,7 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
-import { AppError, type RefusalReader, UpstreamLimiter } from '@oppenheimer/backend-core';
+import { GoogleOAuthClient, googleBucketsOf, UpstreamLimiter } from '@oppenheimer/backend-core';
 import { CalendarErrors } from '../domain/calendar.errors';
 import {
   type CalendarGrant,
@@ -26,13 +26,6 @@ const TIMEOUT_MS = 10_000;
  * past forty waiting answers `CALENDAR_010` rather than hanging the card.
  */
 const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 5_000 };
-/** Google's per-project quota: every connected account draws on it. */
-const PROJECT: Bucket = 'project';
-/** Google's reasons for a per-person quota refusal, and for a per-project one. */
-const PERSON_REASONS = new Set(['userRateLimitExceeded']);
-const PROJECT_REASONS = new Set(['rateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded']);
-
-type Bucket = 'project' | `connection:${string}`;
 
 /**
  * Google Calendar, read-only, through the same OAuth client as Google sign-in. The
@@ -40,56 +33,54 @@ type Bucket = 'project' | `connection:${string}`;
  * as Connect GitHub does; so the redirect URI is the console's.
  *
  * Google counts calls per Google account and per project, and enforces both.
- * Every call here goes through one {@link UpstreamLimiter}: a call counts
- * against its connection (one Google account, so one bucket each when a person
- * has several) and the project, a refusal pauses whichever Google named, and
- * a paused bucket answers `CALENDAR_010` without asking Google again, on every
- * replica (`.agents/rules/integrations.md`).
+ * Every call here goes through one {@link UpstreamLimiter}, by way of the
+ * {@link GoogleOAuthClient} Gmail uses too: a call counts against its
+ * connection (one Google account, so one bucket each when a person has
+ * several) and the project, a refusal pauses whichever Google named, and a
+ * paused bucket answers `CALENDAR_010` without asking Google again, on every
+ * replica (`.agents/rules/integrations.md`). Anything else that kept Google
+ * from answering is a `CalendarProviderError`.
  */
 @Injectable()
 export class GoogleCalendarGateway implements CalendarProviderPort {
-  private readonly limiter: UpstreamLimiter;
+  private readonly google: GoogleOAuthClient;
 
   constructor(
     private readonly configService: ConfigService,
     @Optional() cache?: CacheService,
   ) {
-    this.limiter = new UpstreamLimiter(
-      'Google Calendar',
-      CalendarErrors.GOOGLE_RATE_LIMITED,
-      cache,
-      LIMITS,
-    );
+    this.google = new GoogleOAuthClient(configService, {
+      configPrefix: 'calendar',
+      redirectPath: '/plan/calendar/google',
+      limiter: new UpstreamLimiter(
+        'Google Calendar',
+        CalendarErrors.GOOGLE_RATE_LIMITED,
+        cache,
+        LIMITS,
+      ),
+      timeoutMs: TIMEOUT_MS,
+      unreachableMessage: 'Google unreachable',
+      errors: {
+        grantRevoked: (message) => new CalendarGrantRevokedError(message),
+        provider: (message) => new CalendarProviderError(message),
+      },
+    });
   }
 
   isConfigured(): boolean {
-    return Boolean(this.clientId && this.clientSecret);
+    return this.google.isConfigured();
   }
 
   authorizationUrl(state: string, loginHint?: string): string {
-    const url = new URL(this.config('googleAuthUrl'));
-    url.searchParams.set('client_id', this.clientId ?? '');
-    url.searchParams.set('redirect_uri', this.redirectUri);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('scope', `openid email ${GOOGLE_CALENDAR_SCOPE}`);
-    url.searchParams.set('access_type', 'offline');
-    // `select_account`: a second account can be chosen, not the one signed in.
-    url.searchParams.set('prompt', 'consent select_account');
-    if (loginHint) url.searchParams.set('login_hint', loginHint);
-    url.searchParams.set('include_granted_scopes', 'true');
-    url.searchParams.set('state', state);
-    return url.toString();
+    return this.google.authorizationUrl(GOOGLE_CALENDAR_SCOPE, state, loginHint);
   }
 
   async exchange(code: string): Promise<CalendarGrant> {
-    const body = await this.token(
-      { code, redirect_uri: this.redirectUri, grant_type: 'authorization_code' },
-      [PROJECT],
-    );
+    const grant = await this.google.exchangeCode(code);
     return {
-      refreshToken: typeof body.refresh_token === 'string' ? body.refresh_token : null,
-      account: accountOfIdToken(body.id_token),
-      scopes: typeof body.scope === 'string' ? body.scope.split(' ') : [],
+      refreshToken: grant.refreshToken,
+      account: accountOfIdToken(grant.idToken),
+      scopes: grant.scopes,
     };
   }
 
@@ -97,15 +88,8 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
     grant: CalendarReadGrant,
     range: { from: string; to: string; timeZone: string },
   ): Promise<ProviderEventsRead> {
-    const buckets = bucketsOf(grant.connectionId);
-    const token = await this.token(
-      { refresh_token: grant.refreshToken, grant_type: 'refresh_token' },
-      buckets,
-    );
-    if (typeof token.access_token !== 'string') {
-      throw new CalendarProviderError('Google returned no access token');
-    }
-    const accessToken = token.access_token;
+    const buckets = googleBucketsOf(grant.connectionId);
+    const { accessToken, idToken } = await this.google.accessToken(grant.refreshToken, buckets);
     const events: ProviderCalendarEvent[] = [];
     let pageToken: string | undefined;
     for (let page = 0; page < MAX_PAGES; page += 1) {
@@ -121,7 +105,7 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
       url.searchParams.set('orderBy', 'startTime');
       url.searchParams.set('maxResults', String(PAGE_SIZE));
       if (pageToken) url.searchParams.set('pageToken', pageToken);
-      const { response, errorBody } = await this.fetch(
+      const { response, errorBody } = await this.google.fetch(
         url,
         { headers: { authorization: `Bearer ${accessToken}` } },
         buckets,
@@ -135,129 +119,19 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
     }
     // A grant that holds `openid` gets an ID token on refresh too: what keys a
     // connection written before accounts were keyed by `sub`.
-    return { events, account: accountOfIdToken(token.id_token) };
+    return { events, account: accountOfIdToken(idToken) };
   }
 
   async revoke(grant: CalendarReadGrant): Promise<void> {
-    const url = new URL(`${this.config('googleOauthBaseUrl')}/revoke`);
-    url.searchParams.set('token', grant.refreshToken);
-    await this.fetch(url, { method: 'POST' }, bucketsOf(grant.connectionId)).catch(() => undefined);
+    await this.google.revoke(grant.refreshToken, googleBucketsOf(grant.connectionId));
   }
 
-  /** Google's token endpoint. `invalid_grant` is a grant that is gone, not a fault. */
-  private async token(
-    fields: Record<string, string>,
-    buckets: Bucket[],
-  ): Promise<Record<string, unknown>> {
-    const { response, errorBody } = await this.fetch(
-      new URL(`${this.config('googleOauthBaseUrl')}/token`),
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: this.clientId ?? '',
-          client_secret: this.clientSecret ?? '',
-          ...fields,
-        }).toString(),
-      },
-      buckets,
-    );
-    if (errorBody !== null) {
-      if (jsonOf(errorBody).error === 'invalid_grant') {
-        throw new CalendarGrantRevokedError('invalid_grant');
-      }
-      throw new CalendarProviderError(`Google token endpoint answered ${response.status}`);
-    }
-    return jsonOf(await response.text());
-  }
-
-  /**
-   * Every call to Google, through the limiter. Its rate-limit problem
-   * (`CALENDAR_010`) passes through as is; anything else that kept Google from
-   * answering is a `CalendarProviderError`.
-   */
-  private async fetch(
-    url: URL,
-    init: RequestInit,
-    buckets: Bucket[],
-  ): Promise<{ response: Response; errorBody: string | null }> {
-    try {
-      return await this.limiter.exchange(
-        buckets,
-        () => fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) }),
-        readQuotaRefusal(buckets[0]),
-      );
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new CalendarProviderError(
-        error instanceof Error ? error.message : 'Google unreachable',
-      );
-    }
-  }
-
-  private config(key: 'googleAuthUrl' | 'googleOauthBaseUrl' | 'googleApiBaseUrl'): string {
+  private config(key: 'googleApiBaseUrl'): string {
     return this.configService.getOrThrow<string>(`calendar.${key}`);
-  }
-
-  private get clientId(): string | undefined {
-    return this.configService.get<string>('oauth.google.clientId') || undefined;
-  }
-
-  private get clientSecret(): string | undefined {
-    return this.configService.get<string>('oauth.google.clientSecret') || undefined;
-  }
-
-  private get redirectUri(): string {
-    return `${this.configService.getOrThrow<string>('app.frontendUrl')}/plan/calendar/google`;
   }
 }
 
 function previousDay(date: string): string {
   const [year, month, day] = date.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
-}
-
-/**
- * What a call counts against: the Google account, which is one connection (so
- * a person with several has a bucket per account, and one paused account does
- * not stop the others), and the project every account shares.
- */
-function bucketsOf(connectionId: string): Bucket[] {
-  return [`connection:${connectionId}`, PROJECT];
-}
-
-/**
- * Google names a quota refusal in `error.errors[].reason` (Calendar's v3
- * shape) or `error.status` (`RESOURCE_EXHAUSTED`), and sends it as a 403 as
- * often as a 429. A per-person reason pauses the grant; a per-project one
- * pauses every grant.
- */
-function readQuotaRefusal(personBucket: Bucket): RefusalReader {
-  return (errorBody) => {
-    const error = jsonOf(errorBody).error;
-    const record =
-      typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : {};
-    const reasons = Array.isArray(record.errors)
-      ? record.errors.map((entry) => String((entry as { reason?: unknown })?.reason ?? ''))
-      : [];
-    if (reasons.some((reason) => PERSON_REASONS.has(reason))) {
-      return { limited: true, bucket: personBucket };
-    }
-    if (
-      reasons.some((reason) => PROJECT_REASONS.has(reason)) ||
-      record.status === 'RESOURCE_EXHAUSTED'
-    ) {
-      return { limited: true, bucket: PROJECT };
-    }
-    return { limited: false };
-  };
-}
-
-function jsonOf(text: string): Record<string, unknown> {
-  try {
-    const parsed: unknown = JSON.parse(text);
-    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
-  } catch {
-    return {};
-  }
 }
