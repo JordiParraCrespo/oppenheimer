@@ -156,6 +156,7 @@
     "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
     "HOSTS_007": "No file is waiting for that command.",
     "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
+    "HOSTS_009": "Someone else changed this host while you were saving. Reload it and try again.",
     "INBOX_001": "The Inbox needs a workspace. Open one and try again.",
     "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
     "INBOX_003": "A snooze has to end in the future. Pick a later time.",

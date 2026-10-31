@@ -113,13 +113,49 @@ single-responsibility is enforced (no god-services).
   join the transaction.
 - Inject the port through a DI token (see `nestjs-di.md`), never the concrete class.
 
+### Writing an existing aggregate: versioned by default
+
+An aggregate whose row more than one writer can change (a person and a
+machine, two people, a request and a job) is written with **optimistic
+concurrency**, and that is the default for a new one:
+
+- the aggregate extends `VersionedAggregateRoot` (`@oppenheimer/backend-ddd`),
+  which carries the version the row held when it was loaded; the mapper
+  passes `version` both ways;
+- the table has `"version" integer NOT NULL DEFAULT 1` (`@VersionColumn` on
+  the ORM entity);
+- the repository writes it with `writeVersioned(manager, Orm, entity,
+  record)` on the manager of the transaction that stages its events (a
+  non-tenant repository calls `TypeOrmRepositoryBase.saveVersioned(entity)`,
+  which does both), then `entity.markVersionWritten()` after the commit. It is
+  one `UPDATE … WHERE id = $1 AND "version" = $2` that bumps the version, and
+  a stale copy throws `VersionConflictException` (`GENERIC.VERSION_CONFLICT`,
+  409), which rolls back the side rows and events with it;
+- the handler decides what a conflict means, in one place: wrap the load,
+  the decision and the save in `retryOnVersionConflict(async () => …)`, which
+  runs it once more on a fresh read. An idempotent command (unpair, cancel)
+  finds the state it wanted and writes nothing; an edit (rename) is made again
+  on the current row. When the retry loses too, a handler that faces a person
+  answers its module's own code (`HOSTS_009`), one that does not lets the
+  generic one through. A client that sends the version it read (`If-Match`,
+  `expectedVersion`) gets the conflict without a retry, since the person
+  decided on that version.
+
+`Repository.save` is not a write for an existing aggregate: it re-reads the
+row and writes every column the loaded copy holds, so a copy loaded before
+someone else's change puts the old values back. That is how a host renamed
+from a copy loaded before it was unpaired came back trusted. `hosts` is the
+module on this path; the ones that predate it (`automations`, `tasks` with
+their own version columns, `sessions` and `projects` with conditional `*If`
+writes, the rest on `save`) move onto it as they are next touched.
+
 ### A transition two writers can race is a conditional write
 
-`save` is a blind upsert: whoever writes last wins. That is right for a create
-and for an edit where the last writer may win; it is wrong for a state
-transition two workers, two replicas or a retry can make at once (claim a run,
-resolve a request, stop a session). There, both load the row in the same
-state, both decide, and the second write silently undoes the first.
+A versioned write refuses *any* concurrent change, which is what an edit
+wants. A claim wants something narrower: it answers who won a transition
+(claim a run, resolve a request, stop a session) and lets unrelated writes
+through. Two workers, two replicas or a retry can make it at once; both load
+the row in the same state, both decide, and only one may apply.
 
 - **The write is conditional on the state the aggregate was loaded in.** The
   aggregate remembers it (`statusAtLoad`, or a version), and the repository

@@ -1,7 +1,11 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { AggregateID } from '@oppenheimer/backend-ddd';
+import {
+  type AggregateID,
+  retryOnVersionConflict,
+  VersionConflictException,
+} from '@oppenheimer/backend-ddd';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostErrors } from '../../domain/hosts.errors';
 import { HOST_REPOSITORY } from '../../hosts.di-tokens';
@@ -20,6 +24,13 @@ import { UnpairHostCommand } from './unpair-host.command';
  * link closes, to close every session rather than only stop it. A host with no
  * link open at that moment is not told, so the console offers it only while the
  * host is online.
+ *
+ * **Idempotent.** A host already unpaired is left as it is, and an unpair that
+ * loses to another write is decided again on a fresh read: when that write was
+ * the machine's own uninstall, the host is already unpaired and nothing more is
+ * written, so `HostUnpaired` is raised and put on the timeline once. A `wipe`
+ * asked for then is not sent: the link already closed without it. Losing twice
+ * answers `HOSTS_009`.
  */
 @CommandHandler(UnpairHostCommand)
 export class UnpairHostCommandHandler implements ICommandHandler<UnpairHostCommand, AggregateID> {
@@ -29,15 +40,23 @@ export class UnpairHostCommandHandler implements ICommandHandler<UnpairHostComma
   ) {}
 
   async execute(command: UnpairHostCommand): Promise<AggregateID> {
-    const found = await this.hosts.findOneById(command.scope, command.hostId);
-    if (found.isNone()) {
-      throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
+    try {
+      await retryOnVersionConflict(async () => {
+        const found = await this.hosts.findOneById(command.scope, command.hostId);
+        if (found.isNone()) {
+          throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
+        }
+        const host = found.unwrap();
+        if (host.isUnpaired) return;
+        host.unpair(new Date(), { wipe: command.wipe });
+        await this.hosts.save(host);
+      });
+    } catch (error) {
+      if (!(error instanceof VersionConflictException)) throw error;
+      throw new AppError(HostErrors.CHANGED_CONCURRENTLY, {
+        detail: `Host ${command.hostId} was written by someone else twice while it was unpaired`,
+      });
     }
-
-    const host = found.unwrap();
-    host.unpair(new Date(), { wipe: command.wipe });
-    await this.hosts.save(host);
-
-    return host.id;
+    return command.hostId;
   }
 }

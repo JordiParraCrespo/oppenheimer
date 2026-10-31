@@ -28,6 +28,7 @@ export const GenericErrorCode = {
   ARGUMENT_OUT_OF_RANGE: 'GENERIC.ARGUMENT_OUT_OF_RANGE',
   CONFLICT: 'GENERIC.CONFLICT',
   NOT_FOUND: 'GENERIC.NOT_FOUND',
+  VERSION_CONFLICT: 'GENERIC.VERSION_CONFLICT',
 } as const;
 
 /**
@@ -97,4 +98,15 @@ export class NotFoundException extends ExceptionBase {
   constructor(message = NotFoundException.message) {
     super(message);
   }
+}
+
+/**
+ * A versioned write found the row at another version than the one the
+ * aggregate was loaded at: someone wrote it since, and nothing was changed.
+ * The caller reloads and decides again (`retryOnVersionConflict`), or answers
+ * the conflict.
+ */
+export class VersionConflictException extends ExceptionBase {
+  readonly code = GenericErrorCode.VERSION_CONFLICT;
+  readonly httpStatus = 409;
 }
