@@ -408,6 +408,13 @@ earlier note:
   relay path and falling back to it (built the same day, behind the
   `terminal_direct_path` flag), and the console now draws predictable keys
   before their echo. The relay still admits every attachment.
+- `versions/mvp/22-direct-terminal-path.md` bound the direct channel to the
+  DTLS fingerprints in the signalling, which the control plane relays, so a
+  compromised control plane could sit in the middle of it. On 2026-10-31 the
+  owner asked for as much peer to peer as possible and a handshake to harden
+  it: `versions/mvp/31-peer-to-peer-and-the-host-proof.md` has the host sign
+  both fingerprints with its pairing key on every channel, the browser pin
+  the key per host, and orders what moves off the control plane next.
 - `versions/mvp/05-screens.md` said a deleted session's row stays until
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if

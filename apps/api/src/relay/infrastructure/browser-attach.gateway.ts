@@ -276,8 +276,9 @@ export class BrowserAttachGateway {
   }
 
   /**
-   * Whether this attachment may move to a direct path (22), and the ICE
-   * servers it gathers with if so. Only for a runner that can answer, for a
+   * Whether this attachment may move to a direct path (22), the ICE servers
+   * it gathers with and the host the browser pins the key of (31) if so.
+   * Only for a runner that can answer and prove itself, for a
    * person the `terminal_direct_path` flag is on for, and not through a share
    * link: its audience may be anyone, and a host's upload is somebody's home
    * connection (22, "Several browsers"). `null` keeps the attachment on the
@@ -285,13 +286,20 @@ export class BrowserAttachGateway {
    */
   private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {
     if (claim.share) return null;
+    // The proof as well as the path: the console refuses a channel whose host
+    // has not signed it (31), so a runner that cannot would only cost the
+    // reader a negotiation that ends on the relay anyway.
     if (!link.capabilities.includes('attachment.direct')) return null;
+    if (!link.capabilities.includes('attachment.direct.proof')) return null;
     const enabled = this.flags.isEnabled('terminal_direct_path', {
       userId: claim.userId,
       organizationId: claim.organizationId,
     });
     if (!enabled) return null;
-    return { iceServers: this.configService.get<string[]>('relay.iceServers') ?? [] };
+    return {
+      iceServers: this.configService.get<string[]>('relay.iceServers') ?? [],
+      hostId: link.hostId,
+    };
   }
 
   /**

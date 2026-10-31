@@ -1,4 +1,5 @@
 import type { AttachClientMessage, AttachServerMessage } from '@oppenheimer/shared/protocol';
+import { browserHostKeyPins, type HostKeyPins } from './direct-handshake';
 import { DirectPath, directPathSupported, type PeerFactory } from './direct-path';
 
 /**
@@ -23,6 +24,8 @@ export interface PathSwitchOptions {
   /** Whether to take a direct path when one is offered; asked at each offer. */
   want?: () => boolean;
   peerFactory?: PeerFactory;
+  /** The host keys this browser has pinned; its own storage when absent. */
+  pins?: HostKeyPins;
   schedule: (fn: () => void, ms: number) => () => void;
   /** A control message on the attach socket. */
   tell: (message: AttachClientMessage) => void;
@@ -46,8 +49,11 @@ export class PathSwitch {
   private relaySent = 0;
   private path: RelayPath = 'relay';
   private failures = 0;
+  private readonly pins: HostKeyPins;
 
-  constructor(private readonly options: PathSwitchOptions) {}
+  constructor(private readonly options: PathSwitchOptions) {
+    this.pins = options.pins ?? browserHostKeyPins();
+  }
 
   onPath(listener: (path: RelayPath) => void): () => void {
     listener(this.path);
@@ -55,12 +61,18 @@ export class PathSwitch {
     return () => this.listeners.delete(listener);
   }
 
-  /** The relay invited a direct path for this attachment. */
-  invited(iceServers: readonly string[]): void {
+  /**
+   * The relay invited a direct path for this attachment, to `hostId`. With no
+   * host named there is nothing to pin the key under, so no direct path.
+   */
+  invited(iceServers: readonly string[], hostId: string | undefined): void {
+    if (!hostId) return;
     if (!this.options.want?.() || this.failures >= MAX_DIRECT_FAILURES) return;
     if (!this.options.peerFactory && !directPathSupported()) return;
     const direct = new DirectPath({
       iceServers,
+      hostId,
+      pins: this.pins,
       peerFactory: this.options.peerFactory,
       schedule: this.options.schedule,
       hooks: {
@@ -75,13 +87,14 @@ export class PathSwitch {
         deliver: (bytes) => {
           if (this.direct === direct) this.options.deliver(bytes);
         },
-        ended: () => {
+        ended: (distrusted) => {
           if (this.direct !== direct) return;
           // A path that never opened, or one that closed under the terminal:
           // either way the relay carries on, and the host repaints whatever
-          // the channel lost.
+          // the channel lost. A host whose proof was refused is not asked
+          // again by this stream: what answered may not be the host.
           this.direct = null;
-          this.failures += 1;
+          this.failures = distrusted ? MAX_DIRECT_FAILURES : this.failures + 1;
           this.setPath('relay');
         },
       },

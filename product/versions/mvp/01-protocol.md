@@ -276,8 +276,11 @@ runner does with it and point back.
   that direction's stream (from the runner, its output; from the control
   plane, the browser's input). An offset, not a marker, because this
   link's writer sends control frames ahead of queued PTY frames. Sent only
-  to a runner whose `hello` names `attachment.direct`. Credit and resize
-  stay on the link whichever path the bytes take.
+  to a runner whose `hello` names `attachment.direct`, and since 2026-10-31
+  (31) also `attachment.direct.proof`: the host signs its proof on the data
+  channel itself, so no link message changed, and the relay's `attached`
+  names the host (`direct.hostId`) for the browser to pin its key under.
+  Credit and resize stay on the link whichever path the bytes take.
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver. For `session.create` that means the session id
   is the key: a redelivered create either finds the session the first

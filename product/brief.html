@@ -192,7 +192,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     </g>
   </g>
 </svg>
-<p class="caption">Runners connect out, so the control plane never needs to reach a target. Behind a flag, on by default like every flag (note 22): a terminal starts on the relay and moves to a direct WebRTC channel to its host when one connects; the relay still admits every attachment.</p>
+<p class="caption">Runners connect out, so the control plane never needs to reach a target. Behind a flag, on by default like every flag (note 22): a terminal starts on the relay and moves to a direct WebRTC channel to its host when one connects; the relay still admits every attachment. Before a byte crosses that channel the host signs both ends' DTLS fingerprints with its pairing key and the browser pins the key, so the control plane cannot sit in the middle (note 31).</p>
 </div>
 
 <h3>What makes it feel local</h3>

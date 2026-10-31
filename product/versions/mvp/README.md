@@ -42,6 +42,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 28 | [Bots in the sections](28-bots-in-sections.md) | A Bots heading in Sessions, Automations, Plan and Pull requests, as the 2026-10-25 export draws it: a bot shows in the sections placed on it (by its owner, the section's plus, or itself), and opens its chat inside Pull requests; three slices |
 | 29 | [Inbox](29-inbox.md) | The 2026-10-25 export's new first rail item, first version: what needs you composed in the console from four reads that exist (sessions waiting on you, bot approvals, pull requests for you, failed runs), one at a time with its answer, filtered by project; done, deprioritize, snooze and delete stored as marks per occurrence; one new read, one new event; questions from Claude Code later |
 | 30 | [Session previews](30-session-previews.md) | The session pane's Browser tab: a session's dev server on an origin per session and port under a preview domain, served by the relay through the runner's link (the tunnel already open), judged as an attach by ticket then cookie, the app seeing `localhost`; an app with an API through its dev server's proxy; the ports a session's own processes listen on; why not Cloudflare Tunnel or ngrok |
+| 31 | [Peer to peer first, and the host proof](31-peer-to-peer-and-the-host-proof.md) | What still crosses the control plane and the order it moves to the browser ↔ host path; the host signs both DTLS fingerprints and the browser's nonce with its pairing key on every direct channel, and the browser pins the key per host (trust on first use), so a control plane that rewrites the signalling cannot sit in the middle; next: the pin on screen, shares direct, end to end on the relay, device keys |
 
 ## Decision log
 
@@ -747,3 +748,14 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and everything under it. No migration: a session keeps the folder its
   state records, and a store left in `repos/` is cloned again on its next
   create.
+- 2026-10-31: **the host proves itself on every direct channel** (31, 22,
+  01, 07 F30). Asked for: "as much p2p as possible … some handshake to make
+  it more robust". 22 bound the data channel to the DTLS fingerprints in the
+  signalling, which the control plane carries, so a compromised one could
+  splice two DTLS sessions. Built: before a byte crosses a channel the host
+  signs both fingerprints and the browser's nonce with its pairing key; the
+  browser checks the signature against its own peer connection, pins the key
+  per host on first use and refuses another; the runner moves output to the
+  channel only on the browser's `ready`. The relay invites only a runner
+  naming `attachment.direct.proof`, and names the host in `attached.direct`.
+  31 also orders what moves off the control plane next.
