@@ -1,11 +1,9 @@
 export type { Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
 export {
-  ConfigKeySealer,
   type ConfigKeySealerOptions,
   configKeySealer,
   type KeySealer,
 } from './crypto/config-key-sealer';
-export { openBlob, sealBlob } from './crypto/sealed-blob';
 export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,
@@ -54,7 +52,6 @@ export {
   type CapabilityMap,
 } from './services/capabilities.service';
 export {
-  GOOGLE_PROJECT_BUCKET,
   type GoogleAccessToken,
   type GoogleBucket,
   type GoogleCodeGrant,
