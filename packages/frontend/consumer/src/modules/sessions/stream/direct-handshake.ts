@@ -166,6 +166,26 @@ export function browserHostKeyPins(): HostKeyPins {
 
 export type ProofVerdict = 'trusted' | 'invalid' | 'key-changed';
 
+interface HostProof {
+  key: Uint8Array;
+  signature: Uint8Array;
+}
+
+/**
+ * The host's `proof` message, decoded: `{t: 'proof', v, key, sig}` with both
+ * values base64url. `null` for anything else, which is what a proof that is
+ * not one is judged as.
+ */
+function parseProof(message: unknown): HostProof | null {
+  if (typeof message !== 'object' || message === null) return null;
+  const { t, v, key, sig } = message as Record<string, unknown>;
+  if (t !== 'proof' || v !== PROOF_VERSION) return null;
+  if (typeof key !== 'string' || typeof sig !== 'string') return null;
+  const decodedKey = fromBase64Url(key);
+  const signature = fromBase64Url(sig);
+  return decodedKey && signature ? { key: decodedKey, signature } : null;
+}
+
 /**
  * Judges the host's `proof` message for the handshake that sent `nonce`:
  * the signature over this peer connection's own fingerprints, then the key
@@ -179,14 +199,11 @@ export async function judgeHostProof(input: {
   nonce: string;
   pins: HostKeyPins;
 }): Promise<ProofVerdict> {
-  const m = input.message as { t?: unknown; v?: unknown; key?: unknown; sig?: unknown } | null;
-  if (m?.t !== 'proof' || m.v !== PROOF_VERSION) return 'invalid';
-  if (typeof m.key !== 'string' || typeof m.sig !== 'string') return 'invalid';
-  const key = fromBase64Url(m.key);
-  const signature = fromBase64Url(m.sig);
+  const proof = parseProof(input.message);
   const offer = sdpFingerprints(input.offerSdp);
   const answer = sdpFingerprints(input.answerSdp);
-  if (!key || !signature || !offer || !answer) return 'invalid';
+  if (!proof || !offer || !answer) return 'invalid';
+  const { key, signature } = proof;
   const transcript = proofTranscript(offer, answer, input.nonce);
   if (!(await verifyHostProof(key, signature, transcript))) return 'invalid';
   const fingerprint = await hostKeyFingerprint(key);

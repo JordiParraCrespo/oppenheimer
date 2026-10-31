@@ -759,3 +759,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   channel only on the browser's `ready`. The relay invites only a runner
   naming `attachment.direct.proof`, and names the host in `attached.direct`.
   31 also orders what moves off the control plane next.
+- 2026-10-31: **the host pin does not stop an active control plane that
+  invents host ids** (31, corrected the same day after the pull request's
+  security review). The pin is keyed by the host id the relay names, and an
+  unseen id is first use, so a compromised control plane can name a fresh one
+  and sit in the middle with a key of its own. 31 now says so, and its open
+  question 4 asks how first use stops being automatic.

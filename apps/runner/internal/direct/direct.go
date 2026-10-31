@@ -173,59 +173,8 @@ func (a *Answerer) Answer(ctx context.Context, offer string, iceServers []string
 			default:
 			}
 		})
-		dc.OnOpen(func() {
-			// The proof comes first; a browser that never finishes it holds
-			// a peer slot for this long and no longer.
-			timer := time.AfterFunc(a.opts.HandshakeTimeout, func() {
-				if !ch.isReady() {
-					a.opts.Logger.Info("direct: the browser did not finish the host proof in time")
-					ch.end()
-				}
-			})
-			go func() {
-				<-ch.done
-				timer.Stop()
-			}()
-		})
-		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			if !msg.IsString {
-				if !ch.isReady() {
-					// Bytes before the proof was accepted are not the
-					// browser's: the handshake is the first thing it sends.
-					ch.end()
-					return
-				}
-				if h.Message != nil {
-					h.Message(msg.Data)
-				}
-				return
-			}
-			if ch.isReady() {
-				return
-			}
-			ch.mu.Lock()
-			reply, done, err := ch.hs.receive(msg.Data)
-			ch.mu.Unlock()
-			if err != nil {
-				a.opts.Logger.Info("direct: host proof refused", slog.Any("error", err))
-				ch.end()
-				return
-			}
-			if reply != nil {
-				if err := dc.SendText(string(reply)); err != nil {
-					ch.end()
-				}
-				return
-			}
-			if done {
-				ch.mu.Lock()
-				ch.ready = true
-				ch.mu.Unlock()
-				if h.Open != nil {
-					h.Open(ch)
-				}
-			}
-		})
+		dc.OnOpen(func() { ch.awaitProof(a.opts.HandshakeTimeout, a.opts.Logger) })
+		dc.OnMessage(func(msg webrtc.DataChannelMessage) { ch.receive(dc, msg, h, a.opts.Logger) })
 		dc.OnClose(ch.end)
 	})
 
@@ -310,15 +259,66 @@ type Channel struct {
 	low  chan struct{}
 	done chan struct{}
 	end  func()
-	// hs is the host proof's state; ready once the browser accepted it.
-	hs    *handshake
-	ready bool
+	// hs is the host proof's state, guarded by mu; bytes flow once it is
+	// ready.
+	hs *handshake
 }
 
 func (c *Channel) isReady() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.ready
+	return c.hs.ready
+}
+
+// awaitProof closes the channel if the browser has not finished the host
+// proof within timeout: one that never does holds a peer slot that long and
+// no longer.
+func (c *Channel) awaitProof(timeout time.Duration, logger *slog.Logger) {
+	timer := time.AfterFunc(timeout, func() {
+		if !c.isReady() {
+			logger.Info("direct: the browser did not finish the host proof in time")
+			c.end()
+		}
+	})
+	go func() {
+		<-c.done
+		timer.Stop()
+	}()
+}
+
+// receive is one message from the browser. Until the proof is accepted only
+// the handshake's text messages are taken, and anything else closes the
+// channel; after it, binary messages are keystrokes and text is ignored.
+func (c *Channel) receive(dc *webrtc.DataChannel, msg webrtc.DataChannelMessage, h Handlers, logger *slog.Logger) {
+	ready := c.isReady()
+	switch {
+	case ready && !msg.IsString:
+		if h.Message != nil {
+			h.Message(msg.Data)
+		}
+		return
+	case ready:
+		return
+	case !msg.IsString:
+		// Bytes before the proof are not keystrokes: the handshake is the
+		// first thing a browser sends.
+		c.end()
+		return
+	}
+	c.mu.Lock()
+	reply, done, err := c.hs.receive(msg.Data)
+	c.mu.Unlock()
+	switch {
+	case err != nil:
+		logger.Info("direct: host proof refused", slog.Any("error", err))
+		c.end()
+	case reply != nil:
+		if err := dc.SendText(string(reply)); err != nil {
+			c.end()
+		}
+	case done && h.Open != nil:
+		h.Open(c)
+	}
 }
 
 // Send writes bytes to the browser. It waits while the channel holds more
@@ -327,7 +327,7 @@ func (c *Channel) isReady() bool {
 // returns.
 func (c *Channel) Send(ctx context.Context, bytes []byte) error {
 	c.mu.Lock()
-	dc, ready := c.dc, c.ready
+	dc, ready := c.dc, c.hs.ready
 	c.mu.Unlock()
 	if dc == nil || !ready {
 		return ErrClosed

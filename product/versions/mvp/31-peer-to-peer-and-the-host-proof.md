@@ -117,9 +117,19 @@ a new party.
   changed key.
 - **The relay names the host** in `attached.direct.hostId`. With no host
   named the browser takes no direct path: it could not tell a new host from a
-  changed key. The id comes from the control plane like everything else in
-  the signalling. A control plane that lies about it can at most make a host
-  look new, which is the limit of trust on first use, not a way around a pin.
+  changed key.
+- **The pin is only as good as the host id, and the control plane chooses the
+  id.** *Corrected 2026-10-31 (security review on the pull request):* this
+  note first said a control plane that lies about the id "can at most make a
+  host look new". That understated it. An id the browser has never seen is
+  first use, and first use trusts whatever key proves itself. So a
+  compromised control plane that names a fresh id can answer the browser
+  itself, sign the browser's transcript with a key of its own, open a second
+  channel to the real host, and read and alter the terminal while the pane
+  says `direct`. The pin stops a changed key under a known id. It does not
+  stop an active control plane from inventing ids, which it can do on every
+  attach. What closes it is first use that is not automatic (open question
+  4).
 
 ### The relay invites only a runner that proves itself (built)
 
@@ -141,9 +151,13 @@ a new party.
   second, after a fallback, on a network that cannot connect directly, and
   for every share viewer. The control plane reads those bytes as it always
   has. Step 3 below is the fix.
-- **It does not protect the first contact** with a host if the control plane
-  is already compromised then. That is the limit of trust on first use, and
-  the reason the fingerprint is printed on both ends.
+- **It does not yet protect against an active control plane that invents
+  host ids** (above). Trust on first use has that limit when the party that
+  names the hosts is the attacker, and it is the reason the fingerprint is
+  printed on the host. Until first use asks the person (open question 4), the
+  proof stops passive reading of the signalling, a control plane that rewrites
+  fingerprints under a known host, and a host whose key changed. It does not
+  stop a determined active compromise.
 - **It does not stop a compromised control plane from driving a host.** The
   link carries `session.create` with a prompt, which is code execution on the
   host by design. Making the control plane unable to forge that is step 5,
@@ -187,3 +201,11 @@ a new party.
 3. **Whether resize and credit move onto the channel.** They are small and not
    secret, and they are what keeps the attach socket the source of truth (22).
    Probably not before step 3 decides what the socket carries.
+4. **How first use stops being automatic.** The candidates: the console
+   shows the fingerprint of a host it has never met and takes the direct path
+   only once the person confirms it matches `oppenheimer-runner status` (once
+   per host per browser); or the pin is made when the host is paired, from a
+   short code the runner prints and the person types into Add host; or both
+   wait for device keys (step 5), which turn the question around so the host
+   decides which browsers it trusts. Each is a change to what the console
+   shows.

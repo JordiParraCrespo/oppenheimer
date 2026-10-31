@@ -87,6 +87,14 @@ const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 export const REAUTHORIZE_INTERVAL_MS = 60_000;
 
 /**
+ * What a runner names to be invited to a direct path (22): it answers offers,
+ * and it proves itself on the channel (31). The console refuses a channel
+ * whose host has not signed it, so a runner without the proof would only cost
+ * the reader a negotiation that ends on the relay anyway.
+ */
+const DIRECT_PATH_CAPABILITIES = ['attachment.direct', 'attachment.direct.proof'] as const;
+
+/**
  * The browser attach socket: one per attachment, unmultiplexed.
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
@@ -286,11 +294,7 @@ export class BrowserAttachGateway {
    */
   private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {
     if (claim.share) return null;
-    // The proof as well as the path: the console refuses a channel whose host
-    // has not signed it (31), so a runner that cannot would only cost the
-    // reader a negotiation that ends on the relay anyway.
-    if (!link.capabilities.includes('attachment.direct')) return null;
-    if (!link.capabilities.includes('attachment.direct.proof')) return null;
+    if (!DIRECT_PATH_CAPABILITIES.every((named) => link.capabilities.includes(named))) return null;
     const enabled = this.flags.isEnabled('terminal_direct_path', {
       userId: claim.userId,
       organizationId: claim.organizationId,
