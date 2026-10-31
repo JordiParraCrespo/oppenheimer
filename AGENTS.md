@@ -123,13 +123,16 @@ When you add a file that mentions an optional app (CI, compose,
 - Conventional commits enforced via commitlint
 - Independent versioning per package via Changesets
 - No git hooks, and no CI on pull requests: **CI is local**. The pipeline is
-  `scripts/ci/local.mjs`: lint, Go, build and test, and, behind
-  `scripts/stack/stack.mjs up`, the API's integration and e2e suites. A new
-  CI step goes there and nowhere else. Before you push, commit and run
-  `pnpm ci:local`; push only on a green run, and paste its report
-  (`.ci-local/report.md`) into the pull request. No GitHub check gates a
-  pull request: whoever merges reads that report, and the scheduled run is
-  what catches a report that was wrong
+  `scripts/ci/plan.mjs`, run by `pnpm ci:local` (`scripts/ci/local.mjs`):
+  lint, Go, build and test, and, behind `scripts/stack/stack.mjs up`, the
+  API's integration and e2e suites, the jobs side by side and stopping at
+  the first failure. A new CI step goes in the plan and nowhere else. Before
+  you push, commit and run `pnpm ci:local`; push only on a green run, and
+  paste its report (`.ci-local/report.md`) into the pull request. While
+  working, `pnpm ci:local --dirty` is the lint job on uncommitted work. The
+  order of a pull request's steps is the `steward` skill's. No GitHub check
+  gates a pull request: whoever merges reads that report, and the scheduled
+  run is what catches a report that was wrong
 - `.github/workflows/ci.yml` runs that same program, `pnpm ci:local --all`,
   on `main` every eight hours and on demand (`workflow_dispatch`), and then
   builds the images. A red run opens a `main-red` issue with the failed
@@ -139,9 +142,10 @@ When you add a file that mentions an optional app (CI, compose,
   packages the diff against `origin/main` affects (a change in
   `packages/shared` reaches every app that imports it). `--all`, or a change
   to a file no package owns (the workflow, the lockfile, `docker/`,
-  `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
-  a new root-level file every package relies on is a pattern in its
-  `GLOBAL_PATHS`
+  `scripts/`), runs everything; a repo check only the lint job runs and the
+  evals select nothing. A new Docker image is a row in its `IMAGES`; a new
+  root-level file every package relies on is a pattern in `GLOBAL_PATHS`
+  (`scripts/ci/selection.mjs`, beside `LINT_ONLY_PATHS` and `OWNED_PATHS`)
 - Agent guardrails live in `.claude/settings.json`: it denies force pushes,
   `git reset --hard`, deleting branches, `sudo`, piping a download into a
   shell and reading credential files, asks before `rm -rf` or reading an
@@ -375,7 +379,7 @@ pnpm check:singletons   # One installed copy of each React singleton for apps/we
 # oppenheimer:end web
 pnpm docker:dev         # Start Postgres + Redis
 pnpm monitoring:up      # Grafana on :3030, Prometheus on :9090, over the local API (needs METRICS_TOKEN)
-pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
+pnpm ci:local           # CI, locally: what the branch touches (--all for everything, --dirty to lint uncommitted work)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
@@ -460,7 +464,7 @@ pnpm changeset          # Create a changeset for versioning
   or to none
 <!-- oppenheimer:end web -->
 - The web app's critical path is budgeted: `pnpm check:bundle` fails past the
-  number in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately,
+  number in `apps/web/bundle-budget.json`. Raise a budget only deliberately,
   in its own diff
 - Compression, cache headers and the Content-Security-Policy for the SPA live
   in `apps/web/nginx.conf`. A new third-party

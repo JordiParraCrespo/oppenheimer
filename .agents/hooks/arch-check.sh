@@ -28,9 +28,12 @@ if ! pnpm --filter @oppenheimer/api exec depcruise --version >/dev/null 2>&1; th
   exit 0
 fi
 
-# `pnpm arch` goes through turbo, which builds upstream packages first so
-# dependency-cruiser can resolve the @oppenheimer/* workspace imports.
-output=$(pnpm arch 2>&1)
+# Through turbo, which builds upstream packages first so dependency-cruiser
+# can resolve the @oppenheimer/* workspace imports; only for the packages with
+# uncommitted changes (`[HEAD]` counts the working tree), since a boundary is
+# broken where the import is written. Unfiltered, a fresh container spent a
+# minute and a half building packages nobody touched.
+output=$(pnpm turbo run arch --filter='[HEAD]' --output-logs=errors-only 2>&1)
 status=$?
 
 if [[ -n "$api_changed" ]]; then
