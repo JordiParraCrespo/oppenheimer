@@ -99,6 +99,13 @@ function outline(root: HTMLElement): string[] {
   });
 }
 
+/**
+ * A turn's time as the header shows it: in the host's time zone, so the
+ * outline reads the same on a machine that is not on UTC.
+ */
+const clock = (iso: string) =>
+  new Intl.DateTimeFormat('en', { timeStyle: 'short' }).format(new Date(iso));
+
 const composer = () => screen.getByPlaceholderText('sessions.chat.composer.placeholder');
 
 describe('a session replayed from its transcript', () => {
@@ -126,7 +133,7 @@ describe('a session replayed from its transcript', () => {
 
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      '▾ sessions.chat.turn.worked 1m 20s · 10:01 AM',
+      `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
       '  answered: Which fix? Wait for the toast',
@@ -158,7 +165,7 @@ describe('a session replayed from its transcript', () => {
 
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      '▸ sessions.chat.turn.worked 1m 20s · 10:01 AM',
+      `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
       '  changes: sessions.chat.changes{"count":1} +2 −1 e2e/sign-in.spec.ts +2 −1',
@@ -177,7 +184,7 @@ describe('a session replayed from its transcript', () => {
 
     expect(outline(chat.container).slice(5)).toEqual([
       'you: Now run the whole suite',
-      '▾ sessions.chat.turn.worked 1m 32s · 10:06 AM',
+      `▾ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
       '  reply: Running the suite.',
       '  call: sessions.chat.verb.command pnpm test',
       '  reply: All 212 tests pass.',
@@ -187,7 +194,7 @@ describe('a session replayed from its transcript', () => {
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked 1m 20s/ }));
     expect(outline(chat.container).slice(0, 8)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      '▾ sessions.chat.turn.worked 1m 20s · 10:01 AM',
+      `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
       '  answered: Which fix? Wait for the toast',
