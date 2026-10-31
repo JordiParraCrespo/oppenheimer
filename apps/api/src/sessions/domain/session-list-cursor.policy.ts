@@ -1,4 +1,4 @@
-import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
+import { ArgumentInvalidException, CursorCodec } from '@oppenheimer/backend-ddd';
 import { SESSION_SORTS, type SessionSortDto } from '@oppenheimer/shared';
 
 /**
@@ -22,10 +22,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  * skip the rows that share its millisecond.
  */
 export function encodeSessionListCursor(cursor: SessionListCursor): string {
-  return Buffer.from(
-    JSON.stringify({ s: cursor.sort, k: cursor.key, i: cursor.id }),
-    'utf8',
-  ).toString('base64url');
+  return CursorCodec.encode({ s: cursor.sort, k: cursor.key, i: cursor.id });
 }
 
 /**
@@ -36,21 +33,10 @@ export function encodeSessionListCursor(cursor: SessionListCursor): string {
 export function decodeSessionListCursor(text: string, sort: SessionSortDto): SessionListCursor {
   const invalid = () =>
     new ArgumentInvalidException('`cursor` is not a cursor this list issued for this sort');
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(Buffer.from(text, 'base64url').toString('utf8'));
-  } catch {
-    throw invalid();
-  }
-  if (typeof parsed !== 'object' || parsed === null) throw invalid();
-  const { s, k, i } = parsed as { s?: unknown; k?: unknown; i?: unknown };
-  if (
-    typeof s !== 'string' ||
-    !(SESSION_SORTS as readonly string[]).includes(s) ||
-    typeof k !== 'string' ||
-    typeof i !== 'string' ||
-    !UUID_PATTERN.test(i)
-  ) {
+  const fields = CursorCodec.decode(text, ['s', 'k', 'i']);
+  if (!fields) throw invalid();
+  const { s, k, i } = fields;
+  if (!(SESSION_SORTS as readonly string[]).includes(s) || !UUID_PATTERN.test(i)) {
     throw invalid();
   }
   if (s !== sort) {
