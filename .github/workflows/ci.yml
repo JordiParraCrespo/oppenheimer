@@ -80,8 +80,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # oppenheimer:begin extension
       # The extension's suite launches Chromium; a contributor has it from
-      # scripts/dev/bootstrap.sh, the runner does not.
-      - run: pnpm --filter @oppenheimer/extension exec playwright install --with-deps chromium
+      # scripts/dev/bootstrap.sh, the runner does not. No --with-deps: the
+      # runner has no passwordless sudo, and its image carries the libraries.
+      - run: pnpm --filter @oppenheimer/extension exec playwright install chromium
       # oppenheimer:end extension
       - id: images
         run: node scripts/ci/affected.mjs
