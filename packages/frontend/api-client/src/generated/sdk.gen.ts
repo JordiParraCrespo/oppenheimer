@@ -2939,7 +2939,7 @@ export const findBotConversation = <ThrowOnError extends boolean = false>(option
 /**
  * Send a bot a message
  *
- * A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.
+ * A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.
  */
 export const sendBotMessage = <ThrowOnError extends boolean = false>(options: Options<SendBotMessageData, ThrowOnError>): RequestResult<SendBotMessageResponses, SendBotMessageErrors, ThrowOnError> => (options.client ?? client).post<SendBotMessageResponses, SendBotMessageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

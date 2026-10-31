@@ -962,6 +962,12 @@ earlier note:
   line outside any turn, and stops the asking turn if it still runs. Every
   decision is broadcast as `approval_resolved`, so every open tab takes the
   card down at once (25 §5).
+- `versions/mvp/25-bots.md` §3 had a message written while a bot works
+  wait over the composer for the turn after. On 2026-10-31, from Codex's
+  `turn/steer`, Enter steers the running turn instead: the turn takes the
+  message at its next tool call, and one it never reaches runs as its own
+  turn; Alt+Enter still queues it for after
+  (`next-steps/0.7-terminal-and-chat.md`, "Steer in the bots chat").
 - The bot stream was lossy by design: text published while the browser was
   away was gone, and the console matched what it streamed against stored
   text to avoid drawing it twice. On 2026-10-31 a running turn's unstored

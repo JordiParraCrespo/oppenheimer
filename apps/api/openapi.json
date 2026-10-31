@@ -20135,7 +20135,7 @@
     },
     "/api/v1/bots/{id}/messages": {
       "post": {
-        "description": "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+        "description": "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
         "operationId": "sendBotMessage",
         "parameters": [
           {
@@ -34134,6 +34134,10 @@
               "xai"
             ]
           },
+          "steer": {
+            "type": "boolean",
+            "description": "Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn."
+          },
           "model": {
             "type": "string",
             "description": "The model it runs on, fixed when it was sent."
@@ -34208,6 +34212,7 @@
           "id",
           "status",
           "provider",
+          "steer",
           "model",
           "error",
           "failure",
@@ -34279,6 +34284,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64
+          },
+          "steer": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

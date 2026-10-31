@@ -195,11 +195,14 @@ export interface SendBotMessageVariables {
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
   attachmentIds?: readonly string[];
+  /** Into the turn under way, at its next tool call, rather than after it. */
+  steer?: boolean;
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
 export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
-  run: (app, { id, content, attachmentIds }) => app.bots.sendMessage(id, content, attachmentIds),
+  run: (app, { id, content, attachmentIds, steer }) =>
+    app.bots.sendMessage(id, content, attachmentIds, steer),
   update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
 });
 

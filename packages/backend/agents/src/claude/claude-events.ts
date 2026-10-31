@@ -274,15 +274,14 @@ export class ClaudeEventTranslator {
       const name = this.toolNames.get(block.tool_use_id);
       if (name === undefined) continue;
       this.toolNames.delete(block.tool_use_id);
-      const data = this.made.take(block.tool_use_id);
-      events.push({
-        type: 'tool.finished',
-        callId: block.tool_use_id,
-        name,
-        output: resultText(block.content),
-        isError: block.is_error === true,
-        ...(data ? { data } : {}),
-      });
+      events.push(
+        ...this.made.finished({
+          callId: block.tool_use_id,
+          name,
+          output: resultText(block.content),
+          isError: block.is_error === true,
+        }),
+      );
     }
     return events;
   }

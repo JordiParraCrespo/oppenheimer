@@ -318,6 +318,40 @@ describe('TurnTranscript', () => {
     ]);
   });
 
+  // What breaks this: a steer closing the line while a second call on it
+  // still runs, so that call's end found no line and was dropped with its
+  // session, images and subagents (Claude Code reports two calls, then each end).
+  it('keeps the end of a call still running when a steer closes its line, and opens a new line after the steer', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'web_fetch', input: {} },
+      { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+      { type: 'tool.finished', callId: 'a', name: 'web_fetch', output: 'page', isError: false },
+      { type: 'steered', callId: 'a', steers: [{ id: 'message-1', text: 'Use Tokyo time.' }] },
+      {
+        type: 'tool.finished',
+        callId: 'b',
+        name: 'start_session',
+        output: 'Started',
+        isError: false,
+        data: { sessionId: 'session-1' },
+      },
+      { type: 'tool.started', callId: 'c', name: 'web_fetch', input: {} },
+    ]);
+    const line = inserted(writes)[0];
+    expect(line?.steps.map((step) => [step.callId, step.output, step.sessionId])).toEqual([
+      ['a', 'page', null],
+      ['b', 'Started', 'session-1'],
+    ]);
+    expect(writes.filter((write) => write.kind === 'steer')).toEqual([
+      { kind: 'steer', messageId: 'message-1', position: 2 },
+    ]);
+    // The call after the steer is a line of its own, after it.
+    expect(inserted(writes).map((message) => [message.role, message.position])).toEqual([
+      ['activity', 1],
+      ['activity', 3],
+    ]);
+  });
+
   it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {
     const subject = turn();
     subject.start(new Date());

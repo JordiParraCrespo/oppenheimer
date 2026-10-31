@@ -18,6 +18,7 @@ import {
   type BotTurnEntity,
   type BotTurnPlanLimits,
 } from '../domain/bot-turn.entity';
+import type { BotStreamNudge } from '../infrastructure/bot-stream.port';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
 /** What one engine event asks the runner to do. */
@@ -28,6 +29,8 @@ export type TranscriptWrite =
   | { kind: 'text'; block: number; text: string }
   /** The block being written ended (stored, or only whitespace): what was kept of it goes. */
   | { kind: 'settled' }
+  /** A message the person steered in, put after the call whose result carried it to the model. */
+  | { kind: 'steer'; messageId: string; position: number }
   /** The engine waits to try a refused call again; passed on, never stored. */
   | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' };
 
@@ -53,7 +56,10 @@ export interface TranscriptOutcome {
  * of their own, after the line, which the next call does not join. Text as
  * it streams is passed on with the number of blocks stored before it, and
  * kept until its block ends, so a chat that connects mid-block reads it
- * whole. Your message is position 0, so the bot's start at 1.
+ * whole. Your message is position 0, so the bot's start at 1. A message
+ * you steered in while it worked takes the next position once the call
+ * that delivered it has ended, and the next call opens a line of its own
+ * after it.
  */
 export class TurnTranscript {
   private position = 1;
@@ -61,6 +67,12 @@ export class TurnTranscript {
   /** The blocks of text stored so far. */
   private blocks = 0;
   private activity: BotMessageEntity | null = null;
+  /**
+   * The line each call still running was put on, by call id: a steer or a
+   * shown image closes the line for new calls, never for the calls on it,
+   * whose ends still land there.
+   */
+  private readonly running = new Map<string, BotMessageEntity>();
   private outcome: TranscriptOutcome = {
     reason: 'failed',
     error: 'The turn ended without saying how',
@@ -89,6 +101,13 @@ export class TurnTranscript {
         return this.finished(event);
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
+      case 'steered':
+        this.activity = null;
+        return event.steers.map((steer) => ({
+          kind: 'steer' as const,
+          messageId: steer.id,
+          position: this.position++,
+        }));
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;
@@ -150,9 +169,11 @@ export class TurnTranscript {
     };
     if (this.activity) {
       this.activity.steps.push(step);
+      this.running.set(callId, this.activity);
       return [{ kind: 'steps', message: this.activity }];
     }
     this.activity = this.message('activity', '', [step]);
+    this.running.set(callId, this.activity);
     return [{ kind: 'insert', message: this.activity }];
   }
 
@@ -164,8 +185,10 @@ export class TurnTranscript {
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
     const { callId, output, isError, data } = event;
-    const step = this.activity?.steps.find((candidate) => candidate.callId === callId);
-    if (!this.activity || !step) return [];
+    const line = this.running.get(callId);
+    const step = line?.steps.find((candidate) => candidate.callId === callId);
+    if (!line || !step) return [];
+    this.running.delete(callId);
     step.output =
       output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
@@ -177,7 +200,7 @@ export class TurnTranscript {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;
     }
-    const writes: TranscriptWrite[] = [{ kind: 'steps', message: this.activity }];
+    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
     if (images.length > 0) {
       this.activity = null;
@@ -203,6 +226,21 @@ export class TurnTranscript {
       attachments,
     });
   }
+}
+
+/** A retry wait, passed on and never stored, as the bot's stream says it. */
+export function passedOnEvent(
+  turnId: string,
+  write: Extract<TranscriptWrite, { kind: 'retrying' }>,
+): BotStreamNudge {
+  return { type: 'retrying', turnId, reason: write.reason };
+}
+
+/** The message a stored write wrote: the one it inserted or grew, or the steer it placed. */
+export function storedMessageId(
+  write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' }>,
+): string {
+  return write.kind === 'steer' ? write.messageId : write.message.id;
 }
 
 /** Why a turn the time limit stopped failed, in words a person can act on. */
