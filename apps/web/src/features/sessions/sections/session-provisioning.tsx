@@ -5,6 +5,7 @@ import {
   ErrorAlert,
   PageFrame,
   StartFailureDetail,
+  StartFailureHelp,
   useStartFailure,
 } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
@@ -87,6 +88,10 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           status={t(failed ? 'sessions.provisioning.failed' : 'sessions.provisioning.working')}
         />
 
+        {/* What the reason cannot say in a line, for the codes that need it. */}
+        {failed && failure?.help ? (
+          <StartFailureHelp help={failure.help} className="mt-6.5" />
+        ) : null}
         {/* The host's own words, English and for whoever reads its logs: a
             secondary line under the translated reason, never the reason. */}
         {failed && failure?.detail ? (

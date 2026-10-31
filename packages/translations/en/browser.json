@@ -462,7 +462,14 @@
     "code": "Code: {{code}}",
     "startFailure": {
       "codes": {
-        "SESS_002": "This host makes sessions with one repository."
+        "SESS_002": "This host makes sessions with one repository.",
+        "SESS_010": "Codex's CLI has no cloud environment for this repository."
+      },
+      "help": {
+        "SESS_010": {
+          "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
+          "link": "Open Codex Cloud settings"
+        }
       },
       "details": "Details from the host: {{detail}}"
     }
