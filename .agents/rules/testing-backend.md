@@ -83,9 +83,11 @@ infrastructure started by **testcontainers** (`postgres:16-alpine`,
   `DataSource`, and `createTestDatabase({ empty: true })` is a database with no
   schema, for a spec whose subject is the migrations. Files share nothing
   else, so they run in parallel workers and may truncate, lock or count what
-  they like. Never start a container in a spec, except for what is
-  server-wide in Redis: `CLIENT PAUSE` stalls every client, so
-  `session-cache.integration.spec.ts` starts a Redis of its own;
+  they like. A Redis db is reserved server-wide (`integration-servers.ts`), so
+  two runs on one Redis never share one. Never start a container in a spec;
+  what is server-wide in Redis (`CLIENT PAUSE` stalls every client) takes
+  `usePrivateRedis()`, a server of the file's own, as
+  `session-cache.integration.spec.ts` does;
 - prefer a bare `DataSource` over the entities under test, with a real
   `OutboxService`, to booting the application: the app adds Redis and Better
   Auth to what can make the suite red. Boot the app only when the wiring is

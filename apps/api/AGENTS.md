@@ -181,7 +181,8 @@ Integration suites sit beside the module they exercise, as
 `src/<module>/__tests__/<name>.integration.spec.ts`; the few that span modules
 (the schema, correlation ids) are in `src/__tests__/`, with the run's one
 Postgres and Redis (`integration-global-setup.ts`), the per-file database and
-Redis db each spec takes from them (`integration-services.ts`) and the helper
+Redis db each spec takes from them (`integration-services.ts`, over
+`integration-servers.ts`) and the helper
 that builds the test schema (`run-migrations.ts`). `pnpm test` skips
 them; `pnpm test:integration` runs only them.
 

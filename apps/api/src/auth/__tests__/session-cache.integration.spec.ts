@@ -3,9 +3,9 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import Redis from 'ioredis';
 import pg from 'pg';
-import { GenericContainer, type StartedTestContainer } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { useTestDatabase } from '../../__tests__/integration-services';
+import { usePrivateRedis, useTestDatabase } from '../../__tests__/integration-services';
 
 /**
  * Better Auth's session cache (`secondaryStorage`) against a real Postgres and
@@ -26,13 +26,7 @@ describe('Session cache (integration)', () => {
   let redisContainer: StartedTestContainer;
 
   beforeAll(async () => {
-    [redisContainer] = await Promise.all([
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-      useTestDatabase(),
-    ]);
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
-    process.env.REDIS_DB = '0';
+    [redisContainer] = await Promise.all([usePrivateRedis(), useTestDatabase()]);
 
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 

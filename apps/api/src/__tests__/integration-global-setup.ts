@@ -1,9 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import Redis from 'ioredis';
-import { Client } from 'pg';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { GenericContainer, Wait } from 'testcontainers';
 import type { TestProject } from 'vitest/node';
-import type { IntegrationServices } from './integration-services';
+import { adminClient, type IntegrationServices, releaseRedisDbs } from './integration-servers';
 import { runAllMigrations } from './run-migrations';
 
 /**
@@ -12,53 +11,132 @@ import { runAllMigrations } from './run-migrations';
  * each file copies it (`integration-services.ts`). The containers are started
  * here unless `DB_HOST` and `REDIS_HOST` already point at a pair, as the
  * stack's or a workflow's service containers do; on a pair we did not start,
- * only the databases and Redis keys this run created are removed afterwards.
+ * only the databases and Redis dbs this run created are removed afterwards.
  */
 export default async function setup(project: TestProject): Promise<() => Promise<void>> {
+  const { services, teardown } = await provisionIntegrationServices({
+    start: process.env.DB_HOST && process.env.REDIS_HOST ? reuseServers : startServers,
+    migrate: migrateTemplate,
+  });
+  project.provide('integrationServices', services);
+  return teardown;
+}
+
+/** The pair a run uses, and how to leave it as the run found it. */
+export interface StartedServers {
+  postgres: IntegrationServices['postgres'];
+  redis: IntegrationServices['redis'];
+  /** Stops what was started, or on a pair someone else runs, removes what `runId` made. */
+  release: (runId: string) => Promise<void>;
+}
+
+/**
+ * Starts (or finds) the servers, then migrates the template. Whatever fails
+ * after the servers are up releases them before the error propagates: the
+ * teardown is never returned then, and `ci:local` runs without Ryuk, so
+ * nothing else would stop them.
+ */
+export async function provisionIntegrationServices(steps: {
+  start: () => Promise<StartedServers>;
+  migrate: (services: IntegrationServices) => Promise<void>;
+}): Promise<{ services: IntegrationServices; teardown: () => Promise<void> }> {
   const runId = `it_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
-  const started: StartedTestContainer[] = [];
+  const servers = await steps.start();
+  const services: IntegrationServices = {
+    runId,
+    template: `${runId}_template`,
+    postgres: servers.postgres,
+    redis: servers.redis,
+  };
+  try {
+    await steps.migrate(services);
+  } catch (error) {
+    await servers.release(runId).catch(() => {});
+    throw error;
+  }
+  return { services, teardown: () => servers.release(runId) };
+}
 
-  const reuse = Boolean(process.env.DB_HOST && process.env.REDIS_HOST);
-  let postgres: IntegrationServices['postgres'];
-  let redis: IntegrationServices['redis'];
-
-  if (reuse) {
-    postgres = {
-      host: process.env.DB_HOST as string,
-      port: Number(process.env.DB_PORT ?? 5432),
-      username: process.env.DB_USERNAME ?? 'postgres',
-      password: process.env.DB_PASSWORD ?? '',
-    };
-    redis = {
-      host: process.env.REDIS_HOST as string,
-      port: Number(process.env.REDIS_PORT ?? 6379),
-      password: process.env.REDIS_PASSWORD || undefined,
-    };
-  } else {
-    const [pg, rd] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-        // Thirty-odd files each hold an app pool, an auth pool and a client of
-        // their own at once; the default 100 connections is not enough.
-        .withCommand(['postgres', '-c', 'max_connections=1000'])
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
-    started.push(pg, rd);
-    postgres = {
-      host: pg.getHost(),
-      port: pg.getMappedPort(5432),
+async function startServers(): Promise<StartedServers> {
+  const started = await Promise.allSettled([
+    new GenericContainer('postgres:16-alpine')
+      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
+      // Thirty-odd files each hold an app pool, an auth pool and a client of
+      // their own at once; the default 100 connections is not enough.
+      .withCommand(['postgres', '-c', 'max_connections=1000'])
+      .withExposedPorts(5432)
+      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
+      .start(),
+    // A logical db per Redis-using file, more than a default server's 16.
+    new GenericContainer('redis:7-alpine')
+      .withCommand(['redis-server', '--databases', '64'])
+      .withExposedPorts(6379)
+      .start(),
+  ]);
+  const containers = started.flatMap((result) =>
+    result.status === 'fulfilled' ? [result.value] : [],
+  );
+  const stop = async () => {
+    await Promise.all(containers.map((container) => container.stop()));
+  };
+  const [pg, rd] = started;
+  if (pg.status === 'rejected' || rd.status === 'rejected') {
+    await stop().catch(() => {});
+    throw pg.status === 'rejected' ? pg.reason : (rd as PromiseRejectedResult).reason;
+  }
+  return {
+    postgres: {
+      host: pg.value.getHost(),
+      port: pg.value.getMappedPort(5432),
       username: 'test',
       password: 'test',
-    };
-    redis = { host: rd.getHost(), port: rd.getMappedPort(6379) };
-  }
+    },
+    redis: { host: rd.value.getHost(), port: rd.value.getMappedPort(6379) },
+    release: stop,
+  };
+}
 
-  const template = `${runId}_template`;
-  const services: IntegrationServices = { runId, template, postgres, redis };
+async function reuseServers(): Promise<StartedServers> {
+  const postgres = {
+    host: process.env.DB_HOST as string,
+    port: Number(process.env.DB_PORT ?? 5432),
+    username: process.env.DB_USERNAME ?? 'postgres',
+    password: process.env.DB_PASSWORD ?? '',
+  };
+  const redis = {
+    host: process.env.REDIS_HOST as string,
+    port: Number(process.env.REDIS_PORT ?? 6379),
+    password: process.env.REDIS_PASSWORD || undefined,
+  };
+  return {
+    postgres,
+    redis,
+    // Someone else's pair: leave it as we found it.
+    release: async (runId) => {
+      const admin = await adminClient(postgres);
+      try {
+        const { rows } = await admin.query<{ datname: string }>(
+          'SELECT datname FROM pg_database WHERE starts_with(datname, $1)',
+          [`${runId}_`],
+        );
+        for (const { datname } of rows) {
+          await admin.query(`DROP DATABASE IF EXISTS "${datname}" WITH (FORCE)`);
+        }
+      } finally {
+        await admin.end();
+      }
+      const client = new Redis({ ...redis, lazyConnect: true });
+      try {
+        await client.connect();
+        await releaseRedisDbs(client, runId);
+      } finally {
+        client.disconnect();
+      }
+    },
+  };
+}
 
+async function migrateTemplate({ template, postgres }: IntegrationServices): Promise<void> {
   const admin = await adminClient(postgres);
   try {
     await admin.query(`CREATE DATABASE "${template}"`);
@@ -82,51 +160,4 @@ export default async function setup(project: TestProject): Promise<() => Promise
   } finally {
     await locker.end();
   }
-
-  project.provide('integrationServices', services);
-
-  return async () => {
-    if (started.length > 0) {
-      await Promise.all(started.map((container) => container.stop()));
-      return;
-    }
-    // Someone else's pair: leave it as we found it.
-    const cleanup = await adminClient(postgres);
-    try {
-      const { rows } = await cleanup.query<{ datname: string }>(
-        'SELECT datname FROM pg_database WHERE starts_with(datname, $1)',
-        [`${runId}_`],
-      );
-      for (const { datname } of rows) {
-        await cleanup.query(`DROP DATABASE IF EXISTS "${datname}" WITH (FORCE)`);
-      }
-    } finally {
-      await cleanup.end();
-    }
-    const client = new Redis({ ...redis, lazyConnect: true });
-    try {
-      await client.connect();
-      const claimed = (await client.smembers(`${runId}:dbs`)).map(Number);
-      for (const db of claimed) {
-        await client.select(db);
-        await client.flushdb();
-      }
-      await client.select(0);
-      await client.del(`${runId}:next-db`, `${runId}:dbs`);
-    } finally {
-      client.disconnect();
-    }
-  };
-}
-
-async function adminClient(postgres: IntegrationServices['postgres']): Promise<Client> {
-  const client = new Client({
-    host: postgres.host,
-    port: postgres.port,
-    user: postgres.username,
-    password: postgres.password,
-    database: 'postgres',
-  });
-  await client.connect();
-  return client;
 }
