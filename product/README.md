@@ -932,3 +932,11 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- Codex cloud sessions named their environment by guessing its label from
+  the repository (`next-steps/cloud-agents.md`, "Codex is built"). On
+  2026-10-31 a session failed on an environment labelled otherwise, and
+  the owner asked to improve environment management: the host now lists
+  the ChatGPT account's environments and starts the task in the one linked
+  to the repository, and New session has an Environment chip to pick
+  another, kept with the session's launch (`next-steps/cloud-agents.md`,
+  "Which Codex environment").

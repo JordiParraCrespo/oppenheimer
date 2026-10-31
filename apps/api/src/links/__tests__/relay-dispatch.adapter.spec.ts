@@ -111,6 +111,62 @@ describe('RelayDispatchAdapter', () => {
     ]);
   });
 
+  describe('a Codex cloud session', () => {
+    const codexCloud = (environment: string | null) => {
+      const entity = WorkSessionEntity.request({
+        organizationId: ORG,
+        projectId: PROJECT,
+        createdByUserId: 'user-1',
+        hostId: HOST,
+        slug: 'bold-otter-3f9a7k',
+        agent: 'codex',
+        place: 'cloud',
+      });
+      entity.recordEvent({
+        seq: 1,
+        kind: 'session.requested',
+        payload: { agent: 'codex', place: 'cloud', launch: { environment } },
+        occurredAt: new Date(),
+      });
+      (entity.checkouts as SessionCheckoutEntity[]).push(
+        SessionCheckoutEntity.createNew({
+          organizationId: ORG,
+          sessionId: entity.id,
+          installationId: 'inst-1',
+          githubRepoId: '42',
+          repositoryFullName: 'acme/xrp-mobile',
+          directoryName: 'xrp-mobile',
+          baseBranch: 'main',
+          branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+        }),
+      );
+      return entity;
+    };
+    const spec = {
+      ...NAMES,
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+      prompt: 'Fix the wallet list',
+      cloud: { sealed: 'c2VhbGVk', expiresAt: new Date('2026-10-31T13:00:00Z') },
+    };
+
+    // The person's pick rides the create, so the host starts the task there.
+    it('names the environment the person picked', async () => {
+      const { adapter, link } = harness(true, ['session.cloud.codex', 'codex.environments']);
+      await adapter.create(codexCloud('e_6845a1b2c3d4'), spec);
+
+      const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(parsed.codexEnvironment).toBe('e_6845a1b2c3d4');
+    });
+
+    // None picked is the host's own pick: the environment linked to the repository.
+    it('names none when nobody picked one', async () => {
+      const { adapter, link } = harness(true, ['session.cloud.codex', 'codex.environments']);
+      await adapter.create(codexCloud(null), spec);
+
+      expect(vi.mocked(link.send).mock.calls[0]?.[0]).not.toHaveProperty('codexEnvironment');
+    });
+  });
+
   describe('a session in a folder on the host', () => {
     const inFolder = () =>
       WorkSessionEntity.request({

@@ -632,6 +632,7 @@ describe('CreateSessionCommandHandler', () => {
         model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
+        environment: null,
       });
     });
 
@@ -649,7 +650,12 @@ describe('CreateSessionCommandHandler', () => {
     it('defaults to the level that asks, never to one that escalates', async () => {
       await run({});
 
-      expect(requestPayload().launch).toEqual({ model: null, permission: 'ask', effort: null });
+      expect(requestPayload().launch).toEqual({
+        model: null,
+        permission: 'ask',
+        effort: null,
+        environment: null,
+      });
     });
 
     it('records the first task as prompt.first and sends it with the launch', async () => {

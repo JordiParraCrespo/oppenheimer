@@ -13,6 +13,8 @@ export const SESSION_DISPATCH = Symbol('SESSION_DISPATCH');
 export const HOST_FOLDERS = Symbol('HOST_FOLDERS');
 /** The Browser tab's listing of a session's ports; bound by `links/` like `HOST_FOLDERS`. */
 export const SESSION_PORTS = Symbol('SESSION_PORTS');
+/** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
+export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');
 export const SESSION_LOOKUP = Symbol('SESSION_LOOKUP');
 export const SESSION_RECONCILIATION = Symbol('SESSION_RECONCILIATION');

@@ -38,7 +38,8 @@ const (
 )
 
 // createCodexCloud runs `codex cloud exec` on the checkout's base branch, in
-// the Codex cloud environment named for its repository, reports the task as
+// the Codex cloud environment the create names, or else the one linked to its
+// repository (cloud.Codex.Start), reports the task as
 // the session's `agentSessionId` and the session as working. Codex takes the
 // branch from GitHub, so nothing is fetched or checked out here: the progress
 // is the agent's step alone.
@@ -53,7 +54,7 @@ func (h *linkHandler) createCodexCloud(
 	var started cloud.Started
 	if err := stage(sessionsdomain.StageAgent, false, func() error {
 		var err error
-		started, err = h.codexCloud().Start(ctx, checkout.RepositoryFullName, checkout.BaseBranch, m.Prompt)
+		started, err = h.codexCloud().Start(ctx, checkout.RepositoryFullName, checkout.BaseBranch, m.Prompt, m.CodexEnvironment)
 		return err
 	}); err != nil {
 		fail(err)
@@ -173,4 +174,25 @@ func (h *linkHandler) codexCloud() CodexCloud {
 		return h.app.CodexCloud
 	}
 	return cloud.Codex{}
+}
+
+// listCodexEnvironments answers `codex.environments.list`: the composer's
+// picker of Codex cloud environments, read with the host's own sign-in.
+func (h *linkHandler) listCodexEnvironments(ctx context.Context, m link.CodexEnvironmentsList) {
+	envs, err := h.codexCloud().Environments(ctx, m.Repository)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	out := link.CodexEnvironments{
+		Type: link.TypeCodexEnvironments, CommandID: m.CommandID,
+		Environments: make([]link.CodexEnvironmentsEnvironments, 0, len(envs.Environments)),
+		Recommended:  envs.Recommended, Source: envs.Source,
+	}
+	for _, env := range envs.Environments {
+		out.Environments = append(out.Environments, link.CodexEnvironmentsEnvironments{
+			ID: env.ID, Label: env.Label, Pinned: env.Pinned, Repository: env.Repository,
+		})
+	}
+	_ = h.client.Send(out)
 }

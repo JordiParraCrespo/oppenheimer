@@ -16,6 +16,7 @@ import {
 import { effortLevelFor } from '@oppenheimer/shared/agents';
 import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { CloudAgentLaunch } from '../cloud-agents/application/cloud-runs.port';
+import type { HostCodexEnvironments } from './application/host-codex-environments.port';
 import type { HostFolderListing } from './application/host-folders.port';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -54,6 +55,7 @@ import {
 } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
+import { HostCodexEnvironmentsResponseDto } from './dtos/host-codex-environments.response.dto';
 import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
 import {
   SessionCheckoutResponseDto,
@@ -135,6 +137,7 @@ export class WorkSessionMapper
     record.launchModel = fold.launch.model;
     record.launchPermission = fold.launch.permission;
     record.launchEffort = fold.launch.effort;
+    record.launchEnvironment = fold.launch.environment;
     record.closeRequestedAt = fold.closeRequest?.requestedAt ?? null;
     record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
@@ -217,6 +220,20 @@ export class WorkSessionMapper
     }));
     dto.truncated = listing.truncated ?? false;
     dto.recent = recent.map((folder) => ({ path: folder.path, lastUsedAt: folder.lastUsedAt }));
+    return dto;
+  }
+
+  /** The Codex environment picker's answer, absent labels and recommendation spelled as null. */
+  toCodexEnvironmentsResponse(listing: HostCodexEnvironments): HostCodexEnvironmentsResponseDto {
+    const dto = new HostCodexEnvironmentsResponseDto();
+    dto.environments = listing.environments.map((env) => ({
+      id: env.id,
+      label: env.label ?? null,
+      pinned: env.pinned,
+      repository: env.repository,
+    }));
+    dto.recommended = listing.recommended ?? null;
+    dto.source = listing.source;
     return dto;
   }
 
@@ -322,6 +339,7 @@ export class WorkSessionMapper
         model: record.launchModel,
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
+        environment: record.launchEnvironment,
       },
       projectId: record.projectId,
       closeRequest: record.closeRequestedAt
@@ -399,7 +417,7 @@ export class WorkSessionMapper
           place: placeOfCreate(input),
           ...(input.folder ? { folder: input.folder } : {}),
           requestedByUserId: props.userId,
-          launch: this.toLaunch(input.agent, input.launch),
+          launch: this.toLaunch(input.agent, input.launch, input.codexEnvironment),
         },
       },
     ];
@@ -470,11 +488,16 @@ export class WorkSessionMapper
    * approvals records no level at all (`launchPermissionFor`), and an effort
    * the model does not offer is not recorded (`effortLevelFor`).
    */
-  toLaunch(agent: SessionAgent, launch: CreateSessionDto['launch']): SessionLaunchFold {
+  toLaunch(
+    agent: SessionAgent,
+    launch: CreateSessionDto['launch'],
+    environment?: string,
+  ): SessionLaunchFold {
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
       effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
+      environment: environment ?? null,
     };
   }
 

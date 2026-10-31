@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
-import { HOST_FOLDERS, SESSION_DISPATCH, SESSION_PORTS } from '../sessions/sessions.di-tokens';
+import {
+  HOST_CODEX_ENVIRONMENTS,
+  HOST_FOLDERS,
+  SESSION_DISPATCH,
+  SESSION_PORTS,
+} from '../sessions/sessions.di-tokens';
 import { CacheParkedFileAdapter } from './infrastructure/cache-parked-file.adapter';
 import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
+import { RelayHostCodexEnvironmentsAdapter } from './infrastructure/relay-host-codex-environments.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
@@ -27,6 +33,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: LINK_REPLIES, useClass: InProcessLinkReplies },
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
+    { provide: HOST_CODEX_ENVIRONMENTS, useClass: RelayHostCodexEnvironmentsAdapter },
   ],
   exports: [
     LINK_REGISTRY,
@@ -36,6 +43,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     LINK_REPLIES,
     HOST_FOLDERS,
     SESSION_PORTS,
+    HOST_CODEX_ENVIRONMENTS,
   ],
 })
 export class LinksModule {}

@@ -656,7 +656,7 @@ export class WorkSessionRepository
                 "projectId" = $17,
                 "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
                 "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
-                "pendingDecision" = $22::jsonb,
+                "pendingDecision" = $22::jsonb, "launchEnvironment" = $23,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -682,6 +682,7 @@ export class WorkSessionRepository
           record.closeRefusalCode,
           record.closeRefusalDetail,
           record.pendingDecision === null ? null : JSON.stringify(record.pendingDecision),
+          record.launchEnvironment,
         ],
       );
       await this.writeTurns(manager, session);

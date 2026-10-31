@@ -1,6 +1,11 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
 import {
+  codexEnvironmentRefSchema,
+  codexEnvironmentsListSchema,
+  codexEnvironmentsSchema,
+} from './codex-environments.js';
+import {
   deviceAttachSchema,
   deviceDetachSchema,
   deviceInfoSchema,
@@ -107,6 +112,13 @@ export const RUNNER_CAPABILITIES = [
    * (`product/next-steps/cloud-agents.md`).
    */
   'session.cloud.codex',
+  /**
+   * Answers `codex.environments.list` with `codex.environments`: the Codex
+   * cloud environments the host's ChatGPT account has, for the composer's
+   * picker, and takes `session.create`'s `codexEnvironment`. A runner without
+   * it guesses the environment from the repository's name.
+   */
+  'codex.environments',
   /**
    * Takes `session.watch` and `session.unwatch`: it scans a live session's
    * screen for a pattern on every pass it already makes, and reports a match
@@ -406,6 +418,15 @@ export const sessionCreateSchema = z
         expiresAt: z.iso.datetime(),
       })
       .optional(),
+    /**
+     * A Codex cloud session's environment, as the person picked it: its id
+     * (or label), passed to `codex cloud exec --env`. Absent, the runner picks
+     * the environment linked to the repository (`codex.environments`'
+     * `recommended`) and then tries the repository's names as labels. Only on
+     * a Codex cloud session, and sent only to a runner whose `hello` named
+     * `codex.environments`.
+     */
+    codexEnvironment: codexEnvironmentRefSchema.optional(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
   .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
@@ -422,6 +443,12 @@ export const sessionCreateSchema = z
         message.checkouts.length === 1 &&
         message.prompt !== undefined),
     { path: ['cloud'] },
+  )
+  .refine(
+    (message) =>
+      message.codexEnvironment === undefined ||
+      (message.cloud !== undefined && message.agent === 'codex'),
+    { path: ['codexEnvironment'] },
   )
   .refine(
     (message) =>
@@ -1001,6 +1028,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   portOpenSchema,
   portOpenedSchema,
   portCloseSchema,
+  codexEnvironmentsListSchema,
+  codexEnvironmentsSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

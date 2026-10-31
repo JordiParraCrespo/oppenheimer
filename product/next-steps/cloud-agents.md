@@ -41,11 +41,11 @@ of the `cloud` place with the agent `codex`
 (`../versions/mvp/24-session-places.md` §7):
 
 - **The dispatching host's runner starts it** with
-  `codex cloud exec --env <repository> --branch <base> <task>` and the
+  `codex cloud exec --env=<environment> --branch <base> <task>` and the
   host's own ChatGPT sign-in. Codex reads the branch from GitHub, so
-  nothing is fetched or checked out. The environment is named by its label:
-  the repository's full name, then its bare name; one named neither is the
-  CLI's refusal, in its words (`SESS_009`).
+  nothing is fetched or checked out. Which environment is "Which Codex
+  environment", below; on 2026-10-29 it was the repository's full name and
+  then its bare name, tried as labels.
 - **Status comes from the host, not the browser.** Unlike `claude`, the
   Codex CLI answers it: the runner reads `codex cloud list --json` once a
   minute while a task it started in the last week has not settled, and
@@ -71,6 +71,57 @@ of the `cloud` place with the agent `codex`
   Crabbox, while the Gateway keeps the app-server, the ChatGPT login and
   the transcript. That is our VM slice, not this one, and keeping a ChatGPT
   login in our control plane is what F23 rules out.
+
+## Which Codex environment (2026-10-31)
+
+A Codex task runs in one of the ChatGPT account's environments, and an
+environment is named by its owner on chatgpt.com/codex: nothing makes it
+the repository's name. Guessing the label from the repository failed as
+soon as one was not (`environment 'oppenheimer' not found`), and the
+person had no way to say which. The owner asked to improve it, and of
+three ways chose both of the first two: the host lists the environments
+and picks the one linked to the repository, and the composer lets the
+person pick another.
+
+- **The host lists them** (`codex.environments.list` →
+  `codex.environments`, capability `codex.environments`). The Codex CLI
+  has no command that lists environments: its TUI reads them from the
+  ChatGPT backend it starts tasks on, `GET /wham/environments` and
+  `GET /wham/environments/by-repo/github/{owner}/{name}`, with the sign-in
+  `codex login` keeps in `$CODEX_HOME/auth.json`
+  (`codex-rs/cloud-tasks/src/env_detect.rs`). The runner does the same on
+  the host, as `oppenheimer-runner`; the sign-in never leaves the host and
+  the control plane never sees it, so F23 holds. Those endpoints are not
+  published and the token is the CLI's: if OpenAI changes them, or the
+  sign-in is in the key ring, the runner lists instead the environments the
+  account's recent tasks ran in, off `codex cloud list --json`, which names
+  each task's (`source: tasks`). The owner chose this knowing the endpoints
+  are unpublished; whether reading the CLI's token for this one read is
+  within OpenAI's terms is the open question below.
+- **With none picked, the linked one.** Among the environments linked to
+  the repository the runner takes the only one, else the pinned one, else
+  the one with the most tasks: what Codex's own picker does
+  (`pick_environment_row`), passed by id. With none linked it tries the
+  repository's full name and bare name as labels, as before, and a refusal
+  then says what to do and names the account's environments.
+- **The composer's Environment chip.** A Codex cloud session with one
+  repository shows an Environment chip after Branch, asked of the host
+  when it shows (`GET /v1/hosts/:id/codex-environments?repository=`, live,
+  nothing cached; `SESSIONS_044`–`046`). Its first row, Auto, is the host's
+  pick and names the linked environment; the others are the account's,
+  linked ones first. A pick is kept with the repository it was made for and
+  remembered with the draft.
+- **The pick is part of the launch.** `codexEnvironment` on
+  `POST /sessions` is folded from `session.requested` into
+  `work_session.launchEnvironment` with the model, permission and effort,
+  so a `session.create` sent again after a reconnect starts the task in the
+  same environment. A runner older than `codex.environments` ignores it and
+  guesses.
+
+Open: whether OpenAI's terms allow a third-party process on the person's
+machine to use the Codex CLI's ChatGPT token for this read. If not, the
+runner keeps only the `codex cloud list` source and the chip lists the
+environments the account has used.
 
 ## What landed (2026-10-26)
 

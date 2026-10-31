@@ -122,6 +122,19 @@
       "archived": "Archivado",
       "failed": "No se han podido cargar tus repositorios."
     },
+    "codexEnvironment": {
+      "label": "Entorno de Codex",
+      "placeholder": "Entorno",
+      "search": "Buscar entornos…",
+      "empty": "Ningún entorno coincide.",
+      "loading": "Pidiendo al equipo sus entornos de Codex…",
+      "auto": "Automático",
+      "autoLinked": "El vinculado al repositorio: {{name}}",
+      "autoByName": "Ningún entorno está vinculado al repositorio: el equipo prueba con su nombre",
+      "linked": "Vinculado a este repositorio",
+      "pinned": "Fijado",
+      "failed": "No se han podido listar los entornos de Codex del equipo."
+    },
     "branch": {
       "label": "Rama",
       "placeholder": "Rama",

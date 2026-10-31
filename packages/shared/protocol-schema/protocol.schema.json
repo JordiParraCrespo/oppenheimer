@@ -524,6 +524,9 @@
             "sealed",
             "expiresAt"
           ]
+        },
+        "codexEnvironment": {
+          "$ref": "#/$defs/__schema0"
         }
       },
       "required": [
@@ -1548,6 +1551,81 @@
         "type",
         "attachmentId"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "codex.environments.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "repository": {
+          "$ref": "#/$defs/gitRef"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "repository"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "codex.environments"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "environments": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/__schema0"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "pinned": {
+                "type": "boolean"
+              },
+              "repository": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "pinned",
+              "repository"
+            ]
+          }
+        },
+        "recommended": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "chatgpt",
+            "tasks"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "environments",
+        "source"
+      ]
     }
   ],
   "$defs": {
@@ -1853,6 +1931,12 @@
       "exclusiveMinimum": 0,
       "maximum": 9007199254740991,
       "id": "githubRepoId"
+    },
+    "__schema0": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\p{Cc}]+$"
     }
   },
   "x-constants": {
@@ -1887,6 +1971,7 @@
       "port.forward",
       "session.cloud",
       "session.cloud.codex",
+      "codex.environments",
       "session.watch"
     ],
     "maxEventPayloadBytes": 8192,

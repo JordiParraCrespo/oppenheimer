@@ -1,0 +1,152 @@
+package cloud
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
+)
+
+// signedIn writes a ChatGPT sign-in as `codex login` keeps it, and answers
+// the Codex home that holds it.
+func signedIn(t *testing.T) string {
+	t.Helper()
+	home := t.TempDir()
+	auth := `{"OPENAI_API_KEY": null, "tokens": {"id_token": "x", "access_token": "tok-1", "refresh_token": "r", "account_id": "acc-1"}}`
+	if err := os.WriteFile(filepath.Join(home, "auth.json"), []byte(auth), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return home
+}
+
+// chatGPT is the backend the CLI reads environments from: by-repo answers
+// for one repository, and the account's list.
+func chatGPT(t *testing.T, byRepo, all string) *httptest.Server {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer tok-1" || r.Header.Get("ChatGPT-Account-Id") != "acc-1" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/wham/environments/by-repo/github/acme-labs/xrp-mobile":
+			_, _ = w.Write([]byte(byRepo))
+		case "/wham/environments":
+			_, _ = w.Write([]byte(all))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+// The account's environments, those linked to the repository marked and
+// first; among several linked ones the pinned one is what a task starts in,
+// as Codex's own picker chooses.
+func TestCodexEnvironmentsMarksAndRecommendsTheRepositorysOwn(t *testing.T) {
+	server := chatGPT(t,
+		`[{"id": "e_web", "label": "Wallet web", "task_count": 40}, {"id": "e_app", "label": "Wallet app", "is_pinned": true, "task_count": 2}]`,
+		`[{"id": "e_app", "label": "Wallet app"}, {"id": "e_docs", "label": "docs"}, {"id": "e_web", "label": "Wallet web"}, {"id": "e_api", "label": "API"}]`)
+	codex := Codex{Home: signedIn(t), BaseURL: server.URL}
+
+	envs, err := codex.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if err != nil {
+		t.Fatalf("Environments: %v", err)
+	}
+	if envs.Source != CodexSourceChatGPT || envs.Recommended != "e_app" {
+		t.Fatalf("source %q, recommended %q", envs.Source, envs.Recommended)
+	}
+	var order []string
+	for _, env := range envs.Environments {
+		order = append(order, env.ID)
+	}
+	if strings.Join(order, ",") != "e_app,e_web,e_api,e_docs" {
+		t.Fatalf("order = %v, want linked (pinned first), then the rest by label", order)
+	}
+	if !envs.Environments[1].Repository || envs.Environments[2].Repository {
+		t.Fatalf("environments = %+v", envs.Environments)
+	}
+}
+
+// With no environment linked, nothing is recommended: a start falls back to
+// the repository's names.
+func TestCodexEnvironmentsRecommendsNothingWhenNoneIsLinked(t *testing.T) {
+	server := chatGPT(t, `[]`, `[{"id": "e_docs", "label": "docs"}]`)
+	envs, err := Codex{Home: signedIn(t), BaseURL: server.URL}.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if err != nil {
+		t.Fatalf("Environments: %v", err)
+	}
+	if envs.Recommended != "" || len(envs.Environments) != 1 {
+		t.Fatalf("envs = %+v", envs)
+	}
+}
+
+// A host whose CLI keeps no sign-in on disk lists the environments its recent
+// tasks ran in instead.
+func TestCodexEnvironmentsFallsBackToTheTasksEnvironments(t *testing.T) {
+	bin, _ := fakeCodex(t, `exit 1`)
+	withTasks(t, bin, `{"tasks": [
+  {"id": "task_e_2", "status": "ready", "environment_id": "e_app", "environment_label": "Wallet app"},
+  {"id": "task_e_1", "status": "ready", "environment_id": "e_app", "environment_label": "Wallet app"},
+  {"id": "task_e_0", "status": "error", "environment_id": "e_api"}
+]}`)
+	envs, err := Codex{Command: bin, Home: t.TempDir()}.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if err != nil {
+		t.Fatalf("Environments: %v", err)
+	}
+	if envs.Source != CodexSourceTasks || envs.Recommended != "" || len(envs.Environments) != 2 ||
+		envs.Environments[0].ID != "e_api" || envs.Environments[1].Label != "Wallet app" {
+		t.Fatalf("envs = %+v", envs)
+	}
+}
+
+// A start with nothing picked goes to the environment linked to the
+// repository, by id, whatever it is labelled.
+func TestCodexStartUsesTheEnvironmentLinkedToTheRepository(t *testing.T) {
+	server := chatGPT(t, `[{"id": "e_app", "label": "Wallet app"}]`, `[]`)
+	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_9'`)
+	codex := Codex{Command: bin, Home: signedIn(t), BaseURL: server.URL}
+
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", ""); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if got := strings.Join(readArgs(t, args), " "); got != "cloud exec --env=e_app --branch main task" {
+		t.Fatalf("args = %q", got)
+	}
+}
+
+// A picked environment is used as it is, once, with nothing listed.
+func TestCodexStartUsesThePickedEnvironment(t *testing.T) {
+	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_9'`)
+	if _, err := (Codex{Command: bin}).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "-weird label"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if got := readArgs(t, args); len(got) != 6 || got[2] != "--env=-weird label" {
+		t.Fatalf("args = %q", got)
+	}
+}
+
+// When no environment is linked and none is labelled after the repository,
+// the refusal says what to do and names the environments the account has.
+func TestCodexStartNamesTheAccountsEnvironmentsWhenNoneFits(t *testing.T) {
+	server := chatGPT(t, `[]`, `[{"id": "e_docs", "label": "docs"}, {"id": "e_api"}]`)
+	bin, _ := fakeCodex(t, `echo "Error: environment 'x' not found; run codex cloud to list available environments" >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: signedIn(t), BaseURL: server.URL}.Start(
+		context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+	}
+	if !strings.Contains(pe.Detail, "No Codex environment is linked to acme-labs/xrp-mobile") ||
+		!strings.Contains(pe.Detail, "This account has: e_api, docs.") {
+		t.Fatalf("detail = %q", pe.Detail)
+	}
+}

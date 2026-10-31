@@ -133,6 +133,7 @@ export {
 } from './cloud-agents.queries';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
+  useHostCodexEnvironments,
   useHostFolders,
   useHostPresence,
   useHosts,

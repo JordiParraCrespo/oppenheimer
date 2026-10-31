@@ -151,6 +151,21 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'port.open': { type: 'port.open', commandId, sessionId, attachmentId: 11, port: 5173 },
   'port.opened': { type: 'port.opened', attachmentId: 11 },
   'port.close': { type: 'port.close', attachmentId: 11 },
+  'codex.environments.list': {
+    type: 'codex.environments.list',
+    commandId,
+    repository: 'jordi/oppenheimer',
+  },
+  'codex.environments': {
+    type: 'codex.environments',
+    commandId,
+    environments: [
+      { id: 'e_6845a1b2c3d4', label: 'Oppenheimer web', pinned: true, repository: true },
+      { id: 'e_6845f9e8d7c6', pinned: false, repository: false },
+    ],
+    recommended: 'e_6845a1b2c3d4',
+    source: 'chatgpt',
+  },
   'session.create': {
     type: 'session.create',
     commandId,

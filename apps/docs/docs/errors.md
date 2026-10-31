@@ -550,6 +550,9 @@ are never reissued.
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
 | `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
 | `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
+| `SESSIONS_044` <a id="sessions_044" /> | This host's runner cannot list Codex environments | 409 |
+| `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
+| `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -608,6 +611,13 @@ links together pass the 2 KB a first task may be; shorten the task or attach few
 session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
 so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
 (`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
+
+`SESSIONS_044` to `SESSIONS_046` are the composer's Codex environment picker
+(`GET /v1/hosts/:id/codex-environments`), which the host's runner answers with its
+own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
+session still starts there, in an environment guessed from the repository's name.
+`046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
+code as `upstreamCode`. A runner that did not answer in time is `SESSIONS_031`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its

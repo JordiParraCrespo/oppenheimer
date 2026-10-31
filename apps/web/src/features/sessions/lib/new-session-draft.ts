@@ -60,6 +60,20 @@ export interface NewSessionDraft {
    * and nothing is sent (`effortChoiceFor`).
    */
   efforts: EffortPicks;
+  /**
+   * The Codex environment picked for a Codex cloud session, and the repository
+   * row it was picked for: it applies only while that repository is the one
+   * picked (`toCreateInput`), so changing the repository falls back to the
+   * host's pick without anything clearing it. Null is the host's pick, the
+   * environment linked to the repository.
+   */
+  codexEnvironment: CodexEnvironmentPick | null;
+}
+
+/** An environment picked for one repository row (`repositoryKey`). */
+export interface CodexEnvironmentPick {
+  repository: string;
+  id: string;
 }
 
 const FALLBACK: NewSessionDraft = {
@@ -74,6 +88,7 @@ const FALLBACK: NewSessionDraft = {
   model: defaultModelFor('claude-code'),
   permission: 'auto',
   efforts: {},
+  codexEnvironment: null,
 };
 
 /**
@@ -92,6 +107,7 @@ type RememberedChoices = Pick<
   | 'model'
   | 'permission'
   | 'efforts'
+  | 'codexEnvironment'
 >;
 
 /** The fields `rememberDraft` writes out, for the form's subscription to name. */
@@ -106,6 +122,7 @@ export const REMEMBERED_FIELDS = [
   'model',
   'permission',
   'efforts',
+  'codexEnvironment',
 ] as const satisfies readonly (keyof RememberedChoices)[];
 
 /**
@@ -161,6 +178,7 @@ export function openDraft(seed: DraftSeed = {}): {
     ...engine,
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
+    codexEnvironment: stored.codexEnvironment ?? FALLBACK.codexEnvironment,
   };
   return { draft: fitHostCloud(draft, seed), fillable: landingFillable(stored) };
 }
@@ -195,6 +213,7 @@ export function rememberDraft({
   model,
   permission,
   efforts,
+  codexEnvironment,
 }: RememberedChoices) {
   try {
     window.localStorage.setItem(
@@ -210,6 +229,7 @@ export function rememberDraft({
         model,
         permission,
         efforts,
+        codexEnvironment,
       }),
     );
   } catch {
@@ -246,12 +266,22 @@ function rememberedChoices(): Partial<RememberedChoices> {
           : undefined,
       permission: SESSION_PERMISSIONS.find((level) => level === stored.permission),
       efforts: effortPicks(stored.efforts),
+      codexEnvironment: codexEnvironmentPick(stored.codexEnvironment),
     };
   } catch {
     // Storage can be unavailable or hold something from an older shape. A draft
     // is a convenience; failing to read one is not worth an error on screen.
     return {};
   }
+}
+
+/** A remembered environment pick, or none when storage holds another shape. */
+function codexEnvironmentPick(value: unknown): CodexEnvironmentPick | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const { repository, id } = value as Partial<CodexEnvironmentPick>;
+  return typeof repository === 'string' && typeof id === 'string' && id
+    ? { repository, id }
+    : undefined;
 }
 
 /** The chips a project's defaults fill. */

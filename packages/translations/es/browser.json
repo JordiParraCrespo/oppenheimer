@@ -433,6 +433,9 @@
       "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
       "SESSIONS_042": "Ese patrón no se puede vigilar. Usa una expresión regular simple, sin lookaround ni referencias hacia atrás.",
       "SESSIONS_043": "Esta sesión ya tiene tantas vigilancias de terminal como admite. Quita una primero.",
+      "SESSIONS_044": "El runner de este equipo es demasiado antiguo para listar los entornos de Codex. Actualízalo, o inicia la sesión y deja que el equipo elija uno.",
+      "SESSIONS_045": "El equipo está desconectado, así que no se pueden listar sus entornos de Codex.",
+      "SESSIONS_046": "Codex no pudo listar sus entornos en el equipo. Comprueba que codex está instalado y con la sesión de ChatGPT iniciada.",
       "VOICE_001": "El dictado necesita un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
@@ -749,6 +752,19 @@
         "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
         "archived": "Archivado",
         "failed": "No se han podido cargar tus repositorios."
+      },
+      "codexEnvironment": {
+        "label": "Entorno de Codex",
+        "placeholder": "Entorno",
+        "search": "Buscar entornos…",
+        "empty": "Ningún entorno coincide.",
+        "loading": "Pidiendo al equipo sus entornos de Codex…",
+        "auto": "Automático",
+        "autoLinked": "El vinculado al repositorio: {{name}}",
+        "autoByName": "Ningún entorno está vinculado al repositorio: el equipo prueba con su nombre",
+        "linked": "Vinculado a este repositorio",
+        "pinned": "Fijado",
+        "failed": "No se han podido listar los entornos de Codex del equipo."
       },
       "branch": {
         "label": "Rama",

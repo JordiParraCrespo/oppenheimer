@@ -79,6 +79,7 @@ const (
 	CapabilityPortForward         = "port.forward"
 	CapabilitySessionCloud        = "session.cloud"
 	CapabilitySessionCloudCodex   = "session.cloud.codex"
+	CapabilityCodexEnvironments   = "codex.environments"
 	CapabilitySessionWatch        = "session.watch"
 )
 
@@ -128,6 +129,8 @@ const (
 	TypePortOpen                = "port.open"
 	TypePortOpened              = "port.opened"
 	TypePortClose               = "port.close"
+	TypeCodexEnvironmentsList   = "codex.environments.list"
+	TypeCodexEnvironments       = "codex.environments"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -176,6 +179,8 @@ var MessageTypes = []string{
 	TypePortOpen,
 	TypePortOpened,
 	TypePortClose,
+	TypeCodexEnvironmentsList,
+	TypeCodexEnvironments,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -270,6 +275,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(PortOpened), true
 	case TypePortClose:
 		return new(PortClose), true
+	case TypeCodexEnvironmentsList:
+		return new(CodexEnvironmentsList), true
+	case TypeCodexEnvironments:
+		return new(CodexEnvironments), true
 	}
 	return nil, false
 }
@@ -394,6 +403,7 @@ type SessionCreate struct {
 	Checkouts        []Checkout            `json:"checkouts"`
 	CwdCheckoutID    *string               `json:"cwdCheckoutId"`
 	Cloud            *SessionCreateCloud   `json:"cloud,omitempty"`
+	CodexEnvironment string                `json:"codexEnvironment,omitempty"`
 }
 
 // LaunchOptions is SessionCreate.Launch.
@@ -722,6 +732,30 @@ type PortOpened struct {
 type PortClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// CodexEnvironmentsList is the `codex.environments.list` message.
+type CodexEnvironmentsList struct {
+	Type       string `json:"type"`
+	CommandID  string `json:"commandId"`
+	Repository string `json:"repository"`
+}
+
+// CodexEnvironments is the `codex.environments` message.
+type CodexEnvironments struct {
+	Type         string                          `json:"type"`
+	CommandID    string                          `json:"commandId"`
+	Environments []CodexEnvironmentsEnvironments `json:"environments"`
+	Recommended  string                          `json:"recommended,omitempty"`
+	Source       string                          `json:"source"`
+}
+
+// CodexEnvironmentsEnvironments is CodexEnvironments.Environments.
+type CodexEnvironmentsEnvironments struct {
+	ID         string `json:"id"`
+	Label      string `json:"label,omitempty"`
+	Pinned     bool   `json:"pinned"`
+	Repository bool   `json:"repository"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

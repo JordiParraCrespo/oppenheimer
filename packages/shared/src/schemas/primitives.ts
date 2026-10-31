@@ -34,7 +34,12 @@ export const FIELD_BOUNDS = {
   prompt: { min: 1, maxBytes: 2 * 1024 },
   /** An absolute path on a host: a folder session's folder, a folder picker's directory. */
   hostPath: { min: 1, max: 4096 },
+  /** A Codex cloud environment's id or label, as `codex cloud exec --env` takes it. */
+  codexEnvironment: { min: 1, max: 128 },
 } as const;
+
+/** Printable text: no control characters (a Codex environment's id or label). */
+export const PRINTABLE_PATTERN = /^[^\p{Cc}]+$/u;
 
 /**
  * A control-plane row is a UUID we minted; GitHub's own ids are numbers it
@@ -71,6 +76,17 @@ export const displayNameSchema = z
   .max(FIELD_BOUNDS.displayName.max);
 
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
+
+/**
+ * A Codex cloud environment, by its id or its label (which the CLI matches
+ * without regard to case): what a Codex cloud session is started in.
+ */
+export const codexEnvironmentSchema = z
+  .string()
+  .trim()
+  .min(FIELD_BOUNDS.codexEnvironment.min)
+  .max(FIELD_BOUNDS.codexEnvironment.max)
+  .regex(PRINTABLE_PATTERN);
 
 /** How long a prompt is, as the event log counts it: UTF-8 bytes. */
 export function promptByteLength(value: string): number {

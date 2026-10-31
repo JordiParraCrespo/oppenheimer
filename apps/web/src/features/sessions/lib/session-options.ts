@@ -11,6 +11,8 @@ import {
   type CloudAgentStatusEntity,
   type CreateSessionCheckout,
   type CreateSessionInput,
+  type HostCodexEnvironment,
+  type HostCodexEnvironments,
   type HostEntity,
   type ProjectEntity,
   parseRepositoryKey,
@@ -524,6 +526,7 @@ export function toCreateInput(
     | 'model'
     | 'permission'
     | 'efforts'
+    | 'codexEnvironment'
   >,
   extras: { prompt: string; attachmentIds: readonly string[] },
 ): CreateSessionInput | null {
@@ -546,9 +549,65 @@ export function toCreateInput(
   if (draft.where === 'cloud') {
     if (!extras.prompt) return null;
     const { agent } = engineForPlace(draft, draft);
-    return { ...common, agent, checkouts: [first], cloud: true };
+    const environment = codexEnvironmentFor({ ...draft, agent });
+    return {
+      ...common,
+      agent,
+      checkouts: [first],
+      cloud: true,
+      ...(environment ? { codexEnvironment: environment } : {}),
+    };
   }
   return { ...common, checkouts: [first, ...rest] };
+}
+
+/**
+ * The Codex environment a Codex cloud session is sent with: the one picked for
+ * the repository it starts from, or none — the host's pick, the environment
+ * linked to the repository — when nothing was picked for that repository.
+ */
+export function codexEnvironmentFor(
+  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'scope' | 'codexEnvironment'>,
+): string | null {
+  const [first] = draft.scope;
+  if (draft.where !== 'cloud' || draft.agent !== 'codex' || !first) return null;
+  return draft.codexEnvironment?.repository === first.id ? draft.codexEnvironment.id : null;
+}
+
+/**
+ * The Codex environment chip's rows: first the host's own pick (`''`), which
+ * names the environment linked to the repository when there is one, then the
+ * account's environments, those linked to the repository first as the host
+ * lists them. A failed read leaves the host's pick alone, saying why.
+ */
+export function toCodexEnvironmentOptions(
+  listing: HostCodexEnvironments | undefined,
+  labels: {
+    auto: string;
+    autoLinked: (name: string) => string;
+    autoByName: string;
+    linked: string;
+    pinned: string;
+    failure?: string;
+  },
+): ChipSelectOption[] {
+  const name = (env: HostCodexEnvironment) => env.label ?? env.id;
+  const recommended = listing?.environments.find((env) => env.id === listing.recommended);
+  const auto: ChipSelectOption = {
+    value: '',
+    label: labels.auto,
+    description:
+      labels.failure ?? (recommended ? labels.autoLinked(name(recommended)) : labels.autoByName),
+  };
+  return [
+    auto,
+    ...(listing?.environments ?? []).map((env) => ({
+      value: env.id,
+      label: name(env),
+      description: env.repository ? labels.linked : env.pinned ? labels.pinned : undefined,
+      keywords: env.id,
+    })),
+  ];
 }
 
 /**
