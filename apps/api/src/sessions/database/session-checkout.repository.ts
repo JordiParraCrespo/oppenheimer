@@ -1,6 +1,6 @@
 import type { EntityManager } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
-import type { WorkSessionMapper } from '../work-session.mapper';
+import { SessionCheckoutMapper } from '../session-checkout.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 
 /**
@@ -10,15 +10,12 @@ import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
  * opened, and every read is part of loading a session.
  */
 export class SessionCheckoutRepository {
-  constructor(
-    private readonly manager: EntityManager,
-    private readonly mapper: WorkSessionMapper,
-  ) {}
+  constructor(private readonly manager: EntityManager) {}
 
   async insert(manager: EntityManager, checkout: SessionCheckoutEntity): Promise<void> {
     await manager
       .getRepository(SessionCheckoutOrmEntity)
-      .insert(this.mapper.checkoutToPersistence(checkout));
+      .insert(SessionCheckoutMapper.toPersistence(checkout));
   }
 
   async retire(manager: EntityManager, checkout: SessionCheckoutEntity): Promise<void> {

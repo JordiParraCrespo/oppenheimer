@@ -1,6 +1,6 @@
 import type { EntityManager } from 'typeorm';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
-import type { WorkSessionMapper } from '../work-session.mapper';
+import { SessionCloudRunMapper } from '../session-cloud-run.mapper';
 import { SessionCloudRunOrmEntity } from './session-cloud-run.orm-entity';
 import type { WorkSessionOrmEntity } from './work-session.orm-entity';
 
@@ -10,20 +10,17 @@ import type { WorkSessionOrmEntity } from './work-session.orm-entity';
  * the session and loaded with it.
  */
 export class SessionCloudRunRepository {
-  constructor(
-    private readonly manager: EntityManager,
-    private readonly mapper: WorkSessionMapper,
-  ) {}
+  constructor(private readonly manager: EntityManager) {}
 
   async insert(manager: EntityManager, run: SessionCloudRunEntity): Promise<void> {
     await manager
       .getRepository(SessionCloudRunOrmEntity)
-      .insert(this.mapper.cloudRunToPersistence(run));
+      .insert(SessionCloudRunMapper.toPersistence(run));
   }
 
   /** Written only while the row is still on the run it was read with; true when it was. */
   async saveIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean> {
-    const { sessionId, organizationId, ...changes } = this.mapper.cloudRunToPersistence(run);
+    const { sessionId, organizationId, ...changes } = SessionCloudRunMapper.toPersistence(run);
     const result = await this.manager
       .getRepository(SessionCloudRunOrmEntity)
       .update({ sessionId, organizationId, latestRunId: runIdAtLoad }, changes);
