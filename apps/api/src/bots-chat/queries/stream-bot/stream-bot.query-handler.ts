@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { BotStreamEvent } from '@oppenheimer/shared';
-import { Observable } from 'rxjs';
+import type { BotStreamEvent, BotStreamSnapshot } from '@oppenheimer/shared';
+import { Observable, type Subscriber } from 'rxjs';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
 import { BOT_STREAM } from '../../bots-chat.di-tokens';
@@ -44,40 +44,18 @@ export class StreamBotQueryHandler
     return new Observable<BotStreamFrame>((subscriber) => {
       let closed = false;
       let teardown = () => {};
-      // Held until the snapshots are out, so none of them lands after a delta it already holds.
-      let held: BotStreamEvent[] | null = [];
+      const catchUp = new CatchUp(
+        (event) => subscriber.next({ kind: 'event', event }),
+        () => closed,
+      );
       this.stream
-        .subscribe(
-          botId,
-          (event) => {
-            if (held) held.push(event);
-            else subscriber.next({ kind: 'event', event });
-          },
-          () => subscriber.complete(),
-        )
+        .subscribe(botId, catchUp.hear, () => subscriber.complete())
         .then(async (unsubscribe) => {
-          const snapshots = closed ? [] : await this.stream.inFlight(botId);
-          if (closed) {
-            unsubscribe();
-            return;
-          }
-          const keepalive = setInterval(
-            () => subscriber.next({ kind: 'keepalive' }),
-            BOT_STREAM_KEEPALIVE_MS,
-          );
-          const lifetime = setTimeout(() => subscriber.complete(), BOT_STREAM_MAX_LIFETIME_MS);
-          keepalive.unref();
-          lifetime.unref();
-          teardown = () => {
-            clearInterval(keepalive);
-            clearTimeout(lifetime);
-            unsubscribe();
-          };
+          const snapshots = await catchUp.read(() => this.stream.inFlight(botId));
+          if (!snapshots) return unsubscribe();
+          teardown = keepOpen(subscriber, unsubscribe);
           subscriber.next({ kind: 'ready' });
-          for (const event of [...snapshots, ...(held ?? [])]) {
-            subscriber.next({ kind: 'event', event });
-          }
-          held = null;
+          catchUp.release(snapshots);
         })
         .catch((error: unknown) => subscriber.error(error));
       return () => {
@@ -86,4 +64,52 @@ export class StreamBotQueryHandler
       };
     });
   }
+}
+
+/**
+ * Catching a new reader up: what the channel carries while the running turns'
+ * text is read is held, and let go after the snapshots, so no snapshot lands
+ * after a delta it already holds. Then it passes straight through.
+ */
+class CatchUp {
+  private held: BotStreamEvent[] | null = [];
+
+  constructor(
+    private readonly emit: (event: BotStreamEvent) => void,
+    private readonly isClosed: () => boolean,
+  ) {}
+
+  readonly hear = (event: BotStreamEvent): void => {
+    if (this.held) this.held.push(event);
+    else this.emit(event);
+  };
+
+  /** The snapshots to send; null when the reader left before or while they were read. */
+  async read(inFlight: () => Promise<BotStreamSnapshot[]>): Promise<BotStreamSnapshot[] | null> {
+    if (this.isClosed()) return null;
+    const snapshots = await inFlight();
+    return this.isClosed() ? null : snapshots;
+  }
+
+  /** The snapshots, then what was held; from here on, live. */
+  release(snapshots: readonly BotStreamSnapshot[]): void {
+    for (const event of [...snapshots, ...(this.held ?? [])]) this.emit(event);
+    this.held = null;
+  }
+}
+
+/** A keepalive under proxies' idle timeouts and an end after the lifetime; answers the teardown. */
+function keepOpen(subscriber: Subscriber<BotStreamFrame>, unsubscribe: () => void): () => void {
+  const keepalive = setInterval(
+    () => subscriber.next({ kind: 'keepalive' }),
+    BOT_STREAM_KEEPALIVE_MS,
+  );
+  const lifetime = setTimeout(() => subscriber.complete(), BOT_STREAM_MAX_LIFETIME_MS);
+  keepalive.unref();
+  lifetime.unref();
+  return () => {
+    clearInterval(keepalive);
+    clearTimeout(lifetime);
+    unsubscribe();
+  };
 }

@@ -69,8 +69,8 @@ export function forgetEndedBotTurns(
  * blocks the conversation does not hold yet. The API stores each block of
  * text that is not only whitespace as one assistant message, and numbers a
  * block by how many it stored before it, so block `n` is stored once the
- * conversation holds more than `n` of the turn's assistant messages with
- * text. A pure function of the two, so a read landing early or late can
+ * turn has stored more than `n` ({@link BotConversationEntity.storedTextBlocks}).
+ * A pure function of the two, so a read landing early or late can
  * neither draw stored text twice nor make it blink out. A turn the
  * conversation shows ended draws nothing live; one it does not show yet
  * draws what streamed.
@@ -82,10 +82,7 @@ export function botLiveText(
   const live: Record<string, string> = {};
   for (const [turnId, { blocks }] of Object.entries(buffers)) {
     if (conversation.hasEnded(turnId)) continue;
-    const stored = conversation.messages.filter(
-      (message) =>
-        message.turnId === turnId && message.role === 'assistant' && message.content.trim() !== '',
-    ).length;
+    const stored = conversation.storedTextBlocks(turnId);
     const unstored = Object.entries(blocks)
       .filter(([index]) => Number(index) >= stored)
       .sort(([a], [b]) => Number(a) - Number(b))

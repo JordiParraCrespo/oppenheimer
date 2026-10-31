@@ -15,27 +15,17 @@ function turnsKeyOf(botId: string): string {
   return `bots:live:${botId}:turns`;
 }
 
+/** What every turn's own keys start with; the read script builds them from it. */
+const TURN_KEY_PREFIX = 'bots:live:turn:';
+
 /** The block a turn is writing, as written so far: a string, appended to. */
 function textKeyOf(turnId: string): string {
-  return `bots:live:turn:${turnId}:text`;
+  return `${TURN_KEY_PREFIX}${turnId}:text`;
 }
 
 /** Where the turn's text is: a hash of `seq` (its writes so far) and `block`. */
 function placeKeyOf(turnId: string): string {
-  return `bots:live:turn:${turnId}:place`;
-}
-
-/** The shared client, with {@link RedisBotStreamAdapter}'s script defined on it. */
-interface LiveTextRedis extends Redis {
-  botLiveWrite(
-    placeKey: string,
-    textKey: string,
-    turnsKey: string,
-    block: number,
-    text: string,
-    ttlSeconds: number,
-    turnId: string,
-  ): Promise<number>;
+  return `${TURN_KEY_PREFIX}${turnId}:place`;
 }
 
 /**
@@ -82,18 +72,31 @@ export class RedisBotStreamAdapter implements BotStreamPort {
     return seq
   `;
 
+  /**
+   * Every turn the bot keeps text for, in one round trip and one instant: a
+   * turn whose place expired (its worker died) is dropped from the set.
+   */
+  private static readonly READ = `
+    local out = {}
+    for _, turnId in ipairs(redis.call('SMEMBERS', KEYS[1])) do
+      local place = redis.call('HMGET', ARGV[1] .. turnId .. ':place', 'seq', 'block')
+      if place[1] and place[2] then
+        local text = redis.call('GET', ARGV[1] .. turnId .. ':text')
+        table.insert(out, turnId)
+        table.insert(out, text)
+        table.insert(out, place[1])
+        table.insert(out, place[2])
+      else
+        redis.call('SREM', KEYS[1], turnId)
+      end
+    end
+    return out
+  `;
+
   constructor(
     @Inject(REDIS_PUB_SUB) private readonly pubSub: RedisPubSubPort,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
-  ) {
-    // Registered once per client, as `RedisThrottlerStorage` does: `EVALSHA` after the first.
-    if (!('botLiveWrite' in redis)) {
-      redis.defineCommand('botLiveWrite', {
-        numberOfKeys: 3,
-        lua: RedisBotStreamAdapter.WRITE,
-      });
-    }
-  }
+  ) {}
 
   async publish(botId: string, event: BotStreamNudge): Promise<void> {
     await this.publishEvent(botId, event);
@@ -102,14 +105,18 @@ export class RedisBotStreamAdapter implements BotStreamPort {
   async write(botId: string, turnId: string, block: number, text: string): Promise<void> {
     let seq: number;
     try {
-      seq = await (this.redis as LiveTextRedis).botLiveWrite(
-        placeKeyOf(turnId),
-        textKeyOf(turnId),
-        turnsKeyOf(botId),
-        block,
-        text,
-        BOT_LIVE_TEXT_TTL_SECONDS,
-        turnId,
+      seq = Number(
+        await this.redis.eval(
+          RedisBotStreamAdapter.WRITE,
+          3,
+          placeKeyOf(turnId),
+          textKeyOf(turnId),
+          turnsKeyOf(botId),
+          block,
+          text,
+          BOT_LIVE_TEXT_TTL_SECONDS,
+          turnId,
+        ),
       );
     } catch (error) {
       this.warn('Could not keep a bot turn’s text', botId, error);
@@ -139,32 +146,30 @@ export class RedisBotStreamAdapter implements BotStreamPort {
   }
 
   async inFlight(botId: string): Promise<BotStreamSnapshot[]> {
+    let flat: (string | null)[];
     try {
-      const turnIds = await this.redis.smembers(turnsKeyOf(botId));
-      const snapshots: BotStreamSnapshot[] = [];
-      for (const turnId of turnIds) {
-        const results = await this.redis
-          .multi()
-          .get(textKeyOf(turnId))
-          .hmget(placeKeyOf(turnId), 'seq', 'block')
-          .exec();
-        const text = results?.[0]?.[1] as string | null;
-        const [seq, block] = (results?.[1]?.[1] ?? []) as (string | null)[];
-        // Its place expired: a worker died under it, and there is nothing to read.
-        if (seq == null || block == null) continue;
-        snapshots.push({
-          type: 'snapshot',
-          turnId,
-          block: Number(block),
-          seq: Number(seq),
-          text: text ?? '',
-        });
-      }
-      return snapshots;
+      flat = (await this.redis.eval(
+        RedisBotStreamAdapter.READ,
+        1,
+        turnsKeyOf(botId),
+        TURN_KEY_PREFIX,
+      )) as (string | null)[];
     } catch (error) {
       this.warn('Could not read a bot’s text in flight', botId, error);
       return [];
     }
+    const snapshots: BotStreamSnapshot[] = [];
+    for (let i = 0; i + 3 < flat.length; i += 4) {
+      const [turnId, text, seq, block] = flat.slice(i, i + 4);
+      snapshots.push({
+        type: 'snapshot',
+        turnId: turnId ?? '',
+        block: Number(block),
+        seq: Number(seq),
+        text: text ?? '',
+      });
+    }
+    return snapshots;
   }
 
   subscribe(

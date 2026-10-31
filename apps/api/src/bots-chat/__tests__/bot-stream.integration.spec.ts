@@ -118,6 +118,20 @@ describe('Bot stream (integration)', () => {
     for (const ttl of ttls) expect(ttl).toBeGreaterThan(0);
   });
 
+  it('reads every running turn at once, and drops one whose place expired under a dead worker', async () => {
+    const botId = 'bot-1';
+    await stream.write(botId, 't1', 0, 'One');
+    await stream.write(botId, 't2', 2, 'Two');
+    await stream.write(botId, 't3', 0, 'Gone');
+    await redis.del('bots:live:turn:t3:place');
+    const snapshots = await stream.inFlight(botId);
+    expect(snapshots.sort((a, b) => a.turnId.localeCompare(b.turnId))).toEqual([
+      { type: 'snapshot', turnId: 't1', block: 0, seq: 1, text: 'One' },
+      { type: 'snapshot', turnId: 't2', block: 2, seq: 1, text: 'Two' },
+    ]);
+    expect((await redis.smembers(`bots:live:${botId}:turns`)).sort()).toEqual(['t1', 't2']);
+  });
+
   it('gives every write of a turn its own seq when they race', async () => {
     const botId = 'bot-1';
     const heard: BotStreamEvent[] = [];

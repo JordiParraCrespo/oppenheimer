@@ -96,10 +96,13 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
   }
 
   private async apply({ botId, id: turnId }: BotTurnEntity, write: TranscriptWrite): Promise<void> {
-    if (write.kind === 'text') return this.stream.write(botId, turnId, write.block, write.text);
-    if (write.kind === 'settled') return this.stream.settle(botId, turnId);
-    if (write.kind === 'retrying') {
-      return this.stream.publish(botId, { type: 'retrying', turnId, reason: write.reason });
+    switch (write.kind) {
+      case 'text':
+        return this.stream.write(botId, turnId, write.block, write.text);
+      case 'settled':
+        return this.stream.settle(botId, turnId);
+      case 'retrying':
+        return this.stream.publish(botId, { type: 'retrying', turnId, reason: write.reason });
     }
     if (write.kind === 'insert') await this.messages.insert(write.message);
     else await this.messages.saveSteps(write.message);

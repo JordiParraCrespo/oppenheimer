@@ -118,6 +118,23 @@ export class BotMessageRepository
       .getCount();
   }
 
+  async countTextBlocks(
+    scope: AccessScope,
+    turnIds: readonly string[],
+  ): Promise<Map<string, number>> {
+    if (turnIds.length === 0) return new Map();
+    // IDX_bot_message_turn.
+    const rows: { turnId: string; count: string }[] = await this.scopedQuery(scope)
+      .select('message.turnId', 'turnId')
+      .addSelect('COUNT(*)', 'count')
+      .andWhere('message.turnId IN (:...turnIds)', { turnIds })
+      .andWhere(`message.role = 'assistant'`)
+      .andWhere(`message.content <> ''`)
+      .groupBy('message.turnId')
+      .getRawMany();
+    return new Map(rows.map((row) => [row.turnId, Number(row.count)]));
+  }
+
   async findExportPage(
     scope: AccessScope,
     botId: string,

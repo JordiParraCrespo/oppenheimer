@@ -4019,6 +4019,12 @@ export type BotConversationResponseDto = {
      * How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.
      */
     messageCount: number;
+    /**
+     * For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`).
+     */
+    storedTextBlocks: {
+        [key: string]: number;
+    };
 };
 
 export type SendBotMessageRequest = {

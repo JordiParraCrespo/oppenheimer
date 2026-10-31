@@ -118,6 +118,16 @@ describe('botLiveText', () => {
     expect(botLiveText(buffers, read)).toEqual({ t1: 'Second' });
   });
 
+  // What breaks this: a long turn whose first blocks fell out of the read's
+  // window counted short in the window, so its stored blocks drew again live.
+  it('takes how many blocks a running turn stored from the read, not from its window', () => {
+    const buffers = streamed([0, 'One.'], [1, 'Two.'], [2, 'Thr']);
+    const windowed = new BotConversationEntity([said('t1', 'Two.')], [turn('t1', 'running')], 120, {
+      t1: 2,
+    });
+    expect(botLiveText(buffers, windowed)).toEqual({ t1: 'Thr' });
+  });
+
   it('counts neither an image message nor an activity line as a stored block', () => {
     const read = conversation(
       [turn('t1', 'running')],
