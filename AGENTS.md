@@ -12,88 +12,62 @@ what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
 gallery of the web design system, and `apps/extension`, a Chrome extension
 that tracks your Claude Code cloud sessions and tells you which need you.
 
+The runner pairs a macOS, Debian or Ubuntu machine with a workspace, installs
+itself as a user service, keeps itself on the current signed release, and
+holds one outbound WebSocket to the control plane (`apps/runner/internal/link`
+on the host, the API's `relay` and `links` modules on the other end): the
+console drives sessions over it, and `runner sessions …` drives the same
+lifecycle from the host. `apps/runner/README.md` says what works today.
+
 ## Product notes
 
-All research and decisions live in `product/`. Start with
-`product/README.md`, which lists the notes in order and records the
-decisions that changed along the way.
+All research and decisions live in `product/`; start with `product/README.md`.
 
-- The MVP is Orca on the web without VMs: connect a host you own, run
-  sessions on it as worktrees with a tmux terminal, Claude Code first
-  (`product/versions/mvp/00-scope.md`). VMs, sleep, accounts, and Codex
-  are the slices after. `product/07-mvp.md` is superseded and kept for
-  history.
-- What comes after the MVP is `product/next-steps/`, one document per
-  version (0.2 Git/GitHub through 0.7 terminal and chat display, plus
-  multi-account with no version yet); its README holds the order.
-- In-depth MVP design lives in `product/versions/mvp/`, one document per
-  area, each with decided points and open questions, and its own decision
-  log in `product/versions/mvp/README.md`.
-- Workspaces are personal for now: one user per workspace, no team
-  management exposed. The Better Auth `organization` row is
-  the personal workspace, created at sign-up with the account as its
-  single owner (`apps/api/src/organizations/commands/provision-personal-workspace/`); no roster UI,
-  no invitations, no teams in the console. The one organization the
-  console can create is the caller's own, on `/onboarding`, which exists
-  because the sign-up hook is best-effort — an account with no workspace
-  cannot open any product screen. Teams come later on the same tables. The one-page auth note is `product/versions/mvp/08-auth.md`;
-  `AUTHORIZATION.md` is the starter's kernel design, kept as history.
+- The MVP scope is `product/versions/mvp/00-scope.md`, its in-depth design one
+  document per area in `product/versions/mvp/` (decision log in its README);
+  what comes after is `product/next-steps/`. `product/07-mvp.md` is
+  superseded, kept for history.
+- Workspaces are personal: the Better Auth `organization` row is the one
+  workspace, created at sign-up with the account as its single owner. No
+  roster, invitations or teams in the console (`product/versions/mvp/08-auth.md`;
+  `AUTHORIZATION.md` is the starter's kernel design, kept as history).
 - When a decision changes, update the note that made it and add a line to
-  the "decisions that changed" list in `product/README.md`. Do not
-  silently rewrite history in earlier notes.
-- The one-page brief `product/brief.html` is regenerated from the notes;
-  keep it in sync when a note changes.
-- The Go runner (`apps/runner`) is the host agent: worktrees, tmux, PTY
-  streaming, the git credential helper and its own signed updates. The
-  NestJS API is the control plane. Designed in
-  `product/versions/mvp/02-runner.md` and `…/09-runner-install-and-update.md`;
-  the wire between them is `…/01-protocol.md`.
+  the "decisions that changed" list in `product/README.md`. Do not silently
+  rewrite history in earlier notes. `product/brief.html` is regenerated from
+  the notes; keep it in sync when a note changes.
+- The runner is `product/versions/mvp/02-runner.md` and
+  `…/09-runner-install-and-update.md`; the wire is `…/01-protocol.md`.
 
-## Monorepo structure
+## Monorepo map
 
 ```
-oppenheimer/
-├── apps/
-│   ├── api/              # NestJS REST API
-│   ├── docs/             # Docusaurus documentation
-│   ├── extension/        # Chrome extension: tracks your Claude Code cloud sessions, says which need you
-│   ├── runner/           # The Go host agent: pairing, service install, signed self-update (+ the REST/WS service it grew from)
-│   ├── web/              # Consumer Vite + TanStack Router SPA
-│   └── web-showcase/     # Next.js app showcasing the web design system
-├── packages/
-│   ├── auth/             # Shared Better Auth config + client helpers (@oppenheimer/auth)
-│   ├── backend/
-│   │   ├── agents/       # The bot engines: Claude Agent SDK + OpenAI Agents SDK behind one port (@oppenheimer/backend-agents)
-│   │   ├── authz/        # Authorization kernel: grants, policies (@oppenheimer/backend-authz)
-│   │   ├── cache/        # Redis cache abstraction (@oppenheimer/backend-cache)
-│   │   ├── core/         # Errors, filters, pipes, interceptors (@oppenheimer/backend-core)
-│   │   ├── ddd/          # DDD/hexagon building blocks (@oppenheimer/backend-ddd)
-│   │   ├── email/        # Pluggable email + React Email templates (@oppenheimer/backend-email)
-│   │   ├── i18n/         # Server-side translation + Intl formatting (@oppenheimer/backend-i18n)
-│   │   ├── llm/          # One interface over LLM providers: OpenRouter, Together, Anthropic… (@oppenheimer/backend-llm)
-│   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
-│   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
-│   ├── tsconfig/         # Shared TypeScript configs + build helpers (@oppenheimer/tsconfig)
-│   ├── env/              # Root .env loader (@oppenheimer/env)
-│   ├── frontend/         # The React tier: logic split by product, glue split by platform
-│   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
-│   │   ├── consumer/     # The console's domain and account chrome, one module per src/modules/ dir (@oppenheimer/frontend-consumer)
-│   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
-│   │   ├── web/          # The web platform kit: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
-│   │   └── design-system/
-│   │       └── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
-│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate, execx
-│   ├── shared/           # Zod schemas, types, CASL permissions
-│   └── translations/     # Shared i18n JSON files
-├── deploy/dev/           # The dev deployment: one Hetzner server, built by GitHub, run by oppctl
-├── docker/               # Docker Compose (dev + prod)
-└── .github/              # GitHub Actions CI/CD
+apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
+             runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
+             web-showcase (Next.js gallery of the design system)
+packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
+             auth (Better Auth config) · env (root .env loader) · tsconfig
+             translations (i18n JSON)
+             backend/  agents authz cache core ddd email i18n llm queue storage
+             frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
+                       api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
+             go/       core config httpx auth health ws postgres selfupdate execx
+deploy/dev/  the dev deployment (README is the runbook) · docker/ Compose · .github/
 ```
 
-Each app and package has its own `README.md` covering its purpose, exports, and
-usage, and an `AGENTS.md` with the rules an agent needs there. Every `CLAUDE.md`
-in the repo is a symlink to the `AGENTS.md` beside it: edit the `AGENTS.md`,
-never the link.
+Who uses whom:
+
+```
+tsconfig → everything · env → api · shared → api, auth, backend/core, frontend/*
+backend/* → api (ddd depends on nothing; agents is the only code that imports an agent SDK)
+translations → web, frontend/web, api (email copy via backend/i18n)
+design-system/web → web, web-showcase, frontend/web
+api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
+frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+```
+
+Each app and package has a `README.md` (purpose, exports, usage) and an
+`AGENTS.md` (the rules an agent needs there). Every `CLAUDE.md` in the repo is
+a symlink to the `AGENTS.md` beside it: edit the `AGENTS.md`, never the link.
 
 <!-- oppenheimer:begin starter -->
 Every app above except `api` is optional. `scripts/starter/features.json`
@@ -106,363 +80,86 @@ When you add a file that mentions an optional app (CI, compose,
 `# oppenheimer:end <id>`; `pnpm starter:check` fails otherwise.
 <!-- oppenheimer:end starter -->
 
-## Key conventions
+## Hard rules
 
-### General
+- **CI is local.** No git hooks and no CI on pull requests. The pipeline is
+  `scripts/ci/local.mjs` (what it selects is `scripts/ci/affected.mjs`); a
+  new CI step goes there and nowhere else. Before you push: commit, run
+  `pnpm ci:local`, push only on a green run, and paste `.ci-local/report.md`
+  into the pull request. `.github/workflows/ci.yml` runs `pnpm ci:local --all`
+  on `main` on a schedule; a red run opens a `main-red` issue, which comes
+  before new work. Driving a pull request is the `/steward` skill.
+- **Stage files by path.** `.claude/settings.json` and the hooks in
+  `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
+  `git reset --hard` and the like; read them for the exact policy and for
+  what else runs on an edit, a push or the end of a task.
+- **A change to what the console shows gets light and dark screenshots,
+  every time.** What counts is defined once, in `.agents/hooks/visual-change.mjs`;
+  how to take them is the `/local-stack` skill ("Show a visual change"); the
+  pull request's `## Screenshots` section is `/steward`. A change there that
+  is not visual records why with `pnpm screens --not-visual "<why>"`.
+- **One `.env`, at the repo root.** The root `.env.example` documents every
+  variable with a note; a new variable goes there. Never add a per-package
+  `.env`. Node apps load it through `@oppenheimer/env` (real env vars win),
+  the web app through Vite's `envDir`.
+- **Conventional commits** (commitlint). Versioning is Changesets, per
+  package (`pnpm changeset`).
+- Biome lints and formats; the one ESLint-family tool is `pnpm lint:design`
+  (`@shadcn/lint` through oxlint, design-system rules only).
+- Shared types and Zod schemas go in `packages/shared`, never duplicated in
+  an app. A new API endpoint needs Swagger decorators and `@RequireScopes`,
+  then `pnpm generate:api-client`. A new error code needs a row in
+  `apps/docs/docs/errors.md`. New copy goes in `packages/translations`.
+- A test names the behavior it protects and the regression that breaks it,
+  lives at the owner boundary, and needs no test-only production seam.
+<!-- oppenheimer:begin web -->
+- A library that holds module state installs once for `apps/web`: the list
+  is `singletons` in `apps/web/package.json`, held by `pnpm check:singletons`.
+<!-- oppenheimer:end web -->
 
-- Node 22 LTS, pnpm workspaces, Turborepo for task orchestration
-- **One `.env`, at the repo root**; the root `.env.example` is its
-  documentation (a note per variable, nothing unread in it). Never add a
-  per-package `.env`. Node apps load it via `@oppenheimer/env` (real env vars always
-  win); the web app reads it through Vite's `envDir`
-- Biome for linting and formatting (not ESLint/Prettier). The one exception is
-  the apps' design-system linter, `@shadcn/lint`, which only ships as an
-  ESLint/oxlint plugin: `pnpm lint:design` runs it through oxlint with oxlint's
-  own rules switched off, so it enforces design-system rules and nothing Biome
-  already covers — see `.agents/rules/frontend-ui.md`
-- Conventional commits enforced via commitlint
-- Independent versioning per package via Changesets
-- No git hooks, and no CI on pull requests: **CI is local**. The pipeline is
-  `scripts/ci/local.mjs`: lint, Go, build and test, and, behind
-  `scripts/stack/stack.mjs up`, the API's integration and e2e suites. A new
-  CI step goes there and nowhere else. Before you push, commit and run
-  `pnpm ci:local`; push only on a green run, and paste its report
-  (`.ci-local/report.md`) into the pull request. No GitHub check gates a
-  pull request: whoever merges reads that report, and the scheduled run is
-  what catches a report that was wrong
-- `.github/workflows/ci.yml` runs that same program, `pnpm ci:local --all`,
-  on `main` every eight hours and on demand (`workflow_dispatch`), and then
-  builds the images. A red run opens a `main-red` issue with the failed
-  rows, and the next green run closes it. An open `main-red` issue comes
-  before new work: `pnpm ci:local --all` on that commit reproduces it
-- `scripts/ci/affected.mjs` chooses what runs: it asks Turborepo which
-  packages the diff against `origin/main` affects (a change in
-  `packages/shared` reaches every app that imports it). `--all`, or a change
-  to a file no package owns (the workflow, the lockfile, `docker/`,
-  `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
-  a new root-level file every package relies on is a pattern in its
-  `GLOBAL_PATHS`
-- Agent guardrails live in `.claude/settings.json`: it denies force pushes,
-  `git reset --hard`, deleting branches, `sudo`, piping a download into a
-  shell and reading credential files, asks before `rm -rf` or reading an
-  env file, and runs `.agents/hooks/git-guard.mjs` before every shell call,
-  which refuses a push to `main`/`master`, a force push, deleting a remote
-  branch, `git reset --hard`, `git branch -D`, `git add -A`/`--all`/`.`/`*`
-  and staging an env file other than `.env.example`, however the command is
-  spelled (`git -C <dir>`, `-c k=v`, quotes, `--`, chained commands). The
-  settings' glob denies are the same policy where a prefix can say it; the
-  hook is the precise check, and `pnpm check:hooks` runs its cases. Stage
-  files by path. The
-  same file formats every edit with Biome and runs the architecture check
-  (`.agents/hooks/arch-check.sh`) and the screenshot guard
-  (`.agents/hooks/screenshot-guard.mjs`) before a task ends
+## Where to read more
 
-### Backend (`apps/api` + `packages/backend/*`)
+Rules in `.agents/rules/` load on their own for the paths in their
+frontmatter; this is the index.
 
-`apps/api` follows **Domain-Driven Hexagon** architecture — see
-[`apps/api/ARCHITECTURE.md`](apps/api/ARCHITECTURE.md) for the layer model, module
-anatomy, the `@oppenheimer/backend-ddd` building blocks, and the "add a module"
-cookbook. Use the `/scaffold-module` skill to generate a compliant module
-skeleton. Boundaries are enforced by `apps/api/.dependency-cruiser.cjs`
-(`pnpm arch`, run in CI and by a Claude Code Stop hook).
-
-Detailed rules live in `.agents/rules/`, each scoped by a `paths` glob so it
-loads only for the code it governs. Three are frontend:
-
-- `frontend-architecture.md` — the placement grid (kernel, product package,
-  platform kit, feature), the kind directories and what each may import, the
-  render rules, and the checks that hold them
-- `forms.md` — React Hook Form and Zod validation across `apps/web` and the
-  shared schemas
-- `frontend-ui.md` — reaching for the design system before writing markup, the
-  colour vocabulary, where helpers and route files live, placeholder data,
-  translating exports, and e2e coverage
-
-The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-roles.md`—`packages/shared`):
-
-- `nestjs-di.md` — DI import rules, `import type` restrictions, repository-port DI tokens
-- `nestjs-architecture.md` — DDD vertical slices, CQRS handlers, domain layer, ports/adapters, mappers, errors, events
-- `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions,
-  conditional `UPDATE`s for racing transitions
-- `testing-backend.md` — Vitest tiers (domain, handler, adapter,
-  testcontainers integration, seam, meta), where each spec lives, and the
-  assertion discipline; the value bar is `/test-audit`
-- `database-design.md` — the standard a table is held to: keys, types,
-  `timestamptz`, foreign keys and their indexes, access-pattern indexes,
-  tenancy, lifecycle, scale and lock-safe migrations. `/design-database`
-  walks the process
-- `backend-packages.md` — CJS exports, package structure (pluggable vs library), email template setup
-- `api-config.md` — OAuth graceful handling, settings as an input to the domain, controllers, Swagger decorators, rate limiting, versioning
-
-Errors are **RFC 7807 problem documents** (`application/problem+json`) produced by
-the global `AllExceptionsFilter`; the catalog message is the stable problem
-`title` and per-request specifics go in `AppError`'s `detail`. New error codes
-need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
-
-- `feature-flags.md` — the flag catalog, kinds, every boolean flag on by default,
-  `useFeatureFlag` / `@RequireFlag`, what is not a flag
-- `go.md` — the Go service template (`apps/runner`): layout, ports, errors,
-  auth, what to reach for instead of a framework
-- `integrations.md` — every call to a system we do not run respects its rate
-  limit: the budget written down first, then every call through one
-  `UpstreamLimiter.exchange` (`@oppenheimer/backend-core`), with buckets named
-  for what the provider counts and a `429` code of its own
-- `provider-integrations.md` — a third-party service is a capability behind
-  one interface, each vendor a provider in one ordered list
-- `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
-- `scopes-and-credentials.md` — the scope catalog, `@RequireScopes`/`ScopesGuard`, API tokens, OAuth for MCP clients
-
-#### Authorization (roles & permissions)
-
-Database-backed dynamic RBAC: roles and permissions live in the `role` table,
-a user holds many, and routes are guarded with `@CheckPolicies`. The full
-guide is `.agents/rules/rbac-roles.md`.
-
-#### Feature flags
-
-Declared in code, targeted in the database, evaluated on the server, read on
-every client from one endpoint. `FEATURE_FLAGS` in
-`packages/shared/src/feature-flags/catalog.ts` is the only place a flag
-exists (reached through the `@oppenheimer/shared/feature-flags` subpaths, not
-the root barrel); `apps/api/src/feature-flags/` holds each deployment's
-targeting, segments and audit trail, evaluates everything in memory and serves
-the caller's values at `GET /v1/feature-flags`; clients read them with
-`useFeatureFlag('key')` from `@oppenheimer/frontend-core/react`, and a route
-gates the same capability with `@RequireFlag('key')`. Every boolean flag
-defaults to `true`: a feature launches on, and the flag is how it is turned
-off or narrowed. Temporary flags carry an expiry. `pnpm check:flags` enforces
-both in CI. The guide is
-`.agents/rules/feature-flags.md`.
-
-#### Scopes (API tokens and OAuth clients)
-
-Credentials are governed by the **scope catalog** in `packages/shared/src/scopes/`.
-Roles say what a person may do; scopes say what a credential (an API token, or
-an OAuth client through the Better Auth `mcp` plugin) may do on their behalf,
-and effective access is the intersection — see
-`.agents/rules/scopes-and-credentials.md`.
-
-### Go services (`apps/runner` + `packages/go/*`)
-
-The product backend is NestJS. Go is for the one-off service that needs a
-static binary, long-lived connections or process orchestration (runners, VMs,
-containers) — `apps/runner` is the template, and the API talks to it with an
-API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
-`packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
-`health`, `ws`, `postgres`, `selfupdate`, `execx`), tied together by the root `go.work`, each also published to
-Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
-`apps/runner` is more than the template now: it is the host agent. It pairs a
-macOS, Debian or Ubuntu machine with a workspace, installs itself as a launchd
-agent or systemd user unit, keeps itself on the current signed release, and
-runs sessions as git worktrees with a tmux session each
-(`runner run|register|install|sessions|status|update`; `runner serve` is the
-template's HTTP service, which is what the container runs). The control-plane
-link is the piece still missing, so sessions are driven from the host today.
-The app is the same hexagon as `apps/api` in idiomatic Go: standard
-`net/http` routing, `slog`, interfaces as ports, constructor injection, one
-composition root (`internal/server`). Errors are the same RFC 7807 documents
-with their own catalog (`RUNNER_*`, `APIKEY_*`). Boundaries are
-enforced by `internal/arch/arch_test.go`. Rules in `.agents/rules/go.md`;
-layer model in `apps/runner/ARCHITECTURE.md`; module list and "add a
-module" steps in `packages/go/README.md`.
-
-### Shared (packages/shared)
-
-- Zod schemas are the single source of truth for DTOs
-- CASL helpers shared between backend and frontend: `defineAbilitiesFromPermissions`
-  (DB-driven, the source of truth) and the legacy `defineAbilitiesFor` fallback
-- Types: `Role` (a free-form role-name `string`), `PermissionDefinition`,
-  `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`, `PaginatedResponse<T>`
-- Constants: `AUTH` (token expiry, salt rounds), `PAGINATION`, `ROLES`,
-  `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`
-
-### Frontend (packages/frontend, apps/web)
-
-The frontend is split twice, and the two splits answer different questions:
-
-- **By product** for logic. `core` is the kernel every app loads (session,
-  users, user settings, capabilities, analytics, the InversifyJS container,
-  validation). `consumer` is the
-  product's domain — one module per directory under its `src/modules/`,
-  among them the account chrome: `organizations` as the personal workspace,
-  `profile`, `permissions` — (entities, repositories, services, TanStack Query hooks);
-  the app loads it through `OppenheimerApp.create({ modules })`. The kernel
-  never imports the product package.
-- **By platform** for UI and glue. `web` is the platform kit: what sits below
-  the routes, organised by concern (`shell`, `auth`, `layout`, `pairing`, `forms`, …; the
-  kit's `.dependency-cruiser.cjs` holds the list and its layers), each concern with the
-  same kind directories a feature has. The kit imports the kernel only; a
-  component that needs a product hook is a feature.
-- **In the app**: routes compose, features contain. `features/<module>/`
-  is named after a module of `core` or of the app's product package and holds
-  only `screens/ sections/ dialogs/ forms/ components/ hooks/ lib/ __tests__/`.
-  Features never import each other; `forms/` and `components/` never fetch;
-  a route file stays under 120 lines.
-
-The placement rules, the render rules (state at the lowest reader, effects
-only in `hooks/`, the React Compiler on, no manual memo) and what enforces
-them are `.agents/rules/frontend-architecture.md`. `/frontend-audit` reviews the
-frontend against them, including the re-renders the compiler does not
-prevent; a daily routine runs it, keeps one GitHub issue (label
-`frontend-audit`) current and opens one pull request fixing the findings
-that are safe to fix (`--fix`; the rest stay for a person), and
-`scripts/evals/frontend-audit/` grades the prompt. The layer model and the
-cookbooks are `packages/frontend/ARCHITECTURE.md` and
-`apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
-`pnpm check:structure` and Biome hold it.
-
-### Web (apps/web)
-
-- Vite SPA built to static assets, served by nginx in Docker
-- Tailwind CSS v4, shadcn/ui components
-- react-i18next for i18n (translations from `packages/translations`)
-- React Hook Form + `zodResolver` for forms
-- Vite env vars (`import.meta.env`, `VITE_`-prefixed) for configuration, read
-  from the root `.env` (`envDir` in `vite.config.ts` points at the repo root)
-
-#### Forms
-
-React Hook Form over a Zod schema from `@oppenheimer/shared`, resolver wired through
-the app's `useZodResolver`. The convention is `.agents/rules/forms.md`.
-
-### Design system (packages/frontend/design-system)
-
-`@oppenheimer/design-system-web` (Base UI + Tailwind v4, tokens in
-`src/styles/globals.css`) is the design system for `apps/web`, and
-`apps/web-showcase` is its gallery. Usage rules are `.agents/rules/frontend-ui.md`.
-
-## Dependency flow
-
-```
-packages/tsconfig         → used by all apps and packages (tsconfig extends)
-packages/env              → used by api (root .env loader)
-packages/shared           → used by api, frontend, api-client, backend/core (wire types)
-packages/auth             → used by api, web (shared Better Auth config)
-packages/backend/core     → used by api, other backend packages
-packages/backend/ddd      → used by api, backend/core (depends on nothing in the workspace)
-packages/backend/email    → used by api
-packages/backend/i18n     → used by api (bundles from packages/translations)
-packages/backend/cache    → used by api
-packages/backend/llm      → used by api
-packages/backend/agents   → used by api (bots; the only code that imports an agent SDK)
-packages/backend/storage  → used by api
-packages/backend/queue    → used by api
-packages/translations     → used by web, frontend/web, api (email copy via backend/i18n)
-packages/frontend/design-system/web → used by web, web-showcase, frontend/web
-packages/frontend/api-client  → used by frontend/core, frontend/consumer
-packages/frontend/core        → used by every frontend package and web
-packages/frontend/consumer    → used by web
-packages/frontend/web         → used by web
-packages/go/core              → used by every other packages/go module and runner
-packages/go/{config,httpx,auth,health,ws,postgres,selfupdate,execx} → used by runner (auth ← ws, httpx ← health, auth)
-```
+| When you are… | Read |
+| --- | --- |
+| writing anything in `apps/api` | `apps/api/ARCHITECTURE.md` (Domain-Driven Hexagon), `nestjs-architecture.md` (slices, CQRS, errors as RFC 7807, events), `nestjs-di.md`, `api-config.md` (config, controllers, Swagger, rate limits); a new module is `/scaffold-module` |
+| touching a table, an entity or a migration | `database-design.md`, `typeorm.md`; a new table is `/design-database` |
+| writing or pruning a backend test | `testing-backend.md`; the value bar is `/test-audit` |
+| building a `packages/backend/*` package | `backend-packages.md` (exports, pluggable vs library) |
+| guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients) |
+| adding or reading a feature flag | `feature-flags.md` |
+| calling a system we do not run | `integrations.md` (rate-limit budgets); a new vendor is `/integrate-provider` and `provider-integrations.md` |
+| writing Go (`apps/runner`, `packages/go`) | `go.md`, `apps/runner/ARCHITECTURE.md`, `packages/go/README.md` |
+| placing frontend code | `frontend-architecture.md`, `packages/frontend/ARCHITECTURE.md`, `apps/web/ARCHITECTURE.md`; a new screen is `/scaffold-feature`, a review is `/frontend-audit` |
+| writing markup or styles | `frontend-ui.md` and the design system's `AGENTS.md`; a design export is `/design-export-port` |
+| building a form | `forms.md` |
+| adding or changing a route in `apps/web` | `/tanstack-routing` |
+| checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
+| deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
 
 ## Commands
 
 ```bash
-pnpm dev                # Start all apps
-pnpm build              # Build everything
-pnpm test               # Unit tests
-pnpm test:integration   # Integration tests (needs Docker)
-pnpm check              # Biome lint + format
-pnpm arch               # Architecture boundaries (dependency-cruiser), API and frontend
-pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
-pnpm check:flags        # Feature flags: none past expiry, none declared but unread
-pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
-pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
+pnpm dev | pnpm dev:mvp   # Start all apps | the MVP
+pnpm build                # Build everything
+pnpm test                 # Unit tests
+pnpm test:integration     # Integration tests (needs Docker)
+pnpm check                # Biome lint + format
+pnpm arch                 # Architecture boundaries (dependency-cruiser), API and frontend
+pnpm check:structure      # Frontend layout contract
+pnpm check:flags          # Feature flags: none past expiry, none declared but unread
 # oppenheimer:begin web
-pnpm check:singletons   # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
+pnpm check:singletons     # One installed copy of each React singleton for apps/web (pnpm-lock.yaml)
 # oppenheimer:end web
-pnpm docker:dev         # Start Postgres + Redis
-pnpm monitoring:up      # Grafana on :3030, Prometheus on :9090, over the local API (needs METRICS_TOKEN)
-pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
+pnpm docker:dev           # Start Postgres + Redis
+pnpm ci:local             # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
-pnpm generate:api-client # Regenerate typed API client (no database needed)
-pnpm changeset          # Create a changeset for versioning
+pnpm generate:api-client  # Regenerate the typed API client (no database needed)
 ```
 
-## Deployment
-
-- **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
-- Docker images built by the scheduled CI run on `main` (GitHub Actions), pushed to GHCR when it is green
-- The dev deployment is `deploy/dev/`; its `README.md` is the runbook
-
-## When modifying code
-
-- Shared types/schemas go in `packages/shared`, not duplicated in apps
-- A test names the behavior it protects and the regression that breaks it,
-  lives at the owner boundary, and needs no test-only production seam;
-  auditing existing tests is `.agents/skills/test-audit/`; how a backend
-  test is written is `.agents/rules/testing-backend.md`
-- New env vars go in the root `.env.example` with a note on what they do; never
-  add a per-package `.env` (see `.agents/rules/api-config.md`)
-- New API endpoints need Swagger decorators and `@RequireScopes`; without the
-  scope they are unreachable by API tokens and OAuth clients. Afterwards run
-  `pnpm generate:api-client`
-- Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
-- Integrating a third-party service (an LLM, speech, email, SMS, a calendar,
-  any vendor API) is the `/integrate-provider` skill
-- New translations go in `packages/translations/{locale}/index.json`
-- Where frontend code goes — kernel, product package, platform kit, or a
-  feature's kind directory — is `.agents/rules/frontend-architecture.md`;
-  `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
-- UI in `apps/web`, `apps/web-showcase` and the web design system:
-  `.agents/rules/frontend-ui.md`
-- **A change to what the console shows gets screenshots, every time.**
-  What counts as one (the console, the platform kit, the design system,
-  the translations; not their tests, stories or docs) is defined once, in
-  `.agents/hooks/visual-change.mjs`. Before the pull request is opened or
-  updated, run the `/local-stack` skill's "Show a visual change" step:
-  stack up `--web`, `pnpm screens <route>...` on each route the change
-  shows on, light and dark (both pre-approved, no prompt). Look at every
-  picture, send them to the user, and give the pull request a
-  `## Screenshots` section (`/steward`). The screenshot guard holds the end
-  of a task until the screenshots are of the code as it is; a change there
-  that is not visual records why with `pnpm screens --not-visual "<why>"`
-- Routes in `apps/web` — a new URL, a guard, a layout
-  route, search params, or anything that regenerates `routeTree.gen.ts` — is
-  the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route
-  file's name is its URL, so a rename is a URL change
-- Porting a design export onto the design system is the
-  `/design-export-port` skill (`.agents/skills/design-export-port/`): the
-  export's values go onto the token vocabulary in `globals.css` and the
-  component rules in `packages/frontend/design-system/AGENTS.md` and
-  `.agents/rules/frontend-ui.md`; it does not replace them. Fonts are system
-  stacks. The MVP export is `product/versions/mvp/design/`. Run with no
-  arguments, the skill ports every export sync since the last port
-  (`last-port.json` in the skill) end to end, captures and pull request
-  included
-- A read's loading placeholder has the shape of what replaces it: the
-  data's own container, static labels written, a bar per line, never a `0`
-  for a value not given (`.agents/rules/frontend-ui.md`). `pnpm
-  check:structure` fails a `QueryState.Pending` that is only a slab, and
-  `/frontend-audit` reports the rest as `U7`
-- Forms and Zod schemas: `.agents/rules/forms.md`
-- Sign-up creates the account and its personal workspace in one go. The
-  `/onboarding` screen is only the recovery path for an account that ended up
-  with no workspace. Only `/register` passes the social `sign-up` intent
-- `@oppenheimer/shared` gives bundlers an ESM build and declares its side
-  effects, so `apps/web` tree-shakes it: an import from the root costs what it
-  uses and no more. Still prefer the narrowest subpath that has the value
-  (`@oppenheimer/shared/schemas/auth`) — it says what the code depends on — and
-  remember that what you *use* lands whole: a schema that reaches the scope
-  catalog brings the catalog. Every `src/<dir>/` and `src/schemas/<x>.schema.ts`
-  is a subpath by pattern; a new one needs no config
-- `@oppenheimer/translations` is imported by subpath only: `apps/web`
-  imports metadata from `@oppenheimer/translations/locales` and catalogs from
-  `@oppenheimer/translations/lazy`; only the default locale is bundled
-<!-- oppenheimer:begin web -->
-- A library that holds module state installs once for `apps/web`: the list
-  is `singletons` in `apps/web/package.json`, and `pnpm check:singletons`
-  fails when the lockfile resolves a listed name to more than one snapshot,
-  or to none
-<!-- oppenheimer:end web -->
-- The web app's critical path is budgeted: `pnpm check:bundle` fails past the
-  number in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately,
-  in its own diff
-- Compression, cache headers and the Content-Security-Policy for the SPA live
-  in `apps/web/nginx.conf`. A new third-party
-  origin goes in `CSP_EXTRA_ORIGINS`; anything the browser must run before
-  React is a file in `public/`, the policy admits no inline script
+`package.json` lists the rest (`check:compiler`, `check:unused`,
+`check:bundle`, `monitoring:up`, …).

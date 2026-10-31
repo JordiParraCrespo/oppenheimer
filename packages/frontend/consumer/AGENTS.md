@@ -31,8 +31,10 @@ and the full "add a module" cookbook are
   `@oppenheimer/frontend-core/react`; export by name from
   `src/react/index.ts` the hooks the app imports. The key factory stays in
   its file — `pnpm check:unused` fails an export nothing outside reads.
-- Data that must not be written to storage → its key prefix in
-  `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`).
+- Nothing is written to storage unless it is listed: plain data (no entity,
+  no `Date`) that is safe to keep in a browser → its key prefix in
+  `CONSUMER_PERSISTED_FEATURES` (`src/react/persistence.ts`), or one read
+  with `meta: PERSIST_META`.
 - Something that is not product logic (every app would need it) → promote it
   to `@oppenheimer/frontend-core` rather than keeping it here.
 

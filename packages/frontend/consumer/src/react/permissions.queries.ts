@@ -6,7 +6,7 @@ import { CONSUMER_CONFIG } from '../config';
 import type { PermissionCatalog } from '../modules/permissions/permission-catalog';
 import { useConsumerApp } from './context';
 
-const permissionsKeys = {
+export const permissionsKeys = {
   all: ['permissions'] as const,
   catalog: () => [...permissionsKeys.all, 'catalog'] as const,
 };
