@@ -3972,6 +3972,10 @@ export type BotTurnResponseDto = {
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
     provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
+     * Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn.
+     */
+    steer: boolean;
+    /**
      * The model it runs on, fixed when it was sent.
      */
     model: string;
@@ -4025,6 +4029,7 @@ export type SendBotMessageRequest = {
     content?: string;
     attachmentIds?: Array<string>;
     timeZone?: string;
+    steer?: boolean;
 };
 
 export type BotGoalResponseDto = {

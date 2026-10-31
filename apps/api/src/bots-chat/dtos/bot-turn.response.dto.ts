@@ -38,6 +38,12 @@ export class BotTurnResponseDto {
   @ApiProperty({ enum: BOT_PROVIDERS })
   provider!: BotProvider;
 
+  @ApiProperty({
+    description:
+      'Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn.',
+  })
+  steer!: boolean;
+
   @ApiProperty({ description: 'The model it runs on, fixed when it was sent.' })
   model!: string;
 

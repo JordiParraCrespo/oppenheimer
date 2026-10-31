@@ -49,7 +49,7 @@ export class SendBotMessageHttpController {
   @ApiOperation({
     summary: 'Send a bot a message',
     description:
-      "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+      "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
   })
   @ApiResponse({ status: 202, type: BotTurnResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -87,6 +87,7 @@ export class SendBotMessageHttpController {
         content: body.content,
         attachmentIds: body.attachmentIds,
         timeZone: body.timeZone ?? null,
+        steer: body.steer,
         // A token's scopes bound what the bot may do for it; a browser session has none.
         credentialScopes: credential ? credential.scopes : null,
       }),

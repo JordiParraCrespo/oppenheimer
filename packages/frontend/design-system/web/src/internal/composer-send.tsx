@@ -14,7 +14,8 @@ import { IconButton } from '../components/icon-button';
  *   `allowEmpty` and no file rides along), while the box is disabled, and
  *   while `sendBlockedReason` says why; Enter submits and Shift+Enter makes
  *   a new line, never mid-composition (an IME). While busy, submitting
- *   stops instead.
+ *   stops instead. With `onAltSubmit`, Alt+Enter is a second way to send
+ *   (a bot's "queue it for after"), under the same rules as send.
  * - `ComposerSendButton`: the round primary button in the foot's corner.
  *   Blocked, it stays focusable (`aria-disabled`, not `disabled`) with the
  *   reason as its description and title, so a keyboard or screen reader
@@ -29,6 +30,7 @@ function useComposerSend({
   attachmentCount = 0,
   onSubmit,
   onStop,
+  onAltSubmit,
 }: {
   value: string;
   busy: boolean;
@@ -38,6 +40,7 @@ function useComposerSend({
   attachmentCount?: number;
   onSubmit: (value: string) => void;
   onStop?: () => void;
+  onAltSubmit?: (value: string) => void;
 }) {
   const blocked = !busy && sendBlockedReason !== undefined;
   const emptyAllowed = allowEmpty && attachmentCount === 0;
@@ -51,6 +54,10 @@ function useComposerSend({
   function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
+      if (event.altKey && onAltSubmit) {
+        if (canSend) onAltSubmit(value);
+        return;
+      }
       submit();
     }
   }

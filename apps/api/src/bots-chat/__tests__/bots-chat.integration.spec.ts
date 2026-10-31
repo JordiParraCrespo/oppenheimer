@@ -74,6 +74,7 @@ import {
   routineSourceKey,
   routineTurn,
 } from '../domain/bot-routine.policy';
+import { BOT_STEER_HELD_POSITION, takesSteer } from '../domain/bot-steer.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
@@ -95,8 +96,9 @@ import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
  * and a turn's history and the summarizer's read start after it to the
  * microsecond; a bot's subscriptions to sessions: one per bot and session,
  * a wake recorded once of two racing ones, gone with the bot, outliving a
- * cleared chat, and one turn per wake however often it is delivered. The
- * schema is the migrations'.
+ * cleared chat, and one turn per wake however often it is delivered; a
+ * steer: taken by the running turn once, moved into it, never with images,
+ * and left queued when Stop got it first. The schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
   let pg: StartedTestContainer;
@@ -289,7 +291,7 @@ describe('bots chat (integration)', () => {
     });
   }
 
-  function sent(bot: BotEntity, content: string) {
+  function sent(bot: BotEntity, content: string, options: { steer?: boolean } = {}) {
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -297,6 +299,7 @@ describe('bots chat (integration)', () => {
       provider: 'glm',
       model: 'glm-5.3',
       effort: null,
+      steer: options.steer ?? false,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
@@ -603,6 +606,81 @@ describe('bots chat (integration)', () => {
     await turns.claim(loaded);
     expect(await turns.requestCancel(loaded, new Date())).toBe(true);
     expect(await turns.isCancelRequested(turn.id)).toBe(true);
+  });
+
+  it('moves a steer into the running turn once, deleting its queued turn, and leaves a message sent to wait', async () => {
+    const bot = await create('Glm Bot');
+    const running = sent(bot, 'What time is it?');
+    await turns.enqueue(running.turn, running.message, null);
+    const claimed = (await turns.findForRun(running.turn.id)).unwrap();
+    claimed.start(new Date());
+    expect(await turns.claim(claimed)).toBe('claimed');
+    const waits = sent(bot, 'And after that?');
+    const steer = sent(bot, 'Use Tokyo time.', { steer: true });
+    expect(await turns.enqueue(waits.turn, waits.message, null)).toBe('waiting');
+    expect(await turns.enqueue(steer.turn, steer.message, null)).toBe('waiting');
+    const takes = (waiting: BotTurnEntity) => takesSteer(claimed, waiting);
+
+    // Two asks race: the steer is taken by one of them only.
+    const [one, two] = await Promise.all([
+      turns.takeSteers(claimed, takes),
+      turns.takeSteers(claimed, takes),
+    ]);
+    expect([...one, ...two]).toEqual([
+      { turnId: steer.turn.id, messageId: steer.message.id, text: 'Use Tokyo time.' },
+    ]);
+    expect((await turns.findForRun(steer.turn.id)).isNone()).toBe(true);
+    expect((await turns.findForRun(waits.turn.id)).unwrap().status).toBe('queued');
+    const [held]: { turnId: string; position: number }[] = await dataSource.query(
+      `SELECT "turnId", position FROM bot_message WHERE id = $1`,
+      [steer.message.id],
+    );
+    expect(held).toEqual({ turnId: claimed.id, position: BOT_STEER_HELD_POSITION });
+
+    // Put where the turn delivered it: the chat then reads it in that place.
+    const line = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: claimed.id,
+      role: 'assistant',
+      content: 'Checking.',
+      steps: [],
+      position: 1,
+    });
+    await messages.insert(line);
+    await messages.placeSteer(claimed, { messageId: steer.message.id, position: 2 }, new Date());
+    const chat = await messages.findConversation(scope(), bot.id, 10);
+    expect(chat.map((message) => [message.turnId, message.content])).toEqual([
+      [claimed.id, 'What time is it?'],
+      [waits.turn.id, 'And after that?'],
+      [claimed.id, 'Checking.'],
+      [claimed.id, 'Use Tokyo time.'],
+    ]);
+  });
+
+  it('takes no steer Stop cancelled first, nor one with images', async () => {
+    const bot = await create('Glm Bot');
+    const running = sent(bot, 'Go');
+    await turns.enqueue(running.turn, running.message, null);
+    const claimed = (await turns.findForRun(running.turn.id)).unwrap();
+    claimed.start(new Date());
+    await turns.claim(claimed);
+    const stopped = sent(bot, 'Never mind', { steer: true });
+    await turns.enqueue(stopped.turn, stopped.message, null);
+    const cancelled = (await turns.findForRun(stopped.turn.id)).unwrap();
+    cancelled.end('cancelled', new Date());
+    expect(await turns.finish(cancelled, null)).toBe(true);
+    const pictured = sent(bot, 'Like this', { steer: true });
+    await turns.enqueue(pictured.turn, pictured.message, null);
+    await dataSource.query(`UPDATE bot_message SET attachments = $2::jsonb WHERE id = $1`, [
+      pictured.message.id,
+      JSON.stringify([{ id: randomUUID(), mimeType: 'image/png', sizeBytes: 1, name: 'x' }]),
+    ]);
+
+    expect(await turns.takeSteers(claimed, (waiting) => takesSteer(claimed, waiting))).toEqual([]);
+    expect((await turns.findForRun(stopped.turn.id)).unwrap().status).toBe('cancelled');
+    // Left as the turn it is: it runs next, with its images.
+    expect((await turns.findForRun(pictured.turn.id)).unwrap().status).toBe('queued');
   });
 
   it('deletes a bot with its turns and messages', async () => {

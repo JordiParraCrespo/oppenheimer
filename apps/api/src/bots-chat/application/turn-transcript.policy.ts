@@ -25,6 +25,8 @@ export type TranscriptWrite =
   | { kind: 'insert'; message: BotMessageEntity }
   | { kind: 'steps'; message: BotMessageEntity }
   | { kind: 'text'; text: string }
+  /** A message the person steered in, put after the call whose result carried it to the model. */
+  | { kind: 'steer'; messageId: string; position: number }
   /** The engine waits to try a refused call again; passed on, never stored. */
   | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' };
 
@@ -49,7 +51,9 @@ export interface TranscriptOutcome {
  * finish. The images a `show_image` call stored are a message of the bot's
  * of their own, after the line, which the next call does not join. Text as
  * it streams is only passed on. Your message is position 0,
- * so the bot's start at 1.
+ * so the bot's start at 1. A message you steered in while it worked takes
+ * the next position once the call that delivered it has ended, and the next
+ * call opens a line of its own after it.
  */
 export class TurnTranscript {
   private position = 1;
@@ -82,6 +86,13 @@ export class TurnTranscript {
         return this.finished(event);
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
+      case 'steered':
+        this.activity = null;
+        return event.steers.map((steer) => ({
+          kind: 'steer' as const,
+          messageId: steer.id,
+          position: this.position++,
+        }));
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;

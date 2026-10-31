@@ -39,6 +39,8 @@
     "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
+    "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
+    "steered": "Steered in while it worked",
     "send": "Send",
     "stop": "Stop",
     "noKey": "{{provider}} has no key in this workspace yet. Add one to talk to this bot.",

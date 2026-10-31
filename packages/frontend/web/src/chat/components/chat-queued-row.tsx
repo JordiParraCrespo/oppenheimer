@@ -1,5 +1,11 @@
 import { ComposerStackRow, IconButton } from '@oppenheimer/design-system-web';
-import { CornerDownLeft, ListEnd, Pencil, X } from '@oppenheimer/design-system-web/icons';
+import {
+  CornerDownLeft,
+  CornerDownRight,
+  ListEnd,
+  Pencil,
+  X,
+} from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -7,16 +13,22 @@ import { useTranslation } from 'react-i18next';
  * for its turn: its words in one line, then the three things to do with it
  * — send it now; take it back into the field to edit; or drop it. What "now"
  * means is the caller's (into the turn under way, or in place of it), and a
- * caller that cannot offer one of the first two leaves it out.
+ * caller that cannot offer one of the first two leaves it out. A `steer`
+ * waits to go into the turn under way rather than after it (Codex's pending
+ * steers over its composer), and says so in its label, whose title says
+ * when it goes in.
  */
 export function ChatQueuedRow({
   text,
+  steer = false,
   onSendNow,
   onEdit,
   onRemove,
 }: {
   /** The message, as it will be sent. */
   text: string;
+  /** Waiting to go into the turn under way at its next tool call, not after it. */
+  steer?: boolean;
   onSendNow?: () => void;
   onEdit?: () => void;
   onRemove: () => void;
@@ -24,7 +36,7 @@ export function ChatQueuedRow({
   const { t } = useTranslation();
   return (
     <ComposerStackRow
-      icon={<ListEnd />}
+      icon={steer ? <CornerDownRight /> : <ListEnd />}
       muted
       actions={
         <>
@@ -59,7 +71,12 @@ export function ChatQueuedRow({
         </>
       }
     >
-      <strong>{t('common.chat.queue.queued')}</strong> <span title={text}>{text}</span>
+      {steer ? (
+        <strong title={t('common.chat.queue.steerHint')}>{t('common.chat.queue.steer')}</strong>
+      ) : (
+        <strong>{t('common.chat.queue.queued')}</strong>
+      )}{' '}
+      <span title={text}>{text}</span>
     </ComposerStackRow>
   );
 }

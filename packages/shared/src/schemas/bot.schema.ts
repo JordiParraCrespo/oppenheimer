@@ -810,6 +810,13 @@ export const sendBotMessageSchema = z
      * the time there, so "tomorrow at 9" means the sender's 9. UTC when absent.
      */
     timeZone: z.string().min(1).max(64).refine(isValidTimeZone).optional(),
+    /**
+     * Steer the turn under way (Codex's `turn/steer`): the running turn takes
+     * the message at its next tool call, rather than it waiting for its own
+     * turn. One that turn never reaches runs as a turn of its own, as does a
+     * message that carries images, which the running turn would not read.
+     */
+    steer: z.boolean().default(false),
   })
   .refine((body) => body.content.length > 0 || body.attachmentIds.length > 0, {
     path: ['content'],

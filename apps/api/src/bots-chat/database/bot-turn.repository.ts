@@ -12,13 +12,18 @@ import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import { BOT_STEER_HELD_POSITION } from '../domain/bot-steer.policy';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import { claimContinuationWithin, owesGoalWithin } from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
-import type { BotPeerEnqueueOutcome, BotTurnRepositoryPort } from './bot-turn.repository.port';
+import type {
+  BotPeerEnqueueOutcome,
+  BotSteerTaken,
+  BotTurnRepositoryPort,
+} from './bot-turn.repository.port';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
@@ -355,6 +360,57 @@ export class BotTurnRepository
         });
       }
       return true;
+    });
+  }
+
+  async takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]> {
+    // Asked at every tool call: a read without the lock first, since most find none.
+    // IDX_bot_turn_active.
+    const waiting: unknown[] = await this.repository.query(
+      `SELECT 1 FROM bot_turn
+        WHERE "organizationId" = $1 AND "botId" = $2 AND "status" = 'queued' AND "steer"
+        LIMIT 1`,
+      [running.organizationId, running.botId],
+    );
+    if (waiting.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // The lock a send, a Stop of a queued turn and a turn's end take.
+      if (!(await lockBot(manager, running))) return [];
+      // IDX_bot_turn_active: a bot's queued turns are a handful.
+      const records = await manager
+        .getRepository(BotTurnOrmEntity)
+        .createQueryBuilder('turn')
+        .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+          organizationId: running.organizationId,
+          botId: running.botId,
+        })
+        .andWhere(`turn.status = 'queued' AND turn.steer`)
+        .orderBy('turn.createdAt', 'ASC')
+        .addOrderBy('turn.id', 'ASC')
+        .getMany();
+      const taken: BotSteerTaken[] = [];
+      for (const waiting of records.map((record) => this.mapper.toDomain(record))) {
+        if (!takes(waiting)) continue;
+        // IDX_bot_message_turn. An UPDATE answers `[rows, affected]`.
+        const [moved]: [{ id: string; content: string }[], number] = await manager.query(
+          `UPDATE bot_message SET "turnId" = $3, "position" = $4
+            WHERE "organizationId" = $1 AND "turnId" = $2 AND "role" = 'user'
+              AND "attachments" = '[]'::jsonb
+            RETURNING id, content`,
+          [running.organizationId, waiting.id, running.id, BOT_STEER_HELD_POSITION],
+        );
+        const message = moved[0];
+        if (!message) continue;
+        await manager.query(
+          `DELETE FROM bot_turn WHERE "organizationId" = $1 AND id = $2 AND "status" = 'queued'`,
+          [running.organizationId, waiting.id],
+        );
+        taken.push({ turnId: waiting.id, messageId: message.id, text: message.content });
+      }
+      return taken;
     });
   }
 

@@ -12,6 +12,14 @@ export type BotPeerEnqueueOutcome =
   | { outcome: 'chain_gone' }
   | { outcome: 'refused'; refusal: string };
 
+/** A steer's message, now the running turn's (`takeSteers`). */
+export interface BotSteerTaken {
+  /** The queued turn it opened, now deleted. */
+  turnId: string;
+  messageId: string;
+  text: string;
+}
+
 export interface BotTurnRepositoryPort {
   /**
    * Stores a sent message as a queued turn and its first message, under a
@@ -113,6 +121,19 @@ export interface BotTurnRepositoryPort {
    * on the asker. Whether this write won.
    */
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean>;
+
+  /**
+   * Steer (`BotSteerPolicy`): under the bot's lock, every waiting steer of
+   * the bot that `takes` allows, oldest first, moved into `running`: its
+   * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
+   * turn deleted, in one transaction, so a Stop, an edit or the worker that
+   * would run it sees it either waiting or gone. A steer whose message
+   * carries images stays queued: the running turn would not read them.
+   */
+  takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]>;
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;

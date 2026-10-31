@@ -5,6 +5,7 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
@@ -27,11 +28,10 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
- * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
- * what it needs, runs the engine, stores and streams what it writes, then
- * records how it ended, makes the bot's next queued turn due and asks whether
- * the conversation needs summarizing. A turn found running was a worker that
- * died under it, and fails rather than running twice.
+ * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), runs the
+ * engine on what it needs, stores and streams what it writes (steers included),
+ * records how it ended, makes the next queued turn due and asks whether to
+ * summarize. A turn found running lost its worker, and fails rather than rerun.
  */
 @CommandHandler(RunBotTurnCommand)
 export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnCommand, void> {
@@ -45,6 +45,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly context: BotTurnContextResolver,
     private readonly cancelWatch: TurnCancelWatchFactory,
     private readonly summaries: BotSummaryTriggerPolicy,
+    private readonly steering: BotSteeringFactory,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -80,7 +81,9 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
       const context = await this.context.resolve(turn, new Date());
       const transcript = new TurnTranscript(turn);
-      for await (const event of this.engine.run({ ...context, signal: watch.signal, scratchDir })) {
+      const steering = this.steering.steering(turn);
+      const signal = watch.signal;
+      for await (const event of this.engine.run({ ...context, signal, scratchDir, steering })) {
         for (const write of transcript.apply(event)) await this.apply(turn, write);
       }
       transcript.endTurn(new Date(), watch.interruption);
@@ -102,12 +105,10 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       return;
     }
     if (write.kind === 'insert') await this.messages.insert(write.message);
-    else await this.messages.saveSteps(write.message);
-    await this.stream.publish(turn.botId, {
-      type: 'message',
-      turnId: turn.id,
-      messageId: write.message.id,
-    });
+    else if (write.kind === 'steps') await this.messages.saveSteps(write.message);
+    else await this.messages.placeSteer(turn, write, new Date());
+    const messageId = write.kind === 'steer' ? write.messageId : write.message.id;
+    await this.stream.publish(turn.botId, { type: 'message', turnId: turn.id, messageId });
   }
 
   private async close(turn: BotTurnEntity, correlationId: string): Promise<void> {

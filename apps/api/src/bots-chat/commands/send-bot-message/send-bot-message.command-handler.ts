@@ -24,7 +24,9 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * A message to a bot (`25-bots.md` §2): a queued turn on the bot's provider,
  * model and effort as they are now, with your message (its words, its images
  * or both) as its first. It runs
- * when the bot's turn before it ends. A provider with no key is refused here,
+ * when the bot's turn before it ends, unless it is a steer the running turn
+ * takes first (`BotSteerPolicy`): words alone steer, since the running turn
+ * would not read images. A provider with no key is refused here,
  * where the person can fix it, rather than failing in the worker. A card the
  * bot is waiting on expires: the person moved on.
  */
@@ -50,6 +52,7 @@ export class SendBotMessageCommandHandler
     attachmentIds,
     timeZone,
     credentialScopes,
+    steer,
     metadata,
   }: SendBotMessageCommand): Promise<string> {
     const bot = await this.lookup.bot(scope, botId);
@@ -70,6 +73,7 @@ export class SendBotMessageCommandHandler
       effort: bot.effort,
       timeZone,
       credentialScopes,
+      steer: steer && attachments.length === 0,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,

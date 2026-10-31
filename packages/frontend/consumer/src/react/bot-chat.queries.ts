@@ -206,6 +206,8 @@ export interface SendBotMessageVariables {
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
   attachmentIds?: readonly string[];
+  /** Into the turn under way, at its next tool call, rather than after it. */
+  steer?: boolean;
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
@@ -215,8 +217,8 @@ export function useSendBotMessage(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, content, attachmentIds }: SendBotMessageVariables) =>
-      app.bots.sendMessage(id, content, attachmentIds),
+    mutationFn: ({ id, content, attachmentIds, steer }: SendBotMessageVariables) =>
+      app.bots.sendMessage(id, content, attachmentIds, steer),
     ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
   });
 }
