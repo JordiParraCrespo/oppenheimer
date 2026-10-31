@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_SKILL_BODY_MAX,
   BOT_SKILL_DESCRIPTION_MAX,
@@ -13,7 +12,6 @@ import { CreateBotSkillCommand } from '../../bots/commands/create-bot-skill/crea
 import { DeleteBotSkillCommand } from '../../bots/commands/delete-bot-skill/delete-bot-skill.command';
 import { UpdateBotSkillCommand } from '../../bots/commands/update-bot-skill/update-bot-skill.command';
 import type { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
-import { BotErrors } from '../../bots/domain/bots.errors';
 import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-skill.query';
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
 import { describeSkillUse, skillBlock } from '../domain/bot-skill.policy';
@@ -107,12 +105,7 @@ export class BotSkillToolsFactory implements BotToolArea {
           userInvocable: input.user_invocable,
           modelInvocable: input.model_invocable,
         };
-        const existing = await this.skill(context, input.name).catch((error: unknown) => {
-          if (error instanceof AppError && error.code === BotErrors.SKILL_NOT_FOUND.code) {
-            return null;
-          }
-          throw error;
-        });
+        const existing = (await this.skills(context)).find((skill) => skill.name === input.name);
         if (existing) {
           await this.commandBus.execute(
             new UpdateBotSkillCommand({
@@ -159,12 +152,17 @@ export class BotSkillToolsFactory implements BotToolArea {
             skillId: skill.id,
           }),
         );
-        const left = await this.queryBus.execute<FindBotSkillsQuery, BotSkillEntity[]>(
-          new FindBotSkillsQuery({ scope: context.owner, botId: context.botId }),
-        );
+        const left = await this.skills(context);
         return `Deleted skill "${skill.name}"; you have ${left.length} left.`;
       },
     });
+  }
+
+  /** Every skill of the bot's, at most `BOT_SKILLS_MAX`: what "is there one by that name" reads. */
+  private skills(context: BotToolCallContext): Promise<BotSkillEntity[]> {
+    return this.queryBus.execute<FindBotSkillsQuery, BotSkillEntity[]>(
+      new FindBotSkillsQuery({ scope: context.owner, botId: context.botId }),
+    );
   }
 
   private skill(context: BotToolCallContext, name: string): Promise<BotSkillEntity> {

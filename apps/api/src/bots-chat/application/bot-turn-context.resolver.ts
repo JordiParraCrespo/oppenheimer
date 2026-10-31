@@ -28,11 +28,7 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
-import {
-  invokedSkill,
-  skillInvocationPrompt,
-  unknownSkillPrompt,
-} from '../domain/bot-skill.policy';
+import { composeTurnMessage } from '../domain/bot-skill.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
@@ -155,14 +151,6 @@ export class BotTurnContextResolver {
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
     const inMind = memoryInMind(facts, BOT_MEMORY_PROFILE_IN_PROMPT_MAX);
-    // A person's `/<name>` runs that skill: its body opens the message.
-    const skill = command ? invokedSkill(command, skills) : null;
-    const asked =
-      command && skill
-        ? skillInvocationPrompt(skill, command, prompt)
-        : command
-          ? unknownSkillPrompt(command, skills, prompt)
-          : prompt;
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
     return {
@@ -194,7 +182,7 @@ export class BotTurnContextResolver {
           hosts,
           lastContext,
         }),
-        asked,
+        composeTurnMessage(command, skills, prompt),
       ),
       images,
       tools,

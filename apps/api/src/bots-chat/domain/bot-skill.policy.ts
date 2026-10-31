@@ -86,6 +86,24 @@ export function unknownSkillPrompt(
 ${prompt}`;
 }
 
+/**
+ * The turn's message, as the person's words become it (`25-bots.md` §4.1):
+ * the skill their `/<name>` runs before them, a note when the command names
+ * no skill they can run, or the words alone when they typed no command. The
+ * one place a slash command becomes the turn's message.
+ */
+export function composeTurnMessage(
+  command: BotSlashCommand | null,
+  skills: readonly BotSkillView[],
+  prompt: string,
+): string {
+  if (!command) return prompt;
+  const skill = invokedSkill(command, skills);
+  return skill
+    ? skillInvocationPrompt(skill, command, prompt)
+    : unknownSkillPrompt(command, skills, prompt);
+}
+
 /** The skill a slash command runs: one of the bot's, by that name, that the person may run. */
 export function invokedSkill<Skill extends BotSkillView>(
   command: BotSlashCommand,
