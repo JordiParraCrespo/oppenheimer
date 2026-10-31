@@ -111,8 +111,14 @@ export const incidentLive: BotRecording = {
     },
     { type: 'ready' },
     { type: 'mark', name: 'opened' },
-    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'The deploy at 02:10 ' } },
-    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'failed its health check.' } },
+    {
+      type: 'bot',
+      event: { type: 'text', turnId: 't9', block: 0, seq: 1, text: 'The deploy at 02:10 ' },
+    },
+    {
+      type: 'bot',
+      event: { type: 'text', turnId: 't9', block: 0, seq: 2, text: 'failed its health check.' },
+    },
     { type: 'mark', name: 'writing' },
     // The block ends and is stored; the stream has already moved on.
     {
@@ -172,9 +178,21 @@ export const incidentLive: BotRecording = {
     { type: 'bot', event: { type: 'message', turnId: 't9', messageId: 'm3' } },
     { type: 'bot', event: { type: 'retrying', turnId: 't9', reason: 'rate_limit' } },
     { type: 'mark', name: 'waiting' },
-    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'It ran out of memory, ' } },
+    {
+      type: 'bot',
+      event: { type: 'text', turnId: 't9', block: 1, seq: 3, text: 'It ran out of memory, ' },
+    },
     { type: 'mark', name: 'resumed' },
-    { type: 'bot', event: { type: 'text', turnId: 't9', text: 'and was rolled back at 02:20.' } },
+    {
+      type: 'bot',
+      event: {
+        type: 'text',
+        turnId: 't9',
+        block: 1,
+        seq: 4,
+        text: 'and was rolled back at 02:20.',
+      },
+    },
     {
       type: 'read',
       conversation: {

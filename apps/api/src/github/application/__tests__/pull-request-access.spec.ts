@@ -8,7 +8,6 @@ import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
 import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
-import { requireApp } from '../app-address.policy';
 import { GithubAccessResolver } from '../github-access.resolver';
 import type { GithubTokenResolver } from '../github-token.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
@@ -700,18 +699,6 @@ describe('a repository read through the person’s own token', () => {
     await reads.pullRequest({ ...SCOPE, userId: 'bruno' } as AccessScope, address);
 
     expect(listFiles).toHaveBeenCalledTimes(2);
-  });
-
-  // A review session clones through the App, which a token repository has none of.
-  it('gives no installation to start a session on, with GITHUB_022', () => {
-    expect(() => requireApp(address)).toThrow(
-      expect.objectContaining({
-        code: 'GITHUB_022',
-        detail: 'Repository 99 is read through your own GitHub token.',
-      }),
-    );
-    const app = { ...address, kind: 'installation' as const, installationId: 'inst' };
-    expect(requireApp(app)).toBe(app);
   });
 
   it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {

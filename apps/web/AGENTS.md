@@ -110,6 +110,10 @@ recovery path for an account that ended up with no workspace. Only
   while the read is pending: the page jumps, or says "none", before the data
   lands.
 - Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
+- A spec that redefines `window.location` or reaches for a Node global jsdom
+  lacks (`ReadableStream`): the unit tests run on the `vmThreads` pool, where
+  neither works. Mock the kit's `leaveFor`; a spec with no DOM runs under
+  `// @vitest-environment node`.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
 what the markup looks like is [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md).

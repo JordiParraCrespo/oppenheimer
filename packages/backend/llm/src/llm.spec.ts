@@ -157,7 +157,10 @@ describe('OpenAiCompatibleLlmService', () => {
   });
 
   it('abandons a call that runs past its timeout', async () => {
-    reply.delayMs = 500;
+    // The reply comes far later than the timeout, so "did not wait for it" is
+    // the bound: one tied to the machine's speed fails on a loaded one (the
+    // CI jobs run side by side).
+    reply.delayMs = 3_000;
     const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
 
     const started = Date.now();
@@ -166,7 +169,7 @@ describe('OpenAiCompatibleLlmService', () => {
     );
 
     expect(error.code).toBe('timeout');
-    expect(Date.now() - started).toBeLessThan(400);
+    expect(Date.now() - started).toBeLessThan(reply.delayMs / 2);
   });
 
   it('falls back to the configured timeout when a request sets none', async () => {

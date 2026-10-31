@@ -23,7 +23,9 @@ to other pull requests or to later sessions.
 - Keep to what was asked. Anything else you notice goes in the pull request
   description as a follow-up, not into the diff.
 - Follow the rules and docs that govern the code you touch, as for any change.
-- Run the `deslop` skill over the branch diff.
+- Take the steps in the order `.agents/skills/steward/SKILL.md` writes
+  down ("The order"): quick check, `deslop` over the branch diff, commit,
+  screens, `pnpm ci:local`, push.
 
 ## 2. Drive the pull request
 

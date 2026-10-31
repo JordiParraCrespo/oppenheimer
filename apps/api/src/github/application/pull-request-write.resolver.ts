@@ -11,7 +11,7 @@ import type {
   ReviewSubmission,
   WorkspaceRepository,
 } from './pull-request-access.port';
-import { openListingKeys } from './pull-request-snapshot.resolver';
+import { openListingKeys } from './pull-request-cache.policy';
 import type { PullRequestWritePort } from './pull-request-write.port';
 
 /**

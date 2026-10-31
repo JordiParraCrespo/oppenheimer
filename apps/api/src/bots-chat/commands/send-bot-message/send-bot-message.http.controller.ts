@@ -26,6 +26,7 @@ import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { BotTurnResponseDto } from '../../dtos/bot-turn.response.dto';
 import { FindBotTurnQuery } from '../../queries/find-bot-turn/find-bot-turn.query';
 import { SendBotMessageCommand } from './send-bot-message.command';
+import type { SentBotMessage } from './send-bot-message.command-handler';
 import { SendBotMessageRequest } from './send-bot-message.request.dto';
 
 @ApiTags('Bots')
@@ -49,7 +50,7 @@ export class SendBotMessageHttpController {
   @ApiOperation({
     summary: 'Send a bot a message',
     description:
-      "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+      "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
   })
   @ApiResponse({ status: 202, type: BotTurnResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -80,19 +81,21 @@ export class SendBotMessageHttpController {
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Body() body: SendBotMessageRequest,
   ): Promise<BotTurnResponseDto> {
-    const turnId = await this.commandBus.execute<SendBotMessageCommand, string>(
+    const sent = await this.commandBus.execute<SendBotMessageCommand, SentBotMessage>(
       new SendBotMessageCommand({
         scope,
         botId,
         content: body.content,
         attachmentIds: body.attachmentIds,
         timeZone: body.timeZone ?? null,
+        steer: body.steer,
         // A token's scopes bound what the bot may do for it; a browser session has none.
         credentialScopes: credential ? credential.scopes : null,
       }),
     );
     const turn = await this.queryBus.execute<FindBotTurnQuery, BotTurnEntity>(
-      new FindBotTurnQuery(scope, botId, turnId),
+      // A steer the running turn already took answers as that turn.
+      new FindBotTurnQuery(scope, botId, sent.turnId, sent.messageId),
     );
     return this.mapper.toResponse(turn);
   }

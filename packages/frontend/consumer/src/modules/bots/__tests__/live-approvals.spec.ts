@@ -170,7 +170,9 @@ describe('BotLiveApprovals', () => {
 
   it('reads a card raised mid-line once a stored message ends the line, and leaves text and messages to the caller', () => {
     const { actions, approvals } = live();
-    expect(approvals.see({ type: 'text', turnId: 't1', text: 'Half a' })).toBe(false);
+    expect(approvals.see({ type: 'text', turnId: 't1', block: 0, seq: 1, text: 'Half a' })).toBe(
+      false,
+    );
     expect(approvals.see({ type: 'approval', approvalId: 'a1', status: 'pending' })).toBe(true);
     expect(actions.readCards).not.toHaveBeenCalled();
     expect(approvals.see({ type: 'message', turnId: 't1', messageId: 'm1' })).toBe(false);
@@ -181,7 +183,7 @@ describe('BotLiveApprovals', () => {
     const { actions, approvals } = live();
     approvals.see({ type: 'approval', approvalId: 'a1', status: 'approved' });
     expect(actions.readCards).toHaveBeenCalledTimes(1);
-    approvals.see({ type: 'text', turnId: 't1', text: 'Half' });
+    approvals.see({ type: 'text', turnId: 't1', block: 0, seq: 1, text: 'Half' });
     approvals.see({ type: 'approval', approvalId: 'a2', status: 'pending' });
     approvals.dispose();
     vi.advanceTimersByTime(APPROVAL_HOLD_MAX_MS);

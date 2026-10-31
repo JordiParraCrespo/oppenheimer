@@ -101,7 +101,11 @@ export class ClaudeBotEngine extends BotEngine {
     };
     const made = new ToolCallData();
     const translator = new ClaudeEventTranslator(made);
-    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey }, made);
+    const toolServer = createToolServer(
+      request.tools,
+      { signal, apiKey: request.apiKey, steering: request.steering },
+      made,
+    );
     try {
       // Loaded on the first turn, so importing the package starts nothing.
       const { query } = await import('@anthropic-ai/claude-agent-sdk');

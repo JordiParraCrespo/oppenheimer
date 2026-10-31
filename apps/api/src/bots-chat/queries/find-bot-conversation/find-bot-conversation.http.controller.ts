@@ -61,6 +61,7 @@ export class FindBotConversationHttpController {
       messages: conversation.messages.map((message) => this.messages.toResponse(message)),
       turns: conversation.turns.map((turn) => this.turns.toResponse(turn)),
       messageCount: conversation.messageCount,
+      storedTextBlocks: Object.fromEntries(conversation.storedTextBlocks),
     };
   }
 }

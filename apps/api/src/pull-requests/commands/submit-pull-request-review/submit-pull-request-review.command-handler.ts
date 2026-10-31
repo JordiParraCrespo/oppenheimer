@@ -1,10 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { requireApp } from '../../../github/application/app-address.policy';
 import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
 import { GithubErrors } from '../../../github/domain/github.errors';
 import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
+import { requireApp } from '../../application/app-address.policy';
 import { SubmitPullRequestReviewCommand } from './submit-pull-request-review.command';
 
 const EVENTS = {

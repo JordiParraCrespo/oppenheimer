@@ -1,3 +1,5 @@
+import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
+import { GithubErrors } from './github.errors';
 import type {
   InstallationAddress,
   RepositoryAddress,
@@ -32,4 +34,27 @@ export function isInstallationAddress<T extends RepositoryAddress>(
   address: T,
 ): address is Extract<T, InstallationAddress> {
   return address.kind === 'installation';
+}
+
+/** Why an address is not one the App acts on: the catalog entry and detail to raise. */
+export interface AppAddressRefusal {
+  kind: 'refused';
+  error: ErrorDefinition;
+  detail: string;
+}
+
+/**
+ * The address narrowed to the App, for what only the App can do (writes in
+ * the caller's name, a session that clones), or the refusal for one read
+ * through a token (§6.2), which the caller raises as `GITHUB_022`.
+ */
+export function appAddressOf<T extends RepositoryAddress>(
+  address: T,
+): Extract<T, InstallationAddress> | AppAddressRefusal {
+  if (isInstallationAddress(address)) return address;
+  return {
+    kind: 'refused',
+    error: GithubErrors.READ_ONLY_REPOSITORY,
+    detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
+  };
 }

@@ -12,6 +12,14 @@ export type BotPeerEnqueueOutcome =
   | { outcome: 'chain_gone' }
   | { outcome: 'refused'; refusal: string };
 
+/** A steer's message, now the running turn's (`takeSteers`). */
+export interface BotSteerTaken {
+  /** The queued turn it opened, now deleted. */
+  turnId: string;
+  messageId: string;
+  text: string;
+}
+
 export interface BotTurnRepositoryPort {
   /**
    * Stores a sent message as a queued turn and its first message, under a
@@ -78,6 +86,8 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'>;
 
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The turn that holds a message now: a steer's is the running turn that took it. */
+  findHolding(scope: AccessScope, botId: string, messageId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
   /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
@@ -113,6 +123,21 @@ export interface BotTurnRepositoryPort {
    * on the asker. Whether this write won.
    */
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean>;
+
+  /**
+   * Steer (`BotSteerPolicy`): under the bot's lock, every waiting steer of
+   * the bot that `takes` allows, oldest first, moved into `running`: its
+   * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
+   * turn deleted, in one transaction, so a Stop, an edit or the worker that
+   * would run it sees it either waiting or gone. The message becomes the
+   * running turn's newest, as of the take, until the transcript places it
+   * where the turn delivered it. A steer whose message carries images stays
+   * queued: the running turn would not read them.
+   */
+  takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]>;
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;

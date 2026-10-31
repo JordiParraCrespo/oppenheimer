@@ -67,19 +67,20 @@ const ChatBatchMaxEntries = 256
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
-	CapabilitySessionImage        = "session.image"
-	CapabilitySessionCreateImages = "session.create.images"
-	CapabilitySessionFiles        = "session.files"
-	CapabilityRepositoryPrepare   = "repository.prepare"
-	CapabilityAttachmentDirect    = "attachment.direct"
-	CapabilitySessionFolder       = "session.folder"
-	CapabilityFsList              = "fs.list"
-	CapabilityAttachmentChat      = "attachment.chat"
-	CapabilityDeviceScreen        = "device.screen"
-	CapabilityPortForward         = "port.forward"
-	CapabilitySessionCloud        = "session.cloud"
-	CapabilitySessionCloudCodex   = "session.cloud.codex"
-	CapabilitySessionWatch        = "session.watch"
+	CapabilitySessionImage          = "session.image"
+	CapabilitySessionCreateImages   = "session.create.images"
+	CapabilitySessionFiles          = "session.files"
+	CapabilityRepositoryPrepare     = "repository.prepare"
+	CapabilityAttachmentDirect      = "attachment.direct"
+	CapabilityAttachmentDirectProof = "attachment.direct.proof"
+	CapabilitySessionFolder         = "session.folder"
+	CapabilityFsList                = "fs.list"
+	CapabilityAttachmentChat        = "attachment.chat"
+	CapabilityDeviceScreen          = "device.screen"
+	CapabilityPortForward           = "port.forward"
+	CapabilitySessionCloud          = "session.cloud"
+	CapabilitySessionCloudCodex     = "session.cloud.codex"
+	CapabilitySessionWatch          = "session.watch"
 )
 
 // The `type` of every message on the link.

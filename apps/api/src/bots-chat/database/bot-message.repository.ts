@@ -67,6 +67,24 @@ export class BotMessageRepository
       .execute();
   }
 
+  async placeSteer(
+    turn: { organizationId: string; id: string },
+    steer: { messageId: string; position: number },
+    at: Date,
+  ): Promise<void> {
+    // PK_bot_message.
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ position: steer.position, createdAt: at })
+      .where('id = :messageId AND "organizationId" = :organizationId AND "turnId" = :turnId', {
+        messageId: steer.messageId,
+        organizationId: turn.organizationId,
+        turnId: turn.id,
+      })
+      .execute();
+  }
+
   async findConversation(
     scope: AccessScope,
     botId: string,
@@ -117,6 +135,23 @@ export class BotMessageRepository
       .andWhere('message.botId = :botId', { botId })
       .andWhere(`message.role <> 'activity'`)
       .getCount();
+  }
+
+  async countTextBlocks(
+    scope: AccessScope,
+    turnIds: readonly string[],
+  ): Promise<Map<string, number>> {
+    if (turnIds.length === 0) return new Map();
+    // IDX_bot_message_turn.
+    const rows: { turnId: string; count: string }[] = await this.scopedQuery(scope)
+      .select('message.turnId', 'turnId')
+      .addSelect('COUNT(*)', 'count')
+      .andWhere('message.turnId IN (:...turnIds)', { turnIds })
+      .andWhere(`message.role = 'assistant'`)
+      .andWhere(`message.content <> ''`)
+      .groupBy('message.turnId')
+      .getRawMany();
+    return new Map(rows.map((row) => [row.turnId, Number(row.count)]));
   }
 
   async findExportPage(

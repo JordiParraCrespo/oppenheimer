@@ -10,12 +10,9 @@ import type {
 } from '../infrastructure/github-pulls.port';
 import { GithubAccessResolver } from './github-access.resolver';
 import type { PullRequestAddress, PullRequestSnapshot } from './pull-request-access.port';
+import { OPEN_TTL_SECONDS, snapshotKey } from './pull-request-cache.policy';
 import type { PullRequestReadPort } from './pull-request-read.port';
-import {
-  OPEN_TTL_SECONDS,
-  PullRequestSnapshotResolver,
-  snapshotKey,
-} from './pull-request-snapshot.resolver';
+import { PullRequestSnapshotResolver } from './pull-request-snapshot.resolver';
 
 /**
  * One pull request's screen, read live through the credential

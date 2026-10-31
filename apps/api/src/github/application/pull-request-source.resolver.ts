@@ -18,7 +18,7 @@ import {
   OPEN_TTL_SECONDS,
   openListingKeys,
   refusalOf,
-} from './pull-request-snapshot.resolver';
+} from './pull-request-cache.policy';
 
 /** A read GitHub refused, with the refusal it gave. */
 export type Refused = { ok: false; refusal: GithubRefusal };
@@ -96,15 +96,11 @@ export class PullRequestSourceResolver {
         },
         error instanceof Error ? error.stack : String(error),
       );
-      const listing = await this.listing(scope, repository, 'open', OPEN_TTL_SECONDS);
+      // With the credential already resolved: asking for it again is a second
+      // lookup the fallback does not need.
+      const listing = await this.listWith(credential, repository, 'open', OPEN_TTL_SECONDS);
       if (!listing.ok) return listing;
-      return {
-        ok: true,
-        credential: listing.credential,
-        whole: [],
-        unfilled: listing.pulls,
-        known: new Map(),
-      };
+      return { ok: true, credential, whole: [], unfilled: listing.pulls, known: new Map() };
     }
   }
 
@@ -117,14 +113,30 @@ export class PullRequestSourceResolver {
   ): Promise<
     { ok: true; credential: GithubCredential; pulls: GithubPullRequestSummary[] } | Refused
   > {
+    let credential: GithubCredential;
     try {
-      const credential = await this.access.readCredential(scope, repository);
+      credential = await this.access.readCredential(scope, repository);
+    } catch (error) {
+      return { ok: false, refusal: refusalOf(error) };
+    }
+    const listing = await this.listWith(credential, repository, state, ttlSeconds);
+    return listing.ok ? { ok: true, credential, pulls: listing.pulls } : listing;
+  }
+
+  /** The same with a credential already resolved for the repository. */
+  private async listWith(
+    credential: GithubCredential,
+    repository: WorkspaceRepository,
+    state: 'open' | 'closed',
+    ttlSeconds: number,
+  ): Promise<{ ok: true; pulls: GithubPullRequestSummary[] } | Refused> {
+    try {
       const pulls = await this.cache.getOrSet(
         listingKey(credential, repository, state),
         ttlSeconds,
         () => this.pulls.listPullRequests(credential, repository.fullName, state, 1),
       );
-      return { ok: true, credential, pulls };
+      return { ok: true, pulls };
     } catch (error) {
       return { ok: false, refusal: refusalOf(error) };
     }

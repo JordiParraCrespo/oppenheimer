@@ -1,5 +1,6 @@
 import type { AttachClientMessage, AttachServerMessage } from '@oppenheimer/shared/protocol';
-import { DirectPath, directPathSupported, type PeerFactory } from './direct-path';
+import type { HostKeyPins } from './direct-handshake';
+import type { DirectPath, PeerFactory } from './direct-path';
 
 /**
  * Which way the terminal's bytes travel: through the relay, or on a direct
@@ -23,6 +24,8 @@ export interface PathSwitchOptions {
   /** Whether to take a direct path when one is offered; asked at each offer. */
   want?: () => boolean;
   peerFactory?: PeerFactory;
+  /** The host keys this browser has pinned; its own storage when absent. */
+  pins?: HostKeyPins;
   schedule: (fn: () => void, ms: number) => () => void;
   /** A control message on the attach socket. */
   tell: (message: AttachClientMessage) => void;
@@ -44,10 +47,22 @@ export class PathSwitch {
   private direct: DirectPath | null = null;
   /** Keystroke bytes sent on this socket. */
   private relaySent = 0;
+  /**
+   * Output bytes the relay delivered on this socket. The host's output offset
+   * counts from the attachment's start, so a path that loads after some of
+   * them arrived starts from this count, not from zero.
+   */
+  private relayReceived = 0;
   private path: RelayPath = 'relay';
   private failures = 0;
+  /** The host keys pinned so far; this browser's storage, once the path loads. */
+  private pins: HostKeyPins | null;
+  /** Moves on every drop, so a path still loading for an older socket is not started. */
+  private generation = 0;
 
-  constructor(private readonly options: PathSwitchOptions) {}
+  constructor(private readonly options: PathSwitchOptions) {
+    this.pins = options.pins ?? null;
+  }
 
   onPath(listener: (path: RelayPath) => void): () => void {
     listener(this.path);
@@ -55,39 +70,57 @@ export class PathSwitch {
     return () => this.listeners.delete(listener);
   }
 
-  /** The relay invited a direct path for this attachment. */
-  invited(iceServers: readonly string[]): void {
+  /**
+   * The relay invited a direct path for this attachment, to `hostId`. With no
+   * host named there is nothing to pin the key under, so no direct path.
+   */
+  invited(iceServers: readonly string[], hostId: string | undefined): void {
+    if (!hostId) return;
     if (!this.options.want?.() || this.failures >= MAX_DIRECT_FAILURES) return;
-    if (!this.options.peerFactory && !directPathSupported()) return;
-    const direct = new DirectPath({
-      iceServers,
-      peerFactory: this.options.peerFactory,
-      schedule: this.options.schedule,
-      hooks: {
-        offer: (sdp) => this.options.tell({ type: 'direct.offer', sdp }),
-        opened: () => {
-          if (this.direct !== direct) return;
-          // Everything typed so far went on the relay; the host types what
-          // the channel carries only after that many bytes.
-          this.options.tell({ type: 'direct.path', offset: this.relaySent });
-          this.setPath('direct');
-        },
-        deliver: (bytes) => {
-          if (this.direct === direct) this.options.deliver(bytes);
-        },
-        ended: () => {
-          if (this.direct !== direct) return;
-          // A path that never opened, or one that closed under the terminal:
-          // either way the relay carries on, and the host repaints whatever
-          // the channel lost.
-          this.direct = null;
-          this.failures += 1;
-          this.setPath('relay');
-        },
+    if (!this.options.peerFactory && typeof RTCPeerConnection === 'undefined') return;
+    // Loaded on the invitation: a pane on the relay, which is every pane
+    // before its first offer, never downloads the peer or the proof.
+    const generation = this.generation;
+    void Promise.all([import('./direct-path'), import('./direct-handshake')]).then(
+      ([{ DirectPath }, { browserHostKeyPins }]) => {
+        if (generation !== this.generation || this.direct) return;
+        this.pins ??= browserHostKeyPins();
+        const direct: DirectPath = new DirectPath({
+          iceServers,
+          hostId,
+          pins: this.pins,
+          peerFactory: this.options.peerFactory,
+          schedule: this.options.schedule,
+          hooks: {
+            offer: (sdp) => this.options.tell({ type: 'direct.offer', sdp }),
+            opened: () => {
+              if (this.direct !== direct) return;
+              // Everything typed so far went on the relay; the host types what
+              // the channel carries only after that many bytes.
+              this.options.tell({ type: 'direct.path', offset: this.relaySent });
+              this.setPath('direct');
+            },
+            deliver: (bytes) => {
+              if (this.direct === direct) this.options.deliver(bytes);
+            },
+            ended: (distrusted) => {
+              if (this.direct !== direct) return;
+              // A path that never opened, or one that closed under the
+              // terminal: either way the relay carries on, and the host
+              // repaints whatever the channel lost. A host whose proof was
+              // refused is not asked again by this stream: what answered may
+              // not be the host.
+              this.direct = null;
+              this.failures = distrusted ? MAX_DIRECT_FAILURES : this.failures + 1;
+              this.setPath('relay');
+            },
+          },
+        });
+        this.direct = direct;
+        direct.relayDelivered(this.relayReceived);
+        void direct.start();
       },
-    });
-    this.direct = direct;
-    void direct.start();
+    );
   }
 
   /** The relay's `direct.*` messages for this attachment. */
@@ -119,6 +152,7 @@ export class PathSwitch {
 
   /** `bytes` arrived on the relay, after the terminal was handed them. */
   relayDelivered(bytes: number): void {
+    this.relayReceived += bytes;
     this.direct?.relayDelivered(bytes);
   }
 
@@ -126,6 +160,7 @@ export class PathSwitch {
   reset(): void {
     this.drop();
     this.relaySent = 0;
+    this.relayReceived = 0;
   }
 
   dispose(): void {
@@ -135,6 +170,7 @@ export class PathSwitch {
 
   /** Ends the direct path without counting it against the stream. */
   private drop(): void {
+    this.generation += 1;
     const direct = this.direct;
     this.direct = null;
     direct?.close();

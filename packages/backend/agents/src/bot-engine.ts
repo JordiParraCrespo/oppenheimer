@@ -30,6 +30,26 @@ export interface BotEngineToolCall {
   callId?: string;
 }
 
+/** A message the person sent while the turn ran, for the turn to take in. */
+export interface BotSteer {
+  /** The caller's id for it (the stored message), handed back on `steered`. */
+  id: string;
+  text: string;
+}
+
+/**
+ * Where a running turn picks up what the person sent while it worked
+ * (Codex's `turn/steer`). The engine asks after each of our tool calls,
+ * before the model reads the call's result: what `take` answers is
+ * delivered then, riding that result, and the caller hands each one over
+ * once. A turn that calls no tool of ours never asks, so what the person
+ * sent waits for the turn after it.
+ */
+export interface BotSteering {
+  /** What was sent since the last ask, now the turn's; none is an empty list. A throw delivers nothing. */
+  take(): Promise<readonly BotSteer[]>;
+}
+
 /** One tool the model may call during a turn, described by JSON Schema. */
 export interface BotEngineTool {
   /** snake_case; the name the model sees and every event carries. */
@@ -88,6 +108,8 @@ export interface BotTurnRequest {
    * in it), and without one it makes its own for the turn and removes it.
    */
   scratchDir?: string;
+  /** Absent: nothing the person sends meanwhile reaches this turn. */
+  steering?: BotSteering;
 }
 
 /** One of a subscription's usage windows: the share used, 0–100, and when it resets. */
@@ -130,6 +152,12 @@ export type BotEngineEvent =
       /** What one of our tools said the call made; absent for the engine's own tools. */
       data?: BotToolData;
     }
+  /**
+   * What the person sent while the turn worked reached the model, with the
+   * result of call `callId`: follows that call's `tool.finished`, whose
+   * `output` is the tool's own, without them.
+   */
+  | { type: 'steered'; callId: string; steers: readonly BotSteer[] }
   /**
    * The provider refused a call and the engine waits to try it again (a
    * rate limit, or the provider overloaded or down); `delayMs` when it said

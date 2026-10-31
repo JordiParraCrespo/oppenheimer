@@ -19,7 +19,11 @@ import type { BotConversationRepositoryPort } from './bot-conversation.repositor
 import { claimContinuationWithin, owesGoalWithin } from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
-import type { BotPeerEnqueueOutcome, BotTurnRepositoryPort } from './bot-turn.repository.port';
+import type {
+  BotPeerEnqueueOutcome,
+  BotSteerTaken,
+  BotTurnRepositoryPort,
+} from './bot-turn.repository.port';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
@@ -236,6 +240,22 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findHolding(
+    scope: AccessScope,
+    botId: string,
+    messageId: string,
+  ): Promise<Option<BotTurnEntity>> {
+    // PK_bot_message, then PK_bot_turn.
+    const record = await this.scopedQuery(scope)
+      .andWhere('turn.botId = :botId', { botId })
+      .andWhere(
+        `turn.id = (SELECT m."turnId" FROM bot_message m WHERE m."organizationId" = turn."organizationId" AND m.id = :messageId)`,
+        { messageId },
+      )
+      .getOne();
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async findForRun(turnId: string): Promise<Option<BotTurnEntity>> {
     const record = await this.repository.findOne({ where: { id: turnId } });
     return record ? Some(this.mapper.toDomain(record)) : None;
@@ -359,6 +379,44 @@ export class BotTurnRepository
     });
   }
 
+  async takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]> {
+    // Asked at every tool call: a read without the lock first, since most find none.
+    // IDX_bot_turn_active.
+    const waiting: unknown[] = await this.repository.query(
+      `SELECT 1 FROM bot_turn
+        WHERE "organizationId" = $1 AND "botId" = $2 AND "status" = 'queued' AND "steer"
+        LIMIT 1`,
+      [running.organizationId, running.botId],
+    );
+    if (waiting.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // The lock a send, a Stop of a queued turn and a turn's end take.
+      if (!(await lockBot(manager, running))) return [];
+      // IDX_bot_turn_active: a bot's queued turns are a handful.
+      const records = await manager
+        .getRepository(BotTurnOrmEntity)
+        .createQueryBuilder('turn')
+        .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+          organizationId: running.organizationId,
+          botId: running.botId,
+        })
+        .andWhere(`turn.status = 'queued' AND turn.steer`)
+        .orderBy('turn.createdAt', 'ASC')
+        .addOrderBy('turn.id', 'ASC')
+        .getMany();
+      const taken: BotSteerTaken[] = [];
+      const waiting = records.map((record) => this.mapper.toDomain(record)).filter(takes);
+      for (const steer of waiting) {
+        const moved = await moveSteerWithin(manager, running, steer);
+        if (moved) taken.push(moved);
+      }
+      return taken;
+    });
+  }
+
   async requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean> {
     const result = await this.repository
       .createQueryBuilder()
@@ -441,6 +499,41 @@ async function enqueueLocked(
   if (active > 0) return 'waiting';
   await stageRun(outbox, manager, turn.botId, turn.id, correlationId);
   return 'staged';
+}
+
+/**
+ * One steer moved into the running turn, in one statement under the caller's
+ * lock on the bot: its message becomes the turn's newest (after the turn's
+ * last stored position, as of now), so a worker that dies before the
+ * transcript places it still reads it in order, and its queued turn is
+ * deleted. Null, and nothing written, when the turn is no longer queued or
+ * its message carries images.
+ */
+async function moveSteerWithin(
+  manager: EntityManager,
+  running: Pick<BotTurnEntity, 'organizationId' | 'id'>,
+  steer: Pick<BotTurnEntity, 'id'>,
+): Promise<BotSteerTaken | null> {
+  // IDX_bot_message_turn for the move and the turn's last position; PK_bot_turn
+  // for the delete, whose cascade finds the message gone from the steer's turn.
+  const [moved]: { id: string; content: string }[] = await manager.query(
+    `WITH moved AS (
+       UPDATE bot_message SET "turnId" = $3, "createdAt" = now(),
+              "position" = (SELECT coalesce(max(m."position"), 0) + 1 FROM bot_message m
+                             WHERE m."organizationId" = $1 AND m."turnId" = $3)
+        WHERE "organizationId" = $1 AND "turnId" = $2 AND "role" = 'user'
+          AND "attachments" = '[]'::jsonb
+          AND EXISTS (SELECT 1 FROM bot_turn t
+                       WHERE t."organizationId" = $1 AND t.id = $2 AND t."status" = 'queued')
+        RETURNING id, content
+     ), gone AS (
+       DELETE FROM bot_turn
+        WHERE "organizationId" = $1 AND id = $2 AND EXISTS (SELECT 1 FROM moved)
+     )
+     SELECT id, content FROM moved`,
+    [running.organizationId, steer.id, running.id],
+  );
+  return moved ? { turnId: steer.id, messageId: moved.id, text: moved.content } : null;
 }
 
 /**
