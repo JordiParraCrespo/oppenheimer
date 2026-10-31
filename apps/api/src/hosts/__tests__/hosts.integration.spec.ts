@@ -1,4 +1,4 @@
-import { createHash, generateKeyPairSync, type KeyObject, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, type KeyObject, randomUUID, sign } from 'node:crypto';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -207,7 +207,7 @@ describe('Hosts & pairing (integration)', () => {
   }
 
   function randomJti(): string {
-    return createHash('sha256').update(`${Math.random()}`).digest('hex').slice(0, 32);
+    return randomUUID().replace(/-/g, '');
   }
 
   describe('migration', () => {

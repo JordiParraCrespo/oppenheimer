@@ -169,8 +169,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
     projectId = await insertProject(organizationId, 'xrp-mobile');
     foreignProjectId = await insertProject(otherOrganizationId, 'xrp-mobile');
-    installationId = await insertInstallation(organizationId, 1);
-    foreignInstallationId = await insertInstallation(otherOrganizationId, 2);
+    installationId = await insertInstallation(organizationId);
+    foreignInstallationId = await insertInstallation(otherOrganizationId);
   });
 
   async function insertProject(org: string, slug: string): Promise<string> {
@@ -183,14 +183,21 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     return id;
   }
 
-  async function insertInstallation(org: string, githubId: number): Promise<string> {
+  /**
+   * GitHub's installation ids are unique among live rows, and every test
+   * inserts two more into this file's database: counted, so no two can match,
+   * as a random offset once did.
+   */
+  let lastGithubInstallationId = 0;
+
+  async function insertInstallation(org: string): Promise<string> {
     const id = randomUUID();
     await dataSource.query(
       `INSERT INTO "github_installation"
          ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
        VALUES ($1, $2, $3, $4, 'Organization', 'all', $5)`,
-      [id, org, githubId + Math.floor(Math.random() * 1_000_000), 'acme', userId],
+      [id, org, ++lastGithubInstallationId, 'acme', userId],
     );
     return id;
   }

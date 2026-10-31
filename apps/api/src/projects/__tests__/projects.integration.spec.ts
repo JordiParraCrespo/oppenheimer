@@ -88,6 +88,9 @@ describe('projects: the saved scope (integration)', () => {
     installationId = await insertInstallation(organizationId);
   });
 
+  /** Counted, not random: GitHub's installation ids are unique among live rows. */
+  let lastGithubInstallationId = 0;
+
   async function insertInstallation(org: string): Promise<string> {
     const id = randomUUID();
     const [user] = await dataSource.query(
@@ -100,7 +103,7 @@ describe('projects: the saved scope (integration)', () => {
          ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
        VALUES ($1, $2, $3, 'acme', 'Organization', 'all', $4)`,
-      [id, org, Math.floor(Math.random() * 1_000_000_000), user.id],
+      [id, org, ++lastGithubInstallationId, user.id],
     );
     return id;
   }
