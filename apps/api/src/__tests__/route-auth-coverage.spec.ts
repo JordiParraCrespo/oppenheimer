@@ -62,27 +62,37 @@ const PUBLIC: Record<string, string> = {
 
 /**
  * Every place the API accepts a socket, keyed by file: how the handshake is
- * authenticated, and a call that does it (comment-free source), so the entry
- * cannot outlive the check it describes.
+ * authenticated, and the method whose call does it. The call must still be in
+ * the file as code (`calls`), so the entry cannot outlive the check it
+ * describes, while its arguments and the lines around it are free to change.
  */
-const UPGRADES: Record<string, { how: string; proof: string }> = {
+const UPGRADES: Record<string, { how: string; calls: string }> = {
   'relay/infrastructure/relay-upgrade.gateway.ts': {
-    how: "the API server's upgrade listener: routes the two socket paths to their gateways, refuses any other with a 404, authenticates nothing itself",
-    proof: "refuseUpgrade(socket, 404, 'no such socket')",
+    how: "the API server's upgrade listener: hands the two socket paths to their gateways' handleUpgrade, refuses any other with a 404, authenticates nothing itself",
+    calls: 'handleUpgrade',
   },
   'relay/infrastructure/runner-link.gateway.ts': {
     how: "a runner's boot assertion as the bearer, verified (its jti burned) before the upgrade is accepted",
-    proof: 'await this.assertions.verify(bearer)',
+    calls: 'verify',
   },
   'relay/infrastructure/browser-attach.gateway.ts': {
     how: 'an allowed Origin and a single-use attach ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
-    proof: 'this.redeem(ws, ticket)',
+    calls: 'redeem',
   },
   'relay/infrastructure/preview-proxy.gateway.ts': {
     how: "the previews' own server (PREVIEW_PORT, outside Nest): every request and upgrade needs the signed preview cookie a ticket redeemed for, judged as an attachment is, and again every minute",
-    proof: 'const reader = await this.reader(req, address)',
+    calls: 'reader',
   },
 };
+
+/**
+ * Whether `source` calls a method named `method` (`.method(`), with comments
+ * and string literals blanked so a mention in either is not a call.
+ */
+function callsMethod(source: string, method: string): boolean {
+  const code = withoutComments(source).replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, "''");
+  return new RegExp(`\\.${method}\\s*\\(`).test(code);
+}
 
 /** Files that take sockets: an `upgrade` listener, a `ws` server, a Nest gateway. */
 const SOCKET_ENTRY = /\.on\(\s*['"]upgrade['"]|new WebSocketServer\(|@WebSocketGateway\(/;
@@ -118,13 +128,27 @@ describe('route authentication coverage', () => {
 
   it('still finds the check each socket entry names in its file', () => {
     const missing = Object.entries(UPGRADES)
-      .filter(
-        ([file, { proof }]) =>
-          !withoutComments(readFileSync(resolve(SRC, file), 'utf8')).includes(proof),
-      )
-      .map(([file, { proof }]) => `${file}: ${proof}`);
+      .filter(([file, { calls }]) => !callsMethod(readFileSync(resolve(SRC, file), 'utf8'), calls))
+      .map(([file, { calls }]) => `${file}: .${calls}(`);
 
     expect(missing).toEqual([]);
+  });
+});
+
+describe('the socket check matcher', () => {
+  it('finds a call whatever its receiver and arguments', () => {
+    expect(callsMethod('await this.assertions.verify(bearer, { now });', 'verify')).toBe(true);
+    expect(callsMethod('const ok = await gate.verify (token)', 'verify')).toBe(true);
+  });
+
+  it('does not take a comment, a string or another method for the call', () => {
+    const source = [
+      '// this.assertions.verify(bearer) used to run here',
+      "log('then .verify(bearer)');",
+      'this.assertions.verifyLater(bearer);',
+    ].join('\n');
+
+    expect(callsMethod(source, 'verify')).toBe(false);
   });
 });
 

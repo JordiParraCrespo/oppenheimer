@@ -116,25 +116,58 @@ function decoratorsIn(text: string): Decorator[] {
   return found;
 }
 
-/** The arguments as plain string literals, or `Unreadable` for anything else. */
-function stringLiterals(decorator: Decorator): string[] {
-  const parts = decorator.args
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return parts.map((part) => {
-    const literal = /^(['"])([^'"\\`$]*)\1$/.exec(part);
-    if (!literal)
-      throw new Unreadable(`@${decorator.name}(${decorator.args.trim()}) is not literal`);
-    return literal[2];
-  });
-}
+/**
+ * What a literal argument may hold. A `token` (a path, a scope, a version) is
+ * single- or double-quoted with no quote, backslash, backtick or `$` inside. A
+ * `text` (a `@NoPolicy` reason) is one literal in any quotes, which may hold
+ * commas, the other quotes and escapes, but no `${…}`.
+ */
+type LiteralShape = 'token' | 'text';
 
-/** The one literal argument of a decorator that takes at most one; `undefined` when empty. */
-function optionalLiteral(decorator: Decorator): string | undefined {
-  const values = stringLiterals(decorator);
-  if (values.length > 1) throw new Unreadable(`@${decorator.name} has more than one argument`);
-  return values[0];
+const QUOTES = `'"\``;
+
+/**
+ * The decorator's arguments as literals of `shape`, at most `max` of them (a
+ * `text` is always exactly one), or `Unreadable` for anything else: a
+ * constant, a call, a spread, an unclosed quote, a literal of the wrong shape.
+ */
+function literalsOf(decorator: Decorator, shape: LiteralShape, max = Infinity): string[] {
+  const args = decorator.args;
+  const refuse = (why = 'is not literal') =>
+    new Unreadable(`@${decorator.name}(${args.trim()}) ${why}`);
+  const values: string[] = [];
+  let index = 0;
+  const skipSpace = () => {
+    while (index < args.length && /\s/.test(args[index])) index += 1;
+  };
+
+  skipSpace();
+  while (index < args.length) {
+    const quote = args[index];
+    if (!QUOTES.includes(quote)) throw refuse();
+    let value = '';
+    for (index += 1; index < args.length && args[index] !== quote; index += 1) {
+      value += args[index];
+      if (args[index] === '\\') value += args[++index] ?? '';
+    }
+    if (index >= args.length) throw refuse();
+    index += 1;
+    const readable =
+      shape === 'token'
+        ? quote !== '`' && /^[^'"\\`$]*$/.test(value)
+        : !(quote === '`' && value.includes('${'));
+    if (!readable) throw refuse();
+    values.push(value);
+    skipSpace();
+    if (index < args.length) {
+      if (args[index] !== ',') throw refuse();
+      index += 1;
+      skipSpace();
+    }
+  }
+  if (shape === 'text' && values.length === 0) throw refuse('names no reason');
+  if (values.length > (shape === 'text' ? 1 : max)) throw refuse('has more than one argument');
+  return values;
 }
 
 /** `@UseGuards` arguments, which must be plain class names to be read for certain. */
@@ -149,16 +182,6 @@ function guardNames(decorator: Decorator | undefined): string[] {
     if (!/^[A-Z]\w*$/.test(name)) throw new Unreadable(`@UseGuards(${name}) is not a class name`);
   }
   return names;
-}
-
-/** The one string literal `@NoPolicy` carries; a reason may hold commas and the other quote. */
-function reasonOf(decorator: Decorator | undefined): string | undefined {
-  if (!decorator) return undefined;
-  const literal = /^(['"`])((?:(?!\1)[^\\]|\\.)*)\1,?$/.exec(decorator.args.trim());
-  if (!literal || (literal[1] === '`' && literal[2].includes('${'))) {
-    throw new Unreadable(`@NoPolicy(${decorator.args.trim()}) is not literal`);
-  }
-  return literal[2];
 }
 
 function only(decorators: Decorator[], name: string): Decorator | undefined {
@@ -196,15 +219,17 @@ function routesIn(file: string, fallbackVersion: string): DeclaredRoute[] {
 
   const prelude = decoratorsIn(lines.slice(0, classAt).join('\n'));
   const controller = only(prelude, 'Controller');
-  const base = controller ? (optionalLiteral(controller) ?? '') : '';
+  const base = controller ? (literalsOf(controller, 'token', 1)[0] ?? '') : '';
   const classScopes = only(prelude, 'RequireScopes');
   const classAny = only(prelude, 'AllowAnyScope') !== undefined;
   const classVersion = only(prelude, 'Version');
   const classGuards = guardNames(only(prelude, 'UseGuards'));
   const classChecks = only(prelude, 'CheckPolicies') !== undefined;
+  const reasonOf = (decorator: Decorator | undefined): string | undefined =>
+    decorator && literalsOf(decorator, 'text')[0];
   const classReason = reasonOf(only(prelude, 'NoPolicy'));
   const versionOf = (decorator: Decorator | undefined): string | undefined =>
-    decorator && (optionalLiteral(decorator) ?? '');
+    decorator && (literalsOf(decorator, 'token', 1)[0] ?? '');
 
   const routes: DeclaredRoute[] = [];
   let block: string[] = [];
@@ -219,10 +244,10 @@ function routesIn(file: string, fallbackVersion: string): DeclaredRoute[] {
     if (http.length === 0) continue;
     if (http.length > 1) throw new Unreadable(`${line.trim()} has ${http.length} route decorators`);
     const verb = http[0].name === 'Sse' ? 'GET' : http[0].name.toUpperCase();
-    const path = optionalLiteral(http[0]) ?? '';
+    const path = literalsOf(http[0], 'token', 1)[0] ?? '';
     const ownScopes = only(decorators, 'RequireScopes');
     const own = ownScopes ?? classScopes;
-    const scopes = own ? stringLiterals(own) : undefined;
+    const scopes = own ? literalsOf(own, 'token') : undefined;
     if (own && scopes?.length === 0) throw new Unreadable(`@RequireScopes() names no scope`);
     const any = classAny || only(decorators, 'AllowAnyScope') !== undefined;
     const version =

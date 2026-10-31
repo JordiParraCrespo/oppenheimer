@@ -125,4 +125,21 @@ describe('the policy scan', () => {
     expect(routes).toEqual([]);
     expect(unreadable).toEqual([expect.stringContaining('is not a class name')]);
   });
+
+  it.each([
+    ['a reason held in a constant', '@NoPolicy(REASON)', 'is not literal'],
+    ['an interpolated reason', '@NoPolicy(`for ${WHO}, always`)', 'is not literal'],
+    ['two reasons', "@NoPolicy('one reason, here', 'another')", 'more than one argument'],
+    ['no reason', '@NoPolicy()', 'names no reason'],
+    ['a reason never closed', "@NoPolicy('the caller's own)", 'is not literal'],
+    ['a path holding a quote', '@Get("it\'s")', 'is not literal'],
+  ])('fails closed on %s', (_case, decorator, reason) => {
+    const verb = decorator.startsWith('@Get') ? decorator : `@Get()\n  ${decorator}`;
+    const { routes, unreadable } = scanFixture({
+      'things.http.controller.ts': fixtureController(`  ${verb}\n  find() {}`),
+    });
+
+    expect(routes).toEqual([]);
+    expect(unreadable).toEqual([expect.stringContaining(reason)]);
+  });
 });
