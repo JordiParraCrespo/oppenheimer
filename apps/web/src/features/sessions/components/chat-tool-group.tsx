@@ -3,6 +3,7 @@ import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 import { formatChatElapsed, groupKindOf, sharedKindOf, summaryOf } from '../lib/chat-blocks';
 import { CHAT_TOOL_ICONS } from '../lib/chat-icons';
+import { ChatExploredTargets } from './chat-explored-targets';
 import { ChatToolRow } from './chat-tool-row';
 import { ChatToolTarget } from './chat-tool-target';
 import { ElapsedClock } from './elapsed-clock';
@@ -13,25 +14,46 @@ import { ElapsedClock } from './elapsed-clock';
  * line opens to the calls. It stays folded while the agent is still in it,
  * so a long run never pushes its words off screen: the call in flight is the
  * line under it, saying what it is doing now, in the present tense, with its
- * clock running.
+ * clock running. A run that only looked around (`explored`) says so instead
+ * of counting, "Explored" ("Exploring" while it is still at it) with what it
+ * read, searched and listed after it, and opens to the same rows.
  */
-export function ChatToolGroup({ calls, live }: { calls: ChatToolCall[]; live: boolean }) {
+export function ChatToolGroup({
+  calls,
+  live,
+  explored = false,
+}: {
+  calls: ChatToolCall[];
+  live: boolean;
+  explored?: boolean;
+}) {
   const { t } = useTranslation();
   const running = live ? [...calls].reverse().find((call) => call.status === 'running') : undefined;
   const done = calls.filter((call) => call !== running);
   const failed = calls.filter((call) => call.status === 'failed').length;
-  const Icon = CHAT_TOOL_ICONS[sharedKindOf(calls)];
+  const Icon = explored ? CHAT_TOOL_ICONS.search : CHAT_TOOL_ICONS[sharedKindOf(calls)];
   const runningKind = running ? groupKindOf(running.kind) : 'other';
   const [only] = done;
+  // A run still exploring keeps its heading over the one call it has done.
+  const grouped = done.length > 1 || (explored && running !== undefined && done.length > 0);
 
   return (
     <div className="flex flex-col gap-1">
-      {done.length === 1 && only ? (
+      {!grouped && only ? (
         <ChatToolRow call={only} />
-      ) : done.length > 1 ? (
+      ) : grouped ? (
         <ToolCallGroup
           icon={<Icon />}
-          summary={summaryOf(done, t)}
+          summary={
+            !explored ? (
+              summaryOf(done, t)
+            ) : running ? (
+              <span className="motion-safe:animate-shimmer">{t('sessions.chat.exploring')}</span>
+            ) : (
+              t('sessions.chat.explored.title')
+            )
+          }
+          detail={explored ? <ChatExploredTargets calls={done} /> : undefined}
           failed={failed > 0 ? t('sessions.chat.failed', { count: failed }) : undefined}
         >
           {done.map((call) => (

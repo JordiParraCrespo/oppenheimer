@@ -3,6 +3,7 @@
 import { LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { clipLine, linesOf } from '../internal/clip-output';
 import { Fold, FoldPanel, FoldTrigger } from '../internal/fold';
 import { cn } from '../lib/utils';
 
@@ -15,7 +16,9 @@ import { cn } from '../lib/utils';
  * - `TraceGroup`: several steps a bot ran together, folded into one quiet
  *   line with a step's 16px glyph ("Used 5 tools", "1 failed" in red after
  *   it); open, its `TraceStep`s hang from a hairline under that glyph, each
- *   as it reads alone, their glyphs under the summary's first letter.
+ *   as it reads alone, their glyphs under the summary's first letter. A
+ *   run of read-only steps is "Explored" with what it read in `detail`
+ *   ("Read session · Listed hosts"), subtle after the summary.
  * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated)
  *   with its `target` after it in full ink, a mono meta ("14 results", "2
  *   failed"), and, when it has children, the chevron that opens them. `tone="danger"` sets the line in red (a
@@ -24,8 +27,9 @@ import { cn } from '../lib/utils';
  *   trigger, so using it never opens the step.
  * - `TraceOutput`: what a step returned, on the card at the 14px radius:
  *   mono 12.5px lines, numbered, scrolling past 256px. `maxLines` cuts a
- *   long one with "Show N more lines" under it; `0` keeps it behind "Show
- *   raw output", for a step whose summary is drawn above it.
+ *   long one with "+N lines" under it, and while it is cut a line too long
+ *   to read keeps only its head and tail; `0` keeps it behind "Show raw
+ *   output", for a step whose summary is drawn above it.
  * - `TraceNote`: a step's words (the thinking, a plan), muted at 14px.
  * - `TraceLive`: the run in flight, after the last step: a spinner, what it
  *   is doing now breathing ("Searching abortSignal", "Writing"), the
@@ -85,6 +89,7 @@ function TraceWords({
 function TraceGroup({
   icon,
   summary,
+  detail,
   failed,
   defaultOpen = false,
   className,
@@ -94,6 +99,8 @@ function TraceGroup({
   icon: React.ReactNode;
   /** "Used 5 tools", "Searched the web 3 times". */
   summary: React.ReactNode;
+  /** What the steps acted on, after the summary in subtle ink ("Read session · Listed hosts"). */
+  detail?: React.ReactNode;
   /** "1 failed", in red after the summary. */
   failed?: React.ReactNode;
   defaultOpen?: boolean;
@@ -109,6 +116,7 @@ function TraceGroup({
         <TraceGlyph>{icon}</TraceGlyph>
         <TraceWords meta={failed} metaClassName="text-danger">
           {summary}
+          {detail ? <span className="text-fg-subtle"> {detail}</span> : null}
         </TraceWords>
       </FoldTrigger>
       <FoldPanel role="list" className={GROUP_RAIL}>
@@ -207,12 +215,15 @@ type TraceOutputLabels = {
   raw: string;
   /** The button under a cut: how many more lines it shows. */
   more: (count: number) => string;
+  /** The button when every line is drawn but some were cut to their head and tail. */
+  full: string;
   less: string;
 };
 
 const TRACE_OUTPUT_LABELS: TraceOutputLabels = {
   raw: 'Show raw output',
-  more: (count) => `Show ${count} more lines`,
+  more: (count) => `+${count} ${count === 1 ? 'line' : 'lines'}`,
+  full: 'Show full lines',
   less: 'Show less',
 };
 
@@ -230,18 +241,26 @@ function TraceOutput({
 }) {
   const label = { ...TRACE_OUTPUT_LABELS, ...labels };
   const [expanded, setExpanded] = React.useState(false);
-  const all = children.replace(/\n$/, '').split('\n');
-  const cut = maxLines !== undefined && !expanded && all.length > maxLines;
-  const lines = cut ? all.slice(0, maxLines) : all;
+  const all = linesOf(children);
+  const clipping = maxLines !== undefined && !expanded;
+  const cut = clipping && all.length > maxLines;
+  const lines = (cut ? all.slice(0, maxLines) : all).map((line) => (clipping ? clipLine(line) : line));
+  const clipsLines = maxLines !== undefined && maxLines > 0 && all.slice(0, maxLines).some((line) => clipLine(line) !== line);
   const toggle =
-    maxLines !== undefined && all.length > maxLines ? (
+    maxLines !== undefined && (all.length > maxLines || clipsLines) ? (
       <button
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
         className="mb-2.5 self-start rounded-xs text-[13px] text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {expanded ? label.less : maxLines === 0 ? label.raw : label.more(all.length - maxLines)}
+        {expanded
+          ? label.less
+          : maxLines === 0
+            ? label.raw
+            : all.length > maxLines
+              ? label.more(all.length - maxLines)
+              : label.full}
       </button>
     ) : null;
   if (lines.length === 0) return toggle;

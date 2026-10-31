@@ -612,7 +612,16 @@
       "waiting": "Waiting for your answer",
       "dismissed": "You dismissed the questions",
       "noAnswer": "No answer read"
-    }
+    },
+    "explored": {
+      "title": "Explored",
+      "read": "Read",
+      "search": "Searched",
+      "list": "Listed",
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more"
+    },
+    "exploring": "Exploring"
   },
   "preview": {
     "show": "Show preview",

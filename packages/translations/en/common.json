@@ -120,6 +120,12 @@
       "previous": "Previous question",
       "nextQuestion": "Next question",
       "of": "{{n}} of {{total}}"
+    },
+    "output": {
+      "more_one": "+{{count}} line",
+      "more_other": "+{{count}} lines",
+      "full": "Show full lines",
+      "less": "Show less"
     }
   },
   "search": {
