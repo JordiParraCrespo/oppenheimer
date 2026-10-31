@@ -1561,6 +1561,7 @@
           "failed": "La sesión «{{name}}» ha fallado",
           "cancelled": "La sesión «{{name}}» se detuvo",
           "expired": "La sesión «{{name}}» caducó sin ejecutarse",
+          "stalled": "La sesión «{{name}}» parece atascada",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
           "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
         },

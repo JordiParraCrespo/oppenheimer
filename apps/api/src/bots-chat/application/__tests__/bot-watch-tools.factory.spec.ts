@@ -2,7 +2,8 @@
  * The tools a bot follows sessions with (`27-bot-subscriptions.md` §3): a
  * watch stored for the turn that asked, with its scopes and zone, as the
  * owner may read the session; none of them asks; unwatch and list touch
- * only the bot's own subscriptions. The upsert itself is the integration
+ * only the bot's own subscriptions; and a task the bot hands off owed its
+ * stall check (§4.1). The upsert itself is the integration
  * suite's.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -17,9 +18,13 @@ import { BotSubscriptionMapper } from '../../bot-subscription.mapper';
 import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../../domain/bot-subscription.entity';
-import { BOT_SUBSCRIPTIONS_PER_BOT } from '../../domain/bot-subscription.policy';
+import {
+  BOT_STALL_CHECK_DELAY_MS,
+  BOT_SUBSCRIPTIONS_PER_BOT,
+} from '../../domain/bot-subscription.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import type { BotStallChecksPort } from '../../infrastructure/bot-stall-checks.port';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import { BotSessionWatchResolver } from '../bot-session-watch.resolver';
@@ -97,8 +102,12 @@ function setup(
         : undefined,
     ),
   };
+  const stallChecks = {
+    schedule: vi.fn<BotStallChecksPort['schedule']>(async () => undefined),
+  };
   const resolver = new BotSessionWatchResolver(
     repository,
+    stallChecks,
     queries as unknown as QueryBus,
     commands as unknown as CommandBus,
     new BotSubscriptionMapper(),
@@ -128,7 +137,7 @@ function setup(
     if (!definition) throw new Error(`no tool ${name}`);
     return definition.bind(context).run(input, { signal: new AbortController().signal });
   };
-  return { subscriptions, queries, commands, approvals, call, resolver, context };
+  return { subscriptions, stallChecks, queries, commands, approvals, call, resolver, context };
 }
 
 describe('BotWatchToolsFactory', () => {
@@ -252,14 +261,42 @@ describe('BotWatchToolsFactory', () => {
     expect(wake).toBeInstanceOf(WakeSubscribedBotCommand);
   });
 
+  // What breaks this: a session stuck at its launch (host offline, a trust
+  // prompt) that the bot never hears of, since no state it waits on comes.
+  it('owes the task it hands off a stall check a few minutes later', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup();
+    const before = Date.now();
+    await resolver.follow(context, SESSION, 'first_task');
+    await resolver.follow(context, SESSION, { turn: 3 });
+
+    const [[started, firstAt], [sent]] = stallChecks.schedule.mock.calls;
+    expect(started).toEqual({
+      subscriptionId: subscriptions.subscribe.mock.calls[0][0].id,
+      botId: 'bot-1',
+      sessionId: SESSION,
+      turn: 1,
+    });
+    expect(sent.turn).toBe(3);
+    expect(firstAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
+  });
+
+  it('keeps the watch it stored when its stall check cannot be staged', async () => {
+    const { resolver, context, stallChecks } = setup();
+    stallChecks.schedule.mockRejectedValueOnce(new Error('connection reset'));
+    expect(await resolver.follow(context, SESSION, 'first_task')).toContain(
+      'You are subscribed to it',
+    );
+  });
+
   it("says when start_session's watch could not be stored rather than throw", async () => {
-    const { resolver, context, subscriptions, commands } = setup();
+    const { resolver, context, subscriptions, commands, stallChecks } = setup();
 
     subscriptions.subscribe.mockRejectedValueOnce(new Error('connection reset'));
     expect(await resolver.follow(context, SESSION, 'first_task')).toBe(
       'It could not be watched (connection reset); read it later with get_session.',
     );
     expect(commands.execute).not.toHaveBeenCalled();
+    expect(stallChecks.schedule).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { RequestContextService } from '@oppenheimer/backend-ddd';
 import { UnwatchSessionTerminalCommand } from '../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
 import {
   WatchSessionTerminalCommand,
@@ -8,16 +9,22 @@ import {
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
-import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
+import { BOT_STALL_CHECKS, BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import { WakeSubscribedBotCommand } from '../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
+  BOT_STALL_CHECK_DELAY_MS,
   BOT_SUBSCRIPTIONS_PER_BOT,
   type BotSubscriptionUntil,
   type BotWatchFrom,
 } from '../domain/bot-subscription.policy';
+import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
+
+/** What `start_session` and `send_to_session` answer once the task they handed off is followed. */
+const HANDED_OFF =
+  'You are subscribed to it and will be woken when the task needs input or ends, or if it has not got going in a few minutes: end your turn now, and report when you are.';
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -29,13 +36,17 @@ export interface SessionWatch {
  * A bot starts following a session (`27-bot-subscriptions.md` §3), from
  * `start_session` or `watch_session`: the session read as the owner, so a
  * bot follows only what its owner may read, and the subscription stored
- * with the turn that made it, its scopes and its zone.
+ * with the turn that made it, its scopes and its zone. A task the bot hands
+ * off also gets its silent stall check (§4.1).
  */
 @Injectable()
 export class BotSessionWatchResolver {
+  private readonly logger = new Logger(BotSessionWatchResolver.name);
+
   constructor(
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)
     private readonly subscriptions: BotSubscriptionRepositoryPort,
+    @Inject(BOT_STALL_CHECKS) private readonly stallChecks: BotStallChecksPort,
     private readonly queries: QueryBus,
     private readonly commands: CommandBus,
     private readonly mapper: BotSubscriptionMapper,
@@ -66,10 +77,35 @@ export class BotSessionWatchResolver {
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      return 'You are subscribed to it and will be woken when its task needs input or ends: end your turn now, and report when you are.';
+      await this.checkLater(subscription, from === 'first_task' ? 1 : from.turn);
+      return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       return `It could not be watched (${reason}); read it later with get_session.`;
+    }
+  }
+
+  /**
+   * Owes the task its stall check. The watch is stored either way, and its
+   * wakes still come, so a check that cannot be staged is logged, not said.
+   */
+  private async checkLater(subscription: BotSubscriptionEntity, turn: number): Promise<void> {
+    try {
+      await this.stallChecks.schedule(
+        {
+          subscriptionId: subscription.id,
+          botId: subscription.botId,
+          sessionId: subscription.resourceId,
+          turn,
+        },
+        new Date(Date.now() + BOT_STALL_CHECK_DELAY_MS),
+        RequestContextService.getCorrelationId() ?? null,
+      );
+    } catch (error) {
+      this.logger.warn(
+        { message: 'A stall check could not be staged', subscriptionId: subscription.id, turn },
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 

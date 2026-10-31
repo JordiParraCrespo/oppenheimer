@@ -923,6 +923,15 @@ earlier note:
   the API serves is that order (groups by position, then Ungrouped); it had
   been Ungrouped first with groups by id, so a heading's order differed from
   Employees' (`versions/mvp/28-bots-in-sections.md`, Decided).
+- `versions/mvp/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
+  never wake a bot, so a delegated task stuck before it began (its host
+  offline, its agent at a folder-trust or sign-in prompt) left the bot
+  silent until somebody asked. On 2026-10-29 the owner asked for it to
+  "monitor a bit what it has done", and chose, over a progress update
+  (which Grok Bot, Codex and Claude Code do not send), a silent stall
+  check: five minutes after `start_session` or `send_to_session`, a job
+  reads the task and wakes the bot once, as `stalled`, only if it never
+  started or its agent was never seen working (27 §4.1).
 - `next-steps/channels.md` placed WhatsApp third among the channels, after
   email and contacts, and as a channel (people write to a bot). On
   2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
