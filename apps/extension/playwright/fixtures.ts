@@ -1,10 +1,21 @@
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
 import type { CloudSessionRecord } from '../src/sessions/session';
 
 const DIST = path.resolve(import.meta.dirname, '../dist');
+/**
+ * The Chromium to launch. An environment that ships one (a container image,
+ * a cloud sandbox) says where with `PLAYWRIGHT_CHROMIUM_PATH`, as
+ * `e2e/playwright.config.ts` reads it, or keeps it where `scripts/stack/screens.mjs`
+ * looks; its build need not be the one this Playwright pins, which is the
+ * one it would otherwise download. Neither, and Playwright resolves its own.
+ */
+const SHIPPED_CHROMIUM = '/opt/pw-browsers/chromium';
+const CHROMIUM_PATH =
+  process.env.PLAYWRIGHT_CHROMIUM_PATH ??
+  (existsSync(SHIPPED_CHROMIUM) ? SHIPPED_CHROMIUM : undefined);
 
 /** A fake claude.ai: its sessions list answers with whatever `sessions` holds. */
 export interface FakeClaude {
@@ -35,12 +46,19 @@ export const test = base.extend<{
       mkdtempSync(path.join(tmpdir(), 'ext-')),
       {
         channel: 'chromium',
+        ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {}),
         locale,
         args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
       },
     );
-    await context.route('https://claude.ai/**', (route) => {
+    // The extension probes claude.ai as soon as it is installed, before the
+    // test has said what claude.ai holds. Its API waits for the test's first
+    // page, by which time it has, so the first list the extension sees is the
+    // test's (the baseline, not news) whichever request reaches it first.
+    const opened = new Promise<void>((resolve) => context.once('page', () => resolve()));
+    await context.route('https://claude.ai/**', async (route) => {
       const url = new URL(route.request().url());
+      if (url.pathname.startsWith('/v1/')) await opened;
       if (url.pathname === '/v1/code/sessions') {
         claude.requests.push({ url: url.href, headers: route.request().headers() });
         const cursor = url.searchParams.get('cursor');
