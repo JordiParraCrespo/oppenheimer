@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { GmailConnectStateResolver } from '../../application/gmail-connect-state.resolver';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
@@ -42,7 +43,7 @@ export class StartGmailConnectionCommandHandler
   ) {}
 
   async execute({ scope, input }: StartGmailConnectionCommand): Promise<StartedGmailConnection> {
-    if (!scope.organizationId) throw new AppError(MailErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     if (!this.provider.isConfigured() || !this.sealer.isConfigured()) {
       throw new AppError(MailErrors.GMAIL_NOT_CONFIGURED);
     }

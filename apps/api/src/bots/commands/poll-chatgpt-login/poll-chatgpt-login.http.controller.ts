@@ -47,8 +47,8 @@ export class PollChatgptLoginHttpController {
   @ApiResponse({ status: 200, type: ChatgptLoginStatusResponseDto })
   @ApiProblemResponse({
     status: 400,
-    description: 'Bots belong to an organization',
-    code: 'BOTS_002',
+    description: 'No active workspace',
+    code: 'TENANT_001',
   })
   @ApiProblemResponse({ status: 410, description: 'The ChatGPT sign-in expired', code: 'BOTS_018' })
   @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_019' })

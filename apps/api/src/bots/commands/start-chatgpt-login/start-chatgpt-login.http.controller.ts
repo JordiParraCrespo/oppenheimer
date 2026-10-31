@@ -34,8 +34,8 @@ export class StartChatgptLoginHttpController {
   @ApiResponse({ status: 200, type: ChatgptLoginResponseDto })
   @ApiProblemResponse({
     status: 400,
-    description: 'Bots belong to an organization',
-    code: 'BOTS_002',
+    description: 'No active workspace',
+    code: 'TENANT_001',
   })
   @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_019' })
   @ApiProblemResponse({

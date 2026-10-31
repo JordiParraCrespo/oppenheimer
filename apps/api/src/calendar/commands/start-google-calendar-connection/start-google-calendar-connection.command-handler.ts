@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { GoogleConnectStateResolver } from '../../application/google-connect-state.resolver';
 import {
@@ -45,7 +46,7 @@ export class StartGoogleCalendarConnectionCommandHandler
     scope,
     input,
   }: StartGoogleCalendarConnectionCommand): Promise<StartedGoogleConnection> {
-    if (!scope.organizationId) throw new AppError(CalendarErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     if (!this.provider.isConfigured() || !this.sealer.isConfigured()) {
       throw new AppError(CalendarErrors.GOOGLE_NOT_CONFIGURED);
     }

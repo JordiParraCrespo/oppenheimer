@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import { type AccessScope, requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, type Option } from 'oxide.ts';
 import type { ProjectRepositoryPort } from '../database/project.repository.port';
@@ -22,7 +22,7 @@ export class ProjectLookupResolver implements ProjectLookupPort {
   async unassigned(scope: AccessScope): Promise<ProjectEntity> {
     const found = await this.projects.findUnassigned(scope);
     if (found.isSome()) return found.unwrap();
-    if (!scope.organizationId) throw new AppError(ProjectErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     await this.projects.provisionUnassigned(scope.organizationId);
     const provisioned = await this.projects.findUnassigned(scope);
     if (provisioned.isNone()) {

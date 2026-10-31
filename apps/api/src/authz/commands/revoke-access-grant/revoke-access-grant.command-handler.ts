@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
@@ -17,9 +18,7 @@ export class RevokeAccessGrantCommandHandler
 
   async execute(command: RevokeAccessGrantCommand): Promise<void> {
     const { scope } = command;
-    if (!scope.organizationId) {
-      throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
-    }
+    requireTenant(scope);
 
     const found = await this.grants.findOneInOrganization(scope.organizationId, command.grantId);
     if (found.isNone()) {

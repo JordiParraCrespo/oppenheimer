@@ -1,12 +1,11 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import { AutomationEntity } from '../../domain/automation.entity';
-import { AutomationErrors } from '../../domain/automations.errors';
 import { CreateAutomationCommand } from './create-automation.command';
 
 /**
@@ -26,7 +25,7 @@ export class CreateAutomationCommandHandler
 
   async execute(command: CreateAutomationCommand): Promise<AggregateID> {
     const { scope, input } = command;
-    if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const now = new Date();
 
     await this.plan.assertProject(scope, input.projectId);
