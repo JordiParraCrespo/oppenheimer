@@ -8,7 +8,9 @@ import { BotComposer } from '../sections/bot-composer';
  * while something is written, so nothing can be sent until the turn ends; a
  * waiting message whose Remove or Edit calls off another turn, or whose Edit
  * loses its words; Send now offered on a message that is not next, or on one
- * whose images the field could not hold again.
+ * whose images the field could not hold again; Enter that queues instead of
+ * steering the turn under way, Alt+Enter that steers instead of queueing, a
+ * steer shown as if it waited for after.
  */
 
 vi.mock('react-i18next', () => ({
@@ -34,8 +36,9 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => ({ id: 'run', status: 'running' }),
   useBotGoal: () => ({ data: null }),
   useBotWaitingMessages: () => [
-    { turnId: 'q1', text: 'Then the tests', images: 0 },
-    { turnId: 'q2', text: '', images: 2 },
+    { turnId: 'q1', text: 'Then the tests', images: 0, steer: false },
+    { turnId: 'q2', text: '', images: 2, steer: false },
+    { turnId: 's1', text: 'Skip the docs', images: 0, steer: true },
   ],
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
@@ -65,14 +68,35 @@ function composer() {
 }
 
 describe('BotComposer while the bot works', () => {
-  it('turns Stop into Send once something is written, and sends it to wait its turn', () => {
+  it('turns Stop into Send once something is written, and steers the turn under way with it', () => {
     composer();
     expect(screen.getByRole('button', { name: 'bots.chat.stop' })).toBeTruthy();
+    expect(screen.getByPlaceholderText('bots.chat.placeholderRunning')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'And a pull request' } });
     fireEvent.click(screen.getByRole('button', { name: 'bots.chat.send' }));
     expect(state.send).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'b1', content: 'And a pull request' }),
+      expect.objectContaining({ id: 'b1', content: 'And a pull request', steer: true }),
     );
+  });
+
+  it('steers on Enter and queues for after on Alt+Enter', () => {
+    composer();
+    const field = screen.getByRole('textbox');
+    fireEvent.change(field, { target: { value: 'Use Tokyo time' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(state.send).toHaveBeenLastCalledWith(expect.objectContaining({ steer: true }));
+    fireEvent.keyDown(field, { key: 'Enter', altKey: true });
+    expect(state.send).toHaveBeenLastCalledWith(
+      expect.objectContaining({ content: 'Use Tokyo time', steer: false }),
+    );
+    expect(state.send).toHaveBeenCalledTimes(2);
+  });
+
+  it('marks a waiting steer as one, apart from the messages queued for after', () => {
+    composer();
+    expect(screen.getAllByText('common.chat.queue.queued')).toHaveLength(2);
+    expect(screen.getAllByText('common.chat.queue.steer')).toHaveLength(1);
+    expect(screen.getByText('Skip the docs')).toBeTruthy();
   });
 
   it('shows each waiting message, images alone by their count', () => {
@@ -93,7 +117,8 @@ describe('BotComposer while the bot works', () => {
     setBotDraft('b1', 'half a thought');
     composer();
     const edit = screen.getAllByRole('button', { name: 'common.chat.queue.edit' });
-    expect(edit).toHaveLength(1);
+    // The words-only queued message and the steer; not the one with images.
+    expect(edit).toHaveLength(2);
     fireEvent.click(edit[0] as HTMLElement);
     expect(state.cancel).toHaveBeenCalledWith(
       { id: 'b1', turnId: 'q1' },

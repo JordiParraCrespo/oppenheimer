@@ -388,7 +388,7 @@ export class AttachSessionStream implements SessionStream {
         this.attached = true;
         this.attempt = 0;
         this.setStatus('live');
-        if (message.direct) this.paths.invited(message.direct.iceServers);
+        if (message.direct) this.paths.invited(message.direct.iceServers, message.direct.hostId);
         return;
       case 'direct.answer':
       case 'direct.path':

@@ -74,7 +74,9 @@
         "queued": "Queued",
         "sendNow": "Send now",
         "edit": "Edit",
-        "remove": "Remove from the queue"
+        "remove": "Remove from the queue",
+        "steer": "Steer",
+        "steerHint": "Goes into the turn under way at its next tool call. If the turn ends first, it runs next."
       },
       "json": {
         "tree": "Tree",
@@ -1366,6 +1368,8 @@
       "startFrom": "Try asking",
       "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
+      "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
+      "steered": "Steered in while it worked",
       "send": "Send",
       "stop": "Stop",
       "noKey": "{{provider}} has no key in this workspace yet. Add one to talk to this bot.",

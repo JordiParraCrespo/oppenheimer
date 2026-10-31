@@ -33,6 +33,9 @@ export type FakeScriptEvent =
  *   the call's scripted `result` when it has one; otherwise the output of
  *   the request's tool of that name, which the fake runs; otherwise an
  *   unknown-tool error, as a real engine reports a tool it does not have.
+ * - After each call, the fake asks the request's `steering` for what the
+ *   person sent meanwhile, as a real engine does at that boundary, and
+ *   reports what it took as `steered` after the call's `tool.finished`.
  * - A script that ends without `done` ends with `done: completed`.
  * - An abort ends the turn with `done: cancelled`; a script that throws
  *   ends it with `done: failed`.
@@ -68,6 +71,8 @@ export class FakeBotEngine extends BotEngine {
         isError: isError === true,
         ...(data ? { data } : {}),
       };
+      const steers = request.steering ? await request.steering.take() : [];
+      if (steers.length > 0) yield { type: 'steered', callId: started.callId, steers };
     }
     yield { type: 'done', reason: 'completed' };
   }

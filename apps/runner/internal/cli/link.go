@@ -180,7 +180,9 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, earlyResize: map[uint32]link.SessionResize{},
 		decided:   map[string]bool{},
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
-		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
+		direct: direct.NewAnswerer(direct.Options{Logger: logger, Prove: func(transcript []byte) ([]byte, []byte, error) {
+			return a.Pairing.ProveDirect(transcript)
+		}}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
 		ports: a.Ports, tunnels: map[uint32]*tunnel{}, opening: map[uint32]bool{},
 	}
@@ -302,7 +304,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionWatch,
 	}
 	if h.direct != nil {
-		named = append(named, link.CapabilityAttachmentDirect)
+		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
 	}
 	if h.devices != nil {
 		named = append(named, link.CapabilityDeviceScreen)

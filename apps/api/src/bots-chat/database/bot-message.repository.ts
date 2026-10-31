@@ -66,6 +66,24 @@ export class BotMessageRepository
       .execute();
   }
 
+  async placeSteer(
+    turn: { organizationId: string; id: string },
+    steer: { messageId: string; position: number },
+    at: Date,
+  ): Promise<void> {
+    // PK_bot_message.
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ position: steer.position, createdAt: at })
+      .where('id = :messageId AND "organizationId" = :organizationId AND "turnId" = :turnId', {
+        messageId: steer.messageId,
+        organizationId: turn.organizationId,
+        turnId: turn.id,
+      })
+      .execute();
+  }
+
   async findConversation(
     scope: AccessScope,
     botId: string,
