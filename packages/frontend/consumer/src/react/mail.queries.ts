@@ -5,7 +5,7 @@ import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/
 import type { GmailConnectionEntity, ScheduledMailEntity } from '../modules/mail';
 import { useConsumerApp } from './context';
 
-export const mailKeys = {
+const mailKeys = {
   all: ['mail'] as const,
   connections: () => [...mailKeys.all, 'connections'] as const,
   scheduled: () => [...mailKeys.all, 'scheduled'] as const,
