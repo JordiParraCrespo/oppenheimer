@@ -1,9 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  PullRequestAccessPort,
-  WorkspaceRepository,
-} from '../../../github/application/pull-request-access.port';
+import type { WorkspaceRepository } from '../../../github/application/pull-request-access.port';
+import type { PullRequestDirectoryPort } from '../../../github/application/pull-request-directory.port';
 import type {
   RepositoryWatch,
   WatchedRepositoryRepositoryPort,
@@ -32,7 +30,9 @@ const WEB = repository(2, 'acme/xrp-web');
 
 function resolverWith(watches: RepositoryWatch[]) {
   return new WatchedRepositoriesResolver(
-    { repositories: vi.fn().mockResolvedValue([MOBILE, WEB]) } as unknown as PullRequestAccessPort,
+    {
+      repositories: vi.fn().mockResolvedValue([MOBILE, WEB]),
+    } as unknown as PullRequestDirectoryPort,
     { findOwn: vi.fn().mockResolvedValue(watches) } as unknown as WatchedRepositoryRepositoryPort,
   );
 }
@@ -59,7 +59,7 @@ describe('WatchedRepositoriesResolver', () => {
   it('answers whether anything is watched without asking GitHub', async () => {
     const repositories = vi.fn().mockResolvedValue([MOBILE, WEB]);
     const resolver = new WatchedRepositoriesResolver(
-      { repositories } as unknown as PullRequestAccessPort,
+      { repositories } as unknown as PullRequestDirectoryPort,
       { findOwn: vi.fn().mockResolvedValue([]) } as unknown as WatchedRepositoryRepositoryPort,
     );
 

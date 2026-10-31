@@ -41,6 +41,31 @@ export class BotSessionWaitResolver {
       await pause(BOT_SESSION_WAIT_POLL_MS, signal);
     }
   }
+
+  /**
+   * A cloud session as it stands once its host has started it
+   * (`start_cloud_session`): read as the owner until the runner reports the
+   * id `claude --cloud` printed, the start fails or the session closes, or
+   * `seconds` pass. The last read is the answer either way; the caller says
+   * what it shows.
+   */
+  async cloudStart(
+    context: BotToolCallContext,
+    sessionId: string,
+    seconds: number,
+    signal: AbortSignal,
+  ): Promise<WorkSessionEntity> {
+    const deadline = Date.now() + seconds * 1_000;
+    for (;;) {
+      const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+        new FindSessionQuery({ scope: context.owner, sessionId }),
+      );
+      const settled =
+        session.cloudSessionId !== null || session.state === 'failed' || session.isResolved;
+      if (settled || Date.now() + BOT_SESSION_WAIT_POLL_MS > deadline) return session;
+      await pause(BOT_SESSION_WAIT_POLL_MS, signal);
+    }
+  }
 }
 
 /** Waits `ms`, or rejects the moment `signal` aborts. */

@@ -116,11 +116,11 @@ the way a kernel hook reads `useOppenheimerApp().auth`.
 The query cache follows the same shape. The kernel ships the persistence
 policy (`defaultQueryClientOptions`, `createQueryPersistOptions`,
 `shouldDehydrateQuery`); the app supplies the platform's persister and names
-its product's sensitive features:
+the product's features that may be stored:
 
 ```ts
 createQueryPersistOptions(__APP_VERSION__, {
-  nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+  persistedFeatures: CONSUMER_PERSISTED_FEATURES,
 });
 ```
 
@@ -129,10 +129,12 @@ createQueryPersistOptions(__APP_VERSION__, {
 The kernel never imports the product, so what the kernel defines for every
 product to follow is an export, not an import:
 
-- `createQueryPersistOptions` keeps the kernel's own features (`auth`,
-  `userSettings`, in `KERNEL_NON_PERSISTED_FEATURES`) out of storage whatever
-  the product passes; `CONSUMER_NON_PERSISTED_FEATURES` (`consumer/src/react/persistence.ts`) adds
-  the product's, and the app passes it through `nonPersistedFeatures`.
+- `createQueryPersistOptions` stores only what is allowed: the kernel's own
+  plain-data features (`featureFlags`, `capabilities`, in
+  `KERNEL_PERSISTED_FEATURES`), the product's (`CONSUMER_PERSISTED_FEATURES`
+  in `consumer/src/react/persistence.ts`, which the app passes through
+  `persistedFeatures`), and a read that opts in with `PERSIST_META`. A new
+  feature is not stored until it is listed.
 - `user-settings` is a kernel module, not a consumer one, because applying
   the saved theme and locale on mount is not product logic
   (`useApplyUserSettings` in the web kit reads `useUserSettings`).
@@ -165,9 +167,9 @@ Nothing moves before its second consumer appears; nothing is written twice.
    satisfies Record<string, ErrorDefinition>`, codes `THINGS_CLIENT_001…`.
    They apply only when the API sent no problem document; `toAppError` keeps
    the server's `code` otherwise.
-3. `src/modules/things/things.repository.ts` — `@injectable()`, calls
-   `heyApiSdk` through `unwrap` / `unwrapBody`, maps DTOs to entities, each
-   method under `@MapApiError(ThingsErrors.X)`.
+3. `src/modules/things/things.repository.ts` — `@injectable()`, each
+   method one `callApi(ThingsErrors.X, async (api) => …)` that calls
+   `heyApiSdk` through `api.body` / `api.result` and maps DTOs to entities.
 4. **A service only when there is a use case to hold.**
    `src/modules/things/things.service.ts` — `@injectable()`, injects the
    repository through `TOKENS.ThingsRepository` — exists when a method does
@@ -197,9 +199,10 @@ Nothing moves before its second consumer appears; nothing is written twice.
 10. `src/react/index.ts` — export by name the hooks the app imports. The key
     factory stays in its file: nothing outside the package names a key, and
     `pnpm check:unused` fails an export nobody imports.
-11. If the module's data must never reach storage, add
-    `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
-    `src/react/persistence.ts`.
+11. Nothing to do for storage: a module's reads are not persisted unless
+    its prefix is in `CONSUMER_PERSISTED_FEATURES`
+    (`src/react/persistence.ts`), which only plain data that is safe in a
+    browser joins.
 
 Then `apps/web/src/features/things/` may exist: `pnpm check:structure` allows
 a feature name only once a module of the kernel or of the app's product

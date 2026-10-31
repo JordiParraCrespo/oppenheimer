@@ -79,6 +79,7 @@ pnpm --filter @oppenheimer/extension lint
 names, else the machine's own at `/opt/pw-browsers/chromium` (a cloud
 sandbox ships one), else Playwright's
 (`pnpm --filter @oppenheimer/extension exec playwright install chromium`).
+`scripts/chromium.mjs` resolves it, for every Playwright run in the repo.
 `pnpm ci:local` runs it when the extension changed.
 
 ## Layout

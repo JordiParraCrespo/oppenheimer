@@ -1,8 +1,8 @@
 import {
-  AggregateRoot,
   ArgumentInvalidException,
   ArgumentNotProvidedException,
-  type CreateEntityProps,
+  type CreateVersionedEntityProps,
+  VersionedAggregateRoot,
 } from '@oppenheimer/backend-ddd';
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostRegisteredDomainEvent } from './events/host-registered.domain-event';
@@ -83,10 +83,14 @@ const FINGERPRINT = /^[0-9a-f]{64}$/;
  * path in the system, and when rotation arrives on the link
  * (`product/versions/mvp/09-runner-install-and-update.md` §3) the retired key
  * is one more column beside it — two keys, never N.
+ *
+ * Versioned, because a person (rename, unpair) and the machine itself
+ * (uninstall) write the same row: a write made on a copy someone has since
+ * changed is refused rather than allowed to put the old `unpairedAt` back.
  */
-export class HostEntity extends AggregateRoot<HostProps> {
+export class HostEntity extends VersionedAggregateRoot<HostProps> {
   /** Rehydrate an existing host (used by the mapper). */
-  static create(create: CreateEntityProps<HostProps>): HostEntity {
+  static create(create: CreateVersionedEntityProps<HostProps>): HostEntity {
     return new HostEntity(create);
   }
 

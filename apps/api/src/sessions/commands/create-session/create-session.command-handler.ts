@@ -16,11 +16,11 @@ import { SessionNamingResolver } from '../../application/session-naming.resolver
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import { firstPromptKey, requestEntries } from '../../domain/session-log-entry.factory';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
 
 /**
@@ -44,7 +44,6 @@ export class CreateSessionCommandHandler
     private readonly plan: SessionPlanFactory,
     private readonly launches: SessionLaunchSpecFactory,
     private readonly naming: SessionNamingResolver,
-    private readonly mapper: WorkSessionMapper,
     private readonly attachments: SessionAttachmentsResolver,
     private readonly cloudAttachments: CloudAttachmentsResolver,
     @Inject(LINK_REGISTRY)
@@ -88,7 +87,7 @@ export class CreateSessionCommandHandler
 
     const created = await this.sessions.createIfUnclaimed(
       session,
-      this.mapper.toRequestEvents({
+      requestEntries({
         commandId: command.id,
         userId: command.userId,
         input,
@@ -109,11 +108,7 @@ export class CreateSessionCommandHandler
       await this.launches.build(created.session, { prompt: input.prompt, images }),
     );
 
-    await this.naming.record(
-      created.session,
-      await naming,
-      WorkSessionMapper.promptKeyFor(command.id),
-    );
+    await this.naming.record(created.session, await naming, firstPromptKey(command.id));
     return { sessionId: created.session.id, hints };
   }
 }

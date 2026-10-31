@@ -32,6 +32,11 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // The one way to report a system role the database does not have: two of
   // the three paths that raise it live outside `roles`.
   '^src/roles/application/missing-system-role\\.factory\\.ts$',
+  // `requireApp`: the address narrowed to the App, or GitHub's `GITHUB_022`.
+  // A pure narrowing that belongs beside `isInstallationAddress` in the
+  // domain, which may not name the `AppError` it throws; the pull request
+  // handlers that write through the App call it before any port.
+  '^src/github/application/app-address\\.policy\\.ts$',
   '\\.di-tokens\\.ts$', // the token a port is bound to
   '\\.repository\\.port\\.ts$', // the port itself
   '^src/[^/]+/infrastructure/[^/]+\\.port\\.ts$', // ports for non-database adapters

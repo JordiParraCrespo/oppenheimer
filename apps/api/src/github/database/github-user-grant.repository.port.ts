@@ -12,7 +12,7 @@ export interface GithubUserGrantRecord {
 /**
  * The grants are keyed by person and carry no tenant: a GitHub identity is the
  * person's, like their hosts. Nothing here is reachable from a route; the
- * `PullRequestAccessPort` resolver is the one reader.
+ * GitHub module's own resolvers are its only readers.
  */
 export interface GithubUserGrantRepositoryPort {
   findByUserId(userId: string): Promise<GithubUserGrantRecord | null>;

@@ -134,21 +134,20 @@ and fetch it again. The exception is a write that changes every read of the
 feature, and says so beside the call: watching a repository moves the pull
 request queue, the details and the period's numbers alike
 (`useInvalidatePullRequests`), and moving or deleting a milestone moves its
-tasks along with it. The update goes through `withCacheOnSuccess` from
-`@oppenheimer/frontend-core/react`, which runs it before the caller's
-`onSuccess`; written inline beside `...options`, the spread order decides
-whether it runs at all:
+tasks along with it. A hook is `mutation({ run, invalidates | update })`
+(`defineMutation` from `@oppenheimer/frontend-core/react`), which runs the
+update before the caller's `onSuccess`; one that needs its own `onMutate`
+or `onError` writes `useMutation` out with `withCacheOnSuccess`, because
+an update written inline beside `...options` runs or not by spread order:
 
 ```typescript
-export function useRenameSession(options?: RenameSessionOptions) {
-  return useMutation({
-    mutationFn: ({ id, name }) => app.sessions.rename(id, name),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
+export const useRenameSession = mutation<SessionEntity, RenameSessionVariables>({
+  run: (app, { id, name }) => app.sessions.rename(id, name),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
 ```
 
 ## What lint checks

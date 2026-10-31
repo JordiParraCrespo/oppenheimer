@@ -72,6 +72,7 @@
       "!**/*.md",
       "!**/*.css",
       "!**/*.gen.ts",
+      "!apps/api/openapi.json",
       "!**/packages/frontend/api-client/src/data-access",
       "!**/packages/frontend/api-client/src/common",
       "!**/packages/frontend/design-system/*/src/components",

@@ -139,13 +139,6 @@ export class SessionsService {
   }
 
   /**
-   * One window's terminal, live: the attach socket, its reconnect ladder, a
-   * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
-   * opened until this is called, and `dispose()` closes it; the platform only
-   * renders what it delivers. `direct` says whether to take a direct path when
-   * the relay offers one (22); it is asked at each offer.
-   */
-  /**
    * The session's device, live: its screen as JPEG frames and the reader's
    * taps and keys back, over the attach socket with a device ticket. The
    * browser never names a device; the host gives the session its own.
@@ -159,6 +152,13 @@ export class SessionsService {
     });
   }
 
+  /**
+   * One window's terminal, live: the attach socket, its reconnect ladder, a
+   * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
+   * opened until this is called, and `dispose()` closes it; the platform only
+   * renders what it delivers. `direct` says whether to take a direct path when
+   * the relay offers one (22); it is asked at each offer.
+   */
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
     const remote = () =>
       new AttachSessionStream({

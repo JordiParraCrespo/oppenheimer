@@ -98,7 +98,7 @@ where it is written, what fails when it is broken, and where that runs (the
 shell hook, the Stop hook, a `ci:local` step). Rules nothing enforces sit
 first, under an "Open" heading. If the file does not exist yet, create it,
 starting with the rules this run touched, and point at it from the
-agent-guardrails paragraph of the root `AGENTS.md`. Each correction updates
+guardrails rule ("Stage files by path") of the root `AGENTS.md`. Each correction updates
 it:
 
 - a new rule gets a row naming its enforcer and the command that runs it;
