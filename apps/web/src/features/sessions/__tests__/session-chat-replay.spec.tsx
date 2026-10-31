@@ -126,9 +126,9 @@ describe('a session replayed from its transcript', () => {
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
       '  answered: Which fix? Wait for the toast',
-      '  call: sessions.chat.verb.edit sign-in.spec.ts e2e +2 −1',
+      '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 e2e/sign-in.spec.ts +2 −1',
+      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
     ]);
     // The composer is back, with the list the agent last wrote within reach.
     expect(composer().closest('[hidden]')).toBeNull();
@@ -142,7 +142,7 @@ describe('a session replayed from its transcript', () => {
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.summary\.read/i }));
     expect(outline(chat.container).slice(3, 6)).toEqual([
       '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
-      '    call: sessions.chat.verb.read sign-in.spec.ts e2e',
+      '    call: sessions.chat.verb.read sign-in.spec.ts tests',
       '    call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
     ]);
     expect(screen.getByText('3 of 20 runs failed')).toBeTruthy();
@@ -157,7 +157,7 @@ describe('a session replayed from its transcript', () => {
       `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 e2e/sign-in.spec.ts +2 −1',
+      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
       'you: Now run the whole suite',
       '… sessions.chat.turn.working 15s',
       '  reply: Running the suite.',
@@ -187,9 +187,9 @@ describe('a session replayed from its transcript', () => {
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  calls: Sessions.chat.summary.read{"count":1}, sessions.chat.summary.command{"count":1} , sessions.chat.failed{"count":1}',
       '  answered: Which fix? Wait for the toast',
-      '  call: sessions.chat.verb.edit sign-in.spec.ts e2e +2 −1',
+      '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 e2e/sign-in.spec.ts +2 −1',
+      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
     ]);
     expect(within(chat.container).getAllByText(/Fixed: the test now/)).toHaveLength(1);
   });
