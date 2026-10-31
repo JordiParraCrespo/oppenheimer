@@ -200,6 +200,13 @@ payment gateway's `NormalizedSubscription` → the aggregate's `SyncSubscription
 orchestrate; they don't hand-assemble object literals field by field. A mapper
 may add methods beyond the three interface ones for these cross-boundary shapes.
 
+**A mapper builds nothing the domain decides.** The events an aggregate raises,
+the entries a request owes its log, a default the domain picks: those are an
+entity method, a `domain/*.policy.ts` or a `domain/*.factory.ts`. A mapper
+imports no `*.domain-event.ts` and stays under 300 lines; `pnpm
+check:api-structure` holds both, and its `LEDGER` names the mappers still past
+them, each with its reason.
+
 ## Pluggable service pattern (backend packages)
 
 Pluggable backend packages (`@oppenheimer/backend-email`, `-storage`, `-cache`,
