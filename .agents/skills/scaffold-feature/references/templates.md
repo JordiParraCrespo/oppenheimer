@@ -55,7 +55,7 @@ export const ThingsErrors = {
 ```ts
 // things.repository.ts
 import { heyApiSdk, type ThingResponseDto } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { ThingEntity } from './thing.entity';
 import { ThingsErrors } from './things.errors';
@@ -72,13 +72,12 @@ function toEntity(data: ThingResponseDto): ThingEntity {
 
 @injectable()
 export class ThingsRepository {
-  @MapApiError(ThingsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<ThingEntity[]> {
-    const { data, error } = await heyApiSdk.findThings();
-    // An absent body is a failed read, not an empty collection: `[]` would
-    // render "no things" over a request that never succeeded.
-    if (error || !data) throw new AppError(ThingsErrors.FETCH_LIST_FAILED);
-    return data.map(toEntity);
+  findAll(): Promise<ThingEntity[]> {
+    // `api.body` fails an absent body: a failed read, not an empty collection
+    // (`[]` would render "no things" over a request that never succeeded).
+    return callApi(ThingsErrors.FETCH_LIST_FAILED, async (api) =>
+      (await api.body(heyApiSdk.findThings())).map(toEntity),
+    );
   }
 }
 ```

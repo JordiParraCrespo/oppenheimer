@@ -5,7 +5,7 @@ import {
   type PullRequestQueueResponseDto,
   type PullRequestRowDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import {
   type LaneReason,
@@ -154,74 +154,64 @@ function toAnalytics(dto: PullRequestAnalyticsResponseDto): PullRequestAnalytics
  */
 @injectable()
 export class PullRequestsRepository {
-  @MapApiError(PullRequestsErrors.FETCH_QUEUE_FAILED)
-  async queue(scope: PullRequestQueueName): Promise<PullRequestQueue> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequests({ query: { scope } }),
-      PullRequestsErrors.FETCH_QUEUE_FAILED,
-    );
-    return toQueue(data);
+  queue(scope: PullRequestQueueName): Promise<PullRequestQueue> {
+    return callApi(PullRequestsErrors.FETCH_QUEUE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequests({ query: { scope } }));
+      return toQueue(data);
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_FAILED)
-  async find(address: PullRequestAddress): Promise<PullRequestDetailEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequest({ path: address }),
-      PullRequestsErrors.FETCH_FAILED,
-    );
-    return toDetail(data);
+  find(address: PullRequestAddress): Promise<PullRequestDetailEntity> {
+    return callApi(PullRequestsErrors.FETCH_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequest({ path: address }));
+      return toDetail(data);
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_FILES_FAILED)
-  async files(address: PullRequestAddress): Promise<PullRequestFile[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequestFiles({ path: address }),
-      PullRequestsErrors.FETCH_FILES_FAILED,
-    );
-    return data.map((file) => ({
-      ...file,
-      previousPath: file.previousPath ?? null,
-      patch: file.patch ?? null,
-    }));
+  files(address: PullRequestAddress): Promise<PullRequestFile[]> {
+    return callApi(PullRequestsErrors.FETCH_FILES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequestFiles({ path: address }));
+      return data.map((file) => ({
+        ...file,
+        previousPath: file.previousPath ?? null,
+        patch: file.patch ?? null,
+      }));
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_FILES_FAILED)
-  async comments(address: PullRequestAddress): Promise<PullRequestComment[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequestComments({ path: address }),
-      PullRequestsErrors.FETCH_FILES_FAILED,
-    );
-    return data.map((comment) => ({
-      ...comment,
-      line: comment.line ?? null,
-      createdAt: new Date(comment.createdAt),
-    }));
+  comments(address: PullRequestAddress): Promise<PullRequestComment[]> {
+    return callApi(PullRequestsErrors.FETCH_FILES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequestComments({ path: address }));
+      return data.map((comment) => ({
+        ...comment,
+        line: comment.line ?? null,
+        createdAt: new Date(comment.createdAt),
+      }));
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_ACTIVITY_FAILED)
-  async activity(address: PullRequestAddress): Promise<PullRequestActivityItem[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequestActivity({ path: address }),
-      PullRequestsErrors.FETCH_ACTIVITY_FAILED,
-    );
-    return data.flatMap((item): PullRequestActivityItem[] => {
-      const base = { id: item.id, author: item.author, at: new Date(item.at) };
-      switch (item.kind) {
-        case 'comment':
-          return [{ ...base, kind: 'comment', body: item.body ?? '' }];
-        case 'commit':
-          return [{ ...base, kind: 'commit', sha: item.sha ?? '', message: item.body ?? '' }];
-        case 'review':
-          return item.state
-            ? [{ ...base, kind: 'review', state: item.state, body: item.body ?? '' }]
-            : [];
-        case 'event':
-          return item.event
-            ? [{ ...base, kind: 'event', event: item.event, subject: item.subject ?? null }]
-            : [];
-        default:
-          return [];
-      }
+  activity(address: PullRequestAddress): Promise<PullRequestActivityItem[]> {
+    return callApi(PullRequestsErrors.FETCH_ACTIVITY_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequestActivity({ path: address }));
+      return data.flatMap((item): PullRequestActivityItem[] => {
+        const base = { id: item.id, author: item.author, at: new Date(item.at) };
+        switch (item.kind) {
+          case 'comment':
+            return [{ ...base, kind: 'comment', body: item.body ?? '' }];
+          case 'commit':
+            return [{ ...base, kind: 'commit', sha: item.sha ?? '', message: item.body ?? '' }];
+          case 'review':
+            return item.state
+              ? [{ ...base, kind: 'review', state: item.state, body: item.body ?? '' }]
+              : [];
+          case 'event':
+            return item.event
+              ? [{ ...base, kind: 'event', event: item.event, subject: item.subject ?? null }]
+              : [];
+          default:
+            return [];
+        }
+      });
     });
   }
 
@@ -230,45 +220,39 @@ export class PullRequestsRepository {
    * GitHub allows it, and otherwise GitHub's auto-merge takes it once the
    * required checks pass (`autoMerge`), or it waits.
    */
-  @MapApiError(PullRequestsErrors.REVIEW_FAILED)
-  async submitReview(address: PullRequestAddress, review: ReviewInput): Promise<ReviewOutcome> {
-    return unwrapBody(
-      heyApiSdk.submitPullRequestReview({
-        path: address,
-        body: {
-          verdict: review.verdict,
-          ...(review.body ? { body: review.body } : {}),
-          comments: review.comments,
-        },
-      }),
-      PullRequestsErrors.REVIEW_FAILED,
-    );
+  submitReview(address: PullRequestAddress, review: ReviewInput): Promise<ReviewOutcome> {
+    return callApi(PullRequestsErrors.REVIEW_FAILED, async (api) => {
+      return api.body(
+        heyApiSdk.submitPullRequestReview({
+          path: address,
+          body: {
+            verdict: review.verdict,
+            ...(review.body ? { body: review.body } : {}),
+            comments: review.comments,
+          },
+        }),
+      );
+    });
   }
 
-  @MapApiError(PullRequestsErrors.COMMENT_FAILED)
-  async addComment(address: PullRequestAddress, comment: LineCommentInput): Promise<void> {
-    await unwrap(
-      heyApiSdk.addPullRequestComment({ path: address, body: comment }),
-      PullRequestsErrors.COMMENT_FAILED,
-    );
+  addComment(address: PullRequestAddress, comment: LineCommentInput): Promise<void> {
+    return callApi(PullRequestsErrors.COMMENT_FAILED, async (api) => {
+      await api.result(heyApiSdk.addPullRequestComment({ path: address, body: comment }));
+    });
   }
 
-  @MapApiError(PullRequestsErrors.MERGE_FAILED)
-  async merge(address: PullRequestAddress, method: MergeMethod = 'squash'): Promise<void> {
-    await unwrap(
-      heyApiSdk.mergePullRequest({ path: address, body: { method } }),
-      PullRequestsErrors.MERGE_FAILED,
-    );
+  merge(address: PullRequestAddress, method: MergeMethod = 'squash'): Promise<void> {
+    return callApi(PullRequestsErrors.MERGE_FAILED, async (api) => {
+      await api.result(heyApiSdk.mergePullRequest({ path: address, body: { method } }));
+    });
   }
 
   /** The caller's review sessions not closed, newest first. */
-  @MapApiError(PullRequestsErrors.FETCH_REVIEW_SESSIONS_FAILED)
-  async reviewSessions(): Promise<ReviewSession[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findReviewSessions(),
-      PullRequestsErrors.FETCH_REVIEW_SESSIONS_FAILED,
-    );
-    return data.map((row) => ({ ...row, createdAt: new Date(row.createdAt) }));
+  reviewSessions(): Promise<ReviewSession[]> {
+    return callApi(PullRequestsErrors.FETCH_REVIEW_SESSIONS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findReviewSessions());
+      return data.map((row) => ({ ...row, createdAt: new Date(row.createdAt) }));
+    });
   }
 
   /**
@@ -276,58 +260,57 @@ export class PullRequestsRepository {
    * to the attempt, as New session's does: a retry after a lost answer finds
    * the session the first one made.
    */
-  @MapApiError(PullRequestsErrors.START_REVIEW_FAILED)
-  async startReviewSession(
+  startReviewSession(
     address: PullRequestAddress,
     hostId: string,
     idempotencyKey: string,
   ): Promise<string> {
-    const data = await unwrapBody(
-      heyApiSdk.startReviewSession({
-        path: address,
-        body: { hostId },
-        headers: { 'Idempotency-Key': idempotencyKey },
-      }),
-      PullRequestsErrors.START_REVIEW_FAILED,
-    );
-    return data.sessionId;
+    return callApi(PullRequestsErrors.START_REVIEW_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.startReviewSession({
+          path: address,
+          body: { hostId },
+          headers: { 'Idempotency-Key': idempotencyKey },
+        }),
+      );
+      return data.sessionId;
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_REPOSITORIES_FAILED)
-  async repositories(): Promise<WatchedRepository[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findWatchedRepositories(),
-      PullRequestsErrors.FETCH_REPOSITORIES_FAILED,
-    );
-    return data.map((repository) => ({
-      installationId: sourceOf(repository.installationId),
-      githubRepoId: repository.githubRepoId,
-      fullName: repository.fullName,
-      isPrivate: repository.private,
-      watching: repository.watching,
-    }));
+  repositories(): Promise<WatchedRepository[]> {
+    return callApi(PullRequestsErrors.FETCH_REPOSITORIES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWatchedRepositories());
+      return data.map((repository) => ({
+        installationId: sourceOf(repository.installationId),
+        githubRepoId: repository.githubRepoId,
+        fullName: repository.fullName,
+        isPrivate: repository.private,
+        watching: repository.watching,
+      }));
+    });
   }
 
-  @MapApiError(PullRequestsErrors.WATCH_FAILED)
-  async setWatching(
+  setWatching(
     repository: Pick<WatchedRepository, 'installationId' | 'githubRepoId'>,
     watching: boolean,
   ): Promise<void> {
-    await unwrap(
-      heyApiSdk.setRepositoryWatch({
-        path: { installationId: repository.installationId, githubRepoId: repository.githubRepoId },
-        body: { watching },
-      }),
-      PullRequestsErrors.WATCH_FAILED,
-    );
+    return callApi(PullRequestsErrors.WATCH_FAILED, async (api) => {
+      await api.result(
+        heyApiSdk.setRepositoryWatch({
+          path: {
+            installationId: repository.installationId,
+            githubRepoId: repository.githubRepoId,
+          },
+          body: { watching },
+        }),
+      );
+    });
   }
 
-  @MapApiError(PullRequestsErrors.FETCH_ANALYTICS_FAILED)
-  async analytics(range: PullRequestAnalyticsRange): Promise<PullRequestAnalytics> {
-    const data = await unwrapBody(
-      heyApiSdk.findPullRequestAnalytics({ query: { range } }),
-      PullRequestsErrors.FETCH_ANALYTICS_FAILED,
-    );
-    return toAnalytics(data);
+  analytics(range: PullRequestAnalyticsRange): Promise<PullRequestAnalytics> {
+    return callApi(PullRequestsErrors.FETCH_ANALYTICS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequestAnalytics({ query: { range } }));
+      return toAnalytics(data);
+    });
   }
 }

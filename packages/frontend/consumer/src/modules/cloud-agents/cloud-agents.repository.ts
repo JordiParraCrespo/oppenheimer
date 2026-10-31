@@ -1,5 +1,5 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
 import { injectable } from 'inversify';
 import type { CloudAgentModel, CloudAgentStatusEntity } from './cloud-agent.entity';
@@ -30,38 +30,31 @@ function toStatus(dto: StatusDto): CloudAgentStatusEntity {
  */
 @injectable()
 export class CloudAgentsRepository {
-  @MapApiError(CloudAgentsErrors.STATUS_FAILED)
-  async status(): Promise<CloudAgentStatusEntity> {
-    return toStatus(
-      await unwrapBody(heyApiSdk.findCloudAgentStatus(), CloudAgentsErrors.STATUS_FAILED),
-    );
+  status(): Promise<CloudAgentStatusEntity> {
+    return callApi(CloudAgentsErrors.STATUS_FAILED, async (api) => {
+      return toStatus(await api.body(heyApiSdk.findCloudAgentStatus()));
+    });
   }
 
   /** Checked with the vendor before it is stored; answers the status with it connected. */
-  @MapApiError(CloudAgentsErrors.CONNECT_FAILED)
-  async connect(provider: CloudAgentProviderId, apiKey: string): Promise<CloudAgentStatusEntity> {
-    return toStatus(
-      await unwrapBody(
-        heyApiSdk.putCloudAgentCredential({ path: { provider }, body: { apiKey } }),
-        CloudAgentsErrors.CONNECT_FAILED,
-      ),
-    );
+  connect(provider: CloudAgentProviderId, apiKey: string): Promise<CloudAgentStatusEntity> {
+    return callApi(CloudAgentsErrors.CONNECT_FAILED, async (api) => {
+      return toStatus(
+        await api.body(heyApiSdk.putCloudAgentCredential({ path: { provider }, body: { apiKey } })),
+      );
+    });
   }
 
-  @MapApiError(CloudAgentsErrors.DISCONNECT_FAILED)
-  async disconnect(provider: CloudAgentProviderId): Promise<void> {
-    await unwrap(
-      heyApiSdk.removeCloudAgentCredential({ path: { provider } }),
-      CloudAgentsErrors.DISCONNECT_FAILED,
-    );
+  disconnect(provider: CloudAgentProviderId): Promise<void> {
+    return callApi(CloudAgentsErrors.DISCONNECT_FAILED, async (api) => {
+      await api.result(heyApiSdk.removeCloudAgentCredential({ path: { provider } }));
+    });
   }
 
-  @MapApiError(CloudAgentsErrors.MODELS_FAILED)
-  async models(provider: CloudAgentProviderId): Promise<CloudAgentModel[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findCloudAgentModels({ path: { provider } }),
-      CloudAgentsErrors.MODELS_FAILED,
-    );
-    return data.map((row) => ({ id: row.id, label: row.label }));
+  models(provider: CloudAgentProviderId): Promise<CloudAgentModel[]> {
+    return callApi(CloudAgentsErrors.MODELS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findCloudAgentModels({ path: { provider } }));
+      return data.map((row) => ({ id: row.id, label: row.label }));
+    });
   }
 }

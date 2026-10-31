@@ -1,5 +1,5 @@
 import { heyApiSdk, type InboxMarkResponseDto } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { InboxErrors } from './inbox.errors';
 import { type InboxMark, InboxMarkEntity } from './inbox-mark.entity';
@@ -17,28 +17,30 @@ function toEntity(dto: InboxMarkResponseDto): InboxMarkEntity {
 @injectable()
 export class InboxRepository {
   /** The caller's marks; a snooze that has ended is left out by the API. */
-  @MapApiError(InboxErrors.FETCH_MARKS_FAILED)
-  async findMarks(): Promise<InboxMarkEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findInboxMarks(), InboxErrors.FETCH_MARKS_FAILED);
-    return data.map(toEntity);
+  findMarks(): Promise<InboxMarkEntity[]> {
+    return callApi(InboxErrors.FETCH_MARKS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findInboxMarks());
+      return data.map(toEntity);
+    });
   }
 
   /** Marks one occurrence, replacing whatever mark it had. `until` comes with a snooze only. */
-  @MapApiError(InboxErrors.PUT_MARK_FAILED)
-  async putMark(itemKey: string, mark: InboxMark, until?: Date): Promise<InboxMarkEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.putInboxMark({
-        path: { itemKey },
-        body: { mark, ...(until ? { until: until.toISOString() } : {}) },
-      }),
-      InboxErrors.PUT_MARK_FAILED,
-    );
-    return toEntity(data);
+  putMark(itemKey: string, mark: InboxMark, until?: Date): Promise<InboxMarkEntity> {
+    return callApi(InboxErrors.PUT_MARK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.putInboxMark({
+          path: { itemKey },
+          body: { mark, ...(until ? { until: until.toISOString() } : {}) },
+        }),
+      );
+      return toEntity(data);
+    });
   }
 
   /** Clears an occurrence's mark: Bring back, Restore priority. Idempotent. */
-  @MapApiError(InboxErrors.DELETE_MARK_FAILED)
-  async deleteMark(itemKey: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteInboxMark({ path: { itemKey } }), InboxErrors.DELETE_MARK_FAILED);
+  deleteMark(itemKey: string): Promise<void> {
+    return callApi(InboxErrors.DELETE_MARK_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteInboxMark({ path: { itemKey } }));
+    });
   }
 }

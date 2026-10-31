@@ -7,12 +7,13 @@ export {
   type ResolvedErrorMessage,
 } from './error-message';
 export {
+  type ApiCall,
   AppError,
   type AppErrorOptions,
+  callApi,
   type ErrorDefinition,
   type SdkResult,
   unwrap,
   unwrapBody,
 } from './errors';
-export { MapApiError } from './map-api-error.decorator';
 export type { IStorageService } from './storage.service';

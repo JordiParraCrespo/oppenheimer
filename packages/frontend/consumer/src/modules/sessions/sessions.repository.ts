@@ -6,7 +6,7 @@ import {
   type SessionShareResponseDto,
   type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { AppError, callApi } from '@oppenheimer/frontend-core';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type {
@@ -208,37 +208,35 @@ export class SessionsRepository {
    * `meta.nextCursor` is null: no page pays for an offset or a count, and a
    * session whose activity moves it up the list mid-walk is never read twice.
    */
-  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<SessionEntity[]> {
-    const sessions: SessionEntity[] = [];
-    let cursor: string | undefined;
-    for (;;) {
-      const data = await unwrapBody(
-        heyApiSdk.findSessions({
-          query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
-        }),
-        SessionsErrors.FETCH_LIST_FAILED,
-        (body) => Array.isArray(body.data),
-      );
-      sessions.push(...data.data.map(toEntity));
-      const next = data.meta.nextCursor;
-      // A cursor the walk already sent would loop for ever; stop instead.
-      if (!next || next === cursor) return sessions;
-      cursor = next;
-    }
+  findAll(): Promise<SessionEntity[]> {
+    return callApi(SessionsErrors.FETCH_LIST_FAILED, async (api) => {
+      const sessions: SessionEntity[] = [];
+      let cursor: string | undefined;
+      for (;;) {
+        const data = await api.body(
+          heyApiSdk.findSessions({
+            query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
+          }),
+          (body) => Array.isArray(body.data),
+        );
+        sessions.push(...data.data.map(toEntity));
+        const next = data.meta.nextCursor;
+        // A cursor the walk already sent would loop for ever; stop instead.
+        if (!next || next === cursor) return sessions;
+        cursor = next;
+      }
+    });
   }
 
   /**
    * The failure keeps the response's status, as every call here does, and this
    * read leans on it: `isSessionNotFound` tells a 404 from a read worth retrying.
    */
-  @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
-  async findById(id: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findSession({ path: { id } }),
-      SessionsErrors.FETCH_ONE_FAILED,
-    );
-    return toEntity(data);
+  findById(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.FETCH_ONE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSession({ path: { id } }));
+      return toEntity(data);
+    });
   }
 
   /**
@@ -248,29 +246,29 @@ export class SessionsRepository {
    * instead of building a second worktree and a second branch. The key is the
    * caller's to mint (`CreateSessionVariables`).
    */
-  @MapApiError(SessionsErrors.CREATE_FAILED)
-  async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createSession({
-        body: toCreateSessionRequest(input),
-        headers: { 'Idempotency-Key': idempotencyKey },
-      }),
-      SessionsErrors.CREATE_FAILED,
-    );
-    return toEntity(data);
+  create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.CREATE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createSession({
+          body: toCreateSessionRequest(input),
+          headers: { 'Idempotency-Key': idempotencyKey },
+        }),
+      );
+      return toEntity(data);
+    });
   }
 
   /** A session in a vendor's cloud: the vendor is asked first, and refuses in its own words. */
-  @MapApiError(SessionsErrors.START_CLOUD_FAILED)
-  async startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.startCloudSession({
-        body: toStartCloudSessionRequest(input),
-        headers: { 'Idempotency-Key': idempotencyKey },
-      }),
-      SessionsErrors.START_CLOUD_FAILED,
-    );
-    return toEntity(data);
+  startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.START_CLOUD_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.startCloudSession({
+          body: toStartCloudSessionRequest(input),
+          headers: { 'Idempotency-Key': idempotencyKey },
+        }),
+      );
+      return toEntity(data);
+    });
   }
 
   /**
@@ -278,13 +276,11 @@ export class SessionsRepository {
    * worktree, so the create that follows does not wait on git. Answers the
    * hints only: whether the host was told.
    */
-  @MapApiError(SessionsErrors.PREPARE_FAILED)
-  async prepare(input: PrepareSessionInput): Promise<string[]> {
-    const data = await unwrapBody(
-      heyApiSdk.prepareSession({ body: input }),
-      SessionsErrors.PREPARE_FAILED,
-    );
-    return data.hints;
+  prepare(input: PrepareSessionInput): Promise<string[]> {
+    return callApi(SessionsErrors.PREPARE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.prepareSession({ body: input }));
+      return data.hints;
+    });
   }
 
   /**
@@ -293,49 +289,45 @@ export class SessionsRepository {
    * pages rather than trusting one to hold it: a start is a handful of entries
    * today, and a namer event or a retry is how that stops being true.
    */
-  @MapApiError(SessionsErrors.FETCH_EVENTS_FAILED)
-  async findStartLog(id: string): Promise<SessionStartEntry[]> {
-    const entries: SessionStartEntry[] = [];
-    let afterSeq: number | undefined;
-    for (let page = 0; page < CONSUMER_CONFIG.sessions.maxStartLogPages; page += 1) {
-      const data = await unwrapBody(
-        heyApiSdk.findSessionEvents({
-          path: { id },
-          query: { limit: CONSUMER_CONFIG.sessions.startLogPageSize, afterSeq },
-        }),
-        SessionsErrors.FETCH_EVENTS_FAILED,
-        (body) => Array.isArray(body.data),
-      );
-      for (const raw of data.data) {
-        const entry = toStartEntry(raw);
-        if (!entry) continue;
-        entries.push(entry);
-        if (settlesStart(entry)) return entries;
+  findStartLog(id: string): Promise<SessionStartEntry[]> {
+    return callApi(SessionsErrors.FETCH_EVENTS_FAILED, async (api) => {
+      const entries: SessionStartEntry[] = [];
+      let afterSeq: number | undefined;
+      for (let page = 0; page < CONSUMER_CONFIG.sessions.maxStartLogPages; page += 1) {
+        const data = await api.body(
+          heyApiSdk.findSessionEvents({
+            path: { id },
+            query: { limit: CONSUMER_CONFIG.sessions.startLogPageSize, afterSeq },
+          }),
+          (body) => Array.isArray(body.data),
+        );
+        for (const raw of data.data) {
+          const entry = toStartEntry(raw);
+          if (!entry) continue;
+          entries.push(entry);
+          if (settlesStart(entry)) return entries;
+        }
+        if (data.nextSeq === null || data.nextSeq === undefined) return entries;
+        afterSeq = data.nextSeq;
       }
-      if (data.nextSeq === null || data.nextSeq === undefined) return entries;
-      afterSeq = data.nextSeq;
-    }
-    return entries;
+      return entries;
+    });
   }
 
   /** Display only: the slug, the directory and the branch never change. */
-  @MapApiError(SessionsErrors.RENAME_FAILED)
-  async rename(id: string, name: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.renameSession({ path: { id }, body: { name } }),
-      SessionsErrors.RENAME_FAILED,
-    );
-    return toEntity(data);
+  rename(id: string, name: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.RENAME_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.renameSession({ path: { id }, body: { name } }));
+      return toEntity(data);
+    });
   }
 
   /** To a project that holds the session's repository; nothing on the host moves. */
-  @MapApiError(SessionsErrors.MOVE_FAILED)
-  async move(id: string, projectId: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.moveSession({ path: { id }, body: { projectId } }),
-      SessionsErrors.MOVE_FAILED,
-    );
-    return toEntity(data);
+  move(id: string, projectId: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.MOVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.moveSession({ path: { id }, body: { projectId } }));
+      return toEntity(data);
+    });
   }
 
   /**
@@ -343,13 +335,11 @@ export class SessionsRepository {
    * types the keys into its terminal. An id that is no longer the pending one
    * is refused (`SESSIONS_032`), so an answer never lands on the next question.
    */
-  @MapApiError(SessionsErrors.ANSWER_DECISION_FAILED)
-  async answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.answerSessionDecision({ path: { id }, body: answer }),
-      SessionsErrors.ANSWER_DECISION_FAILED,
-    );
-    return toEntity(data);
+  answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    return callApi(SessionsErrors.ANSWER_DECISION_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.answerSessionDecision({ path: { id }, body: answer }));
+      return toEntity(data);
+    });
   }
 
   /**
@@ -357,13 +347,11 @@ export class SessionsRepository {
    * worktrees the session already has and reopens the agent's own conversation,
    * so what comes back is the session as it was rather than a second one.
    */
-  @MapApiError(SessionsErrors.RESTART_FAILED)
-  async restart(id: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.restartSession({ path: { id } }),
-      SessionsErrors.RESTART_FAILED,
-    );
-    return toEntity(data);
+  restart(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.RESTART_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.restartSession({ path: { id } }));
+      return toEntity(data);
+    });
   }
 
   /**
@@ -375,126 +363,115 @@ export class SessionsRepository {
    * any other, with `host_offline` in its hints and the close owed on the row:
    * the API sends it again when the host reconnects.
    */
-  @MapApiError(SessionsErrors.CLOSE_FAILED)
-  async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.closeSession({
-        path: { id },
-        query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
-      }),
-      SessionsErrors.CLOSE_FAILED,
-    );
-    return toEntity(data);
+  close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
+    return callApi(SessionsErrors.CLOSE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.closeSession({
+          path: { id },
+          query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
+        }),
+      );
+      return toEntity(data);
+    });
   }
 
   /**
    * A pass to open one window's terminal. Never cached and never retried on
    * its own: the ticket is single use and sixty seconds.
    */
-  @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
-  async issueAttachTicket(
+  issueAttachTicket(
     id: string,
     window = 0,
     target: 'terminal' | 'device' = 'terminal',
   ): Promise<AttachTicket> {
-    const data = await unwrapBody(
-      heyApiSdk.issueAttachTicket({
-        path: { id },
-        body: target === 'device' ? { window, target } : { window },
-      }),
-      SessionsErrors.ATTACH_TICKET_FAILED,
-    );
-    return toTicket(data);
+    return callApi(SessionsErrors.ATTACH_TICKET_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.issueAttachTicket({
+          path: { id },
+          body: target === 'device' ? { window, target } : { window },
+        }),
+      );
+      return toTicket(data);
+    });
   }
 
   /** The ports the session listens on, as its host lists them now. */
-  @MapApiError(SessionsErrors.PORTS_FAILED)
-  async findPorts(id: string): Promise<SessionPorts> {
-    const data = await unwrapBody(
-      heyApiSdk.findSessionPorts({ path: { id } }),
-      SessionsErrors.PORTS_FAILED,
-    );
-    return {
-      state: data.state,
-      ports: data.ports.map((port) => ({ port: port.port, process: port.process ?? null })),
-    };
+  findPorts(id: string): Promise<SessionPorts> {
+    return callApi(SessionsErrors.PORTS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSessionPorts({ path: { id } }));
+      return {
+        state: data.state,
+        ports: data.ports.map((port) => ({ port: port.port, process: port.process ?? null })),
+      };
+    });
   }
 
   /**
    * Where one of the session's ports opens: framed by the Browser tab
    * (`embed`) or in a tab of its own. Never cached: the ticket is single use.
    */
-  @MapApiError(SessionsErrors.PREVIEW_FAILED)
-  async openPreview(
+  openPreview(
     id: string,
     preview: { port: number; path?: string; embed: boolean },
   ): Promise<SessionPreview> {
-    const data = await unwrapBody(
-      heyApiSdk.issueSessionPreview({ path: { id }, body: preview }),
-      SessionsErrors.PREVIEW_FAILED,
-    );
-    return { url: data.url, expiresAt: new Date(data.expiresAt) };
+    return callApi(SessionsErrors.PREVIEW_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.issueSessionPreview({ path: { id }, body: preview }));
+      return { url: data.url, expiresAt: new Date(data.expiresAt) };
+    });
   }
 
   /** How a session is shared, or `null` when it is not. */
-  @MapApiError(SessionsErrors.SHARE_LOAD_FAILED)
-  async findShare(id: string): Promise<SessionShare | null> {
-    const data = await unwrapBody(
-      heyApiSdk.findSessionShare({ path: { id } }),
-      SessionsErrors.SHARE_LOAD_FAILED,
-    );
-    return data.share ? toShare(data.share) : null;
+  findShare(id: string): Promise<SessionShare | null> {
+    return callApi(SessionsErrors.SHARE_LOAD_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSessionShare({ path: { id } }));
+      return data.share ? toShare(data.share) : null;
+    });
   }
 
   /** Share a session, or replace how it is shared; its address stays. */
-  @MapApiError(SessionsErrors.SHARE_FAILED)
-  async putShare(id: string, input: PutSessionShareDto): Promise<SessionShare> {
-    const data = await unwrapBody(
-      heyApiSdk.putSessionShare({ path: { id }, body: input }),
-      SessionsErrors.SHARE_FAILED,
-    );
-    return toShare(data);
+  putShare(id: string, input: PutSessionShareDto): Promise<SessionShare> {
+    return callApi(SessionsErrors.SHARE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.putSessionShare({ path: { id }, body: input }));
+      return toShare(data);
+    });
   }
 
   /** The people a `people` share names, nothing else changed. */
-  @MapApiError(SessionsErrors.UPDATE_SHARE_FAILED)
-  async setSharePeople(id: string, people: string[]): Promise<SessionShare> {
-    const data = await unwrapBody(
-      heyApiSdk.setSessionSharePeople({ path: { id }, body: { people } }),
-      SessionsErrors.UPDATE_SHARE_FAILED,
-    );
-    return toShare(data);
+  setSharePeople(id: string, people: string[]): Promise<SessionShare> {
+    return callApi(SessionsErrors.UPDATE_SHARE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.setSessionSharePeople({ path: { id }, body: { people } }),
+      );
+      return toShare(data);
+    });
   }
 
-  @MapApiError(SessionsErrors.UPDATE_SHARE_FAILED)
-  async stopShare(id: string): Promise<void> {
-    await unwrap(heyApiSdk.stopSessionShare({ path: { id } }), SessionsErrors.UPDATE_SHARE_FAILED);
+  stopShare(id: string): Promise<void> {
+    return callApi(SessionsErrors.UPDATE_SHARE_FAILED, async (api) => {
+      await api.result(heyApiSdk.stopSessionShare({ path: { id } }));
+    });
   }
 
   /** What a share's address opens for whoever is signed in. */
-  @MapApiError(SessionsErrors.SHARED_SESSION_FAILED)
-  async findSharedSession(slug: string): Promise<SharedSession> {
-    const data = await unwrapBody(
-      heyApiSdk.findSharedSession({ body: { slug } }),
-      SessionsErrors.SHARED_SESSION_FAILED,
-    );
-    return {
-      name: data.name,
-      state: data.state,
-      access: data.access,
-      sharedBy: data.sharedBy ?? null,
-      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-    };
+  findSharedSession(slug: string): Promise<SharedSession> {
+    return callApi(SessionsErrors.SHARED_SESSION_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSharedSession({ body: { slug } }));
+      return {
+        name: data.name,
+        state: data.state,
+        access: data.access,
+        sharedBy: data.sharedBy ?? null,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      };
+    });
   }
 
   /** A ticket through a share link: never cached, never retried on its own. */
-  @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
-  async issueSharedAttachTicket(slug: string): Promise<AttachTicket> {
-    const data = await unwrapBody(
-      heyApiSdk.issueSharedAttachTicket({ body: { slug } }),
-      SessionsErrors.ATTACH_TICKET_FAILED,
-    );
-    return toTicket(data);
+  issueSharedAttachTicket(slug: string): Promise<AttachTicket> {
+    return callApi(SessionsErrors.ATTACH_TICKET_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.issueSharedAttachTicket({ body: { slug } }));
+      return toTicket(data);
+    });
   }
 
   /**
@@ -502,14 +479,12 @@ export class SessionsRepository {
    * kept briefly by the API for the `create` that names its id in `attachmentIds`. A file over the cap
    * is refused here, before it is sent; the API judges the type by the bytes.
    */
-  @MapApiError(SessionsErrors.UPLOAD_ATTACHMENT_FAILED)
-  async uploadAttachment(file: Blob): Promise<SessionAttachment> {
-    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
-    const data = await unwrapBody(
-      heyApiSdk.uploadSessionAttachment({ body: { file: file } }),
-      SessionsErrors.UPLOAD_ATTACHMENT_FAILED,
-    );
-    return { id: data.id, mediaType: data.mediaType, size: data.size };
+  uploadAttachment(file: Blob): Promise<SessionAttachment> {
+    return callApi(SessionsErrors.UPLOAD_ATTACHMENT_FAILED, async (api) => {
+      if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
+      const data = await api.body(heyApiSdk.uploadSessionAttachment({ body: { file: file } }));
+      return { id: data.id, mediaType: data.mediaType, size: data.size };
+    });
   }
 
   /**
@@ -519,12 +494,10 @@ export class SessionsRepository {
    * API judges the type by the bytes and answers an unreachable host as an
    * error, so a resolved call means the host has it.
    */
-  @MapApiError(SessionsErrors.PASTE_FILE_FAILED)
-  async pasteFile(id: string, file: Blob, window = 0): Promise<void> {
-    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
-    await unwrap(
-      heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }),
-      SessionsErrors.PASTE_FILE_FAILED,
-    );
+  pasteFile(id: string, file: Blob, window = 0): Promise<void> {
+    return callApi(SessionsErrors.PASTE_FILE_FAILED, async (api) => {
+      if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
+      await api.result(heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }));
+    });
   }
 }

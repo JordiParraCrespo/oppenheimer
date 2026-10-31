@@ -3,7 +3,7 @@ import {
   type MilestoneResponseDto,
   type TaskResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { injectable } from 'inversify';
 import type { CreateSessionInput, StartCloudSessionInput } from '../sessions/session.entity';
@@ -81,115 +81,107 @@ export interface StartedTaskSession {
 
 @injectable()
 export class TasksRepository {
-  @MapApiError(TasksErrors.FETCH_LIST_FAILED)
-  async findAll(filter: TaskFilter = {}): Promise<Task[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findTasks({ query: filter }),
-      TasksErrors.FETCH_LIST_FAILED,
-    );
-    return data.map(toTask);
+  findAll(filter: TaskFilter = {}): Promise<Task[]> {
+    return callApi(TasksErrors.FETCH_LIST_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findTasks({ query: filter }));
+      return data.map(toTask);
+    });
   }
 
-  @MapApiError(TasksErrors.SAVE_FAILED)
-  async create(input: TaskInput): Promise<Task> {
-    const data = await unwrapBody(
-      heyApiSdk.createTask({ body: { status: 'todo', ...input } }),
-      TasksErrors.SAVE_FAILED,
-    );
-    return toTask(data);
+  create(input: TaskInput): Promise<Task> {
+    return callApi(TasksErrors.SAVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createTask({ body: { status: 'todo', ...input } }));
+      return toTask(data);
+    });
   }
 
-  @MapApiError(TasksErrors.SAVE_FAILED)
-  async update(id: string, input: Partial<TaskInput>): Promise<Task> {
-    const { status: _status, ...changes } = input;
-    const data = await unwrapBody(
-      heyApiSdk.updateTask({ path: { id }, body: changes }),
-      TasksErrors.SAVE_FAILED,
-    );
-    return toTask(data);
+  update(id: string, input: Partial<TaskInput>): Promise<Task> {
+    return callApi(TasksErrors.SAVE_FAILED, async (api) => {
+      const { status: _status, ...changes } = input;
+      const data = await api.body(heyApiSdk.updateTask({ path: { id }, body: changes }));
+      return toTask(data);
+    });
   }
 
-  @MapApiError(TasksErrors.MOVE_FAILED)
-  async move(id: string, move: TaskMove): Promise<Task> {
-    const data = await unwrapBody(
-      heyApiSdk.moveTask({ path: { id }, body: move }),
-      TasksErrors.MOVE_FAILED,
-    );
-    return toTask(data);
+  move(id: string, move: TaskMove): Promise<Task> {
+    return callApi(TasksErrors.MOVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.moveTask({ path: { id }, body: move }));
+      return toTask(data);
+    });
   }
 
-  @MapApiError(TasksErrors.DELETE_FAILED)
-  async remove(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteTask({ path: { id } }), TasksErrors.DELETE_FAILED);
+  remove(id: string): Promise<void> {
+    return callApi(TasksErrors.DELETE_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteTask({ path: { id } }));
+    });
   }
 
-  @MapApiError(TasksErrors.START_SESSION_FAILED)
-  async startSession(id: string, input: StartTaskSessionInput): Promise<StartedTaskSession> {
-    const headers = { 'Idempotency-Key': input.idempotencyKey };
-    const data = await unwrapBody(
-      input.cloud
-        ? heyApiSdk.startTaskCloudSession({
-            path: { id },
-            body: { cloud: toStartCloudSessionRequest(input.cloud), seenStatus: input.seenStatus },
-            headers,
-          })
-        : heyApiSdk.startTaskSession({
-            path: { id },
-            body: {
-              session: toCreateSessionRequest(input.session),
-              seenStatus: input.seenStatus,
-            },
-            headers,
-          }),
-      TasksErrors.START_SESSION_FAILED,
-    );
-    return { task: toTask(data.task), sessionId: data.sessionId, hints: data.hints };
+  startSession(id: string, input: StartTaskSessionInput): Promise<StartedTaskSession> {
+    return callApi(TasksErrors.START_SESSION_FAILED, async (api) => {
+      const headers = { 'Idempotency-Key': input.idempotencyKey };
+      const data = await api.body(
+        input.cloud
+          ? heyApiSdk.startTaskCloudSession({
+              path: { id },
+              body: {
+                cloud: toStartCloudSessionRequest(input.cloud),
+                seenStatus: input.seenStatus,
+              },
+              headers,
+            })
+          : heyApiSdk.startTaskSession({
+              path: { id },
+              body: {
+                session: toCreateSessionRequest(input.session),
+                seenStatus: input.seenStatus,
+              },
+              headers,
+            }),
+      );
+      return { task: toTask(data.task), sessionId: data.sessionId, hints: data.hints };
+    });
   }
 
-  @MapApiError(TasksErrors.LINK_FAILED)
-  async linkSession(id: string, sessionId: string, seenStatus: TaskStatus): Promise<Task> {
-    const data = await unwrapBody(
-      heyApiSdk.linkTaskSession({ path: { id, sessionId }, body: { seenStatus } }),
-      TasksErrors.LINK_FAILED,
-    );
-    return toTask(data);
+  linkSession(id: string, sessionId: string, seenStatus: TaskStatus): Promise<Task> {
+    return callApi(TasksErrors.LINK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.linkTaskSession({ path: { id, sessionId }, body: { seenStatus } }),
+      );
+      return toTask(data);
+    });
   }
 
-  @MapApiError(TasksErrors.LINK_FAILED)
-  async unlinkSession(id: string, sessionId: string): Promise<Task> {
-    const data = await unwrapBody(
-      heyApiSdk.unlinkTaskSession({ path: { id, sessionId } }),
-      TasksErrors.LINK_FAILED,
-    );
-    return toTask(data);
+  unlinkSession(id: string, sessionId: string): Promise<Task> {
+    return callApi(TasksErrors.LINK_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.unlinkTaskSession({ path: { id, sessionId } }));
+      return toTask(data);
+    });
   }
 
-  @MapApiError(TasksErrors.FETCH_MILESTONES_FAILED)
-  async findMilestones(): Promise<MilestoneEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findMilestones(), TasksErrors.FETCH_MILESTONES_FAILED);
-    return data.map(toMilestone);
+  findMilestones(): Promise<MilestoneEntity[]> {
+    return callApi(TasksErrors.FETCH_MILESTONES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findMilestones());
+      return data.map(toMilestone);
+    });
   }
 
-  @MapApiError(TasksErrors.SAVE_MILESTONE_FAILED)
-  async createMilestone(input: MilestoneInput): Promise<MilestoneEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createMilestone({ body: input }),
-      TasksErrors.SAVE_MILESTONE_FAILED,
-    );
-    return toMilestone(data);
+  createMilestone(input: MilestoneInput): Promise<MilestoneEntity> {
+    return callApi(TasksErrors.SAVE_MILESTONE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createMilestone({ body: input }));
+      return toMilestone(data);
+    });
   }
 
-  @MapApiError(TasksErrors.SAVE_MILESTONE_FAILED)
-  async updateMilestone(id: string, input: Partial<MilestoneInput>): Promise<MilestoneEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateMilestone({ path: { id }, body: input }),
-      TasksErrors.SAVE_MILESTONE_FAILED,
-    );
-    return toMilestone(data);
+  updateMilestone(id: string, input: Partial<MilestoneInput>): Promise<MilestoneEntity> {
+    return callApi(TasksErrors.SAVE_MILESTONE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateMilestone({ path: { id }, body: input }));
+      return toMilestone(data);
+    });
   }
 
-  @MapApiError(TasksErrors.DELETE_MILESTONE_FAILED)
-  async removeMilestone(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteMilestone({ path: { id } }), TasksErrors.DELETE_MILESTONE_FAILED);
+  removeMilestone(id: string): Promise<void> {
+    return callApi(TasksErrors.DELETE_MILESTONE_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteMilestone({ path: { id } }));
+    });
   }
 }
