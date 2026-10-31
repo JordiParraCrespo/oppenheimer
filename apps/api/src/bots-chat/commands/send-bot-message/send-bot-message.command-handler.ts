@@ -16,6 +16,7 @@ import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resol
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { maySteer } from '../../domain/bot-steer.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from './send-bot-message.command';
@@ -25,8 +26,9 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * model and effort as they are now, with your message (its words, its images
  * or both) as its first. It runs
  * when the bot's turn before it ends, unless it is a steer the running turn
- * takes first (`BotSteerPolicy`): words alone steer, since the running turn
- * would not read images. A provider with no key is refused here,
+ * takes first (`BotSteerPolicy`): words alone steer (`maySteer`), since the
+ * running turn would not read images and a `/<name>` runs its skill as a turn
+ * of its own. A provider with no key is refused here,
  * where the person can fix it, rather than failing in the worker. A card the
  * bot is waiting on expires: the person moved on.
  */
@@ -79,7 +81,7 @@ export class SendBotMessageCommandHandler
       effort: bot.effort,
       timeZone,
       credentialScopes,
-      steer: steer && attachments.length === 0,
+      steer: maySteer(steer, content, attachments.length),
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
