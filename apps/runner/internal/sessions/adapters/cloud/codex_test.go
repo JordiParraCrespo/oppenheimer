@@ -69,6 +69,70 @@ echo 'https://chatgpt.com/codex/tasks/task_e_1'`)
 	}
 }
 
+// An environment made in ChatGPT's Settings → Codex Cloud is invisible to
+// `codex cloud exec`, so a repository whose only environment is there fails
+// under every label. That is its own code, naming the labels tried, the ones
+// the CLI shows in recent tasks and where the newer environments live.
+func TestCodexStartSaysWhichEnvironmentsTheCLICanSee(t *testing.T) {
+	bin, args := fakeCodex(t, `if [ "$2" = list ]; then cat <<'JSON'
+{"tasks": [
+  {"id": "task_e_3", "url": "u", "title": "a", "status": "ready", "environment_label": "kallista"},
+  {"id": "task_e_2", "url": "u", "title": "b", "status": "ready", "environment_label": "woocommerce-elementor-ai-template"},
+  {"id": "task_e_1", "url": "u", "title": "c", "status": "ready", "environment_label": "Kallista"},
+  {"id": "task_e_0", "url": "u", "title": "d", "status": "error", "environment_label": "Oppenheimer"}
+], "cursor": ""}
+JSON
+exit 0; fi
+echo "Error: environment '$4' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
+	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	for _, want := range []string{
+		"acme-labs/oppenheimer or oppenheimer",
+		"recent tasks: kallista, woocommerce-elementor-ai-template (",
+		"Settings → Codex Cloud are not reachable by the CLI",
+	} {
+		if !strings.Contains(pe.Detail, want) {
+			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
+		}
+	}
+	if got := strings.Join(readArgs(t, args)[14:], " "); got != "cloud list --json --limit 20" {
+		t.Fatalf("args after the two tries = %q, want one page of tasks read", got)
+	}
+}
+
+// The labels are a courtesy: a list the CLI cannot answer still ends in the
+// same code, saying it could not read them.
+func TestCodexStartNamesNoEnvironmentsWhenTheyCannotBeRead(t *testing.T) {
+	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Not signed in." >&2; exit 1; }
+echo "Error: environment '$4' not found" >&2; exit 1`)
+	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if !strings.Contains(pe.Detail, "recent tasks: could not be read") {
+		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// Only the CLI's own "environment '<label>' not found" for the label just
+// tried is a missing environment. Another refusal that also says "not found"
+// is the CLI's answer, in its words, and no other label is tried.
+func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
+	bin, args := fakeCodex(t, `echo "Error: branch 'main' not found on the remote" >&2; exit 1`)
+	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+	}
+	if got := readArgs(t, args); len(got) != 7 {
+		t.Fatalf("args = %q, want one try", got)
+	}
+}
+
 // A refusal other than a missing environment is not tried again under
 // another label: it is the CLI's answer, in its own words.
 func TestCodexStartSaysWhyTheCLIRefused(t *testing.T) {

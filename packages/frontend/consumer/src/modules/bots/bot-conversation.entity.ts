@@ -1,4 +1,5 @@
 import type {
+  BotApprovalDecision,
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
@@ -78,6 +79,11 @@ export interface BotWaitingMessage {
   text: string;
   /** How many images it carries. */
   images: number;
+  /**
+   * Sent as a steer: the running turn takes it at its next tool call, and
+   * runs it after itself only when it reaches none.
+   */
+  steer: boolean;
 }
 
 /** The room a bot has left, as of its newest turn that said: its context, its plan. */
@@ -109,6 +115,8 @@ export class BotTurnEntity {
     public readonly planLimits: BotPlanLimits | null = null,
     /** What kind of failure it was, as the API recorded it; `null` unless it failed. */
     private readonly recordedFailure: BotTurnFailure | null = null,
+    /** Sent as a steer into the turn under way (`BotWaitingMessage.steer`). */
+    public readonly steer: boolean = false,
   ) {}
 
   /** Queued or running: the chat shows it working, and Stop applies to it. */
@@ -163,7 +171,14 @@ export class BotConversationEntity {
       if (turn.status !== 'queued') return [];
       const message = this.messages.find((m) => m.turnId === turn.id && m.role === 'user');
       return message
-        ? [{ turnId: turn.id, text: message.content, images: message.attachments.length }]
+        ? [
+            {
+              turnId: turn.id,
+              text: message.content,
+              images: message.attachments.length,
+              steer: turn.steer,
+            },
+          ]
         : [];
     });
   }
@@ -209,6 +224,11 @@ export interface BotApprovalDetails {
   reaches: readonly BotApprovalReach[];
   /** How far the yes went, once decided. */
   reach: BotApprovalReach | null;
+  /**
+   * What the card offers, in the order to draw it, as the API chose them for
+   * this call: the only decisions it accepts.
+   */
+  decisions: readonly BotApprovalDecision[];
 }
 
 const NO_APPROVAL_DETAILS: BotApprovalDetails = {
@@ -218,6 +238,7 @@ const NO_APPROVAL_DETAILS: BotApprovalDetails = {
   reviewNote: null,
   reaches: ['once'],
   reach: null,
+  decisions: ['approve', 'deny', 'stop'],
 };
 
 export class BotApprovalEntity {

@@ -17,6 +17,7 @@ export interface ChatTurnBlock {
   turn: BotTurnEntity | undefined;
   /** What opened it: your message, or an event Oppenheimer told the bot for you. */
   asked: BotMessageEntity[];
+  /** What the bot did, with any message you steered in while it worked where it took it. */
   answer: BotMessageEntity[];
 }
 
@@ -24,8 +25,10 @@ export interface ChatTurnBlock {
  * The conversation as blocks, in the order they happened: each turn's
  * messages under it, your message apart from the bot's work, and each line
  * outside any turn as a block of its own, keyed by its id. An event opens
- * its block either way. A message waiting behind the turn under way is left
- * out: it shows on the composer until its turn starts.
+ * its block either way. A message of yours after the bot's work began is
+ * one you steered in while it worked: it stays in the answer, where the bot
+ * took it. A message waiting behind the turn under way is left out: it shows
+ * on the composer until its turn starts or the turn takes it.
  */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const waiting = new Set(conversation.waitingMessages.map((message) => message.turnId));
@@ -42,7 +45,8 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
   for (const message of conversation.messages) {
     if (message.turnId && waiting.has(message.turnId)) continue;
     const block = blockOf(message.turnId ?? message.id, message.turnId);
-    const opens = message.role === 'user' || message.role === 'event';
+    const steered = message.role === 'user' && block.answer.length > 0;
+    const opens = !steered && (message.role === 'user' || message.role === 'event');
     (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) if (!waiting.has(turn.id)) blockOf(turn.id, turn.id);

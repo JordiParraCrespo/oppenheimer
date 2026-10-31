@@ -1,6 +1,7 @@
 import { Controller, HttpCode, Post, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -26,6 +27,8 @@ export class StartChatgptLoginHttpController {
   @HttpCode(200)
   @CheckPolicies({ action: 'update', subject: 'Bot' })
   @RequireScopes('bots:write')
+  // Each start asks ChatGPT for a new device code; a person tries a few times.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Start signing the workspace in to ChatGPT',
     description:
@@ -37,7 +40,11 @@ export class StartChatgptLoginHttpController {
     description: 'No active workspace',
     code: 'TENANT_001',
   })
-  @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_019' })
+  @ApiProblemResponse({
+    status: 429,
+    description: "ChatGPT's sign-in is busy, or this route's rate limit was reached",
+    code: ['BOTS_019', 'RATE_001'],
+  })
   @ApiProblemResponse({
     status: 502,
     description: "ChatGPT's sign-in could not be reached",

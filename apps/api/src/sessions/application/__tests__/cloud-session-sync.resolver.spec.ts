@@ -6,7 +6,6 @@ import type { WorkSessionRepositoryPort } from '../../database/work-session.repo
 import { SessionCloudRunEntity } from '../../domain/session-cloud-run.entity';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { CloudSessionSyncResolver } from '../cloud-session-sync.resolver';
 
 /**
@@ -48,11 +47,7 @@ function setup(read: CloudRunsPort['read']) {
     saveCloudRunIf: vi.fn().mockResolvedValue(true),
     appendEvents: vi.fn(),
   };
-  const resolver = new CloudSessionSyncResolver(
-    runs,
-    sessions as WorkSessionRepositoryPort,
-    new WorkSessionMapper(),
-  );
+  const resolver = new CloudSessionSyncResolver(runs, sessions as WorkSessionRepositoryPort);
   return { resolver, runs, sessions };
 }
 

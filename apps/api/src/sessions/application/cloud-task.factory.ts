@@ -4,8 +4,8 @@ import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import { cloudTaskWithFiles } from '../domain/cloud-task.policy';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
+import { SessionAttachmentMapper } from '../session-attachment.mapper';
 import { CLOUD_FILES } from '../sessions.di-tokens';
-import { WorkSessionMapper } from '../work-session.mapper';
 import type { CloudFilesPort } from './cloud-files.port';
 
 /** A first task as a launch carries it: its text, and the files its host pulls. */
@@ -34,7 +34,7 @@ export class CloudTaskFactory {
   fits(prompt: string, files: readonly { mediaType: SessionFileMediaType }[]): boolean {
     const sample = files.map(() => this.files.sampleLink());
     return fitsPromptBound(
-      cloudTaskWithFiles(prompt, WorkSessionMapper.toCloudTaskFiles(files, sample)),
+      cloudTaskWithFiles(prompt, SessionAttachmentMapper.toCloudTaskFiles(files, sample)),
     );
   }
 
@@ -50,7 +50,7 @@ export class CloudTaskFactory {
     return {
       prompt: cloudTaskWithFiles(
         task.prompt,
-        WorkSessionMapper.toCloudTaskFiles(task.images, urls),
+        SessionAttachmentMapper.toCloudTaskFiles(task.images, urls),
       ),
     };
   }

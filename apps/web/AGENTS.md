@@ -66,6 +66,24 @@ pnpm check:bundle                 # after pnpm --filter @oppenheimer/web build
 pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec in e2e/tests/web/
 ```
 
+- The critical path is budgeted: `pnpm check:bundle` fails past the number
+  in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately, in
+  its own diff.
+
+## Serving
+
+Compression, cache headers and the Content-Security-Policy live in
+`nginx.conf`. A new third-party origin goes in `CSP_EXTRA_ORIGINS`; anything
+the browser must run before React is a file in `public/`, because the policy
+admits no inline script.
+
+## Sign-up
+
+Sign-up creates the account and its personal workspace in one go
+(`product/versions/mvp/08-auth.md`). The `/onboarding` screen is only the
+recovery path for an account that ended up with no workspace. Only
+`/register` passes the social `sign-up` intent.
+
 ## Patterns agents get wrong
 
 - Naming a feature after the page (`settings`, `console`) instead of the module
@@ -92,6 +110,10 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   while the read is pending: the page jumps, or says "none", before the data
   lands.
 - Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
+- A spec that redefines `window.location` or reaches for a Node global jsdom
+  lacks (`ReadableStream`): the unit tests run on the `vmThreads` pool, where
+  neither works. Mock the kit's `leaveFor`; a spec with no DOM runs under
+  `// @vitest-environment node`.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
 what the markup looks like is [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md).

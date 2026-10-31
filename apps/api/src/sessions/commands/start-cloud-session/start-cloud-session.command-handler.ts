@@ -10,11 +10,16 @@ import { SessionNamingResolver } from '../../application/session-naming.resolver
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import {
+  cloudRequestEntries,
+  cloudRunEntries,
+  firstPromptKey,
+} from '../../domain/session-log-entry.factory';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
+import { SessionCloudRunMapper } from '../../session-cloud-run.mapper';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { StartCloudSessionCommand } from './start-cloud-session.command';
 
 /**
@@ -40,7 +45,6 @@ export class StartCloudSessionCommandHandler
     private readonly runs: CloudRunsPort,
     private readonly plan: SessionPlanFactory,
     private readonly naming: SessionNamingResolver,
-    private readonly mapper: WorkSessionMapper,
   ) {}
 
   async execute(command: StartCloudSessionCommand): Promise<SessionCommandResult> {
@@ -59,14 +63,14 @@ export class StartCloudSessionCommandHandler
     const launched = await this.runs.launch(
       owner,
       input.provider,
-      this.mapper.toCloudLaunch(id, input, source),
+      SessionCloudRunMapper.toLaunch(id, input, source),
     );
 
     const now = new Date();
     const agent = CLOUD_PROVIDER_AGENT[input.provider];
     const session = WorkSessionEntity.requestCloud({
       id,
-      cloudRun: this.mapper.toLaunchedCloudRun(
+      cloudRun: SessionCloudRunMapper.toLaunched(
         { id, organizationId: scope.organizationId },
         input,
         launched,
@@ -84,13 +88,13 @@ export class StartCloudSessionCommandHandler
     });
 
     const created = await this.sessions.createIfUnclaimed(session, [
-      ...this.mapper.toCloudRequestEvents({
+      ...cloudRequestEntries({
         commandId: command.id,
         userId: command.userId,
         agent,
         input,
       }),
-      ...this.mapper.toCloudRunEvents(launched.run, now),
+      ...cloudRunEntries(launched.run, now),
     ]);
     throwIfRefused(created, { projectSlug: project.slug, hostId: null });
     if (!created.created) return { sessionId: created.session.id, hints: [] };
@@ -98,7 +102,7 @@ export class StartCloudSessionCommandHandler
     await this.naming.record(
       created.session,
       await this.naming.propose(created.session, input.prompt),
-      WorkSessionMapper.promptKeyFor(command.id),
+      firstPromptKey(command.id),
     );
     return { sessionId: created.session.id, hints: [] };
   }

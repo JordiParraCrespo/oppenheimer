@@ -3,25 +3,25 @@ import { describe, expect, it } from 'vitest';
 import { mostUrgent, sessionStateOf } from '../lib/session-state';
 
 function session(lifecycle: SessionEntity['lifecycle'], state: SessionEntity['state'] = 'working') {
-  return new SessionEntity(
-    's-1',
-    'org-1',
-    'p-1',
-    'h-1',
-    'Fix the list',
-    'bold-otter',
-    'claude-code',
-    { model: null, permission: null, effort: null },
+  return new SessionEntity({
+    id: 's-1',
+    organizationId: 'org-1',
+    projectId: 'p-1',
+    hostId: 'h-1',
+    name: 'Fix the list',
+    slug: 'bold-otter',
+    agent: 'claude-code',
+    launch: { model: null, permission: null, effort: null },
     state,
     lifecycle,
-    null,
-    [],
-    null,
-    [],
-    new Date('2026-10-01T00:00:00Z'),
-    'worktree',
-    null,
-  );
+    cwdCheckoutId: null,
+    checkouts: [],
+    stoppedAt: null,
+    hints: [],
+    createdAt: new Date('2026-10-01T00:00:00Z'),
+    place: 'worktree',
+    folderPath: null,
+  });
 }
 
 /**

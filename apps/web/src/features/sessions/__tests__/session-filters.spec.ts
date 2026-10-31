@@ -1,4 +1,5 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { sessionCheckout, sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import { describe, expect, it } from 'vitest';
 import {
   ALL,
@@ -30,15 +31,17 @@ const session = (
     name: string;
   }> = {},
 ) =>
-  ({
+  sessionEntity({
     id,
     name: over.name ?? id,
     projectId: over.projectId ?? 'p1',
-    agent: over.agent ?? 'claude-code',
+    agent: (over.agent ?? 'claude-code') as SessionEntity['agent'],
     hostId: over.hostId ?? 'h1',
     createdAt: new Date(over.createdAt ?? '2026-01-01T00:00:00Z'),
-    checkouts: (over.repos ?? ['acme/api']).map((repositoryFullName) => ({ repositoryFullName })),
-  }) as unknown as SessionEntity;
+    checkouts: (over.repos ?? ['acme/api']).map((repositoryFullName) =>
+      sessionCheckout({ repositoryFullName }),
+    ),
+  });
 
 const filters = (over: Partial<SessionFilters>): SessionFilters => ({
   ...DEFAULT_FILTERS,

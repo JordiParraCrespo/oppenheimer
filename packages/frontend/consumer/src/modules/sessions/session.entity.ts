@@ -1,3 +1,4 @@
+import { assignProps } from '@oppenheimer/frontend-core';
 import {
   CODING_AGENTS,
   type CodingAgentId,
@@ -174,6 +175,41 @@ export interface SharedSession {
   expiresAt: Date | null;
 }
 
+/** What a {@link SessionEntity} is made from: every field, the defaulted ones optional. */
+export type SessionEntityProps = Pick<
+  SessionEntity,
+  | 'id'
+  | 'organizationId'
+  | 'projectId'
+  | 'hostId'
+  | 'name'
+  | 'slug'
+  | 'agent'
+  | 'launch'
+  | 'state'
+  | 'lifecycle'
+  | 'cwdCheckoutId'
+  | 'checkouts'
+  | 'stoppedAt'
+  | 'hints'
+  | 'createdAt'
+  | 'place'
+  | 'folderPath'
+> &
+  Partial<
+    Pick<
+      SessionEntity,
+      | 'closeRequest'
+      | 'closeRefusal'
+      | 'observedSince'
+      | 'lastEventAt'
+      | 'stateSeq'
+      | 'decision'
+      | 'cloud'
+      | 'cloudSessionId'
+    >
+  >;
+
 /**
  * A session as the console needs it: a terminal, an agent, and where it runs
  * on a host — a set of checkouts the runner made (`worktree`), or a folder
@@ -185,58 +221,60 @@ export interface SharedSession {
  * stored fold of the log.
  */
 export class SessionEntity {
-  constructor(
-    public readonly id: string,
-    public readonly organizationId: string,
-    public readonly projectId: string,
-    /** Null for a cloud session launched at its vendor, which no host started. */
-    public readonly hostId: string | null,
-    public readonly name: string,
-    /** The directory name and the last segment of the branch. Immutable. */
-    public readonly slug: string,
-    public readonly agent: SessionAgent,
-    public readonly launch: SessionLaunch,
-    public readonly state: SessionGroup,
-    public readonly lifecycle: SessionState,
-    public readonly cwdCheckoutId: string | null,
-    public readonly checkouts: SessionCheckoutEntity[],
-    public readonly stoppedAt: Date | null,
-    /** What the control plane could not do for the request that returned this. */
-    public readonly hints: string[],
-    public readonly createdAt: Date,
-    public readonly place: SessionPlace,
-    /** The folder a `folder` session runs in, absolute; null for a worktree session. */
-    public readonly folderPath: string | null,
-    /**
-     * A delete the host has not carried out yet: the close is the host's to do, so
-     * the session stays until it answers, and its next connection is sent it again.
-     */
-    public readonly closeRequest: SessionCloseRequest | null = null,
-    /** Why the host refused the last delete, until it is asked again. */
-    public readonly closeRefusal: SessionCloseRefusal | null = null,
-    /**
-     * When the agent entered the state it was last observed in; null until a
-     * second report of it. A blocked wait is named by it (the Inbox).
-     */
-    public readonly observedSince: Date | null = null,
-    /** When the session's log last moved. */
-    public readonly lastEventAt: Date | null = null,
-    /** Bumped on every change of `lifecycle`: one failure or launch told from the next. */
-    public readonly stateSeq: number = 0,
-    /**
-     * What the agent waits on you to decide, as the host read it: a question it
-     * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
-     */
-    public readonly decision: SessionDecision | null = null,
-    /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
-    public readonly cloud: SessionCloudRun | null = null,
-    /**
-     * A cloud session's id at its vendor, once its host has started it:
-     * Claude Code's session (`session_…`) or Codex's task (`task_…`); null
-     * before, and for every other session.
-     */
-    public readonly cloudSessionId: string | null = null,
-  ) {}
+  readonly id!: string;
+  readonly organizationId!: string;
+  readonly projectId!: string;
+  /** Null for a cloud session launched at its vendor, which no host started. */
+  readonly hostId!: string | null;
+  readonly name!: string;
+  /** The directory name and the last segment of the branch. Immutable. */
+  readonly slug!: string;
+  readonly agent!: SessionAgent;
+  readonly launch!: SessionLaunch;
+  readonly state!: SessionGroup;
+  readonly lifecycle!: SessionState;
+  readonly cwdCheckoutId!: string | null;
+  readonly checkouts!: SessionCheckoutEntity[];
+  readonly stoppedAt!: Date | null;
+  /** What the control plane could not do for the request that returned this. */
+  readonly hints!: string[];
+  readonly createdAt!: Date;
+  readonly place!: SessionPlace;
+  /** The folder a `folder` session runs in, absolute; null for a worktree session. */
+  readonly folderPath!: string | null;
+  /**
+   * A delete the host has not carried out yet: the close is the host's to do, so
+   * the session stays until it answers, and its next connection is sent it again.
+   */
+  readonly closeRequest: SessionCloseRequest | null = null;
+  /** Why the host refused the last delete, until it is asked again. */
+  readonly closeRefusal: SessionCloseRefusal | null = null;
+  /**
+   * When the agent entered the state it was last observed in; null until a
+   * second report of it. A blocked wait is named by it (the Inbox).
+   */
+  readonly observedSince: Date | null = null;
+  /** When the session's log last moved. */
+  readonly lastEventAt: Date | null = null;
+  /** Bumped on every change of `lifecycle`: one failure or launch told from the next. */
+  readonly stateSeq: number = 0;
+  /**
+   * What the agent waits on you to decide, as the host read it: a question it
+   * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+   */
+  readonly decision: SessionDecision | null = null;
+  /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
+  readonly cloud: SessionCloudRun | null = null;
+  /**
+   * A cloud session's id at its vendor, once its host has started it:
+   * Claude Code's session (`session_…`) or Codex's task (`task_…`); null
+   * before, and for every other session.
+   */
+  readonly cloudSessionId: string | null = null;
+
+  constructor(props: SessionEntityProps) {
+    assignProps(this, props);
+  }
 
   /**
    * Whether it runs in a vendor's cloud, with no terminal here: Claude Code's,
@@ -344,33 +382,15 @@ export class SessionEntity {
 
   /** The same session in another project: what a list draws while a move to it is on its way. */
   inProject(projectId: string): SessionEntity {
-    return new SessionEntity(
-      this.id,
-      this.organizationId,
-      projectId,
-      this.hostId,
-      this.name,
-      this.slug,
-      this.agent,
-      this.launch,
-      this.state,
-      this.lifecycle,
-      this.cwdCheckoutId,
-      this.checkouts,
-      this.stoppedAt,
-      this.hints,
-      this.createdAt,
-      this.place,
-      this.folderPath,
-      this.closeRequest,
-      this.closeRefusal,
-      this.observedSince,
-      this.lastEventAt,
-      this.stateSeq,
-      this.decision,
-      this.cloud,
-      this.cloudSessionId,
-    );
+    return this.with({ projectId });
+  }
+
+  /**
+   * A copy with `overrides` applied. The copy is of every field the session
+   * holds, so a field added later is carried without being listed here.
+   */
+  with(overrides: Partial<SessionEntityProps>): SessionEntity {
+    return new SessionEntity({ ...this, ...overrides });
   }
 }
 

@@ -4,7 +4,7 @@ import {
   type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import {
   BranchEntity,
@@ -45,16 +45,14 @@ function toRepository(data: RepositoryDto): RepositoryEntity {
 
 @injectable()
 export class InstallationsRepository {
-  @MapApiError(InstallationsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<InstallationEntity[]> {
-    // An absent body is a failed read, not an empty list — returning `[]` would
-    // render "GitHub is not connected" over a request that never succeeded,
-    // and send somebody to reinstall an App they already have.
-    const data = await unwrapBody(
-      heyApiSdk.findInstallations(),
-      InstallationsErrors.FETCH_LIST_FAILED,
-    );
-    return data.map(toEntity);
+  findAll(): Promise<InstallationEntity[]> {
+    return callApi(InstallationsErrors.FETCH_LIST_FAILED, async (api) => {
+      // An absent body is a failed read, not an empty list — returning `[]` would
+      // render "GitHub is not connected" over a request that never succeeded,
+      // and send somebody to reinstall an App they already have.
+      const data = await api.body(heyApiSdk.findInstallations());
+      return data.map(toEntity);
+    });
   }
 
   /**
@@ -62,10 +60,11 @@ export class InstallationsRepository {
    * person in this workspace and answers with the App's install URL carrying
    * it.
    */
-  @MapApiError(InstallationsErrors.START_FAILED)
-  async startInstall(): Promise<InstallationStart> {
-    const data = await unwrapBody(heyApiSdk.startInstallation(), InstallationsErrors.START_FAILED);
-    return { url: data.url, state: data.state, expiresAt: new Date(data.expiresAt) };
+  startInstall(): Promise<InstallationStart> {
+    return callApi(InstallationsErrors.START_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.startInstallation());
+      return { url: data.url, state: data.state, expiresAt: new Date(data.expiresAt) };
+    });
   }
 
   /**
@@ -78,23 +77,23 @@ export class InstallationsRepository {
    * installation refreshes what GitHub reports about it rather than
    * duplicating it.
    */
-  @MapApiError(InstallationsErrors.CONNECT_FAILED)
-  async connect(callback: InstallationCallback): Promise<InstallationEntity> {
-    const { githubInstallationId, code, state } = callback;
-    const data = await unwrapBody(
-      heyApiSdk.connectInstallation({ body: { githubInstallationId, code, state } }),
-      InstallationsErrors.CONNECT_FAILED,
-    );
-    return toEntity(data);
+  connect(callback: InstallationCallback): Promise<InstallationEntity> {
+    return callApi(InstallationsErrors.CONNECT_FAILED, async (api) => {
+      const { githubInstallationId, code, state } = callback;
+      const data = await api.body(
+        heyApiSdk.connectInstallation({ body: { githubInstallationId, code, state } }),
+      );
+      return toEntity(data);
+    });
   }
 
-  @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)
-  async repositories(installationId: string): Promise<RepositoryEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.listInstallationRepositories({ path: { id: installationId } }),
-      InstallationsErrors.FETCH_REPOSITORIES_FAILED,
-    );
-    return data.map(toRepository);
+  repositories(installationId: string): Promise<RepositoryEntity[]> {
+    return callApi(InstallationsErrors.FETCH_REPOSITORIES_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.listInstallationRepositories({ path: { id: installationId } }),
+      );
+      return data.map(toRepository);
+    });
   }
 
   /**
@@ -104,13 +103,13 @@ export class InstallationsRepository {
    * account: the API answers this uncached and one call per row of a picker
    * nobody has opened is a GitHub rate limit spent on nothing.
    */
-  @MapApiError(InstallationsErrors.FETCH_BRANCHES_FAILED)
-  async branches(installationId: string, githubRepoId: number): Promise<BranchEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.listRepositoryBranches({ path: { id: installationId, githubRepoId } }),
-      InstallationsErrors.FETCH_BRANCHES_FAILED,
-    );
-    return data.map(toBranch);
+  branches(installationId: string, githubRepoId: number): Promise<BranchEntity[]> {
+    return callApi(InstallationsErrors.FETCH_BRANCHES_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.listRepositoryBranches({ path: { id: installationId, githubRepoId } }),
+      );
+      return data.map(toBranch);
+    });
   }
 }
 

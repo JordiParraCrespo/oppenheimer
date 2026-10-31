@@ -13,8 +13,8 @@ memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
 `pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
-for what a component costs. The Claude Code Stop hook runs dependency-cruiser
-and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
+for what a component costs. The agent hook `.agents/hooks/arch-check.sh` runs
+dependency-cruiser and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 

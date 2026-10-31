@@ -24,13 +24,21 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * A message to a bot (`25-bots.md` §2): a queued turn on the bot's provider,
  * model and effort as they are now, with your message (its words, its images
  * or both) as its first. It runs
- * when the bot's turn before it ends. A provider with no key is refused here,
+ * when the bot's turn before it ends, unless it is a steer the running turn
+ * takes first (`BotSteerPolicy`): words alone steer, since the running turn
+ * would not read images. A provider with no key is refused here,
  * where the person can fix it, rather than failing in the worker. A card the
  * bot is waiting on expires: the person moved on.
  */
+/** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
+export interface SentBotMessage {
+  turnId: string;
+  messageId: string;
+}
+
 @CommandHandler(SendBotMessageCommand)
 export class SendBotMessageCommandHandler
-  implements ICommandHandler<SendBotMessageCommand, string>
+  implements ICommandHandler<SendBotMessageCommand, SentBotMessage>
 {
   constructor(
     @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
@@ -50,8 +58,9 @@ export class SendBotMessageCommandHandler
     attachmentIds,
     timeZone,
     credentialScopes,
+    steer,
     metadata,
-  }: SendBotMessageCommand): Promise<string> {
+  }: SendBotMessageCommand): Promise<SentBotMessage> {
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
     requireFound(
@@ -72,6 +81,7 @@ export class SendBotMessageCommandHandler
       effort: bot.effort,
       timeZone,
       credentialScopes,
+      steer: steer && attachments.length === 0,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
@@ -88,6 +98,6 @@ export class SendBotMessageCommandHandler
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.cards.retire(bot.organizationId, bot.id);
-    return turn.id;
+    return { turnId: turn.id, messageId: message.id };
   }
 }

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -39,6 +40,9 @@ export class PollChatgptLoginHttpController {
   @HttpCode(200)
   @CheckPolicies({ action: 'update', subject: 'Bot' })
   @RequireScopes('bots:write')
+  // The console polls every five seconds (`LIVE_POLL.chatgptLogin`), twelve a
+  // minute; thirty leaves room for a second tab and still stops a loop.
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Check on a ChatGPT sign-in',
     description:
@@ -51,7 +55,11 @@ export class PollChatgptLoginHttpController {
     code: 'TENANT_001',
   })
   @ApiProblemResponse({ status: 410, description: 'The ChatGPT sign-in expired', code: 'BOTS_018' })
-  @ApiProblemResponse({ status: 429, description: "ChatGPT's sign-in is busy", code: 'BOTS_019' })
+  @ApiProblemResponse({
+    status: 429,
+    description: "ChatGPT's sign-in is busy, or this route's rate limit was reached",
+    code: ['BOTS_019', 'RATE_001'],
+  })
   @ApiProblemResponse({
     status: 502,
     description: "ChatGPT's sign-in could not be reached",

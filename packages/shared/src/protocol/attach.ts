@@ -93,7 +93,17 @@ export const attachAttachedSchema = z.object({
    * answer, and the relay allows it for this audience. The ICE servers are the
    * ones the browser's peer connection gathers with.
    */
-  direct: z.object({ iceServers: z.array(z.string().min(1).max(256)).max(8) }).optional(),
+  direct: z
+    .object({
+      iceServers: z.array(z.string().min(1).max(256)).max(8),
+      /**
+       * The host the channel will reach, which is what the browser pins the
+       * host's key under (`31`). Without it the browser takes no direct
+       * path: it cannot tell a new host from a changed key.
+       */
+      hostId: z.string().min(1).max(64).optional(),
+    })
+    .optional(),
 });
 
 /** The runner's answer to `direct.offer`. */

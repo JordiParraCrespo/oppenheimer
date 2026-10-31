@@ -17,7 +17,7 @@ needs none.
 
 The **`web` project passes but is not a CI row yet.** Run
 `pnpm --filter @oppenheimer/e2e e2e:web` locally when you touch the browser
-journeys. Adding it to `scripts/ci/local.mjs` is a separate CI decision: the
+journeys. Adding it to `scripts/ci/plan.mjs` is a separate CI decision: the
 scheduled workflow would need a Chromium.
 
 The **`terminal` project** needs Chromium and nothing else: no stack. It is the
@@ -88,10 +88,12 @@ claim is `GITHUB_003` — the product's rule, not something a test works around.
 mint-and-redeem flow.
 
 An environment that already ships a Chromium — a container image, a sandbox —
-can say where it is instead of downloading the build this Playwright pins:
+can say where it is instead of downloading the build this Playwright pins; one
+at `/opt/pw-browsers/chromium` is used without being named
+(`scripts/chromium.mjs`, which the extension's suite and `pnpm screens` share):
 
 ```bash
-PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium pnpm e2e:web
+PLAYWRIGHT_CHROMIUM_PATH=/path/to/chromium pnpm e2e:web
 ```
 
 ## The fleet: real runners, several machines

@@ -76,9 +76,11 @@ Gmail**; Google sends the browser back to `/settings/mail/google`. A person conn
 Unique `(organizationId, userId, googleSubject)`. The grant is a
 person's, as the calendar's is: nobody else in a workspace uses it, and
 when teams come, a bot works only its owner's Gmail. The sealer is the
-calendar's `AesTokenSealerAdapter`; with a second user it moves to a
-shared place, as the calendar note said it would. Access tokens are
-minted per call and never stored.
+calendar's, under a key of mail's own (`MAIL_TOKEN_KEY`); with a second
+user it moved to a shared place, as the calendar note said it would:
+`configKeySealer` in `@oppenheimer/backend-core`, which every module that
+seals a secret binds to its own token. Access tokens are minted per call
+and never stored.
 
 Disconnect revokes the token at Google and deletes the row. `invalid_grant`
 marks it `revoked`, Settings says Reconnect, and the bot is told that
