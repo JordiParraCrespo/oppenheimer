@@ -1,7 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
 import type { PullRequestReadPort } from '../../../../github/application/pull-request-read.port';
-import type { PullRequestWritePort } from '../../../../github/application/pull-request-write.port';
 import type { ReviewSessionRepositoryPort } from '../../../database/review-session.repository.port';
 import { StartReviewSessionCommand } from '../start-review-session.command';
 import { StartReviewSessionCommandHandler } from '../start-review-session.command-handler';
@@ -41,7 +40,6 @@ function setup(fromFork = false) {
       },
     }),
   } satisfies Pick<PullRequestReadPort, 'pullRequest'>;
-  const writes = { requireApp: vi.fn(<T>(address: T) => address) };
   const reviews = {
     link: vi.fn().mockResolvedValue(undefined),
     findOpen: vi.fn(),
@@ -49,7 +47,6 @@ function setup(fromFork = false) {
   const commandBus = { execute: vi.fn().mockResolvedValue({ sessionId: 'session-1', hints: [] }) };
   const handler = new StartReviewSessionCommandHandler(
     reads as unknown as PullRequestReadPort,
-    writes as unknown as PullRequestWritePort,
     reviews,
     commandBus as never,
   );

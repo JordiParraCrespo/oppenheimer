@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { requireApp } from '../../../github/application/app-address.policy';
 import type { PullRequestWritePort } from '../../../github/application/pull-request-write.port';
 import { GithubErrors } from '../../../github/domain/github.errors';
 import { PULL_REQUEST_WRITES } from '../../../github/github.di-tokens';
@@ -35,7 +36,7 @@ export class SubmitPullRequestReviewCommandHandler
 
   async execute({ scope, address, review }: SubmitPullRequestReviewCommand): Promise<Submitted> {
     // A review is made in the caller's name, which only the App's repositories take.
-    const app = this.writes.requireApp(address);
+    const app = requireApp(address);
     await this.writes.submitReview(scope, scope.userId, app, {
       event: EVENTS[review.verdict],
       body: review.body,
