@@ -10,6 +10,11 @@ import { SessionNamingResolver } from '../../application/session-naming.resolver
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import {
+  cloudRequestEntries,
+  cloudRunEntries,
+  firstPromptKey,
+} from '../../domain/session-log-entry.factory';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -84,13 +89,13 @@ export class StartCloudSessionCommandHandler
     });
 
     const created = await this.sessions.createIfUnclaimed(session, [
-      ...this.mapper.toCloudRequestEvents({
+      ...cloudRequestEntries({
         commandId: command.id,
         userId: command.userId,
         agent,
         input,
       }),
-      ...this.mapper.toCloudRunEvents(launched.run, now),
+      ...cloudRunEntries(launched.run, now),
     ]);
     throwIfRefused(created, { projectSlug: project.slug, hostId: null });
     if (!created.created) return { sessionId: created.session.id, hints: [] };
@@ -98,7 +103,7 @@ export class StartCloudSessionCommandHandler
     await this.naming.record(
       created.session,
       await this.naming.propose(created.session, input.prompt),
-      WorkSessionMapper.promptKeyFor(command.id),
+      firstPromptKey(command.id),
     );
     return { sessionId: created.session.id, hints: [] };
   }
