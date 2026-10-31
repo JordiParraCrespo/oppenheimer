@@ -101,42 +101,42 @@ function toDecision(data: SessionResponseDto['decision']): SessionDecision | nul
 }
 
 function toEntity(data: SessionResponseDto): SessionEntity {
-  return new SessionEntity(
-    data.id,
-    data.organizationId,
-    data.projectId,
-    data.hostId,
-    data.name,
-    data.slug,
-    data.agent,
-    {
+  return new SessionEntity({
+    id: data.id,
+    organizationId: data.organizationId,
+    projectId: data.projectId,
+    hostId: data.hostId,
+    name: data.name,
+    slug: data.slug,
+    agent: data.agent,
+    launch: {
       model: data.launch.model ?? null,
       permission: data.launch.permission ?? null,
       effort: data.launch.effort ?? null,
     },
-    data.state,
-    data.lifecycle,
-    data.cwdCheckoutId ?? null,
-    data.checkouts.map(toCheckout),
-    data.stoppedAt ? new Date(data.stoppedAt) : null,
-    data.hints ?? [],
-    new Date(data.createdAt),
-    data.place,
-    data.folderPath ?? null,
-    data.closeRequest
+    state: data.state,
+    lifecycle: data.lifecycle,
+    cwdCheckoutId: data.cwdCheckoutId ?? null,
+    checkouts: data.checkouts.map(toCheckout),
+    stoppedAt: data.stoppedAt ? new Date(data.stoppedAt) : null,
+    hints: data.hints ?? [],
+    createdAt: new Date(data.createdAt),
+    place: data.place,
+    folderPath: data.folderPath ?? null,
+    closeRequest: data.closeRequest
       ? {
           requestedAt: new Date(data.closeRequest.requestedAt),
           acceptUnpushedWork: data.closeRequest.acceptUnpushedWork,
         }
       : null,
-    data.closeRefusal
+    closeRefusal: data.closeRefusal
       ? { code: data.closeRefusal.code, detail: data.closeRefusal.detail ?? null }
       : null,
-    data.observedSince ? new Date(data.observedSince) : null,
-    data.lastEventAt ? new Date(data.lastEventAt) : null,
-    data.stateSeq ?? 0,
-    toDecision(data.decision),
-    data.cloud
+    observedSince: data.observedSince ? new Date(data.observedSince) : null,
+    lastEventAt: data.lastEventAt ? new Date(data.lastEventAt) : null,
+    stateSeq: data.stateSeq ?? 0,
+    decision: toDecision(data.decision),
+    cloud: data.cloud
       ? {
           provider: data.cloud.provider,
           url: data.cloud.url ?? null,
@@ -147,8 +147,8 @@ function toEntity(data: SessionResponseDto): SessionEntity {
           syncedAt: new Date(data.cloud.syncedAt),
         }
       : null,
-    data.cloudSessionId ?? null,
-  );
+    cloudSessionId: data.cloudSessionId ?? null,
+  });
 }
 
 /**

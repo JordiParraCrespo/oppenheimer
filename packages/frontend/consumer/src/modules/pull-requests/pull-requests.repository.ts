@@ -49,32 +49,31 @@ function laneReasonOf(dto: PullRequestRowDto['laneReason']): LaneReason {
 }
 
 function toEntity(dto: PullRequestRowDto): PullRequestEntity {
-  return new PullRequestEntity(
-    sourceOf(dto.installationId),
-    dto.githubRepoId,
-    dto.repository,
-    dto.number,
-    dto.title,
-    dto.author,
-    dto.authorKind,
-    dto.headRef,
-    dto.scope,
-    dto.lane,
-    laneReasonOf(dto.laneReason),
-    dto.additions,
-    dto.deletions,
-    dto.checks,
-    dto.mergeable,
-    dto.blocker ?? null,
-    dto.waitingSeconds,
-    dto.draft,
-    dto.htmlUrl,
-    dto.checksRefusal,
-    dto.unread,
-    dto.headSha,
-    // Whole seconds, as the API counts them, so two reads of one wait agree.
-    new Date(Math.floor(Date.now() / 1000) * 1000 - dto.waitingSeconds * 1000),
-  );
+  return new PullRequestEntity({
+    installationId: sourceOf(dto.installationId),
+    githubRepoId: dto.githubRepoId,
+    repository: dto.repository,
+    number: dto.number,
+    title: dto.title,
+    author: dto.author,
+    authorKind: dto.authorKind,
+    headRef: dto.headRef,
+    scope: dto.scope,
+    lane: dto.lane,
+    laneReason: laneReasonOf(dto.laneReason),
+    additions: dto.additions,
+    deletions: dto.deletions,
+    checks: dto.checks,
+    mergeable: dto.mergeable,
+    blocker: dto.blocker ?? null,
+    waitingSeconds: dto.waitingSeconds,
+    draft: dto.draft,
+    htmlUrl: dto.htmlUrl,
+    checksRefusal: dto.checksRefusal,
+    unread: dto.unread,
+    headSha: dto.headSha,
+    openedAt: new Date(Math.floor(Date.now() / 1000) * 1000 - dto.waitingSeconds * 1000),
+  });
 }
 
 function toQueue(dto: PullRequestQueueResponseDto): PullRequestQueue {

@@ -1,3 +1,4 @@
+import { assignProps } from '@oppenheimer/frontend-core';
 import type {
   CiFindingAction,
   CiFindingConfidence,
@@ -77,40 +78,70 @@ export type LaneReason =
   /** GitHub did not give the files: size alone, never quick. */
   | { code: 'files_unread'; lines: number };
 
+/** What a {@link PullRequestEntity} is made from: every field, the defaulted ones optional. */
+export type PullRequestEntityProps = Pick<
+  PullRequestEntity,
+  | 'installationId'
+  | 'githubRepoId'
+  | 'repository'
+  | 'number'
+  | 'title'
+  | 'author'
+  | 'authorKind'
+  | 'headRef'
+  | 'scope'
+  | 'lane'
+  | 'laneReason'
+  | 'additions'
+  | 'deletions'
+  | 'checks'
+  | 'mergeable'
+  | 'blocker'
+  | 'waitingSeconds'
+  | 'draft'
+  | 'htmlUrl'
+  | 'checksRefusal'
+  | 'unread'
+  | 'headSha'
+  | 'openedAt'
+>;
+
 /** One row of the queue. */
 export class PullRequestEntity {
-  constructor(
-    public readonly installationId: string,
-    public readonly githubRepoId: number,
-    /** `acme-labs/xrp-mobile`. */
-    public readonly repository: string,
-    public readonly number: number,
-    public readonly title: string,
-    /** A GitHub login. */
-    public readonly author: string,
-    /** A session's when its branch is one a session pushed. */
-    public readonly authorKind: 'session' | 'person',
-    public readonly headRef: string,
-    public readonly scope: PullRequestScope,
-    public readonly lane: PullRequestLane,
-    public readonly laneReason: LaneReason,
-    public readonly additions: number,
-    public readonly deletions: number,
-    public readonly checks: PullRequestChecks,
-    public readonly mergeable: boolean,
-    public readonly blocker: PullRequestBlocker | null,
-    public readonly waitingSeconds: number,
-    public readonly draft: boolean,
-    public readonly htmlUrl: string,
-    /** Why the checks are `unavailable`; null when GitHub showed them. */
-    public readonly checksRefusal: ReadRefusal | null,
-    /** What GitHub did not give on this read; an unread part is not an empty one. */
-    public readonly unread: readonly ('files' | 'reviews')[],
-    /** The head commit this read saw: a new push is a new wait (the Inbox's key). */
-    public readonly headSha: string,
-    /** When it was opened, from `waitingSeconds` at the moment of the read. */
-    public readonly openedAt: Date,
-  ) {}
+  readonly installationId!: string;
+  readonly githubRepoId!: number;
+  /** `acme-labs/xrp-mobile`. */
+  readonly repository!: string;
+  readonly number!: number;
+  readonly title!: string;
+  /** A GitHub login. */
+  readonly author!: string;
+  /** A session's when its branch is one a session pushed. */
+  readonly authorKind!: 'session' | 'person';
+  readonly headRef!: string;
+  readonly scope!: PullRequestScope;
+  readonly lane!: PullRequestLane;
+  readonly laneReason!: LaneReason;
+  readonly additions!: number;
+  readonly deletions!: number;
+  readonly checks!: PullRequestChecks;
+  readonly mergeable!: boolean;
+  readonly blocker!: PullRequestBlocker | null;
+  readonly waitingSeconds!: number;
+  readonly draft!: boolean;
+  readonly htmlUrl!: string;
+  /** Why the checks are `unavailable`; null when GitHub showed them. */
+  readonly checksRefusal!: ReadRefusal | null;
+  /** What GitHub did not give on this read; an unread part is not an empty one. */
+  readonly unread!: readonly ('files' | 'reviews')[];
+  /** The head commit this read saw: a new push is a new wait (the Inbox's key). */
+  readonly headSha!: string;
+  /** When it was opened, from `waitingSeconds` at the moment of the read. */
+  readonly openedAt!: Date;
+
+  constructor(props: PullRequestEntityProps) {
+    assignProps(this, props);
+  }
 
   get address(): PullRequestAddress {
     return {
@@ -210,31 +241,8 @@ export class PullRequestDetailEntity extends PullRequestEntity {
     /** What the head's failing checks came to, one per check looked into. */
     public readonly ciFindings: CiFinding[] = [],
   ) {
-    super(
-      row.installationId,
-      row.githubRepoId,
-      row.repository,
-      row.number,
-      row.title,
-      row.author,
-      row.authorKind,
-      row.headRef,
-      row.scope,
-      row.lane,
-      row.laneReason,
-      row.additions,
-      row.deletions,
-      row.checks,
-      row.mergeable,
-      row.blocker,
-      row.waitingSeconds,
-      row.draft,
-      row.htmlUrl,
-      row.checksRefusal,
-      row.unread,
-      row.headSha,
-      row.openedAt,
-    );
+    // The row is an entity of its own, so it is all the fields its props need.
+    super(row);
   }
 
   get isOpen(): boolean {

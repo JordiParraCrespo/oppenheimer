@@ -1,4 +1,5 @@
 export type { CoreModuleConfig } from './core.module';
+export { assignProps } from './entity-props';
 export {
   createErrorMessageResolver,
   type ErrorMessageKey,

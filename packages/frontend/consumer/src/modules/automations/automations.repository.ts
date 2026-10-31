@@ -109,29 +109,29 @@ function toEntity(dto: AutomationResponseDto): AutomationEntity {
 }
 
 function toRunEntity(dto: AutomationRunResponseDto): AutomationRunEntity {
-  return new AutomationRunEntity(
-    dto.id,
-    dto.automationId,
-    dto.automationName,
-    dto.automationDeleted,
-    dto.projectId ?? null,
-    dto.status,
-    dto.outcome,
-    dto.skipReason ?? null,
-    dto.cause,
-    dto.causeSummary,
-    dto.title,
-    dto.sessionId ?? null,
-    dto.branch ?? null,
-    dto.revisionNumber,
-    dto.agent ?? null,
-    dto.model ?? null,
-    dto.hostId ?? null,
-    new Date(dto.createdAt),
-    date(dto.startedAt),
-    date(dto.endedAt),
-    dto.durationMs ?? null,
-    dto.turn
+  return new AutomationRunEntity({
+    id: dto.id,
+    automationId: dto.automationId,
+    automationName: dto.automationName,
+    automationDeleted: dto.automationDeleted,
+    projectId: dto.projectId ?? null,
+    status: dto.status,
+    outcome: dto.outcome,
+    skipReason: dto.skipReason ?? null,
+    cause: dto.cause,
+    causeSummary: dto.causeSummary,
+    title: dto.title,
+    sessionId: dto.sessionId ?? null,
+    branch: dto.branch ?? null,
+    revisionNumber: dto.revisionNumber,
+    agent: dto.agent ?? null,
+    model: dto.model ?? null,
+    hostId: dto.hostId ?? null,
+    createdAt: new Date(dto.createdAt),
+    startedAt: date(dto.startedAt),
+    endedAt: date(dto.endedAt),
+    durationMs: dto.durationMs ?? null,
+    turn: dto.turn
       ? {
           state: dto.turn.state,
           exitCode: dto.turn.exitCode ?? null,
@@ -142,7 +142,7 @@ function toRunEntity(dto: AutomationRunResponseDto): AutomationRunEntity {
           prompt: dto.turn.prompt ?? null,
         }
       : null,
-  );
+  });
 }
 
 type TriggerRequest = CreateAutomationRequest['triggers'][number];

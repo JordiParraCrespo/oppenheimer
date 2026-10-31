@@ -30,25 +30,25 @@ function session(
     folderPath?: string;
   } = {},
 ): SessionEntity {
-  return new SessionEntity(
-    'session-1',
-    'org-1',
-    'project-1',
-    'host-1',
-    'Fix the wallet list empty state',
-    'bold-otter-3f9a7k',
-    'claude-code',
-    { model: 'opus', permission: 'ask', effort: null },
-    overrides.state ?? 'working',
-    overrides.lifecycle ?? 'open',
-    overrides.cwdCheckoutId ?? null,
-    overrides.checkouts ?? [],
-    overrides.stoppedAt ?? null,
-    overrides.hints ?? [],
-    new Date('2026-06-15T12:00:00Z'),
-    overrides.folderPath ? 'folder' : 'worktree',
-    overrides.folderPath ?? null,
-  );
+  return new SessionEntity({
+    id: 'session-1',
+    organizationId: 'org-1',
+    projectId: 'project-1',
+    hostId: 'host-1',
+    name: 'Fix the wallet list empty state',
+    slug: 'bold-otter-3f9a7k',
+    agent: 'claude-code',
+    launch: { model: 'opus', permission: 'ask', effort: null },
+    state: overrides.state ?? 'working',
+    lifecycle: overrides.lifecycle ?? 'open',
+    cwdCheckoutId: overrides.cwdCheckoutId ?? null,
+    checkouts: overrides.checkouts ?? [],
+    stoppedAt: overrides.stoppedAt ?? null,
+    hints: overrides.hints ?? [],
+    createdAt: new Date('2026-06-15T12:00:00Z'),
+    place: overrides.folderPath ? 'folder' : 'worktree',
+    folderPath: overrides.folderPath ?? null,
+  });
 }
 
 /**
@@ -152,31 +152,31 @@ describe('SessionEntity.isHostOffline', () => {
  */
 describe('a cloud session', () => {
   function cloud(status: 'starting' | 'running' | 'finished', branch: string | null = null) {
-    return new SessionEntity(
-      'session-2',
-      'org-1',
-      'project-1',
-      null,
-      'Fix the login redirect loop',
-      'calm-heron-2b8c1d',
-      'cursor',
-      { model: null, permission: null, effort: null },
-      'working',
-      'open',
-      null,
-      [],
-      null,
-      [],
-      new Date('2026-10-27T12:00:00Z'),
-      'cloud',
-      null,
-      null,
-      null,
-      null,
-      null,
-      0,
-      null,
-      {
+    return new SessionEntity({
+      id: 'session-2',
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      hostId: null,
+      name: 'Fix the login redirect loop',
+      slug: 'calm-heron-2b8c1d',
+      agent: 'cursor',
+      launch: { model: null, permission: null, effort: null },
+      state: 'working',
+      lifecycle: 'open',
+      cwdCheckoutId: null,
+      checkouts: [],
+      stoppedAt: null,
+      hints: [],
+      createdAt: new Date('2026-10-27T12:00:00Z'),
+      place: 'cloud',
+      folderPath: null,
+      closeRequest: null,
+      closeRefusal: null,
+      observedSince: null,
+      lastEventAt: null,
+      stateSeq: 0,
+      decision: null,
+      cloud: {
         provider: 'cursor',
         url: 'https://cursor.com/agents?id=bc-session-2',
         repositoryUrl: 'https://github.com/acme/api',
@@ -185,7 +185,7 @@ describe('a cloud session', () => {
         pullRequestUrl: null,
         syncedAt: new Date('2026-10-27T12:00:00Z'),
       },
-    );
+    });
   }
 
   it('is worked on while its vendor’s run is starting or running, and settled once it ended', () => {
@@ -213,33 +213,33 @@ describe('a cloud session', () => {
  */
 describe('SessionEntity cloud links', () => {
   function cloudSession(agent: 'claude-code' | 'codex', cloudSessionId: string | null) {
-    return new SessionEntity(
-      'session-1',
-      'org-1',
-      'project-1',
-      'host-1',
-      'Fix the wallet list empty state',
-      'bold-otter-3f9a7k',
+    return new SessionEntity({
+      id: 'session-1',
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      hostId: 'host-1',
+      name: 'Fix the wallet list empty state',
+      slug: 'bold-otter-3f9a7k',
       agent,
-      { model: null, permission: 'ask', effort: null },
-      'working',
-      'open',
-      null,
-      [],
-      null,
-      [],
-      new Date('2026-06-15T12:00:00Z'),
-      'cloud',
-      null,
-      null,
-      null,
-      null,
-      null,
-      0,
-      null,
-      null,
+      launch: { model: null, permission: 'ask', effort: null },
+      state: 'working',
+      lifecycle: 'open',
+      cwdCheckoutId: null,
+      checkouts: [],
+      stoppedAt: null,
+      hints: [],
+      createdAt: new Date('2026-06-15T12:00:00Z'),
+      place: 'cloud',
+      folderPath: null,
+      closeRequest: null,
+      closeRefusal: null,
+      observedSince: null,
+      lastEventAt: null,
+      stateSeq: 0,
+      decision: null,
+      cloud: null,
       cloudSessionId,
-    );
+    });
   }
 
   it("opens Claude Code's on claude.ai and teleports it", () => {
