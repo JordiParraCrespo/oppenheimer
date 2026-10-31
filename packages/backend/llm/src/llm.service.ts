@@ -1,9 +1,4 @@
-import type {
-  LlmCompletion,
-  LlmCompletionRequest,
-  LlmProviderId,
-  LlmProviderSetting,
-} from './llm.types';
+import type { LlmCompletion, LlmCompletionRequest, LlmProviderSetting } from './llm.types';
 import { ProviderPause } from './rate-limit';
 
 /**
@@ -19,7 +14,8 @@ import { ProviderPause } from './rate-limit';
  * caller's decision, because only the caller knows what the fallback is.
  */
 export abstract class LlmService {
-  abstract readonly provider: LlmProviderId | LlmProviderSetting;
+  /** One of {@link LlmProviderSetting}, or a bot provider for a bot engine's service. */
+  abstract readonly provider: string;
 
   /** The provider's rate-limit pause, for the lifetime of this service (`rate-limit.ts`). */
   protected readonly pause = new ProviderPause();

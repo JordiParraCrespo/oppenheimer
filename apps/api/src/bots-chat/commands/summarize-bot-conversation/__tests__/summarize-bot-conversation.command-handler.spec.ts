@@ -1,4 +1,5 @@
-import { BotRateLimitError, type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
+import { type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
+import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { None, Some } from 'oxide.ts';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotConversationSummaryRepositoryPort } from '../../../database/bot-conversation-summary.repository.port';
@@ -17,7 +18,7 @@ import { SummarizeBotConversationCommandHandler } from '../summarize-bot-convers
  * on the version it read, and on losing that race writes nothing more. It
  * decides again on what it reads, so a job with nothing to fold calls no
  * model, and a bot with no key is left alone. A refusal for rate reaches the
- * worker as a `BotRateLimitError`, which delays the job (the processor's
+ * worker as an `LlmRateLimitError`, which delays the job (the processor's
  * spec). The write's SQL is the integration spec's.
  */
 let clock = Date.parse('2026-10-15T09:00:00Z');
@@ -176,7 +177,7 @@ describe('SummarizeBotConversationCommandHandler', () => {
     const resetAt = new Date('2026-10-15T10:00:00Z');
     const { run, summaries } = setup({ rateLimitedUntil: resetAt });
     const failure = await run().catch((error: unknown) => error);
-    expect(failure).toBeInstanceOf(BotRateLimitError);
+    expect(failure).toBeInstanceOf(LlmRateLimitError);
     expect(failure).toMatchObject({ resetAt });
     expect(summaries.save).not.toHaveBeenCalled();
     expect(summaries.stageSummarize).not.toHaveBeenCalled();
