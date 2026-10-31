@@ -408,6 +408,13 @@ earlier note:
   relay path and falling back to it (built the same day, behind the
   `terminal_direct_path` flag), and the console now draws predictable keys
   before their echo. The relay still admits every attachment.
+- `versions/mvp/22-direct-terminal-path.md` bound the direct channel to the
+  DTLS fingerprints in the signalling, which the control plane relays, so a
+  compromised control plane could sit in the middle of it. On 2026-10-31 the
+  owner asked for as much peer to peer as possible and a handshake to harden
+  it: `versions/mvp/31-peer-to-peer-and-the-host-proof.md` has the host sign
+  both fingerprints with its pairing key on every channel, the browser pin
+  the key per host, and orders what moves off the control plane next.
 - `versions/mvp/05-screens.md` said a deleted session's row stays until
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if
@@ -962,6 +969,19 @@ earlier note:
   line outside any turn, and stops the asking turn if it still runs. Every
   decision is broadcast as `approval_resolved`, so every open tab takes the
   card down at once (25 §5).
+- `versions/mvp/25-bots.md` §3 had a message written while a bot works
+  wait over the composer for the turn after. On 2026-10-31, from Codex's
+  `turn/steer`, Enter steers the running turn instead: the turn takes the
+  message at its next tool call, and one it never reaches runs as its own
+  turn; Alt+Enter still queues it for after
+  (`next-steps/0.7-terminal-and-chat.md`, "Steer in the bots chat").
+- The bot stream was lossy by design: text published while the browser was
+  away was gone, and the console matched what it streamed against stored
+  text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
+  text is kept beside the channel and sent as a snapshot when the browser
+  connects, and the console reconciles by block and sequence number, the
+  stored message being the authority (`versions/mvp/25-bots.md` §2,
+  `next-steps/0.7-chat-protocol.md` slice 2).
 - Note 25 §7 listed slash commands among what bots did not have yet. On
   2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
   (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash

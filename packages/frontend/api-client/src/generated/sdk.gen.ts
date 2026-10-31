@@ -2987,7 +2987,7 @@ export const findBotConversation = <ThrowOnError extends boolean = false>(option
 /**
  * Send a bot a message
  *
- * A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.
+ * A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.
  */
 export const sendBotMessage = <ThrowOnError extends boolean = false>(options: Options<SendBotMessageData, ThrowOnError>): RequestResult<SendBotMessageResponses, SendBotMessageErrors, ThrowOnError> => (options.client ?? client).post<SendBotMessageResponses, SendBotMessageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3062,7 +3062,7 @@ export const findBotGoal = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Follow a bot's chat as it happens
  *
- * Server-Sent Events. `ready` once subscribed, then a `bot` event per change: `{ type: "text", turnId, text }` as a turn writes, `{ type: "message", turnId, messageId }` when a message is stored, `{ type: "turn", turnId, status }` when a turn moves. The stored conversation is the record; read it again on `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.
+ * Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: "snapshot", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: "text", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: "retrying", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: "subagents", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: "message", turnId, messageId }` when a message is stored; `{ type: "turn", turnId, status }` when a turn moves; `{ type: "approval", approvalId, status }` and `{ type: "question", questionId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.
  */
 export const streamBot = <ThrowOnError extends boolean = false>(options: Options<StreamBotData, ThrowOnError>): RequestResult<StreamBotResponses, StreamBotErrors, ThrowOnError> => (options.client ?? client).get<StreamBotResponses, StreamBotErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

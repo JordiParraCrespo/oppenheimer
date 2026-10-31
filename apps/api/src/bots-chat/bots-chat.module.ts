@@ -37,6 +37,7 @@ import { BotSessionWaitResolver } from './application/bot-session-wait.resolver'
 import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
 import { BotSkillToolsFactory } from './application/bot-skill-tools.factory';
+import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
@@ -50,6 +51,7 @@ import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
+import { TurnWriteFactory } from './application/turn-write.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
@@ -287,6 +289,8 @@ const queryHandlers: Provider[] = [
     BotTurnContextResolver,
     BotTurnOpeningResolver,
     BotMessageAttachmentsResolver,
+    BotSteeringFactory,
+    TurnWriteFactory,
     BotSummaryTriggerPolicy,
     BotModelAccessResolver,
     BotApprovalRequestFactory,

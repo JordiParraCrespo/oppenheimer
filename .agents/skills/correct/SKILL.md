@@ -83,7 +83,7 @@ check and its config into it. Run the check, paste the failure, then drop the
 replay. A check that has never failed on real code proves nothing.
 
 Run the same command locally and in CI. CI is local here, so a new check is a
-step in `scripts/ci/local.mjs` and nowhere else, behind the root
+step in `scripts/ci/plan.mjs` and nowhere else, behind the root
 `package.json` script a contributor would type.
 
 An exception goes on the offending line with its reason (`biome-ignore

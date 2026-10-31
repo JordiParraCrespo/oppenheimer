@@ -102,6 +102,14 @@ export const REAUTHORIZE_INTERVAL_MS = 60_000;
 export const ATTACH_PING_INTERVAL_MS = 15_000;
 
 /**
+ * What a runner names to be invited to a direct path (22): it answers offers,
+ * and it proves itself on the channel (31). The console refuses a channel
+ * whose host has not signed it, so a runner without the proof would only cost
+ * the reader a negotiation that ends on the relay anyway.
+ */
+const DIRECT_PATH_CAPABILITIES = ['attachment.direct', 'attachment.direct.proof'] as const;
+
+/**
  * The browser attach socket: one per attachment, unmultiplexed.
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
@@ -296,8 +304,9 @@ export class BrowserAttachGateway {
   }
 
   /**
-   * Whether this attachment may move to a direct path (22), and the ICE
-   * servers it gathers with if so. Only for a runner that can answer, for a
+   * Whether this attachment may move to a direct path (22), the ICE servers
+   * it gathers with and the host the browser pins the key of (31) if so.
+   * Only for a runner that can answer and prove itself, for a
    * person the `terminal_direct_path` flag is on for, and not through a share
    * link: its audience may be anyone, and a host's upload is somebody's home
    * connection (22, "Several browsers"). `null` keeps the attachment on the
@@ -305,13 +314,16 @@ export class BrowserAttachGateway {
    */
   private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {
     if (claim.share) return null;
-    if (!link.capabilities.includes('attachment.direct')) return null;
+    if (!DIRECT_PATH_CAPABILITIES.every((named) => link.capabilities.includes(named))) return null;
     const enabled = this.flags.isEnabled('terminal_direct_path', {
       userId: claim.userId,
       organizationId: claim.organizationId,
     });
     if (!enabled) return null;
-    return { iceServers: this.configService.get<string[]>('relay.iceServers') ?? [] };
+    return {
+      iceServers: this.configService.get<string[]>('relay.iceServers') ?? [],
+      hostId: link.hostId,
+    };
   }
 
   /**

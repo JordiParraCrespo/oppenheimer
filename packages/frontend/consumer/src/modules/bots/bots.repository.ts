@@ -320,6 +320,7 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
     dto.planLimits ? toPlanLimits(dto.planLimits) : null,
     dto.failure,
+    dto.steer,
   );
 }
 
@@ -416,6 +417,7 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
     dto.messages.map(toMessage),
     dto.turns.map(toTurn),
     dto.messageCount,
+    dto.storedTextBlocks,
   );
 }
 
@@ -463,20 +465,23 @@ export class BotsRepository {
 
   /**
    * Says `content` to the bot, with the images uploaded for it
-   * (`uploadImage`): a turn, queued behind any it has not finished. The
-   * browser's time zone goes with it, so the bot tells the time where you are.
+   * (`uploadImage`): a turn, queued behind any it has not finished, or with
+   * `steer` taken into the turn under way at its next tool call (words
+   * alone). The browser's time zone goes with it, so the bot tells the time
+   * where you are.
    */
   sendMessage(
     id: string,
     content: string,
     attachmentIds: readonly string[] = [],
+    steer = false,
   ): Promise<BotTurnEntity> {
     return callApi(BotsErrors.SEND_FAILED, async (api) => {
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const data = await api.body(
         heyApiSdk.sendBotMessage({
           path: { id },
-          body: { content, attachmentIds: [...attachmentIds], timeZone },
+          body: { content, attachmentIds: [...attachmentIds], timeZone, steer },
         }),
       );
       return toTurn(data);

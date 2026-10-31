@@ -1,12 +1,12 @@
 import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { requireApp } from '../../../github/application/app-address.policy';
 import type { PullRequestReadPort } from '../../../github/application/pull-request-read.port';
 import { PULL_REQUEST_READS } from '../../../github/github.di-tokens';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
+import { requireApp } from '../../application/app-address.policy';
 import type { ReviewSessionRepositoryPort } from '../../database/review-session.repository.port';
 import { PullRequestsErrors } from '../../domain/pull-requests.errors';
 import { type ReviewedPullRequest, reviewSessionInput } from '../../domain/review-session.policy';

@@ -12,6 +12,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BotEngineEvent } from '../../bot-engine';
+import { steerNote } from '../../turn';
 import { ChatgptBotEngine } from '../chatgpt-bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 
@@ -216,6 +217,67 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
           output: 'clock broken',
         }),
       );
+    },
+    SDK_LOAD_MS,
+  );
+
+  it(
+    'hands the model what the person sent meanwhile with the next tool result, once',
+    async () => {
+      const sent = [[{ id: 'message-1', text: 'Use Tokyo time instead.' }], []];
+      let asks = 0;
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'What time is it?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'The time',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => ({ content: '13:37 UTC' }),
+          },
+        ],
+        steering: {
+          take: async () => {
+            asks += 1;
+            return sent.shift() ?? [];
+          },
+        },
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      const steers = [{ id: 'message-1', text: 'Use Tokyo time instead.' }];
+      // The tool's own output on its line, the delivery right after it.
+      expect(events.slice(0, 3)).toEqual([
+        { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
+        {
+          type: 'tool.finished',
+          callId: 'call_1',
+          name: 'get_time',
+          output: '13:37 UTC',
+          isError: false,
+        },
+        { type: 'steered', callId: 'call_1', steers },
+      ]);
+      expect(asks).toBe(1);
+      // What the model read: the result, then the message, marked as the person's.
+      expect(requests[1]?.body.input).toContainEqual(
+        expect.objectContaining({
+          type: 'function_call_output',
+          call_id: 'call_1',
+          output: `13:37 UTC${steerNote(steers)}`,
+        }),
+      );
+      expect(steerNote(steers)).toContain('Use Tokyo time instead.');
     },
     SDK_LOAD_MS,
   );

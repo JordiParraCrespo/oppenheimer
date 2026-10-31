@@ -4022,6 +4022,10 @@ export type BotTurnResponseDto = {
     status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
     provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     /**
+     * Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn.
+     */
+    steer: boolean;
+    /**
      * The model it runs on, fixed when it was sent.
      */
     model: string;
@@ -4069,12 +4073,19 @@ export type BotConversationResponseDto = {
      * How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.
      */
     messageCount: number;
+    /**
+     * For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`).
+     */
+    storedTextBlocks: {
+        [key: string]: number;
+    };
 };
 
 export type SendBotMessageRequest = {
     content?: string;
     attachmentIds?: Array<string>;
     timeZone?: string;
+    steer?: boolean;
 };
 
 export type BotGoalResponseDto = {

@@ -48,11 +48,14 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
- * running the button is Stop until something is written, and what is sent
- * then waits for its turn. Each message waiting shows over the box
- * (`ChatQueuedRow`): Remove takes it back, Edit takes it back into the
- * field, and the first one's Send now stops the turn under way so it runs
- * next. A message that carried images is not taken back to edit: they were
+ * running the button is Stop until something is written. While a turn runs,
+ * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
+ * next tool call, and runs it after itself if it reaches none; Alt+Enter
+ * queues it for after instead, and a message with images always waits,
+ * since the running turn would not read them. Each message waiting shows
+ * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
+ * back, Edit takes it back into the field, and the first one's Send now
+ * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were
  * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
  * send off and says where to add one, fused to the top of the box. It owns
  * the draft alone: the chips in `tools` and `engine` are elements its parent
@@ -119,6 +122,15 @@ export function BotComposer({
     noKey ??
     (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined);
   const failure = send.error ?? cancel.error;
+  const running = active?.status === 'running';
+  const message = (steer: boolean) => ({
+    id: botId,
+    content: draft,
+    attachmentIds: images.images.flatMap((image) =>
+      image.attachmentId ? [image.attachmentId] : [],
+    ),
+    steer: steer && images.images.length === 0,
+  });
   const dictation = useDictation({
     voice: useVoiceDictation(() => [name]),
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
@@ -165,6 +177,7 @@ export function BotComposer({
         {waiting.map((message, index) => (
           <ChatQueuedRow
             key={message.turnId}
+            steer={message.steer}
             text={message.text || t('bots.chat.queuedImages', { count: message.images })}
             onSendNow={
               index === 0 && active?.status === 'running'
@@ -218,15 +231,8 @@ export function BotComposer({
           value={draft}
           onValueChange={setDraft}
           inputRef={field}
-          onSubmit={() =>
-            send.mutate({
-              id: botId,
-              content: draft,
-              attachmentIds: images.images.flatMap((image) =>
-                image.attachmentId ? [image.attachmentId] : [],
-              ),
-            })
-          }
+          onSubmit={() => send.mutate(message(running))}
+          onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
           onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
@@ -246,7 +252,11 @@ export function BotComposer({
                 ))
               : undefined
           }
-          placeholder={t('bots.chat.placeholder', { name })}
+          placeholder={
+            running
+              ? t('bots.chat.placeholderRunning', { name })
+              : t('bots.chat.placeholder', { name })
+          }
           tools={tools}
           engine={engine}
           above={top ? tops[top]() : undefined}
