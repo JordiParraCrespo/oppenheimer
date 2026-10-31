@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import { type SessionDecision, sessionDecisionSchema } from '@oppenheimer/shared';
-import type { HostCodexEnvironments } from './application/host-codex-environments.port';
 import type { HostFolderListing } from './application/host-folders.port';
 import type { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import type { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -17,7 +16,6 @@ import {
 } from './domain/session-state.policy';
 import { SESSION_ORIGINS } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
-import { HostCodexEnvironmentsResponseDto } from './dtos/host-codex-environments.response.dto';
 import { HostFoldersResponseDto } from './dtos/host-folders.response.dto';
 import { SessionPageMetaDto, SessionResponseDto } from './dtos/session.response.dto';
 import type { SessionDecisionResponseDto } from './dtos/session-decision.response.dto';
@@ -140,20 +138,6 @@ export class WorkSessionMapper
    * branches and an absent `truncated` are spelled out, so a client never has to
    * tell "no" from "not said".
    */
-  /** The Codex environment picker's answer, absent labels and recommendation spelled as null. */
-  toCodexEnvironmentsResponse(listing: HostCodexEnvironments): HostCodexEnvironmentsResponseDto {
-    const dto = new HostCodexEnvironmentsResponseDto();
-    dto.environments = listing.environments.map((env) => ({
-      id: env.id,
-      label: env.label ?? null,
-      pinned: env.pinned,
-      repository: env.repository,
-    }));
-    dto.recommended = listing.recommended ?? null;
-    dto.source = listing.source;
-    return dto;
-  }
-
   toFoldersResponse(listing: HostFolderListing, recent: RecentFolder[]): HostFoldersResponseDto {
     const dto = new HostFoldersResponseDto();
     dto.path = listing.path;

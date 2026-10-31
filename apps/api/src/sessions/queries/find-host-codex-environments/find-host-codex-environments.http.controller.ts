@@ -21,7 +21,7 @@ import { CurrentAccessScope } from '../../../authz/decorators/current-access-sco
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { HostCodexEnvironments } from '../../application/host-codex-environments.port';
 import { HostCodexEnvironmentsResponseDto } from '../../dtos/host-codex-environments.response.dto';
-import { WorkSessionMapper } from '../../work-session.mapper';
+import { HostCodexEnvironmentsMapper } from '../../host-codex-environments.mapper';
 import { FindHostCodexEnvironmentsQuery } from './find-host-codex-environments.query';
 import { FindHostCodexEnvironmentsRequest } from './find-host-codex-environments.request.dto';
 
@@ -33,10 +33,7 @@ import { FindHostCodexEnvironmentsRequest } from './find-host-codex-environments
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('hosts')
 export class FindHostCodexEnvironmentsHttpController {
-  constructor(
-    private readonly queryBus: QueryBus,
-    private readonly mapper: WorkSessionMapper,
-  ) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':id/codex-environments')
   @Version('1')
@@ -71,6 +68,6 @@ export class FindHostCodexEnvironmentsHttpController {
       FindHostCodexEnvironmentsQuery,
       HostCodexEnvironments
     >(new FindHostCodexEnvironmentsQuery({ scope, hostId: id, repository: query.repository }));
-    return this.mapper.toCodexEnvironmentsResponse(listing);
+    return HostCodexEnvironmentsMapper.toResponse(listing);
   }
 }
