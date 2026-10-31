@@ -582,6 +582,13 @@ earlier note:
   owed close again, a restart request supersedes it, and the console draws
   such a row as deleting or refused instead of bringing it back as it was
   (03, "A close is owed until the host answers it"; 01, "Hello").
+- Note 03 keyed the `session.stopped` a hello records for a lost pane by the
+  runner's `runId` alone, so a replayed hello wrote it once. That also
+  merged a second loss of the same pane, after a restart, on a later link of
+  the same runner process, into the first, and the session stayed open on a
+  pane that was gone. On 2026-10-31 the key is the run and the link's epoch,
+  and the entry is written only while the row is still open and not stopped
+  under its lock (03, "Hello reconciliation").
 - `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
   no key, fell back to the first keyed provider in catalog order, so a
   workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the

@@ -13,6 +13,7 @@ import type {
   RunnerLink,
 } from '../../links/application/link-registry.port';
 import type { AttachTicket } from '../../sessions/application/session-lookup.port';
+import { clampCredit, creditSender } from './coalescing-sender.util';
 
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 
@@ -43,6 +44,10 @@ export class DeviceAttachment implements AttachmentSink {
   private finished = false;
   /** A read-only share watches: its input is dropped here. */
   private readonly readOnly: boolean;
+  private readonly credits = creditSender((bytes) => {
+    if (this.attachmentId === null) return;
+    this.link.send({ type: 'attachment.credit', attachmentId: this.attachmentId, bytes });
+  });
 
   constructor(
     private readonly ws: WebSocket,
@@ -136,11 +141,9 @@ export class DeviceAttachment implements AttachmentSink {
     const message = attachClientMessageSchema.safeParse(parsed);
     if (!message.success) return;
     if (message.data.type === 'credit') {
-      this.link.send({
-        type: 'attachment.credit',
-        attachmentId: this.attachmentId,
-        bytes: message.data.bytes,
-      });
+      // Held to a rate and clamped as a terminal's is: every screen on the host
+      // shares its one link.
+      this.credits.push(clampCredit(message.data.bytes));
       return;
     }
     if (message.data.type === 'device.input' && !this.readOnly) {
@@ -191,6 +194,7 @@ export class DeviceAttachment implements AttachmentSink {
   private stopTimer(): void {
     if (this.recheckTimer) clearInterval(this.recheckTimer);
     this.recheckTimer = null;
+    this.credits.dispose();
   }
 
   private tell(message: AttachServerMessage): void {
