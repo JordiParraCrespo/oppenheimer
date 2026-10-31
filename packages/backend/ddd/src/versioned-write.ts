@@ -42,8 +42,7 @@ export async function writeVersioned<Orm extends ObjectLiteral>(
   const result = await manager
     .createQueryBuilder()
     .update(target)
-    // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
-    // represent jsonb columns (free-form records, arrays, unions).
+    // The `QueryDeepPartialEntity` cast that `TypeOrmRepositoryBase.insert` explains.
     .set({ ...changes, version: () => '"version" + 1' } as QueryDeepPartialEntity<Orm>)
     .where({ [idColumn]: entity.id, version: entity.version })
     .execute();

@@ -1,11 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import {
-  type AggregateID,
-  retryOnVersionConflict,
-  VersionConflictException,
-} from '@oppenheimer/backend-ddd';
+import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { retryHostWrite } from '../../application/host-write-retry.policy';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostErrors } from '../../domain/hosts.errors';
 import { HOST_REPOSITORY } from '../../hosts.di-tokens';
@@ -28,22 +25,15 @@ export class RenameHostCommandHandler implements ICommandHandler<RenameHostComma
   ) {}
 
   async execute(command: RenameHostCommand): Promise<AggregateID> {
-    try {
-      return await retryOnVersionConflict(async () => {
-        const found = await this.hosts.findOneById(command.scope, command.hostId);
-        if (found.isNone()) {
-          throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
-        }
-        const host = found.unwrap();
-        host.rename(command.name);
-        await this.hosts.save(host);
-        return host.id;
-      });
-    } catch (error) {
-      if (!(error instanceof VersionConflictException)) throw error;
-      throw new AppError(HostErrors.CHANGED_CONCURRENTLY, {
-        detail: `Host ${command.hostId} was written by someone else twice while it was renamed`,
-      });
-    }
+    return retryHostWrite(command.hostId, async () => {
+      const found = await this.hosts.findOneById(command.scope, command.hostId);
+      if (found.isNone()) {
+        throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
+      }
+      const host = found.unwrap();
+      host.rename(command.name);
+      await this.hosts.save(host);
+      return host.id;
+    });
   }
 }

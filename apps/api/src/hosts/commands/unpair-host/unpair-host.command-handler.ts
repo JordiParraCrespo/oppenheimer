@@ -1,11 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import {
-  type AggregateID,
-  retryOnVersionConflict,
-  VersionConflictException,
-} from '@oppenheimer/backend-ddd';
+import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { retryHostWrite } from '../../application/host-write-retry.policy';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostErrors } from '../../domain/hosts.errors';
 import { HOST_REPOSITORY } from '../../hosts.di-tokens';
@@ -40,23 +37,16 @@ export class UnpairHostCommandHandler implements ICommandHandler<UnpairHostComma
   ) {}
 
   async execute(command: UnpairHostCommand): Promise<AggregateID> {
-    try {
-      await retryOnVersionConflict(async () => {
-        const found = await this.hosts.findOneById(command.scope, command.hostId);
-        if (found.isNone()) {
-          throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
-        }
-        const host = found.unwrap();
-        if (host.isUnpaired) return;
-        host.unpair(new Date(), { wipe: command.wipe });
-        await this.hosts.save(host);
-      });
-    } catch (error) {
-      if (!(error instanceof VersionConflictException)) throw error;
-      throw new AppError(HostErrors.CHANGED_CONCURRENTLY, {
-        detail: `Host ${command.hostId} was written by someone else twice while it was unpaired`,
-      });
-    }
+    await retryHostWrite(command.hostId, async () => {
+      const found = await this.hosts.findOneById(command.scope, command.hostId);
+      if (found.isNone()) {
+        throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
+      }
+      const host = found.unwrap();
+      if (host.isUnpaired) return;
+      host.unpair(new Date(), { wipe: command.wipe });
+      await this.hosts.save(host);
+    });
     return command.hostId;
   }
 }
