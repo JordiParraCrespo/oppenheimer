@@ -20,12 +20,13 @@ const STACK_UP = 'services/stack up';
 
 /**
  * @param {object} selection  `affected.mjs`'s outputs: scope, packages,
- *   filters, lintOnly (the changed files only the lint job reads)
+ *   filters, lintOnly (the changed files only the lint job reads), apiSuites
+ *   (false when the API is affected only through copy it never reads)
  * @param {object} options  dirty: lint only, on uncommitted work; skip: jobs
  *   left out
  */
 export function plan(
-  { scope, packages, filters, lintOnly = [] },
+  { scope, packages, filters, lintOnly = [], apiSuites = true },
   { dirty = false, skip = new Set() } = {},
 ) {
   const touches = (name) => packages.includes(name);
@@ -38,10 +39,10 @@ export function plan(
   /** Waits for the build, when this run has one. */
   const afterBuild = () => (any && !dirty && !skip.has('test') ? { after: [BUILD] } : {});
 
-  const needsIntegration = !dirty && touches('@oppenheimer/api') && !skip.has('integration');
+  const apiChanged = touches('@oppenheimer/api') && apiSuites;
+  const needsIntegration = !dirty && apiChanged && !skip.has('integration');
   // oppenheimer:begin e2e
-  const needsE2e =
-    !dirty && (touches('@oppenheimer/api') || touches('@oppenheimer/e2e')) && !skip.has('e2e');
+  const needsE2e = !dirty && (apiChanged || touches('@oppenheimer/e2e')) && !skip.has('e2e');
   // oppenheimer:end e2e
   const needsStack = needsIntegration || needsE2e;
   // The backend packages' declarations, checked whatever else the diff touched.

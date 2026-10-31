@@ -3,7 +3,7 @@
 // again, or a CI script edit that stops forcing one.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { classify } from './selection.mjs';
+import { apiSuitesNeeded, classify } from './selection.mjs';
 
 test('the pipeline, the lockfile and the workflow still force a full run', () => {
   for (const file of [
@@ -78,4 +78,39 @@ test("a package's own file is left to Turborepo", () => {
     lintOnly: [],
     owners: [],
   });
+});
+
+const API_DIRS = ['apps/api', 'packages/translations', 'packages/backend/i18n'];
+
+test("the console's copy alone gives the API's suites nothing to check", () => {
+  assert.equal(
+    apiSuitesNeeded(
+      [
+        'packages/translations/en/sessions.json',
+        'packages/translations/es/sessions.json',
+        'packages/translations/en/index.json',
+        'packages/translations/en/browser.json',
+        'apps/web/src/features/sessions/screens/list.tsx',
+      ],
+      API_DIRS,
+    ),
+    false,
+  );
+});
+
+test('the copy the API renders, or anything else of its, runs them', () => {
+  for (const file of [
+    'packages/translations/en/emails.json',
+    'packages/translations/es/errors.json',
+    'packages/translations/namespaces.json',
+    'packages/translations/locales.ts',
+    'packages/backend/i18n/src/translator.ts',
+    'apps/api/src/main.ts',
+  ]) {
+    assert.equal(
+      apiSuitesNeeded([file, 'packages/translations/en/sessions.json'], API_DIRS),
+      true,
+      file,
+    );
+  }
 });

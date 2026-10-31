@@ -83,3 +83,29 @@ export function classify(changed) {
   }
   return { global, lintOnly, owners: [...owners].sort() };
 }
+
+/** The namespaces the API renders (email copy, problem documents); the rest is the browsers'. */
+export const API_NAMESPACES = ['emails', 'errors'];
+
+/**
+ * Translation copy the API never reads: a namespace file of another area, or
+ * a catalog assembled from the namespaces (whose own files say which changed).
+ */
+export function isCopyTheApiSkips(file) {
+  const match = /^packages\/translations\/[a-z]{2}\/([A-Za-z]+)\.json$/.exec(file);
+  if (!match) return false;
+  if (match[1] === 'index' || match[1] === 'browser') return true;
+  return !API_NAMESPACES.includes(match[1]);
+}
+
+/**
+ * Whether the API's integration and e2e suites have anything to check: a
+ * changed file in the API or a package it depends on (`apiDirs`), other than
+ * copy it never reads. `@oppenheimer/api` depends on the translations for its
+ * emails, so without this a change to the console's copy alone would run both.
+ */
+export function apiSuitesNeeded(changed, apiDirs) {
+  return changed.some(
+    (file) => apiDirs.some((dir) => file.startsWith(`${dir}/`)) && !isCopyTheApiSkips(file),
+  );
+}

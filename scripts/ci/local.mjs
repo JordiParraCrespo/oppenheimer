@@ -116,6 +116,7 @@ function selection() {
     packages: JSON.parse(outputs.packages),
     filters: outputs.filters ? outputs.filters.split(' ') : [],
     lintOnly: JSON.parse(outputs.lint_only ?? '[]'),
+    apiSuites: outputs.api_suites !== 'false',
   };
 }
 

@@ -118,3 +118,12 @@ test('step ids are unique, and every wait names a step of the plan', () => {
   assert.equal(new Set(ids).size, ids.length);
   for (const s of steps) for (const id of s.after ?? []) assert.ok(ids.includes(id), id);
 });
+
+test('an API reached only through copy it never reads runs no suite, but its unit tests', () => {
+  const steps = plan({
+    ...affected('@oppenheimer/api', '@oppenheimer/translations'),
+    apiSuites: false,
+  });
+  assert.ok(steps.every((s) => !['services', 'integration', 'e2e'].includes(s.job)));
+  assert.ok(step(steps, 'test/turbo test').args.includes('--filter=@oppenheimer/api'));
+});
