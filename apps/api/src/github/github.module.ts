@@ -14,6 +14,7 @@ import { PullRequestDirectoryResolver } from './application/pull-request-directo
 import { PullRequestListingResolver } from './application/pull-request-listing.resolver';
 import { PullRequestReadResolver } from './application/pull-request-read.resolver';
 import { PullRequestSnapshotResolver } from './application/pull-request-snapshot.resolver';
+import { PullRequestSourceResolver } from './application/pull-request-source.resolver';
 import { PullRequestWriteResolver } from './application/pull-request-write.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { AddGithubTokenCommandHandler } from './commands/add-github-token/add-github-token.command-handler';
@@ -163,6 +164,8 @@ const adapters: Provider[] = [
   GithubTokenResolver,
   // One fill per snapshot key, whether the queue, the figures or one pull request's screen asks.
   PullRequestSnapshotResolver,
+  // Which pull requests a repository has, before the listings fill any.
+  PullRequestSourceResolver,
 ];
 
 /**

@@ -8,6 +8,7 @@ import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
 import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import type { GithubPullsPort } from '../../infrastructure/github-pulls.port';
+import { requireApp } from '../app-address.policy';
 import { GithubAccessResolver } from '../github-access.resolver';
 import type { GithubTokenResolver } from '../github-token.resolver';
 import type { GithubUserGrantResolver } from '../github-user-grant.resolver';
@@ -16,6 +17,7 @@ import { PullRequestDirectoryResolver } from '../pull-request-directory.resolver
 import { PullRequestListingResolver } from '../pull-request-listing.resolver';
 import { PullRequestReadResolver } from '../pull-request-read.resolver';
 import { PullRequestSnapshotResolver } from '../pull-request-snapshot.resolver';
+import { PullRequestSourceResolver } from '../pull-request-source.resolver';
 import { PullRequestWriteResolver } from '../pull-request-write.resolver';
 
 /**
@@ -141,7 +143,11 @@ function build(
   // One snapshot resolver behind both reads, as the module binds it: the queue
   // and a pull request's own screen share its cache keys and its single flight.
   const snapshots = new PullRequestSnapshotResolver(port, redis);
-  const listings = new PullRequestListingResolver(port, redis, access, snapshots);
+  const listings = new PullRequestListingResolver(
+    redis,
+    new PullRequestSourceResolver(port, redis, access),
+    snapshots,
+  );
   const reads = new PullRequestReadResolver(port, redis, access, snapshots);
   const writes = new PullRequestWriteResolver(port, redis, access);
   const repository: WorkspaceRepository = {
@@ -698,13 +704,14 @@ describe('a repository read through the person’s own token', () => {
 
   // A review session clones through the App, which a token repository has none of.
   it('gives no installation to start a session on, with GITHUB_022', () => {
-    const { writes } = build({});
-
-    expect(() => writes.requireApp(address)).toThrow(
-      expect.objectContaining({ code: 'GITHUB_022' }),
+    expect(() => requireApp(address)).toThrow(
+      expect.objectContaining({
+        code: 'GITHUB_022',
+        detail: 'Repository 99 is read through your own GitHub token.',
+      }),
     );
     const app = { ...address, kind: 'installation' as const, installationId: 'inst' };
-    expect(writes.requireApp(app)).toBe(app);
+    expect(requireApp(app)).toBe(app);
   });
 
   it('is GITHUB_023 for a repository none of the person’s tokens opens', async () => {
