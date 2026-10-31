@@ -9,7 +9,6 @@ import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.p
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
 import {
-  passedOnEvent,
   type TranscriptWrite,
   TurnTranscript,
   thrownFailure,
@@ -96,21 +95,20 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     }
   }
 
-  private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
-    if (write.kind === 'text' || write.kind === 'retrying') {
-      await this.stream.publish(turn.botId, passedOnEvent(turn.id, write));
-      return;
+  private async apply({ botId, id: turnId }: BotTurnEntity, write: TranscriptWrite): Promise<void> {
+    if (write.kind === 'text') return this.stream.write(botId, turnId, write.block, write.text);
+    if (write.kind === 'settled') return this.stream.settle(botId, turnId);
+    if (write.kind === 'retrying') {
+      return this.stream.publish(botId, { type: 'retrying', turnId, reason: write.reason });
     }
     if (write.kind === 'insert') await this.messages.insert(write.message);
     else await this.messages.saveSteps(write.message);
-    await this.stream.publish(turn.botId, {
-      type: 'message',
-      turnId: turn.id,
-      messageId: write.message.id,
-    });
+    await this.stream.publish(botId, { type: 'message', turnId, messageId: write.message.id });
   }
 
   private async close(turn: BotTurnEntity, correlationId: string): Promise<void> {
+    // Before it reads as ended: a chat that connects after never gets a snapshot of it.
+    await this.stream.forget(turn.botId, turn.id);
     if (!(await this.turns.finish(turn, correlationId))) return;
     await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
     await this.summaries.afterTurn(turn, correlationId);

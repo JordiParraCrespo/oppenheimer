@@ -6,11 +6,17 @@ import {
   type BotTextBuffers,
   botLiveText,
   forgetEndedBotTurns,
-  liveSuffix,
-  markBotStreamGap,
   NO_BOT_TEXT,
+  putBotSnapshot,
 } from '../live-text';
 
+/**
+ * A turn's live text as the stream says it and the conversation stores it:
+ * deltas placed by block and dropped by `seq` when already held, a snapshot
+ * in place of the block it covers, and each block drawn until the read that
+ * stores it lands. The frames' order and the API's side are the stream's
+ * specs (`stream-bot.query-handler.spec.ts`, `bot-stream.integration.spec.ts`).
+ */
 const at = new Date('2026-10-01T10:00:00Z');
 
 function turn(id: string, status: BotTurnStatus): BotTurnEntity {
@@ -28,118 +34,109 @@ function conversation(
   return new BotConversationEntity(messages, turns, messages.length);
 }
 
-/** Feeds deltas, with `|` standing for a reconnect between them. */
-function streamed(turnId: string, ...pieces: string[]): BotTextBuffers {
-  let buffers = NO_BOT_TEXT;
-  for (const piece of pieces) {
-    buffers = piece === '|' ? markBotStreamGap(buffers) : appendBotText(buffers, turnId, piece);
-  }
-  return buffers;
+/** Deltas of turn `t1`, each `[block, text]`, numbered from `seq` 1. */
+function streamed(...pieces: [number, string][]): BotTextBuffers {
+  return pieces.reduce(
+    (buffers, [block, text], index) =>
+      appendBotText(buffers, { type: 'text', turnId: 't1', block, seq: index + 1, text }),
+    NO_BOT_TEXT,
+  );
 }
 
 describe('the stream buffer', () => {
-  it('appends each delta to its turn, and starts a segment at a reconnect', () => {
-    expect(streamed('t1', 'Hel', 'lo', '|', ' there')).toEqual({ t1: ['Hello', ' there'] });
+  it('adds each delta to its block', () => {
+    expect(streamed([0, 'Hel'], [0, 'lo'], [1, 'Next'])).toEqual({
+      t1: { seq: 3, blocks: { 0: 'Hello', 1: 'Next' } },
+    });
   });
 
-  it('keeps a reconnect with nothing after it to one segment', () => {
-    expect(streamed('t1', 'Hi', '|', '|')).toEqual({ t1: ['Hi', ''] });
+  // What breaks this: a delta heard both in the snapshot and on the channel
+  // after it drawn twice ("Hello, worldworld").
+  it('drops a delta at or below the seq it holds', () => {
+    let buffers = putBotSnapshot(NO_BOT_TEXT, {
+      type: 'snapshot',
+      turnId: 't1',
+      block: 0,
+      seq: 3,
+      text: 'Hello, world',
+    });
+    for (const [seq, text] of [
+      [2, 'lo, '],
+      [3, 'world'],
+      [4, '!'],
+      [4, '!'],
+    ] as const) {
+      buffers = appendBotText(buffers, { type: 'text', turnId: 't1', block: 0, seq, text });
+    }
+    expect(buffers.t1).toEqual({ seq: 4, blocks: { 0: 'Hello, world!' } });
+  });
+
+  // What breaks this: a reconnect keeping the half block it had and adding
+  // the snapshot to it, or keeping the hole the drop left.
+  it('puts a snapshot in place of the block it covers and any later one, keeping earlier ones', () => {
+    const buffers = putBotSnapshot(streamed([0, 'First.'], [1, 'Sec'], [2, 'stale']), {
+      type: 'snapshot',
+      turnId: 't1',
+      block: 1,
+      seq: 9,
+      text: 'Second, whole',
+    });
+    expect(buffers.t1).toEqual({ seq: 9, blocks: { 0: 'First.', 1: 'Second, whole' } });
   });
 
   it('drops only the turns the conversation shows ended', () => {
-    const buffers = { ...streamed('t1', 'Done'), ...streamed('t2', 'Going') };
+    const buffers = {
+      ...streamed([0, 'Done']),
+      t2: { seq: 1, blocks: { 0: 'Going' } },
+    };
     const read = conversation([turn('t1', 'completed'), turn('t2', 'running')]);
-    expect(forgetEndedBotTurns(buffers, read)).toEqual({ t2: ['Going'] });
+    expect(forgetEndedBotTurns(buffers, read)).toEqual({ t2: { seq: 1, blocks: { 0: 'Going' } } });
     expect(forgetEndedBotTurns(buffers, undefined)).toBe(buffers);
   });
 });
 
-describe('liveSuffix', () => {
-  it('draws all of it while nothing is stored', () => {
-    expect(liveSuffix(['Hello'], [])).toBe('Hello');
-  });
-
-  it('strips each stored block, in order, and draws what follows', () => {
-    expect(liveSuffix(['First.Second.Thi'], ['First.', 'Second.'])).toBe('Thi');
-  });
-
-  it('draws nothing when every streamed block is stored', () => {
-    expect(liveSuffix(['First.Second.'], ['First.', 'Second.'])).toBe('');
-  });
-
-  /** Whitespace a block ends or starts with is not significant, nor an unstored blank block. */
-  it('skips whitespace at block boundaries', () => {
-    expect(liveSuffix(['\n\nFirst.\n\n  Second.\n Thi'], ['First.\n', '\nSecond.'])).toBe('Thi');
-  });
-
-  it('compares inside a block exactly', () => {
-    expect(liveSuffix(['Hello  world. More'], ['Hello world.'])).toBe('');
-  });
-
-  /** The read landed before the block's last deltas: the stored message already shows them. */
-  it('draws nothing while the stream is behind the stored text', () => {
-    expect(liveSuffix(['First.Sec'], ['First.', 'Second.'])).toBe('');
-  });
-
-  /** Codex's finding: a partial reply with no stored message survives a reconnect. */
-  it('keeps what streamed before a reconnect', () => {
-    expect(liveSuffix(['Partial rep', ''], [])).toBe('Partial rep');
-  });
-
-  it('holds text after a reconnect until a stored message covers the hole', () => {
-    expect(liveSuffix(['Hello', ' world. More'], [])).toBe('Hello');
-    expect(liveSuffix(['Hello', ' world. More'], ['Hello big world.'])).toBe('More');
-  });
-
-  it('draws what follows the stored text that ended after a reconnect', () => {
-    expect(liveSuffix(['First.', 'econd. Thi'], ['First.', 'Second.'])).toBe('Thi');
-  });
-
-  /** Mounted mid-turn: the stream holds the end of a block and what came after. */
-  it('finds where the last stored block ends when the stream began inside it', () => {
-    expect(liveSuffix(['nd block. Third'], ['First block.', 'Second block.'])).toBe('Third');
-  });
-
-  it('finds the last stored block when the stream began before it', () => {
-    expect(liveSuffix(['ck. Second block. Third'], ['First block.', 'Second block.'])).toBe(
-      'Third',
-    );
-  });
-
-  it('draws nothing when the stream began after the last stored block', () => {
-    expect(liveSuffix(['Third block'], ['First block.'])).toBe('');
-  });
-
-  /** The furthest end hides text rather than repeat stored text. */
-  it('hides text rather than repeat stored text when the last block recurs', () => {
-    expect(liveSuffix(['ah. Say ok. More. Say ok. Rest'], ['Blah.', 'Say ok.'])).toBe('Rest');
-  });
-
-  it('ignores blank stored text', () => {
-    expect(liveSuffix(['Hello'], ['', '   '])).toBe('Hello');
-  });
-});
-
 describe('botLiveText', () => {
-  it('draws a running turn’s unstored text, by turn', () => {
+  it('draws the blocks the conversation does not hold yet, by turn', () => {
     const read = conversation(
       [turn('t1', 'running')],
       [said('t1', 'Hi', 'activity'), said('t1', 'First.')],
     );
-    expect(botLiveText(streamed('t1', 'First.', ' Sec'), read)).toEqual({ t1: 'Sec' });
+    expect(botLiveText(streamed([0, 'First.'], [1, ' Sec']), read)).toEqual({ t1: 'Sec' });
+  });
+
+  /**
+   * The regression this guards: text stored as a message drawn twice, once
+   * from the conversation and once still live; or dropped before the read
+   * that holds it landed, so it blinked out.
+   */
+  it('keeps a block live until the read that stores it lands', () => {
+    const buffers = streamed([0, 'First.'], [1, 'Second']);
+    expect(botLiveText(buffers, conversation([turn('t1', 'running')]))).toEqual({
+      t1: 'First.\n\nSecond',
+    });
+    const read = conversation([turn('t1', 'running')], [said('t1', 'First (as stored).')]);
+    expect(botLiveText(buffers, read)).toEqual({ t1: 'Second' });
+  });
+
+  it('counts neither an image message nor an activity line as a stored block', () => {
+    const read = conversation(
+      [turn('t1', 'running')],
+      [said('t1', '', 'assistant'), said('t1', 'Ran it', 'activity')],
+    );
+    expect(botLiveText(streamed([0, 'Still writing']), read)).toEqual({ t1: 'Still writing' });
   });
 
   it('draws nothing for a turn once the conversation shows it ended', () => {
     const read = conversation([turn('t1', 'completed')]);
-    expect(botLiveText(streamed('t1', 'Unsaid'), read)).toEqual({});
+    expect(botLiveText(streamed([0, 'Unsaid']), read)).toEqual({});
   });
 
   it('draws a turn the conversation does not hold yet', () => {
-    expect(botLiveText(streamed('t9', 'Early'), conversation([]))).toEqual({ t9: 'Early' });
+    expect(botLiveText(streamed([0, 'Early']), conversation([]))).toEqual({ t1: 'Early' });
   });
 
   it('leaves out a turn with nothing live', () => {
     const read = conversation([turn('t1', 'running')], [said('t1', 'All of it')]);
-    expect(botLiveText(streamed('t1', 'All of it'), read)).toEqual({});
+    expect(botLiveText(streamed([0, 'All of it'], [1, '  ']), read)).toEqual({});
   });
 });

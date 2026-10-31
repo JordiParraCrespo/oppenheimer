@@ -23,6 +23,12 @@ export type BotStreamFrame =
  * shape (`StreamWorkspaceEventsQueryHandler`) on one bot's channel. The bot is
  * looked up as the caller first, so a stream never opens on another
  * workspace's bot.
+ *
+ * Once subscribed it reads the text each running turn has not stored yet,
+ * and sends it as a `snapshot` per turn right after `ready`, before anything
+ * the channel carried meanwhile: so a chat that connects mid-block, or comes
+ * back after a drop, holds the whole block, and the deltas it then hears at
+ * or below the snapshot's `seq` are ones it has.
  */
 @QueryHandler(StreamBotQuery)
 export class StreamBotQueryHandler
@@ -38,13 +44,19 @@ export class StreamBotQueryHandler
     return new Observable<BotStreamFrame>((subscriber) => {
       let closed = false;
       let teardown = () => {};
+      // Held until the snapshots are out, so none of them lands after a delta it already holds.
+      let held: BotStreamEvent[] | null = [];
       this.stream
         .subscribe(
           botId,
-          (event) => subscriber.next({ kind: 'event', event }),
+          (event) => {
+            if (held) held.push(event);
+            else subscriber.next({ kind: 'event', event });
+          },
           () => subscriber.complete(),
         )
-        .then((unsubscribe) => {
+        .then(async (unsubscribe) => {
+          const snapshots = closed ? [] : await this.stream.inFlight(botId);
           if (closed) {
             unsubscribe();
             return;
@@ -62,6 +74,10 @@ export class StreamBotQueryHandler
             unsubscribe();
           };
           subscriber.next({ kind: 'ready' });
+          for (const event of [...snapshots, ...(held ?? [])]) {
+            subscriber.next({ kind: 'event', event });
+          }
+          held = null;
         })
         .catch((error: unknown) => subscriber.error(error));
       return () => {

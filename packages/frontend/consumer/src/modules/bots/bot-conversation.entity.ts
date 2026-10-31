@@ -187,6 +187,12 @@ export class BotConversationEntity {
   turn(id: string): BotTurnEntity | undefined {
     return this.turns.find((turn) => turn.id === id);
   }
+
+  /** The conversation shows the turn ended; one it does not show yet is still running. */
+  hasEnded(turnId: string): boolean {
+    const turn = this.turn(turnId);
+    return turn !== undefined && !turn.isActive;
+  }
 }
 
 /**

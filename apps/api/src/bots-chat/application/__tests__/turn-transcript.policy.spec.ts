@@ -63,6 +63,33 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: a chat that reconnects mid-turn drawing a stored block
+  // again, because the block it was told it is in counts one the conversation
+  // never stored (only whitespace) or misses one it did.
+  it('places each delta in the block it belongs to, counting only blocks it stored', () => {
+    const { writes } = run([
+      { type: 'text.delta', text: 'One' },
+      { type: 'text.done', text: 'One' },
+      { type: 'text.delta', text: '  ' },
+      { type: 'text.done', text: '  ' },
+      { type: 'tool.started', callId: 'a', name: 'web_search', input: {} },
+      { type: 'text.delta', text: 'Two' },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(
+      writes.flatMap((write) =>
+        write.kind === 'text'
+          ? [[write.block, write.text]]
+          : write.kind === 'settled'
+            ? ['settled']
+            : [],
+      ),
+    ).toEqual([[0, 'One'], 'settled', [1, '  '], 'settled', [1, 'Two']]);
+    expect(writes.findIndex((write) => write.kind === 'settled')).toBeGreaterThan(
+      writes.findIndex((write) => write.kind === 'insert'),
+    );
+  });
+
   it('gathers a run of tool calls into one activity line and fills in what each answered', () => {
     const { writes } = run([
       { type: 'tool.started', callId: 'a', name: 'web_search', input: { q: 'x' } },

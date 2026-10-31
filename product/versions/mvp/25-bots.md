@@ -1035,3 +1035,15 @@ The decisions it produced:
   model, and it fails closed**: an ask rule beats an allow rule, and a
   review that cannot say asks. It moves plain-language rules out of §7.
   From Grok Bot's reviewer (§9 row 7).
+- 2026-10-31: **a chat that reconnects mid-turn loses no text** (§2,
+  Streaming). The stream dropped what was published while the browser's
+  connection was down, and the console drew a hole until the next stored
+  message. The block of text a turn is writing is now kept in Redis beside
+  the channel until it is stored or the turn ends, and the stream sends it
+  whole as a `snapshot` per running turn right after `ready` (Grok's
+  reconnect response: a snapshot first, then deltas). Each delta carries
+  its block (the blocks the turn stored before it) and the turn's `seq`, so
+  the console drops one it already holds, and draws a block until the
+  conversation holds that many of the turn's assistant messages with text
+  (Codex's rule that the completed item is authoritative). That replaced
+  the console's matching of streamed text against stored text.
