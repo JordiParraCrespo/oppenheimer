@@ -1,6 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
-import type { PullRequestAccessPort } from '../../../../github/application/pull-request-access.port';
+import type { PullRequestReadPort } from '../../../../github/application/pull-request-read.port';
+import type { PullRequestWritePort } from '../../../../github/application/pull-request-write.port';
 import type { ReviewSessionRepositoryPort } from '../../../database/review-session.repository.port';
 import { StartReviewSessionCommand } from '../start-review-session.command';
 import { StartReviewSessionCommandHandler } from '../start-review-session.command-handler';
@@ -28,7 +29,7 @@ const ADDRESS = {
 };
 
 function setup(fromFork = false) {
-  const access = {
+  const reads = {
     pullRequest: vi.fn().mockResolvedValue({
       repository: { fullName: 'acme/web' },
       pull: {
@@ -39,15 +40,16 @@ function setup(fromFork = false) {
         fromFork,
       },
     }),
-    requireApp: vi.fn(<T>(address: T) => address),
-  } satisfies Pick<PullRequestAccessPort, 'pullRequest'> & { requireApp: unknown };
+  } satisfies Pick<PullRequestReadPort, 'pullRequest'>;
+  const writes = { requireApp: vi.fn(<T>(address: T) => address) };
   const reviews = {
     link: vi.fn().mockResolvedValue(undefined),
     findOpen: vi.fn(),
   } satisfies ReviewSessionRepositoryPort;
   const commandBus = { execute: vi.fn().mockResolvedValue({ sessionId: 'session-1', hints: [] }) };
   const handler = new StartReviewSessionCommandHandler(
-    access as unknown as PullRequestAccessPort,
+    reads as unknown as PullRequestReadPort,
+    writes as unknown as PullRequestWritePort,
     reviews,
     commandBus as never,
   );

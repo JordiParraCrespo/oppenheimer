@@ -6181,6 +6181,10 @@ export type InviteMemberErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
      * ORG_016 — The organization service failed to handle the request
      */
     502: ProblemDetailsDto;
@@ -7532,6 +7536,10 @@ export type UninstallHostErrors = {
      * HOSTS_005 — No valid host assertion was presented
      */
     401: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UninstallHostError = UninstallHostErrors[keyof UninstallHostErrors];
@@ -7596,6 +7604,10 @@ export type UnpairHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UnpairHostError = UnpairHostErrors[keyof UnpairHostErrors];
@@ -7663,6 +7675,10 @@ export type RenameHostErrors = {
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
+    /**
+     * HOSTS_009 — Someone else wrote the host meanwhile, again on the retry
+     */
+    409: ProblemDetailsDto;
 };
 
 export type RenameHostError = RenameHostErrors[keyof RenameHostErrors];
@@ -13697,7 +13713,7 @@ export type StartChatgptLoginErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**
@@ -13743,7 +13759,7 @@ export type PollChatgptLoginErrors = {
      */
     410: ProblemDetailsDto;
     /**
-     * BOTS_019 — ChatGPT's sign-in is busy
+     * BOTS_019 / RATE_001 — ChatGPT's sign-in is busy, or this route's rate limit was reached
      */
     429: ProblemDetailsDto;
     /**
