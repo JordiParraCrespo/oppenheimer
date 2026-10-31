@@ -1143,6 +1143,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
+| `SESS_010` <a id="sess_010" />         | No Codex cloud environment the CLI can reach is named for the repository | 404 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1165,6 +1166,19 @@ the service (`systemctl --user restart oppenheimer-runner` or
 `launchctl kickstart -k gui/$(id -u)/dev.oppenheimer.runner`). A directory
 another account owns is fixed with `chown`; a mode looser than `0700` is
 tightened by the runner itself.
+
+`SESS_010` is `codex cloud exec` refusing every label a Codex cloud session
+was tried under (the repository's `owner/name`, then its bare name) as "not
+found". ChatGPT has two lists of Codex environments: the one `codex cloud`
+browses (`/wham/environments`), and the newer one in ChatGPT's Settings →
+Codex Cloud, with publish and snapshots, which codex-cli does not read yet
+(0.166.0). An environment that exists only in the second is not one the CLI
+can start a task in. The detail names the labels tried and the environment
+labels the CLI showed in the account's twenty newest tasks
+(`codex cloud list --json`): codex-cli has no command that lists environments
+outside its interactive TUI, so that list is partial, and the full one is
+`codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
+words.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is

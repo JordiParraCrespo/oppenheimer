@@ -885,6 +885,17 @@ earlier note:
   host, not the browser extension, reports its status off
   `codex cloud list --json`, since Codex's CLI answers it
   (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
+- `next-steps/cloud-agents.md` had a Codex environment named neither for
+  the repository's full name nor its bare name be the CLI's refusal, in its
+  words (`SESS_009`). On 2026-10-31 starts failed "not found" on
+  environments made in ChatGPT Settings → Codex Cloud, which codex-cli
+  0.166.0 cannot reach (it resolves only the list `codex cloud` browses).
+  That is now `SESS_010`, naming the labels tried and the labels on the
+  account's recent tasks, the one non-interactive view codex-cli offers,
+  partial; the failed start's pane explains it with a link to Settings →
+  Codex Cloud. The place picker does not mark the Codex row for it, since
+  a partial list would hide starts that work
+  (`next-steps/cloud-agents.md`, "Environments the CLI cannot reach").
 - A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
   Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
   9), it can also wake on a line the terminal prints that matches a

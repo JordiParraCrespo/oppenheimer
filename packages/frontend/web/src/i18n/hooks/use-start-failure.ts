@@ -6,7 +6,8 @@ import { type FailureReason, failureReason } from '../lib/start-failure';
  * it: the code's sentence in the reader's language (`fallback` when the code
  * has none), and the host's raw detail for a line of its own. A code reads in
  * the console's words first (`errors.startFailure.codes`, for the few a person
- * can act on), then in the shared `errors.byCode` catalog.
+ * can act on), then in the shared `errors.byCode` catalog. A code that needs
+ * more than a sentence carries a help note (`errors.startFailure.help`).
  */
 export function useStartFailure(
   failure: { code: string | null; detail: string | null } | null | undefined,
@@ -22,5 +23,13 @@ export function useStartFailure(
       return key ? (i18n.t(key as never) as string) : undefined;
     },
     fallback,
+    (code) => {
+      const key = `errors.startFailure.help.${code}`;
+      if (!i18n.exists(`${key}.body`)) return undefined;
+      return {
+        body: i18n.t(`${key}.body` as never) as string,
+        link: i18n.t(`${key}.link` as never) as string,
+      };
+    },
   );
 }
