@@ -526,7 +526,7 @@
           ]
         },
         "codexEnvironment": {
-          "$ref": "#/$defs/__schema0"
+          "$ref": "#/$defs/codexEnvironmentRef"
         }
       },
       "required": [
@@ -1589,7 +1589,7 @@
             "type": "object",
             "properties": {
               "id": {
-                "$ref": "#/$defs/__schema0"
+                "$ref": "#/$defs/codexEnvironmentRef"
               },
               "label": {
                 "type": "string",
@@ -1610,7 +1610,7 @@
           }
         },
         "recommended": {
-          "$ref": "#/$defs/__schema0"
+          "$ref": "#/$defs/codexEnvironmentRef"
         },
         "source": {
           "type": "string",
@@ -1932,11 +1932,12 @@
       "maximum": 9007199254740991,
       "id": "githubRepoId"
     },
-    "__schema0": {
+    "codexEnvironmentRef": {
       "type": "string",
       "minLength": 1,
       "maxLength": 128,
-      "pattern": "^[^\\p{Cc}]+$"
+      "pattern": "^[^\\p{Cc}]+$",
+      "id": "codexEnvironmentRef"
     }
   },
   "x-constants": {

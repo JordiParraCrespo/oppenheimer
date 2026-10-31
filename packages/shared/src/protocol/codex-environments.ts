@@ -1,6 +1,5 @@
 import { z } from 'zod/v4';
-import { FIELD_BOUNDS, PRINTABLE_PATTERN } from '../schemas/primitives.js';
-import { commandIdSchema, gitRefSchema } from './primitives.js';
+import { codexEnvironmentRefSchema, commandIdSchema, gitRefSchema } from './primitives.js';
 
 /**
  * Codex cloud environments on the link (`product/next-steps/cloud-agents.md`,
@@ -11,18 +10,6 @@ import { commandIdSchema, gitRefSchema } from './primitives.js';
 
 /** How many environments one `codex.environments` names at most. */
 export const CODEX_ENVIRONMENTS_MAX = 100;
-
-/**
- * A Codex environment as `codex cloud exec --env` takes it: its id, or its
- * label, which the CLI matches without regard to case. Printable text only; the
- * runner passes it as `--env=<value>`, so a leading dash is no flag.
- */
-export const codexEnvironmentRefSchema = z
-  .string()
-  .trim()
-  .min(FIELD_BOUNDS.codexEnvironment.min)
-  .max(FIELD_BOUNDS.codexEnvironment.max)
-  .regex(PRINTABLE_PATTERN);
 
 /**
  * The Codex environments the host's ChatGPT account can start a task in,

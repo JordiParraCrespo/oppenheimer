@@ -1,10 +1,6 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
-import {
-  codexEnvironmentRefSchema,
-  codexEnvironmentsListSchema,
-  codexEnvironmentsSchema,
-} from './codex-environments.js';
+import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   deviceAttachSchema,
   deviceDetachSchema,
@@ -23,6 +19,7 @@ import {
 import {
   attachmentIdSchema,
   checkoutIdSchema,
+  codexEnvironmentRefSchema,
   commandIdSchema,
   githubRepoIdSchema,
   gitRefSchema,
