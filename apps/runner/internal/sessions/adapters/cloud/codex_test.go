@@ -118,6 +118,21 @@ echo "Error: environment '$4' not found" >&2; exit 1`)
 	}
 }
 
+// Only the CLI's own "environment '<label>' not found" for the label just
+// tried is a missing environment. Another refusal that also says "not found"
+// is the CLI's answer, in its words, and no other label is tried.
+func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
+	bin, args := fakeCodex(t, `echo "Error: branch 'main' not found on the remote" >&2; exit 1`)
+	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+	}
+	if got := readArgs(t, args); len(got) != 7 {
+		t.Fatalf("args = %q, want one try", got)
+	}
+}
+
 // A refusal other than a missing environment is not tried again under
 // another label: it is the CLI's answer, in its own words.
 func TestCodexStartSaysWhyTheCLIRefused(t *testing.T) {

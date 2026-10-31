@@ -93,8 +93,8 @@ var codexTaskURL = regexp.MustCompile(`https?://\S+/codex/tasks/([A-Za-z0-9_-]+)
 // it. The environment is named by its label, which `codex cloud exec`
 // matches without regard to case: the repository's full name first, then its
 // bare name, the two ways people name one. When the CLI has neither, the
-// start is ErrCodexCloudEnvironment, naming the labels tried and the ones the
-// CLI can see; any other refusal is the CLI's own, in its words.
+// start is a domain.CodexEnvironmentRefusal; any other refusal is the CLI's
+// own, in its words.
 func (c Codex) Start(ctx context.Context, repository, branch, prompt string) (Started, error) {
 	tried := codexEnvironments(repository)
 	for _, env := range tried {
@@ -106,37 +106,38 @@ func (c Codex) Start(ctx context.Context, repository, branch, prompt string) (St
 			return Started{}, domain.ErrCodexCloudStart.WithDetail(
 				"codex cloud exec named no task: %s", lastWords(out))
 		}
-		if !codexEnvironmentMissing(err) {
+		if !codexEnvironmentMissing(err, env) {
 			return Started{}, err
 		}
 	}
-	return Started{}, c.noEnvironment(ctx, tried)
+	return Started{}, c.environmentRefusal(ctx, tried).Problem()
 }
 
-// codexEnvironmentMissing reports whether the CLI refused because it has no
-// environment under the label: "environment '<label>' not found; run `codex
-// cloud` to list available environments".
-func codexEnvironmentMissing(err error) bool {
-	return strings.Contains(err.Error(), "not found")
+// codexMissing is the CLI's refusal of a label it has no environment for
+// (codex-rs/cloud-tasks, 0.166.0): "environment '<label>' not found; run
+// `codex cloud` to list available environments".
+var codexMissing = regexp.MustCompile(`environment '([^']*)' not found`)
+
+// codexEnvironmentMissing reports whether err is the CLI refusing env itself
+// as missing, and not some other refusal that happens to say "not found".
+func codexEnvironmentMissing(err error, env string) bool {
+	match := codexMissing.FindStringSubmatch(err.Error())
+	return match != nil && match[1] == env
 }
 
 // codexVisibleMax bounds how many labels a refusal names.
 const codexVisibleMax = 8
 
-// noEnvironment is the refusal for a repository the CLI has no environment
-// for. What it can see is read off one page of the account's newest tasks: a
-// read that fails says so instead of naming any, and the start fails the same.
-func (c Codex) noEnvironment(ctx context.Context, tried []string) error {
-	visible := "could not be read"
+// environmentRefusal is what the CLI can see when it has nothing under the
+// labels tried, read off one page of the account's newest tasks; a read that
+// fails leaves the refusal unlisted rather than failing differently.
+func (c Codex) environmentRefusal(ctx context.Context, tried []string) domain.CodexEnvironmentRefusal {
+	refusal := domain.CodexEnvironmentRefusal{Tried: tried}
 	if page, err := c.List(ctx, ""); err == nil {
-		visible = "none"
-		if labels := codexLabels(page.Tasks, tried); len(labels) > 0 {
-			visible = strings.Join(labels, ", ")
-		}
+		refusal.Listed = true
+		refusal.Visible = codexLabels(page.Tasks, tried)
 	}
-	return domain.ErrCodexCloudEnvironment.WithDetail(
-		"codex cloud exec found no environment labelled %s. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet. Environments in this account's recent tasks: %s (partial: codex-cli lists its environments only in its TUI, `codex cloud`).",
-		strings.Join(tried, " or "), visible)
+	return refusal
 }
 
 // codexLabels is the environment labels tasks ran in, each once, in the order
