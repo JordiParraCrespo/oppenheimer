@@ -51,10 +51,12 @@ describe('a session pane opened again', () => {
     const first = mount('s-1:0');
     expect(first.result.current.hasOutput).toBe(false);
     expect(mounted.at(-1)?.snapshot).toBeUndefined();
+    // The fake names a picture after how many panes have mounted, in any test.
+    const kept = `picture of ${mounted.length}`;
     first.unmount();
 
     const again = mount('s-1:0');
-    expect(mounted.at(-1)?.snapshot).toBe('picture of 1');
+    expect(mounted.at(-1)?.snapshot).toBe(kept);
     expect(again.result.current.hasOutput).toBe(true);
     again.unmount();
   });

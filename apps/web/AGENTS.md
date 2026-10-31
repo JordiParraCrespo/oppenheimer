@@ -92,6 +92,12 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   while the read is pending: the page jumps, or says "none", before the data
   lands.
 - Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
+- A spec that redefines `window.location` or reaches for a Node global jsdom
+  does not have (`ReadableStream`). The unit tests run on the `vmThreads`
+  pool (`@oppenheimer/tsconfig/vitest-frontend.mjs`), where jsdom is the
+  file's global the way a browser window is: neither works there. Import a
+  stream from `node:stream/web`; a package whose specs must replace
+  `location` passes `pool: 'forks'`, as `packages/frontend/web` does.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
 what the markup looks like is [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md).
