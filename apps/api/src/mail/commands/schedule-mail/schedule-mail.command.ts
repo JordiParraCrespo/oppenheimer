@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { MailPlan } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Keeps an approved message to send from the caller's Gmail at a time, once per approval. */
 export class ScheduleMailCommand extends CommandBase {

@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { ProjectRepositoryInputDto } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { ProjectSettingsResolver } from '../../../application/project-settings.resolver';
 import type {
   ProjectInsertOutcome,

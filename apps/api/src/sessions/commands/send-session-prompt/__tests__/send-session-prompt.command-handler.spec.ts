@@ -6,7 +6,7 @@ import type { WorkSessionRepositoryPort } from '../../../database/work-session.r
 import { SessionCloudRunEntity } from '../../../domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
-import { SendSessionPromptCommand } from '../../send-session-prompt/send-session-prompt.command';
+import { SendSessionPromptCommand } from '../send-session-prompt.command';
 import { SendSessionPromptCommandHandler } from '../send-session-prompt.command-handler';
 
 /**

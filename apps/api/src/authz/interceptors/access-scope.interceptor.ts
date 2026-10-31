@@ -1,10 +1,11 @@
 import type { NestInterceptor } from '@nestjs/common';
 import { type CallHandler, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
-import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { ROLES } from '@oppenheimer/shared';
 import type { Observable } from 'rxjs';
 import { tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
-import { AbilityFactory } from '../../roles/application/ability.factory';
+import { AbilityFactory } from '../application/ability.factory';
+import { type ScopeResolverPort } from '../application/scope-resolver.port';
+import { SCOPE_RESOLVER } from '../authz.di-tokens';
 import { ACCESS_SCOPE_KEY } from '../decorators/current-access-scope.decorator';
 
 /** Instance-level roles that short-circuit scoping (Q0). */

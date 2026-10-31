@@ -4,9 +4,9 @@ import {
   type BotTurnRequest,
   engineCapabilities,
 } from '@oppenheimer/backend-agents';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { BOT_MEMORY_PROFILE_IN_PROMPT_MAX } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { BOT_DOCUMENT_REPOSITORY, BOT_MEMORY_FACT_REPOSITORY } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';

@@ -4,12 +4,12 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { Request } from 'express';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { InvitationProblemResponses } from '../../decorators/invitation-problem-responses.decorator';
 import type { InvitationCaller } from '../../domain/invitation.types';
 import { InvitationResponseDto } from '../../dtos/organization.response.dto';

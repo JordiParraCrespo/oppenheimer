@@ -3,11 +3,11 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentSession } from '../../../auth/decorators/current-session.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { RevokeOtherSessionsCommand } from './revoke-other-sessions.command';
 
 @ApiTags('Profile')

@@ -1,5 +1,5 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { BotSubagentRun } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import {
   SUBAGENT_CALLS_PER_TURN,
   SUBAGENT_DATA_KEY,

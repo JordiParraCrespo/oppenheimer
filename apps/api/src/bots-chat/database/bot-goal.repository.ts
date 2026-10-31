@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { DataSource, type EntityManager, type Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
 import { BotResource } from '../../bots/bots.resource';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';

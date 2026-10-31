@@ -1,6 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { BOT_AVATAR_COLORS } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { CreateBotCommand } from '../../../bots/commands/create-bot/create-bot.command';
 import { BotEntity } from '../../../bots/domain/bot.entity';
 import { BotGroupEntity } from '../../../bots/domain/bot-group.entity';

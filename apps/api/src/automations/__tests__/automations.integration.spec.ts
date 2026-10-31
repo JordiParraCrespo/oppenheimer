@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { Some } from 'oxide.ts';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { AutomationMapper } from '../automation.mapper';

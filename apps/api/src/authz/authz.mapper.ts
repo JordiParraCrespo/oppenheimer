@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import {
-  canGrant,
-  type ResourceDefinition,
-  type ResourceRegistry,
-} from '@oppenheimer/backend-authz';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { AbilityContext, AppAbility } from '@oppenheimer/shared';
+import { type ResourceRegistry } from './application/resource.registry';
 import { AccessGrantOrmEntity } from './database/access-grant.orm-entity';
 import { AccessGrantEntity } from './domain/access-grant.entity';
+import { canGrant } from './domain/can-grant.policy';
+import { type ResourceDefinition } from './domain/resource-definition.types';
 import { AccessGrantResponseDto } from './dtos/access-grant.response.dto';
 import type {
   AuthzCatalogResponseDto,

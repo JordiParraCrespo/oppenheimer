@@ -22,6 +22,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@casl/ability": "^6.8.1",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
@@ -34,7 +35,6 @@
     "@nestjs/typeorm": "^11.0.3",
     "@oppenheimer/auth": "workspace:*",
     "@oppenheimer/backend-agents": "workspace:*",
-    "@oppenheimer/backend-authz": "workspace:*",
     "@oppenheimer/backend-cache": "workspace:*",
     "@oppenheimer/backend-core": "workspace:*",
     "@oppenheimer/backend-ddd": "workspace:*",

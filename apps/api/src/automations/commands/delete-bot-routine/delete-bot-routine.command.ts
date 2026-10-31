@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Delete one of a bot's routines, from its Routines tab or its own tool. */
 export class DeleteBotRoutineCommand extends CommandBase {

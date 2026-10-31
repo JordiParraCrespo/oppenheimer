@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { StagedFileReaderPort } from '../../links/application/staged-file-reader.port';
 import { STAGED_FILE_READER } from '../../links/links.di-tokens';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';

@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /**
  * `state` is the **stored lifecycle**, not the derived group the sidebar shows: the

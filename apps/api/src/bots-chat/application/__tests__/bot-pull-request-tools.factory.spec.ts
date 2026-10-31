@@ -1,5 +1,5 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { AddPullRequestCommentCommand } from '../../../pull-requests/commands/add-pull-request-comment/add-pull-request-comment.command';
 import { AddPullRequestConversationCommentCommand } from '../../../pull-requests/commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command';
 import { MergePullRequestCommand } from '../../../pull-requests/commands/merge-pull-request/merge-pull-request.command';

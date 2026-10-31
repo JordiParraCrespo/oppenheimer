@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto } from '@oppenheimer/shared';
 import { SESSION_IMAGE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import type { ParkedFilePort } from '../../links/application/parked-file.port';
 import { LINK_REGISTRY, PARKED_FILES } from '../../links/links.di-tokens';

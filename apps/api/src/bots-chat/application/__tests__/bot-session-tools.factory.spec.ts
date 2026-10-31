@@ -1,6 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';

@@ -1,5 +1,3 @@
-import type { AbilityScopeContext, ScopeGrant } from '@oppenheimer/shared';
-
 /**
  * Everything the caller may reach, before capabilities are considered.
  *
@@ -33,25 +31,5 @@ export function emptyScope(userId: string, organizationId: string | null = null)
     teamIds: [],
     grants: new Map(),
     bypass: false,
-  };
-}
-
-/**
- * Project an {@link AccessScope} into the plain shape `@oppenheimer/shared` uses to
- * interpolate `${scope.*}` placeholders.
- *
- * The two types are deliberately separate: `@oppenheimer/shared` is consumed by the
- * browser and must not learn about server-side scope resolution, while the
- * kernel wants Sets and Maps for membership checks.
- */
-export function toAbilityScopeContext(scope: AccessScope): AbilityScopeContext {
-  const grants: Record<string, ScopeGrant> = {};
-  for (const [subject, grant] of scope.grants) {
-    grants[subject] = grant === 'all' ? 'all' : [...grant];
-  }
-  return {
-    organizationId: scope.organizationId,
-    teamIds: scope.teamIds,
-    grants,
   };
 }

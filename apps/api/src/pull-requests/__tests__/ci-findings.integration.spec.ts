@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { CiFindingMapper } from '../ci-finding.mapper';
 import { CiFindingOrmEntity } from '../database/ci-finding.orm-entity';
 import { CiFindingRepository } from '../database/ci-finding.repository';

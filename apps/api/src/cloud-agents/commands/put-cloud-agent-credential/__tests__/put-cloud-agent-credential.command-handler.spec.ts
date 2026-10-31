@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { CloudAgentResolver } from '../../../application/cloud-agent.resolver';
 import type { CloudAgentProvider } from '../../../application/cloud-agent-provider.port';
 import type { CloudAgentCredentialRepositoryPort } from '../../../database/cloud-agent-credential.repository.port';

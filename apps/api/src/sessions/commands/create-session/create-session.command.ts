@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { CreateSessionDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { SessionOrigin } from '../../domain/session-turn.policy';
 
 export class CreateSessionCommand extends CommandBase {

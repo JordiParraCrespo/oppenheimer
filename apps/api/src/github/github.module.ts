@@ -1,7 +1,7 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { GithubAccessResolver } from './application/github-access.resolver';
 import { GithubTokenResolver } from './application/github-token.resolver';

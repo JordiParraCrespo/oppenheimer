@@ -9,15 +9,15 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { IDEMPOTENCY_KEY_MAX } from '@oppenheimer/shared';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { MilestoneWithProgress } from '../../database/milestone.repository.port';
 import { userActor } from '../../domain/plan-change.types';

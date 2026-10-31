@@ -1,9 +1,9 @@
 import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared';
 import { type ProjectPlanSummary } from '@oppenheimer/shared/plan';
 import { z } from 'zod/v4';
-import type { ProjectEntity } from './../projects/domain/project.entity';
-import type { PlanActor } from './../tasks/domain/plan-change.types';
-import type { TaskEntity } from './../tasks/domain/task.entity';
+import type { ProjectEntity } from '../projects/domain/project.entity';
+import type { PlanActor } from '../tasks/domain/plan-change.types';
+import type { TaskEntity } from '../tasks/domain/task.entity';
 import { type BotToolCallContext } from './application/bot-tool.factory';
 import { cut, formatToolTime } from './domain/bot-tool-text.policy';
 

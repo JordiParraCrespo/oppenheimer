@@ -1,6 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { CreateMailDraftCommand } from '../../../mail/commands/create-mail-draft/create-mail-draft.command';
 import { ScheduleMailCommand } from '../../../mail/commands/schedule-mail/schedule-mail.command';
 import { SendMailCommand } from '../../../mail/commands/send-mail/send-mail.command';

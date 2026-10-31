@@ -1,8 +1,8 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';

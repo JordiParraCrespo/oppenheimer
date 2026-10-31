@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, type Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ProjectRepositoryPort } from '../database/project.repository.port';
 import type { ProjectEntity } from '../domain/project.entity';
 import { ProjectErrors } from '../domain/projects.errors';

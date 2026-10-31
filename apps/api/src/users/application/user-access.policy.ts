@@ -1,7 +1,7 @@
 import { AppError } from '@oppenheimer/backend-core';
 import { canAccess } from '@oppenheimer/shared';
 import { AuthErrors } from '../../auth/domain/auth.errors';
-import type { AbilityRequest } from '../../roles/application/ability.factory';
+import type { AbilityRequest } from '../../authz/application/ability.factory';
 import type { UserEntity } from '../domain/user.entity';
 
 /**

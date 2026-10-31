@@ -1,14 +1,14 @@
-import { canAccessRow } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AuthzVersionRepositoryPort,
   AuthzVersions,
-} from '../../database/authz-version.repository.port';
-import type { RoleRepositoryPort } from '../../database/role.repository.port';
-import type { UserRoleRepositoryPort } from '../../database/user-role.repository.port';
-import { RoleEntity } from '../../domain/role.entity';
-import { Permission } from '../../domain/value-objects/permission.value-object';
+} from '../../../roles/database/authz-version.repository.port';
+import type { RoleRepositoryPort } from '../../../roles/database/role.repository.port';
+import type { UserRoleRepositoryPort } from '../../../roles/database/user-role.repository.port';
+import { RoleEntity } from '../../../roles/domain/role.entity';
+import { Permission } from '../../../roles/domain/value-objects/permission.value-object';
+import { canAccessRow } from '../../domain/can-access-row.policy';
 import { AbilityFactory } from '../ability.factory';
 import { GlobalRoleRegistry } from '../global-role.registry';
 

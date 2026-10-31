@@ -61,8 +61,8 @@ Three things the generator gets wrong most often:
 
 ## Layer rules (the Stop hook + CI enforce these)
 
-- `domain/` imports **only** `@oppenheimer/backend-ddd`, `@oppenheimer/backend-authz` and
-  `@oppenheimer/shared` plus node core. No `@nestjs/*`, no `typeorm`, no `oxide.ts`,
+- `domain/` imports **only** `@oppenheimer/backend-ddd`, `@oppenheimer/shared`,
+  another module's `domain/` plus node core. No `@nestjs/*`, no `typeorm`, no `oxide.ts`,
   no `express`.
 - Handlers inject the **port** via its DI token — never a `*.repository.ts`,
   `*.adapter.ts` or `*.gateway.ts`. Every adapter you generate gets a

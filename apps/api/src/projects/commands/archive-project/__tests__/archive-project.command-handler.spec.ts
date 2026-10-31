@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import { ProjectUsageRegistry } from '../../../application/project-usage.registry';
 import type { ProjectRepositoryPort } from '../../../database/project.repository.port';
 import { ProjectEntity } from '../../../domain/project.entity';

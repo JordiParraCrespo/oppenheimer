@@ -3,12 +3,12 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { VoiceStatusDto } from '@oppenheimer/shared';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { VoiceStatusResponseDto } from '../../dtos/voice-status.response.dto';
 import { FindVoiceStatusQuery } from './find-voice-status.query';
 

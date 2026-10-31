@@ -63,8 +63,8 @@ merging when:
 - a review thread is unresolved, a reviewer asks for more than the task, or a
   security finding is open;
 - the diff touches a security-sensitive path: auth, authorization, scopes or
-  credentials (`packages/auth`, `packages/backend/authz`,
-  `packages/shared/src/scopes`, `apps/api/src/auth*`), the agent guardrails
+  credentials (`packages/auth`, `packages/shared/src/scopes`,
+  `apps/api/src/auth*`), the agent guardrails
   (`.claude/settings.json`, `.agents/hooks/`), workflows (`.github/`), the
   deployment (`deploy/`) or a migration;
 - a person's approval is required by branch protection or a code owner;

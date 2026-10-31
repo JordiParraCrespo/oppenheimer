@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotQuestionEntity } from '../domain/bot-question.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';

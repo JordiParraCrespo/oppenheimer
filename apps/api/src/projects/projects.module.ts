@@ -1,7 +1,7 @@
 import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { OrganizationsModule } from '../organizations/organizations.module';

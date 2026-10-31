@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { CiFindingMapper } from '../ci-finding.mapper';
 import type { CiFindingEntity } from '../domain/ci-finding.entity';
 import { PullRequestResource } from '../pull-requests.resource';

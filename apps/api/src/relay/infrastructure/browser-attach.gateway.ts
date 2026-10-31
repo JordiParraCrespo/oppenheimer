@@ -3,7 +3,6 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { canAccessRow, SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import {
@@ -12,6 +11,9 @@ import {
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
+import { type ScopeResolverPort } from '../../authz/application/scope-resolver.port';
+import { SCOPE_RESOLVER } from '../../authz/authz.di-tokens';
+import { canAccessRow } from '../../authz/domain/can-access-row.policy';
 
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 
@@ -25,10 +27,11 @@ export type AttachVerdict =
   | { allowed: false; reason: AttachClosedReason; code: number };
 
 import { type WebSocket, WebSocketServer } from 'ws';
-import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
-import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { CredentialOwner } from '../../auth/domain/scope-context.types';
+import type { AbilityPort } from '../../authz/application/ability.port';
+import { ABILITY } from '../../authz/authz.di-tokens';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';

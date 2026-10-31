@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HostErrors } from '../domain/hosts.errors';
 import { HostMapper } from '../host.mapper';

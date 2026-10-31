@@ -1,6 +1,6 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { GmailCallResolver } from '../../../application/gmail-call.resolver';
 import type { MailSendRepositoryPort } from '../../../database/mail-send.repository.port';
 import { GmailConnectionEntity } from '../../../domain/gmail-connection.entity';

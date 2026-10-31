@@ -1,4 +1,4 @@
-import { defineResource } from '@oppenheimer/backend-authz';
+import { defineResource } from '../authz/domain/resource-definition.types';
 
 /**
  * Automations are workspace-owned, like sessions: every member sees them all,

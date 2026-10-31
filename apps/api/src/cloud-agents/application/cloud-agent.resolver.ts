@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { type CloudAgentProviderId, cloudAgentProviderSchema } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { CloudAgentErrors } from '../domain/cloud-agents.errors';
 import type { CloudAgentProvider } from './cloud-agent-provider.port';
 import { CloudAgentProviderRegistry } from './cloud-agent-provider.registry';

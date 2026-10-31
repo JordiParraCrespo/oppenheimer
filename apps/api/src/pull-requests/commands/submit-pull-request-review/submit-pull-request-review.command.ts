@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { SubmitPullRequestReviewDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { PullRequestAddress } from '../../../github/application/pull-request-access.port';
 
 export class SubmitPullRequestReviewCommand extends CommandBase {

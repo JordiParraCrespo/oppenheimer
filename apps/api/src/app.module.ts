@@ -5,7 +5,6 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { CacheModule } from '@oppenheimer/backend-cache';
 import {
   AllExceptionsFilter,
@@ -245,7 +244,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       defaultLocale: 'en',
       defaultTimeZone: 'UTC',
     }),
-    AuthzKernelModule.forRoot(),
     AuthModule,
     AuthzModule,
     ApiTokensModule,

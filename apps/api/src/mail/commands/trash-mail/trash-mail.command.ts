@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Moves threads of the caller's Gmail to Trash, or brings them back. Nothing is deleted for good. */
 export class TrashMailCommand extends CommandBase {

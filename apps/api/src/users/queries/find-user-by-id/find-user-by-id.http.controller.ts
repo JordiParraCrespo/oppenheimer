@@ -2,11 +2,11 @@ import { Controller, Get, Param, ParseUUIDPipe, Req, UseGuards, Version } from '
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
-import type { AbilityRequest } from '../../../roles/application/ability.factory';
+import type { AbilityRequest } from '../../../authz/application/ability.factory';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { assertCanAccessUser } from '../../application/user-access.policy';
 import type { UserEntity } from '../../domain/user.entity';
 import { UserResponseDto } from '../../dtos/user.response.dto';

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GithubInstallationEntity } from '../../github/domain/github-installation.entity';
 import { FindInstallationsQuery } from '../../github/queries/find-installations/find-installations.query';
 import { ListInstallationRepositoriesQuery } from '../../github/queries/list-installation-repositories/list-installation-repositories.query';

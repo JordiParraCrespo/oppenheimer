@@ -8,8 +8,8 @@
  * turn in Postgres is the integration suite's.
  */
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { BotEntity } from '../../../../bots/domain/bot.entity';
 import { SessionErrors } from '../../../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../../../sessions/domain/work-session.entity';

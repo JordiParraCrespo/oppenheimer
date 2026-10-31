@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';

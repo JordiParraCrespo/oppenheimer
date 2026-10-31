@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';

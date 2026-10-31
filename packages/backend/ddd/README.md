@@ -21,8 +21,8 @@ rules.
 - **Repository base**: `TypeOrmRepositoryBase`, the port's four methods for a
   non-tenant TypeORM adapter (map, write through `writeWithEvents`, map back;
   `idColumn` for a table keyed by something other than `id`). Tenant-scoped
-  adapters use `ScopedRepositoryBase` from `@oppenheimer/backend-authz`
-  instead.
+  adapters use `ScopedRepositoryBase` from the API's
+  `src/authz/database/scoped.repository.ts` instead.
 - **Guards & exceptions**: `Guard`, `ExceptionBase`, `NotFoundException`,
   `ConflictException`, `ArgumentInvalidException`, `ArgumentNotProvidedException`,
   `ArgumentOutOfRangeException`.

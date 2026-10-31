@@ -3,9 +3,9 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { DeleteUserCommand } from '../delete-user/delete-user.command';
 import { DeleteOwnAccountRequest } from './delete-own-account.request.dto';
 

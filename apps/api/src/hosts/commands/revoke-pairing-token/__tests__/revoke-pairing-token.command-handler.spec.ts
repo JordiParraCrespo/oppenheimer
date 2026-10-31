@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { HostPairingTokenRepositoryPort } from '../../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entity';
 import { RevokePairingTokenCommand } from '../revoke-pairing-token.command';

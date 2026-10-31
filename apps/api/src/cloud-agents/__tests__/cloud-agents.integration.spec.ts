@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { CloudAgentCredentialMapper } from '../cloud-agent-credential.mapper';
 import { CloudAgentCredentialOrmEntity } from '../database/cloud-agent-credential.orm-entity';
 import { CloudAgentCredentialRepository } from '../database/cloud-agent-credential.repository';

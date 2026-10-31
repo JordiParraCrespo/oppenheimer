@@ -2,11 +2,11 @@ import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards, Version } from
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { OrganizationScoped } from '../../../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { MemberProblemResponses } from '../../decorators/member-problem-responses.decorator';
 import { MemberResponseDto } from '../../dtos/organization.response.dto';
 import { ListMembersQuery } from './list-members.query';

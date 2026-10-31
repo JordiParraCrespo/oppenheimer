@@ -2,15 +2,15 @@ import { Body, Controller, Post, Req, UseGuards, UseInterceptors, Version } from
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { MintedPairingTokenResponseDto } from '../../dtos/pairing-token.response.dto';
 import { HostPairingTokenMapper } from '../../host-pairing-token.mapper';

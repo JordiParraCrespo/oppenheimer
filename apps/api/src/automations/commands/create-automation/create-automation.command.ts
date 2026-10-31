@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { CreateAutomationDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 export class CreateAutomationCommand extends CommandBase {
   /** The caller, who becomes the owner every run acts as. */

@@ -39,10 +39,10 @@ export interface PersistenceTracked {
  * named for the transition.
  *
  * Tenant-scoped repositories do not extend it, and `ScopedRepositoryBase`
- * (`@oppenheimer/backend-authz`) is not built on it: every read there takes an
- * `AccessScope`, and their writes are locked, conditional SQL rather than a
- * plain `save`. What the two kinds share is `OutboxService.transaction`, not a
- * base class.
+ * (the API's `authz/database/scoped.repository.ts`) is not built on it:
+ * every read there takes an `AccessScope`, and their writes are locked,
+ * conditional SQL rather than a plain `save`. What the two kinds share is
+ * `OutboxService.transaction`, not a base class.
  */
 export abstract class TypeOrmRepositoryBase<
   Aggregate extends EventfulAggregate & { readonly id: string },

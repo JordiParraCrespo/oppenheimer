@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { AutomationRunStatus } from '@oppenheimer/shared/automations';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type {
   AutomationRunDigest,
   RunHistoryBucket,

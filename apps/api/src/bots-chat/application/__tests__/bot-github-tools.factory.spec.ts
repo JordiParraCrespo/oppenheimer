@@ -1,6 +1,6 @@
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { FindInstallationsQuery } from '../../../github/queries/find-installations/find-installations.query';
 import { ListInstallationRepositoriesQuery } from '../../../github/queries/list-installation-repositories/list-installation-repositories.query';
 import { FindPullRequestQuery } from '../../../pull-requests/queries/find-pull-request/find-pull-request.query';

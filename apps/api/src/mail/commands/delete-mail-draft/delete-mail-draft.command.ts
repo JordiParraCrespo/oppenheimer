@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Deletes a draft from the caller's Gmail; a sent message is never touched. */
 export class DeleteMailDraftCommand extends CommandBase {

@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AutomationRepositoryInputDto, TriggerInputDto } from '@oppenheimer/shared';
 import { type AutomationPlace, automationPlaceFits } from '@oppenheimer/shared/automations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';

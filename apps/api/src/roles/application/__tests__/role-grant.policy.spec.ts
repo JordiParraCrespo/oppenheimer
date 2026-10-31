@@ -5,8 +5,8 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
+import type { AbilityFactory } from '../../../authz/application/ability.factory';
 import { RoleEntity } from '../../domain/role.entity';
-import type { AbilityFactory } from '../ability.factory';
 import { RoleGrantPolicy } from '../role-grant.policy';
 
 function policyFor(actorPermissions: PermissionDefinition[]): RoleGrantPolicy {

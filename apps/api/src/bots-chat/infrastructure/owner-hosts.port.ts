@@ -1,4 +1,4 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotPromptHost } from '../domain/bot-turn-context.policy';
 
 /** A host as a turn's prompt names it. */

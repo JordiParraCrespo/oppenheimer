@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AccessScope,
-  applyAccessScope,
-  ScopedRepositoryBase,
-} from '@oppenheimer/backend-authz';
 import type { BotDocumentName } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
+import { applyAccessScope, ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotDocumentRevision } from '../domain/bot.types';

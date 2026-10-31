@@ -1,12 +1,11 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { AbilityPort } from '../../application/ability.port';
-import { CHECK_POLICIES_KEY } from '../../decorators/check-policies.decorator';
-import { AuthErrors } from '../../domain/auth.errors';
+import { CHECK_POLICIES_KEY, NO_POLICY_KEY } from '../../decorators/check-policies.decorator';
 import { PoliciesGuard } from '../policies.guard';
 
 /** Metadata the route under test declares, keyed the way the reflector reads it. */

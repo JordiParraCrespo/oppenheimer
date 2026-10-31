@@ -1,6 +1,6 @@
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AbilityFactory } from '../../../../roles/application/ability.factory';
+import type { AbilityFactory } from '../../../../authz/application/ability.factory';
 import type { ApiTokenRepositoryPort } from '../../../database/api-token.repository.port';
 import type { OrganizationMembershipReaderPort } from '../../../database/organization-membership.repository.port';
 import type { ApiTokenEntity } from '../../../domain/api-token.entity';

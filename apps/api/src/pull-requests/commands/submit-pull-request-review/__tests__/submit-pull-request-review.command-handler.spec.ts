@@ -1,7 +1,7 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SubmitPullRequestReviewDto } from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type {
   InstallationAddress,
   PullRequestAccessPort,

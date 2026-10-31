@@ -1,9 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { BotPermission } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { NewBotProviderResolver } from '../../application/new-bot-provider.resolver';

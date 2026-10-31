@@ -5,9 +5,9 @@ import {
 } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AbilityFactory } from '../../../../authz/application/ability.factory';
 import type { UserRepositoryPort } from '../../../../users/database/user.repository.port';
 import { UserErrors } from '../../../../users/domain/user.errors';
-import type { AbilityFactory } from '../../../application/ability.factory';
 import { RoleGrantPolicy } from '../../../application/role-grant.policy';
 import type { RoleRepositoryPort } from '../../../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../../../database/user-role.repository.port';
