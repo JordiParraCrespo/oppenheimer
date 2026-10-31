@@ -6,39 +6,53 @@
  *   pnpm ci:local --all                # everything, as the scheduled run on main does
  *   pnpm ci:local --base origin/feat   # against another base
  *   pnpm ci:local --skip e2e,integration
+ *   pnpm ci:local --dirty              # the lint job on uncommitted work, before a commit
+ *   pnpm ci:local --no-fail-fast       # finish every job even after a failure
  *
- * This file is the pipeline. Pull requests get no GitHub CI: every agent
- * runs this before it pushes, and `.github/workflows/ci.yml` runs
+ * This file is the pipeline's command line. Pull requests get no GitHub CI:
+ * every agent runs this before it pushes, and `.github/workflows/ci.yml` runs
  * `pnpm ci:local --all` on main every eight hours, so the report a pull
  * request carries and the scheduled run are the same program. A new CI step
- * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
+ * goes in `plan.mjs` and nowhere else. The jobs, chosen by `affected.mjs`:
  *
- *   lint         Biome, the design-system lint, architecture, structure, flags,
- *                React singletons (one installed copy each),
- *                compiler bail-outs, unused code, eval anchors, starter manifest
+ *   lint         Biome, the design-system lint, architecture, typecheck,
+ *                structure, flags, React singletons (one installed copy each),
+ *                compiler bail-outs, unused code, translations, eval anchors,
+ *                this pipeline's own tests, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, backend public API, generated files committed, unit tests, bundle budget
+ *   services     the stack's Postgres, Redis and stubs, then the API built here
  *   integration  the API's suite (Testcontainers, so Docker)
  *   e2e          the API suite against the stack
  *
- * Integration and e2e run after `scripts/stack/stack.mjs up`, and the stack
- * comes down when they finish.
+ * The jobs run side by side (`run.mjs`); the services start while the build
+ * runs, and the suites once the API is up. A stack that was already up (a
+ * console from `stack.mjs up --web`, for the screenshots) stays up with this
+ * commit's API in it; one this run started comes down at the end.
  *
  * It runs on the commit checked out, so commit first; it refuses a tree with
  * any uncommitted change, untracked files included. A job stops at its first
- * failed step; the other jobs still run. The report (HEAD, base, one row per
- * step) is printed and written to `.ci-local/report.md` — paste it into the
- * pull request. The exit code is non-zero when any step failed.
+ * failed step, and the first failure stops the run (fail-fast), except with
+ * `--all` or `--no-fail-fast`, where every other job runs to its end. The
+ * report (HEAD, base, one row per step) is printed and written to
+ * `.ci-local/report.md` — paste it into the pull request; each step's output
+ * is in `.ci-local/logs/`. The exit code is non-zero when any step failed.
+ *
+ * `--dirty` is the quick check while working: the lint job only, on the tree
+ * as it is, uncommitted files included. Its report goes to
+ * `.ci-local/dirty-report.md`, says it is not for a pull request, and leaves
+ * `report.md` alone.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { plan, SKIPPABLE, teardown } from './plan.mjs';
+import { MARKS, runSteps } from './run.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, '.ci-local');
-const JOBS = ['lint', 'go', 'test', 'integration', 'e2e'];
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -46,13 +60,19 @@ const flag = (name) => {
   return at === -1 ? undefined : (args[at + 1] ?? '');
 };
 const all = args.includes('--all');
+const dirty = args.includes('--dirty');
+const failFast = !all && !args.includes('--no-fail-fast');
 const base = all ? null : (flag('--base') ?? 'origin/main');
 const skip = new Set((flag('--skip') ?? '').split(',').filter(Boolean));
 for (const job of skip) {
-  if (!JOBS.includes(job)) {
-    console.error(`ci:local: unknown job "${job}" in --skip; jobs are ${JOBS.join(', ')}`);
+  if (!SKIPPABLE.includes(job)) {
+    console.error(`ci:local: unknown job "${job}" in --skip; jobs are ${SKIPPABLE.join(', ')}`);
     process.exit(2);
   }
+}
+if (all && dirty) {
+  console.error('ci:local: --dirty checks the work in hand against a base; it does not take --all');
+  process.exit(2);
 }
 
 function git(...gitArgs) {
@@ -77,7 +97,8 @@ function selection() {
   const env = { ...process.env, GITHUB_OUTPUT: output };
   delete env.GITHUB_BASE_REF;
   delete env.GITHUB_STEP_SUMMARY;
-  execFileSync('node', ['scripts/ci/affected.mjs', ...(base ? ['--base', base] : [])], {
+  const affectedArgs = [...(base ? ['--base', base] : []), ...(dirty ? ['--dirty'] : [])];
+  execFileSync('node', ['scripts/ci/affected.mjs', ...affectedArgs], {
     cwd: ROOT,
     env,
     stdio: 'inherit',
@@ -93,43 +114,9 @@ function selection() {
     scope: outputs.scope,
     packages: JSON.parse(outputs.packages),
     filters: outputs.filters ? outputs.filters.split(' ') : [],
+    lintOnly: JSON.parse(outputs.lint_only ?? '[]'),
   };
 }
-
-// ---------------------------------------------------------------------- steps
-
-const rows = [];
-
-/**
- * Runs one step with its output inherited; returns whether it passed. A step
- * is a command, or a function that returns whether it passed.
- */
-function step(job, name, command, commandArgs, options = {}) {
-  console.log(`\n▶ [${job}] ${name}`);
-  const started = Date.now();
-  const ok =
-    typeof command === 'function'
-      ? command()
-      : spawnSync(command, commandArgs, {
-          cwd: ROOT,
-          stdio: 'inherit',
-          env: { ...process.env, ...options.env },
-        }).status === 0;
-  rows.push({ job, name, ok, seconds: Math.round((Date.now() - started) / 1000) });
-  return ok;
-}
-
-function job(name, steps) {
-  if (skip.has(name)) {
-    rows.push({ job: name, name: 'skipped with --skip', ok: null, seconds: 0 });
-    return;
-  }
-  for (const [label, command, commandArgs, options] of steps) {
-    if (!step(name, label, command, commandArgs, options)) return;
-  }
-}
-
-const touches = (packages, name) => packages.includes(name);
 
 // ----------------------------------------------------------------------- run
 
@@ -137,227 +124,74 @@ const touches = (packages, name) => packages.includes(name);
 // changes would be run but not selected for, or selected for but not in the
 // commit the report names. An untracked file counts: a build or a test can
 // read it, and it will not be pushed. Commit first, or ignore it.
-if (git('status', '--porcelain') !== '') {
+if (!dirty && git('status', '--porcelain') !== '') {
   console.error(
-    'ci:local: commit your changes first (or ignore the file); the report is for a commit, and the selection reads commits.',
+    'ci:local: commit your changes first (or ignore the file); the report is for a commit, and the selection reads commits. `--dirty` checks uncommitted work, lint only.',
   );
   console.error(git('status', '--short'));
   process.exit(2);
 }
 const head = git('rev-parse', 'HEAD');
-const { scope, packages, filters } = selection();
-const any = packages.length > 0;
-
-// lint — always.
-job('lint', [
-  // `pnpm check` is the contributor's command and writes the fixes it can; a
-  // drift Biome could fix would then pass. Check without writing.
-  ['Biome', 'pnpm', ['exec', 'biome', 'check', '.']],
-  ['pnpm check:biome-plugins', 'pnpm', ['check:biome-plugins']],
-  // oppenheimer:begin web|web-showcase
-  ['Design-system lint (reports, never fails)', 'pnpm', ['lint:design']],
-  // oppenheimer:end web|web-showcase
-  ...(any ? [['Architecture boundaries', 'pnpm', ['turbo', 'run', 'arch', ...filters]]] : []),
-  ['API structure', 'pnpm', ['check:api-structure']],
-  ['Feature flags', 'pnpm', ['check:flags']],
-  // The agent git guard (`.agents/hooks/git-guard.mjs`): its policy, case by case.
-  ['Agent git guard', 'pnpm', ['check:hooks']],
-  ['Dev bootstrap', 'pnpm', ['check:bootstrap']],
-  // oppenheimer:begin runner
-  // The runner release path's refusals: no keys, unsigned, tampered.
-  ['Runner release publishing', 'pnpm', ['check:runner-release']],
-  // oppenheimer:end runner
-  // oppenheimer:begin web
-  ['Frontend structure', 'pnpm', ['check:structure']],
-  // The React Compiler gives up silently on a function it cannot compile (the
-  // build prints nothing). The web tier is at zero bail-outs; keep it.
-  ['React Compiler bail-outs', 'pnpm', ['check:compiler', '--strict']],
-  // Unused exports, files and dependencies in the console and the frontend
-  // packages (knip, `knip.json`): an export nobody imports is deleted.
-  ['Unused code', 'pnpm', ['check:unused']],
-  // `pnpm check:singletons`: apps/web's module-state libraries, once each.
-  ...(touches(packages, '@oppenheimer/web')
-    ? [['One copy of each React singleton', 'pnpm', ['check:singletons']]]
-    : []),
-  // oppenheimer:end web
-  // The hexagon audit's eval plants its violations by anchoring on exact
-  // lines of apps/api; a refactor that moves one silently retires the eval.
-  // Planting into a throwaway worktree proves every anchor still matches.
-  [
-    'Audit evals stay plantable',
-    'sh',
-    [
-      '-c',
-      'dir=$(mktemp -d) && git worktree add -q --detach "$dir/planted" HEAD && node .agents/routines/evals/hexagon-audit/plant.mjs "$dir/planted"; status=$?; git worktree remove --force "$dir/planted"; rm -rf "$dir"; exit $status',
-    ],
-  ],
-  // oppenheimer:begin starter
-  ['Starter manifest', 'pnpm', ['starter:check']],
-  // oppenheimer:end starter
-]);
-
-// oppenheimer:begin runner
-let goTouched =
-  packages.some((p) => p.startsWith('@oppenheimer/go-')) ||
-  touches(packages, '@oppenheimer/runner');
-// oppenheimer:begin e2e
-// e2e/netsim, the network simulator, is a Go module inside the e2e package.
-goTouched ||= touches(packages, '@oppenheimer/e2e');
-// oppenheimer:end e2e
-if (goTouched) {
-  job('go', [
-    ['go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...']],
-    // NUL-delimited, like `packages/go/Makefile`: unquoted, the module
-    // directories split on the spaces in a checkout path and golangci-lint
-    // lints nothing while reporting `0 issues`.
-    [
-      'golangci-lint',
-      'sh',
-      ['-c', `go list -m -f '{{.Dir}}/...' | tr '\\n' '\\0' | xargs -0 golangci-lint run`],
-    ],
-    ['go test', 'go', ['test', '-count=1', 'github.com/jordiparracrespo/oppenheimer/...']],
-    [
-      'build the runner',
-      'sh',
-      ['-c', 'cd apps/runner && go build -trimpath -o /dev/null ./cmd/runner'],
-    ],
-    ...['darwin/arm64', 'darwin/amd64', 'linux/arm64'].map((target) => {
-      const [goos, goarch] = target.split('/');
-      return [
-        `build for ${target}`,
-        'sh',
-        ['-c', `cd apps/runner && GOOS=${goos} GOARCH=${goarch} go build -o /dev/null ./...`],
-      ];
-    }),
-  ]);
-}
-// oppenheimer:end runner
-
-if (any) {
-  job('test', [
-    ['turbo build', 'pnpm', ['turbo', 'run', 'build', ...filters]],
-    // The backend packages must compile against their dependencies' built
-    // declarations, and every one is checked whatever the diff touched, so
-    // they are built here (Turborepo's cache makes that free after the build
-    // above).
-    [
-      'Backend public API',
-      'sh',
-      ['-c', "pnpm turbo run build --filter='./packages/backend/*' && pnpm check:public-api"],
-    ],
-    // oppenheimer:begin runner
-    ...(touches(packages, '@oppenheimer/shared') || touches(packages, '@oppenheimer/runner')
-      ? [
-          [
-            'Generated files are committed',
-            'pnpm',
-            ['--filter', '@oppenheimer/shared', 'run', 'check:generated'],
-          ],
-          [
-            'Generated files unchanged',
-            'git',
-            [
-              'diff',
-              '--exit-code',
-              '--',
-              'packages/shared/protocol-schema',
-              'apps/runner/internal',
-            ],
-          ],
-        ]
-      : []),
-    // oppenheimer:end runner
-    ['turbo test', 'pnpm', ['turbo', 'run', 'test', ...filters]],
-    // oppenheimer:begin extension
-    // The built extension in Chromium against a fake claude.ai: the page
-    // tap, the poll, the badge, the notifications and the popup.
-    ...(touches(packages, '@oppenheimer/extension')
-      ? [['Extension in Chromium', 'pnpm', ['--filter', '@oppenheimer/extension', 'e2e']]]
-      : []),
-    // oppenheimer:end extension
-    // oppenheimer:begin web
-    ...(touches(packages, '@oppenheimer/web')
-      ? [
-          ['build the web app', 'pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/web']],
-          ['First-load budgets', 'pnpm', ['check:bundle']],
-        ]
-      : []),
-    // oppenheimer:end web
-  ]);
-}
-
-const needsIntegration = touches(packages, '@oppenheimer/api') && !skip.has('integration');
-// oppenheimer:begin e2e
-const needsE2e =
-  (touches(packages, '@oppenheimer/api') || touches(packages, '@oppenheimer/e2e')) &&
-  !skip.has('e2e');
-// oppenheimer:end e2e
-for (const name of ['integration', 'e2e']) if (skip.has(name)) job(name, []);
-
-// Both suites need the stack's services: `stack.mjs up` uses a Postgres and
-// Redis already listening (the workflow's service containers), and otherwise
-// starts them under Docker, starting the daemon in a sandbox that ships it
-// stopped. Testcontainers then needs that same daemon, so where Postgres and
-// Redis run outside Docker, Docker still has to be running.
-if (needsIntegration || needsE2e) {
+const chosen = selection();
+const steps = plan(chosen, { dirty, skip });
+// A console up before this run (`stack.mjs up --web`, for the screenshots)
+// is in use: the run swaps the API and leaves the rest up.
+const keepStack = (() => {
   try {
-    // `up` leaves an API that is already answering alone, and that API may
-    // be an earlier build or someone's dev server: the suites would test it,
-    // not this commit. Stop what the stack started before, then insist the
-    // port is free, so the API the suites reach is the one built here.
-    if (
-      step('services', 'stack down (a stale API)', 'node', ['scripts/stack/stack.mjs', 'down']) &&
-      step('services', 'nothing else answers on the API port', () => {
-        const url = `${process.env.API_URL ?? 'http://localhost:3001'}/api/v1/health`;
-        const answered =
-          spawnSync('curl', ['-sf', '-o', '/dev/null', '--max-time', '2', url]).status === 0;
-        if (answered)
-          console.log(
-            `${url} answers, and the stack did not start it; stop that API and run this again.`,
-          );
-        return !answered;
-      }) &&
-      step('services', 'stack up', 'node', ['scripts/stack/stack.mjs', 'up'])
-    ) {
-      if (needsIntegration) {
-        job('integration', [
-          ['build the API', 'pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/api...']],
-          // Ryuk is one more image to pull from Docker Hub; every suite
-          // stops its own containers.
-          [
-            'pnpm test:integration',
-            'pnpm',
-            ['test:integration'],
-            { env: { TESTCONTAINERS_RYUK_DISABLED: 'true' } },
-          ],
-        ]);
-      }
-      // oppenheimer:begin e2e
-      if (needsE2e) job('e2e', [['e2e:api', 'pnpm', ['--filter', '@oppenheimer/e2e', 'e2e:api']]]);
-      // oppenheimer:end e2e
-    }
-  } finally {
-    spawnSync('node', ['scripts/stack/stack.mjs', 'down'], { cwd: ROOT, stdio: 'inherit' });
+    return Boolean(JSON.parse(readFileSync(join(ROOT, '.stack', 'state.json'), 'utf8')).pids?.web);
+  } catch {
+    return false;
   }
+})();
+
+const logDir = join(OUT, dirty ? 'dirty-logs' : 'logs');
+rmSync(logDir, { recursive: true, force: true });
+const aborted = new AbortController();
+process.once('SIGINT', () => aborted.abort());
+process.once('SIGTERM', () => aborted.abort());
+const started = Date.now();
+let rows;
+try {
+  rows = await runSteps(steps, {
+    cwd: ROOT,
+    logDir,
+    failFast,
+    // In GitHub Actions the run's page is the only place to read a log.
+    echo: Boolean(process.env.GITHUB_ACTIONS),
+    signal: aborted.signal,
+  });
+} finally {
+  const down = teardown(steps, { keepStack });
+  if (down) spawnSync(down[0], down[1], { cwd: ROOT, stdio: 'inherit' });
 }
+const wall = Math.round((Date.now() - started) / 1000);
 
 // -------------------------------------------------------------------- report
 
-const failed = rows.filter((r) => r.ok === false);
-const mark = (ok) => (ok === null ? '⏭️' : ok ? '✅' : '❌');
+for (const job of skip)
+  rows.push({ job, name: 'skipped with --skip', status: 'skipped', seconds: 0 });
+const failed = rows.filter((r) => r.status === 'failed');
+const passed = failed.length === 0 && !aborted.signal.aborted;
+const verdict = aborted.signal.aborted ? '⏹️ interrupted' : passed ? '✅ passed' : '❌ failed';
 const report = [
-  `### Local CI ${failed.length ? '❌ failed' : '✅ passed'}`,
+  dirty
+    ? `### Quick check ${verdict} — uncommitted work, lint only; not a pull request's report`
+    : `### Local CI ${verdict}`,
   '',
-  `\`pnpm ci:local${args.length ? ` ${args.join(' ')}` : ''}\` on \`${head.slice(0, 12)}\`, ` +
-    `${base ? `against \`${base}\`` : 'every package'}; scope **${scope}**, ${packages.length} package(s).`,
+  `\`pnpm ci:local${args.length ? ` ${args.join(' ')}` : ''}\` on \`${head.slice(0, 12)}\`` +
+    `${dirty ? ' plus uncommitted changes' : ''}, ` +
+    `${base ? `against \`${base}\`` : 'every package'}; scope **${chosen.scope}**, ` +
+    `${chosen.packages.length} package(s); ${wall}s wall clock` +
+    `${failFast ? ', fail-fast' : ''}.`,
   '',
   '| Job | Step | Result | Time |',
   '| --- | --- | --- | --- |',
-  ...rows.map((r) => `| ${r.job} | ${r.name} | ${mark(r.ok)} | ${r.seconds}s |`),
+  ...rows.map((r) => `| ${r.job} | ${r.name} | ${MARKS[r.status]} | ${r.seconds}s |`),
   '',
 ].join('\n');
 mkdirSync(OUT, { recursive: true });
-writeFileSync(join(OUT, 'report.md'), report);
+const reportFile = dirty ? 'dirty-report.md' : 'report.md';
+writeFileSync(join(OUT, reportFile), report);
 console.log(`\n${report}`);
-console.log(`Report written to ${join('.ci-local', 'report.md')}.`);
-process.exit(failed.length ? 1 : 0);
+console.log(`Report written to ${join('.ci-local', reportFile)}; step logs in ${logDir}.`);
+process.exit(passed ? 0 : 1);

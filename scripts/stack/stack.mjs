@@ -2,9 +2,10 @@
 /**
  * The stack the e2e suites run against, stood up in one command:
  *
- *   node scripts/stack/stack.mjs up [--web] [--no-build]
+ *   node scripts/stack/stack.mjs up [--web] [--no-build] [--no-api]
  *   node scripts/stack/stack.mjs status
- *   node scripts/stack/stack.mjs down
+ *   node scripts/stack/stack.mjs down [--api]
+ *   node scripts/stack/stack.mjs api-port-free
  *
  * `up` is Postgres and Redis, the GitHub, namer and Cursor stubs (`e2e/support`), the
  * migrated API and, with `--web`, the console — the steps `e2e/README.md`
@@ -22,7 +23,12 @@
  *   Compose project this script started (`oppenheimer-stack`) is stopped.
  *
  * Everything it starts is recorded in `.stack/`, with a log per process;
- * `down` stops exactly that.
+ * `down` stops exactly that, and `down --api` only the API it started, which
+ * is how `pnpm ci:local` swaps in the API it built and leaves a console that
+ * `up --web` started for the screenshots. `up --no-api` stops short of the
+ * API: the services, so they can start while the API is still being built.
+ * `api-port-free` fails when something the stack did not start answers on the
+ * API's port.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -318,7 +324,7 @@ async function up(flags) {
   // built — in one turbo run — and started. The console's Vite serves the
   // app's own source but resolves the workspace packages it imports from their
   // `dist/`, so it needs its dependencies built as much as the API does.
-  const startsApi = !(await httpOk(API_HEALTH));
+  const startsApi = !flags.has('--no-api') && !(await httpOk(API_HEALTH));
   const filters = startsApi ? ['--filter=@oppenheimer/api...'] : [];
   // oppenheimer:begin web
   const startsWeb = flags.has('--web') && !(await httpOk(WEB_URL));
@@ -327,6 +333,7 @@ async function up(flags) {
   if (filters.length && !flags.has('--no-build'))
     run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
   if (startsApi) await startApi();
+  else if (flags.has('--no-api')) log('services up; the API is not started (--no-api)');
   else log(`the API is already answering on ${API_URL}; leaving it`);
   // oppenheimer:begin web
   if (startsWeb) await startWeb();
@@ -364,8 +371,15 @@ async function stop(pid) {
   if (groupAlive(pid)) process.kill(-pid, 'SIGKILL');
 }
 
-async function down() {
+async function down(flags) {
   const state = readState();
+  if (flags.has('--api')) {
+    if (state.pids.api) await stop(state.pids.api);
+    delete state.pids.api;
+    if (existsSync(stateFile)) writeState(state);
+    log('the API is down; the rest of the stack is left as it was');
+    return;
+  }
   for (const name of ['web', 'api', 'github-stub', 'namer-stub', 'cursor-stub']) {
     if (state.pids[name]) await stop(state.pids[name]);
   }
@@ -405,9 +419,19 @@ switch (command) {
     await status();
     break;
   case 'down':
-    await down();
+    await down(flags);
+    break;
+  case 'api-port-free':
+    if (await httpOk(API_HEALTH)) {
+      fail(
+        `${API_HEALTH} answers, and the stack did not start it; stop that API and run this again`,
+      );
+    }
+    log(`nothing answers on ${API_URL}`);
     break;
   default:
-    console.error('usage: stack.mjs up [--web] [--no-build] | status | down');
+    console.error(
+      'usage: stack.mjs up [--web] [--no-build] [--no-api] | status | down [--api] | api-port-free',
+    );
     process.exit(2);
 }
