@@ -2,7 +2,7 @@ import { ToolCallGroup, ToolCallLive } from '@oppenheimer/design-system-web';
 import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 import { formatChatElapsed, groupKindOf, sharedKindOf, summaryOf } from '../lib/chat-blocks';
-import { CHAT_TOOL_ICONS } from '../lib/chat-icons';
+import { chatToolIcon } from '../lib/chat-icons';
 import { ChatToolRow } from './chat-tool-row';
 import { ChatToolTarget } from './chat-tool-target';
 import { ElapsedClock } from './elapsed-clock';
@@ -20,7 +20,7 @@ export function ChatToolGroup({ calls, live }: { calls: ChatToolCall[]; live: bo
   const running = live ? [...calls].reverse().find((call) => call.status === 'running') : undefined;
   const done = calls.filter((call) => call !== running);
   const failed = calls.filter((call) => call.status === 'failed').length;
-  const Icon = CHAT_TOOL_ICONS[sharedKindOf(calls)];
+  const Icon = chatToolIcon(sharedKindOf(calls));
   const runningKind = running ? groupKindOf(running.kind) : 'other';
   const [only] = done;
 

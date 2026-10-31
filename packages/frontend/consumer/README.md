@@ -41,6 +41,13 @@ a service fronts it, its repository stay inside the package.
   `SessionStream` (the attach socket, its reconnect ladder, a fresh ticket per
   dial and the byte credit), and `createResizeCoalescer` sits beside it. The
   app only renders what the stream delivers.
+- **modules/chat** — what both chats share, with no repository of its own:
+  `classifyTool` (a tool call's kind, chat item type, glyph name, name in
+  words and target, for a coding agent's tools and a bot's), `toolIcon`,
+  `humaniseToolName`, `toolLine`, `todosOf` (a `TodoWrite` list, for both
+  chats), and the per-kind builder the two adapters
+  (`sessions/chat/session-chat-items.ts`, `bots/bot-chat-items.ts`) use to
+  read their source into `@oppenheimer/shared/schemas/chat-item`.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
   `OrganizationsModule`, `isProvisionalSlug`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
