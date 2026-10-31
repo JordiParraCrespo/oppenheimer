@@ -617,13 +617,7 @@
       "noAnswer": "No se pudo leer la respuesta"
     },
     "explored": {
-      "title": "Explorado",
-      "read": "Leyó",
-      "search": "Buscó",
-      "list": "Listó",
-      "more_one": "+{{count}} más",
-      "more_many": "+{{count}} más",
-      "more_other": "+{{count}} más"
+      "title": "Explorado"
     },
     "exploring": "Explorando"
   },

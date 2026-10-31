@@ -614,12 +614,7 @@
       "noAnswer": "No answer read"
     },
     "explored": {
-      "title": "Explored",
-      "read": "Read",
-      "search": "Searched",
-      "list": "Listed",
-      "more_one": "+{{count}} more",
-      "more_other": "+{{count}} more"
+      "title": "Explored"
     },
     "exploring": "Exploring"
   },

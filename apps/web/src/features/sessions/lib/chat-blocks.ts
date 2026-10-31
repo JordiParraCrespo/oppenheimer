@@ -12,7 +12,7 @@ import type {
 import type { ChatUsageContext } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
-import { isExploring } from './explored';
+import { exploredRuns } from './explored';
 import type { FileHandOff } from './file-hand-off';
 
 /** How a session pane reads its session: the grid, or the chat (0.7). */
@@ -96,20 +96,13 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
 
 type CallsBlock = Extract<ChatBlock, { kind: 'tools' | 'explored' }>;
 
-/**
- * A run of calls cut where it turns from looking around to doing something
- * else and back: each stretch of exploring calls an `explored` block, each
- * stretch of the rest a `tools` block, in order.
- */
+/** A run of calls as the blocks it is: each stretch of exploring calls `explored`, the rest `tools`. */
 function runsOf(group: Extract<ChatBlock, { kind: 'tools' }>): CallsBlock[] {
-  const runs: CallsBlock[] = [];
-  for (const call of group.calls) {
-    const kind = isExploring(call) ? 'explored' : 'tools';
-    const previous = runs.at(-1);
-    if (previous?.kind === kind) previous.calls.push(call);
-    else runs.push({ kind, id: runs.length === 0 ? group.id : call.id, calls: [call] });
-  }
-  return runs;
+  return exploredRuns(group.calls).map((run, index) => ({
+    kind: run.explored ? 'explored' : 'tools',
+    id: index === 0 ? group.id : (run.items[0]?.id ?? group.id),
+    calls: run.items,
+  }));
 }
 
 /**

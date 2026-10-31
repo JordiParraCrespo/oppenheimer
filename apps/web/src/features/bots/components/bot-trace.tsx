@@ -10,13 +10,13 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Globe, ListTodo, Search, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
+import { useExploredLine } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BotExploredTargets } from '@/features/bots/components/bot-explored-targets';
 import { BotSubagents } from '@/features/bots/components/bot-subagents';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
-import { type StepRun, stepRuns } from '@/features/bots/lib/explored-steps';
+import { type TraceRun, traceRuns } from '@/features/bots/lib/explored-steps';
 import { searchResults } from '@/features/bots/lib/search-results';
 import {
   groupSummary,
@@ -161,6 +161,7 @@ export function BotTrace({
   live?: boolean;
 }) {
   const { t } = useTranslation();
+  const exploredLine = useExploredLine();
   const labels: TraceOutputLabels = {
     raw: t('bots.chat.activity.rawOutput'),
     more: (count) => t('bots.chat.activity.moreLines', { count }),
@@ -187,37 +188,52 @@ export function BotTrace({
       </TraceStep>
     );
   };
-  const runOf = (run: StepRun, index: number) => {
-    const done = run.steps.filter((step) => step.output !== null);
-    const exploring = live && run.explored && done.length < run.steps.length;
-    if (done.length === 0) return null;
-    const [only] = done;
-    if (done.length === 1 && only && !exploring) {
-      return <Trace key={only.callId}>{lineOf(only)}</Trace>;
-    }
-    const failed = done.filter((step) => step.isError).length;
-    const actions = done.map(toolAction);
-    return (
-      <TraceGroup
-        key={done[0]?.callId ?? index}
-        icon={run.explored ? <Search /> : STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
-        summary={
-          !run.explored ? (
-            t(groupSummary(actions), { count: done.length })
-          ) : exploring ? (
-            <span className="motion-safe:animate-shimmer">{t('bots.chat.activity.exploring')}</span>
-          ) : (
-            t('bots.chat.activity.explored')
-          )
-        }
-        detail={run.explored ? <BotExploredTargets steps={done} /> : undefined}
-        failed={failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined}
-      >
-        {done.map(lineOf)}
-      </TraceGroup>
-    );
+  const failedOf = (run: TraceRun) => {
+    const failed = run.steps.filter((step) => step.isError).length;
+    return failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined;
   };
-  const runs = stepRuns(steps).map(runOf).filter(Boolean);
+  const runOf = (run: TraceRun) => {
+    const [only] = run.steps;
+    switch (run.kind) {
+      case 'explored':
+        return only && run.steps.length === 1 && !run.exploring ? (
+          <Trace key={run.key}>{lineOf(only)}</Trace>
+        ) : (
+          <TraceGroup
+            key={run.key}
+            icon={<Search />}
+            summary={
+              run.exploring ? (
+                <span className="motion-safe:animate-shimmer">
+                  {t('bots.chat.activity.exploring')}
+                </span>
+              ) : (
+                t('bots.chat.activity.explored')
+              )
+            }
+            detail={exploredLine(run.parts)}
+            failed={failedOf(run)}
+          >
+            {run.steps.map(lineOf)}
+          </TraceGroup>
+        );
+      case 'tools': {
+        if (only && run.steps.length === 1) return <Trace key={run.key}>{lineOf(only)}</Trace>;
+        const actions = run.steps.map(toolAction);
+        return (
+          <TraceGroup
+            key={run.key}
+            icon={STEP_VIEWS[sharedKind(actions) ?? 'tool'].icon}
+            summary={t(groupSummary(actions), { count: run.steps.length })}
+            failed={failedOf(run)}
+          >
+            {run.steps.map(lineOf)}
+          </TraceGroup>
+        );
+      }
+    }
+  };
+  const runs = traceRuns(steps, live).map(runOf);
   if (runs.length === 0) return null;
   return runs.length === 1 ? runs[0] : <div className="flex flex-col">{runs}</div>;
 }

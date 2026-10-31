@@ -131,14 +131,9 @@
       "subagentTokens": "{{tokens}} tokens",
       "explored": "Explored",
       "exploring": "Exploring",
-      "exploredRead": "Read",
-      "exploredList": "Listed",
-      "exploredSearch": "Searched",
       "moreLines_one": "+{{count}} line",
       "moreLines_other": "+{{count}} lines",
-      "fullLines": "Show full lines",
-      "exploredMore_one": "+{{count}} more",
-      "exploredMore_other": "+{{count}} more"
+      "fullLines": "Show full lines"
     },
     "suggest": {
       "task": {

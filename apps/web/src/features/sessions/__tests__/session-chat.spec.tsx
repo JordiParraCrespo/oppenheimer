@@ -7,7 +7,6 @@ import {
   renderHook,
   screen,
   waitFor,
-  within,
 } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useChatState } from '../hooks/use-session-chat';
@@ -631,8 +630,8 @@ describe('the work in a turn', () => {
     });
     render(<SessionChat chat={chat} readOnly={false} />);
     const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
-    expect(explored.textContent).toContain('sessions.chat.explored.read a.ts');
-    expect(explored.textContent).toContain('sessions.chat.explored.search cancel');
+    expect(explored.textContent).toContain('common.chat.explored.read a.ts');
+    expect(explored.textContent).toContain('common.chat.explored.search cancel');
     expect(explored.textContent?.match(/a\.ts/g)).toHaveLength(1);
     // The edit is its own row after the group, not one of its calls.
     expect(screen.getByText('sessions.chat.verb.edit')).toBeTruthy();
@@ -671,7 +670,7 @@ describe('the work in a turn', () => {
     // The two done are one folded line naming them; the one in flight says so under it.
     const summary = screen.getByRole('button', { name: /sessions\.chat\.exploring/ });
     expect(summary.getAttribute('aria-expanded')).toBe('false');
-    expect(within(summary).getByText('a.ts, b.ts')).toBeTruthy();
+    expect(summary.textContent).toContain('common.chat.explored.read a.ts, b.ts');
     expect(screen.getByText('c.ts')).toBeTruthy();
   });
 });

@@ -1,9 +1,10 @@
 import { ToolCallGroup, ToolCallLive } from '@oppenheimer/design-system-web';
 import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
+import { useExploredLine } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { formatChatElapsed, groupKindOf, sharedKindOf, summaryOf } from '../lib/chat-blocks';
 import { CHAT_TOOL_ICONS } from '../lib/chat-icons';
-import { ChatExploredTargets } from './chat-explored-targets';
+import { exploredPartsOf } from '../lib/explored';
 import { ChatToolRow } from './chat-tool-row';
 import { ChatToolTarget } from './chat-tool-target';
 import { ElapsedClock } from './elapsed-clock';
@@ -28,6 +29,7 @@ export function ChatToolGroup({
   explored?: boolean;
 }) {
   const { t } = useTranslation();
+  const exploredLine = useExploredLine();
   const running = live ? [...calls].reverse().find((call) => call.status === 'running') : undefined;
   const done = calls.filter((call) => call !== running);
   const failed = calls.filter((call) => call.status === 'failed').length;
@@ -53,7 +55,7 @@ export function ChatToolGroup({
               t('sessions.chat.explored.title')
             )
           }
-          detail={explored ? <ChatExploredTargets calls={done} /> : undefined}
+          detail={explored ? exploredLine(exploredPartsOf(done)) : undefined}
           failed={failed > 0 ? t('sessions.chat.failed', { count: failed }) : undefined}
         >
           {done.map((call) => (

@@ -126,6 +126,13 @@
       "more_other": "+{{count}} lines",
       "full": "Show full lines",
       "less": "Show less"
+    },
+    "explored": {
+      "read": "Read",
+      "search": "Searched",
+      "list": "Listed",
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more"
     }
   },
   "search": {

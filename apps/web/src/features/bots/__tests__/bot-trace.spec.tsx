@@ -13,7 +13,8 @@ import { BotTrace } from '../components/bot-trace';
  * compact view, or cut with no way to the rest.
  */
 
-vi.mock('react-i18next', () => ({
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
@@ -104,10 +105,10 @@ describe('BotTrace', () => {
       />,
     );
     const explored = screen.getByRole('button', { name: /bots\.chat\.activity\.explored/ });
-    expect(explored.textContent).toContain('bots.chat.activity.exploredRead session');
+    expect(explored.textContent).toContain('common.chat.explored.read session');
     expect(explored.textContent?.match(/session/g)).toHaveLength(1);
-    expect(explored.textContent).toContain('bots.chat.activity.exploredList hosts');
-    expect(explored.textContent).toContain('bots.chat.activity.exploredSearch mail “invoice”');
+    expect(explored.textContent).toContain('common.chat.explored.list hosts');
+    expect(explored.textContent).toContain('common.chat.explored.search mail “invoice”');
     // The call that acts is its own line after the group.
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
     fireEvent.click(explored);

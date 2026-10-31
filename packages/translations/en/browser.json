@@ -127,6 +127,13 @@
         "more_other": "+{{count}} lines",
         "full": "Show full lines",
         "less": "Show less"
+      },
+      "explored": {
+        "read": "Read",
+        "search": "Searched",
+        "list": "Listed",
+        "more_one": "+{{count}} more",
+        "more_other": "+{{count}} more"
       }
     },
     "search": {
@@ -1246,12 +1253,7 @@
         "noAnswer": "No answer read"
       },
       "explored": {
-        "title": "Explored",
-        "read": "Read",
-        "search": "Searched",
-        "list": "Listed",
-        "more_one": "+{{count}} more",
-        "more_other": "+{{count}} more"
+        "title": "Explored"
       },
       "exploring": "Exploring"
     },
@@ -1448,14 +1450,9 @@
         "subagentTokens": "{{tokens}} tokens",
         "explored": "Explored",
         "exploring": "Exploring",
-        "exploredRead": "Read",
-        "exploredList": "Listed",
-        "exploredSearch": "Searched",
         "moreLines_one": "+{{count}} line",
         "moreLines_other": "+{{count}} lines",
-        "fullLines": "Show full lines",
-        "exploredMore_one": "+{{count}} more",
-        "exploredMore_other": "+{{count}} more"
+        "fullLines": "Show full lines"
       },
       "suggest": {
         "task": {

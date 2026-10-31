@@ -1,5 +1,6 @@
 ---
 '@oppenheimer/design-system-web': minor
+'@oppenheimer/frontend-consumer': minor
 '@oppenheimer/frontend-web': minor
 '@oppenheimer/translations': minor
 '@oppenheimer/web': minor
@@ -15,3 +16,5 @@ search. A call's text output shows its first five lines, a long line cut
 to its head and tail, under "+N lines". `ToolCallGroup` and `TraceGroup`
 take a `detail`; `ToolCallOutput` is new, and `TraceOutput` cuts long
 lines while it is cut and takes a `full` label.
+
+The fold is one pure module, `@oppenheimer/frontend-consumer`'s `chat` (`cutRuns`, `exploredParts`), and the line after the heading is the kit's `useExploredLine`.

@@ -128,6 +128,14 @@
         "more_other": "+{{count}} líneas",
         "full": "Ver líneas completas",
         "less": "Ver menos"
+      },
+      "explored": {
+        "read": "Leyó",
+        "search": "Buscó",
+        "list": "Listó",
+        "more_one": "+{{count}} más",
+        "more_many": "+{{count}} más",
+        "more_other": "+{{count}} más"
       }
     },
     "search": {
@@ -1252,13 +1260,7 @@
         "noAnswer": "No se pudo leer la respuesta"
       },
       "explored": {
-        "title": "Explorado",
-        "read": "Leyó",
-        "search": "Buscó",
-        "list": "Listó",
-        "more_one": "+{{count}} más",
-        "more_many": "+{{count}} más",
-        "more_other": "+{{count}} más"
+        "title": "Explorado"
       },
       "exploring": "Explorando"
     },
@@ -1461,16 +1463,10 @@
         "subagentTokens": "{{tokens}} tokens",
         "explored": "Explorado",
         "exploring": "Explorando",
-        "exploredRead": "Leyó",
-        "exploredList": "Listó",
-        "exploredSearch": "Buscó",
         "moreLines_one": "+{{count}} línea",
         "moreLines_many": "+{{count}} líneas",
         "moreLines_other": "+{{count}} líneas",
-        "fullLines": "Ver líneas completas",
-        "exploredMore_one": "+{{count}} más",
-        "exploredMore_many": "+{{count}} más",
-        "exploredMore_other": "+{{count}} más"
+        "fullLines": "Ver líneas completas"
       },
       "suggest": {
         "task": {

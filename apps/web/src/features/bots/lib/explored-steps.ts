@@ -1,17 +1,19 @@
-import type { BotToolStep } from '@oppenheimer/frontend-consumer';
+import {
+  type BotToolStep,
+  cutRuns,
+  type ExploredPart,
+  type ExploreTarget,
+  type ExploreVerb,
+  exploredParts,
+} from '@oppenheimer/frontend-consumer';
 
 /**
- * Which of a bot's calls only look around, so a run of them folds into one
- * "Explored" line that names what they read ("Read session, mail thread ·
- * Listed hosts · Searched mail “invoice”"), the way Codex folds its
- * exploring calls (`exec_cell/model.rs`) and the session chat folds reads.
- * A bot has no file tools, so its read-only calls are known by name: a
- * `read_`, `get_`, `list_` or `search_` tool, the web search and fetch, and
- * the few that only look (`peek`, `recall`, `run_history`). Any other call
- * ends the run.
+ * Which of a bot's calls only look around, for the product package's fold
+ * (`cutRuns`, `exploredParts`), and the runs its trace draws. A bot has no
+ * file tools, so its read-only calls are known by name: a `read_`, `get_`,
+ * `list_` or `search_` tool, the web search and fetch, and the few that only
+ * look (`peek`, `recall`, `run_history`). Any other call ends the run.
  */
-
-export type ExploreVerb = 'read' | 'list' | 'search';
 
 /** How an MCP tool's name reaches the chat: `mcp__<server>__<tool>`. */
 const MCP_PREFIX = /^mcp__[^_]+(?:_[^_]+)*__/;
@@ -42,15 +44,6 @@ const WEB_FETCH = new Set(['web_fetch', 'webfetch']);
 
 const QUERY_MAX = 40;
 
-/** What a read-only call looked at; none for a call that may change something. */
-export interface StepExplore {
-  verb: ExploreVerb;
-  /** What it read, in words off the tool's name ("session", "mail thread"); a site for a fetch, empty for the web search. */
-  object: string;
-  /** What a search searched for, cut short. */
-  query?: string;
-}
-
 function queryOf(input: Record<string, unknown>): string | undefined {
   const value = input.query ?? input.q ?? input.pattern;
   if (typeof value !== 'string' || value.trim() === '') return undefined;
@@ -68,7 +61,13 @@ function siteOf(input: Record<string, unknown>): string {
   }
 }
 
-export function stepExplore(step: Pick<BotToolStep, 'name' | 'input'>): StepExplore | null {
+/**
+ * What a read-only call looked at, named by what it read in words off the
+ * tool's name ("session", "mail thread"), a site for a fetch, and what a
+ * search searched for (mail “invoice”); none for a call that may change
+ * something. Two reads of one kind of thing are one name.
+ */
+export function stepExplore(step: Pick<BotToolStep, 'name' | 'input'>): ExploreTarget | null {
   const key = step.name.replace(MCP_PREFIX, '').toLowerCase();
   const named = NAMED[key];
   const prefixed = PREFIXES.find(([prefix]) => key.startsWith(prefix));
@@ -81,51 +80,51 @@ export function stepExplore(step: Pick<BotToolStep, 'name' | 'input'>): StepExpl
       ? { verb: prefixed[1], object: key.slice(prefixed[0].length) }
       : null;
   if (!base) return null;
-  const object = base.object.replaceAll('_', ' ');
   const query = base.verb === 'search' ? queryOf(step.input) : undefined;
-  return query === undefined ? { verb: base.verb, object } : { verb: base.verb, object, query };
-}
-
-/** A run of steps of one sort: all looking around, or all doing something else. */
-export interface StepRun {
-  explored: boolean;
-  steps: BotToolStep[];
-}
-
-/** A turn's calls cut where they turn from looking around to doing something else and back. */
-export function stepRuns(steps: readonly BotToolStep[]): StepRun[] {
-  const runs: StepRun[] = [];
-  for (const step of steps) {
-    const explored = stepExplore(step) !== null;
-    const previous = runs.at(-1);
-    if (previous?.explored === explored) previous.steps.push(step);
-    else runs.push({ explored, steps: [step] });
-  }
-  return runs;
-}
-
-/** One verb of an Explored line and what it names, each once. */
-export interface ExploredPart {
-  verb: ExploreVerb;
-  targets: string[];
+  const label = [base.object.replaceAll('_', ' '), query ? `“${query}”` : '']
+    .filter(Boolean)
+    .join(' ');
+  return { verb: base.verb, key: label, label };
 }
 
 /**
- * What a run of read-only calls looked at, by verb in the order each first
- * came: the same thing read twice (two `get_session`s) named once, a search
- * by what it searched and for what (mail “invoice”).
+ * A run of the bot's finished calls as its trace draws it: a stretch that
+ * only looked around, with what it looked at and whether the call in flight
+ * is one more read (`exploring`), or a stretch of the rest.
  */
-export function exploredParts(steps: readonly BotToolStep[]): ExploredPart[] {
-  const parts = new Map<ExploreVerb, Set<string>>();
-  for (const step of steps) {
-    const explore = stepExplore(step);
-    if (!explore) continue;
-    const targets = parts.get(explore.verb) ?? new Set<string>();
-    const target = [explore.object, explore.query ? `“${explore.query}”` : '']
-      .filter(Boolean)
-      .join(' ');
-    if (target) targets.add(target);
-    parts.set(explore.verb, targets);
-  }
-  return [...parts].map(([verb, targets]) => ({ verb, targets: [...targets] }));
+export type TraceRun =
+  | {
+      kind: 'explored';
+      key: string;
+      steps: BotToolStep[];
+      parts: ExploredPart[];
+      exploring: boolean;
+    }
+  | { kind: 'tools'; key: string; steps: BotToolStep[] };
+
+/**
+ * The bot's calls as the runs its trace draws, each holding only the calls
+ * that finished: a call still running is the turn's live line, not a trace
+ * line, but while the turn is `live` a running read keeps its run Exploring.
+ * A run with nothing finished yet is not drawn.
+ */
+export function traceRuns(steps: readonly BotToolStep[], live: boolean): TraceRun[] {
+  return cutRuns(steps, (step) => stepExplore(step) !== null).flatMap((run): TraceRun[] => {
+    const done = run.items.filter((step) => step.output !== null);
+    const [first] = done;
+    if (!first) return [];
+    if (!run.explored) return [{ kind: 'tools', key: first.callId, steps: done }];
+    return [
+      {
+        kind: 'explored',
+        key: first.callId,
+        steps: done,
+        parts: exploredParts(done, (step) => {
+          const target = stepExplore(step);
+          return target ? [target] : null;
+        }),
+        exploring: live && done.length < run.items.length,
+      },
+    ];
+  });
 }
