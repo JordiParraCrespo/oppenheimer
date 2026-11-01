@@ -1,4 +1,4 @@
 {
   "$comment": "The console's first load, gzipped KB: every script and stylesheet index.html pulls in (scripts/check-bundle-size.mjs). The measured size plus a little headroom; raising it is a decision, in its own diff, with the reason in the commit.",
-  "firstLoadKB": 364
+  "firstLoadKB": 345
 }

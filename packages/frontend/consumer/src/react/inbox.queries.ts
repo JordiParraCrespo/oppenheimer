@@ -11,7 +11,7 @@ import type { RunsFilter } from '../modules/automations/automation.entity';
 import { composeInbox, type InboxSources, type InboxView } from '../modules/inbox/inbox-item';
 import { type InboxMark, InboxMarkEntity } from '../modules/inbox/inbox-mark.entity';
 import type { ProjectEntity } from '../modules/projects/project.entity';
-import { automationsKeys } from './automations.queries';
+import { automationsKeys } from './automations.keys';
 import { usePendingBotApprovalsQuery } from './bot-approvals.queries';
 import { useConsumerApp } from './context';
 import { inboxKeys } from './inbox.keys';

@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import { TaskEntity } from '../../modules/tasks/task.entity';
 import type { TasksRepository } from '../../modules/tasks/tasks.repository';
+import { tasksKeys } from '../tasks.keys';
 import {
-  tasksKeys,
   useCreateTask,
   useDeleteTask,
   useMilestones,

@@ -4,14 +4,14 @@ import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { automationsKeys } from './automations.queries';
-import { botsKeys } from './bots.queries';
+import { automationsKeys } from './automations.keys';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
-import { hostsKeys } from './hosts.queries';
+import { hostsKeys } from './hosts.keys';
 import { inboxKeys } from './inbox.keys';
-import { pullRequestsKeys } from './pull-requests.queries';
-import { sessionsKeys } from './sessions.queries';
-import { tasksKeys } from './tasks.queries';
+import { pullRequestsKeys } from './pull-requests.keys';
+import { sessionsKeys } from './sessions.keys';
+import { tasksKeys } from './tasks.keys';
 import { setWorkspaceStream } from './workspace-stream-status';
 
 /**
