@@ -989,3 +989,10 @@ earlier note:
   one consumer and no second implementation of its one port, and
   authorization had lived in four places. `.agents/rules/rbac-roles.md` is
   the current map.
+- Note 25 §7 listed slash commands among what bots did not have yet. On
+  2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
+  (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash
+  commands; they were built as a bot's skills: one row each, listed by name
+  and description in every prompt and read with `use_skill` when used,
+  saved by the bot with `save_skill` or by hand in Settings → Skills, and
+  run by the person as `/<name>` (`versions/mvp/25-bots.md` §4.1, Skills).

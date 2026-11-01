@@ -142,6 +142,47 @@ export class BotMemoryFactEntity {
   }
 }
 
+/**
+ * One of a bot's skills (`25-bots.md` §4.1): a reusable way of doing one task,
+ * run by the person as `/<name>` and used by the bot when a request fits.
+ */
+export class BotSkillEntity {
+  constructor(
+    public readonly id: string,
+    /** What the person types after `/`. */
+    public readonly name: string,
+    /** When to use it; every turn of the bot lists it. */
+    public readonly description: string,
+    /** The skill itself, in Markdown. */
+    public readonly body: string,
+    /** The person may run it as `/<name>`. */
+    public readonly userInvocable: boolean,
+    /** The bot may use it unasked when a request fits. */
+    public readonly modelInvocable: boolean,
+    /** Who wrote it last: the reader, or the bot through `save_skill`. */
+    public readonly source: BotAuthor,
+    public readonly createdAt: Date,
+    public readonly updatedAt: Date,
+  ) {}
+
+  /** What the composer's `/` menu inserts. */
+  get command(): string {
+    return `/${this.name}`;
+  }
+}
+
+/** A new skill: who may run it is both unless said. */
+export interface CreateBotSkillInput {
+  name: string;
+  description: string;
+  body: string;
+  userInvocable?: boolean;
+  modelInvocable?: boolean;
+}
+
+/** A change to a skill; what is left out stays. */
+export type UpdateBotSkillInput = Partial<CreateBotSkillInput>;
+
 /** A change to a fact: its words, its tier or its scope; what is left out stays. */
 export interface UpdateBotFactInput {
   content?: string;

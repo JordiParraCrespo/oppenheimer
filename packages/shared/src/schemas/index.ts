@@ -4,6 +4,7 @@ export * from './auth.schema.js';
 export * from './authz.schema.js';
 export * from './automation.schema.js';
 export * from './bot.schema.js';
+export * from './bot-skill.schema.js';
 export * from './calendar.schema.js';
 export * from './chat-item.schema.js';
 export * from './cloud-agent.schema.js';

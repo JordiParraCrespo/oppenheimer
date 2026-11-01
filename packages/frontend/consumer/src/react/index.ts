@@ -71,6 +71,16 @@ export {
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
 } from './bot-routines.queries';
+export {
+  type AddBotSkillVariables,
+  type DeleteBotSkillVariables,
+  type UpdateBotSkillVariables,
+  useAddBotSkill,
+  useBotSlashCommands,
+  useDeleteBotSkill,
+  useSuspenseBotSkills,
+  useUpdateBotSkill,
+} from './bot-skills.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,

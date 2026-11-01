@@ -27,10 +27,13 @@
 // subshells, `$(...)`), skips leading `VAR=value` words and wrappers such as
 // `env` or `command`, then git's global options (`-C <path>`, `-c <k=v>`,
 // `--git-dir=…`, `--no-pager`, …) to find the subcommand, and honours `--`.
-// `.agents/hooks/git-guard.test.mjs` holds the cases.
+// The parser is shared: `screenshot-guard.mjs` reads pushes and `gh pr`
+// commands, and the checkout each runs in, through `gitInvocation`,
+// `ghInvocation` and `located`. `.agents/hooks/git-guard.test.mjs` holds the
+// cases.
 
 import { readFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SEPARATORS = new Set(['&&', '||', ';', '|', '&', '\n', '(', ')', '$(', '`']);
@@ -112,8 +115,8 @@ export function commands(line) {
   return result.filter((words) => words.length > 0);
 }
 
-/** `{ subcommand, args }` when `words` runs git, after its global options; else undefined. */
-export function gitInvocation(words) {
+/** Where the program in `words` starts, past `VAR=value` words and wrappers. */
+function programAt(words) {
   let i = 0;
   for (;;) {
     while (i < words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[i])) i += 1;
@@ -121,14 +124,76 @@ export function gitInvocation(words) {
     i += 1;
     while (i < words.length && words[i].startsWith('-')) i += 1;
   }
+  return i;
+}
+
+/**
+ * `{ subcommand, args, directories }` when `words` runs git, after its global
+ * options; else undefined. `directories` are its `-C` values, in order (each
+ * relative to the one before).
+ */
+export function gitInvocation(words) {
+  let i = programAt(words);
   if (i >= words.length || basename(words[i]) !== 'git') return undefined;
   i += 1;
+  const directories = [];
   while (i < words.length && words[i].startsWith('-')) {
     const option = words[i];
+    if (option === '-C' && i + 1 < words.length) directories.push(words[i + 1]);
     i += GLOBAL_WITH_VALUE.has(option) ? 2 : 1;
   }
   if (i >= words.length) return undefined;
-  return { subcommand: words[i], args: words.slice(i + 1) };
+  return { subcommand: words[i], args: words.slice(i + 1), directories };
+}
+
+/** `gh`'s global options that take the next word as their value. */
+const GH_WITH_VALUE = new Set(['-R', '--repo', '--hostname']);
+
+/**
+ * `{ group, action, args }` when `words` runs the GitHub CLI (`gh pr create`
+ * → group `pr`, action `create`), after its global options; else undefined.
+ */
+export function ghInvocation(words) {
+  let i = programAt(words);
+  if (i >= words.length || basename(words[i]) !== 'gh') return undefined;
+  i += 1;
+  while (i < words.length && words[i].startsWith('-')) {
+    i += GH_WITH_VALUE.has(words[i]) ? 2 : 1;
+  }
+  if (i >= words.length) return undefined;
+  return { group: words[i], action: words[i + 1], args: words.slice(i + 2) };
+}
+
+/**
+ * The simple commands in `line`, each with the directory it runs in: `cwd`,
+ * moved by every `cd`/`pushd` before it in the line. A `cd` the line does not
+ * spell out (`cd $DIR`, `cd -`, `cd "$(…)"`) leaves `directory` null from
+ * there on. A subshell's `cd` is followed past its `)`, which errs toward the
+ * directory the line was heading for.
+ */
+export function located(line, cwd) {
+  let directory = cwd;
+  return commands(line).map((words) => {
+    const here = { words, directory };
+    const i = programAt(words);
+    if (words[i] === 'cd' || words[i] === 'pushd') {
+      const target = words.slice(i + 1).find((word) => word === '-' || !word.startsWith('-'));
+      directory = moveTo(directory, target);
+    }
+    return here;
+  });
+}
+
+/** Where `cd target` from `directory` lands, or null when the line cannot say. */
+export function moveTo(directory, target) {
+  const home = process.env.HOME;
+  if (target === undefined) return home ?? null;
+  if (directory === null || target === '-' || /[$`]/.test(target)) return null;
+  if (target === '~' || target.startsWith('~/')) {
+    return home ? resolve(home, target.slice(2)) : null;
+  }
+  if (target.startsWith('~')) return null;
+  return resolve(directory, target);
 }
 
 /** `git push` options whose value is the next word, so it is not read as the remote. */
