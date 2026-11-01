@@ -5,11 +5,7 @@ import type { UseQueryOptions } from '@tanstack/react-query';
 import { CONSUMER_CONFIG } from '../config';
 import type { PermissionCatalog } from '../modules/permissions/permission-catalog';
 import { useConsumerApp } from './context';
-
-export const permissionsKeys = {
-  all: ['permissions'] as const,
-  catalog: () => [...permissionsKeys.all, 'catalog'] as const,
-};
+import { permissionsKeys } from './permissions.keys';
 
 /**
  * The permission catalog and the subset the signed-in user may grant, which

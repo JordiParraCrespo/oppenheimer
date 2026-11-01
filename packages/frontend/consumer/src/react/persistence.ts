@@ -1,4 +1,4 @@
-import { permissionsKeys } from './permissions.queries';
+import { permissionsKeys } from './permissions.keys';
 
 /**
  * The consumer features whose reads reach the persisted query cache, beside

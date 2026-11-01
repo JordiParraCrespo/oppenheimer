@@ -7,7 +7,7 @@ import {
   type ChatgptLoginState,
   isChatgptLoginExpired,
 } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
 import { invalidateModelProviders } from './model-providers.queries';

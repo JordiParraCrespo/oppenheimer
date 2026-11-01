@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { ProjectEntity } from '../../modules/projects/project.entity';
+import { projectsKeys } from '../projects.keys';
 import {
-  projectsKeys,
   useArchiveProject,
   useCreateProject,
   useProjects,

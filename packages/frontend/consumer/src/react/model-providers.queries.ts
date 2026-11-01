@@ -4,10 +4,10 @@ import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
 import { type QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { ModelProviderEntity } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
-import { voiceKeys } from './voice.queries';
+import { voiceKeys } from './voice.keys';
 
 /**
  * The workspace's model providers (Settings → Model providers): which have a

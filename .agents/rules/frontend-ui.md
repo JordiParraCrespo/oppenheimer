@@ -323,10 +323,11 @@ A change that alters what the console shows is taken light and dark on the
 local stack, looked at, shown to the user and listed under `## Screenshots`
 in its pull request: the `local-stack` skill's "Show a visual change" step
 (`pnpm screens <route>...`). A component in the design system
-or the kit is photographed on a console route that renders it. The
-screenshot guard, `.agents/hooks/screenshot-guard.mjs`, holds the work until
-the pictures are of the code as it is (`.agents/hooks/visual-change.mjs`
-defines what counts; `.claude/settings.json` says when the guard runs).
+or the kit is photographed on a console route that renders it. The hook
+`.agents/hooks/screenshot-guard.mjs` refuses to push the branch, or open or
+update its pull request, until the pictures are of the code as it is
+(`.agents/hooks/visual-change.mjs` defines what counts; `.claude/settings.json`
+says when the guard runs).
 
 ## Dead code
 
