@@ -41,8 +41,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * `owner` gains `manage Whatsapp` in its workspace; every read adds the owner,
  * so a workspace owner never reads another person's chats.
  */
-export class AddWhatsapp1791005700000 implements MigrationInterface {
-  name = 'AddWhatsapp1791005700000';
+export class AddWhatsapp1793520484168 implements MigrationInterface {
+  name = 'AddWhatsapp1793520484168';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

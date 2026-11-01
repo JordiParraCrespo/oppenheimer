@@ -49,7 +49,7 @@ WhatsApp Web is.
 label, the device's state as the host last reported it (`pairing`,
 `connecting`, `connected`, `logged_out`, `unlinked`), the number and its
 WhatsApp name, the QR while pairing and why it is logged out. The migration
-header is `1791005700000-AddWhatsapp.ts`.
+header is `1793520484168-AddWhatsapp.ts`.
 
 ## 2. How the device behaves
 
