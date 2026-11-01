@@ -56,12 +56,14 @@ Every change that alters what the console shows gets screenshots, taken
 here and shown to the user, before its pull request is opened or updated.
 What counts is defined once, in `.agents/hooks/visual-change.mjs`: the
 console, the platform kit, the design system and the translations, not
-their tests, stories or docs. The Stop hook
-`.agents/hooks/screenshot-guard.mjs` holds the end of a task on such a
-branch until `.screenshots/` is of the code as it is: `pnpm screens`
+their tests, stories or docs. The PreToolUse hook
+`.agents/hooks/screenshot-guard.mjs` refuses to push such a branch, or to
+open or update its pull request (`gh pr create`/`edit`, the GitHub MCP
+tools), until `.screenshots/` is of the code as it is: `pnpm screens`
 records a fingerprint of what the change's files say, and an edit to one
 of them after the pictures means taking them again; an edit to a comment
-or to layout alone does not.
+or to layout alone does not. A turn that ends without publishing is not
+held.
 
 1. Bring the stack up with the console: `node scripts/stack/stack.mjs up --web`.
    It serves this checkout's source through Vite, so later edits show
