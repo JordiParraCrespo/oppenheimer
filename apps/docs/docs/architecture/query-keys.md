@@ -52,9 +52,15 @@ specific key beneath it.
 
 ### 3. Colocate keys with their queries
 
-Keep the key factory in the same feature file as the hooks that use it (e.g.
+Keep the key factory with the feature whose hooks use it (e.g.
 `users.queries.ts`), not in a single global `queryKeys.ts`. Related code stays
 together and dead keys are easy to spot when a feature is deleted.
+
+In `@oppenheimer/frontend-consumer` the factory is its own file beside the
+hooks, `things.keys.ts` next to `things.queries.ts`. The console's entry
+loads the list of features kept in the persisted cache, and anything else on
+the entry may name a factory too; importing one from its `.queries` file puts
+every hook in that file on the first load, and each new hook grows it.
 
 ### 4. Use a query key factory
 

@@ -73,7 +73,9 @@
       "queued": "En cola",
       "sendNow": "Enviar ahora",
       "edit": "Editar",
-      "remove": "Quitar de la cola"
+      "remove": "Quitar de la cola",
+      "steer": "Reconducir",
+      "steerHint": "Entra en el turno en curso en su próxima llamada a una herramienta. Si el turno acaba antes, va a continuación."
     },
     "json": {
       "tree": "Árbol",

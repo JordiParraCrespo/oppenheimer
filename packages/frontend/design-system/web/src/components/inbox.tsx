@@ -1,3 +1,4 @@
+// uncatalogued: the Inbox screen's own parts; no other screen draws them
 'use client';
 
 import { Button as ButtonPrimitive } from '@base-ui/react/button';

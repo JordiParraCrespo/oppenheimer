@@ -51,6 +51,7 @@ import {
   LINK_PING_INTERVAL_MS,
   RunnerLinkGateway,
 } from '../infrastructure/runner-link.gateway';
+import { type Held, held, readByServer, settled } from './relay-sockets.spec-support';
 
 /**
  * The two sockets, end to end, minus Postgres and Redis: a runner that dials
@@ -95,6 +96,8 @@ function hello(overrides: Record<string, unknown> = {}) {
 
 interface Harness {
   server: Server;
+  /** Holds the `valid.slow` bearer's verification until the test releases it. */
+  slowAssertion: Held<void>;
   origin: string;
   tickets: Map<string, AttachTicket>;
   presence: HostPresencePort;
@@ -116,6 +119,7 @@ interface Harness {
 
 async function harness(options: { fingerprint?: string | null } = {}): Promise<Harness> {
   Logger.overrideLogger(false);
+  const slowAssertion = held<void>(undefined);
   const assertions: HostAssertionPort = {
     recognises: (bearer) => bearer.startsWith('valid.'),
     verify: async (bearer) => {
@@ -124,7 +128,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
       if (bearer === 'valid.unpaired')
         return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: true };
       if (bearer === 'valid.slow') {
-        await new Promise((resolve) => setTimeout(resolve, 150));
+        await slowAssertion.answer();
         return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
       }
       // The store behind the replay guard is down: a fault, not a verdict.
@@ -238,6 +242,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
   const { port } = server.address() as AddressInfo;
   return {
     server,
+    slowAssertion,
     origin: `http://127.0.0.1:${port}`,
     tickets,
     presence,
@@ -308,11 +313,6 @@ async function runnerUp(h: Harness, overrides: Record<string, unknown> = {}): Pr
     keyFingerprint: FINGERPRINT,
   });
   return runner;
-}
-
-/** A lookup that answers after `ms`, so a frame can land while a ticket is judged. */
-function slowly<T>(value: T, ms = 150): () => Promise<T> {
-  return () => new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
 
 /** A text frame with no mask: a protocol violation from a client (RFC 6455 §5.1). */
@@ -532,8 +532,9 @@ describe('runner link', () => {
   });
 
   it('applies the batches queued behind one for the same session as one append, in arrival order, acked per batch', async () => {
+    const first = held<void>(undefined);
     vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
-      if (batch.batchId === 'b1') await new Promise((resolve) => setTimeout(resolve, 50));
+      if (batch.batchId === 'b1') await first.answer();
       return {
         batchId: batch.batchId,
         accepted: batch.events
@@ -568,6 +569,10 @@ describe('runner link', () => {
         }),
       );
     }
+    // b2–b4 arrive while b1 is still being written.
+    await first.entered;
+    await readByServer(runner);
+    first.release();
     await vi.waitFor(() => expect(acks).toHaveLength(4));
     expect(
       vi
@@ -867,6 +872,7 @@ describe('runner link', () => {
   });
 
   it('survives a runner that resets its connection while its assertion is verified', async () => {
+    const accepted = new Promise<Socket>((resolve) => h.server.once('connection', resolve));
     const raw = connect(Number(new URL(h.origin).port), '127.0.0.1');
     raw.on('error', () => {});
     await new Promise((resolve) => raw.once('connect', resolve));
@@ -879,9 +885,14 @@ describe('runner link', () => {
         'Sec-WebSocket-Version: 13\r\n' +
         'Authorization: Bearer valid.slow\r\n\r\n',
     );
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    const serverSide = await accepted;
+    await h.slowAssertion.entered;
+    const reset = new Promise((resolve) => serverSide.once('close', resolve));
     raw.resetAndDestroy();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await reset;
+    // The verification answers for a socket that is already gone.
+    h.slowAssertion.release();
+    await settled();
     const runner = await runnerUp(h);
     sockets.push(runner);
     expect(h.registry.find(HOST)).toBeDefined();
@@ -1051,9 +1062,8 @@ describe('browser attach socket', () => {
 
   it('keeps a viewport the browser sent while its ticket was still being redeemed', async () => {
     // The browser says its size without waiting for redemption to finish.
-    vi.mocked(h.workspaces.isMember).mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 150)),
-    );
+    const membership = held(true);
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(membership.answer);
     const runner = await runnerUp(h);
     sockets.push(runner);
     const browser = ws(
@@ -1064,18 +1074,21 @@ describe('browser attach socket', () => {
     );
     sockets.push(browser);
     await opened(browser);
+    await membership.entered;
     const sentAt = Date.now();
+    const attached = nextMessage(runner);
     browser.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
+    await readByServer(browser);
+    membership.release();
 
-    const attach = await nextMessage(runner);
+    const attach = await attached;
     expect(attach.text).toMatchObject({ type: 'session.attach', cols: 120, rows: 40 });
     expect(Date.now() - sentAt).toBeLessThan(1_000);
   });
 
   it('opens no attachment for a browser that left while its ticket was redeemed', async () => {
-    vi.mocked(h.workspaces.isMember).mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 150)),
-    );
+    const membership = held(true);
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(membership.answer);
     const runner = await runnerUp(h);
     sockets.push(runner);
     const heard: unknown[] = [];
@@ -1087,12 +1100,17 @@ describe('browser attach socket', () => {
       [issueTicket(h, 0)],
     );
     await opened(browser);
+    await membership.entered;
     browser.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
+    const left = closed(browser);
     browser.close();
+    // The close handshake finished, so the relay has seen the browser leave.
+    await left;
+    membership.release();
+    await settled();
 
     // Its close fired before anything was listening for it, so an attachment
     // opened now would sit in the link's table for good.
-    await new Promise((resolve) => setTimeout(resolve, 400));
     expect(h.registry.find(HOST)?.attachmentCount).toBe(0);
     expect(heard).toEqual([]);
   });
@@ -1169,13 +1187,23 @@ describe('browser attach socket', () => {
   });
 
   it('keeps an attach socket that answers its pings', async () => {
-    h.browsers.pingIntervalMs = 20;
+    // Each ping after the first is sent only once the last one was answered,
+    // so a third ping proves two rounds kept the socket. A fixed sleep with a
+    // 20 ms interval lost the pong to a busy event loop under the full CI run.
+    h.browsers.pingIntervalMs = 100;
     const runner = await runnerUp(h);
     sockets.push(runner);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
     sockets.push(browser);
+    const pinged = new Promise<void>((resolve) => {
+      let pings = 0;
+      browser.on('ping', () => {
+        pings += 1;
+        if (pings === 3) resolve();
+      });
+    });
     await opened(browser);
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await pinged;
     expect(browser.readyState).toBe(WebSocket.OPEN);
   });
 
@@ -1233,15 +1261,18 @@ describe('browser attach socket', () => {
 
   it('survives a frame over maxPayload while its ticket is judged', async () => {
     const warn = vi.spyOn(Logger.prototype, 'warn');
-    vi.mocked(h.workspaces.isMember).mockImplementationOnce(slowly(true));
+    const membership = held(true);
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(membership.answer);
     const ticket = issueTicket(h);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
     sockets.push(browser);
     browser.on('error', () => {});
     const gone = closed(browser);
     await opened(browser);
+    await membership.entered;
     browser.send(Buffer.alloc(65 * 1024));
     await expect(gone).resolves.toMatchObject({ code: 1009 });
+    membership.release();
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'browser attach socket error' }),
     );
@@ -1250,29 +1281,33 @@ describe('browser attach socket', () => {
   });
 
   it('survives an unmasked frame before the ticket resolves', async () => {
-    vi.mocked(h.lookup.findAttachTarget).mockImplementationOnce(
-      slowly({ id: SESSION, organizationId: ORG, hostId: HOST, state: 'live' as const }),
-    );
+    const target = held({ id: SESSION, organizationId: ORG, hostId: HOST, state: 'live' as const });
+    vi.mocked(h.lookup.findAttachTarget).mockImplementationOnce(target.answer);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
     sockets.push(browser);
     browser.on('error', () => {});
     const gone = closed(browser);
     await opened(browser);
+    await target.entered;
     rawSocket(browser).write(UNMASKED_FRAME);
     await expect(gone).resolves.toMatchObject({ code: 1002 });
+    target.release();
     await stillServing();
   });
 
   it('survives a text frame that is not UTF-8 while its ticket is judged', async () => {
     const warn = vi.spyOn(Logger.prototype, 'warn');
-    vi.mocked(h.workspaces.isMember).mockImplementationOnce(slowly(true));
+    const membership = held(true);
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(membership.answer);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
     sockets.push(browser);
     browser.on('error', () => {});
     const gone = closed(browser);
     await opened(browser);
+    await membership.entered;
     rawSocket(browser).write(INVALID_UTF8_FRAME);
     await expect(gone).resolves.toMatchObject({ code: 1007 });
+    membership.release();
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'browser attach socket error' }),
     );
@@ -1440,16 +1475,29 @@ describe('browser attach socket', () => {
     });
 
     it('stops re-checking once the browser leaves', async () => {
-      const { browser } = await attachedBrowser();
-      const left = closed(browser);
-      browser.close();
-      await left;
-      await vi.waitFor(() => expect(h.registry.find(HOST)?.attachmentCount).toBe(0));
-      const judged = vi.mocked(h.lookup.findAttachTarget).mock.calls.length;
+      // Only intervals are faked, and the clock moves a few re-checks at most:
+      // the link's keep-alive is minutes away, and no socket waits on a timeout.
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      try {
+        const { browser } = await attachedBrowser();
+        const judged = () => vi.mocked(h.lookup.findAttachTarget).mock.calls.length;
+        const attachedAt = judged();
+        await vi.advanceTimersByTimeAsync(RECHECK_MS);
+        // The faked clock is what drives the re-check.
+        expect(judged()).toBe(attachedAt + 1);
 
-      await new Promise((resolve) => setTimeout(resolve, RECHECK_MS * 4));
+        const left = closed(browser);
+        browser.close();
+        await left;
+        await vi.waitFor(() => expect(h.registry.find(HOST)?.attachmentCount).toBe(0));
+        const leftAt = judged();
 
-      expect(vi.mocked(h.lookup.findAttachTarget).mock.calls.length).toBe(judged);
+        await vi.advanceTimersByTimeAsync(RECHECK_MS * 4);
+
+        expect(judged()).toBe(leftAt);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('is re-checked only every REAUTHORIZE_INTERVAL_MS by default', () => {
@@ -1471,6 +1519,8 @@ describe('browser attach socket', () => {
   });
 
   describe('the direct path', () => {
+    /** A runner that answers offers and proves itself on every channel (31). */
+    const DIRECT = ['attachment.direct', 'attachment.direct.proof'];
     const OFFER = 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n';
 
     async function attached(capabilities: string[], ticket = issueTicket(h)) {
@@ -1488,11 +1538,11 @@ describe('browser attach socket', () => {
 
     it('offers it to a person the flag is on for, on a runner that can answer, with the ICE servers', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { attached: told } = await attached(['attachment.direct']);
+      const { attached: told } = await attached(DIRECT);
       expect(told).toEqual({
         type: 'attached',
         window: 0,
-        direct: { iceServers: ['stun:stun.example.com:3478'] },
+        direct: { iceServers: ['stun:stun.example.com:3478'], hostId: HOST },
       });
       expect(h.flags.isEnabled).toHaveBeenCalledWith('terminal_direct_path', {
         userId: USER,
@@ -1500,11 +1550,17 @@ describe('browser attach socket', () => {
       });
     });
 
-    it('does not offer it on a runner that cannot answer, or while the flag is off', async () => {
+    it('does not offer it on a runner that cannot answer or cannot prove itself, or while the flag is off', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
       expect((await attached([])).attached).toEqual({ type: 'attached', window: 0 });
-      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      // A runner from before the host proof: the console would refuse its
+      // channel, so it is never invited.
       expect((await attached(['attachment.direct'])).attached).toEqual({
+        type: 'attached',
+        window: 0,
+      });
+      vi.mocked(h.flags.isEnabled).mockReturnValue(false);
+      expect((await attached(DIRECT)).attached).toEqual({
         type: 'attached',
         window: 0,
       });
@@ -1512,7 +1568,7 @@ describe('browser attach socket', () => {
 
     it('relays the offer, the answer and both offsets between browser and runner', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
 
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
@@ -1541,7 +1597,7 @@ describe('browser attach socket', () => {
 
     it('tells the browser when the runner refuses, and the attachment stays on the relay', async () => {
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const offer = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       await offer;
@@ -1566,7 +1622,7 @@ describe('browser attach socket', () => {
 
     it('never forwards an offer it did not invite, or a second one', async () => {
       // The flag is off: the browser was not told it could offer.
-      const { runner, browser } = await attached(['attachment.direct']);
+      const { runner, browser } = await attached(DIRECT);
       const refusal = nextMessage(browser);
       browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await refusal).text).toMatchObject({ type: 'direct.unavailable' });
@@ -1578,7 +1634,7 @@ describe('browser attach socket', () => {
       expect((await next).text).toMatchObject({ type: 'session.resize' });
 
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const invited = await attached(['attachment.direct']);
+      const invited = await attached(DIRECT);
       const first = nextMessage(invited.runner);
       invited.browser.send(JSON.stringify({ type: 'direct.offer', sdp: OFFER }));
       expect((await first).text).toMatchObject({ type: 'attachment.direct.offer' });
@@ -1624,15 +1680,14 @@ describe('browser attach socket', () => {
 
     it('drops them for a person the flag is off for', async () => {
       const { runner, browser } = await attached();
-      const next = nextMessage(browser);
+      const heard: unknown[] = [];
+      browser.on('message', (data) => heard.push(JSON.parse(String(data))));
+      const gone = closed(browser);
       runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 1, entries: [entry] }));
-      // The next thing this browser hears is the runner closing the attachment, not the chat.
+      // Everything this browser hears before the runner closes the attachment, in order.
       runner.send(JSON.stringify({ type: 'attachment.closed', attachmentId: 1 }));
-      const heard = await Promise.race([
-        next.then((message) => message.text),
-        new Promise((resolve) => setTimeout(() => resolve('nothing'), 300)),
-      ]);
-      expect(heard).not.toMatchObject({ type: 'chat' });
+      await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE });
+      expect(heard).not.toContainEqual(expect.objectContaining({ type: 'chat' }));
     });
   });
 
@@ -1674,7 +1729,9 @@ describe('browser attach socket', () => {
     it('never offers a direct path through a share, whatever the flag says', async () => {
       shareIs(true);
       vi.mocked(h.flags.isEnabled).mockReturnValue(true);
-      const runner = await runnerUp(h, { capabilities: ['attachment.direct'] });
+      const runner = await runnerUp(h, {
+        capabilities: ['attachment.direct', 'attachment.direct.proof'],
+      });
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [shareTicket(false)]);
       sockets.push(browser);

@@ -39,6 +39,8 @@
     "startFrom": "Prueba a pedir",
     "hello": "{{name}} está listo. ¿En qué trabajamos?",
     "placeholder": "Escribe a {{name}}",
+    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+    "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
     "noKey": "{{provider}} aún no tiene clave en este espacio de trabajo. Añade una para hablar con este bot.",
@@ -280,6 +282,11 @@
       "progress": "{{step}} de {{limit}} continuaciones",
       "stop": "Detener objetivo",
       "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo."
+    },
+    "slash": {
+      "label": "Habilidades",
+      "menu": "Habilidades que puedes ejecutar",
+      "pick": "Usar /{{name}}"
     }
   },
   "settings": {
@@ -291,6 +298,7 @@
       "profile": "Perfil",
       "instructions": "Instrucciones",
       "memory": "Memoria",
+      "skills": "Habilidades",
       "permissions": "Permisos",
       "routines": "Rutinas",
       "homeHost": "Máquina principal"
@@ -411,6 +419,42 @@
       "toPerson": "Compartirlo con todos tus bots",
       "toBot": "Guardarlo solo para este bot"
     },
+    "skills": {
+      "title": "Habilidades",
+      "subtitle": "Formas guardadas de hacer una tarea. Ejecuta una escribiendo / y su nombre en el chat; el bot usa una por su cuenta cuando una petición encaja.",
+      "count_one": "Habilidades · {{count}}",
+      "count_other": "Habilidades · {{count}}",
+      "empty": "Aún no hay habilidades. Añade una, o pide al bot que guarde como habilidad cómo hizo algo.",
+      "add": "Añadir habilidad",
+      "edit": "Editar {{name}}",
+      "delete": "Borrar {{name}}",
+      "byYou": "Guardada por ti · {{date}}",
+      "byBot": "Guardada por el bot · {{date}}",
+      "onlyYou": "Solo la ejecutas tú",
+      "onlyBot": "Solo la usa el bot",
+      "loadFailed": "No se pudieron cargar las habilidades.",
+      "deleteFailed": "No se pudo borrar la habilidad.",
+      "dialog": {
+        "newTitle": "Nueva habilidad",
+        "editTitle": "Editar /{{name}}",
+        "description": "Una habilidad es una receta que el bot sigue: cuándo se aplica, los pasos, cómo comprobar el resultado y qué contar.",
+        "name": "Nombre",
+        "nameHint": "Minúsculas, dígitos y guiones. La ejecutas como /{{name}}.",
+        "summary": "Descripción",
+        "summaryHint": "Una frase sobre qué hace y cuándo usarla. El bot la lee en cada chat.",
+        "summaryPlaceholder": "Escribe las notas de versión a partir de las pull requests fusionadas desde la última etiqueta",
+        "body": "Instrucciones",
+        "bodyPlaceholder": "1. Lista las pull requests fusionadas desde la última etiqueta.\n2. Agrúpalas por área.\n3. Escribe las notas en Markdown y compártelas aquí.",
+        "userInvocable": "Puedo ejecutarla desde el chat con su comando",
+        "modelInvocable": "El bot puede usarla por su cuenta cuando una petición encaja",
+        "save": "Guardar habilidad",
+        "saving": "Guardando…",
+        "saveFailed": "No se pudo guardar la habilidad."
+      },
+      "deleteTitle": "¿Borrar /{{name}}?",
+      "deleteBody": "El bot ya no podrá usarla, y /{{name}} dejará de funcionar en el chat.",
+      "deleting": "Borrando…"
+    },
     "routines": {
       "title": "Rutinas",
       "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
@@ -479,6 +523,7 @@
         "sessions": "Sesiones y máquinas",
         "plan": "Plan",
         "mail": "Correo",
+        "whatsapp": "WhatsApp",
         "github": "GitHub",
         "automations": "Rutinas y automatizaciones",
         "bots": "Otros bots",

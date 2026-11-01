@@ -361,12 +361,13 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	}
 	if !slices.Equal(constants.Capabilities, []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
-		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect,
+		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof,
 		link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityAttachmentChat,
 		link.CapabilityDeviceScreen,
 		link.CapabilityPortForward,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilityCodexEnvironments,
 		link.CapabilitySessionWatch,
+		link.CapabilityWhatsapp,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

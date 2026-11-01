@@ -71,6 +71,16 @@ export {
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
 } from './bot-routines.queries';
+export {
+  type AddBotSkillVariables,
+  type DeleteBotSkillVariables,
+  type UpdateBotSkillVariables,
+  useAddBotSkill,
+  useBotSlashCommands,
+  useDeleteBotSkill,
+  useSuspenseBotSkills,
+  useUpdateBotSkill,
+} from './bot-skills.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
@@ -302,4 +312,9 @@ export {
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
+export {
+  useLinkWhatsapp,
+  useSuspenseWhatsappSettings,
+  useUnlinkWhatsapp,
+} from './whatsapp.queries';
 export { useWorkspaceEvents } from './workspace-events';

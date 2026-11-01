@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive; MergePath and RoutineSteps cover the stepped surfaces
 import { CheckIcon } from 'lucide-react';
 import type * as React from 'react';
 

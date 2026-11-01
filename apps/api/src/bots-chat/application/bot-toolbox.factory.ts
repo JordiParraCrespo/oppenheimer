@@ -25,6 +25,7 @@ import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
+import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
 import type {
   ApprovedCallContext,
@@ -35,6 +36,7 @@ import type {
 } from './bot-tool.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 
 /**
  * Every tool a bot's turn is offered (`25-bots.md` §4), area by area. A tool
@@ -47,6 +49,7 @@ export class BotToolboxFactory {
 
   constructor(
     self: BotSelfToolsFactory,
+    skills: BotSkillToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
     watches: BotWatchToolsFactory,
@@ -59,6 +62,7 @@ export class BotToolboxFactory {
     mail: BotMailToolsFactory,
     mailWrites: BotMailWriteToolsFactory,
     mailOrganizing: BotMailOrganizeToolsFactory,
+    whatsapp: BotWhatsappToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
@@ -67,6 +71,7 @@ export class BotToolboxFactory {
   ) {
     this.areas = [
       self,
+      skills,
       goals,
       questions,
       hosts,
@@ -81,6 +86,7 @@ export class BotToolboxFactory {
       mail,
       mailWrites,
       mailOrganizing,
+      whatsapp,
       peers,
       web,
       subagents,

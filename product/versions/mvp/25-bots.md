@@ -473,6 +473,47 @@ of `bot_memory_fact`, with two columns more:
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
 
+**Skills** (2026-10-31, from OpenClaw's skills and Grok Bot's saved
+skills, `research/lessons-from-openclaw-and-grok-bot-skills.md`). A skill is a
+reusable way of doing one task, saved under a short name: when it applies,
+what it needs, the steps, how to check the result and what to report. It is
+one row of `bot_skill`, the bot's own, at most 50 a bot.
+
+| Tool | Does | Default |
+|------|------|---------|
+| `use_skill` | Read one of its skills in full, to follow it | auto |
+| `save_skill` | Save a skill, or replace the one of that name, as the bot's | auto |
+| `delete_skill` | Delete a skill and its command | auto |
+
+- **Its name is its command.** Lowercase letters, digits and hyphens, at
+  most 32 (OpenClaw's cap); `skill` is reserved. Settings types a name into
+  that shape as it is written.
+- **Who may run it is two switches**, at least one on: `userInvocable`, the
+  person runs it as `/<name>` (OpenClaw's `user-invocable`), and
+  `modelInvocable`, the bot uses it unasked (the inverse of its
+  `disable-model-invocation`).
+- **The prompt lists, the bot reads on demand.** The system prompt's "Your
+  skills" section lists each skill the bot may use, by name and description
+  and never its body, sorted by name so the prompt stays the same bytes;
+  only a turn offered `use_skill` gets it. When a request fits one the bot
+  reads it, follows it and says which it used. A skill is how to do the
+  work, never permission to do more: tools, approvals and rules stand.
+- **A slash command runs a skill.** A message of the person's that opens
+  with `/<name>` (or `/skill <name>`, the generic entry) runs that skill if
+  the person may: the turn's message opens with the skill's body, then the
+  words as written, whose part after the command is its input. The stored
+  message stays what was typed. A command that names no such skill tells
+  the bot which ones the person can run, so it says so rather than guessing.
+  Only a person's message runs one, never an event's text.
+- **Made in chat or in Settings.** Asked to "save that as a skill", the bot
+  calls `save_skill`; Settings → Skills lists them with who saved each,
+  adds, edits and deletes. The composer's `/` menu offers the ones the
+  person may run as the command is typed: arrows move, Tab or Enter picks,
+  Escape closes it.
+- **Not built.** Grok Bot's library shared by all of a person's bots, a
+  registry like OpenClaw's ClawHub, and skills that dispatch straight to a
+  tool.
+
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
 |------|------|---------|
@@ -817,7 +858,7 @@ the owner's rules (§5). Next: the asking tools of each area.
 
 Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
-Routines, Notifications, daily caps, slash commands, voice,
+Routines, Notifications, daily caps, voice,
 attachments other than images (§3.1), project memory, a bot's engine running on a host of its own with the full
 Claude Code toolset.
 
@@ -838,7 +879,7 @@ eight colours (`AV_COLORS`).
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
   `bot_approval`; for long conversations `bot_conversation_summary`; for
-  images `bot_attachment` (§3.1).
+  images `bot_attachment` (§3.1); for skills `bot_skill` (§4.1).
   Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
@@ -1052,3 +1093,15 @@ The decisions it produced:
   to end (at most 600 ms). From Codex's `available_decisions`,
   `serverRequest/resolved` and its deferred approval modals. It refines
   2026-10-15's card, whose no always gave the bot a turn.
+- 2026-10-31: **a chat that reconnects mid-turn loses no text** (§2,
+  Streaming). The stream dropped what was published while the browser's
+  connection was down, and the console drew a hole until the next stored
+  message. The block of text a turn is writing is now kept in Redis beside
+  the channel until it is stored or the turn ends, and the stream sends it
+  whole as a `snapshot` per running turn right after `ready` (Grok's
+  reconnect response: a snapshot first, then deltas). Each delta carries
+  its block (the blocks the turn stored before it) and the turn's `seq`, so
+  the console drops one it already holds, and draws a block until the
+  conversation holds that many of the turn's assistant messages with text
+  (Codex's rule that the completed item is authoritative). That replaced
+  the console's matching of streamed text against stored text.

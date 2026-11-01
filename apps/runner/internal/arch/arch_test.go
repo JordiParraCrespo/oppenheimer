@@ -30,7 +30,16 @@ const (
 	sharedPrefix = "github.com/jordiparracrespo/oppenheimer/packages/go/"
 )
 
-var contexts = []string{"apikeys", "devices", "host", "pairing", "ports", "service", "sessions", "updates"}
+var contexts = []string{"apikeys", "devices", "host", "pairing", "ports", "service", "sessions", "updates", "whatsapp"}
+
+// confined lists third-party modules only one package may import: the
+// adapter that owns the system they speak to. whatsmeow is an unofficial
+// WhatsApp client, and keeping it (and the SQLite driver its store needs) in
+// one adapter is what keeps replacing it one package's work.
+var confined = map[string]string{
+	"go.mau.fi/":         "whatsapp/adapters/whatsmeow",
+	"modernc.org/sqlite": "whatsapp/adapters/whatsmeow",
+}
 
 func TestImportBoundaries(t *testing.T) {
 	root, err := filepath.Abs("..")
@@ -56,6 +65,8 @@ func TestImportBoundaries(t *testing.T) {
 				reason = violatesInternal(pkg, strings.TrimPrefix(target, modulePrefix))
 			case strings.HasPrefix(target, sharedPrefix):
 				reason = violatesShared(pkg, strings.TrimPrefix(target, sharedPrefix))
+			default:
+				reason = violatesConfined(pkg, target)
 			}
 			if reason != "" {
 				violations = append(violations, rel+" imports "+target+": "+reason)
@@ -69,6 +80,16 @@ func TestImportBoundaries(t *testing.T) {
 	for _, v := range violations {
 		t.Error(v)
 	}
+}
+
+// violatesConfined keeps a confined third-party module in its one package.
+func violatesConfined(from, to string) string {
+	for prefix, owner := range confined {
+		if strings.HasPrefix(to, prefix) && from != owner {
+			return "only " + owner + " may import " + prefix
+		}
+	}
+	return ""
 }
 
 // violatesShared decides which packages/go modules a layer may use.

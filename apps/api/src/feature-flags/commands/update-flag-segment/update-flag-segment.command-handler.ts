@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { FlagSegmentRepositoryPort } from '../../database/flag-segment.repository.port';
 import { segmentProblems } from '../../domain/feature-flag.policy';
@@ -34,14 +34,10 @@ export class UpdateFlagSegmentCommandHandler
     }
 
     const found = await this.segments.findOneByKey(command.key);
-    if (found.isNone()) {
-      throw new AppError(FeatureFlagErrors.SEGMENT_NOT_FOUND, {
-        detail: `No segment "${command.key}".`,
-        extensions: { segment: command.key },
-      });
-    }
-
-    const segment = found.unwrap();
+    const segment = requireFound(found, FeatureFlagErrors.SEGMENT_NOT_FOUND, {
+      detail: `No segment "${command.key}".`,
+      extensions: { segment: command.key },
+    });
     segment.update(
       { name: command.name, description: command.description, conditions: command.conditions },
       { actorId: command.actorId, comment: command.comment },

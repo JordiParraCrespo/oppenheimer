@@ -7,11 +7,6 @@ export const MailErrors = {
     message: 'That Gmail account is not connected',
     httpStatus: 409,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'MAIL_002',
-    message: 'Mail belongs to an organization',
-    httpStatus: 400,
-  },
   /** The person already holds the five accounts mail takes; remove one first. */
   GMAIL_ACCOUNT_LIMIT_REACHED: {
     code: 'MAIL_003',

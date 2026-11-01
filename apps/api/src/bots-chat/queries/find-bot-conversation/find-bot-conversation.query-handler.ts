@@ -14,13 +14,17 @@ export interface BotConversation {
   turns: BotTurnEntity[];
   /** Every message the chat holds, not only these: Settings' history line. */
   messageCount: number;
+  /** For each turn still queued or running, the blocks of text it has stored in all. */
+  storedTextBlocks: Map<string, number>;
 }
 
 /**
  * A bot's chat as the console draws it: its newest messages, oldest first,
  * the turns they belong to (how each ended, why one failed), and any turn
  * still queued or running, which the chat shows as working; and how many
- * messages it holds in all, past the window.
+ * messages it holds in all, past the window. For a turn still running, how
+ * many blocks of text it stored in all: its streamed text is numbered by
+ * that, and a long turn's first blocks can fall outside the window.
  */
 @QueryHandler(FindBotConversationQuery)
 export class FindBotConversationQueryHandler
@@ -42,6 +46,12 @@ export class FindBotConversationQueryHandler
       this.turns.findForConversation(scope, botId, turnIds),
       this.messages.countConversation(scope, botId),
     ]);
-    return { messages, turns, messageCount };
+    const active = turns.filter((turn) => turn.status === 'queued' || turn.status === 'running');
+    const counted = await this.messages.countTextBlocks(
+      scope,
+      active.map((turn) => turn.id),
+    );
+    const storedTextBlocks = new Map(active.map((turn) => [turn.id, counted.get(turn.id) ?? 0]));
+    return { messages, turns, messageCount, storedTextBlocks };
   }
 }

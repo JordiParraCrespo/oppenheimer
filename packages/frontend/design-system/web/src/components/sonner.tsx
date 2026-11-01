@@ -1,3 +1,4 @@
+// uncatalogued: Toaster is mounted once, at the root of the console app
 'use client';
 
 import {

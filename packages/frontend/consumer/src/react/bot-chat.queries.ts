@@ -37,12 +37,12 @@ import {
   botLiveText,
   clearBotRetry,
   forgetEndedBotTurns,
-  markBotStreamGap,
   NO_BOT_RETRIES,
   NO_BOT_TEXT,
   noteBotRetry,
+  putBotSnapshot,
 } from '../modules/bots/live-text';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
@@ -195,11 +195,14 @@ export interface SendBotMessageVariables {
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
   attachmentIds?: readonly string[];
+  /** Into the turn under way, at its next tool call, rather than after it. */
+  steer?: boolean;
 }
 
 /** Says something to the bot. The chat is read again for the message and its turn. */
 export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
-  run: (app, { id, content, attachmentIds }) => app.bots.sendMessage(id, content, attachmentIds),
+  run: (app, { id, content, attachmentIds, steer }) =>
+    app.bots.sendMessage(id, content, attachmentIds, steer),
   update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
 });
 
@@ -281,10 +284,13 @@ export interface BotLive {
  * The chat, live, while the screen is up: the text each running turn is
  * writing that the stored conversation does not hold yet, which turns wait
  * on a provider that refused a call (until they write again), and where the
- * children of a running `delegate` call are. The stream's text is kept as it
- * arrived ({@link BotTextBuffers}); what is drawn is derived from it and the
- * conversation in render ({@link botLiveText}), so a read landing early or
- * late never draws stored text twice or drops it. A call's children are its
+ * children of a running `delegate` call are. The stream's text is kept by
+ * block ({@link BotTextBuffers}): deltas the turn's text already holds are
+ * dropped by `seq`, and the `snapshot` the stream sends as it comes up
+ * replaces the block being written, so what was published while it was down
+ * is not lost. What is drawn is derived from it and the conversation in
+ * render ({@link botLiveText}), so a read landing early or late never draws
+ * stored text twice or drops it. A call's children are its
  * newest frame until its stored step ends it ({@link botLiveSubagents}).
  *
  * The conversation is read again the moment a message is stored or a turn
@@ -384,7 +390,6 @@ export function useBotLive(id: string): BotLive {
     const offStatus = stream.onStatus((status) => {
       const now = status === 'live';
       if (now && !up) {
-        update(markBotStreamGap);
         void refetchChat(queryClient, id, false);
         void queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) });
       }
@@ -398,7 +403,10 @@ export function useBotLive(id: string): BotLive {
           return;
         case 'text':
           retry((retries) => clearBotRetry(retries, event.turnId));
-          update((buffers) => appendBotText(buffers, event.turnId, event.text));
+          update((buffers) => appendBotText(buffers, event));
+          return;
+        case 'snapshot':
+          update((buffers) => putBotSnapshot(buffers, event));
           return;
         case 'subagents':
           change((state) => ({ ...state, frames: putBotSubagents(state.frames, event) }));

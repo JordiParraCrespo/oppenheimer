@@ -38,6 +38,15 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import {
+  whatsappAckSchema,
+  whatsappLinkSchema,
+  whatsappMessagesSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
+  whatsappStateSchema,
+  whatsappUnlinkSchema,
+} from './whatsapp.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -69,6 +78,15 @@ export const RUNNER_CAPABILITIES = [
    * Named only by a runner that drops a read-only attachment's input itself.
    */
   'attachment.direct',
+  /**
+   * Proves itself on every direct channel before a byte crosses it: it signs
+   * both DTLS fingerprints and the browser's nonce with its host key
+   * (`product/versions/mvp/31-peer-to-peer-and-the-host-proof.md`). The relay
+   * invites a direct path only to a runner naming this beside
+   * `attachment.direct`, because the console refuses a channel that is not
+   * proved.
+   */
+  'attachment.direct.proof',
   /**
    * Takes a `session.create` with a `folder` instead of checkouts: a session in
    * a folder already on the host, nothing cloned and nothing written
@@ -123,6 +141,12 @@ export const RUNNER_CAPABILITIES = [
    * (`product/versions/mvp/27-bot-subscriptions.md`).
    */
   'session.watch',
+  /**
+   * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
+   * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
+   */
+  'whatsapp',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1027,6 +1051,13 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   portCloseSchema,
   codexEnvironmentsListSchema,
   codexEnvironmentsSchema,
+  whatsappLinkSchema,
+  whatsappUnlinkSchema,
+  whatsappStateSchema,
+  whatsappMessagesSchema,
+  whatsappAckSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

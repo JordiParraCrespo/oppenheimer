@@ -59,6 +59,7 @@ host: remove it under Settings → Hosts).
   host.key      0600  the Ed25519 key every dial is signed with
   bin/                runner-<version> binaries and the `current` symlink
   state/              update.json, sessions.json
+  state/whatsapp/ 0700  whatsapp.db (0600): the WhatsApp linked device's keys and its outbox
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
   images/             files pasted into sessions, one directory per session

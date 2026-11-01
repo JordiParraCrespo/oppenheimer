@@ -22,11 +22,11 @@ the catalog, one row per product surface (the composer, routines, Plan, pull
 requests, the diff, the chat, bots, settings, the drag layer, charts), is
 [`.agents/reference/frontend-ui-catalog.md`](../reference/frontend-ui-catalog.md):
 read it too before building anything these rows do not name. Its rows are
-rules of this section like these ones. `pnpm check:structure` keeps the two
-tables honest (`scripts/ui-catalog.mjs`): a row that names a component
-nothing exports fails, and so does a design-system component with no row and
-no reason in that script's `UNCATALOGUED`. A new component lands with its
-row.
+rules of this section like these ones. `pnpm check:ui-catalog` keeps the two
+tables honest (`scripts/ui-catalog.mjs`): a row whose Use column names a
+component neither package exports publicly fails, and so does a
+design-system module no Use column names, unless the module opens with
+`// uncatalogued: <why>`. A new component lands with its row.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
@@ -323,10 +323,11 @@ A change that alters what the console shows is taken light and dark on the
 local stack, looked at, shown to the user and listed under `## Screenshots`
 in its pull request: the `local-stack` skill's "Show a visual change" step
 (`pnpm screens <route>...`). A component in the design system
-or the kit is photographed on a console route that renders it. The
-screenshot guard, `.agents/hooks/screenshot-guard.mjs`, holds the work until
-the pictures are of the code as it is (`.agents/hooks/visual-change.mjs`
-defines what counts; `.claude/settings.json` says when the guard runs).
+or the kit is photographed on a console route that renders it. The hook
+`.agents/hooks/screenshot-guard.mjs` refuses to push the branch, or open or
+update its pull request, until the pictures are of the code as it is
+(`.agents/hooks/visual-change.mjs` defines what counts; `.claude/settings.json`
+says when the guard runs).
 
 ## Dead code
 

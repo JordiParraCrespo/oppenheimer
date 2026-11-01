@@ -18,6 +18,12 @@
     "arch": {
       "dependsOn": ["^build"]
     },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "test": {
       "cache": false
     },

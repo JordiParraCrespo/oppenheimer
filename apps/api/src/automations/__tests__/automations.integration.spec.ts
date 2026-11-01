@@ -3,9 +3,8 @@ import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { Some } from 'oxide.ts';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { AutomationMapper } from '../automation.mapper';
@@ -42,7 +41,6 @@ const DAY = 24 * HOUR;
  * scoped on the run itself, answers the right totals and counts.
  */
 describe('automations: firing under the caps, and the runs list (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let automations: AutomationRepository;
   let runs: AutomationRunRepository;
@@ -78,28 +76,11 @@ describe('automations: firing under the caps, and the runs list (integration)', 
     }) as AccessScope;
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         AutomationOrmEntity,
         AutomationRevisionOrmEntity,
@@ -150,7 +131,6 @@ describe('automations: firing under the caps, and the runs list (integration)', 
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {

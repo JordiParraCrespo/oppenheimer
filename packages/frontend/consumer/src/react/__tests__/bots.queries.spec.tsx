@@ -14,8 +14,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import { BotEntity, BotMemoryFactEntity, type UpdateBotInput } from '../../modules/bots/bot.entity';
 import type { BotsRepository } from '../../modules/bots/bots.repository';
+import { botsKeys } from '../bots.keys';
 import {
-  botsKeys,
   useDeleteBotFact,
   useSuspenseBot,
   useUpdateBotFact,

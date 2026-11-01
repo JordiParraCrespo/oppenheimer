@@ -1,3 +1,4 @@
+// uncatalogued: the primitive under AvatarPicker, BotAvatar and PersonChip; the catalog's rows name those
 'use client';
 
 import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';

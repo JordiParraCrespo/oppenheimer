@@ -20,6 +20,7 @@ import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
 import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
+import { BotSkillOrmEntity } from '../bots/database/bot-skill.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
@@ -79,6 +80,8 @@ import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 /**
  * Data source used by the TypeORM CLI (`migration:generate` / `migration:run` /
@@ -137,6 +140,8 @@ export default new DataSource({
     CalendarConnectionOrmEntity,
     GmailConnectionOrmEntity,
     MailSendOrmEntity,
+    WhatsappAccountOrmEntity,
+    WhatsappMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,
@@ -148,6 +153,7 @@ export default new DataSource({
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    BotSkillOrmEntity,
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
     BotMessageOrmEntity,

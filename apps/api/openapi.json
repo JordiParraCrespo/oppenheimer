@@ -12097,7 +12097,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12177,7 +12177,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12288,7 +12288,7 @@
             "description": ""
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12371,7 +12371,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12494,7 +12494,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15349,7 +15349,7 @@
             }
           },
           "400": {
-            "description": "TASKS_003 — No active organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16521,6 +16521,185 @@
         "summary": "Cancel a scheduled mail",
         "tags": [
           "Mail"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts": {
+      "get": {
+        "description": "Every number the caller linked as a WhatsApp device on one of their hosts, oldest first: its name, how its device stands, whether its host is online, and while it pairs, the QR code to scan.",
+        "operationId": "findWhatsappAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The caller’s own linked WhatsApp numbers",
+        "tags": [
+          "WhatsApp"
+        ]
+      },
+      "post": {
+        "description": "Asks the host’s runner to pair a new WhatsApp linked device, the way WhatsApp Web pairs: read the account back until it carries a QR code, then scan it from the phone’s Settings → Linked devices. The caller’s number already on that host is paired again; a connected one is left as it is. Use a number you can lose: WhatsApp does not allow unofficial clients.",
+        "operationId": "linkWhatsapp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkWhatsappRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — No such host of the caller’s",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_003 — As many numbers as one person links\n\nWHATSAPP_006 — Another person’s number is on that host\n\nWHATSAPP_005 — The host’s runner holds no WhatsApp\n\nWHATSAPP_004 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link a WhatsApp number on a host",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}": {
+      "delete": {
+        "description": "Logs the device out of WhatsApp, deletes its keys from the host, and forgets the number and the messages kept for its bots. An offline host is told when it comes back. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeWhatsappAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unlink a WhatsApp number",
+        "tags": [
+          "WhatsApp"
         ]
       }
     },
@@ -18329,7 +18508,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19307,6 +19486,330 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/skills": {
+      "get": {
+        "description": "By name.",
+        "operationId": "findBotSkills",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BotSkillResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a bot's skills",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "post": {
+        "description": "A reusable way of doing one task, run as /<name> or by the bot when it fits.",
+        "operationId": "createBotSkill",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBotSkillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotSkillResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_039 — The name is taken",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_040 — The bot has as many skills as it can keep",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Give a bot a skill",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/skills/{skillId}": {
+      "patch": {
+        "operationId": "updateBotSkill",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "skillId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBotSkillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotSkillResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_038 — Skill not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_039 — The name is taken",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change a bot's skill",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteBotSkill",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "skillId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_038 — Skill not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a bot's skill",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bot-groups": {
       "get": {
         "description": "In sidebar order.",
@@ -19383,7 +19886,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19659,7 +20162,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19807,7 +20310,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19885,7 +20388,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19983,7 +20486,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20261,7 +20764,7 @@
     },
     "/api/v1/bots/{id}/messages": {
       "post": {
-        "description": "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
+        "description": "A turn, queued on the bot's provider and model as they are now. Words, images uploaded with `POST /bots/:id/attachments` (`attachmentIds`), or both. It runs when the bot's turn before it ends; with `steer`, the turn under way takes it at its next tool call instead (words only; one that turn never reaches runs as its own). Follow it on `GET /bots/:id/stream` and read the result from `GET /bots/:id/conversation`.",
         "operationId": "sendBotMessage",
         "parameters": [
           {
@@ -20762,7 +21265,7 @@
     },
     "/api/v1/bots/{id}/stream": {
       "get": {
-        "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change: `{ type: \"text\", turnId, text }` as a turn writes, `{ type: \"message\", turnId, messageId }` when a message is stored, `{ type: \"turn\", turnId, status }` when a turn moves. The stored conversation is the record; read it again on `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
+        "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: \"snapshot\", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: \"text\", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: \"retrying\", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: \"subagents\", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: \"message\", turnId, messageId }` when a message is stored; `{ type: \"turn\", turnId, status }` when a turn moves; `{ type: \"approval\", approvalId, status }` and `{ type: \"question\", questionId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
         "operationId": "streamBot",
         "parameters": [
           {
@@ -21771,7 +22274,7 @@
             }
           },
           "400": {
-            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "description": "VOICE_002 — No audio attached\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21930,7 +22433,7 @@
             }
           },
           "400": {
-            "description": "INBOX_001 — No active workspace",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22008,7 +22511,7 @@
             }
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22077,7 +22580,7 @@
             "description": "The occurrence has no mark."
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -23029,6 +23532,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -23082,6 +23587,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -23177,6 +23684,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -23296,6 +23805,8 @@
               "calendar:write",
               "mail:read",
               "mail:write",
+              "whatsapp:read",
+              "whatsapp:write",
               "cloud-agents:read",
               "cloud-agents:write",
               "pulls:read",
@@ -23370,6 +23881,7 @@
               "tasks",
               "calendar",
               "mail",
+              "whatsapp",
               "cloud-agents",
               "pulls",
               "repositories",
@@ -23455,6 +23967,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -23522,6 +24036,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -23624,6 +24140,8 @@
                 "calendar:write",
                 "mail:read",
                 "mail:write",
+                "whatsapp:read",
+                "whatsapp:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -31597,6 +32115,100 @@
           "botId"
         ]
       },
+      "WhatsappAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The host whose runner holds the linked device."
+          },
+          "label": {
+            "type": "string",
+            "example": "Spare",
+            "description": "What the person and their bots call the number."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pairing",
+              "connecting",
+              "connected",
+              "logged_out",
+              "unlinked"
+            ],
+            "description": "The device as its host last reported it: `pairing` shows a QR code to scan, `connected` is online, `logged_out` and `unlinked` offer Pair again."
+          },
+          "hostOnline": {
+            "type": "boolean",
+            "description": "Whether the host’s runner is connected now; nothing moves while it is not."
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "34600111222@s.whatsapp.net",
+            "description": "The paired number’s JID, once paired."
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The paired account’s own WhatsApp name."
+          },
+          "qr": {
+            "type": "string",
+            "nullable": true,
+            "description": "While pairing, the QR code’s text, to draw and scan from the phone’s Linked devices."
+          },
+          "qrExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the device is logged out or unlinked, in the host’s words."
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first linked."
+          }
+        },
+        "required": [
+          "id",
+          "hostId",
+          "label",
+          "status",
+          "hostOnline",
+          "phone",
+          "displayName",
+          "qr",
+          "qrExpiresAt",
+          "statusReason",
+          "linkedAt"
+        ]
+      },
+      "LinkWhatsappRequest": {
+        "type": "object",
+        "properties": {
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "hostId"
+        ]
+      },
       "PullRequestLaneReasonDto": {
         "type": "object",
         "properties": {
@@ -33516,6 +34128,123 @@
           }
         }
       },
+      "BotSkillResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "release-notes",
+            "description": "Lowercase letters, digits and hyphens: the slash command that runs it."
+          },
+          "description": {
+            "type": "string",
+            "example": "Writes release notes from the pull requests merged since the last tag.",
+            "description": "When to use it; every turn of the bot lists it."
+          },
+          "body": {
+            "type": "string",
+            "description": "The skill itself, in Markdown: the steps, the checks, what to report."
+          },
+          "userInvocable": {
+            "type": "boolean",
+            "description": "The person may run it by typing `/<name>` in the chat."
+          },
+          "modelInvocable": {
+            "type": "boolean",
+            "description": "The bot's prompt lists it, so the bot may use it unasked."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "user",
+              "bot"
+            ],
+            "description": "Who wrote it last."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "body",
+          "userInvocable",
+          "modelInvocable",
+          "source",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateBotSkillRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 280
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "userInvocable": {
+            "type": "boolean"
+          },
+          "modelInvocable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "body"
+        ]
+      },
+      "UpdateBotSkillRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 280
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "userInvocable": {
+            "type": "boolean"
+          },
+          "modelInvocable": {
+            "type": "boolean"
+          }
+        }
+      },
       "BotGroupResponseDto": {
         "type": "object",
         "properties": {
@@ -34330,6 +35059,10 @@
               "xai"
             ]
           },
+          "steer": {
+            "type": "boolean",
+            "description": "Sent as a steer: while it waits, the running turn takes its message at its next tool call. One the running turn never reached runs as its own turn."
+          },
           "model": {
             "type": "string",
             "description": "The model it runs on, fixed when it was sent."
@@ -34404,6 +35137,7 @@
           "id",
           "status",
           "provider",
+          "steer",
           "model",
           "error",
           "failure",
@@ -34438,12 +35172,20 @@
           "messageCount": {
             "type": "number",
             "description": "How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines."
+          },
+          "storedTextBlocks": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`)."
           }
         },
         "required": [
           "messages",
           "turns",
-          "messageCount"
+          "messageCount",
+          "storedTextBlocks"
         ]
       },
       "SendBotMessageRequest": {
@@ -34467,6 +35209,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64
+          },
+          "steer": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -35051,6 +35797,7 @@
               "sessions",
               "plan",
               "mail",
+              "whatsapp",
               "github",
               "automations",
               "bots",

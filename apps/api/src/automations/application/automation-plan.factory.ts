@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AutomationRepositoryInputDto, TriggerInputDto } from '@oppenheimer/shared';
 import { type AutomationPlace, automationPlaceFits } from '@oppenheimer/shared/automations';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
@@ -39,8 +39,7 @@ export class AutomationPlanFactory {
 
   async assertProject(scope: AccessScope, projectId: string): Promise<void> {
     const found = await this.projects.findOneById(scope, projectId);
-    if (found.isNone()) throw new AppError(AutomationErrors.PROJECT_UNAVAILABLE);
-    const project = found.unwrap();
+    const project = requireFound(found, AutomationErrors.PROJECT_UNAVAILABLE);
     if (project.isArchived || project.isUnassigned) {
       throw new AppError(AutomationErrors.PROJECT_UNAVAILABLE, {
         detail: project.isArchived ? 'The project is archived' : 'Unassigned holds no automations',

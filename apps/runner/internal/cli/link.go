@@ -20,6 +20,7 @@ import (
 	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	waapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/whatsapp/app"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
@@ -95,6 +96,9 @@ type linkHandler struct {
 	// ports is the session's listening ports (link_ports.go); nil is a
 	// platform the runner cannot read them on.
 	ports *portsapp.Service
+	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
+	// is a host that offers none, and its hello does not name the capability.
+	whatsapp *waapp.Service
 	// cloudStarts holds the sessions whose cloud start (`claude --cloud`,
 	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
@@ -181,7 +185,9 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, earlyResize: map[uint32]link.SessionResize{},
 		decided:   map[string]bool{},
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
-		direct:  direct.NewAnswerer(direct.Options{Logger: logger}),
+		direct: direct.NewAnswerer(direct.Options{Logger: logger, Prove: func(transcript []byte) ([]byte, []byte, error) {
+			return a.Pairing.ProveDirect(transcript)
+		}}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
 		ports: a.Ports, tunnels: map[uint32]*tunnel{}, opening: map[uint32]bool{},
 	}
@@ -211,6 +217,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	a.Credentials = handler.credentials
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
+	handler.startWhatsApp(logger)
 	go handler.retryEvents(life)
 	go handler.watchCodexCloud(life)
 	// Run returns only when ctx ends or the host was unpaired. A lost or
@@ -303,13 +310,16 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments,
 	}
 	if h.direct != nil {
-		named = append(named, link.CapabilityAttachmentDirect)
+		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
 	}
 	if h.devices != nil {
 		named = append(named, link.CapabilityDeviceScreen)
 	}
 	if h.ports != nil {
 		named = append(named, link.CapabilityPortForward)
+	}
+	if h.whatsapp != nil {
+		named = append(named, link.CapabilityWhatsapp)
 	}
 	return named
 }
@@ -353,6 +363,7 @@ func (h *linkHandler) Connected(_ context.Context, epoch uint64) {
 	// Whatever was not acked before the drop is sent again; the keys make the
 	// resend free on the other side.
 	h.reporter.Resend()
+	h.whatsAppLinkUp()
 }
 
 func (h *linkHandler) Disconnected(uint64) {
@@ -620,6 +631,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// between links is only logged, as a create's is.
 			h.lanes.run(laneHostUpdate, func() { h.update(h.life, m) })
 		}
+	case link.TypeWhatsappLink, link.TypeWhatsappUnlink, link.TypeWhatsappSend, link.TypeWhatsappAck:
+		h.whatsAppMessage(msg)
 	default:
 		h.logger.Warn("unknown message from the control plane", slog.String("type", msg.Type))
 	}

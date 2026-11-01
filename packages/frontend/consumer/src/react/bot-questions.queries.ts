@@ -4,7 +4,7 @@ import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { BotQuestionAnswer } from '@oppenheimer/shared/schemas/bot';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BotQuestionCardEntity } from '../modules/bots/bot-conversation.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**

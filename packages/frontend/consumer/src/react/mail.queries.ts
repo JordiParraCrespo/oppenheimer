@@ -3,13 +3,8 @@
 import { useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { GmailConnectionEntity, ScheduledMailEntity } from '../modules/mail';
 import { useConsumerApp } from './context';
+import { mailKeys } from './mail.keys';
 import { mutation } from './mutation';
-
-const mailKeys = {
-  all: ['mail'] as const,
-  connections: () => [...mailKeys.all, 'connections'] as const,
-  scheduled: () => [...mailKeys.all, 'scheduled'] as const,
-};
 
 /** The reader's own Gmail accounts, oldest first, under a Suspense `QueryState`: Settings → Mail. */
 export function useSuspenseGmailConnections() {

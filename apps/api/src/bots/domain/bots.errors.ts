@@ -7,11 +7,6 @@ export const BotErrors = {
     message: 'Bot not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'BOTS_002',
-    message: 'Bots belong to an organization',
-    httpStatus: 400,
-  },
   /** Also a group in another workspace. */
   GROUP_NOT_FOUND: {
     code: 'BOTS_003',
@@ -218,5 +213,23 @@ export const BotErrors = {
     code: 'BOTS_037',
     message: 'The questions were already answered',
     httpStatus: 409,
+  },
+  /** Also a skill of another bot, or in another workspace. */
+  SKILL_NOT_FOUND: {
+    code: 'BOTS_038',
+    message: 'Skill not found',
+    httpStatus: 404,
+  },
+  /** A skill's name is its slash command, so one bot has one skill of each name. */
+  SKILL_NAME_TAKEN: {
+    code: 'BOTS_039',
+    message: 'The bot already has a skill with that name',
+    httpStatus: 409,
+  },
+  /** Every skill's name and description is in each turn's prompt, so a bot keeps a bounded number. */
+  SKILLS_FULL: {
+    code: 'BOTS_040',
+    message: 'The bot has as many skills as it can keep',
+    httpStatus: 422,
   },
 } as const satisfies Record<string, ErrorDefinition>;

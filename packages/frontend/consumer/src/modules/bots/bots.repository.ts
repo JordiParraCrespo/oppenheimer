@@ -12,6 +12,7 @@ import {
   type BotQuestionResponseDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
+  type BotSkillResponseDto,
   type BotTurnPlanLimitsDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
@@ -54,12 +55,15 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
+  type CreateBotSkillInput,
   ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
+  type UpdateBotSkillInput,
 } from './bot.entity';
 import {
   BotApprovalEntity,
@@ -169,6 +173,20 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.tier,
     dto.scope,
     dto.botId,
+    new Date(dto.createdAt),
+    new Date(dto.updatedAt),
+  );
+}
+
+function toSkill(dto: BotSkillResponseDto): BotSkillEntity {
+  return new BotSkillEntity(
+    dto.id,
+    dto.name,
+    dto.description,
+    dto.body,
+    dto.userInvocable,
+    dto.modelInvocable,
+    dto.source,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
   );
@@ -302,6 +320,7 @@ function toTurn(dto: BotTurnResponseDto): BotTurnEntity {
     dto.contextTokens === null ? null : { tokens: dto.contextTokens, window: dto.contextWindow },
     dto.planLimits ? toPlanLimits(dto.planLimits) : null,
     dto.failure,
+    dto.steer,
   );
 }
 
@@ -398,6 +417,7 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
     dto.messages.map(toMessage),
     dto.turns.map(toTurn),
     dto.messageCount,
+    dto.storedTextBlocks,
   );
 }
 
@@ -445,20 +465,23 @@ export class BotsRepository {
 
   /**
    * Says `content` to the bot, with the images uploaded for it
-   * (`uploadImage`): a turn, queued behind any it has not finished. The
-   * browser's time zone goes with it, so the bot tells the time where you are.
+   * (`uploadImage`): a turn, queued behind any it has not finished, or with
+   * `steer` taken into the turn under way at its next tool call (words
+   * alone). The browser's time zone goes with it, so the bot tells the time
+   * where you are.
    */
   sendMessage(
     id: string,
     content: string,
     attachmentIds: readonly string[] = [],
+    steer = false,
   ): Promise<BotTurnEntity> {
     return callApi(BotsErrors.SEND_FAILED, async (api) => {
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const data = await api.body(
         heyApiSdk.sendBotMessage({
           path: { id },
-          body: { content, attachmentIds: [...attachmentIds], timeZone },
+          body: { content, attachmentIds: [...attachmentIds], timeZone, steer },
         }),
       );
       return toTurn(data);
@@ -771,6 +794,35 @@ export class BotsRepository {
   clearMemory(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_MEMORY_FAILED, async (api) => {
       await api.result(heyApiSdk.clearBotMemory({ path: { id } }));
+    });
+  }
+
+  findSkills(id: string): Promise<BotSkillEntity[]> {
+    return callApi(BotsErrors.FETCH_SKILLS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotSkills({ path: { id } }));
+      return data.map(toSkill);
+    });
+  }
+
+  addSkill(id: string, skill: CreateBotSkillInput): Promise<BotSkillEntity> {
+    return callApi(BotsErrors.SAVE_SKILL_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createBotSkill({ path: { id }, body: skill }));
+      return toSkill(data);
+    });
+  }
+
+  updateSkill(id: string, skillId: string, change: UpdateBotSkillInput): Promise<BotSkillEntity> {
+    return callApi(BotsErrors.SAVE_SKILL_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateBotSkill({ path: { id, skillId }, body: change }),
+      );
+      return toSkill(data);
+    });
+  }
+
+  removeSkill(id: string, skillId: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_SKILL_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotSkill({ path: { id, skillId } }));
     });
   }
 

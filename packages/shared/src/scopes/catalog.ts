@@ -27,6 +27,7 @@ export const SCOPE_RESOURCES = [
   'tasks',
   'calendar',
   'mail',
+  'whatsapp',
   'cloud-agents',
   'pulls',
   'repositories',
@@ -477,6 +478,30 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Mail' },
           { action: 'update', subject: 'Mail' },
           { action: 'delete', subject: 'Mail' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'whatsapp',
+    label: 'WhatsApp',
+    description:
+      'The numbers the caller linked as WhatsApp devices on their hosts, as their bots read and write in them.',
+    levels: {
+      read: {
+        scope: 'whatsapp:read',
+        label: 'Read',
+        description: 'List the caller’s own linked numbers and read their chats.',
+        policies: [{ action: 'read', subject: 'Whatsapp' }],
+      },
+      write: {
+        scope: 'whatsapp:write',
+        label: 'Edit',
+        description: 'Link and unlink the caller’s own numbers, and send from them.',
+        policies: [
+          { action: 'create', subject: 'Whatsapp' },
+          { action: 'update', subject: 'Whatsapp' },
+          { action: 'delete', subject: 'Whatsapp' },
         ],
       },
     },

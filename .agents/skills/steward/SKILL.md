@@ -10,14 +10,41 @@ Pull requests get no GitHub CI. `.github/workflows/ci.yml` runs
 check gates a pull request: whoever merges reads the local report, and the
 scheduled run is what catches a report that was wrong.
 
+## The order
+
+This is the one place the order is written; `local-stack`, `ship` and the
+other skills point here.
+
+1. **Edit.**
+2. **Quick check:** `pnpm ci:local --dirty`. The lint job only, on the tree
+   as it is, in about a minute; its report (`.ci-local/dirty-report.md`) is
+   not for the pull request. Fix what it finds and run it again.
+3. **Deslop:** the `deslop` skill over the branch diff.
+4. **Commit**, staging files by path.
+5. **Screens**, when the change shows on screen: the `local-stack` skill's
+   "Show a visual change" (stack up `--web`, `pnpm screens <route>...`).
+   An edit after them that only touches comments or layout keeps them;
+   any other edit to a visual file means taking them again.
+6. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
+   up; the run swaps in the API it built.
+7. **Push** on green, with the report and the screenshots in the
+   description.
+
+A fix after step 6 goes back to step 2 for that fix, and through 4–7 again.
+
 ## Before every push
 
 1. Commit, then run `pnpm ci:local`. It refuses uncommitted changes and
    untracked files, checks what the branch touches against `origin/main`, and
    brings the local stack up (Docker, Postgres, Redis, the API built from this
    commit) when the integration or e2e suite is selected. Stop your own dev
-   API first: it refuses an API on the port that the stack did not start. A change to a file no package owns (the workflow, the lockfile,
-   `scripts/`) selects everything on its own.
+   API first: it refuses an API on the port that the stack did not start. A
+   change to a file no package owns (the workflow, the lockfile, the CI
+   scripts) selects everything on its own; a repo check the lint job runs,
+   an eval's cases, or `apps/web/bundle-budget.json` does not
+   (`scripts/ci/selection.mjs`). The jobs run side by side and the first
+   failure stops the run; `--no-fail-fast` finishes every job, and each
+   step's output is in `.ci-local/logs/`.
 2. Push only on a green run. A red step is yours to fix. Never skip a job
    with `--skip` to get green; `--skip` exists for re-running a job you have
    just fixed.
@@ -31,8 +58,10 @@ scheduled run is what catches a report that was wrong.
    route the change shows on. Look at each one, send them to the user, and
    give the description a `## Screenshots` section naming the routes,
    themes, widths and the commit they were taken on. A change there that is
-   not visual says why in that section instead. Take them again after a
-   push that changes how it looks.
+   not visual says why in that section instead (`pnpm screens --not-visual
+   "<why>"` records it). Take them again after a change to how it looks.
+   `.agents/hooks/screenshot-guard.mjs` refuses the push and the pull
+   request's creation or update until the pictures are of the code as it is.
 
 A pull request is ready when the report's commit is its head, every row is
 green, a visual change has its screenshots, and every review thread has an

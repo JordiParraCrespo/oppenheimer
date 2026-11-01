@@ -41,9 +41,9 @@ their permissions live in the `role` table (not in code); a user's effective
 permissions are the **union of every role assigned to them** via the `user_role`
 join. CASL turns those permissions into an ability that guards check.
 
-Do **not** reintroduce a hardcoded role→permission switch. The legacy
-`defineAbilitiesFor(role)` helper remains only as a fallback/ frontend
-convenience — application authorization goes through the database.
+Do **not** reintroduce a hardcoded role→permission switch: application
+authorization goes through the database. `SYSTEM_ROLE_PERMISSIONS` is what
+the system roles are seeded with, not a second source of truth.
 
 ## Where things live
 

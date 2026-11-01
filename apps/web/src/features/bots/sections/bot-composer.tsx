@@ -36,21 +36,26 @@ import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
+import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
-import { botDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
+import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
+import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { type ComposerTop, composerTopOf } from '@/features/bots/lib/composer-top';
 import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
- * running the button is Stop until something is written, and what is sent
- * then waits for its turn. Each message waiting shows over the box
- * (`ChatQueuedRow`): Remove takes it back, Edit takes it back into the
- * field, and the first one's Send now stops the turn under way so it runs
- * next. A message that carried images is not taken back to edit: they were
+ * running the button is Stop until something is written. While a turn runs,
+ * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
+ * next tool call, and runs it after itself if it reaches none; Alt+Enter
+ * queues it for after instead, and a message with images always waits,
+ * since the running turn would not read them. Each message waiting shows
+ * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
+ * back, Edit takes it back into the field, and the first one's Send now
+ * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were
  * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
  * send off and says where to add one, fused to the top of the box. It owns
  * the draft alone: the chips in `tools` and `engine` are elements its parent
@@ -59,7 +64,9 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * suggestion in the hello can fill it; the field takes focus on open and
  * after a fill. Enter sends, Shift+Enter starts a new line. The mic dictates
  * into the draft (`useDictation`), added to its end, to be read before it is
- * sent.
+ * sent. A draft that is a `/` command being typed opens the menu of the
+ * skills it can run over the box (`useSlashMenu`); picking one writes
+ * `/<name> ` for its input to follow.
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
  * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
@@ -88,6 +95,7 @@ export function BotComposer({
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
+  const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const active = useBotActiveTurn(botId);
   const waiting = useBotWaitingMessages(botId);
   const { data: keyed } = useModelProviders({
@@ -114,6 +122,15 @@ export function BotComposer({
     noKey ??
     (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined);
   const failure = send.error ?? cancel.error;
+  const running = active?.status === 'running';
+  const message = (steer: boolean) => ({
+    id: botId,
+    content: draft,
+    attachmentIds: images.images.flatMap((image) =>
+      image.attachmentId ? [image.attachmentId] : [],
+    ),
+    steer: steer && images.images.length === 0,
+  });
   const dictation = useDictation({
     voice: useVoiceDictation(() => [name]),
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
@@ -160,6 +177,7 @@ export function BotComposer({
         {waiting.map((message, index) => (
           <ChatQueuedRow
             key={message.turnId}
+            steer={message.steer}
             text={message.text || t('bots.chat.queuedImages', { count: message.images })}
             onSendNow={
               index === 0 && active?.status === 'running'
@@ -204,49 +222,52 @@ export function BotComposer({
           cancel.reset();
         }}
       />
-      <ChatComposer
-        value={draft}
-        onValueChange={setDraft}
-        inputRef={field}
-        onSubmit={() =>
-          send.mutate({
-            id: botId,
-            content: draft,
-            attachmentIds: images.images.flatMap((image) =>
-              image.attachmentId ? [image.attachmentId] : [],
-            ),
-          })
-        }
-        onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
-        busy={
-          (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
-        }
-        sendBlockedReason={blocked}
-        allowEmpty={images.images.length > 0}
-        onAttach={() => picker.current?.click()}
-        onPaste={onPaste}
-        attachments={
-          images.images.length > 0
-            ? images.images.map((image) => (
-                <BotComposerImage
-                  key={image.key}
-                  image={image}
-                  onRemove={() => images.remove(image.key)}
-                />
-              ))
-            : undefined
-        }
-        placeholder={t('bots.chat.placeholder', { name })}
-        tools={tools}
-        engine={engine}
-        above={top ? tops[top]() : undefined}
-        dictation={dictationSlots(dictation)}
-        labels={{
-          send: t('bots.chat.send'),
-          stop: t('bots.chat.stop'),
-          attach: t('bots.chat.images.attach'),
-        }}
-      />
+      <div className="relative">
+        {slash.open ? (
+          <BotSlashMenu items={slash.items} highlighted={slash.highlighted} onPick={slash.pick} />
+        ) : null}
+        <ChatComposer
+          onKeyDownCapture={slash.onKeyDownCapture}
+          value={draft}
+          onValueChange={setDraft}
+          inputRef={field}
+          onSubmit={() => send.mutate(message(running))}
+          onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
+          onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
+          busy={
+            (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
+          }
+          sendBlockedReason={blocked}
+          allowEmpty={images.images.length > 0}
+          onAttach={() => picker.current?.click()}
+          onPaste={onPaste}
+          attachments={
+            images.images.length > 0
+              ? images.images.map((image) => (
+                  <BotComposerImage
+                    key={image.key}
+                    image={image}
+                    onRemove={() => images.remove(image.key)}
+                  />
+                ))
+              : undefined
+          }
+          placeholder={
+            running
+              ? t('bots.chat.placeholderRunning', { name })
+              : t('bots.chat.placeholder', { name })
+          }
+          tools={tools}
+          engine={engine}
+          above={top ? tops[top]() : undefined}
+          dictation={dictationSlots(dictation)}
+          labels={{
+            send: t('bots.chat.send'),
+            stop: t('bots.chat.stop'),
+            attach: t('bots.chat.images.attach'),
+          }}
+        />
+      </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );

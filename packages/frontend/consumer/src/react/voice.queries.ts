@@ -5,11 +5,7 @@ import type { VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
 import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tanstack/react-query';
 import type { VoiceTranscription } from '../modules/voice';
 import { useConsumerApp } from './context';
-
-export const voiceKeys = {
-  all: ['voice'] as const,
-  status: () => [...voiceKeys.all, 'status'] as const,
-};
+import { voiceKeys } from './voice.keys';
 
 /**
  * Whether the workspace can dictate (`GET /voice/status`). A sign-in or key

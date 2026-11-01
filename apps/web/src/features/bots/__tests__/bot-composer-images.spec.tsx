@@ -35,6 +35,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useUploadBotImage: () => ({ mutateAsync: state.upload }),
   useCancelBotTurn: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
+  useBotSlashCommands: () => ({ data: undefined }),
 }));
 
 beforeEach(() => {
@@ -85,7 +86,12 @@ describe('BotComposer images', () => {
     expect(screen.getByRole('img', { name: 'shot.png' })).toBeTruthy();
     await waitFor(() => expect(sendButton().getAttribute('aria-disabled')).not.toBe('true'));
     fireEvent.click(sendButton());
-    expect(state.send).toHaveBeenCalledWith({ id: 'b1', content: '', attachmentIds: ['a1'] });
+    expect(state.send).toHaveBeenCalledWith({
+      id: 'b1',
+      content: '',
+      attachmentIds: ['a1'],
+      steer: false,
+    });
   });
 
   it('takes an image off the message with its cross', async () => {

@@ -73,7 +73,9 @@
       "queued": "Queued",
       "sendNow": "Send now",
       "edit": "Edit",
-      "remove": "Remove from the queue"
+      "remove": "Remove from the queue",
+      "steer": "Steer",
+      "steerHint": "Goes into the turn under way at its next tool call. If the turn ends first, it runs next."
     },
     "json": {
       "tree": "Tree",

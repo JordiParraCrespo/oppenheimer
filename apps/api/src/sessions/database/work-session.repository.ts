@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { OutboxService } from '@oppenheimer/backend-ddd';
+import { type KeysetOrder, keysetAfter, keysetPage, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
@@ -312,17 +312,18 @@ export class WorkSessionRepository
     if (filters.cursor) {
       // A row comparison, so the walk resumes exactly after the last row it
       // returned and never counts: `(key, id)` is unique.
-      query.andWhere(
-        `(${key.expression}, "session"."id") ${key.after} (CAST(:cursorKey AS ${key.type}), CAST(:cursorId AS uuid))`,
-        { cursorKey: filters.cursor.key, cursorId: filters.cursor.id },
-      );
+      const after = keysetAfter(keysetOrderOf(sort), filters.cursor);
+      query.andWhere(after.sql, after.params);
       // One more than asked for, so "is there another page" needs no count.
-      const rows = await this.pageOf(query.limit(filters.limit + 1));
-      const page = rows.slice(0, filters.limit);
+      const page = keysetPage(
+        await this.pageOf(query.limit(filters.limit + 1)),
+        filters.limit,
+        (row) => ({ key: row.sortKey, id: row.record.id }),
+      );
       return {
-        data: await this.withCheckoutsAll(page.map((row) => row.record)),
+        data: await this.withCheckoutsAll(page.items.map((row) => row.record)),
         limit: filters.limit,
-        nextCursor: rows.length > filters.limit ? cursorAfter(sort, page) : null,
+        nextCursor: page.next ? { sort, ...page.next } : null,
       };
     }
 
@@ -724,6 +725,18 @@ function applySort(
 ): void {
   const direction = SORT_KEYS[sort].after === '<' ? 'DESC' : 'ASC';
   query.orderBy(SORT_KEYS[sort].expression, direction).addOrderBy('session.id', direction);
+}
+
+/** The list's order as a keyset: its key, then the id, both in the key's direction. */
+function keysetOrderOf(sort: NonNullable<SessionFilters['sort']>): KeysetOrder {
+  const key = SORT_KEYS[sort];
+  return {
+    key: key.expression,
+    keyType: key.type,
+    id: '"session"."id"',
+    idType: 'uuid',
+    direction: key.after === '<' ? 'DESC' : 'ASC',
+  };
 }
 
 /** The cursor that resumes after the last row of a page; null for an empty one. */

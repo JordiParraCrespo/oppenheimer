@@ -209,8 +209,8 @@ them, each with its reason.
 
 ## Pluggable service pattern (backend packages)
 
-Pluggable backend packages (`@oppenheimer/backend-email`, `-storage`, `-cache`,
-`-queue`) follow this pattern:
+Pluggable backend packages (`@oppenheimer/backend-email`, `-storage`, `-cache`)
+follow this pattern:
 
 1. **Abstract class** defines the interface (e.g. `EmailService`)
 2. **Concrete implementations** provide behavior (e.g. `ConsoleEmailService`, `ResendEmailService`)
@@ -388,5 +388,6 @@ DeleteUserCommand → UserEntity.delete() raises UserDeletedDomainEvent (with re
 - DDD building blocks (entity/value-object/aggregate/event/command/query bases,
   ports, mapper interface, domain exceptions) live in `@oppenheimer/backend-ddd`
 - Filters, interceptors, pipes, and shared interfaces go in `@oppenheimer/backend-core`, not in `apps/api`
-- Email templates go in `packages/backend/email/src/templates/` as React components
+- Email layouts go in `packages/backend/email/src/templates/` as React components;
+  a product email's copy is the API's (`queue/email-job.mapper.ts`)
 - Shared types/schemas go in `packages/shared`, not duplicated in apps

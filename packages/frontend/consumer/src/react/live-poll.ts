@@ -39,6 +39,11 @@ import { useStreamCovers } from './workspace-stream-status';
  *   background. Five seconds is the pace ChatGPT's device flow usually asks
  *   for; when it asks for a slower one, the API answers the faster polls
  *   "pending" without asking ChatGPT, so this interval never sets the pace.
+ * - `whatsappPairing`: Settings → WhatsApp while a number pairs: the host
+ *   issues a new QR code every twenty seconds or so, and the phone that scans
+ *   one is told so at once, so two seconds keeps the code drawn current. It
+ *   keeps going in the background, where the reader has their phone out. The
+ *   workspace stream carries no device state.
  * - `sessionPorts`: the ports a session listens on, while its Browser tab is
  *   open: a dev server the agent just started shows within a few seconds.
  *   Not in the background, and the workspace stream carries no such fact.
@@ -64,6 +69,7 @@ export const LIVE_POLL = {
   pairing: { interval: 3000, inBackground: true, streamCanCover: true },
   liveRun: { interval: 5000, inBackground: true },
   chatgptLogin: { interval: 5000, inBackground: true },
+  whatsappPairing: { interval: 2000, inBackground: true },
   hostPresence: { interval: 15_000, inBackground: false },
   cloudSession: { interval: 5000, inBackground: true },
   sessionPorts: { interval: 3000, inBackground: false },
