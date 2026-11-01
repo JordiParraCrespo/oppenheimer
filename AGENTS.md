@@ -47,7 +47,7 @@ apps/        api (NestJS control plane; authorization in src/authz) · web (Vite
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
              translations (i18n JSON)
-             backend/  agents cache core ddd email i18n llm queue storage
+             backend/  agents cache core ddd email i18n llm storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
              go/       core config httpx auth health ws postgres selfupdate execx
