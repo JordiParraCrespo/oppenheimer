@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { SessionCheckoutOrmEntity } from '../database/session-checkout.orm-entity';
 import { SessionShareOrmEntity } from '../database/session-share.orm-entity';
 import { SessionShareRepository } from '../database/session-share.repository';
@@ -22,7 +21,6 @@ import { WorkSessionMapper } from '../work-session.mapper';
  * watches, write access ends within a day) for any writer that skips it.
  */
 describe('sessions: sharing a session (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let shares: SessionShareRepository;
   let sessions: WorkSessionRepository;
@@ -68,27 +66,11 @@ describe('sessions: sharing a session (integration)', () => {
     });
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         WorkSessionOrmEntity,
         SessionCheckoutOrmEntity,
@@ -113,7 +95,6 @@ describe('sessions: sharing a session (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {

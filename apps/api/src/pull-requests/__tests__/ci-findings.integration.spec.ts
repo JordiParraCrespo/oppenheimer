@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { CiFindingMapper } from '../ci-finding.mapper';
 import { CiFindingOrmEntity } from '../database/ci-finding.orm-entity';
 import { CiFindingRepository } from '../database/ci-finding.repository';
@@ -16,7 +15,6 @@ import { CiFindingEntity, type CiFindingProps } from '../domain/ci-finding.entit
  * contract, so a row they forbid is refused here.
  */
 describe('CI findings (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let findings: CiFindingRepository;
   let organizationId: string;
@@ -31,21 +29,10 @@ describe('CI findings (integration)', () => {
   });
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [CiFindingOrmEntity],
       synchronize: false,
     });
@@ -58,7 +45,6 @@ describe('CI findings (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   async function insertOrganization(): Promise<string> {

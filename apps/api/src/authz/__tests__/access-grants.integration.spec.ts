@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type Logger } from 'typeorm';
-import { loadMigrations } from '../../__tests__/run-migrations';
+import { createTestDatabase } from '../../__tests__/integration-services';
 import { AccessGrantMapper } from '../authz.mapper';
 import { AccessGrantOrmEntity } from '../database/access-grant.orm-entity';
 import { AccessGrantRepository } from '../database/access-grant.repository';
@@ -12,7 +11,6 @@ import { AccessGrantRepository } from '../database/access-grant.repository';
  * principals, and the organization's paginated list.
  */
 describe('AccessGrantRepository (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let grants: AccessGrantRepository;
   const statements: string[] = [];
@@ -57,20 +55,14 @@ describe('AccessGrantRepository (integration)', () => {
     );
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
+    const db = await createTestDatabase();
     dataSource = new DataSource({
       type: 'postgres',
-      url: `postgres://test:test@${pgContainer.getHost()}:${pgContainer.getMappedPort(5432)}/test`,
+      url: db.url,
       entities: [AccessGrantOrmEntity],
-      migrations: await loadMigrations(),
       logger,
     });
     await dataSource.initialize();
-    await dataSource.runMigrations();
     grants = new AccessGrantRepository(
       dataSource.getRepository(AccessGrantOrmEntity),
       new AccessGrantMapper(),
@@ -85,7 +77,6 @@ describe('AccessGrantRepository (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   describe('findActiveForPrincipals', () => {

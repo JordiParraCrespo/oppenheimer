@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
 import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
@@ -104,7 +103,6 @@ import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.
  * and left queued when Stop got it first. The schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let bots: BotRepository;
   let documents: BotDocumentRepository;
@@ -131,22 +129,11 @@ describe('bots chat (integration)', () => {
   const scope = () => scopeOf(organizationId);
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         BotOrmEntity,
         BotDocumentOrmEntity,
@@ -238,7 +225,6 @@ describe('bots chat (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   beforeEach(async () => {
