@@ -36,6 +36,7 @@ import type {
 } from './bot-tool.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 
 /**
  * Every tool a bot's turn is offered (`25-bots.md` §4), area by area. A tool
@@ -61,6 +62,7 @@ export class BotToolboxFactory {
     mail: BotMailToolsFactory,
     mailWrites: BotMailWriteToolsFactory,
     mailOrganizing: BotMailOrganizeToolsFactory,
+    whatsapp: BotWhatsappToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
@@ -84,6 +86,7 @@ export class BotToolboxFactory {
       mail,
       mailWrites,
       mailOrganizing,
+      whatsapp,
       peers,
       web,
       subagents,

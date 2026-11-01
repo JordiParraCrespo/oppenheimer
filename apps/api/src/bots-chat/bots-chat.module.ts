@@ -48,6 +48,7 @@ import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver'
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
@@ -323,6 +324,7 @@ const queryHandlers: Provider[] = [
     BotPeerToolsFactory,
     BotWebToolsFactory,
     BotMailToolsFactory,
+    BotWhatsappToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
     BotMailAccountsResolver,

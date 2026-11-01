@@ -311,4 +311,9 @@ export {
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
+export {
+  useLinkWhatsapp,
+  useSuspenseWhatsappSettings,
+  useUnlinkWhatsapp,
+} from './whatsapp.queries';
 export { useWorkspaceEvents } from './workspace-events';
