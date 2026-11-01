@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { WhatsappAccountOrmEntity } from '../database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from '../database/whatsapp-account.repository';
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';
@@ -22,7 +21,6 @@ import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
  * in batches; and the messages go with their number.
  */
 describe('whatsapp (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let accounts: WhatsappAccountRepository;
   let messages: WhatsappMessageRepository;
@@ -40,21 +38,10 @@ describe('whatsapp (integration)', () => {
   });
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [WhatsappAccountOrmEntity, WhatsappMessageOrmEntity],
       synchronize: false,
     });
@@ -71,7 +58,6 @@ describe('whatsapp (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   async function insertUser(): Promise<string> {
