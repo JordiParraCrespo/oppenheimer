@@ -193,9 +193,11 @@ Nothing moves before its second consumer appears; nothing is written twice.
 8. `src/di/consumer-app.ts` — push `ThingsModule` into `consumerModules` and
    add a `get things()` getter on `ConsumerApp` returning the service, or the
    repository when there is none. The hooks read `app.things` either way.
-9. `src/react/things.queries.ts` — `thingsKeys` (every key derived from
-   `all: ['things']`), query and mutation hooks over `useConsumerApp()`;
-   mutations invalidate by prefix in `onSuccess`.
+9. `src/react/things.keys.ts` — `thingsKeys` (every key derived from
+   `all: ['things']`), alone in its file so the persistence list (or anything
+   else on the entry) can name it without loading the hooks; `src/react/things.queries.ts` — query and
+   mutation hooks over `useConsumerApp()`; mutations invalidate by prefix in
+   `onSuccess`.
 10. `src/react/index.ts` — export by name the hooks the app imports. The key
     factory stays in its file: nothing outside the package names a key, and
     `pnpm check:unused` fails an export nobody imports.

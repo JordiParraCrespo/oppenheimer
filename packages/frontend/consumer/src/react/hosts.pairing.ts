@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
+import { hostsKeys } from './hosts.keys';
 import {
-  hostsKeys,
   useCurrentPairing,
   useHostList,
   usePairingTokens,

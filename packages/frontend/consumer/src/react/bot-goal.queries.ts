@@ -2,7 +2,7 @@
 
 import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotGoal } from '@oppenheimer/shared/schemas/bot';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
