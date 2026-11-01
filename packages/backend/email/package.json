@@ -21,7 +21,6 @@
   "dependencies": {
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.1.28",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
     "nodemailer": "^9.0.3",

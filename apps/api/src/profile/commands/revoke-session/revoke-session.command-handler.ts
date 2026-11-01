@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { SessionReaderPort } from '../../database/session.repository.port';
 import { ProfileErrors } from '../../domain/profile.errors';
 import type { ProfileAuthPort } from '../../infrastructure/profile-auth.port';
@@ -29,9 +29,7 @@ export class RevokeSessionCommandHandler implements ICommandHandler<RevokeSessio
     }
 
     const found = await this.sessions.findOneById(command.sessionId);
-    if (found.isNone()) throw new AppError(ProfileErrors.SESSION_NOT_FOUND);
-
-    const session = found.unwrap();
+    const session = requireFound(found, ProfileErrors.SESSION_NOT_FOUND);
     if (session.userId !== command.userId) {
       throw new AppError(ProfileErrors.SESSION_NOT_FOUND);
     }

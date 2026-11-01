@@ -168,7 +168,22 @@ is authorized in is `product/versions/mvp/08-auth.md`.
 | `GRANT_001` <a id="grant_001" /> | Access grant not found                                    | 404  |
 | `GRANT_002` <a id="grant_002" /> | An access grant cannot exceed the granter's own access    | 403  |
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
-| `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
+
+## Tenancy
+
+| Code                               | Title               | HTTP |
+| ---------------------------------- | ------------------- | ---- |
+| `TENANT_001` <a id="tenant_001" /> | No active workspace | 400  |
+
+A route that reads or writes a workspace's rows answers `TENANT_001` when the
+request acts in no organization: open a workspace (or send a token minted in
+one) and try again. Every module raises this one code
+(`requireTenant` in `@oppenheimer/backend-authz`).
+
+It replaced a code per module, all of them a 400 saying the same thing about a
+different noun. These are retired and no longer sent: `BOTS_002` <a id="bots_002" />, `PROJECTS_002` <a id="projects_002" />, `GRANT_004` <a id="grant_004" />, `TASKS_003` <a id="tasks_003" />, `CLOUD_AGENTS_002` <a id="cloud_agents_002" />, `VOICE_001` <a id="voice_001" />, `MAIL_002` <a id="mail_002" />, `INBOX_001` <a id="inbox_001" />, `CALENDAR_002` <a id="calendar_002" />, `AUTOMATIONS_002` <a id="automations_002" />.
+The sessions, GitHub and pull-request modules still answer `SESSIONS_002`,
+`GITHUB_006` and `PULLS_001` until they move to `TENANT_001` as well.
 
 ## Rate limiting
 
@@ -466,7 +481,6 @@ project, where a session that names no project is listed. See
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
 | `PROJECTS_001` <a id="projects_001" /> | Project not found                  | 404  |
-| `PROJECTS_002` <a id="projects_002" /> | Projects belong to an organization  | 400  |
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
@@ -684,7 +698,6 @@ owner. See `product/versions/mvp/16-automations-architecture.md`.
 | Code                                         | Title                                       | HTTP |
 | -------------------------------------------- | ------------------------------------------- | ---- |
 | `AUTOMATIONS_001` <a id="automations_001" /> | Automation not found                        | 404  |
-| `AUTOMATIONS_002` <a id="automations_002" /> | Automations belong to an organization       | 400  |
 | `AUTOMATIONS_003` <a id="automations_003" /> | The automation was changed by someone else  | 409  |
 | `AUTOMATIONS_004` <a id="automations_004" /> | A repository is not available to this workspace | 422 |
 | `AUTOMATIONS_005` <a id="automations_005" /> | That agent cannot run an automation         | 422  |
@@ -724,7 +737,6 @@ See `product/versions/mvp/25-bots.md`.
 | Code                                 | Title                                        | HTTP |
 | ------------------------------------ | -------------------------------------------- | ---- |
 | `BOTS_001` <a id="bots_001" />       | Bot not found                                | 404  |
-| `BOTS_002` <a id="bots_002" />       | Bots belong to an organization               | 400  |
 | `BOTS_003` <a id="bots_003" />       | Bot group not found                          | 404  |
 | `BOTS_004` <a id="bots_004" />       | A group with that name already exists        | 409  |
 | `BOTS_005` <a id="bots_005" />       | Bot document not found                       | 404  |
@@ -858,7 +870,6 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
-| `VOICE_001` <a id="voice_001" />     | Dictation needs an active workspace                          | 400  |
 | `VOICE_002` <a id="voice_002" />     | No audio was sent                                            | 400  |
 | `VOICE_003` <a id="voice_003" />     | The recording is too long                                    | 413  |
 | `VOICE_004` <a id="voice_004" />     | The recording is not 16-bit PCM WAV                          | 415  |
@@ -879,7 +890,6 @@ or deleted. See `product/versions/mvp/29-inbox.md`.
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
-| `INBOX_001` <a id="inbox_001" />     | The Inbox belongs to a workspace                             | 400  |
 | `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
 | `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
 | `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
@@ -897,7 +907,6 @@ links. See `product/versions/mvp/17-plan.md`.
 | ------------------------------------ | ---------------------------------------- | ---- |
 | `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
 | `TASKS_002` <a id="tasks_002" />     | Milestone not found                      | 404  |
-| `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
 | `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
 | `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
 | `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
@@ -929,7 +938,6 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | Code                                     | Title                                               | HTTP |
 | ---------------------------------------- | --------------------------------------------------- | ---- |
 | `CALENDAR_001` <a id="calendar_001" />   | Event not found                                     | 404  |
-| `CALENDAR_002` <a id="calendar_002" />   | The calendar belongs to an organization             | 400  |
 | `CALENDAR_003` <a id="calendar_003" />   | That range of days is too wide                      | 400  |
 | `CALENDAR_004` <a id="calendar_004" />   | Google Calendar is not configured on this server    | 503  |
 | `CALENDAR_005` <a id="calendar_005" />   | That Google Calendar connection was not started here | 400 |
@@ -966,7 +974,6 @@ and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
 | Code                             | Title                                                  | HTTP |
 | -------------------------------- | ------------------------------------------------------ | ---- |
 | `MAIL_001` <a id="mail_001" />   | That Gmail account is not connected                    | 409  |
-| `MAIL_002` <a id="mail_002" />   | Mail belongs to an organization                        | 400  |
 | `MAIL_003` <a id="mail_003" />   | That is as many Gmail accounts as mail takes           | 409  |
 | `MAIL_004` <a id="mail_004" />   | Gmail is not configured on this server                 | 503  |
 | `MAIL_005` <a id="mail_005" />   | That Gmail connection was not started here             | 400  |
@@ -1064,7 +1071,6 @@ refusals of a launch (`POST /sessions/cloud`). See
 
 | Code                                       | Title                                               | HTTP |
 | ------------------------------------------ | --------------------------------------------------- | ---- |
-| `CLOUD_AGENTS_002` <a id="cloud_agents_002" /> | Cloud agents belong to an organization          | 400  |
 | `CLOUD_AGENTS_003` <a id="cloud_agents_003" /> | Cloud agents are not configured on this server  | 503  |
 | `CLOUD_AGENTS_004` <a id="cloud_agents_004" /> | That cloud agent provider is not connected      | 409  |
 | `CLOUD_AGENTS_005` <a id="cloud_agents_005" /> | The provider refused the API key                | 422  |

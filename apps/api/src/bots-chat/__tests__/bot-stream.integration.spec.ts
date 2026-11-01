@@ -3,9 +3,10 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotStreamEvent } from '@oppenheimer/shared';
 import Redis from 'ioredis';
 import { firstValueFrom, type Observable, take, toArray } from 'rxjs';
-import { GenericContainer, type StartedTestContainer } from 'testcontainers';
+import { useTestRedis } from '../../__tests__/integration-services';
 import type { BotLookupPort } from '../../bots/application/bot-lookup.port';
 import type { BotEntity } from '../../bots/domain/bot.entity';
+import { redisConfigFromEnv, redisConnectionOptions } from '../../config/redis.config';
 import { RedisPubSubAdapter } from '../../redis/infrastructure/redis-pub-sub.adapter';
 import { RedisBotStreamAdapter } from '../infrastructure/redis-bot-stream.adapter';
 import { StreamBotQuery } from '../queries/stream-bot/stream-bot.query';
@@ -22,30 +23,28 @@ import {
  * the frames is the console's (`live-text.spec.ts`).
  */
 describe('Bot stream (integration)', () => {
-  let container: StartedTestContainer;
   let redis: Redis;
   let pubSub: RedisPubSubAdapter;
   let stream: RedisBotStreamAdapter;
   let handler: StreamBotQueryHandler;
 
   beforeAll(async () => {
-    container = await new GenericContainer('redis:7-alpine').withExposedPorts(6379).start();
-    const config = { host: container.getHost(), port: container.getMappedPort(6379) };
-    redis = new Redis(config);
+    await useTestRedis();
+    const config = redisConfigFromEnv();
+    redis = new Redis(redisConnectionOptions(config));
     pubSub = new RedisPubSubAdapter(redis, { get: () => config } as unknown as ConfigService);
     stream = new RedisBotStreamAdapter(pubSub, redis);
     const lookup = { bot: async () => ({}) as BotEntity } satisfies BotLookupPort;
     handler = new StreamBotQueryHandler(lookup, stream);
-  }, 120_000);
+  });
 
   beforeEach(async () => {
-    await redis.flushall();
+    await redis.flushdb();
   });
 
   afterAll(async () => {
     await pubSub?.onApplicationShutdown();
     await redis?.quit();
-    await container?.stop();
   });
 
   /** A chat opening on the bot: the first `count` frames it is sent, keepalives aside. */

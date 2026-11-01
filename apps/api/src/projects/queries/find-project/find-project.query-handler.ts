@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectErrors } from '../../domain/projects.errors';
@@ -17,12 +17,8 @@ export class FindProjectQueryHandler implements IQueryHandler<FindProjectQuery, 
   async execute(query: FindProjectQuery): Promise<ProjectEntity> {
     const found = await this.projects.findOneById(query.scope, query.projectId);
 
-    if (found.isNone()) {
-      throw new AppError(ProjectErrors.NOT_FOUND, {
-        detail: `No project with id ${query.projectId}`,
-      });
-    }
-
-    return found.unwrap();
+    return requireFound(found, ProjectErrors.NOT_FOUND, {
+      detail: `No project with id ${query.projectId}`,
+    });
   }
 }

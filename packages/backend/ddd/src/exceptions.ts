@@ -22,7 +22,7 @@ export interface ErrorDefinition {
 }
 
 /** Codes of the invariant failures the building blocks raise themselves. */
-export const GenericErrorCode = {
+const GenericErrorCode = {
   ARGUMENT_INVALID: 'GENERIC.ARGUMENT_INVALID',
   ARGUMENT_NOT_PROVIDED: 'GENERIC.ARGUMENT_NOT_PROVIDED',
   ARGUMENT_OUT_OF_RANGE: 'GENERIC.ARGUMENT_OUT_OF_RANGE',

@@ -1,8 +1,7 @@
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AutomationLimitsResolver } from '../../application/automation-limits.resolver';
 import type { AutomationLimits } from '../../domain/automation-limits.policy';
-import { AutomationErrors } from '../../domain/automations.errors';
 import { FindAutomationSettingsQuery } from './find-automation-settings.query';
 
 /** The workspace's effective limits: what its automations get when they set nothing. */
@@ -13,7 +12,7 @@ export class FindAutomationSettingsQueryHandler
   constructor(private readonly limits: AutomationLimitsResolver) {}
 
   execute(query: FindAutomationSettingsQuery): Promise<AutomationLimits> {
-    if (!query.scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(query.scope);
     return this.limits.resolve(query.scope.organizationId);
   }
 }
