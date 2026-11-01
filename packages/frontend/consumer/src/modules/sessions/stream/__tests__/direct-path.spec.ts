@@ -364,8 +364,9 @@ describe('the direct path', () => {
     // The real host signed what it saw: an offer from the middle, not this browser's.
     const middle = 'v=0\r\na=fingerprint:sha-256 EE:EE\r\n';
     channel.text(await (await hostKey()).prove(nonce, middle));
-    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(h.peers[0]?.closed).toBe(true);
+    // The verdict is WebCrypto on Node's thread pool, so no count of ticks is
+    // sure to outlast it on a loaded machine: wait for the close itself.
+    await vi.waitFor(() => expect(h.peers[0]?.closed).toBe(true));
     expect(channel.handshake().map((m) => m.t)).toEqual(['hello']);
     h.stream.send('x');
     expect(socket.typed()).toBe('x');
