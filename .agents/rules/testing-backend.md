@@ -35,7 +35,20 @@ packages/backend/<pkg>/src/**/__tests__/*.spec.ts
   `<name>.integration.spec.ts`. The suffix is what separates them:
   `apps/api/vitest.config.ts` excludes `*.integration.spec.ts`, so
   `pnpm test` never needs Docker, and `vitest.integration.config.ts` runs only
-  them.
+  them. A spec that needs a real binary or the network beyond Docker (the relay
+  against the Go runner) is `<name>.e2e.spec.ts`, left out the same way and
+  run by `vitest.e2e.config.ts` (`pnpm test:relay-e2e`).
+- `apps/api`'s unit specs share one module graph per worker
+  (`isolate: false`), because importing Nest, not the tests, is most of the
+  suite's time. A spec that calls `vi.mock`/`vi.doMock` is moved to an
+  isolated project by `vitest.config.ts` itself, from its source; a module
+  mock anywhere else under `src/` stops the run, because the scan could not
+  see it. Any other spec that leaves fake timers on, `process.env` changed or
+  a global such as `fetch` replaced has it put back and fails, by
+  `vitest.shared-guard.ts`: undo it in `afterEach`, or use
+  `vi.stubEnv`/`vi.stubGlobal`, which the config undoes.
+- A helper a module's specs share is `__tests__/<name>.spec-support.ts`
+  beside them (`relay/__tests__/relay-sockets.spec-support.ts`).
 - `apps/api` runs with `globals: true` and the SWC plugin, which emits the
   decorator metadata Nest's constructor injection needs; packages import
   `describe`/`it`/`vi` from `vitest`.
@@ -68,10 +81,26 @@ the bug (`typeorm.md`).
 
 **Integration specs** run the adapter, or the module, against real
 infrastructure started by **testcontainers** (`postgres:16-alpine`,
-`redis:7-alpine`):
+`redis:7-alpine`), once per run rather than once per file:
 
-- the schema is built by `runAllMigrations()` (`src/__tests__/run-migrations.ts`),
-  never `synchronize`, so a broken migration fails here and not in production;
+- `vitest.integration.config.ts`'s `globalSetup`
+  (`src/__tests__/integration-global-setup.ts`) starts one Postgres and one
+  Redis, or uses the pair `DB_HOST`/`REDIS_HOST` (with their `_PORT`,
+  `_USERNAME`, `_PASSWORD`) already name, and migrates once into a template
+  database with `runAllMigrations()` (`src/__tests__/run-migrations.ts`), never
+  `synchronize`, so a broken migration fails here and not in production;
+- a file takes its own copy of that database and, if it touches Redis, a
+  logical Redis database of its own, from `src/__tests__/integration-services.ts`:
+  `useTestDatabase()` / `useTestRedis()` point `DB_*` / `REDIS_*` at them for a
+  spec that boots the app, `createTestDatabase()` returns the URL for a bare
+  `DataSource`, and `createTestDatabase({ empty: true })` is a database with no
+  schema, for a spec whose subject is the migrations. Files share nothing
+  else, so they run in parallel workers and may truncate, lock or count what
+  they like. A Redis db is reserved server-wide (`integration-servers.ts`), so
+  two runs on one Redis never share one. Never start a container in a spec;
+  what is server-wide in Redis (`CLIENT PAUSE` stalls every client) takes
+  `usePrivateRedis()`, a server of the file's own, as
+  `session-cache.integration.spec.ts` does;
 - prefer a bare `DataSource` over the entities under test, with a real
   `OutboxService`, to booting the application: the app adds Redis and Better
   Auth to what can make the suite red. Boot the app only when the wiring is

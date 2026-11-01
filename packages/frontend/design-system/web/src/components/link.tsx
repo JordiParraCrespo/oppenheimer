@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive with no hand-built rival to warn against
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 

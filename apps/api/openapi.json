@@ -11971,7 +11971,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12051,7 +12051,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12162,7 +12162,7 @@
             "description": ""
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12245,7 +12245,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12368,7 +12368,7 @@
             }
           },
           "400": {
-            "description": "CLOUD_AGENTS_002 — Cloud agents belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15223,7 +15223,7 @@
             }
           },
           "400": {
-            "description": "TASKS_003 — No active organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18203,7 +18203,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19581,7 +19581,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19857,7 +19857,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20005,7 +20005,7 @@
             "description": ""
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20083,7 +20083,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20181,7 +20181,7 @@
             }
           },
           "400": {
-            "description": "BOTS_002 — Bots belong to an organization",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21969,7 +21969,7 @@
             }
           },
           "400": {
-            "description": "VOICE_002 — No audio attached\n\nVOICE_001 — No active workspace",
+            "description": "VOICE_002 — No audio attached\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22128,7 +22128,7 @@
             }
           },
           "400": {
-            "description": "INBOX_001 — No active workspace",
+            "description": "TENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22206,7 +22206,7 @@
             }
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22275,7 +22275,7 @@
             "description": "The occurrence has no mark."
           },
           "400": {
-            "description": "INBOX_002 — Not an Inbox item key\n\nINBOX_001 — No active workspace",
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
             "content": {
               "application/problem+json": {
                 "schema": {

@@ -1,16 +1,14 @@
 import { render } from '@react-email/render';
 import * as React from 'react';
 import type {
+  ActionEmailParams,
   EmailVerificationEmailParams,
-  HostNetworkChangedEmailParams,
-  HostPairedEmailParams,
   InvitationEmailParams,
   PasswordResetEmailParams,
   WelcomeEmailParams,
 } from './email.service';
+import { ActionEmail } from './templates/action-email';
 import { EmailVerificationEmail } from './templates/email-verification';
-import { HostNetworkChangedEmail } from './templates/host-network-changed';
-import { HostPairedEmail } from './templates/host-paired';
 import { InvitationEmail } from './templates/invitation';
 import { PasswordResetEmail } from './templates/password-reset';
 import { WelcomeEmail } from './templates/welcome';
@@ -33,12 +31,6 @@ export async function renderInvitationEmail(params: InvitationEmailParams): Prom
   return render(React.createElement(InvitationEmail, params));
 }
 
-export async function renderHostPairedEmail(params: HostPairedEmailParams): Promise<string> {
-  return render(React.createElement(HostPairedEmail, params));
-}
-
-export async function renderHostNetworkChangedEmail(
-  params: HostNetworkChangedEmailParams,
-): Promise<string> {
-  return render(React.createElement(HostNetworkChangedEmail, params));
+export async function renderActionEmail(params: ActionEmailParams): Promise<string> {
+  return render(React.createElement(ActionEmail, params));
 }

@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
-import { InjectQueue } from '@nestjs/bullmq';
 import {
+  Inject,
   Injectable,
   Logger,
   type OnApplicationBootstrap,
@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { type OutboxMessageRecord, OutboxRelay, OutboxService } from '@oppenheimer/backend-ddd';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
+import { OUTBOX_QUEUES } from '../../queue/queue.di-tokens';
 
 /**
  * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`: `event` rows are
@@ -24,28 +24,13 @@ import type { Queue } from 'bullmq';
 export class OutboxRelayService implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(OutboxRelayService.name);
   private readonly relay: OutboxRelay;
-  private readonly queues: ReadonlyMap<string, Queue>;
 
   constructor(
     outbox: OutboxService,
     private readonly eventEmitter: EventEmitter2,
-    @InjectQueue(QUEUE_NAMES.EMAIL) emailQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS) inboundEventsQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.AUTOMATION_RUNS) automationRunsQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.BOT_TURNS) botTurnsQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.BOT_APPROVALS) botApprovalsQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.BOT_SUMMARIES) botSummariesQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.BOT_STALL_CHECKS) botStallChecksQueue: Queue,
+    // Every queue `QueueModule` registers as `stagedOnOutbox`, keyed by name.
+    @Inject(OUTBOX_QUEUES) private readonly queues: ReadonlyMap<string, Queue>,
   ) {
-    this.queues = new Map<string, Queue>([
-      [QUEUE_NAMES.EMAIL, emailQueue],
-      [QUEUE_NAMES.INBOUND_EVENTS, inboundEventsQueue],
-      [QUEUE_NAMES.AUTOMATION_RUNS, automationRunsQueue],
-      [QUEUE_NAMES.BOT_TURNS, botTurnsQueue],
-      [QUEUE_NAMES.BOT_APPROVALS, botApprovalsQueue],
-      [QUEUE_NAMES.BOT_SUMMARIES, botSummariesQueue],
-      [QUEUE_NAMES.BOT_STALL_CHECKS, botStallChecksQueue],
-    ]);
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,
       logger: this.logger,

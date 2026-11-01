@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotCompletionRequest, BotProvider } from '@oppenheimer/backend-agents';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { botDefaultModel } from '@oppenheimer/shared';
 import type {
   TurnCredential,
@@ -35,8 +35,7 @@ export class BotModelAccessResolver {
   /** The workspace's bot; `BOTS_001` when it is gone or another workspace's. */
   async bot(organizationId: string, botId: string): Promise<BotEntity> {
     const found = await this.bots.findForTurn(organizationId, botId);
-    if (found.isNone()) throw new AppError(BotErrors.NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, BotErrors.NOT_FOUND);
   }
 
   /** The workspace's bot, or null when it is gone or another workspace's. */

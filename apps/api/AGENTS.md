@@ -185,8 +185,11 @@ the module's `TypeOrmModule.forFeature`.
 
 Integration suites sit beside the module they exercise, as
 `src/<module>/__tests__/<name>.integration.spec.ts`; the few that span modules
-(the schema, correlation ids) are in `src/__tests__/`, with the helper that
-builds the test schema, `src/__tests__/run-migrations.ts`. `pnpm test` skips
+(the schema, correlation ids) are in `src/__tests__/`, with the run's one
+Postgres and Redis (`integration-global-setup.ts`), the per-file database and
+Redis db each spec takes from them (`integration-services.ts`, over
+`integration-servers.ts`) and the helper
+that builds the test schema (`run-migrations.ts`). `pnpm test` skips
 them; `pnpm test:integration` runs only them.
 
 ## Commands
@@ -196,6 +199,7 @@ pnpm --filter @oppenheimer/api dev                # watch mode
 pnpm --filter @oppenheimer/api arch               # dependency-cruiser boundary check
 pnpm --filter @oppenheimer/api test               # unit tests
 pnpm --filter @oppenheimer/api test:integration   # needs Docker (Postgres + Redis)
+pnpm --filter @oppenheimer/api test:relay-e2e     # the real Go runner against the relay (go, tmux, git, network)
 pnpm migration:new <PascalName>                   # start a migration: src/migrations/<now>-<Name>.ts
 pnpm --filter @oppenheimer/api migration:generate -- src/migrations/<Name>  # diff entities against a database (foreign keys are not in the entities)
 pnpm --filter @oppenheimer/api migration:run

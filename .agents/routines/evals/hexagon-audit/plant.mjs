@@ -128,11 +128,11 @@ edit(
 edit(
   'P3',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
-  `    const user = found.unwrap();
+  `    const user = requireFound(found, UserErrors.NOT_FOUND);
 
     if (
       command.confirmation`,
-  `    const user = found.unwrap();
+  `    const user = requireFound(found, UserErrors.NOT_FOUND);
     if (user.role === 'admin') {
       throw new ForbiddenException('Admins cannot be deleted through this endpoint');
     }
@@ -161,10 +161,8 @@ edit(
 edit(
   'P5',
   api('users/queries/find-user-by-id/find-user-by-id.query-handler.ts'),
-  `    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-    return found.unwrap();`,
-  `    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-    const user = found.unwrap();
+  `    return requireFound(found, UserErrors.NOT_FOUND);`,
+  `    const user = requireFound(found, UserErrors.NOT_FOUND);
     // Reading a profile counts as activity: re-activate dormant accounts.
     if (!user.isActive) {
       user.getProps().isActive = true;
@@ -177,10 +175,11 @@ edit(
 edit(
   'P6',
   api('users/commands/update-user/update-user.command-handler.ts'),
-  `    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);`,
-  `    if (found.isNone()) {
-      throw new AppError({ ...UserErrors.NOT_FOUND, message: \`User \${command.userId} not found\` });
-    }`,
+  `    const user = requireFound(found, UserErrors.NOT_FOUND);`,
+  `    const user = requireFound(found, {
+      ...UserErrors.NOT_FOUND,
+      message: \`User \${command.userId} not found\`,
+    });`,
 );
 
 // P7 HEX-EVENTS: an event raised without a reason, then emitted straight from

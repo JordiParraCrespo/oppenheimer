@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
-import { loadMigrations } from '../../__tests__/run-migrations';
+import { createTestDatabase } from '../../__tests__/integration-services';
 import { Session } from '../../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../../authz/database/access-grant.orm-entity';
 import { RoleOrmEntity } from '../../roles/database/role.orm-entity';
@@ -22,19 +21,14 @@ import { OrganizationAccessRepository } from '../database/organization-access.re
  * acceptance was undone.
  */
 describe('Organization access (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let userRoles: UserRoleRepository;
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
+    const db = await createTestDatabase();
     dataSource = new DataSource({
       type: 'postgres',
-      url: `postgres://test:test@${pgContainer.getHost()}:${pgContainer.getMappedPort(5432)}/test`,
+      url: db.url,
       entities: [
         Session,
         AccessGrantOrmEntity,
@@ -43,10 +37,8 @@ describe('Organization access (integration)', () => {
         RoleOrmEntity,
         UserRoleOrmEntity,
       ],
-      migrations: await loadMigrations(),
     });
     await dataSource.initialize();
-    await dataSource.runMigrations();
     userRoles = new UserRoleRepository(
       dataSource.getRepository(UserRoleOrmEntity),
       dataSource.getRepository(RoleOrmEntity),
@@ -56,7 +48,6 @@ describe('Organization access (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   /**

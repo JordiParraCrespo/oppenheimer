@@ -1,7 +1,6 @@
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { InboundDeliveryOrmEntity } from '../database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../database/inbound-event.orm-entity';
 import { InboundEventRepository } from '../database/inbound-event.repository';
@@ -16,35 +15,17 @@ import { InboundEventMapper } from '../inbound-event.mapper';
  * across a re-run.
  */
 describe('inbound events store (integration)', () => {
-  let container: StartedTestContainer;
   let dataSource: DataSource;
   let store: InboundEventRepository;
 
   const ORG = '44444444-4444-4444-8444-444444444444';
 
   beforeAll(async () => {
-    container = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = container.getHost();
-    process.env.DB_PORT = container.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [InboundDeliveryOrmEntity, InboundEventOrmEntity, OutboxMessageSchema],
     });
     await dataSource.initialize();
@@ -62,7 +43,6 @@ describe('inbound events store (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await container?.stop();
   });
 
   function delivery(deliveryId: string, payloadDigest: string, action = 'opened'): NewDelivery {

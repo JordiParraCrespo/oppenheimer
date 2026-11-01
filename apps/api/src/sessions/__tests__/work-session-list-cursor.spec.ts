@@ -15,6 +15,16 @@ describe('the session list cursor', () => {
     expect(decodeSessionListCursor(encodeSessionListCursor(cursor), 'recent')).toEqual(cursor);
   });
 
+  it('reads, and writes byte for byte, a cursor the hand-written encoding issued', () => {
+    // What the list issued before it moved onto `CursorCodec`: clients hold these.
+    const issued =
+      'eyJzIjoicmVjZW50IiwiayI6IjIwMjYtMDktMjggMTA6MDA6MDAuMTIzNDU2KzAwIiwiaSI6ImM5YjVkM2UxLTJmMzAtNGI0Yy05ZDVlLTZmNzA4MTkyYTNiNCJ9';
+    const cursor = { sort: 'recent' as const, key: '2026-09-28 10:00:00.123456+00', id: ID };
+
+    expect(decodeSessionListCursor(issued, 'recent')).toEqual(cursor);
+    expect(encodeSessionListCursor(cursor)).toBe(issued);
+  });
+
   it('refuses a cursor issued for another sort', () => {
     const text = encodeSessionListCursor({ sort: 'name', key: 'bold otter', id: ID });
     expect(() => decodeSessionListCursor(text, 'recent')).toThrow(ArgumentInvalidException);

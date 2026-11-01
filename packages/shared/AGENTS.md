@@ -28,8 +28,8 @@ src/
   the API validates against them and the frontend reuses them. Do not duplicate
   DTO shapes in apps. They state the **constraint only, never a message** — see
   below.
-- **CASL helpers**: `defineAbilitiesFromPermissions` (DB-driven, the source of
-  truth) and the legacy `defineAbilitiesFor` fallback.
+- **CASL helpers**: `defineAbilitiesFromPermissions`, over permissions from
+  the database (the source of truth) or `SYSTEM_ROLE_PERMISSIONS`.
 - **`ENDPOINT_POLICIES`** (`permissions/endpoint-policies.ts`): what each
   guarded endpoint demands, keyed by the path Nest mounts it at. One
   declaration of a rule the API enforces and a client gates a destination on;
@@ -41,8 +41,7 @@ src/
   barrel: the API imports `@oppenheimer/shared/feature-flags`, the web tier
   `@oppenheimer/shared/feature-flags/catalog` (no Zod); see
   `.agents/rules/feature-flags.md`.
-- **Types**: `Role` (free-form role-name `string`), `PaginationParams`,
-  `PaginatedResponse<T>`, the deployment/client capability catalogs and the
+- **Types**: `Role` (free-form role-name `string`), `PaginatedResponse<T>`, the deployment/client capability catalogs and the
   RFC 7807 problem-details helpers; `PermissionDefinition` and
   `SYSTEM_ROLE_PERMISSIONS` live in `permissions/`.
 - **Constants**: `PAGINATION`, `PASSWORD_MIN_LENGTH`, `ROLES`,
