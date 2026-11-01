@@ -1,4 +1,4 @@
-import type { Scope } from '@oppenheimer/shared';
+import { parseBotSlashCommand, type Scope } from '@oppenheimer/shared';
 import type { BotTurnEntity } from './bot-turn.entity';
 
 /**
@@ -24,6 +24,17 @@ export function takesSteer(running: BotTurnEntity, waiting: BotTurnEntity): bool
     waiting.requestedByUserId === running.requestedByUserId &&
     sameScopes(running.credentialScopes, waiting.credentialScopes)
   );
+}
+
+/**
+ * Whether a message sent while the bot works may steer the running turn, as
+ * its sender asked: words alone. Images wait for a turn of their own, since
+ * the running turn would not read them, and so does a `/<name>` command,
+ * since a skill runs as the opening of its own turn (`composeTurnMessage`),
+ * never mid-way through another.
+ */
+export function maySteer(asked: boolean, content: string, images: number): boolean {
+  return asked && images === 0 && parseBotSlashCommand(content) === null;
 }
 
 /** Two credentials' scopes, as sets; null (a browser session) only matches null. */
