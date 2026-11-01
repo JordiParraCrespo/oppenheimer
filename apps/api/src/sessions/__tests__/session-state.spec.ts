@@ -296,7 +296,12 @@ describe('the launch the fold projects', () => {
       }),
     );
 
-    expect(fold.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    expect(fold.launch).toEqual({
+      model: 'opus',
+      permission: 'auto',
+      effort: 'high',
+      environment: null,
+    });
     // The request is also what starts the session, and stating a launch must not
     // have cost it that.
     expect(fold.state).toBe('starting');
@@ -305,7 +310,26 @@ describe('the launch the fold projects', () => {
   it('reads a request with no launch as the level that asks', () => {
     const fold = foldSessionEvent(INITIAL_SESSION_FOLD, entry(SESSION_EVENT_KINDS.REQUESTED, {}));
 
-    expect(fold.launch).toEqual({ model: null, permission: 'ask', effort: null });
+    expect(fold.launch).toEqual({
+      model: null,
+      permission: 'ask',
+      effort: null,
+      environment: null,
+    });
+  });
+
+  // A Codex cloud session's environment is part of the launch, so a create
+  // sent again after a reconnect starts the task where the person picked.
+  it('takes a Codex cloud environment from the request', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        agent: 'codex',
+        launch: { environment: 'e_6845a1b2c3d4' },
+      }),
+    );
+
+    expect(fold.launch.environment).toBe('e_6845a1b2c3d4');
   });
 
   it('refuses a permission level outside the union rather than storing it', () => {
@@ -346,7 +370,12 @@ describe('the launch the fold projects', () => {
       entry(SESSION_EVENT_KINDS.STOPPED),
     ]);
 
-    expect(fold.launch).toEqual({ model: 'sonnet', permission: 'full', effort: 'max' });
+    expect(fold.launch).toEqual({
+      model: 'sonnet',
+      permission: 'full',
+      effort: 'max',
+      environment: null,
+    });
   });
 });
 

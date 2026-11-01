@@ -88,6 +88,8 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
 import { FindCloudFileQueryHandler } from './queries/find-cloud-file/find-cloud-file.query-handler';
+import { FindHostCodexEnvironmentsHttpController } from './queries/find-host-codex-environments/find-host-codex-environments.http.controller';
+import { FindHostCodexEnvironmentsQueryHandler } from './queries/find-host-codex-environments/find-host-codex-environments.query-handler';
 import { FindHostFoldersHttpController } from './queries/find-host-folders/find-host-folders.http.controller';
 import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-host-folders.query-handler';
 import { FindLatestSessionEventsQueryHandler } from './queries/find-latest-session-events/find-latest-session-events.query-handler';
@@ -152,6 +154,7 @@ const httpControllers = [
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
+  FindHostCodexEnvironmentsHttpController,
   FindSessionPortsHttpController,
   // `cloud-files/:token`: what a cloud session's agent downloads, with no credential.
   FindCloudFileHttpController,
@@ -192,6 +195,7 @@ const queryHandlers: Provider[] = [
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
+  FindHostCodexEnvironmentsQueryHandler,
   FindSessionPortsQueryHandler,
   FindCloudFileQueryHandler,
 ];

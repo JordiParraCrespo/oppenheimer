@@ -46,6 +46,10 @@ var (
 	// Cloud is not among them yet. Its detail names the labels tried and the
 	// ones the CLI showed in the account's recent tasks.
 	ErrCodexCloudEnvironment = problem.New("SESS_010", http.StatusNotFound, "No Codex cloud environment the CLI can reach is named for the repository")
+	// ErrCodexRateLimited is ChatGPT refusing a read of the account's Codex
+	// environments for rate: nothing more is asked of it for that account
+	// until the time it named has passed.
+	ErrCodexRateLimited = problem.New("SESS_011", http.StatusTooManyRequests, "ChatGPT asked the host to wait before listing Codex environments")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.

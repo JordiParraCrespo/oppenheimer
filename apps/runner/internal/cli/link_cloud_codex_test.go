@@ -76,10 +76,13 @@ type fakeCodexCloud struct {
 	starts   []string
 }
 
-func (f *fakeCodexCloud) Start(_ context.Context, repository, branch, prompt string) (cloud.Started, error) {
+func (f *fakeCodexCloud) Start(_ context.Context, repository, branch, prompt, environment string) (cloud.Started, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := "task_e_" + string(rune('a'+len(f.starts)))
+	if environment != "" {
+		repository += "[" + environment + "]"
+	}
 	f.starts = append(f.starts, repository+"@"+branch+": "+prompt)
 	f.tasks = append([]cloud.CodexTask{{ID: id, Status: cloud.CodexPending}}, f.tasks...)
 	return cloud.Started{ID: id, URL: "https://chatgpt.com/codex/tasks/" + id}, nil
@@ -99,6 +102,16 @@ func (f *fakeCodexCloud) List(_ context.Context, cursor string) (cloud.CodexPage
 		page.Cursor = string(must(json.Marshal(to)))
 	}
 	return page, nil
+}
+
+func (f *fakeCodexCloud) Environments(_ context.Context, repository string) (cloud.CodexEnvironments, error) {
+	return cloud.CodexEnvironments{
+		Environments: []cloud.CodexEnvironment{
+			{ID: "e_linked", Label: "Wallet app", Pinned: true, Repository: repository == "acme-labs/xrp-mobile"},
+			{ID: "e_other"},
+		},
+		Recommended: "e_linked", Source: cloud.CodexSourceChatGPT,
+	}, nil
 }
 
 func (f *fakeCodexCloud) set(id, status string) {
@@ -235,7 +248,7 @@ func TestTheCodexCloudPollPagesToATaskFurtherBack(t *testing.T) {
 	codex.pageSize = 1
 	h.createCloud(context.Background(), codexCreate("s-1"))
 	for range 3 {
-		_, _ = codex.Start(context.Background(), "acme-labs/web", "main", "elsewhere")
+		_, _ = codex.Start(context.Background(), "acme-labs/web", "main", "elsewhere", "")
 	}
 	sent.take()
 
@@ -299,5 +312,51 @@ func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
 	}
 	if codex.lists != lists {
 		t.Fatal("Codex was asked about a task whose finish the control plane took")
+	}
+}
+
+// The environment the person picked is the one the task starts in.
+func TestACodexCloudCreateStartsInThePickedEnvironment(t *testing.T) {
+	h, codex, _ := newCodexCloudHarness(t)
+	create := codexCreate("s-1")
+	create.CodexEnvironment = "e_other"
+	h.createCloud(context.Background(), create)
+
+	if len(codex.starts) != 1 || codex.starts[0] != "acme-labs/xrp-mobile[e_other]@develop: Fix the wallet list" {
+		t.Fatalf("starts = %q", codex.starts)
+	}
+}
+
+type sentMessages struct {
+	mu   sync.Mutex
+	sent []any
+}
+
+func (s *sentMessages) Send(message any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sent = append(s.sent, message)
+	return nil
+}
+
+func (s *sentMessages) SendFrame(context.Context, uint32, []byte) error { return nil }
+
+// `codex.environments.list` is answered with the account's environments under
+// the command's id, the linked one marked and recommended.
+func TestCodexEnvironmentsAreListedForTheComposer(t *testing.T) {
+	h, _, _ := newCodexCloudHarness(t)
+	client := &sentMessages{}
+	h.client = client
+	h.listCodexEnvironments(context.Background(), link.CodexEnvironmentsList{
+		Type: link.TypeCodexEnvironmentsList, CommandID: "c-1", Repository: "acme-labs/xrp-mobile",
+	})
+
+	if len(client.sent) != 1 {
+		t.Fatalf("sent = %+v", client.sent)
+	}
+	got, ok := client.sent[0].(link.CodexEnvironments)
+	if !ok || got.CommandID != "c-1" || got.Recommended != "e_linked" || got.Source != "chatgpt" ||
+		len(got.Environments) != 2 || !got.Environments[0].Repository || got.Environments[1].Repository {
+		t.Fatalf("answer = %+v", client.sent[0])
 	}
 }

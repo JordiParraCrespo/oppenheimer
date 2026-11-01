@@ -156,6 +156,11 @@ export interface SessionLaunchFold {
   model: string | null;
   permission: SessionPermissionDto | null;
   effort: SessionEffortDto | null;
+  /**
+   * A Codex cloud session's environment, as picked; null is the host's own
+   * pick, the environment linked to the repository.
+   */
+  environment: string | null;
 }
 
 export interface SessionLogEntry {
@@ -258,7 +263,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
-  launch: { model: null, permission: 'ask', effort: null },
+  launch: { model: null, permission: 'ask', effort: null, environment: null },
   projectId: null,
   closeRequest: null,
   closeRefusal: null,
@@ -314,6 +319,7 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
     // The same rule the create applied (`effortLevelFor`), so a replay of the
     // log records exactly what the create did.
     effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
+    environment: stringField(launch, 'environment'),
   };
 }
 

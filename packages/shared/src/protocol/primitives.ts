@@ -6,7 +6,12 @@ import {
   SESSION_PERMISSIONS,
 } from '../agents/catalog.js';
 import { loginUrlPattern } from '../agents/login.js';
-import { FIELD_BOUNDS, fitsPromptBound, HOST_PLATFORMS } from '../schemas/primitives.js';
+import {
+  FIELD_BOUNDS,
+  fitsPromptBound,
+  HOST_PLATFORMS,
+  PRINTABLE_PATTERN,
+} from '../schemas/primitives.js';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
@@ -134,6 +139,18 @@ const AGENT_LOGIN_URL = new Map(
 
 /** A git ref or a slug — a short, non-empty, path-safe string on the wire. */
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
+
+/**
+ * A Codex environment as `codex cloud exec --env` takes it: its id, or its
+ * label, which the CLI matches without regard to case. Printable text only; the
+ * runner passes it as `--env=<value>`, so a leading dash is no flag.
+ */
+export const codexEnvironmentRefSchema = z
+  .string()
+  .trim()
+  .min(FIELD_BOUNDS.codexEnvironment.min)
+  .max(FIELD_BOUNDS.codexEnvironment.max)
+  .regex(PRINTABLE_PATTERN);
 
 /**
  * The protocol range a runner speaks. The control plane reconciles against it at
@@ -291,6 +308,7 @@ for (const [id, schema] of [
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
   ['hostPath', hostPathSchema],
+  ['codexEnvironmentRef', codexEnvironmentRefSchema],
 ] as const) {
   z.globalRegistry.add(schema, { id });
 }

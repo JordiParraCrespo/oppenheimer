@@ -60,6 +60,7 @@ function renderChip(
   },
   claudeCloud: (typeof HOSTS)[number] | null = HOSTS[0],
   codexCloud: (typeof HOSTS)[number] | null = null,
+  extra: Partial<Parameters<typeof PlaceSelect>[0]> = {},
 ) {
   const onHostChange = vi.fn();
   const onPlaceChange = vi.fn();
@@ -90,6 +91,7 @@ function renderChip(
       onCloudChange={onCloudChange}
       onConnectCloud={onConnectCloud}
       onAddHost={vi.fn()}
+      {...extra}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'sessions.new.host.label' }));
@@ -225,6 +227,35 @@ describe('PlaceSelect', () => {
     expect(
       screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }),
     ).toHaveProperty('disabled', false);
+  });
+
+  // Codex's cloud runs in one of the account's environments, as the frame
+  // drills into a cloud account: the host picked opens its Environments pane,
+  // which the caller draws, and the chip stays open on it.
+  it('opens the Environments pane for the host Codex’s cloud starts from', () => {
+    const environments = vi.fn(({ hostId }: { hostId: string }) => (
+      <div role="listbox" aria-label="environments">
+        {hostId}
+      </div>
+    ));
+    const picked = renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], HOSTS[2], {
+      environments,
+    });
+    openTab('clouds');
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }));
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+
+    expect(picked.onHostCloudChange).toHaveBeenCalledWith('host-1', 'codex');
+    expect(screen.getByRole('listbox', { name: 'environments' }).textContent).toBe('host-1');
+  });
+
+  it('names the Codex environment picked on the host', () => {
+    renderChip(CLOUDS, { place: 'cloud', cloud: null, cloudAgent: 'codex' }, HOSTS[0], HOSTS[0], {
+      environment: 'Oppenheimer web',
+    });
+    expect(screen.getByRole('button', { name: 'sessions.new.host.label' }).textContent).toContain(
+      'Oppenheimer web · mac-studio',
+    );
   });
 
   /** The chip names whose cloud the place is, so a Codex task never reads as Claude Code's. */

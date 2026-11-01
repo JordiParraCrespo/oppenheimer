@@ -171,9 +171,11 @@ started from a host, run on the vendor's machines, followed here
 (`../../next-steps/cloud-agents.md`, "Codex is built"). It is the same
 place with the agent `codex`; what differs is the vendor's CLI:
 
-- **What the runner does.** `codex cloud exec --env <repository> --branch
-  <base> <task>` on the checkout's base branch, in the Codex environment
-  labelled with the repository's full name, then its bare name. Codex reads
+- **What the runner does.** `codex cloud exec --env=<environment> --branch
+  <base> <task>` on the checkout's base branch, in the environment the
+  person picked, else the one linked to the repository, else one labelled
+  with the repository's full name, then its bare name (2026-10-31,
+  `../../next-steps/cloud-agents.md`, "Which Codex environment"). Codex reads
   the branch from GitHub, so nothing is fetched or checked out, and the
   create's token goes unused. It reports the task's id on `session.started`
   and the session as working. It names `session.cloud.codex` in its hello;

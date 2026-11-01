@@ -422,6 +422,11 @@ export interface CreateWorktreeSession {
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   cloud?: boolean;
+  /**
+   * A Codex cloud session's environment, by id: absent, the host starts the
+   * task in the environment linked to the repository.
+   */
+  codexEnvironment?: string;
   folder?: never;
 }
 
@@ -432,6 +437,7 @@ export interface CreateFolderSession {
   checkouts?: never;
   cwdGithubRepoId?: never;
   cloud?: never;
+  codexEnvironment?: never;
 }
 
 interface CreateSessionCommon {

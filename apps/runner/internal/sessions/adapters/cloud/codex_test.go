@@ -12,12 +12,16 @@ import (
 )
 
 // fakeCodex writes a stand-in for the CLI that runs script with the CLI's
-// arguments, and records them, one per line, in the returned file.
+// arguments, and records them, one per line, in the returned file. With a
+// tasks.json beside it (withTasks), `cloud list` answers that file and is not
+// recorded: the list a start reads environments from.
 func fakeCodex(t *testing.T, script string) (bin, args string) {
 	t.Helper()
 	dir := t.TempDir()
 	bin, args = filepath.Join(dir, "codex"), filepath.Join(dir, "args")
+	tasks := filepath.Join(dir, "tasks.json")
 	body := "#!/bin/sh\n" +
+		"if [ \"$2\" = list ] && [ -f '" + tasks + "' ]; then cat '" + tasks + "'; exit 0; fi\n" +
 		"for a in \"$@\"; do printf '%s\\n' \"$a\" >> '" + args + "'; done\n" +
 		"[ \"$1\" = cloud ] || { echo \"unexpected args: $*\" >&2; exit 2; }\n" +
 		script
@@ -25,6 +29,22 @@ func fakeCodex(t *testing.T, script string) (bin, args string) {
 		t.Fatal(err)
 	}
 	return bin, args
+}
+
+// withTasks makes the fake's `cloud list` answer json.
+func withTasks(t *testing.T, bin, json string) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(filepath.Dir(bin), "tasks.json"), []byte(json), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// noSignIn is a Codex whose home holds no ChatGPT sign-in, so environments
+// come from its tasks.
+func noSignIn(t *testing.T, bin string) Codex {
+	t.Helper()
+	withTasks(t, bin, `{"tasks": []}`)
+	return Codex{Command: bin, Home: t.TempDir()}
 }
 
 func readArgs(t *testing.T, path string) []string {
@@ -38,7 +58,7 @@ func readArgs(t *testing.T, path string) []string {
 
 func TestCodexStartReadsTheTaskTheCLINamed(t *testing.T) {
 	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_68a1b2c3d4'`)
-	started, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "develop", "Fix the wallet list")
+	started, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "develop", "Fix the wallet list", "")
 	if err != nil {
 		t.Fatalf("Start: %v", err)
 	}
@@ -47,7 +67,7 @@ func TestCodexStartReadsTheTaskTheCLINamed(t *testing.T) {
 		t.Fatalf("started = %+v, want %+v", started, want)
 	}
 	got := strings.Join(readArgs(t, args), " ")
-	if got != "cloud exec --env acme-labs/xrp-mobile --branch develop Fix the wallet list" {
+	if got != "cloud exec --env=acme-labs/xrp-mobile --branch develop Fix the wallet list" {
 		t.Fatalf("args = %q", got)
 	}
 }
@@ -55,16 +75,16 @@ func TestCodexStartReadsTheTaskTheCLINamed(t *testing.T) {
 // People name a Codex environment after the repository either way; the CLI
 // says which label it has not got, and the bare name is tried next.
 func TestCodexStartTriesTheRepositorysBareNameNext(t *testing.T) {
-	bin, args := fakeCodex(t, `[ "$4" = xrp-mobile ] || { echo "Error: environment '$4' not found; run codex cloud to list available environments" >&2; exit 1; }
+	bin, args := fakeCodex(t, `[ "$3" = --env=xrp-mobile ] || { echo "Error: environment '${3#--env=}' not found; run codex cloud to list available environments" >&2; exit 1; }
 echo 'https://chatgpt.com/codex/tasks/task_e_1'`)
-	started, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	started, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	if err != nil {
 		t.Fatalf("Start: %v", err)
 	}
 	if started.ID != "task_e_1" {
 		t.Fatalf("started = %+v", started)
 	}
-	if got := readArgs(t, args); len(got) != 14 || got[3] != "acme-labs/xrp-mobile" || got[10] != "xrp-mobile" {
+	if got := readArgs(t, args); len(got) != 12 || got[2] != "--env=acme-labs/xrp-mobile" || got[8] != "--env=xrp-mobile" {
 		t.Fatalf("args = %q, want the full name tried before the bare name", got)
 	}
 }
@@ -83,8 +103,8 @@ func TestCodexStartSaysWhichEnvironmentsTheCLICanSee(t *testing.T) {
 ], "cursor": ""}
 JSON
 exit 0; fi
-echo "Error: environment '$4' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task")
+echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
 	pe := problem.From(err)
 	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
@@ -98,7 +118,9 @@ echo "Error: environment '$4' not found; run `+"`codex cloud`"+` to list availab
 			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
 		}
 	}
-	if got := strings.Join(readArgs(t, args)[14:], " "); got != "cloud list --json --limit 20" {
+	// One page read for the environments, the two tries, and one page read
+	// for the refusal.
+	if got := strings.Join(readArgs(t, args)[17:], " "); got != "cloud list --json --limit 20" {
 		t.Fatalf("args after the two tries = %q, want one page of tasks read", got)
 	}
 }
@@ -107,8 +129,8 @@ echo "Error: environment '$4' not found; run `+"`codex cloud`"+` to list availab
 // same code, saying it could not read them.
 func TestCodexStartNamesNoEnvironmentsWhenTheyCannotBeRead(t *testing.T) {
 	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Not signed in." >&2; exit 1; }
-echo "Error: environment '$4' not found" >&2; exit 1`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task")
+echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
 	pe := problem.From(err)
 	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
@@ -123,12 +145,12 @@ echo "Error: environment '$4' not found" >&2; exit 1`)
 // is the CLI's answer, in its words, and no other label is tried.
 func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
 	bin, args := fakeCodex(t, `echo "Error: branch 'main' not found on the remote" >&2; exit 1`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	pe := problem.From(err)
 	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
 	}
-	if got := readArgs(t, args); len(got) != 7 {
+	if got := readArgs(t, args); len(got) != 6 {
 		t.Fatalf("args = %q, want one try", got)
 	}
 }
@@ -138,7 +160,7 @@ func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
 func TestCodexStartSaysWhyTheCLIRefused(t *testing.T) {
 	bin, args := fakeCodex(t, `echo "Not signed in. Please run 'codex login' to sign in with ChatGPT, then re-run 'codex cloud'." >&2
 exit 1`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	pe := problem.From(err)
 	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
@@ -146,14 +168,14 @@ exit 1`)
 	if !strings.Contains(pe.Detail, "codex login") {
 		t.Fatalf("detail = %v, want the CLI's words", err)
 	}
-	if got := readArgs(t, args); len(got) != 7 {
+	if got := readArgs(t, args); len(got) != 6 {
 		t.Fatalf("args = %q, want one try", got)
 	}
 }
 
 func TestCodexStartRefusesAnAnswerWithNoTask(t *testing.T) {
 	bin, _ := fakeCodex(t, `echo 'Submitted.'`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task")
+	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "e_1")
 	if pe := problem.From(err); pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
 	}

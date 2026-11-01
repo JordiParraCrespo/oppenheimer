@@ -524,6 +524,7 @@ export function toCreateInput(
     | 'model'
     | 'permission'
     | 'efforts'
+    | 'codexEnvironment'
   >,
   extras: { prompt: string; attachmentIds: readonly string[] },
 ): CreateSessionInput | null {
@@ -546,9 +547,36 @@ export function toCreateInput(
   if (draft.where === 'cloud') {
     if (!extras.prompt) return null;
     const { agent } = engineForPlace(draft, draft);
-    return { ...common, agent, checkouts: [first], cloud: true };
+    const environment = codexEnvironmentFor({ ...draft, agent });
+    return {
+      ...common,
+      agent,
+      checkouts: [first],
+      cloud: true,
+      ...(environment ? { codexEnvironment: environment } : {}),
+    };
   }
   return { ...common, checkouts: [first, ...rest] };
+}
+
+/**
+ * The Codex environment a Codex cloud session is sent with: the one picked on
+ * its host, or none — the host's pick, the environment linked to the
+ * repository. A pick made on another host is another ChatGPT account's.
+ */
+function codexEnvironmentFor(
+  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'codexEnvironment'>,
+): string | null {
+  if (draft.where !== 'cloud' || draft.agent !== 'codex') return null;
+  return pickedEnvironment(draft.codexEnvironment, draft.hostId)?.id ?? null;
+}
+
+/** The environment picked on `hostId`, or null when none was. */
+export function pickedEnvironment(
+  pick: NewSessionDraft['codexEnvironment'],
+  hostId: string | null,
+): NonNullable<NewSessionDraft['codexEnvironment']> | null {
+  return pick && pick.hostId === hostId ? pick : null;
 }
 
 /**

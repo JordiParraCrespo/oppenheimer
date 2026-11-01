@@ -95,7 +95,7 @@ export function requestEntries(props: {
         place: placeOfCreate(input),
         ...(input.folder ? { folder: input.folder } : {}),
         requestedByUserId: props.userId,
-        launch: launchOf(input.agent, input.launch),
+        launch: launchOf(input.agent, input.launch, input.codexEnvironment),
       },
     },
   ];
@@ -176,11 +176,13 @@ export function cloudRunEntries(report: CloudRunReport, now: Date): NewSessionEv
 export function launchOf(
   agent: SessionAgent,
   launch: CreateSessionDto['launch'],
+  environment?: string,
 ): SessionLaunchFold {
   return {
     model: launch?.model ?? null,
     permission: launchPermissionFor(agent, launch?.permission),
     effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
+    environment: environment ?? null,
   };
 }
 
