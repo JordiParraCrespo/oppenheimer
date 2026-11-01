@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { CloudAgentCredentialMapper } from '../cloud-agent-credential.mapper';
 import { CloudAgentCredentialOrmEntity } from '../database/cloud-agent-credential.orm-entity';
 import { CloudAgentCredentialRepository } from '../database/cloud-agent-credential.repository';
@@ -15,7 +14,6 @@ import { CloudAgentCredentialEntity } from '../domain/cloud-agent-credential.ent
  * (`sessions.integration.spec.ts`, "a cloud session").
  */
 describe('cloud agents (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let credentials: CloudAgentCredentialRepository;
   let organizationId: string;
@@ -30,21 +28,10 @@ describe('cloud agents (integration)', () => {
   });
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [CloudAgentCredentialOrmEntity],
       synchronize: false,
     });
@@ -57,7 +44,6 @@ describe('cloud agents (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   async function insertUser(): Promise<string> {

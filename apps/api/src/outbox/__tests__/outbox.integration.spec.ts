@@ -1,7 +1,6 @@
 import { type OutboxMessageRecord, OutboxRelay, OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { loadMigrations } from '../../__tests__/run-migrations';
+import { createTestDatabase } from '../../__tests__/integration-services';
 
 /** The claim's inner SELECT, as `OutboxService.claim` runs it. */
 const CLAIM_SELECT = `SELECT "id" FROM "outbox_message"
@@ -18,26 +17,18 @@ const CLAIM_SELECT = `SELECT "id" FROM "outbox_message"
  * retention delete touches only old processed rows.
  */
 describe('the outbox table (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let outbox: OutboxService;
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    const url = `postgres://test:test@${pgContainer.getHost()}:${pgContainer.getMappedPort(5432)}/test`;
-    dataSource = new DataSource({ type: 'postgres', url, migrations: await loadMigrations() });
+    const db = await createTestDatabase();
+    dataSource = new DataSource({ type: 'postgres', url: db.url });
     await dataSource.initialize();
-    await dataSource.runMigrations();
     outbox = new OutboxService(dataSource);
   }, 180000);
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   const indexes = async () =>

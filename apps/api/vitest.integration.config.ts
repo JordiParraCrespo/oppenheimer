@@ -11,6 +11,9 @@ export default defineConfig({
     root: './',
     include: ['src/**/*.integration.spec.ts'],
     setupFiles: ['./vitest.setup.ts'],
+    // One Postgres and one Redis for the run; each file gets a database and a
+    // Redis db of its own from `src/__tests__/integration-services.ts`.
+    globalSetup: ['./src/__tests__/integration-global-setup.ts'],
     testTimeout: 30000,
     // The app holds Redis/Postgres connections (BullMQ, cache, Better Auth).
     // Tearing the containers down at the end of the suite races with those
