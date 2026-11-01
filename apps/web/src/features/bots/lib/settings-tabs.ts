@@ -3,6 +3,7 @@ import {
   Database,
   FileText,
   ShieldCheck,
+  SquareSlash,
   Terminal,
   Zap,
 } from '@oppenheimer/design-system-web/icons';
@@ -30,6 +31,12 @@ export const BOT_SETTINGS_TABS = [
     to: '/bots/$botId/settings/memory',
     labelKey: 'bots.settings.tabs.memory',
     Icon: Database,
+  },
+  {
+    slug: 'skills',
+    to: '/bots/$botId/settings/skills',
+    labelKey: 'bots.settings.tabs.skills',
+    Icon: SquareSlash,
   },
   {
     slug: 'permissions',

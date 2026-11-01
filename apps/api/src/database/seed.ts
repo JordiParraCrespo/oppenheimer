@@ -23,6 +23,7 @@ import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
 import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
+import { BotSkillOrmEntity } from '../bots/database/bot-skill.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
@@ -160,6 +161,7 @@ const dataSource = new DataSource({
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    BotSkillOrmEntity,
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
     BotMessageOrmEntity,

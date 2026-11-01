@@ -14,12 +14,14 @@ import { BotMapper } from './bot.mapper';
 import { BotDocumentMapper } from './bot-document.mapper';
 import { BotGroupMapper } from './bot-group.mapper';
 import { BotMemoryFactMapper } from './bot-memory-fact.mapper';
+import { BotSkillMapper } from './bot-skill.mapper';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_GROUP_REPOSITORY,
   BOT_LOOKUP,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_REPOSITORY,
+  BOT_SKILL_REPOSITORY,
   CHATGPT_AUTH,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
   PROVIDER_KEY_SEALER,
@@ -35,12 +37,16 @@ import { CreateBotGroupCommandHandler } from './commands/create-bot-group/create
 import { CreateBotGroupHttpController } from './commands/create-bot-group/create-bot-group.http.controller';
 import { CreateBotMemoryFactCommandHandler } from './commands/create-bot-memory-fact/create-bot-memory-fact.command-handler';
 import { CreateBotMemoryFactHttpController } from './commands/create-bot-memory-fact/create-bot-memory-fact.http.controller';
+import { CreateBotSkillCommandHandler } from './commands/create-bot-skill/create-bot-skill.command-handler';
+import { CreateBotSkillHttpController } from './commands/create-bot-skill/create-bot-skill.http.controller';
 import { DeleteBotCommandHandler } from './commands/delete-bot/delete-bot.command-handler';
 import { DeleteBotHttpController } from './commands/delete-bot/delete-bot.http.controller';
 import { DeleteBotGroupCommandHandler } from './commands/delete-bot-group/delete-bot-group.command-handler';
 import { DeleteBotGroupHttpController } from './commands/delete-bot-group/delete-bot-group.http.controller';
 import { DeleteBotMemoryFactCommandHandler } from './commands/delete-bot-memory-fact/delete-bot-memory-fact.command-handler';
 import { DeleteBotMemoryFactHttpController } from './commands/delete-bot-memory-fact/delete-bot-memory-fact.http.controller';
+import { DeleteBotSkillCommandHandler } from './commands/delete-bot-skill/delete-bot-skill.command-handler';
+import { DeleteBotSkillHttpController } from './commands/delete-bot-skill/delete-bot-skill.http.controller';
 import { DeleteModelProviderCredentialCommandHandler } from './commands/delete-model-provider-credential/delete-model-provider-credential.command-handler';
 import { DeleteModelProviderCredentialHttpController } from './commands/delete-model-provider-credential/delete-model-provider-credential.http.controller';
 import { PollChatgptLoginCommandHandler } from './commands/poll-chatgpt-login/poll-chatgpt-login.command-handler';
@@ -61,6 +67,8 @@ import { UpdateBotGroupCommandHandler } from './commands/update-bot-group/update
 import { UpdateBotGroupHttpController } from './commands/update-bot-group/update-bot-group.http.controller';
 import { UpdateBotMemoryFactCommandHandler } from './commands/update-bot-memory-fact/update-bot-memory-fact.command-handler';
 import { UpdateBotMemoryFactHttpController } from './commands/update-bot-memory-fact/update-bot-memory-fact.http.controller';
+import { UpdateBotSkillCommandHandler } from './commands/update-bot-skill/update-bot-skill.command-handler';
+import { UpdateBotSkillHttpController } from './commands/update-bot-skill/update-bot-skill.http.controller';
 import { BotOrmEntity } from './database/bot.orm-entity';
 import { BotRepository } from './database/bot.repository';
 import { BotDocumentOrmEntity } from './database/bot-document.orm-entity';
@@ -70,6 +78,8 @@ import { BotGroupOrmEntity } from './database/bot-group.orm-entity';
 import { BotGroupRepository } from './database/bot-group.repository';
 import { BotMemoryFactOrmEntity } from './database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from './database/bot-memory-fact.repository';
+import { BotSkillOrmEntity } from './database/bot-skill.orm-entity';
+import { BotSkillRepository } from './database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from './database/model-provider-credential.repository';
 
@@ -88,6 +98,9 @@ import { FindBotGroupsQueryHandler } from './queries/find-bot-groups/find-bot-gr
 import { FindBotMemoryHttpController } from './queries/find-bot-memory/find-bot-memory.http.controller';
 import { FindBotMemoryQueryHandler } from './queries/find-bot-memory/find-bot-memory.query-handler';
 import { FindBotMemoryFactQueryHandler } from './queries/find-bot-memory-fact/find-bot-memory-fact.query-handler';
+import { FindBotSkillQueryHandler } from './queries/find-bot-skill/find-bot-skill.query-handler';
+import { FindBotSkillsHttpController } from './queries/find-bot-skills/find-bot-skills.http.controller';
+import { FindBotSkillsQueryHandler } from './queries/find-bot-skills/find-bot-skills.query-handler';
 import { FindBotsHttpController } from './queries/find-bots/find-bots.http.controller';
 import { FindBotsQueryHandler } from './queries/find-bots/find-bots.query-handler';
 import { FindModelProviderCredentialsHttpController } from './queries/find-model-provider-credentials/find-model-provider-credentials.http.controller';
@@ -108,6 +121,10 @@ const httpControllers = [
   ClearBotMemoryHttpController,
   UpdateBotMemoryFactHttpController,
   DeleteBotMemoryFactHttpController,
+  FindBotSkillsHttpController,
+  CreateBotSkillHttpController,
+  UpdateBotSkillHttpController,
+  DeleteBotSkillHttpController,
   FindBotGroupsHttpController,
   CreateBotGroupHttpController,
   UpdateBotGroupHttpController,
@@ -133,6 +150,9 @@ const commandHandlers: Provider[] = [
   UpdateBotMemoryFactCommandHandler,
   DeleteBotMemoryFactCommandHandler,
   ClearBotMemoryCommandHandler,
+  CreateBotSkillCommandHandler,
+  UpdateBotSkillCommandHandler,
+  DeleteBotSkillCommandHandler,
   PutModelProviderCredentialCommandHandler,
   DeleteModelProviderCredentialCommandHandler,
   SetDefaultModelProviderCommandHandler,
@@ -150,6 +170,8 @@ const queryHandlers: Provider[] = [
   FindBotDocumentRevisionsQueryHandler,
   FindBotMemoryQueryHandler,
   FindBotMemoryFactQueryHandler,
+  FindBotSkillsQueryHandler,
+  FindBotSkillQueryHandler,
   FindModelProviderCredentialsQueryHandler,
 ];
 
@@ -167,6 +189,7 @@ const queryHandlers: Provider[] = [
       BotDocumentOrmEntity,
       BotDocumentRevisionOrmEntity,
       BotMemoryFactOrmEntity,
+      BotSkillOrmEntity,
       ModelProviderCredentialOrmEntity,
     ]),
     AuthzKernelModule.forFeature([BotResource]),
@@ -181,6 +204,7 @@ const queryHandlers: Provider[] = [
     BotGroupMapper,
     BotDocumentMapper,
     BotMemoryFactMapper,
+    BotSkillMapper,
     BotLookupResolver,
     ModelProviderCredentialMapper,
     ChatgptSignInMapper,
@@ -203,6 +227,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_GROUP_REPOSITORY, useClass: BotGroupRepository },
     { provide: BOT_DOCUMENT_REPOSITORY, useClass: BotDocumentRepository },
     { provide: BOT_MEMORY_FACT_REPOSITORY, useClass: BotMemoryFactRepository },
+    { provide: BOT_SKILL_REPOSITORY, useClass: BotSkillRepository },
     { provide: BOT_LOOKUP, useExisting: BotLookupResolver },
   ],
   // What the chat (`BotsChatModule`) reads a bot, its parts and its key through.
@@ -211,6 +236,7 @@ const queryHandlers: Provider[] = [
     BOT_REPOSITORY,
     BOT_DOCUMENT_REPOSITORY,
     BOT_MEMORY_FACT_REPOSITORY,
+    BOT_SKILL_REPOSITORY,
     MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
     PROVIDER_KEY_SEALER,
     TURN_CREDENTIALS,

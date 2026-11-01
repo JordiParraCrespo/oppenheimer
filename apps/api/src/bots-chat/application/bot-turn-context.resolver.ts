@@ -7,9 +7,14 @@ import {
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { BOT_MEMORY_PROFILE_IN_PROMPT_MAX } from '@oppenheimer/shared';
-import { BOT_DOCUMENT_REPOSITORY, BOT_MEMORY_FACT_REPOSITORY } from '../../bots/bots.di-tokens';
+import {
+  BOT_DOCUMENT_REPOSITORY,
+  BOT_MEMORY_FACT_REPOSITORY,
+  BOT_SKILL_REPOSITORY,
+} from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
+import type { BotSkillRepositoryPort } from '../../bots/database/bot-skill.repository.port';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
@@ -23,6 +28,7 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
+import { composeTurnMessage } from '../domain/bot-skill.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
@@ -58,7 +64,8 @@ export const BOT_TURN_MAX_STEPS = 20;
  * and this turn's message with its images, its words opened by the moment
  * it runs in: the sender's time, the bot's home host and the owner's hosts,
  * read in the owner's scope, and how full its context was when its last
- * turn ended. The bot's own rows are read by the turn's
+ * turn ended. A message that opens with `/<name>` runs that skill of the
+ * bot's: the skill's body is sent before the words. The bot's own rows are read by the turn's
  * workspace; what the owner can reach is read as the owner, so the bot sees
  * no more than they do.
  */
@@ -68,6 +75,7 @@ export class BotTurnContextResolver {
     private readonly access: BotModelAccessResolver,
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
+    @Inject(BOT_SKILL_REPOSITORY) private readonly skills: BotSkillRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
@@ -86,15 +94,16 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnContext> {
-    const { prompt, images } = await this.opening.resolve(turn);
+    const { prompt, images, command } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, earlier, hosts, lastContext, permissions] = await Promise.all([
+    const [documents, facts, skills, earlier, hosts, lastContext, permissions] = await Promise.all([
       this.documents.findAllForTurn(turn.organizationId, bot.id),
       this.memory.findAllForTurn(turn.organizationId, bot.id),
+      this.skills.findAllForTurn(turn.organizationId, bot.id),
       this.messages.findHistory(
         turn.organizationId,
         bot.id,
@@ -162,6 +171,7 @@ export class BotTurnContextResolver {
               origin: turn.origin,
             })
           : [],
+        skills,
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(
@@ -172,7 +182,7 @@ export class BotTurnContextResolver {
           hosts,
           lastContext,
         }),
-        prompt,
+        composeTurnMessage(command, skills, prompt),
       ),
       images,
       tools,

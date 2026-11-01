@@ -25,6 +25,7 @@ import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
+import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
 import type {
   ApprovedCallContext,
@@ -48,6 +49,7 @@ export class BotToolboxFactory {
 
   constructor(
     self: BotSelfToolsFactory,
+    skills: BotSkillToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
     watches: BotWatchToolsFactory,
@@ -69,6 +71,7 @@ export class BotToolboxFactory {
   ) {
     this.areas = [
       self,
+      skills,
       goals,
       questions,
       hosts,

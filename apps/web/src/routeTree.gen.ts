@@ -73,6 +73,7 @@ import { Route as AuthenticatedBotsBotIdSettingsPermissionsRouteImport } from '.
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
+import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 
 const IndexRoute = IndexRouteImport.update({
@@ -428,6 +429,12 @@ const AuthenticatedBotsBotIdSettingsRunsOnRoute =
     path: '/runs-on',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsSkillsRoute =
+  AuthenticatedBotsBotIdSettingsSkillsRouteImport.update({
+    id: '/skills',
+    path: '/skills',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport.update({
     id: '/pulls_/$installationId/$githubRepoId/$number',
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -554,6 +562,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -622,6 +631,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -688,6 +698,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings'
   id:
@@ -813,6 +825,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/profile'
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
+    | '/_authenticated/bots_/$botId/settings/skills'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
     | '/_authenticated/bots_/$botId/settings/'
   fileRoutesById: FileRoutesById
@@ -1278,6 +1291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/skills': {
+      id: '/_authenticated/bots_/$botId/settings/skills'
+      path: '/skills'
+      fullPath: '/bots/$botId/settings/skills'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/pulls_/$installationId/$githubRepoId/$number': {
       id: '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
       path: '/pulls/$installationId/$githubRepoId/$number'
@@ -1430,6 +1450,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  AuthenticatedBotsBotIdSettingsSkillsRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   AuthenticatedBotsBotIdSettingsIndexRoute: typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 
@@ -1449,6 +1470,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsRoutinesRoute,
     AuthenticatedBotsBotIdSettingsRunsOnRoute:
       AuthenticatedBotsBotIdSettingsRunsOnRoute,
+    AuthenticatedBotsBotIdSettingsSkillsRoute:
+      AuthenticatedBotsBotIdSettingsSkillsRoute,
     AuthenticatedBotsBotIdSettingsIndexRoute:
       AuthenticatedBotsBotIdSettingsIndexRoute,
   }
