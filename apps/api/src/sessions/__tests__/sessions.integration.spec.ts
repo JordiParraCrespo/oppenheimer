@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { ProjectOrmEntity } from '../../projects/database/project.orm-entity';
 import { ProjectRepository } from '../../projects/database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../../projects/database/project-repository.orm-entity';
@@ -37,7 +36,6 @@ import { WorkSessionMapper } from '../work-session.mapper';
  * here rather than in production.
  */
 describe('sessions: the log, the fold and the keys (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let repository: WorkSessionRepository;
   let organizationId: string;
@@ -115,30 +113,13 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   ];
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    // The migrations, not `synchronize`: a session's composite keys reference
+    // The migrated schema, not `synchronize`: a session's composite keys reference
     // the project, checkout and installation tables, and only the SQL has them.
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         WorkSessionOrmEntity,
         SessionCheckoutOrmEntity,
@@ -161,7 +142,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {
@@ -193,8 +173,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
     projectId = await insertProject(organizationId, 'xrp-mobile');
     foreignProjectId = await insertProject(otherOrganizationId, 'xrp-mobile');
-    installationId = await insertInstallation(organizationId, 1);
-    foreignInstallationId = await insertInstallation(otherOrganizationId, 2);
+    installationId = await insertInstallation(organizationId);
+    foreignInstallationId = await insertInstallation(otherOrganizationId);
   });
 
   async function insertProject(org: string, slug: string): Promise<string> {
@@ -207,14 +187,21 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     return id;
   }
 
-  async function insertInstallation(org: string, githubId: number): Promise<string> {
+  /**
+   * GitHub's installation ids are unique among live rows, and every test
+   * inserts two more into this file's database: counted, so no two can match,
+   * as a random offset once did.
+   */
+  let lastGithubInstallationId = 0;
+
+  async function insertInstallation(org: string): Promise<string> {
     const id = randomUUID();
     await dataSource.query(
       `INSERT INTO "github_installation"
          ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
        VALUES ($1, $2, $3, $4, 'Organization', 'all', $5)`,
-      [id, org, githubId + Math.floor(Math.random() * 1_000_000), 'acme', userId],
+      [id, org, ++lastGithubInstallationId, 'acme', userId],
     );
     return id;
   }

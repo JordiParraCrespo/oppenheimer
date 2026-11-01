@@ -211,7 +211,7 @@ shared connection. The body says one word per dependency; the reason is logged.
 | ---------- | -------------------------------------------------------------------------------------- |
 | `app`      | `PORT`, `NODE_ENV`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_ADMIN_USER_IDS`, `FRONTEND_URL` |
 | `database` | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`                      |
-| `redis`    | `REDIS_HOST`, `REDIS_PORT`                                                             |
+| `redis`    | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`                               |
 | `email`    | `EMAIL_PROVIDER`, `EMAIL_FROM`, `SMTP_*`, `RESEND_API_KEY`                             |
 | `oauth`    | `GOOGLE_CLIENT_ID/SECRET/CALLBACK`, `GITHUB_CLIENT_ID/SECRET/CALLBACK`                 |
 | `storage`  | `STORAGE_PROVIDER`, `UPLOAD_DIR`, `S3_*`                                               |

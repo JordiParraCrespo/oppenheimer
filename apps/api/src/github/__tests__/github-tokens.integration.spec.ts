@@ -1,6 +1,5 @@
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { WatchedRepositoryOrmEntity } from '../../pull-requests/database/watched-repository.orm-entity';
 import { GithubTokenOrmEntity } from '../database/github-token.orm-entity';
 import { GithubTokenRepository } from '../database/github-token.repository';
@@ -14,7 +13,6 @@ import { GithubTokenPinOrmEntity } from '../database/github-token-pin.orm-entity
  * repository even though its installation is null.
  */
 describe('GitHub tokens schema (integration)', () => {
-  let container: StartedTestContainer;
   let dataSource: DataSource;
   let tokens: GithubTokenRepository;
 
@@ -23,28 +21,11 @@ describe('GitHub tokens schema (integration)', () => {
   const ORG = '11111111-1111-4111-8111-111111111111';
 
   beforeAll(async () => {
-    container = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = container.getHost();
-    process.env.DB_PORT = container.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [GithubTokenOrmEntity, GithubTokenPinOrmEntity, WatchedRepositoryOrmEntity],
     });
     await dataSource.initialize();
@@ -71,7 +52,6 @@ describe('GitHub tokens schema (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await container?.stop();
   });
 
   const token = (userId: string, label: string, repositoryIds: number[] = [7]) => ({

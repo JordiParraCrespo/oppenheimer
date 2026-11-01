@@ -4,9 +4,8 @@ import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { CacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
@@ -27,8 +26,6 @@ describe('authorization cache (integration)', () => {
   let baseUrl: string;
   let dataSource: DataSource;
   let commandBus: CommandBus;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   /** Every SQL statement TypeORM ran, while recording. */
   let recorded: string[] | null = null;
@@ -36,26 +33,10 @@ describe('authorization cache (integration)', () => {
   let user: { id: string; token: string; workspaceId: string };
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    await runAllMigrations();
 
     const { AppModule } = await import('../../app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -89,7 +70,6 @@ describe('authorization cache (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   /** Sign up, then wait for sign-up's personal workspace to reach the session. */

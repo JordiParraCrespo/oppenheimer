@@ -1,7 +1,6 @@
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { GithubInstallationOrmEntity } from '../database/github-installation.orm-entity';
 import { GithubInstallationRepository } from '../database/github-installation.repository';
 import { GithubInstallationMapper } from '../github-installation.mapper';
@@ -16,32 +15,14 @@ import { GithubInstallationMapper } from '../github-installation.mapper';
  * It deliberately does not boot the application: what is under test is SQL.
  */
 describe('GitHub installations schema (integration)', () => {
-  let container: StartedTestContainer;
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    container = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = container.getHost();
-    process.env.DB_PORT = container.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [GithubInstallationOrmEntity],
     });
     await dataSource.initialize();
@@ -49,7 +30,6 @@ describe('GitHub installations schema (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await container?.stop();
   });
 
   const ORG_ONE = '11111111-1111-4111-8111-111111111111';
