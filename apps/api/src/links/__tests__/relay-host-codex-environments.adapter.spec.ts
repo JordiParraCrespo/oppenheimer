@@ -65,6 +65,16 @@ describe('RelayHostCodexEnvironmentsAdapter', () => {
     });
   });
 
+  // Before a repository is picked the picker still lists the account's
+  // environments: the frame names no repository rather than an empty one.
+  it('asks for the account’s environments with no repository when none is picked', async () => {
+    const { adapter, link } = harness(true);
+
+    void adapter.list(HOST);
+
+    expect(sentCommand(link)).not.toHaveProperty('repository');
+  });
+
   it('answers with Codex’s refusal, in the runner’s words', async () => {
     const { adapter, link, replies } = harness(true);
 

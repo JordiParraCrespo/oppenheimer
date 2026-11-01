@@ -98,13 +98,17 @@ export class HostsRepository {
 
   /**
    * The Codex cloud environments of the host's ChatGPT account, through its
-   * runner, those linked to `repository` (`owner/name`) marked. The failure
+   * runner, those linked to `repository` (`owner/name`) marked; absent, none
+   * is. The failure
    * keeps the API's code (`SESSIONS_044` to `SESSIONS_047`, `SESSIONS_031`).
    */
-  findCodexEnvironments(id: string, repository: string): Promise<HostCodexEnvironments> {
+  findCodexEnvironments(id: string, repository?: string): Promise<HostCodexEnvironments> {
     return callApi(HostsErrors.FETCH_CODEX_ENVIRONMENTS_FAILED, async (api) => {
       const data = await api.body(
-        heyApiSdk.findHostCodexEnvironments({ path: { id }, query: { repository } }),
+        heyApiSdk.findHostCodexEnvironments({
+          path: { id },
+          query: repository ? { repository } : {},
+        }),
       );
       return {
         environments: data.environments.map((env) => ({

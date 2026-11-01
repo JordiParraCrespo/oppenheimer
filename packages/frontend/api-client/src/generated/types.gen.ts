@@ -10123,11 +10123,11 @@ export type FindHostCodexEnvironmentsData = {
     path: {
         id: string;
     };
-    query: {
+    query?: {
         /**
-         * The repository the session is for, `owner/name`: its environments are marked.
+         * The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.
          */
-        repository: string;
+        repository?: string;
     };
     url: '/api/v1/hosts/{id}/codex-environments';
 };

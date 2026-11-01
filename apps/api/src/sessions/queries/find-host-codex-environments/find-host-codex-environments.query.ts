@@ -5,10 +5,10 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 export class FindHostCodexEnvironmentsQuery extends QueryBase {
   readonly scope: AccessScope;
   readonly hostId: string;
-  /** `owner/name`. */
-  readonly repository: string;
+  /** `owner/name`; absent before a repository is picked. */
+  readonly repository?: string;
 
-  constructor(props: { scope: AccessScope; hostId: string; repository: string }) {
+  constructor(props: { scope: AccessScope; hostId: string; repository?: string }) {
     super();
     this.scope = props.scope;
     this.hostId = props.hostId;

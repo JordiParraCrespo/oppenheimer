@@ -48,9 +48,10 @@ export class FindHostCodexEnvironmentsHttpController {
   })
   @ApiQuery({
     name: 'repository',
-    required: true,
+    required: false,
     type: String,
-    description: 'The repository the session is for, `owner/name`: its environments are marked.',
+    description:
+      'The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.',
   })
   @ApiResponse({ status: 200, type: HostCodexEnvironmentsResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })

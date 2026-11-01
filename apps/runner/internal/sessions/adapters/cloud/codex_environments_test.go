@@ -222,3 +222,16 @@ func TestCodexStartUsesTheEnvironmentLabelledWithTheRepositorysName(t *testing.T
 		t.Fatalf("args = %q", got)
 	}
 }
+
+// Before a repository is picked the account's environments are listed alone:
+// none is linked and none is recommended.
+func TestCodexEnvironmentsWithNoRepositoryListsTheAccounts(t *testing.T) {
+	server := chatGPT(t, `[{"id": "e_web"}]`, `[{"id": "e_docs", "label": "docs"}, {"id": "e_api", "label": "API"}]`)
+	envs, err := Codex{Home: signedIn(t), BaseURL: server.URL}.Environments(context.Background(), "")
+	if err != nil {
+		t.Fatalf("Environments: %v", err)
+	}
+	if envs.Recommended != "" || len(envs.Environments) != 2 || envs.Environments[0].Repository || envs.Environments[1].Repository {
+		t.Fatalf("envs = %+v", envs)
+	}
+}

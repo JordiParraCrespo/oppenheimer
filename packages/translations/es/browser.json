@@ -779,16 +779,16 @@
       },
       "codexEnvironment": {
         "label": "Entorno de Codex",
-        "placeholder": "Entorno",
         "search": "Buscar entornos…",
         "empty": "Ningún entorno coincide.",
         "loading": "Pidiendo al equipo sus entornos de Codex…",
         "auto": "Automático",
         "autoLinked": "{{name}}, la elección del equipo",
-        "autoByName": "Ninguno vinculado ni con el nombre del repositorio",
-        "linked": "Vinculado a este repositorio",
+        "autoByName": "La elección del equipo",
+        "linked": "Vinculado",
         "pinned": "Fijado",
-        "failed": "No se han podido listar los entornos de Codex del equipo."
+        "failed": "No se han podido listar los entornos de Codex del equipo.",
+        "lives": "Los entornos viven en tu cuenta de Codex"
       },
       "branch": {
         "label": "Rama",

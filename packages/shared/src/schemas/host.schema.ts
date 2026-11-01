@@ -112,10 +112,12 @@ export type HostFoldersQuery = z.infer<typeof hostFoldersQuerySchema>;
  * marked, for the composer's picker (`product/next-steps/cloud-agents.md`).
  */
 export const hostCodexEnvironmentsQuerySchema = z.object({
+  /** Absent before a repository is picked: the list then marks none as linked. */
   repository: z
     .string()
     .max(200)
-    .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),
+    .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/)
+    .optional(),
 });
 
 export type HostCodexEnvironmentsQuery = z.infer<typeof hostCodexEnvironmentsQuerySchema>;

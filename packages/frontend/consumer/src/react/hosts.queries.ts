@@ -28,7 +28,7 @@ import { mutation } from './mutation';
  * ['hosts', 'detail', id]                     detail(id)
  * ['hosts', 'detail', id, 'folders']          folderLists(id)
  * ['hosts', 'detail', id, 'folders', path]    folders(id, path)                one directory; null is home
- * ['hosts', 'detail', id, 'codex-environments', repository]   codexEnvironments(id, repository)
+ * ['hosts', 'detail', id, 'codex-environments', repository]   codexEnvironments(id, repository)   null: none picked yet
  * ```
  *
  * A pairing detail's `queryFn` mints: refetching it issues a new token under
@@ -48,7 +48,7 @@ export const hostsKeys = {
   detail: (id: string) => [...hostsKeys.details(), id] as const,
   folderLists: (id: string) => [...hostsKeys.detail(id), 'folders'] as const,
   folders: (id: string, path: string | null) => [...hostsKeys.folderLists(id), path] as const,
-  codexEnvironments: (id: string, repository: string) =>
+  codexEnvironments: (id: string, repository: string | null) =>
     [...hostsKeys.detail(id), 'codex-environments', repository] as const,
 };
 
@@ -185,22 +185,23 @@ export function useHostFolders<TData = HostFolders>(
 
 /**
  * The Codex cloud environments of a host's ChatGPT account, as its runner reads
- * them now, those linked to `repository` (`owner/name`) marked: New session's
- * environment chip for a Codex cloud session. A refusal is the answer (the host
+ * them now, those linked to `repository` (`owner/name`) marked, or none when
+ * it is null: the Environments pane of New session's place chip, for a Codex
+ * cloud session. A refusal is the answer (the host
  * is away, its runner is too old, Codex is not signed in), so it is not retried.
  * Nothing is cached beyond the visit, as for the folder picker: an environment
  * made on chatgpt.com a minute ago must show.
  */
 export function useHostCodexEnvironments<TData = HostCodexEnvironments>(
   hostId: string,
-  repository: string,
+  repository: string | null,
   options?: Omit<UseQueryOptions<HostCodexEnvironments, Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
   return useQuery<HostCodexEnvironments, Error, TData>({
     queryKey: hostsKeys.codexEnvironments(hostId, repository),
-    queryFn: () => app.hosts.findCodexEnvironments(hostId, repository),
+    queryFn: () => app.hosts.findCodexEnvironments(hostId, repository ?? undefined),
     staleTime: 0,
     retry: false,
     refetchOnWindowFocus: false,

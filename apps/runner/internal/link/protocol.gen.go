@@ -738,7 +738,7 @@ type PortClose struct {
 type CodexEnvironmentsList struct {
 	Type       string `json:"type"`
 	CommandID  string `json:"commandId"`
-	Repository string `json:"repository"`
+	Repository string `json:"repository,omitempty"`
 }
 
 // CodexEnvironments is the `codex.environments` message.

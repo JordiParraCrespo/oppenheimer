@@ -11,8 +11,6 @@ import {
   type CloudAgentStatusEntity,
   type CreateSessionCheckout,
   type CreateSessionInput,
-  type HostCodexEnvironment,
-  type HostCodexEnvironments,
   type HostEntity,
   type ProjectEntity,
   parseRepositoryKey,
@@ -563,61 +561,22 @@ export function toCreateInput(
 
 /**
  * The Codex environment a Codex cloud session is sent with: the one picked on
- * its host for the repository it starts from, or none — the host's pick, the
- * environment linked to the repository — when nothing was picked for that
- * pair. A pick made on another host is another ChatGPT account's.
+ * its host, or none — the host's pick, the environment linked to the
+ * repository. A pick made on another host is another ChatGPT account's.
  */
 function codexEnvironmentFor(
-  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'scope' | 'codexEnvironment'>,
+  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'codexEnvironment'>,
 ): string | null {
-  const [first] = draft.scope;
-  if (draft.where !== 'cloud' || draft.agent !== 'codex' || !first) return null;
-  return pickedEnvironment(draft.codexEnvironment, draft.hostId, first.id);
+  if (draft.where !== 'cloud' || draft.agent !== 'codex') return null;
+  return pickedEnvironment(draft.codexEnvironment, draft.hostId)?.id ?? null;
 }
 
-/** The environment picked on `hostId` for `repository`, or null when none was. */
+/** The environment picked on `hostId`, or null when none was. */
 export function pickedEnvironment(
   pick: NewSessionDraft['codexEnvironment'],
   hostId: string | null,
-  repository: string,
-): string | null {
-  return pick && pick.hostId === hostId && pick.repository === repository ? pick.id : null;
-}
-
-/**
- * The Codex environment chip's rows: first the host's own pick (`''`), which
- * names the environment linked to the repository when there is one, then the
- * account's environments, those linked to the repository first as the host
- * lists them. A failed read leaves the host's pick alone, saying why.
- */
-export function toCodexEnvironmentOptions(
-  listing: HostCodexEnvironments | undefined,
-  labels: {
-    auto: string;
-    autoLinked: (name: string) => string;
-    autoByName: string;
-    linked: string;
-    pinned: string;
-    failure?: string;
-  },
-): ChipSelectOption[] {
-  const name = (env: HostCodexEnvironment) => env.label ?? env.id;
-  const recommended = listing?.environments.find((env) => env.id === listing.recommended);
-  const auto: ChipSelectOption = {
-    value: '',
-    label: labels.auto,
-    description:
-      labels.failure ?? (recommended ? labels.autoLinked(name(recommended)) : labels.autoByName),
-  };
-  return [
-    auto,
-    ...(listing?.environments ?? []).map((env) => ({
-      value: env.id,
-      label: name(env),
-      description: env.repository ? labels.linked : env.pinned ? labels.pinned : undefined,
-      keywords: env.id,
-    })),
-  ];
+): NonNullable<NewSessionDraft['codexEnvironment']> | null {
+  return pick && pick.hostId === hostId ? pick : null;
 }
 
 /**

@@ -19,7 +19,7 @@ import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import type { CodingAgentId, HostCloudAgentId } from '@oppenheimer/shared/agents';
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -48,7 +48,8 @@ function hostCloudRowValue(agent: HostCloudAgentId): string {
 type Pane =
   | { kind: 'root' }
   | { kind: 'host'; host: PlaceHost }
-  | { kind: 'start-from'; cloud: HostCloudRow };
+  | { kind: 'start-from'; cloud: HostCloudRow }
+  | { kind: 'environments'; cloud: HostCloudRow; host: { value: string; label: string } };
 
 const ROOT: Pane = { kind: 'root' };
 
@@ -76,6 +77,12 @@ type Tab = 'hosts' | 'cloud';
  * and one with no key yet goes to connect it. Add host… is the foot. Props
  * in, choices out: the section above fetches.
  *
+ * Codex's cloud runs in one of the ChatGPT account's environments, so a host
+ * picked in its Start from pane opens that host's Environments pane, as the
+ * frame drills into a cloud account: the caller draws it (`environments`),
+ * since it reads the host, and the chip then names the one picked
+ * (`environment`).
+ *
  * Each pane is one list under one search: the tab's hosts or clouds, a host's
  * places, or the hosts to start from. The arrows move through it and Enter
  * takes the row, as in `ChipSelect`.
@@ -97,6 +104,8 @@ export function PlaceSelect({
   onCloudChange,
   onConnectCloud,
   onAddHost,
+  environments,
+  environment,
   loading,
   failure,
   disabled,
@@ -120,6 +129,13 @@ export function PlaceSelect({
   /** A vendor with no key yet: the reader goes to connect it. */
   onConnectCloud: () => void;
   onAddHost: () => void;
+  /**
+   * Codex's Environments pane for the host picked in its Start from pane,
+   * filtered by the pane's search; `close` shuts the chip once one is picked.
+   */
+  environments?: (pane: { hostId: string; query: string; close: () => void }) => ReactNode;
+  /** The Codex environment picked on the chosen host, by name; null is the host's pick. */
+  environment?: string | null;
   loading?: boolean;
   failure?: string;
   disabled?: boolean;
@@ -168,29 +184,36 @@ export function PlaceSelect({
     loading: false,
   };
   const list: { rows: ChipSelectOption[]; search: string; empty: string; loading: boolean } =
-    pane.kind === 'host'
+    pane.kind === 'environments'
       ? {
-          ...hostsList,
-          rows: filterOptions<ChipSelectOption>(
-            SESSION_PLACES.map((candidate) => ({
-              value: candidate,
-              label: t(`sessions.new.where.${candidate}.label`),
-              description: t(`sessions.new.where.${candidate}.description`),
-              leading: <PlaceIcon place={candidate} />,
-            })),
-            term,
-          ),
+          rows: [],
+          search: t('sessions.new.codexEnvironment.search'),
+          empty: t('sessions.new.codexEnvironment.empty'),
+          loading: false,
         }
-      : pane.kind === 'start-from'
-        ? { ...hostsList, rows: filterOptions(pane.cloud.startFrom, term) }
-        : tab === 'hosts'
-          ? { ...hostsList, rows: hostRows, loading: Boolean(loading) }
-          : {
-              rows: cloudRows,
-              search: t('sessions.new.where.searchClouds'),
-              empty: t('sessions.new.where.cloudsEmpty'),
-              loading: false,
-            };
+      : pane.kind === 'host'
+        ? {
+            ...hostsList,
+            rows: filterOptions<ChipSelectOption>(
+              SESSION_PLACES.map((candidate) => ({
+                value: candidate,
+                label: t(`sessions.new.where.${candidate}.label`),
+                description: t(`sessions.new.where.${candidate}.description`),
+                leading: <PlaceIcon place={candidate} />,
+              })),
+              term,
+            ),
+          }
+        : pane.kind === 'start-from'
+          ? { ...hostsList, rows: filterOptions(pane.cloud.startFrom, term) }
+          : tab === 'hosts'
+            ? { ...hostsList, rows: hostRows, loading: Boolean(loading) }
+            : {
+                rows: cloudRows,
+                search: t('sessions.new.where.searchClouds'),
+                empty: t('sessions.new.where.cloudsEmpty'),
+                loading: false,
+              };
   const rows = list.rows;
 
   function show(next: { pane?: Pane; query?: string }) {
@@ -229,10 +252,20 @@ export function PlaceSelect({
         const from = pane.cloud.startFrom.find((candidate) => candidate.value === row.value);
         if (from && !from.disabled) {
           onHostCloudChange(from.value, pane.cloud.agent);
-          onOpenChange(false);
+          if (pane.cloud.agent === 'codex' && environments) {
+            show({
+              pane: {
+                kind: 'environments',
+                cloud: pane.cloud,
+                host: { value: from.value, label: from.label },
+              },
+            });
+          } else onOpenChange(false);
         }
         return;
       }
+      case 'environments':
+        return;
       case 'root':
         chooseAtRoot(row);
     }
@@ -308,6 +341,8 @@ export function PlaceSelect({
       }
       case 'root':
         return rootRow(option, pointer);
+      case 'environments':
+        return null;
     }
   }
 
@@ -381,6 +416,15 @@ export function PlaceSelect({
         );
       case 'start-from':
         return <StartFromHead agent={pane.cloud.agent} onBack={() => show({ pane: ROOT })} />;
+      case 'environments':
+        return (
+          <ChipSelectBack onClick={() => show({ pane: { kind: 'start-from', cloud: pane.cloud } })}>
+            <span className="flex items-center gap-2">
+              <AgentMark agent={pane.cloud.agent} />
+              {pane.host.label}
+            </span>
+          </ChipSelectBack>
+        );
       case 'root':
         return (
           <ChipSelectTabs aria-label={t('sessions.new.where.label')}>
@@ -418,7 +462,9 @@ export function PlaceSelect({
           >
             {pickedCloud
               ? `${pickedCloud.label} · ${t('sessions.new.where.atVendor')}`
-              : `${host?.label ?? t('sessions.new.host.placeholder')} · ${t(placeLabelKey(place, cloudAgent))}`}
+              : place === 'cloud' && cloudAgent === 'codex' && environment
+                ? `${environment} · ${host?.label ?? t('sessions.new.host.placeholder')}`
+                : `${host?.label ?? t('sessions.new.host.placeholder')} · ${t(placeLabelKey(place, cloudAgent))}`}
           </ChipSelectTrigger>
         }
       />
@@ -431,18 +477,26 @@ export function PlaceSelect({
           onKeyDown={onKeyDown}
         />
         {paneHead()}
-        <ChipSelectList
-          role="listbox"
-          aria-label={t(
-            pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
-          )}
-          loading={list.loading}
-          loadingText={t('sessions.new.host.loading')}
-          empty={rows.length === 0}
-          emptyText={list.empty}
-        >
-          {rows.map(row)}
-        </ChipSelectList>
+        {pane.kind === 'environments' && environments ? (
+          environments({
+            hostId: pane.host.value,
+            query,
+            close: () => onOpenChange(false),
+          })
+        ) : (
+          <ChipSelectList
+            role="listbox"
+            aria-label={t(
+              pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
+            )}
+            loading={list.loading}
+            loadingText={t('sessions.new.host.loading')}
+            empty={rows.length === 0}
+            emptyText={list.empty}
+          >
+            {rows.map(row)}
+          </ChipSelectList>
+        )}
         <ChipSelectActionRow
           action={{ label: t('sessions.new.host.add'), onSelect: onAddHost }}
           onClose={() => onOpenChange(false)}

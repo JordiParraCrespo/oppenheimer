@@ -32,7 +32,7 @@ export class RelayHostCodexEnvironmentsAdapter implements HostCodexEnvironmentsP
     private readonly replies: LinkRepliesPort,
   ) {}
 
-  async list(hostId: string, repository: string): Promise<HostCodexEnvironmentsOutcome> {
+  async list(hostId: string, repository?: string): Promise<HostCodexEnvironmentsOutcome> {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
     if (!link.capabilities.includes('codex.environments')) return { kind: 'not_supported' };
@@ -40,7 +40,7 @@ export class RelayHostCodexEnvironmentsAdapter implements HostCodexEnvironmentsP
     const message: CodexEnvironmentsListMessage = {
       type: 'codex.environments.list',
       commandId: randomUUID(),
-      repository,
+      ...(repository ? { repository } : {}),
     };
     // Waiting before sending, so an answer faster than this line cannot be missed.
     const pending = this.replies.expect(hostId, message.commandId, CODEX_ENVIRONMENTS_TIMEOUT_MS);

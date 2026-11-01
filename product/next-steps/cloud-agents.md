@@ -149,14 +149,20 @@ person pick another.
   id; with neither, the start is `SESS_010`, naming every environment the
   CLI can reach (that list is complete here, not the tasks' partial one). The CLI is handed the names as labels only when
   the account's whole list could not be read.
-- **The composer's Environment chip.** A Codex cloud session with one
-  repository shows an Environment chip after Branch, asked of the host
-  when it shows (`GET /v1/hosts/:id/codex-environments?repository=`, live,
-  nothing cached; `SESSIONS_044`–`047`). Its first row, Auto, is the host's
-  pick and names the linked environment; the others are the account's,
-  linked ones first. A pick is kept with the host and the repository it was
-  made for, since each host lists its own ChatGPT account's environments, and
-  remembered with the draft.
+- **Picked in the place chip, as the frame draws it.**
+  `NewSessionComposer.dc.html` drills from a cloud account under Cloud into
+  its environments, each with a line on its right and "Environments live in
+  your Codex account" under them, and the chip then reads
+  "<environment> · <account>". Here the host stands for the account (it is
+  the ChatGPT sign-in the host's `codex` holds): the Codex row's Start from
+  pane, on a host, opens that host's Environments pane, asked of the host
+  when it opens (`GET /v1/hosts/:id/codex-environments`, live, nothing
+  cached, the repository optional; `SESSIONS_044`–`047`). Auto leads and
+  names the host's pick; the others are the account's, linked ones first,
+  marked Linked or Pinned. The chip reads "<environment> · <host>". A pick
+  is kept with the host it was made on, since each host lists its own
+  ChatGPT account's environments, and remembered with the draft. The frame's
+  saved Environments tab and its New environment dialog are not built.
 - **ChatGPT's 429 is a stop.** The reads count against the host's ChatGPT
   account. A 429 pauses that account for its `Retry-After` (a minute when it
   names none); nothing else is asked in its place, and a start in the pause

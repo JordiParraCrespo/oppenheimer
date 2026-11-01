@@ -11882,9 +11882,9 @@
           },
           {
             "name": "repository",
-            "required": true,
+            "required": false,
             "in": "query",
-            "description": "The repository the session is for, `owner/name`: its environments are marked.",
+            "description": "The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.",
             "schema": {
               "type": "string"
             }

@@ -13,7 +13,7 @@ export const CODEX_ENVIRONMENTS_MAX = 100;
 
 /**
  * The Codex environments the host's ChatGPT account can start a task in,
- * those linked to `repository` (`owner/name`) marked. Sent only to a runner
+ * those linked to `repository` (`owner/name`) marked; absent, none is. Sent only to a runner
  * whose hello named `codex.environments`; answered by `codex.environments`
  * with the same `commandId`, or by `command.failed` (`SESS_009` Codex could
  * not answer: no CLI, no sign-in).
@@ -21,7 +21,7 @@ export const CODEX_ENVIRONMENTS_MAX = 100;
 export const codexEnvironmentsListSchema = z.object({
   type: z.literal('codex.environments.list'),
   commandId: commandIdSchema,
-  repository: gitRefSchema,
+  repository: gitRefSchema.optional(),
 });
 
 export type CodexEnvironmentsListMessage = z.infer<typeof codexEnvironmentsListSchema>;

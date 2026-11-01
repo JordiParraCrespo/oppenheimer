@@ -23,6 +23,9 @@ export type HostCodexEnvironmentsOutcome =
  * sign-in, which the control plane never holds.
  */
 export interface HostCodexEnvironmentsPort {
-  /** The environments of the host's ChatGPT account, those linked to `repository` marked. */
-  list(hostId: string, repository: string): Promise<HostCodexEnvironmentsOutcome>;
+  /**
+   * The environments of the host's ChatGPT account, those linked to
+   * `repository` marked; absent, none is.
+   */
+  list(hostId: string, repository?: string): Promise<HostCodexEnvironmentsOutcome>;
 }
