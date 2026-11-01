@@ -2,8 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ThrottlerException } from '@nestjs/throttler';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { runAllMigrations } from './run-migrations';
+import { useTestDatabase, useTestRedis } from './integration-services';
 
 /**
  * Guards run before interceptors, so the correlation id is opened in middleware:
@@ -13,34 +12,12 @@ import { runAllMigrations } from './run-migrations';
 describe('Correlation id (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    await runAllMigrations();
 
     const { AppModule } = await import('../app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -61,7 +38,6 @@ describe('Correlation id (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   async function problemOf(response: Response) {

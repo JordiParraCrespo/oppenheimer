@@ -3,9 +3,9 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import Redis from 'ioredis';
 import pg from 'pg';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import type { StartedTestContainer } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { usePrivateRedis, useTestDatabase } from '../../__tests__/integration-services';
 
 /**
  * Better Auth's session cache (`secondaryStorage`) against a real Postgres and
@@ -14,36 +14,22 @@ import { runAllMigrations } from '../../__tests__/run-migrations';
  *
  * Query counts are measured by wrapping `pg.Client.prototype.query`, which
  * every pool in the process — TypeORM's and Better Auth's — goes through.
+ *
+ * Postgres is the run's shared server; Redis is a server of this file's own,
+ * because the outage case pauses every client of the server it runs on.
  */
 describe('Session cache (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
   let redis: Redis;
-  let pgContainer: StartedTestContainer;
   let redisContainer: StartedTestContainer;
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    [redisContainer] = await Promise.all([usePrivateRedis(), useTestDatabase()]);
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
-    await runAllMigrations();
     // Imported only now: the Better Auth instance reads the database config at
     // module load.
     const { AppModule } = await import('../../app.module');
@@ -68,7 +54,7 @@ describe('Session cache (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
+    await redisContainer?.stop();
   });
 
   // --- helpers -------------------------------------------------------------
