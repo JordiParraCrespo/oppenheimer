@@ -288,7 +288,10 @@
     "BOTS_034": "Este bot ya tiene tantos permisos permanentes como admite. Quita uno en sus ajustes primero.",
     "BOTS_035": "Esas preguntas no existen.",
     "BOTS_036": "Esas respuestas no encajan con las preguntas. Responde cada una y vuelve a enviarlas.",
-    "BOTS_037": "Esas preguntas ya tenían respuesta."
+    "BOTS_037": "Esas preguntas ya tenían respuesta.",
+    "BOTS_038": "No se ha encontrado esa habilidad.",
+    "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
+    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero."
   },
   "notFound": {
     "title": "Esta página no existe",

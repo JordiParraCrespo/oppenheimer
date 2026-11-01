@@ -36,10 +36,12 @@ import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
+import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
-import { botDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
+import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
+import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { type ComposerTop, composerTopOf } from '@/features/bots/lib/composer-top';
 import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
@@ -62,7 +64,9 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * suggestion in the hello can fill it; the field takes focus on open and
  * after a fill. Enter sends, Shift+Enter starts a new line. The mic dictates
  * into the draft (`useDictation`), added to its end, to be read before it is
- * sent.
+ * sent. A draft that is a `/` command being typed opens the menu of the
+ * skills it can run over the box (`useSlashMenu`); picking one writes
+ * `/<name> ` for its input to follow.
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
  * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
@@ -91,6 +95,7 @@ export function BotComposer({
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
+  const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const active = useBotActiveTurn(botId);
   const waiting = useBotWaitingMessages(botId);
   const { data: keyed } = useModelProviders({
@@ -217,46 +222,52 @@ export function BotComposer({
           cancel.reset();
         }}
       />
-      <ChatComposer
-        value={draft}
-        onValueChange={setDraft}
-        inputRef={field}
-        onSubmit={() => send.mutate(message(running))}
-        onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
-        onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
-        busy={
-          (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
-        }
-        sendBlockedReason={blocked}
-        allowEmpty={images.images.length > 0}
-        onAttach={() => picker.current?.click()}
-        onPaste={onPaste}
-        attachments={
-          images.images.length > 0
-            ? images.images.map((image) => (
-                <BotComposerImage
-                  key={image.key}
-                  image={image}
-                  onRemove={() => images.remove(image.key)}
-                />
-              ))
-            : undefined
-        }
-        placeholder={
-          running
-            ? t('bots.chat.placeholderRunning', { name })
-            : t('bots.chat.placeholder', { name })
-        }
-        tools={tools}
-        engine={engine}
-        above={top ? tops[top]() : undefined}
-        dictation={dictationSlots(dictation)}
-        labels={{
-          send: t('bots.chat.send'),
-          stop: t('bots.chat.stop'),
-          attach: t('bots.chat.images.attach'),
-        }}
-      />
+      <div className="relative">
+        {slash.open ? (
+          <BotSlashMenu items={slash.items} highlighted={slash.highlighted} onPick={slash.pick} />
+        ) : null}
+        <ChatComposer
+          onKeyDownCapture={slash.onKeyDownCapture}
+          value={draft}
+          onValueChange={setDraft}
+          inputRef={field}
+          onSubmit={() => send.mutate(message(running))}
+          onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
+          onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
+          busy={
+            (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
+          }
+          sendBlockedReason={blocked}
+          allowEmpty={images.images.length > 0}
+          onAttach={() => picker.current?.click()}
+          onPaste={onPaste}
+          attachments={
+            images.images.length > 0
+              ? images.images.map((image) => (
+                  <BotComposerImage
+                    key={image.key}
+                    image={image}
+                    onRemove={() => images.remove(image.key)}
+                  />
+                ))
+              : undefined
+          }
+          placeholder={
+            running
+              ? t('bots.chat.placeholderRunning', { name })
+              : t('bots.chat.placeholder', { name })
+          }
+          tools={tools}
+          engine={engine}
+          above={top ? tops[top]() : undefined}
+          dictation={dictationSlots(dictation)}
+          labels={{
+            send: t('bots.chat.send'),
+            stop: t('bots.chat.stop'),
+            attach: t('bots.chat.images.attach'),
+          }}
+        />
+      </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );

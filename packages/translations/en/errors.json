@@ -288,7 +288,10 @@
     "BOTS_034": "This bot already has as many standing permissions as it can hold. Remove one in its settings first.",
     "BOTS_035": "Those questions don't exist.",
     "BOTS_036": "Those answers do not fit the questions. Answer each one, then send them again.",
-    "BOTS_037": "Those questions were already answered."
+    "BOTS_037": "Those questions were already answered.",
+    "BOTS_038": "That skill could not be found.",
+    "BOTS_039": "This bot already has a skill with that name. Pick another.",
+    "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
   },
   "notFound": {
     "title": "That page does not exist",
