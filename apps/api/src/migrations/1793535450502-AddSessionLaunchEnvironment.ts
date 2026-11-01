@@ -9,8 +9,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * with no default rewrites no rows and holds the table's lock only for the
  * catalog change.
  */
-export class AddSessionLaunchEnvironment1791005700000 implements MigrationInterface {
-  name = 'AddSessionLaunchEnvironment1791005700000';
+export class AddSessionLaunchEnvironment1793535450502 implements MigrationInterface {
+  name = 'AddSessionLaunchEnvironment1793535450502';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
