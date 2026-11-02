@@ -1047,3 +1047,9 @@ earlier note:
   herdr-core: an agent in a session starts, tells and waits on child
   sessions with `runner sessions run|send|wait|report` (`runner --skill`).
   The control-plane half, a child the console lists, is still 0.6's.
+- `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
+  or `runner` grows user commands, and noted the starter's CLI and MCP apps
+  were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
+  (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
+  automations, bots and tasks, which are not the runner's to forward. The
+  runner keeps the same-host verbs.
