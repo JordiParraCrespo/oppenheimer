@@ -1,8 +1,10 @@
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import {
-  approvalEvent,
   approvalEventOf,
+  approvalFinishedWords,
   approvalResolved,
+  approvalStartedWords,
+  deniedWords,
   stoppedLine,
 } from '../domain/bot-approval.policy';
 import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
@@ -132,27 +134,32 @@ describe('BotApprovalEntity', () => {
   });
 });
 
-describe('approvalEvent', () => {
-  it('says who approved what, then what the call answered', () => {
+describe('the words that open an approval’s turns', () => {
+  it('says who approved what, and that it runs now', () => {
     const approval = pending();
     approval.approve('user-1', NOW);
-    approval.recordResult('Started session s-1.', false);
-    expect(approvalEvent(approval, 'Ana')).toBe(
-      'Ana approved: Start Claude Code on build-02\nIt ran: Started session s-1.',
+    expect(approvalStartedWords(approval, 'Ana')).toBe(
+      'Ana approved: Start Claude Code on build-02\nIt is running now.',
     );
   });
 
-  it('says a failed call failed', () => {
+  it('says what the approved call answered, and that a failed one failed', () => {
     const approval = pending();
     approval.approve('user-1', NOW);
-    approval.recordResult('Host offline.', true);
-    expect(approvalEvent(approval, 'Ana')).toContain('It ran and failed: Host offline.');
+    approval.recordResult('Started session s-1.', false);
+    expect(approvalFinishedWords(approval, 'Ana')).toBe(
+      'Ana approved a call, and it finished: Start Claude Code on build-02\nIt ran: Started session s-1.',
+    );
+    const failed = pending();
+    failed.approve('user-1', NOW);
+    failed.recordResult('Host offline.', true);
+    expect(approvalFinishedWords(failed, 'Ana')).toContain('It ran and failed: Host offline.');
   });
 
   it('says who denied it, with their note, and names nobody when the name is unknown', () => {
     const approval = pending();
     approval.deny('user-1', NOW, 'Use staging');
-    expect(approvalEvent(approval, ' ')).toBe(
+    expect(deniedWords(approval, ' ')).toBe(
       'The person denied: Start Claude Code on build-02\nTheir note: Use staging',
     );
   });

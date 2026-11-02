@@ -1,9 +1,11 @@
 import {
   type BotApprovalDecision,
   type BotApprovalEvent,
+  type BotApprovalEventStage,
   type BotApprovalReach,
   type BotApprovalResolution,
   type BotEventOutcome,
+  type BotMessageEvent,
   type BotStreamEvent,
   expandScopes,
   type Scope,
@@ -60,15 +62,52 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
 }
 
 /**
- * A decided approval as the event that opens the bot's next turn. Its first
- * line is what the chat shows ("Ana approved: Start Claude Code on
- * build-02…"); what follows is what the bot needs to report back: the call's
- * answer, or the person's note. `by` is who decided, by name.
+ * The words that open the turn a yes gives the bot at once (`25-bots.md`
+ * §5): who approved what, and that it runs now. The chat draws its fields;
+ * the bot reads this and says it is on it (`approvalAsk`).
  */
-export function approvalEvent(approval: BotApprovalEntity, by: string): string {
-  if (approval.status === 'denied') return denialWords(approval, `${who(by)} denied`);
+export function approvalStartedWords(approval: BotApprovalEntity, by: string): string {
+  return `${who(by)} approved: ${approval.summary}\nIt is running now.`;
+}
+
+/** The words that open the turn reporting an approved call: what it was, and its answer. */
+export function approvalFinishedWords(approval: BotApprovalEntity, by: string): string {
   const answer = approval.status === 'failed' ? 'It ran and failed' : 'It ran';
-  return `${who(by)} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
+  return `${who(by)} approved a call, and it finished: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
+}
+
+/** The words that open the turn a no gives the bot: what was refused, and the note. */
+export function deniedWords(approval: BotApprovalEntity, by: string): string {
+  return denialWords(approval, `${who(by)} denied`);
+}
+
+/**
+ * What the bot is asked to do with an approval's turn, by the line that
+ * opened it: say it is on it while the call runs (`started`), or report what
+ * came of the card (how the call went, or the no).
+ */
+export function approvalAsk(stage: BotApprovalEventStage | undefined): string {
+  return stage === 'started' ? APPROVAL_STARTED_ASK : APPROVAL_DECIDED_ASK;
+}
+
+const APPROVAL_DECIDED_ASK =
+  'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
+
+const APPROVAL_STARTED_ASK =
+  'They just approved the call you asked for, and Oppenheimer is running it now. Before it finishes, tell them in one short sentence, in your own voice and their language, that you are on it and what you are doing (for example: "On it, archiving those 25 now."). Do not say it is done, do not guess how it will go, and do not call any tool: how it went comes in your next turn, and you report it then.';
+
+/**
+ * The approval a turn's opening says was approved and is running: the turn
+ * a yes opens at once, where the bot only says it is on it. Null for any
+ * other opening.
+ */
+export function approvalStartedBy(
+  opening: { role: string; event?: BotMessageEvent | null } | null,
+): string | null {
+  const event = opening?.role === 'event' ? opening.event : null;
+  return event?.kind === 'approval' && event.stage === 'started'
+    ? (event.approvalId ?? null)
+    : null;
 }
 
 /** Who decided, by name, as the bot is told; "The person" when the name is unknown. */
@@ -166,16 +205,40 @@ export function intersectScopes(
   return [...expandScopes(a)].filter((scope) => other.has(scope)).sort();
 }
 
+type TurnProps = Parameters<typeof BotTurnEntity.queue>[0];
+
 /**
- * The turn a decision gives the bot: queued like a message of yours, on the
- * bot's provider, model and effort as they are now, opened by the event (its
- * words for the bot, what happened for the chat) rather than by words of
- * yours.
+ * The turns a decision gives the bot (`25-bots.md` §5), each queued like a
+ * message of yours, on the bot's provider, model and effort as they are now,
+ * and opened by an event (its words for the bot, its fields for the chat)
+ * rather than by words of yours. A yes gives two: one at once, where the bot
+ * says it is on it while the call runs, and one when the call ran, where it
+ * reports how it went. A no gives one.
  */
-export function decisionTurn(
-  props: Parameters<typeof BotTurnEntity.queue>[0],
-  approval: BotApprovalEntity,
-  by: string,
+export function approvalStartedTurn(props: TurnProps, approval: BotApprovalEntity, by: string) {
+  return eventTurn(props, approvalStartedWords(approval, by), {
+    ...approvalEventOf(approval),
+    stage: 'started',
+  });
+}
+
+/** The turn that reports how an approved call went, once it ran. */
+export function approvalFinishedTurn(props: TurnProps, approval: BotApprovalEntity, by: string) {
+  return eventTurn(props, approvalFinishedWords(approval, by), {
+    ...approvalEventOf(approval),
+    stage: 'finished',
+  });
+}
+
+/** The turn that tells the bot it was denied, so it carries on. */
+export function deniedTurn(props: TurnProps, approval: BotApprovalEntity, by: string) {
+  return eventTurn(props, deniedWords(approval, by), approvalEventOf(approval));
+}
+
+function eventTurn(
+  props: TurnProps,
+  content: string,
+  event: BotApprovalEvent,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({ ...props, origin: 'approval' });
   const opening = BotMessageEntity.createNew({
@@ -183,8 +246,8 @@ export function decisionTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: approvalEvent(approval, by),
-    event: approvalEventOf(approval),
+    content,
+    event,
     steps: [],
     position: 0,
   });

@@ -833,6 +833,19 @@ How the card works (built 2026-10-15, `bot_approval`):
   once. The bot reads the words, then and in later history, as a note from
   Oppenheimer and not as your words, and is told not to route around a
   denial.
+- **A yes is answered at once, the way a person would.** The approval
+  queues, with the yes, a short turn of the bot's own (its event's
+  `stage` is `started`): "On it, archiving those 25 now.", in its own
+  voice, while the call runs. That turn is offered the bot's usual tools so
+  the provider's cache of the conversation holds, but each refuses to run,
+  it has two round trips, and it takes no steer: a message sent meanwhile
+  waits for a turn that can act on it. Meanwhile the chat holds the call as a live
+  line with its clock ("Running: Archive 25 threads…") under that sentence.
+  The call's answer opens the report's turn as before, its event `finished`,
+  drawn as "Done: …" (or "It failed: …") rather than a second "You
+  approved". If the call ran before the "on it" turn started, that turn ends
+  without a word: an "on it" after the fact, or after the report, reads
+  backwards. A no is unchanged: one turn, which already starts at once.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
 - **Not built yet:** a card for a bot-to-bot or background turn (they
@@ -1150,6 +1163,14 @@ The decisions it produced:
   to end (at most 600 ms). From Codex's `available_decisions`,
   `serverRequest/resolved` and its deferred approval modals. It refines
   2026-10-15's card, whose no always gave the bot a turn.
+- 2026-11-02: **a yes gets an answer before the work.** Approving a card
+  queued no turn until the call had run, so the chat stayed silent through
+  the call and then through a model call over the whole conversation. A
+  yes now queues a short "on it" turn at once (`stage: started`), the chat
+  shows the call running under it, and the report follows as its own turn
+  (`stage: finished`, drawn "Done: …"). Each yes costs one more model call,
+  over a cached prefix. It refines 2026-10-15's card, whose yes gave the
+  bot one turn, after the call.
 - 2026-10-31: **a chat that reconnects mid-turn loses no text** (§2,
   Streaming). The stream dropped what was published while the browser's
   connection was down, and the console drew a hole until the next stored

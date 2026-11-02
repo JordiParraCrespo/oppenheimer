@@ -19,7 +19,9 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
  * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
- * what it needs, runs the engine with its steering, hands what the transcript
+ * what it needs, runs the engine with its steering (unless what it read says
+ * the turn takes none, or has nothing left to say, and so ends at once),
+ * hands what the transcript
  * writes to the turn's writer (`TurnWriteFactory`), then records how it ended,
  * makes the bot's next queued turn due and asks whether the conversation needs
  * summarizing. A turn found running was a worker that died under it, and fails
@@ -70,13 +72,19 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     const watch = this.cancelWatch.watch(turn.id);
     let scratchDir: string | undefined;
     try {
+      const shape = await this.context.resolve(turn, new Date());
+      if (!shape) {
+        turn.end('completed', new Date());
+        return;
+      }
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
-      const context = await this.context.resolve(turn, new Date());
       const transcript = new TurnTranscript(turn);
-      const steering = this.steering.steering(turn);
+      // A message sent meanwhile that this turn cannot take waits for its own turn.
+      const steering = shape.takesSteers ? this.steering.steering(turn) : undefined;
       const signal = watch.signal;
       const write = this.writes.writer(turn);
-      for await (const event of this.engine.run({ ...context, signal, scratchDir, steering })) {
+      const request = { ...shape.request, signal, scratchDir, steering };
+      for await (const event of this.engine.run(request)) {
         for (const written of transcript.apply(event)) await write(written);
       }
       transcript.endTurn(new Date(), watch.interruption);

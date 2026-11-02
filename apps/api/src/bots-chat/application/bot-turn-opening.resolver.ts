@@ -12,6 +12,7 @@ import {
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import { attachedImagesNote } from '../domain/bot-image.policy';
+import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
@@ -25,6 +26,8 @@ export interface BotTurnOpening {
    * only a person's message runs a skill, never an event's text.
    */
   command: BotSlashCommand | null;
+  /** The message itself: yours, or the event Oppenheimer told the bot; null when gone. */
+  message: BotMessageEntity | null;
 }
 
 /**
@@ -47,7 +50,7 @@ export class BotTurnOpeningResolver {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
     const command = opening?.role === 'user' ? parseBotSlashCommand(opening.content) : null;
     if (!opening?.attachments.length) {
-      return { prompt: botTurnPrompt(opening), images: [], command };
+      return { prompt: botTurnPrompt(opening), images: [], command, message: opening };
     }
     const prompt = [botTurnPrompt(opening).trim(), attachedImagesNote(opening.attachments)]
       .filter(Boolean)
@@ -67,6 +70,6 @@ export class BotTurnOpeningResolver {
         return this.mapper.toTurnImage(attachment, data);
       }),
     );
-    return { prompt, images, command };
+    return { prompt, images, command, message: opening };
   }
 }

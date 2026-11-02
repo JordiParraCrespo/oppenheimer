@@ -55,8 +55,27 @@ function setup(asking: 'running' | 'completed' | 'gone' = 'completed') {
 describe('decideApproval', () => {
   it('stages the call on a yes, standing for nothing past it', () => {
     const { approval, decide } = setup();
-    expect(decide('approve')).toEqual({ effects: { runCall: { by: 'Ana' } }, cancelAsking: false });
+    const { effects, cancelAsking } = decide('approve');
+    expect(cancelAsking).toBe(false);
+    expect(effects.runCall).toEqual({ by: 'Ana' });
+    expect(effects.standing).toBeUndefined();
     expect(approval).toMatchObject({ status: 'approved', reach: 'once' });
+  });
+
+  // Regression: the bot said nothing between the yes and the call's result,
+  // a silence of the call's whole run plus a model call over the conversation.
+  it('queues the turn where the bot says it is on it with the yes, before the call runs', () => {
+    const { approval, decide } = setup('running');
+    const { effects } = decide('approve');
+    expect(effects.continuation?.turn).toMatchObject({
+      status: 'queued',
+      origin: 'approval',
+      timeZone: 'Europe/Madrid',
+    });
+    expect(effects.continuation?.opening.event).toEqual(
+      expect.objectContaining({ outcome: 'approved', stage: 'started', approvalId: approval.id }),
+    );
+    expect(effects.continuation?.opening.content).toContain('It is running now.');
   });
 
   it('leaves the subject’s grant standing with Always allow for …', () => {

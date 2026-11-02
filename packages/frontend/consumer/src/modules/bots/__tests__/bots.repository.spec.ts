@@ -273,7 +273,7 @@ describe('BotsRepository', () => {
     ]);
   });
 
-  it('keeps the session an approved call started on its event, for the chat to open', async () => {
+  it('keeps the session an approved call started, and which of its lines it is, for the chat to draw', async () => {
     sdk.findBotConversation.mockResolvedValue(
       ok({
         messages: [
@@ -292,6 +292,8 @@ describe('BotsRepository', () => {
               fromBotName: null,
               expectsReply: null,
               sessionId: 's-1',
+              approvalId: 'a-1',
+              stage: 'finished',
             },
             createdAt: '2026-10-15T09:00:01.000Z',
           },
@@ -300,7 +302,13 @@ describe('BotsRepository', () => {
       }),
     );
     const conversation = await repository.findConversation('bot-1');
-    expect(conversation.messages[0]?.event).toMatchObject({ kind: 'approval', sessionId: 's-1' });
+    // Without its stage, the line over the report reads "You approved" a second time.
+    expect(conversation.messages[0]?.event).toMatchObject({
+      kind: 'approval',
+      sessionId: 's-1',
+      approvalId: 'a-1',
+      stage: 'finished',
+    });
   });
 
   it('reads a card of questions as its own card, and sends one answer per question', async () => {

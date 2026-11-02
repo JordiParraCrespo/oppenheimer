@@ -232,6 +232,7 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             summary: dto.summary,
             sessionId: dto.sessionId ?? null,
             ...(dto.approvalId && { approvalId: dto.approvalId }),
+            ...(dto.stage && { stage: dto.stage }),
           }
         : null;
     }
