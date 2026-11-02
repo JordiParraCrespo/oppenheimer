@@ -233,6 +233,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'schedule_mail',
       asks: 'always',
+      perCallOnly: true,
       scope: 'mail:write',
       description: `Schedules a message, or one of the person’s drafts (give draft_id and leave the message fields out), to send from their Gmail at a time: up to ${MAIL_SCHEDULE_MAX_DAYS} days ahead, sent within a minute of it. Always asks the person first, showing the message and the time; their yes is for that message at that time, and changing either means asking again. cancel_scheduled_mail stops it until it goes. Files from mail only: an image from this chat cannot wait.`,
       input: message.partial({ body: true }).extend({
@@ -314,6 +315,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     return defineBotTool({
       name: tool.name,
       asks: 'always',
+      perCallOnly: true,
       scope: 'mail:write',
       description: tool.description,
       input: tool.input,

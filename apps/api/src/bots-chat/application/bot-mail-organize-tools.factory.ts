@@ -64,17 +64,18 @@ const resolvedNames = z
 
 /**
  * Labels a bot may not put on mail itself: Trash and Spam move it out of
- * sight (`trash_mail` asks every time; nothing marks spam), and Gmail keeps
- * Drafts and Sent for itself.
+ * sight (`trash_mail` asks until the owner allows it; nothing marks spam),
+ * and Gmail keeps Drafts and Sent for itself.
  */
 const RESERVED_ADD = new Set(['TRASH', 'SPAM', 'DRAFT', 'SENT']);
 
 /**
  * Mail (`product/next-steps/mail.md` §3.5), organizing: read state, stars,
  * importance, labels, the inbox and Trash, on threads or messages of the
- * owner's Gmail. Each asks under Approve for me and can run on its own under
- * Approve everything, except `trash_mail`, which asks every time; bringing
- * threads back from Trash never asks. A card stores the account's id and the
+ * owner's Gmail. Each asks under Approve for me and runs on its own under
+ * Full access, except `trash_mail`, which asks under Full access too until
+ * the owner allows it (Settings, or "always" on its card); bringing threads
+ * back from Trash never asks. A card stores the account's id and the
  * labels' ids, so a rename while it waits does not change what a yes does,
  * and a call that changes nothing or more than `MAIL_ORGANIZE_MAX` is refused
  * before any card is raised. Nothing is ever deleted for good.
@@ -176,7 +177,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'trash_mail',
       asks: 'always',
       scope: 'mail:write',
-      description: `Moves threads of the person's Gmail to Trash, which Gmail empties after 30 days; untrash_mail brings them back until then. Always asks the person first. Nothing is ever deleted for good. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
+      description: `Moves threads of the person's Gmail to Trash, which Gmail empties after 30 days; untrash_mail brings them back until then. Asks the person first, unless they have allowed it for you. Nothing is ever deleted for good. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
       input: threadsOnly,
       normalize: (call, context) => this.frozen(call, context),
       summarize: async (call, context) =>
