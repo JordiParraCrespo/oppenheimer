@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** A bot's message to one chat of one of its owner's numbers, as its tool resolved it. */
 export class SendWhatsappMessageCommand extends CommandBase {

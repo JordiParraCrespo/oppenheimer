@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { WhatsappAccountEntity } from '../../domain/whatsapp-account.entity';
 
 /** A number, and whether its host's runner can be reached now. */
