@@ -8,9 +8,20 @@ export interface InboxFilter {
   project: string | null;
 }
 
-/** A session's notice counts among its sessions: the facet has no kind of its own for it. */
+/**
+ * The Type facet each kind is counted under. A session's notice counts with
+ * its sessions: the facet has no option of its own for it.
+ */
+const TYPE_OF: Record<InboxItem['kind'], Exclude<InboxTypeFilter, 'all'>> = {
+  session: 'session',
+  notice: 'session',
+  approval: 'approval',
+  pull: 'pull',
+  run: 'run',
+};
+
 function matchesType(item: InboxItem, type: InboxTypeFilter): boolean {
-  return type === 'all' || item.kind === type || (type === 'session' && item.kind === 'notice');
+  return type === 'all' || TYPE_OF[item.kind] === type;
 }
 
 /** An item two projects hold matches either; one no project holds matches `none`. */
