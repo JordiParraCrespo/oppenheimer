@@ -30,7 +30,7 @@ export function BotUsageSkeleton() {
       <LoadingStatus />
       <section aria-hidden className="flex flex-col gap-2">
         <h3 className="font-medium">{t('bots.chat.usage.thisChat')}</h3>
-        <div className="grid grid-cols-2 gap-x-6 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6">
           {FIGURES.map((width, index) => line(`figure-${index}`, width))}
         </div>
       </section>

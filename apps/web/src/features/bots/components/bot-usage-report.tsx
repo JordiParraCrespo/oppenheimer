@@ -94,7 +94,7 @@ export function BotUsageReport({
         {usage.turns === 0 ? (
           <p className="text-[13px] text-fg-muted">{t('bots.chat.usage.empty')}</p>
         ) : (
-          <dl className="grid grid-cols-2 gap-x-6 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-x-6">
             {stats.map((stat) => (
               <div key={stat.label} className={ROW}>
                 <dt className="text-fg-muted">{stat.label}</dt>
