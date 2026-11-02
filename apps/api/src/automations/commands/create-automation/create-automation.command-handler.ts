@@ -30,6 +30,7 @@ export class CreateAutomationCommandHandler
 
     await this.plan.assertProject(scope, input.projectId);
     await this.plan.assertWhere(scope, input);
+    await this.plan.assertSentryConnection(scope, input.triggers);
     const repositories = await this.plan.resolveRepositories(scope, input.repositories);
     const triggers = this.plan.triggers(input.triggers, now);
 

@@ -139,6 +139,29 @@ describe('the automation aggregate', () => {
     expect(() => automation([outside])).toThrow(/does not work in/);
   });
 
+  // Regression: a Sentry trigger refused for naming no repository, so a
+  // session automation could never start on an error.
+  it('takes a Sentry trigger, which names no repository', () => {
+    const sentry = triggerFromInput(
+      {
+        source: 'sentry',
+        event: 'issue_created',
+        connectionId: '6f1c2d3e-0000-4000-8000-000000000001',
+        filter: { op: 'equals', value: 'oppenheimer-api' },
+      },
+      0,
+    );
+    expect(sentry).toMatchObject({
+      source: 'sentry',
+      eventType: 'issue_created',
+      config: {
+        connectionId: '6f1c2d3e-0000-4000-8000-000000000001',
+        filter: { op: 'equals', value: 'oppenheimer-api' },
+      },
+    });
+    expect(() => automation([sentry])).not.toThrow();
+  });
+
   it('keeps an event with no filter field matching anything, whatever was sent', () => {
     const trigger = triggerFromInput(
       {
@@ -400,6 +423,27 @@ describe('launching a run', () => {
     expect(runCheckout(repositories, { ...pr, type: 'issue_opened' })).toEqual({
       repository: repositories[1],
     });
+  });
+
+  it('starts a Sentry run in the first repository, naming the Sentry organization', () => {
+    const issue: RunEventView = {
+      type: 'issue_created',
+      source: 'sentry',
+      subjectRef: '6f1c2d3e-0000-4000-8000-000000000001',
+      subjectName: 'acme',
+      actorLogin: null,
+      attributes: { project: 'oppenheimer-api' },
+      context: { ref: 'API-1Z', title: 'TypeError: boom', url: 'https://acme.sentry.io/issues/1/' },
+    };
+    expect(runCheckout(repositories, issue)).toEqual({ repository: repositories[0] });
+    expect(eventCauseSummary(issue)).toMatchObject({
+      label: 'New issue',
+      text: 'TypeError: boom',
+      ref: 'acme API-1Z',
+    });
+    expect(composeRunPrompt('Fix it.', issue)).toContain(
+      '<untrusted_external_data source="sentry" event="issue_created" sentry_organization="acme">',
+    );
   });
 
   it('puts the event after the instructions, as data, and gives way before the instructions do', () => {

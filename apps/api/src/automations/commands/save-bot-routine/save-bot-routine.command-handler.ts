@@ -35,6 +35,7 @@ export class SaveBotRoutineCommandHandler
     requireTenant(scope);
     const now = new Date();
     if (changes.triggers) await this.plan.assertMailAccounts(scope, changes.triggers);
+    if (changes.triggers) await this.plan.assertSentryConnection(scope, changes.triggers);
     const triggers = changes.triggers ? this.plan.triggers(changes.triggers, now) : undefined;
 
     if (command.routineId === null) {

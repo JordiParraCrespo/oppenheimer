@@ -41,6 +41,17 @@ export function triggerFromInput(input: TriggerInputDto, position: number): Auto
       nextFireAt: null,
     };
   }
+  if (input.source === 'sentry') {
+    return {
+      id: randomUUID(),
+      position,
+      source: 'sentry',
+      eventType: input.event,
+      config: { connectionId: input.connectionId, filter: input.filter },
+      timezone: null,
+      nextFireAt: null,
+    };
+  }
   const definition = externalEventDefinition(input.source, input.event);
   return {
     id: randomUUID(),

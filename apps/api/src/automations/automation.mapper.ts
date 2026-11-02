@@ -188,6 +188,17 @@ export class AutomationMapper {
       filter.op === 'equals' && typeof filter.value === 'string'
         ? { op: 'equals', value: filter.value }
         : { op: 'any' };
+    if (record.source === 'sentry') {
+      return {
+        id: record.id,
+        position: record.position,
+        source: 'sentry',
+        eventType: record.eventType,
+        config: { connectionId: String(config.connectionId ?? ''), filter: stored },
+        timezone: null,
+        nextFireAt: null,
+      };
+    }
     if (record.source === 'gmail') {
       return {
         id: record.id,
@@ -303,6 +314,11 @@ export class AutomationMapper {
         { subjectKind: TRIGGER_SUBJECT_KINDS.gmail, subjectRef: trigger.config.connectionId },
       ];
     }
+    if (trigger.source === 'sentry') {
+      return [
+        { subjectKind: TRIGGER_SUBJECT_KINDS.sentry, subjectRef: trigger.config.connectionId },
+      ];
+    }
     return trigger.config.repositories.map((ref) => ({
       subjectKind: TRIGGER_SUBJECT_KINDS.github,
       subjectRef: ref,
@@ -398,6 +414,9 @@ export class AutomationMapper {
     } else if (trigger.source === 'gmail') {
       dto.connectionId = trigger.config.connectionId;
       dto.query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
+    } else if (trigger.source === 'sentry') {
+      dto.connectionId = trigger.config.connectionId;
+      dto.filter = trigger.config.filter;
     } else {
       dto.repositories = trigger.config.repositories;
       dto.filter = trigger.config.filter;

@@ -78,6 +78,8 @@ const lines = [
   '# key starting `crsr_stub_` and plays each run out on its own clock.',
   `CLOUD_AGENTS_KEY=${randomBytes(32).toString('base64')}`,
   `CLOUD_AGENTS_CURSOR_API_URL=${CURSOR_STUB}`,
+  "# Seals the workspaces' Sentry client secrets, so Sentry can start automations.",
+  `SENTRY_CONNECTION_KEY=${randomBytes(32).toString('base64')}`,
   "# Sessions' previews, so the Browser tab is offered. `*.localhost` resolves",
   '# to the loopback in every browser, so the API serves them with no DNS.',
   `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3011'}`,

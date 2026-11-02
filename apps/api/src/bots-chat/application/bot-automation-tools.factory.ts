@@ -238,6 +238,10 @@ export function describeTrigger(
     const query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
     return `gmail mail_received in account ${trigger.config.connectionId}${query ? ` matching "${query}"` : ' (every new message in the inbox)'}`;
   }
+  if (trigger.source === 'sentry') {
+    const value = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
+    return `sentry ${trigger.eventType} through connection ${trigger.config.connectionId}${value ? ` for "${value}"` : ' (every project)'}`;
+  }
   const filter =
     trigger.config.filter.op === 'equals'
       ? ` where it equals "${trigger.config.filter.value}"`

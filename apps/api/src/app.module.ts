@@ -56,6 +56,7 @@ import {
   redisConfig,
   relayConfig,
   retentionConfig,
+  sentryConfig,
   sessionsConfig,
   storageConfig,
   throttlingConfig,
@@ -84,6 +85,7 @@ import { REDIS_CLIENT } from './redis/redis.di-tokens';
 import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
+import { SentryModule } from './sentry/sentry.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { TasksModule } from './tasks/tasks.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
@@ -117,6 +119,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         mailConfig,
         cloudAgentsConfig,
         retentionConfig,
+        sentryConfig,
         throttlingConfig,
         voiceConfig,
       ],
@@ -273,6 +276,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     TasksModule,
     CalendarModule,
     MailModule,
+    SentryModule,
     WhatsappModule,
     CloudAgentsModule,
     PullRequestsModule,

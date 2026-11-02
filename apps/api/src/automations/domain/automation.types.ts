@@ -115,6 +115,15 @@ export interface GmailTriggerConfig {
   filter: TriggerFilter;
 }
 
+/**
+ * A Sentry trigger's config (`next-steps/sentry.md`): the workspace's Sentry
+ * connection, and a project slug (an alert's rule name) or `any`.
+ */
+export interface SentryTriggerConfig {
+  connectionId: string;
+  filter: TriggerFilter;
+}
+
 export type AutomationTriggerProps =
   | {
       id: string;
@@ -140,6 +149,15 @@ export type AutomationTriggerProps =
       source: 'gmail';
       eventType: string;
       config: GmailTriggerConfig;
+      timezone: null;
+      nextFireAt: null;
+    }
+  | {
+      id: string;
+      position: number;
+      source: 'sentry';
+      eventType: string;
+      config: SentryTriggerConfig;
       timezone: null;
       nextFireAt: null;
     };

@@ -13,6 +13,9 @@ import { MailErrors } from '../../mail/domain/mail.errors';
 import { FindGmailConnectionQuery } from '../../mail/queries/find-gmail-connection/find-gmail-connection.query';
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
+import { SentryErrors } from '../../sentry/domain/sentry.errors';
+import type { SentryConnectionResponseDto } from '../../sentry/dtos/sentry-connection.response.dto';
+import { FindSentryConnectionQuery } from '../../sentry/queries/find-sentry-connection/find-sentry-connection.query';
 import type { AutomationRepository, AutomationTriggerProps } from '../domain/automation.types';
 import { automationAgentSupported } from '../domain/automation-agent.policy';
 import { AutomationErrors } from '../domain/automations.errors';
@@ -117,6 +120,27 @@ export class AutomationPlanFactory {
           detail: `No connected Gmail account of yours has the id ${input.connectionId}`,
         });
       }
+    }
+  }
+
+  /** Each Sentry trigger watches this workspace's own connection. */
+  async assertSentryConnection(
+    scope: AccessScope,
+    inputs: readonly TriggerInputDto[],
+  ): Promise<void> {
+    const named = inputs.flatMap((input) =>
+      input.source === 'sentry' ? [input.connectionId] : [],
+    );
+    if (named.length === 0) return;
+    const connection = await this.queryBus.execute<
+      FindSentryConnectionQuery,
+      SentryConnectionResponseDto
+    >(new FindSentryConnectionQuery({ scope }));
+    const stranger = named.find((id) => id !== connection.id);
+    if (stranger) {
+      throw new AppError(SentryErrors.NOT_CONNECTED, {
+        detail: `This workspace's Sentry connection is not ${stranger}`,
+      });
     }
   }
 

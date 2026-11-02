@@ -11,6 +11,7 @@ import {
   RUN_WINDOWS,
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
+  SENTRY_EVENT_TYPES,
 } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 import { CLOUD_AGENT_IDS } from './cloud-agent.schema.js';
@@ -116,10 +117,34 @@ export const gmailTriggerInputSchema = z.object({
 
 export type GmailTriggerInputDto = z.infer<typeof gmailTriggerInputSchema>;
 
+/** How long a Sentry filter value may be: a project slug, or an alert rule's name. */
+export const SENTRY_TRIGGER_FILTER_MAX = 200;
+
+/**
+ * A Sentry card (`next-steps/sentry.md`): the workspace's connected Sentry
+ * organization, the event, and one project slug (an alert's rule name) or
+ * "any". The run works in the automation's first repository.
+ */
+export const sentryTriggerInputSchema = z.object({
+  source: z.literal('sentry'),
+  event: z.enum(SENTRY_EVENT_TYPES),
+  connectionId: z.string().uuid(),
+  filter: z.discriminatedUnion('op', [
+    z.object({ op: z.literal('any') }),
+    z.object({
+      op: z.literal('equals'),
+      value: z.string().trim().min(1).max(SENTRY_TRIGGER_FILTER_MAX),
+    }),
+  ]),
+});
+
+export type SentryTriggerInputDto = z.infer<typeof sentryTriggerInputSchema>;
+
 export const triggerInputSchema = z.union([
   scheduleTriggerInputSchema,
   githubTriggerInputSchema,
   gmailTriggerInputSchema,
+  sentryTriggerInputSchema,
 ]);
 
 export type TriggerInputDto = z.infer<typeof triggerInputSchema>;

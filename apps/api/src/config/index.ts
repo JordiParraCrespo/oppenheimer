@@ -14,6 +14,7 @@ export { oauthConfig } from './oauth.config';
 export { redisConfig } from './redis.config';
 export { relayConfig } from './relay.config';
 export { retentionConfig } from './retention.config';
+export { sentryConfig, sentrySealKeyOf } from './sentry.config';
 export { sessionsConfig } from './sessions.config';
 export { storageConfig } from './storage.config';
 export { throttlingConfig } from './throttling.config';

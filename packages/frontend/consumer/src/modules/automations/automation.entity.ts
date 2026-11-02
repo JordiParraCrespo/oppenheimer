@@ -12,6 +12,7 @@ import type {
   GithubEventType,
   RunWindow,
   ScheduleFrequency,
+  SentryEventType,
   TriggerFilter,
 } from '@oppenheimer/shared/automations';
 import type { TriggerInputDto } from '@oppenheimer/shared/schemas/automation';
@@ -65,7 +66,20 @@ export interface GmailTrigger {
   query: string | null;
 }
 
-export type AutomationTrigger = ScheduleTrigger | GithubTrigger | GmailTrigger;
+/**
+ * A Sentry trigger (`next-steps/sentry.md`): an issue or an alert in the
+ * workspace's connected Sentry organization, maybe narrowed to one project
+ * (an alert, to one rule). The run works in the automation's first repository.
+ */
+export interface SentryTrigger {
+  source: 'sentry';
+  id: string | null;
+  event: SentryEventType;
+  connectionId: string;
+  filter: TriggerFilter;
+}
+
+export type AutomationTrigger = ScheduleTrigger | GithubTrigger | GmailTrigger | SentryTrigger;
 
 /** A repository an automation's runs clone. */
 export interface AutomationRepository {

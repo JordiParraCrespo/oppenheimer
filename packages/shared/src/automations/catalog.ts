@@ -18,26 +18,29 @@
  * Where a trigger comes from. `schedule` is ours; every other source is an
  * external system that delivers events through the inbound-events hub.
  */
-export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail'] as const;
+export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail', 'sentry'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
 
 /**
- * The sources whose events arrive from outside: GitHub's through a webhook,
- * Gmail's from our own poll of the accounts a routine watches.
+ * The sources whose events arrive from outside: GitHub's and Sentry's through
+ * a webhook, Gmail's from our own poll of the accounts a routine watches.
  */
 export const EXTERNAL_TRIGGER_SOURCES = [
   'github',
   'gmail',
+  'sentry',
 ] as const satisfies readonly TriggerSource[];
 export type ExternalTriggerSource = (typeof EXTERNAL_TRIGGER_SOURCES)[number];
 
 /**
  * What an external source's events happen to, and so what its triggers watch:
- * a repository for GitHub, a connected account for Gmail.
+ * a repository for GitHub, a connected account for Gmail, the workspace's
+ * connected Sentry organization for Sentry.
  */
 export const TRIGGER_SUBJECT_KINDS = {
   github: 'repository',
   gmail: 'gmail_connection',
+  sentry: 'sentry_connection',
 } as const satisfies Record<ExternalTriggerSource, string>;
 export type TriggerSubjectKind = (typeof TRIGGER_SUBJECT_KINDS)[ExternalTriggerSource];
 
@@ -109,16 +112,37 @@ export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
 export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
 
+/**
+ * What a connected Sentry organization delivers (`next-steps/sentry.md`): a
+ * new issue, a resolved one that came back, one escalating past its usual
+ * volume, and an issue alert rule firing.
+ */
+export const SENTRY_EVENT_TYPES = [
+  'issue_created',
+  'issue_regressed',
+  'issue_escalating',
+  'alert_triggered',
+] as const;
+export type SentryEventType = (typeof SENTRY_EVENT_TYPES)[number];
+
 /** Every external event type any source defines. */
-export type ExternalEventType = GithubEventType | GmailEventType;
+export type ExternalEventType = GithubEventType | GmailEventType | SentryEventType;
 
 /**
  * The attribute a trigger's one filter value is compared with. `null` is an
  * event with nothing to narrow on (an issue opened, a release), whose trigger
  * always matches. A mail's `query` is the list of watched Gmail queries it
- * matched, so a trigger's query is found in it.
+ * matched, so a trigger's query is found in it. A Sentry issue's `project` is
+ * its project's slug; an alert's `rule` is the name of the rule that fired.
  */
-export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label', 'query'] as const;
+export const TRIGGER_FILTER_FIELDS = [
+  'baseBranch',
+  'branch',
+  'label',
+  'query',
+  'project',
+  'rule',
+] as const;
 export type TriggerFilterField = (typeof TRIGGER_FILTER_FIELDS)[number];
 
 /**
@@ -283,6 +307,48 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     description: 'A message arrived in a connected Gmail account',
     filterField: 'query',
     defaultFilter: { op: 'any' },
+    checkout: 'default_branch',
+    untrustedContent: true,
+  },
+  // Sentry: an error's message, culprit and stack are whatever the failing
+  // code and its input put there, so its content is untrusted.
+  {
+    source: 'sentry',
+    type: 'issue_created',
+    label: 'New issue',
+    description: 'Sentry grouped an error it had not seen before',
+    filterField: 'project',
+    defaultFilter: ANY_FILTER,
+    checkout: 'default_branch',
+    untrustedContent: true,
+  },
+  {
+    source: 'sentry',
+    type: 'issue_regressed',
+    label: 'Issue regressed',
+    description: 'A resolved issue happened again',
+    filterField: 'project',
+    defaultFilter: ANY_FILTER,
+    checkout: 'default_branch',
+    untrustedContent: true,
+  },
+  {
+    source: 'sentry',
+    type: 'issue_escalating',
+    label: 'Issue escalating',
+    description: 'An issue is happening far more than usual',
+    filterField: 'project',
+    defaultFilter: ANY_FILTER,
+    checkout: 'default_branch',
+    untrustedContent: true,
+  },
+  {
+    source: 'sentry',
+    type: 'alert_triggered',
+    label: 'Alert fired',
+    description: 'An issue alert rule fired',
+    filterField: 'rule',
+    defaultFilter: ANY_FILTER,
     checkout: 'default_branch',
     untrustedContent: true,
   },
