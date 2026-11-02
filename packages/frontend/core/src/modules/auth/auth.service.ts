@@ -1,5 +1,5 @@
 import type { LoginDto, RegisterDto } from '@oppenheimer/shared';
-import { inject, injectable, optional } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import {
   ANALYTICS_EVENTS,
@@ -45,8 +45,7 @@ export class AuthService {
     @inject(TOKENS.StorageService)
     private readonly storage: IStorageService,
     @inject(TOKENS.ErrorReportingService)
-    @optional()
-    private readonly errors?: ErrorReportingService,
+    private readonly errors: ErrorReportingService,
   ) {}
 
   async login(dto: LoginDto): Promise<void> {
@@ -115,7 +114,7 @@ export class AuthService {
     // who signed out rather than to a fresh anonymous id.
     this.analytics.capture(ANALYTICS_EVENTS.USER_SIGNED_OUT);
     this.analytics.reset();
-    this.errors?.setUser(null);
+    this.errors.setUser(null);
   }
 
   /**
@@ -191,7 +190,7 @@ export class AuthService {
 
   /** Error reports get the id alone; analytics gets the person's name and address. */
   private identify(user: { id: string; email: string; firstName: string; lastName: string }): void {
-    this.errors?.setUser(user.id);
+    this.errors.setUser(user.id);
     this.analytics.identify(user.id, {
       email: user.email,
       name: `${user.firstName} ${user.lastName}`.trim(),

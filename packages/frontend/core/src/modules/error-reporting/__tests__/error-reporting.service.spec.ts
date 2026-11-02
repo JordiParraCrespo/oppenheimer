@@ -33,6 +33,23 @@ describe('ErrorReportingService', () => {
     expect(client.captured).toEqual([{ error: bug, context: { level: 'error' } }]);
   });
 
+  // Regression: a repository's mapper throwing on a response it could not
+  // read, wrapped by `callApi` in its fallback error and so never reported.
+  it('reports the bug a repository wrapped, and not the network failure it wrapped', () => {
+    const client = new RecordingClient();
+    const service = new ErrorReportingService(client);
+    const unreadable = new TypeError('data.map is not a function');
+    const fallback = { code: 'HOSTS_CLIENT_001', message: 'Failed to load hosts' };
+
+    expect(service.capture(new AppError(fallback, { cause: unreadable }))).toBe(true);
+    expect(
+      service.capture(new AppError(fallback, { cause: new TypeError('Failed to fetch') })),
+    ).toBe(false);
+    expect(service.capture(new AppError(fallback))).toBe(false);
+
+    expect(client.captured).toEqual([{ error: unreadable, context: undefined }]);
+  });
+
   it('never throws when the provider does', () => {
     const service = new ErrorReportingService({
       capture: () => {

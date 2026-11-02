@@ -38,10 +38,12 @@ ENV API_UPSTREAM=api:3001
 # every user-defined network has. Set it where the image runs outside one.
 ENV NGINX_RESOLVER=127.0.0.11
 # Origins the Content-Security-Policy in nginx.conf admits beyond 'self'.
-# Defaults to the PostHog EU endpoints, matching VITE_POSTHOG_HOST's default;
-# widen it when the analytics project is in another region or VITE_API_URL
-# points the app at a different origin.
-ENV CSP_EXTRA_ORIGINS="https://eu.i.posthog.com https://eu-assets.i.posthog.com"
+# Defaults to the PostHog EU endpoints, matching VITE_POSTHOG_HOST's default,
+# and Sentry's ingestion hosts (sentry.io's US and EU regions), where the
+# console posts its error reports when VITE_SENTRY_DSN is set; widen it when
+# the analytics project is in another region, Sentry is self-hosted, or
+# VITE_API_URL points the app at a different origin.
+ENV CSP_EXTRA_ORIGINS="https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io"
 # Origins the console may frame beyond 'self': sessions' previews, as a
 # wildcard of the preview domain (`https://*.<PREVIEW_BASE_URL's domain>`).
 # Empty, the Browser tab's frame is refused; see the /session-previews skill.
