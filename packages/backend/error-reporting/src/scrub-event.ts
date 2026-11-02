@@ -5,8 +5,9 @@ import { URLSearchParams } from 'node:url';
  * `beforeSend`, after every integration has added to it, so nothing an
  * integration attaches gets past this.
  *
- * - Credentials: the `Authorization`, `Cookie` and API-key headers, and any
- *   query parameter or extra whose name says it holds a secret.
+ * - Credentials: the `Authorization`, `Cookie` and API-key headers, any
+ *   query parameter or extra whose name says it holds a secret, and the
+ *   token in a path that is itself the credential (`/cloud-files/{token}`).
  * - Bodies: a request body can hold a prompt, a message, a terminal's input or
  *   a pasted key; the route and the correlation id are enough to find it.
  * - The user is reduced to an id: no email, name or IP.
@@ -26,7 +27,13 @@ const SECRET_HEADERS = new Set([
 
 /** A key whose value is a secret by its name: `token`, `apiKey`, `client_secret`, `password`, `code`… */
 const SECRET_KEY =
-  /token|secret|password|passwd|api[-_]?key|authorization|cookie|^code$|^state$|signature|dsn/i;
+  /token|secret|password|passwd|api[-_]?key|authorization|cookie|ticket|^code$|^state$|signature|dsn/i;
+
+/**
+ * Paths whose last segment is a bearer credential: a public route that takes
+ * no other proof. A new one is added here, with a case in the spec.
+ */
+const CREDENTIAL_PATHS = [/(\/cloud-files\/)[^/?#]+/g];
 
 export const REDACTED = '[redacted]';
 
@@ -88,8 +95,15 @@ export function scrubQuery(query: string): string {
 
 function scrubUrl(url: string): string {
   const at = url.indexOf('?');
-  if (at === -1) return url;
-  return `${url.slice(0, at)}?${scrubQuery(url.slice(at + 1))}`;
+  if (at === -1) return scrubPath(url);
+  return `${scrubPath(url.slice(0, at))}?${scrubQuery(url.slice(at + 1))}`;
+}
+
+function scrubPath(path: string): string {
+  return CREDENTIAL_PATHS.reduce(
+    (scrubbed, pattern) => scrubbed.replace(pattern, `$1${REDACTED}`),
+    path,
+  );
 }
 
 function scrubRecord(record: Record<string, unknown>): Record<string, unknown> {
