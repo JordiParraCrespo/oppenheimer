@@ -384,6 +384,11 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, errors.New(`usage: runner sessions report "message"`)
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.Report(ctx, strings.Join(args, " ")) })
+	case "notify":
+		if len(args) == 0 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions notify "line"`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Notify(ctx, strings.Join(args, " ")) })
 	case "send-file":
 		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
 		caption := fs.String("caption", "", "a line about the file, shown with it")
@@ -558,6 +563,7 @@ func usage(w *os.File) {
   runner sessions children        this session's children and what each one says
   runner sessions send-file <path> [--caption "line"]
                                   from inside a session: show the person a file in its chat
+  runner sessions notify "line"   from inside a session: tell the person, in the console's Inbox
   runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
   runner --skill                  the manual for an agent in a session (helpers, messages, waits)
   runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)

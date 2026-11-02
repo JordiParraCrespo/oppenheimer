@@ -71,6 +71,18 @@ path. Use it for what the person should look at rather than read in your
 answer: a screenshot, a chart, a page you rendered. The file stays on this
 host; send it again after you change it.
 
+## Tell the person
+
+```sh
+runner sessions notify "The migration ran: 3 tables changed, all tests pass."
+```
+
+The line lands in the person's Inbox in the console, wherever they are,
+until they mark it done. Use it when you finish something they asked to
+hear about, or when you need them and they may not be watching ("I need the
+staging API key to go on"). One line, at most 500 bytes; a newer notice
+from you replaces the last one.
+
 ## What the person sees
 
 Every session, children included, is a terminal on this host. The console

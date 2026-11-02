@@ -1068,3 +1068,8 @@ earlier note:
   a mail-cleaning goal stopped at its first long turn: the goal is the way
   past that limit, so that turn is reviewed and the next continuation goes
   on, told to take a smaller step.
+- `versions/mvp/29-inbox.md` built the Inbox only from what the system
+  already knew, with no way for an agent to post into it. Since 2026-11-02
+  an agent in a session can: `runner sessions notify "line"` keeps the line
+  on its session, and the Inbox lists it until it is marked done
+  (`next-steps/agent-tools.md` §2).

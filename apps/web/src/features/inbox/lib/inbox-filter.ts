@@ -8,8 +8,9 @@ export interface InboxFilter {
   project: string | null;
 }
 
+/** A session's notice counts among its sessions: the facet has no kind of its own for it. */
 function matchesType(item: InboxItem, type: InboxTypeFilter): boolean {
-  return type === 'all' || item.kind === type;
+  return type === 'all' || item.kind === type || (type === 'session' && item.kind === 'notice');
 }
 
 /** An item two projects hold matches either; one no project holds matches `none`. */

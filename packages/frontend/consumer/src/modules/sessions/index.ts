@@ -31,6 +31,7 @@ export {
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,
+  type SessionNotice,
   type SessionPort,
   type SessionPorts,
   type SessionPreview,

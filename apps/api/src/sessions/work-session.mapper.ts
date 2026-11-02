@@ -12,6 +12,7 @@ import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
   readAgentReport,
+  readNotice,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -75,6 +76,7 @@ export class WorkSessionMapper
     record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
     record.pendingDecision = fold.pendingDecision;
     record.agentReport = fold.agentReport;
+    record.notice = fold.notice;
     return record;
   }
 
@@ -193,6 +195,7 @@ export class WorkSessionMapper
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
       agentReport: readAgentReport(record.agentReport),
+      notice: readNotice(record.notice),
     };
   }
 
@@ -254,6 +257,7 @@ export class WorkSessionMapper
       : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
     dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
+    dto.notice = entity.notice ? { ...entity.notice, at: new Date(entity.notice.at) } : null;
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) =>

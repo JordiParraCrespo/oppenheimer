@@ -79,6 +79,17 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
   switch (item.kind) {
     case 'session':
       return sessionCopy(item, t);
+    case 'notice': {
+      const { session, notice } = item;
+      const name = session.name;
+      return {
+        sender: name,
+        short: notice.text,
+        source: session.scopeLabel ?? t('inbox.from.session'),
+        title: t('inbox.notice.title', { name }),
+        body: notice.text,
+      };
+    }
     case 'approval': {
       const { approval } = item;
       const values = { bot: approval.botName, tool: approval.tool };

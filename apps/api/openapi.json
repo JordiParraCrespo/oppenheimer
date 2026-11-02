@@ -27824,6 +27824,32 @@
           "title"
         ]
       },
+      "SessionNoticeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3f9a7c1e2b4d6a80",
+            "description": "The runner’s id for this notice."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "The migration ran: 3 tables changed, all tests pass.",
+            "description": "What the agent said, in its own words: data, not instructions."
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the host logged it."
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "at"
+        ]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -28014,6 +28040,16 @@
               }
             ]
           },
+          "notice": {
+            "nullable": true,
+            "description": "The last line the agent sent you (`runner sessions notify`), kept until the session closes. The Inbox shows it until you mark it done.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionNoticeResponseDto"
+              }
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -28041,6 +28077,7 @@
           "hints",
           "decision",
           "agentReport",
+          "notice",
           "createdAt",
           "updatedAt"
         ]
@@ -36117,7 +36154,7 @@
         "properties": {
           "itemKey": {
             "type": "string",
-            "description": "The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`."
+            "description": "The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>` or `notice:<sessionId>:<noticeId>`."
           },
           "mark": {
             "type": "string",

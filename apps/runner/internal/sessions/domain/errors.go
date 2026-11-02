@@ -58,6 +58,9 @@ var (
 	// (`runner sessions send-file`): not there, not a regular file, or not
 	// readable by the runner.
 	ErrShare = problem.New("SESS_013", http.StatusBadRequest, "The file cannot be shared")
+	// ErrNotify refuses `runner sessions notify` on a runner with no link to
+	// the control plane: a host that is not paired has nobody to tell.
+	ErrNotify = problem.New("SESS_014", http.StatusServiceUnavailable, "The person cannot be notified from this host")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.
