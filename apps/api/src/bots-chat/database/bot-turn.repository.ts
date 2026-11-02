@@ -24,6 +24,7 @@ import type {
   BotSteerTaken,
   BotTurnRepositoryPort,
 } from './bot-turn.repository.port';
+import { clearModelCallsWithin } from './bot-usage.repository';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
@@ -484,12 +485,7 @@ export class BotTurnRepository
         organizationId,
         botId,
       ]);
-      // What the chat spent outside its turns goes with them: `/usage` counts one chat
-      // (IDX_bot_model_call_bot).
-      await manager.query(
-        `DELETE FROM bot_model_call WHERE "organizationId" = $1 AND "botId" = $2`,
-        [organizationId, botId],
-      );
+      await clearModelCallsWithin(manager, organizationId, botId);
       return 'cleared';
     });
   }

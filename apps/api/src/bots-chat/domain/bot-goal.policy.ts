@@ -1,11 +1,9 @@
-import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import {
   BOT_GOAL_CONTINUATIONS_PERSON,
   type BotGoalActivity,
   type BotTurnFailure,
   type BotTurnStatus,
   botGoalCommandOf,
-  isBotConsoleCommand,
   parseBotSlashCommand,
   type Scope,
 } from '@oppenheimer/shared';
@@ -59,7 +57,8 @@ export interface GoalSettingTurn {
  * The goal a person's message sets (`25-bots.md` §4.1, "Built-in
  * commands"): `/goal <condition>` sets one on the turn it queues, with the
  * whole of the limit; null for any other message, `/goal` alone and
- * `/goal clear` included, which `refuseConsoleCommand` refuses first.
+ * `/goal clear` included, which `refuseConsoleCommand`
+ * (`bot-built-in.policy.ts`) refuses first.
  */
 export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoalEntity | null {
   const command = botGoalCommandOf(parseBotSlashCommand(content));
@@ -73,19 +72,6 @@ export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoal
     credentialScopes: turn.credentialScopes,
     timeZone: turn.timeZone,
   });
-}
-
-/**
- * Refuses a message that is a built-in the console runs itself (`/goal`
- * alone, `/goal clear`, `/usage`): as a message it would spend a turn to say
- * what the console shows, and do nothing it asks.
- */
-export function refuseConsoleCommand(content: string): void {
-  if (isBotConsoleCommand(parseBotSlashCommand(content))) {
-    throw new ArgumentInvalidException(
-      '/goal alone, /goal clear and /usage are not messages: read the goal with GET /bots/:id/goal, stop it with DELETE /bots/:id/goal, and read the usage with GET /bots/:id/usage',
-    );
-  }
 }
 
 /** What the end of a turn means for the goal, before the reviewer is asked. */

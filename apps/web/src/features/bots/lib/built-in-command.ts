@@ -11,12 +11,15 @@ import { botGoalCommandOf, parseBotSlashCommand } from '@oppenheimer/shared/sche
  * - null: the draft is a message, built-in or not (`/goal <condition>` is
  *   sent; the API sets the goal).
  *
- * A new built-in adds its case here and its action to `useBuiltInCommand`,
- * so the composer keeps one notice and one local action whatever the draft.
+ * A new built-in adds its case here and its entry to `useBuiltInCommand`'s
+ * table of local actions, so the composer keeps one notice and one local
+ * action whatever the draft.
  */
+export type BuiltInLocalAction = 'clearGoal' | 'openUsage';
+
 export type BuiltInCommandAction =
   | { kind: 'notice'; notice: 'goalNeedsCondition' }
-  | { kind: 'local'; action: 'clearGoal' | 'openUsage' }
+  | { kind: 'local'; action: BuiltInLocalAction }
   | null;
 
 export function builtInCommandActionOf(draft: string): BuiltInCommandAction {

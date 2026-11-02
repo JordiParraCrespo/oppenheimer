@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import type { BotModelCallPurpose, BotProvider, BotUsage } from '@oppenheimer/shared';
-import type { Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { type BotModelCall, botUsageOf, tokenCount } from '../domain/bot-usage.policy';
 import { BotModelCallOrmEntity } from './bot-model-call.orm-entity';
@@ -93,4 +93,18 @@ export class BotUsageRepository
       })),
     });
   }
+}
+
+/**
+ * Clears what a bot's chat spent outside its turns, in the transaction that
+ * clears the chat (`BotTurnRepository.clearConversation`): the turns go with
+ * the conversation, and these with them, so `/usage` always counts one chat
+ * (IDX_bot_model_call_bot).
+ */
+export async function clearModelCallsWithin(
+  manager: EntityManager,
+  organizationId: string,
+  botId: string,
+): Promise<void> {
+  await manager.delete(BotModelCallOrmEntity, { organizationId, botId });
 }

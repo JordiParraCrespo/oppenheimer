@@ -8,7 +8,6 @@
  * end delivered twice queues two; a `/goal` that shows or clears the goal
  * spending a turn.
  */
-import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import { BOT_GOAL_CONTINUATIONS_MAX, BOT_GOAL_CONTINUATIONS_PERSON } from '@oppenheimer/shared';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import {
@@ -19,7 +18,6 @@ import {
   goalKeyPrefix,
   goalOutcome,
   goalSourceKey,
-  refuseConsoleCommand,
 } from '../domain/bot-goal.policy';
 
 function goal(continuations = 0, limit = 3): BotGoalEntity {
@@ -183,17 +181,6 @@ describe('goalFromMessage', () => {
   it('sets nothing for /goal alone or /goal clear, which the console runs', () => {
     expect(goalFromMessage('/goal', turn)).toBeNull();
     expect(goalFromMessage('/goal stop', turn)).toBeNull();
-  });
-});
-
-describe('refuseConsoleCommand', () => {
-  it('refuses /goal alone, /goal clear and /usage as messages, and lets the rest through', () => {
-    for (const content of ['/goal', '/goal stop', '/usage', '/usage today']) {
-      expect(() => refuseConsoleCommand(content)).toThrow(ArgumentInvalidException);
-    }
-    for (const content of ['/goal CI is green', '/usages', 'what is my usage?']) {
-      expect(() => refuseConsoleCommand(content)).not.toThrow();
-    }
   });
 });
 

@@ -16,7 +16,8 @@ import { BotMessageAttachmentsResolver } from '../../application/bot-message-att
 import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { goalFromMessage, refuseConsoleCommand } from '../../domain/bot-goal.policy';
+import { refuseConsoleCommand } from '../../domain/bot-built-in.policy';
+import { goalFromMessage } from '../../domain/bot-goal.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { maySteer } from '../../domain/bot-steer.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';

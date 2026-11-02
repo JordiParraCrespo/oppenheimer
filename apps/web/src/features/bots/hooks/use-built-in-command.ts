@@ -1,6 +1,9 @@
 import { useClearBotGoal } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
-import { builtInCommandActionOf } from '@/features/bots/lib/built-in-command';
+import {
+  type BuiltInLocalAction,
+  builtInCommandActionOf,
+} from '@/features/bots/lib/built-in-command';
 import { openUsageCard } from '@/features/bots/lib/usage-cards';
 
 const NOTICES = {
@@ -21,14 +24,18 @@ export function useBuiltInCommand(botId: string, draft: string) {
   const action = builtInCommandActionOf(draft);
   const notice = action?.kind === 'notice' ? t(NOTICES[action.notice]) : undefined;
 
-  function runLocally(onDone: () => void): boolean {
-    if (action?.kind !== 'local') return false;
-    if (action.action === 'openUsage') {
+  // What each built-in the console runs does; the next one is an entry here, not a branch.
+  const local: Record<BuiltInLocalAction, (onDone: () => void) => void> = {
+    clearGoal: (onDone) => clearGoal.mutate({ id: botId }, { onSuccess: onDone }),
+    openUsage: (onDone) => {
       openUsageCard(botId);
       onDone();
-    } else {
-      clearGoal.mutate({ id: botId }, { onSuccess: onDone });
-    }
+    },
+  };
+
+  function runLocally(onDone: () => void): boolean {
+    if (action?.kind !== 'local') return false;
+    local[action.action](onDone);
     return true;
   }
 
