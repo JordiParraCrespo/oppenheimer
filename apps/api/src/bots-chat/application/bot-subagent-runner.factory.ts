@@ -81,7 +81,15 @@ export class BotSubagentRunnerFactory {
     turn: AbortSignal,
     progress: ChildProgress,
   ): Promise<BotSubagentRun> {
-    const tally: Tally = { started: Date.now(), texts: [], toolCalls: [], input: 0, output: 0 };
+    const tally: Tally = {
+      started: Date.now(),
+      texts: [],
+      toolCalls: [],
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    };
     // A child still waiting for a slot when the turn is stopped never starts.
     if (turn.aborted) return progress.ended(ended(task, 'cancelled', null, tally));
     progress.started(tally.started);
@@ -109,6 +117,8 @@ export class BotSubagentRunnerFactory {
         } else if (event.type === 'usage') {
           tally.input += event.inputTokens;
           tally.output += event.outputTokens;
+          tally.cacheRead += event.cacheReadTokens ?? 0;
+          tally.cacheWrite += event.cacheWriteTokens ?? 0;
         } else if (event.type === 'done') {
           reason = event.reason;
           error = event.error ?? null;
@@ -180,6 +190,8 @@ interface Tally {
   toolCalls: string[];
   input: number;
   output: number;
+  cacheRead: number;
+  cacheWrite: number;
 }
 
 /**
@@ -202,6 +214,8 @@ function ended(
     toolCalls: tally.toolCalls,
     inputTokens: tally.input,
     outputTokens: tally.output,
+    cacheReadTokens: tally.cacheRead,
+    cacheWriteTokens: tally.cacheWrite,
     durationMs: Date.now() - tally.started,
   };
 }

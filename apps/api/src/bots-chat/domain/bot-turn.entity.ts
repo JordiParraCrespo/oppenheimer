@@ -70,8 +70,12 @@ export interface BotTurnProps {
   error: string | null;
   /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
   failure: BotTurnFailure | null;
+  /** Every token the turn sent, cached or not, its subagents' included. */
   inputTokens: number;
   outputTokens: number;
+  /** How much of `inputTokens` the provider read from its prompt cache, and wrote to it. */
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
   /** What the model's context held at the turn's last answer; null before one. */
   context: BotTurnContext | null;
   /** A subscription's usage windows as that answer said them; null on an API key. */
@@ -171,6 +175,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         failure: null,
         inputTokens: 0,
         outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
         context: null,
         planLimits: null,
         cancelRequestedAt: null,
@@ -322,6 +328,12 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get outputTokens(): number {
     return this.props.outputTokens;
   }
+  get cacheReadTokens(): number {
+    return this.props.cacheReadTokens;
+  }
+  get cacheWriteTokens(): number {
+    return this.props.cacheWriteTokens;
+  }
   get context(): BotTurnContext | null {
     return this.props.context;
   }
@@ -368,6 +380,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       failure?: BotTurnFailure | null;
       inputTokens?: number;
       outputTokens?: number;
+      cacheReadTokens?: number;
+      cacheWriteTokens?: number;
       context?: BotTurnContext | null;
       planLimits?: BotTurnPlanLimits | null;
       limitedUntil?: Date | null;
@@ -381,6 +395,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.failure = status === 'failed' ? (outcome.failure ?? 'other') : null;
     this.props.inputTokens = outcome.inputTokens ?? this.props.inputTokens;
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
+    this.props.cacheReadTokens = outcome.cacheReadTokens ?? this.props.cacheReadTokens;
+    this.props.cacheWriteTokens = outcome.cacheWriteTokens ?? this.props.cacheWriteTokens;
     this.props.context = outcome.context ?? this.props.context;
     this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
   }

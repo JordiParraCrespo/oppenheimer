@@ -24,6 +24,7 @@ import type {
   BotSteerTaken,
   BotTurnRepositoryPort,
 } from './bot-turn.repository.port';
+import { clearModelCallsWithin } from './bot-usage.repository';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
@@ -372,6 +373,8 @@ export class BotTurnRepository
           failure: turn.failure,
           inputTokens: turn.inputTokens,
           outputTokens: turn.outputTokens,
+          cacheReadTokens: turn.cacheReadTokens,
+          cacheWriteTokens: turn.cacheWriteTokens,
           contextTokens: record.contextTokens,
           contextWindow: record.contextWindow,
           planLimits: record.planLimits,
@@ -490,6 +493,7 @@ export class BotTurnRepository
         organizationId,
         botId,
       ]);
+      await clearModelCallsWithin(manager, organizationId, botId);
       return 'cleared';
     });
   }
