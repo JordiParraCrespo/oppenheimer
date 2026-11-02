@@ -1,9 +1,11 @@
 import {
   type BotApprovalDecision,
   type BotApprovalEvent,
+  type BotApprovalEventStage,
   type BotApprovalReach,
   type BotApprovalResolution,
   type BotEventOutcome,
+  type BotMessageEvent,
   type BotStreamEvent,
   expandScopes,
   type Scope,
@@ -67,8 +69,23 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
  */
 export function approvalEvent(approval: BotApprovalEntity, by: string): string {
   if (approval.status === 'denied') return denialWords(approval, `${who(by)} denied`);
+  return `${who(by)} approved: ${approval.summary}\n${ranWords(approval)}`;
+}
+
+/** A yes, while its call runs: the line the bot says it is on it after. */
+export function approvalStartedEvent(approval: BotApprovalEntity, by: string): string {
+  return `${who(by)} approved: ${approval.summary}\nIt is running now.`;
+}
+
+/** How an approved call went, once it ran: the line the bot reports it after. */
+export function approvalFinishedEvent(approval: BotApprovalEntity): string {
+  return `The approved call finished: ${approval.summary}\n${ranWords(approval)}`;
+}
+
+/** The call's answer, as the bot is told it. */
+function ranWords(approval: BotApprovalEntity): string {
   const answer = approval.status === 'failed' ? 'It ran and failed' : 'It ran';
-  return `${who(by)} approved: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
+  return `${answer}: ${approval.result ?? ''}`;
 }
 
 /** Who decided, by name, as the bot is told; "The person" when the name is unknown. */
@@ -170,12 +187,15 @@ export function intersectScopes(
  * The turn a decision gives the bot: queued like a message of yours, on the
  * bot's provider, model and effort as they are now, opened by the event (its
  * words for the bot, what happened for the chat) rather than by words of
- * yours.
+ * yours. A yes gives two (`25-bots.md` §5): one at once, `started`, where the
+ * bot says it is on it while the call runs, and one when it ran,
+ * `finished`, where it reports how it went. A no gives one, with no stage.
  */
 export function decisionTurn(
   props: Parameters<typeof BotTurnEntity.queue>[0],
   approval: BotApprovalEntity,
   by: string,
+  stage?: BotApprovalEventStage,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({ ...props, origin: 'approval' });
   const opening = BotMessageEntity.createNew({
@@ -183,10 +203,35 @@ export function decisionTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: approvalEvent(approval, by),
-    event: approvalEventOf(approval),
+    content: decisionWords(approval, by, stage),
+    event: { ...approvalEventOf(approval), ...(stage && { stage }) },
     steps: [],
     position: 0,
   });
   return { turn, opening };
+}
+
+function decisionWords(
+  approval: BotApprovalEntity,
+  by: string,
+  stage: BotApprovalEventStage | undefined,
+): string {
+  if (stage === 'started') return approvalStartedEvent(approval, by);
+  if (stage === 'finished') return approvalFinishedEvent(approval);
+  return approvalEvent(approval, by);
+}
+
+/**
+ * Whether a turn's opening is a yes while its call runs: the turn where the
+ * bot only says it is on it, so it is given no tool to act with.
+ */
+export function opensApprovalStarted(opening: {
+  role: string;
+  event?: BotMessageEvent | null;
+}): boolean {
+  return (
+    opening.role === 'event' &&
+    opening.event?.kind === 'approval' &&
+    opening.event.stage === 'started'
+  );
 }

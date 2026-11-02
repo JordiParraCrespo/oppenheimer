@@ -30,11 +30,13 @@ export interface BotApprovalOutcome {
 
 /**
  * Applies one of a card's decisions to it and says what that owes
- * (`25-bots.md` §5): a yes moves the card and stages the call, with the
- * permission it leaves standing when it reaches past this call; a no queues
- * the turn that tells the bot, under what both the asking turn's and the
- * decider's scopes cover, so it carries on; a stop writes its line outside
- * any turn, queues none, and stops the asking turn if it still runs. The
+ * (`25-bots.md` §5): a yes moves the card, stages the call, with the
+ * permission it leaves standing when it reaches past this call, and queues
+ * the turn where the bot says it is on it while the call runs, so you hear
+ * back at once rather than after the call; a no queues the turn that tells
+ * the bot, so it carries on; both turns run under what both the asking
+ * turn's and the decider's scopes cover. A stop writes its line outside any
+ * turn, queues none, and stops the asking turn if it still runs. The
  * decision is one the card offers; the handler checks that first.
  */
 export function decideApproval(
@@ -49,6 +51,16 @@ export function decideApproval(
   },
 ): BotApprovalOutcome {
   const { bot, asked, now } = context;
+  const turnProps = {
+    organizationId: bot.organizationId,
+    botId: bot.id,
+    requestedByUserId: decider.userId,
+    provider: bot.provider,
+    model: bot.model ?? botDefaultModel(bot.provider).id,
+    effort: bot.effort,
+    timeZone: asked?.timeZone ?? null,
+    credentialScopes: intersectScopes(asked ? asked.credentialScopes : [], decider.scopes),
+  };
   const reach = reachOf(decision);
   if (reach) {
     approval.approve(decider.userId, now, decider.scopes, reach);
@@ -56,6 +68,7 @@ export function decideApproval(
     return {
       effects: {
         runCall: { by: decider.name },
+        continuation: decisionTurn(turnProps, approval, decider.name, 'started'),
         ...(permission && { standing: { permission, maxGrants: BOT_TOOL_GRANTS_MAX } }),
       },
       cancelAsking: false,
@@ -68,19 +81,8 @@ export function decideApproval(
       cancelAsking: asked?.status === 'running',
     };
   }
-  const continuation = decisionTurn(
-    {
-      organizationId: bot.organizationId,
-      botId: bot.id,
-      requestedByUserId: decider.userId,
-      provider: bot.provider,
-      model: bot.model ?? botDefaultModel(bot.provider).id,
-      effort: bot.effort,
-      timeZone: asked?.timeZone ?? null,
-      credentialScopes: intersectScopes(asked ? asked.credentialScopes : [], decider.scopes),
-    },
-    approval,
-    decider.name,
-  );
-  return { effects: { continuation }, cancelAsking: false };
+  return {
+    effects: { continuation: decisionTurn(turnProps, approval, decider.name) },
+    cancelAsking: false,
+  };
 }

@@ -24,7 +24,12 @@ import type { BotPermissionsResolver } from '../bot-permissions.resolver';
 import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
-import { BotTurnContextResolver } from '../bot-turn-context.resolver';
+import {
+  APPROVAL_STARTED_REFUSAL,
+  BOT_APPROVAL_STARTED_MAX_STEPS,
+  BOT_TURN_MAX_STEPS,
+  BotTurnContextResolver,
+} from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
@@ -64,6 +69,8 @@ function setup(
     skills?: BotSkillEntity[];
     /** The tools the prompt lists, by name. */
     offered?: string[];
+    /** The turn opens on a yes while its call runs. */
+    approvalStarted?: boolean;
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -102,7 +109,14 @@ function setup(
       findLastContext: async () => conversation.lastContext ?? null,
     } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
     {
-      tools: () => [],
+      tools: () => [
+        {
+          name: 'archive_mail',
+          description: 'Archive.',
+          inputSchema: { type: 'object' },
+          run: vi.fn(async () => ({ content: 'Archived 25 threads.' })),
+        },
+      ],
       readOnlyTools: () => [],
       catalog: () => offered,
     } as unknown as BotToolboxFactory,
@@ -113,6 +127,7 @@ function setup(
         prompt: opening,
         images: [],
         command: parseBotSlashCommand(opening),
+        approvalStarted: conversation.approvalStarted ?? false,
       }),
     } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
@@ -138,6 +153,24 @@ function setup(
 }
 
 describe('BotTurnContextResolver', () => {
+  // What breaks this: the "on it" turn acting before the call it approved
+  // reports, or archiving a second time; or, offered no tools at all, losing
+  // the provider's cached conversation and paying for it whole.
+  it('offers a yes’s turn the same tools, each refusing to run, and two round trips', async () => {
+    const quiet = await setup(async () => [], { approvalStarted: true }).resolve();
+    expect(quiet.tools.map((tool) => tool.name)).toEqual(['archive_mail']);
+    expect(quiet.maxSteps).toBe(BOT_APPROVAL_STARTED_MAX_STEPS);
+    await expect(
+      quiet.tools[0]?.run({}, { signal: new AbortController().signal }),
+    ).resolves.toEqual({ content: APPROVAL_STARTED_REFUSAL, isError: true });
+
+    const usual = await setup(async () => []).resolve();
+    expect(usual.maxSteps).toBe(BOT_TURN_MAX_STEPS);
+    await expect(
+      usual.tools[0]?.run({}, { signal: new AbortController().signal }),
+    ).resolves.toEqual({ content: 'Archived 25 threads.' });
+  });
+
   it('names the home host among the owner’s hosts', async () => {
     const { resolve } = setup(async () => [
       { id: HOME, name: 'build-01', online: true, runningSessions: 1 },

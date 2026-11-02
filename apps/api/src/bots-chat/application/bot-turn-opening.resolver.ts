@@ -11,6 +11,7 @@ import {
 } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import { opensApprovalStarted } from '../domain/bot-approval.policy';
 import { attachedImagesNote } from '../domain/bot-image.policy';
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -25,6 +26,11 @@ export interface BotTurnOpening {
    * only a person's message runs a skill, never an event's text.
    */
   command: BotSlashCommand | null;
+  /**
+   * The turn opens on a yes while its call runs (`opensApprovalStarted`):
+   * the bot only says it is on it, so it is given nothing to act with.
+   */
+  approvalStarted: boolean;
 }
 
 /**
@@ -46,8 +52,9 @@ export class BotTurnOpeningResolver {
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
     const command = opening?.role === 'user' ? parseBotSlashCommand(opening.content) : null;
+    const approvalStarted = opening ? opensApprovalStarted(opening) : false;
     if (!opening?.attachments.length) {
-      return { prompt: botTurnPrompt(opening), images: [], command };
+      return { prompt: botTurnPrompt(opening), images: [], command, approvalStarted };
     }
     const prompt = [botTurnPrompt(opening).trim(), attachedImagesNote(opening.attachments)]
       .filter(Boolean)
@@ -67,6 +74,6 @@ export class BotTurnOpeningResolver {
         return this.mapper.toTurnImage(attachment, data);
       }),
     );
-    return { prompt, images, command };
+    return { prompt, images, command, approvalStarted };
   }
 }

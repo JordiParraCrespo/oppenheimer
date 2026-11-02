@@ -7,6 +7,7 @@ import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QueueModule } from '../queue/queue.module';
 import { BotApprovalRequestFactory } from './application/bot-approval-request.factory';
+import { BotApprovalStartedResolver } from './application/bot-approval-started.resolver';
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
@@ -291,6 +292,7 @@ const queryHandlers: Provider[] = [
     BotGoalMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
+    BotApprovalStartedResolver,
     BotMessageAttachmentsResolver,
     BotSteeringFactory,
     TurnWriteFactory,

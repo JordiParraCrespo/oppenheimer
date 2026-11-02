@@ -179,9 +179,9 @@ describe('RunApprovedCallCommandHandler', () => {
     });
     expect(continuation?.opening).toMatchObject({
       role: 'event',
-      event: { outcome: 'approved', tool: 'start_session', sessionId: SESSION },
+      event: { outcome: 'approved', tool: 'start_session', sessionId: SESSION, stage: 'finished' },
       content:
-        'Ana approved: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
+        'The approved call finished: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
     });
   });
 

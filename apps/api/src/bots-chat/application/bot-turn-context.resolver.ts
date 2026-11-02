@@ -56,6 +56,28 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir'>;
 export const BOT_TURN_MAX_STEPS = 20;
 
 /**
+ * Model round trips in the turn a yes opens while its call runs: one to
+ * say it is on it, and one more should it reach for a tool anyway.
+ */
+export const BOT_APPROVAL_STARTED_MAX_STEPS = 2;
+
+/** What a tool answers in the turn a yes opens: nothing runs, the report comes next. */
+export const APPROVAL_STARTED_REFUSAL =
+  'Not in this turn: the call they approved is still running. Say in one sentence that you are on it and end your turn; how it went comes in your next turn.';
+
+/**
+ * The turn's tools, each refusing to run: the turn a yes opens only says the
+ * bot is on it. They are still offered, the same as every other turn, so the
+ * provider's cache of the conversation, keyed on them, still holds.
+ */
+function refusingTools(tools: BotTurnContext['tools']): BotTurnContext['tools'] {
+  return tools.map((tool) => ({
+    ...tool,
+    run: async () => ({ content: APPROVAL_STARTED_REFUSAL, isError: true }),
+  }));
+}
+
+/**
  * Everything a turn needs, read when it starts: the bot as it is now (its
  * soul, instructions and memory become the system prompt, the same from turn
  * to turn while they are), the conversation before this turn (its summary,
@@ -94,7 +116,7 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnContext> {
-    const { prompt, images, command } = await this.opening.resolve(turn);
+    const { prompt, images, command, approvalStarted } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
@@ -185,8 +207,8 @@ export class BotTurnContextResolver {
         composeTurnMessage(command, skills, prompt),
       ),
       images,
-      tools,
-      maxSteps: BOT_TURN_MAX_STEPS,
+      tools: approvalStarted ? refusingTools(tools) : tools,
+      maxSteps: approvalStarted ? BOT_APPROVAL_STARTED_MAX_STEPS : BOT_TURN_MAX_STEPS,
     };
   }
 

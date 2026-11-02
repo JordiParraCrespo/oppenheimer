@@ -5,6 +5,7 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { BotApprovalStartedResolver } from '../../application/bot-approval-started.resolver';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
@@ -38,6 +39,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly summaries: BotSummaryTriggerPolicy,
     private readonly steering: BotSteeringFactory,
     private readonly writes: TurnWriteFactory,
+    private readonly approvalStarted: BotApprovalStartedResolver,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -70,6 +72,11 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     const watch = this.cancelWatch.watch(turn.id);
     let scratchDir: string | undefined;
     try {
+      // A yes whose call already ran: the turn that reports it says it all.
+      if (await this.approvalStarted.overtaken(turn)) {
+        turn.end('completed', new Date());
+        return;
+      }
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
       const context = await this.context.resolve(turn, new Date());
       const transcript = new TurnTranscript(turn);

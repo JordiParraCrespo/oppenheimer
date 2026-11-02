@@ -33,6 +33,36 @@ const conversation = (
   }) as unknown as BotConversationEntity;
 
 describe('chatTurns', () => {
+  // What breaks this: the chat goes quiet between the bot's "on it" and its
+  // report, or keeps a call spinning after the report landed.
+  it('marks the call a yes started as running until the line that reports it is in the chat', () => {
+    const since = new Date('2026-11-02T10:00:00Z');
+    const approval = (id: string, turnId: string, stage: 'started' | 'finished') =>
+      ({
+        id,
+        turnId,
+        role: 'event',
+        createdAt: since,
+        event: {
+          kind: 'approval',
+          outcome: 'approved',
+          tool: 'archive_mail',
+          summary: 'Archive 25 threads',
+          sessionId: null,
+          approvalId: 'a1',
+          stage,
+        },
+      }) as BotMessageEntity;
+    const started = [approval('m1', 't1', 'started'), message('m2', 't1', 'assistant')];
+    const running = chatTurns(conversation(started, [turn('t1')]));
+    expect(running[0]?.runningCall).toEqual({ summary: 'Archive 25 threads', since });
+
+    const reported = chatTurns(
+      conversation([...started, approval('m3', 't2', 'finished')], [turn('t1'), turn('t2')]),
+    );
+    expect(reported.map((block) => block.runningCall)).toEqual([null, null]);
+  });
+
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {
     const blocks = chatTurns(
       conversation(
@@ -162,6 +192,7 @@ const block = (
     : undefined,
   asked,
   answer,
+  runningCall: null,
 });
 
 describe('replyText', () => {
@@ -191,7 +222,14 @@ describe('retryContent', () => {
     expect(retryContent([block(undefined, asked)])).toBeNull();
     expect(retryContent([])).toBeNull();
     // A routine's line after the turn does not take Retry away.
-    const line: ChatTurnBlock = { key: 'r1', turnId: null, turn: undefined, asked: [], answer: [] };
+    const line: ChatTurnBlock = {
+      key: 'r1',
+      turnId: null,
+      turn: undefined,
+      asked: [],
+      answer: [],
+      runningCall: null,
+    };
     expect(retryContent([block('failed', asked), line])).toBe('what about bun?');
   });
 

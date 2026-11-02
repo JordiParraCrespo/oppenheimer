@@ -88,6 +88,7 @@ describe('BotTurnOpeningResolver', () => {
         { mimeType: 'image/png', data: Buffer.from(second.storageKey).toString('base64') },
       ],
       command: null,
+      approvalStarted: false,
     });
     expect(attachments.findForMessage).toHaveBeenCalledWith(turn.organizationId, message.id);
   });
@@ -98,6 +99,7 @@ describe('BotTurnOpeningResolver', () => {
       prompt: 'Hi',
       images: [],
       command: null,
+      approvalStarted: false,
     });
     expect(attachments.findForMessage).not.toHaveBeenCalled();
   });

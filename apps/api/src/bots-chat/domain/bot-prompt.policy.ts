@@ -202,6 +202,18 @@ function approvalPrompt(content: string): string {
   return `${eventNote(content)}\n\n${APPROVAL_ASK}`;
 }
 
+/**
+ * What the turn a yes opens at once is asked (`25-bots.md` §5): the call is
+ * running, so the bot says it is on it, as a person would before doing the
+ * work, and leaves the report to the turn its result opens.
+ */
+function approvalStartedPrompt(content: string): string {
+  return `${eventNote(content)}\n\n${APPROVAL_STARTED_ASK}`;
+}
+
+const APPROVAL_STARTED_ASK =
+  'They just approved the call you asked for, and Oppenheimer is running it now. Before it finishes, tell them in one short sentence, in your own voice and their language, that you are on it and what you are doing (for example: "On it, archiving those 25 now."). Do not say it is done, do not guess how it will go, and do not call any tool: how it went comes in your next turn, and you report it then.';
+
 const APPROVAL_ASK =
   'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
 
@@ -222,7 +234,8 @@ type EventPrompts = {
  * (`goalContinuationText`), so each is read as the note it is.
  */
 const EVENT_PROMPTS: EventPrompts = {
-  approval: (_event, content) => approvalPrompt(content),
+  approval: (event, content) =>
+    event.stage === 'started' ? approvalStartedPrompt(content) : approvalPrompt(content),
   question: (_event, content) => `${eventNote(content)}\n\n${QUESTION_ASK}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,

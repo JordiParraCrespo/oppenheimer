@@ -1,4 +1,9 @@
-import { ChatUserMessage, IconButton, MessageTrail } from '@oppenheimer/design-system-web';
+import {
+  ChatUserMessage,
+  IconButton,
+  MessageTrail,
+  TraceLive,
+} from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { dateFormatter, formatTimeAway, useLocale } from '@oppenheimer/frontend-web';
 import {
@@ -13,12 +18,14 @@ import { BotActivity } from '@/features/bots/components/bot-activity';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
+import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import {
   type ChatTurnBlock,
   compactTokens,
+  opensOnApprovalStarted,
   replyText,
   turnDurationMs,
   turnPhase,
@@ -40,7 +47,9 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * sit above its bubble, and the ones the bot showed (`show_image`) in its
  * answer where it showed them, both drawn by `images`, which reads them. A
  * message you steered in while it worked sits in the answer where the bot
- * took it (`BotSteerMessage`).
+ * took it (`BotSteerMessage`). A turn a yes opened says the bot is on it,
+ * and then holds the approved call as a live line with its clock until the
+ * turn that reports it lands; that line is the turn's live line meanwhile.
  */
 export function BotTurn({
   block,
@@ -74,6 +83,8 @@ export function BotTurn({
   const active = turn?.isActive ?? false;
   const text = replyText(block);
   const step = active ? runningStep(block.answer) : undefined;
+  // A yes's turn whose call ran before it spoke ends without a word, and without a trail.
+  const silent = block.answer.length === 0 && opensOnApprovalStarted(block);
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const ran = turn ? turnDurationMs(turn) : null;
   const meta = turn
@@ -128,7 +139,12 @@ export function BotTurn({
           ),
         )}
         {live ? <BotReply content={live} streaming /> : null}
-        {turn && active ? (
+        {block.runningCall ? (
+          <TraceLive elapsed={<BotTurnClock since={block.runningCall.since} />}>
+            {t('bots.chat.event.running', { summary: block.runningCall.summary })}
+          </TraceLive>
+        ) : null}
+        {turn && active && !block.runningCall ? (
           <BotTurnLive
             queued={turn.status === 'queued'}
             step={step}
@@ -147,7 +163,7 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active ? (
+        {turn && !active && !silent ? (
           <MessageTrail
             actions={
               <>

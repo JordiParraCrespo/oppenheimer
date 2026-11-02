@@ -19,6 +19,18 @@ export interface ChatTurnBlock {
   asked: BotMessageEntity[];
   /** What the bot did, with any message you steered in while it worked where it took it. */
   answer: BotMessageEntity[];
+  /**
+   * The approved call this turn opened on, while it still runs: the turn a
+   * yes opens at once (`stage: 'started'`), until the line of the turn that
+   * reports it (`finished`) is in the chat. Null on every other turn.
+   */
+  runningCall: RunningApprovedCall | null;
+}
+
+/** An approved call under way, as the chat draws it: what it does, and since when. */
+export interface RunningApprovedCall {
+  summary: string;
+  since: Date;
 }
 
 /**
@@ -37,7 +49,7 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     let block = blocks.get(key);
     if (!block) {
       const turn = turnId === null ? undefined : conversation.turn(turnId);
-      block = { key, turnId, turn, asked: [], answer: [] };
+      block = { key, turnId, turn, asked: [], answer: [], runningCall: null };
       blocks.set(key, block);
     }
     return block;
@@ -50,7 +62,44 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) if (!waiting.has(turn.id)) blockOf(turn.id, turn.id);
+  const finished = finishedApprovals(conversation.messages);
+  for (const block of blocks.values()) block.runningCall = runningCallOf(block, finished);
   return [...blocks.values()];
+}
+
+/** Whether a block is the turn a yes opened at once, where the bot says it is on it. */
+export function opensOnApprovalStarted(block: ChatTurnBlock): boolean {
+  return block.asked.some(({ event }) => event?.kind === 'approval' && event.stage === 'started');
+}
+
+/** The approvals whose call ran: the ones a `finished` line reports. */
+function finishedApprovals(messages: readonly BotMessageEntity[]): Set<string> {
+  const ids = new Set<string>();
+  for (const { event } of messages) {
+    if (event?.kind === 'approval' && event.stage === 'finished' && event.approvalId) {
+      ids.add(event.approvalId);
+    }
+  }
+  return ids;
+}
+
+/** The call a block's `started` line says was approved, while no `finished` line reports it. */
+function runningCallOf(
+  block: ChatTurnBlock,
+  finished: ReadonlySet<string>,
+): RunningApprovedCall | null {
+  for (const message of block.asked) {
+    const { event } = message;
+    if (
+      event?.kind === 'approval' &&
+      event.stage === 'started' &&
+      event.approvalId &&
+      !finished.has(event.approvalId)
+    ) {
+      return { summary: event.summary, since: message.createdAt };
+    }
+  }
+  return null;
 }
 
 /** How long a turn ran, once it has ended; `null` for one that never started. */
