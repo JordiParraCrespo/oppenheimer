@@ -258,6 +258,7 @@ describe('markersBefore', () => {
     turn: { id: iso, provider: 'glm', model, createdAt: new Date(iso) } as BotTurnEntity,
     asked: [{ createdAt: new Date(iso) } as BotMessageEntity],
     answer: [],
+    runningCall: null,
   });
 
   /** A day line where the day changes, a model note where the model does; nothing before the first turn. */
