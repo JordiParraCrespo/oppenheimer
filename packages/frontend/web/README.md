@@ -9,7 +9,7 @@ compiles it and tree-shakes what it does not use.
 The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
-`theme`, `i18n`, `analytics`, `forms`, `markdown`, `dictation` and `chat` are leaves, `layout` and
+`theme`, `i18n`, `analytics`, `error-reporting`, `forms`, `markdown`, `dictation` and `chat` are leaves, `layout` and
 `pairing` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
@@ -46,6 +46,7 @@ names the concern and what to reach for first.
   ago" that keeps moving; `useStartFailure`, why a session did not start, in
   the reader's language.
 - **analytics** — `PageViewTracker`.
+- **error-reporting** — `createWebErrorReportingClient`, Sentry for `OppenheimerApp.create({ errorReporting })`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
 
 `package.json` `sideEffects` names one file, `src/i18n/lib/i18n.ts`: it

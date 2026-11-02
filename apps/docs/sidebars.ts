@@ -22,6 +22,7 @@ const sidebars: SidebarsConfig = {
         'architecture/frontend-architecture',
         'architecture/query-keys',
         'architecture/analytics',
+        'architecture/error-reporting',
         // oppenheimer:begin runner
         'architecture/go-services',
         // oppenheimer:end runner

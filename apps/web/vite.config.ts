@@ -1,10 +1,31 @@
 import path from 'node:path';
 import { vendorChunks } from '@oppenheimer/tsconfig/vite-chunks.mjs';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import pkg from './package.json' with { type: 'json' };
+
+/**
+ * Source maps for Sentry, only when the build can upload them
+ * (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_WEB_PROJECT`): `hidden` leaves
+ * no `sourceMappingURL` in the bundle, and the plugin deletes the maps once
+ * uploaded, so none is ever served. The release matches what the client
+ * reports (`createWebErrorReportingClient`). Never `VITE_`-prefixed: the
+ * token stays out of the bundle.
+ */
+const sentryUpload =
+  process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_WEB_PROJECT
+    ? sentryVitePlugin({
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_WEB_PROJECT,
+        release: { name: process.env.VITE_SENTRY_RELEASE || pkg.version },
+        sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+        telemetry: false,
+      })
+    : null;
 
 export default defineConfig({
   // There is one .env, at the monorepo root; a .env placed in apps/web is
@@ -26,6 +47,7 @@ export default defineConfig({
       compiler: true,
     }),
     tailwindcss(),
+    sentryUpload,
   ],
   resolve: {
     alias: {
@@ -38,6 +60,7 @@ export default defineConfig({
     dedupe: ['zod'],
   },
   build: {
+    sourcemap: sentryUpload ? 'hidden' : false,
     rollupOptions: {
       // One chunk per library instead of one chunk for all of them, so a
       // release invalidates app code and leaves the dependencies cached. See

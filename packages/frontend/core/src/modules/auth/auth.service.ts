@@ -1,5 +1,5 @@
 import type { LoginDto, RegisterDto } from '@oppenheimer/shared';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import {
   ANALYTICS_EVENTS,
@@ -8,6 +8,7 @@ import {
 } from '../analytics/analytics.events';
 import type { AnalyticsService } from '../analytics/analytics.service';
 import type { IStorageService } from '../core/storage.service';
+import type { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import type { SocialAuthIntent, SocialProvider } from './auth.client';
 import type { AuthRepository } from './auth.repository';
 import type { AuthStore } from './auth.state';
@@ -43,6 +44,9 @@ export class AuthService {
     private readonly analytics: AnalyticsService,
     @inject(TOKENS.StorageService)
     private readonly storage: IStorageService,
+    @inject(TOKENS.ErrorReportingService)
+    @optional()
+    private readonly errors?: ErrorReportingService,
   ) {}
 
   async login(dto: LoginDto): Promise<void> {
@@ -111,6 +115,7 @@ export class AuthService {
     // who signed out rather than to a fresh anonymous id.
     this.analytics.capture(ANALYTICS_EVENTS.USER_SIGNED_OUT);
     this.analytics.reset();
+    this.errors?.setUser(null);
   }
 
   /**
@@ -184,7 +189,9 @@ export class AuthService {
       });
   }
 
+  /** Error reports get the id alone; analytics gets the person's name and address. */
   private identify(user: { id: string; email: string; firstName: string; lastName: string }): void {
+    this.errors?.setUser(user.id);
     this.analytics.identify(user.id, {
       email: user.email,
       name: `${user.firstName} ${user.lastName}`.trim(),

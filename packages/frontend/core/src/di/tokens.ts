@@ -12,6 +12,8 @@ export const TOKENS = {
   AnalyticsClient: Symbol.for('AnalyticsClient'),
   AnalyticsService: Symbol.for('AnalyticsService'),
   AuthClient: Symbol.for('AuthClient'),
+  ErrorReportingClient: Symbol.for('ErrorReportingClient'),
+  ErrorReportingService: Symbol.for('ErrorReportingService'),
   AuthRepository: Symbol.for('AuthRepository'),
   AuthStore: Symbol.for('AuthStore'),
   AuthService: Symbol.for('AuthService'),
