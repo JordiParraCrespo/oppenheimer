@@ -25,6 +25,7 @@ there.
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
+| — | [Sentry](sentry.md) | Errors from the API, workers, bots and console reported to Sentry; a Sentry issue as an automation trigger that starts a fix; built from 2026-11-02, version not set |
 
 ## What this list does not place yet
 
@@ -118,3 +119,5 @@ where these land is the first open question below.
 - 2026-10-31: 0.7 gains a second document, [the chat's model and
   protocol](0.7-chat-protocol.md), with six slices drawn from a read of
   Codex and Grok.
+- 2026-11-02: Sentry added: error reporting, and Sentry issues as a trigger
+  source (`sentry.md`); version not set.

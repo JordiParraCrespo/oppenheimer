@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExceptionBase, RequestContextService } from '@oppenheimer/backend-ddd';
+import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import type { Request, Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError, ZodIssue } from 'zod';
@@ -42,6 +43,10 @@ const INTERNAL_ERROR_DETAIL =
  *
  * 5xx responses never carry the underlying message — the correlation id is
  * what ties the client's report back to the logged stack trace.
+ *
+ * Every 5xx is also reported (`ErrorReporter`): one we did not foresee as an
+ * error, a curated one (an `AppError`, a framework 503) as a warning grouped
+ * by its code, since its cause is usually a dependency rather than our code.
  */
 @Injectable()
 @Catch()
@@ -49,7 +54,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
   private readonly typeBaseUrl: string;
 
-  constructor(@Optional() configService?: ConfigService) {
+  constructor(
+    @Optional() configService?: ConfigService,
+    @Optional() private readonly reporter?: ErrorReporter,
+  ) {
     this.typeBaseUrl =
       configService?.get<string>('app.errorTypeBaseUrl') ?? DEFAULT_ERROR_TYPE_BASE_URL;
   }
@@ -71,6 +79,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+      this.report(exception, problem, request);
     }
 
     const retryAfter = retryAfterOf(exception);
@@ -143,6 +152,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return this.internalProblem(context);
   }
 
+  private report(exception: unknown, problem: ProblemDetails, request: Request | undefined): void {
+    if (!this.reporter?.enabled) return;
+    const curated = exception instanceof AppError || exception instanceof HttpException;
+    const code = exception instanceof AppError ? exception.code : undefined;
+    const subject = request as ReportedRequest | undefined;
+    this.reporter.capture(exception, {
+      level: curated ? 'warning' : 'error',
+      tags: {
+        'http.method': request?.method,
+        'http.route': subject?.route?.path,
+        'http.status_code': problem.status,
+        'error.code': code,
+      },
+      fingerprint: code ? ['app-error', code] : undefined,
+      userId: idOf(subject?.user?.id),
+      workspaceId: idOf(subject?.session?.activeOrganizationId),
+    });
+  }
+
   private internalProblem(
     context: { instance?: string; correlationId?: string },
     status: number = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -156,6 +184,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       context,
     );
   }
+}
+
+/** What the auth guards and the router leave on a request, as far as a report reads it. */
+interface ReportedRequest {
+  route?: { path?: string };
+  user?: { id?: unknown } | null;
+  session?: { activeOrganizationId?: unknown } | null;
+}
+
+function idOf(value: unknown): string | undefined {
+  return typeof value === 'string' && value ? value : undefined;
 }
 
 /**
