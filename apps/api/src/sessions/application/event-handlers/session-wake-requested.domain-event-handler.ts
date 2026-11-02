@@ -1,8 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { SESSION_WAKE_MAX_DELAY_MS } from '@oppenheimer/shared';
 import { SessionWakeRequestedDomainEvent } from '../../domain/events/session-wake-requested.domain-event';
-import { scheduledWakeText } from '../../domain/session-wake.policy';
+import { scheduledWakeText, wakeAt, wakeIds } from '../../domain/session-wake.policy';
 import { SESSION_WAKES } from '../../sessions.di-tokens';
 import type { SessionWakesPort } from '../session-wakes.port';
 
@@ -19,21 +18,23 @@ import type { SessionWakesPort } from '../session-wakes.port';
 export class SessionWakeRequestedDomainEventHandler {
   constructor(@Inject(SESSION_WAKES) private readonly wakes: SessionWakesPort) {}
 
-  @OnEvent(SessionWakeRequestedDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // the outbox marks the event delivered, so a wake whose stage failed would
+  // be lost after the agent was told to end its turn; rethrown, the outbox
+  // delivers the event again.
+  @OnEvent(SessionWakeRequestedDomainEvent.name, { suppressErrors: false })
   async handle(
     event: Pick<
       SessionWakeRequestedDomainEvent,
       'aggregateId' | 'wakeId' | 'at' | 'text' | 'metadata'
     >,
   ): Promise<void> {
-    const now = Date.now();
-    const asked = Date.parse(event.at);
-    if (Number.isNaN(asked)) return;
-    const at = new Date(Math.min(Math.max(asked, now), now + SESSION_WAKE_MAX_DELAY_MS));
+    const at = wakeAt(event.at, Date.now());
+    if (!at) return;
     await this.wakes.schedule(
       {
         sessionId: event.aggregateId,
-        wakeId: `at-${event.wakeId}`,
+        wakeId: wakeIds.schedule(event.wakeId),
         source: 'schedule',
         text: scheduledWakeText(event.wakeId, event.text),
         attempt: 0,

@@ -59,3 +59,18 @@ describe('SessionWakeRequestedDomainEventHandler', () => {
     expect(farAt.getTime()).toBe(NOW + 7 * 24 * 60 * 60 * 1000);
   });
 });
+
+describe('SessionWakeRequestedDomainEventHandler, delivered by the outbox', () => {
+  // The regression: a wake whose stage failed, swallowed by the listener, so
+  // the outbox marked the event delivered and the agent, told to end its
+  // turn, slept for good.
+  it('lets a failure reach the outbox relay, which delivers the event again', () => {
+    const listeners = Reflect.getMetadata(
+      'EVENT_LISTENER_METADATA',
+      SessionWakeRequestedDomainEventHandler.prototype.handle,
+    );
+    expect(listeners).toEqual([
+      { event: 'SessionWakeRequestedDomainEvent', options: { suppressErrors: false } },
+    ]);
+  });
+});
