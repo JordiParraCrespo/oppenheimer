@@ -96,7 +96,8 @@ function outline(root: HTMLElement): string[] {
 const clock = (iso: string) =>
   new Intl.DateTimeFormat('en', { timeStyle: 'short' }).format(new Date(iso));
 
-const composer = () => screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+const composer = () =>
+  screen.getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}');
 
 describe('a session replayed from its transcript', () => {
   it('stops on the question it asked, which takes the composer’s place', () => {

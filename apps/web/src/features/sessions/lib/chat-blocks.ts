@@ -10,6 +10,7 @@ import type {
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
 import type { ChatUsageContext } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { exploredRuns } from './explored';
@@ -225,6 +226,8 @@ export function latestModel(turns: readonly ChatTurn[]): string | null {
   return null;
 }
 
+/** A Claude model's id, whose context windows are the two below. */
+const CLAUDE_MODEL = /^claude-/;
 /** The window a Claude model reads by default. */
 const CONTEXT_WINDOW = 200_000;
 /** The long-context window, which a session past the default is on. */
@@ -234,7 +237,9 @@ const LONG_CONTEXT_WINDOW = 1_000_000;
  * The context as of the agent's last answer: the CLI's own figure when its
  * status line has sent one, which knows the window the session runs with;
  * otherwise counted off the transcript, which does not, so it is the
- * default window until the tokens could only fit the long one.
+ * default window until the tokens could only fit the long one. That guess
+ * is a Claude model's windows, so a turn another model answered (OpenCode
+ * on GPT, say) is not counted: no meter beats one against the wrong window.
  */
 export function latestContext(
   turns: readonly ChatTurn[],
@@ -247,6 +252,7 @@ export function latestContext(
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const tokens = turns[i]?.contextTokens;
     if (!tokens) continue;
+    if (!CLAUDE_MODEL.test(turns[i]?.model ?? '')) return null;
     return { tokens, window: tokens > CONTEXT_WINDOW ? LONG_CONTEXT_WINDOW : CONTEXT_WINDOW };
   }
   return null;
@@ -345,11 +351,29 @@ export function elapsedOf(turn: ChatTurn): string | null {
 }
 
 /**
- * A model id as people say it: `claude-opus-5-5` reads "Opus 5.5". Anything
- * that is not a Claude id is shown as it came.
+ * The agent catalog's models by id, as people say them ("GPT-6.1 Sol"):
+ * each id as the CLI takes it, and without the provider OpenCode puts in
+ * front of it (`anthropic/`), which is how OpenCode names the model that
+ * answered.
+ */
+const MODEL_LABELS: ReadonlyMap<string, string> = new Map(
+  Object.values(CODING_AGENTS).flatMap((agent) =>
+    agent.models.flatMap((model): [string, string][] => [
+      [model.id, model.label],
+      [model.id.slice(model.id.indexOf('/') + 1), model.label],
+    ]),
+  ),
+);
+
+/**
+ * A model id as people say it: the catalog's name for it ("GPT-6.1 Sol"),
+ * else a Claude id read as one (`claude-opus-5-5` reads "Opus 5.5"). Any
+ * other is shown as it came.
  */
 export function modelName(model: string | null): string | null {
   if (!model) return null;
+  const known = MODEL_LABELS.get(model);
+  if (known) return known;
   const match = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(model);
   if (!match) return model;
   const [, family = '', major, minor] = match;

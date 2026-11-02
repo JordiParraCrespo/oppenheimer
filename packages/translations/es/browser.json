@@ -1196,13 +1196,13 @@
       },
       "empty": {
         "title": "Todavía no se ha dicho nada",
-        "description": "Lo que Claude dice y hace aparece aquí mientras trabaja."
+        "description": "Lo que el agente dice y hace aparece aquí mientras trabaja."
       },
       "composer": {
-        "placeholder": "Escribe a Claude",
+        "placeholder": "Escribe a {{agent}}",
+        "placeholderAnyAgent": "Escribe al agente",
         "send": "Enviar",
         "stop": "Detener",
-        "agent": "Claude Code",
         "attach": "Adjuntar archivos",
         "removeAttachment": "Quitar {{name}}",
         "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",

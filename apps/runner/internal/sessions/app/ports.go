@@ -226,12 +226,14 @@ type Transcripts interface {
 	// transcript cannot be read at all. It is asked again on the next poll,
 	// so a failure is only a later name.
 	FirstPrompt(agent domain.Agent, conversation string) string
-	// Follow sends the conversation's entries to emit, the history first
-	// under Reset and then each one the agent appends, until ctx ends. An
+	// Follow sends the session's conversation's entries to emit, the history
+	// first under Reset and then each one the agent appends, until ctx ends.
+	// The session says where it is: its conversation's name, where its agent
+	// serves it, or the directory it ran in. An
 	// entry over entryMax bytes is left out and a batch holds at most
 	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
 	// runner cannot read the agent's transcript.
-	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
+	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(ChatBatch) error) error
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
 	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.

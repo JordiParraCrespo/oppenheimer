@@ -39,6 +39,8 @@ type agentReader interface {
 // to the agent's own reader.
 type Reader struct {
 	agents map[domain.Agent]agentReader
+	// chats is each agent's conversation file, for the chat view.
+	chats  map[domain.Agent]chatSource
 	logger *slog.Logger
 	// statusDir is where `runner statusline` keeps each Claude Code
 	// conversation's status (SaveStatus); empty follows none.
@@ -61,6 +63,12 @@ type Options struct {
 	// StatusDir is where the runner's status line keeps what Claude Code
 	// hands it, by conversation; empty sends no status beside the chat.
 	StatusDir string
+	// CodexSessions is Codex's `sessions/` folder, `~/.codex/sessions` or
+	// `$CODEX_HOME/sessions`, for the chat view.
+	CodexSessions string
+	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
+	// `$GROK_HOME/sessions`, for the chat view.
+	GrokSessions string
 	// Logger reports a transcript that could not be read, which the session
 	// service treats as none yet; nil is the process's default logger.
 	Logger *slog.Logger
@@ -73,10 +81,19 @@ func New(opts Options) *Reader {
 		logger = slog.Default()
 	}
 	agents := map[domain.Agent]agentReader{}
+	chats := map[domain.Agent]chatSource{}
 	if opts.ClaudeProjects != "" {
-		agents[domain.AgentClaude] = claudeReader{projects: opts.ClaudeProjects}
+		claude := claudeReader{projects: opts.ClaudeProjects}
+		agents[domain.AgentClaude] = claude
+		chats[domain.AgentClaude] = claude
 	}
-	return &Reader{agents: agents, logger: logger, statusDir: opts.StatusDir}
+	if opts.CodexSessions != "" {
+		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions}
+	}
+	if opts.GrokSessions != "" {
+		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
+	}
+	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir}
 }
 
 // FirstPrompt implements app.Transcripts.

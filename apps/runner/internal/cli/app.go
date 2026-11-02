@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/user"
@@ -211,10 +212,15 @@ func New(version string) (*App, error) {
 		Transcripts: transcript.New(transcript.Options{
 			ClaudeProjects: claudeProjectsPath(paths),
 			StatusDir:      StatusDir(paths),
+			CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
+			GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
 		}),
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand(),
+		// OpenCode serves its conversation on a loopback port the runner
+		// picks, which the chat view reads it through.
+		FreePort: freeLoopbackPort,
 		// The agent runs under `runner pty`, which answers its OSC 7501
 		// probe and keeps what it reports: its own word on what it does,
 		// ahead of the screen classifier.
@@ -521,4 +527,31 @@ func claudeProjectsPath(paths Paths) string {
 		return ""
 	}
 	return filepath.Join(paths.UserHome, ".claude", "projects")
+}
+
+// agentSessionsPath is an agent CLI's `sessions/` folder: under the home its
+// variable names (`CODEX_HOME`, `GROK_HOME`), else under its folder in the
+// user's home. "" when there is no home to look in.
+func agentSessionsPath(paths Paths, homeEnv, folder string) string {
+	if dir := os.Getenv(homeEnv); dir != "" {
+		return filepath.Join(dir, "sessions")
+	}
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, folder, "sessions")
+}
+
+// freeLoopbackPort is a port on 127.0.0.1 nothing listens on now, which the
+// kernel hands out from its ephemeral range: the agent binds it a moment
+// later, and a port given out again inside that moment is unlikely enough to
+// leave to a restart.
+func freeLoopbackPort() (int, error) {
+	var config net.ListenConfig
+	listener, err := config.Listen(context.Background(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	return port, listener.Close()
 }
