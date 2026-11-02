@@ -22,6 +22,13 @@ describe('githubWakeText', () => {
     );
   });
 
+  it('drops a repository name GitHub would not allow, and names it when it would', () => {
+    expect(githubWakeText('comment', 3, {}, null, 'acme/app')).toContain('repo="acme/app"');
+    const odd = githubWakeText('comment', 3, {}, null, 'acme/app" x="y');
+    expect(odd).not.toContain('repo=');
+    expect(odd).toContain('`gh pr view 3 --comments`');
+  });
+
   // The regression: a stranger's login or a check's name carrying words that
   // read as instructions, or markup that closes the frame early.
   it('drops a login, a state or a check name that is not what GitHub allows', () => {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -151,5 +152,69 @@ func TestTheChatSendsEverySharedFileAfterTheHistoryAndEachNewOne(t *testing.T) {
 		}
 		cancel()
 		<-done
+	}
+}
+
+// The regression this guards: a text file under the raw text limit whose
+// JSON escapes (`<` becomes `<`) outgrow the entry, saved anyway and
+// then left out by the follower, so not even its name reached the chat.
+func TestATextFileThatEscapesPastTheEntryGoesByName(t *testing.T) {
+	work, files := t.TempDir(), t.TempDir()
+	page := filepath.Join(work, "page.html")
+	if err := os.WriteFile(page, []byte(strings.Repeat("<div></div>", 2_700)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shared, err := transcript.SaveShared(files, sharingSession, page, "", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shared.Text != nil {
+		t.Fatal("the text was kept although its entry is over the room")
+	}
+	entries, err := os.ReadDir(transcript.SharedDir(files, sharingSession))
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("kept %v, %v", entries, err)
+	}
+	info, err := entries[0].Info()
+	if err != nil || info.Size() > transcript.SharedEntryMax {
+		t.Fatalf("entry of %d bytes, %v", info.Size(), err)
+	}
+}
+
+// The regression this guards: every shared file sent to a new attachment in
+// one batch, over the link's frame limit, refused and offered again for good.
+func TestSharedFilesGoInBatchesTheLinkTakes(t *testing.T) {
+	projects := write(t, promptLine, answerLine)
+	files, work := t.TempDir(), t.TempDir()
+	for i := range 17 {
+		path := filepath.Join(work, fmt.Sprintf("notes-%02d.txt", i))
+		if err := os.WriteFile(path, []byte(strings.Repeat("x", 30_000)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := transcript.SaveShared(files, conversation, path, "", time.Now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sink := &batches{}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = transcript.New(transcript.Options{ClaudeProjects: projects, FilesDir: files}).Follow(ctx,
+			domain.Session{ID: conversation, Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}},
+			64<<10, 256, sink.emit)
+	}()
+	defer func() { cancel(); <-done }()
+	eventually(t, "every shared file", func() bool { return len(sink.entries()) == 2+17 })
+	sink.mu.Lock()
+	defer sink.mu.Unlock()
+	for _, batch := range sink.got {
+		size := 0
+		for _, entry := range batch.Entries {
+			size += len(entry)
+		}
+		if size > 256<<10 {
+			t.Fatalf("a batch of %d bytes", size)
+		}
 	}
 }

@@ -119,8 +119,8 @@ test('a failed check on the pull request a session watches is typed into it', as
     .toMatchObject({
       source: 'api',
       payload: {
-        text: expect.stringContaining(
-          'Pull request #128: checks failed (GitHub Actions): failure.',
+        text: expect.stringMatching(
+          /Pull request #128 of [\w.-]+\/[\w.-]+: checks failed \(GitHub Actions\): failure\. Read it with `gh pr view 128 --repo /,
         ),
         sender: { kind: 'wake', source: 'github' },
       },

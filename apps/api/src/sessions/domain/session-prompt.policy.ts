@@ -20,7 +20,8 @@ export type SessionPromptSender =
   | { kind: 'wake'; source: SessionWakeSource; wakeId: string };
 
 /** What a wake comes from: a pull request the agent watches, or a time it set. */
-export type SessionWakeSource = 'github' | 'schedule';
+export const SESSION_WAKE_SOURCES = ['github', 'schedule'] as const;
+export type SessionWakeSource = (typeof SESSION_WAKE_SOURCES)[number];
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';

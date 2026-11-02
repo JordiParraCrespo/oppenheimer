@@ -47,24 +47,29 @@ export class GithubPullWakesDomainEventHandler {
       event.subjectRef,
       number,
     );
-    const text = githubWakeText(
-      event.eventType,
-      number,
-      event.attributes ?? {},
-      event.actorLogin ?? null,
+    const type = event.eventType;
+    // Each wake on its own outbox row: the stages do not depend on each other.
+    await Promise.all(
+      watching.map((session) =>
+        this.wakes.schedule(
+          {
+            sessionId: session.id,
+            wakeId: `gh-${event.aggregateId}`,
+            source: 'github',
+            text: githubWakeText(
+              type,
+              number,
+              event.attributes ?? {},
+              event.actorLogin ?? null,
+              session.checkouts.find((checkout) => checkout.githubRepoId === event.subjectRef)
+                ?.repositoryFullName ?? null,
+            ),
+            attempt: 0,
+          },
+          new Date(),
+          event.metadata.correlationId ?? null,
+        ),
+      ),
     );
-    for (const session of watching) {
-      await this.wakes.schedule(
-        {
-          sessionId: session.id,
-          wakeId: `gh-${event.aggregateId}`,
-          source: 'github',
-          text,
-          attempt: 0,
-        },
-        new Date(),
-        event.metadata.correlationId ?? null,
-      );
-    }
   }
 }

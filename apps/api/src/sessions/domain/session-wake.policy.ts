@@ -41,16 +41,25 @@ function checkName(value: unknown): string | null {
   return plain ? plain.slice(0, 60) : null;
 }
 
+/** `owner/name` as GitHub allows one, or nothing. */
+function repository(value: string | null): string | null {
+  return value && /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(value) ? value : null;
+}
+
 /**
- * The line for one event on pull request `number`, framed the way the runner
- * frames a child's report, so the agent reads it as the host's and not the
- * person's.
+ * The line for one event on pull request `number` of `repo` (the watching
+ * session's checkout of it, `owner/name`), framed the way the runner frames
+ * a child's report, so the agent reads it as the host's and not the
+ * person's. The repository is named in the frame and in the command: a
+ * session with several checkouts runs above all of them, where a bare
+ * `gh pr view` would pick none, or the wrong one.
  */
 export function githubWakeText(
   type: WakingGithubEvent,
   number: number,
   attributes: Record<string, unknown>,
   actorLogin: string | null,
+  repo: string | null = null,
 ): string {
   const by = login(actorLogin);
   const who = by ? ` by @${by}` : '';
@@ -72,7 +81,12 @@ export function githubWakeText(
       what = `merged${who}`;
       break;
   }
-  return `<oppenheimer from="github" event="${type}" pull="${number}">Pull request #${number}: ${what}. Read it with \`gh pr view ${number} --comments\` before you act on it.</oppenheimer>`;
+  const named = repository(repo);
+  const where = named ? ` repo="${named}"` : '';
+  const view = named
+    ? `gh pr view ${number} --repo ${named} --comments`
+    : `gh pr view ${number} --comments`;
+  return `<oppenheimer from="github" event="${type}"${where} pull="${number}">Pull request #${number}${named ? ` of ${named}` : ''}: ${what}. Read it with \`${view}\` before you act on it.</oppenheimer>`;
 }
 
 /**

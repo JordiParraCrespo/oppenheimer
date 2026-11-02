@@ -179,22 +179,21 @@ func (f *follower) checkShared() {
 	if f.shared == "" || f.reset || len(f.pending) > 0 {
 		return
 	}
-	seen := make(map[string]bool, len(f.sharedSeen))
-	for name := range f.sharedSeen {
-		seen[name] = true
-	}
-	entries := sharedEntries(f.shared, seen)
-	if len(entries) == 0 {
-		return
-	}
+	entries, names := sharedEntries(f.shared, f.sharedSeen)
 	for len(entries) > 0 {
-		n := min(len(entries), f.batchMax)
+		n, size := 0, 0
+		for n < len(entries) && n < f.batchMax && (n == 0 || size+len(entries[n]) <= chatBatchBytes) {
+			size += len(entries[n])
+			n++
+		}
 		if f.emit(app.ChatBatch{Entries: entries[:n]}) != nil {
 			return
 		}
-		entries = entries[n:]
+		for _, name := range names[:n] {
+			f.sharedSeen[name] = true
+		}
+		entries, names = entries[n:], names[n:]
 	}
-	f.sharedSeen = seen
 }
 
 func (f *follower) check() {
