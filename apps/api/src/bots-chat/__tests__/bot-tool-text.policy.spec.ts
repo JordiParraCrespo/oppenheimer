@@ -33,6 +33,13 @@ describe('cut', () => {
     expect(cut('short', 10)).toBe('short');
     expect(cut('a long sentence', 6)).toBe('a long… (cut)');
   });
+
+  // A lone half of an emoji goes to the provider as an escape xAI refuses,
+  // failing the whole turn: a cut that lands mid-emoji drops all of it.
+  it('never leaves half an emoji at the cut', () => {
+    expect(cut('ship 🚀 now', 6)).toBe('ship … (cut)');
+    expect(cut('ship 🚀 now', 7)).toBe('ship 🚀… (cut)');
+  });
 });
 
 /**
