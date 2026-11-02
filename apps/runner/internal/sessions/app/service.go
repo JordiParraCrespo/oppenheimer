@@ -292,7 +292,7 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 // (previous, nil on a create). None for an agent that serves nothing, or when
 // no port could be found: the agent then runs as it always did, without a
 // chat view.
-func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer) *domain.AgentServer {
+func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer, directory string) *domain.AgentServer {
 	if !agent.ServesConversation() || s.freePort == nil {
 		return nil
 	}
@@ -304,11 +304,30 @@ func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer) 
 	if previous != nil && previous.Since != 0 {
 		since = previous.Since
 	}
-	server, err := domain.NewAgentServer(port, since)
+	server, err := domain.NewAgentServer(port, since, directory)
 	if err != nil {
 		return nil
 	}
 	return &server
+}
+
+// sessionEnv is the session's tmux environment: the host's (Options.Env)
+// and, for an agent that serves its conversation, its API's credentials,
+// which must stay off the launch command line (domain.Launch.ServerEnv).
+func (s *Service) sessionEnv(session domain.Session) map[string]string {
+	env := s.env(session)
+	server := session.Launch.ServerEnv(session.Agent)
+	if len(server) == 0 {
+		return env
+	}
+	merged := make(map[string]string, len(env)+len(server))
+	for name, value := range env {
+		merged[name] = value
+	}
+	for name, value := range server {
+		merged[name] = value
+	}
+	return merged
 }
 
 // FollowChat follows a session's conversation for the chat view, sending
@@ -557,14 +576,14 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// Resuming also drops the stored first task, which is right: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
-	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server)
+	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
-	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.sessionEnv(session))
 	release()
 	if err != nil {
 		return domain.Session{}, err

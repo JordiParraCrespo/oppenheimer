@@ -73,21 +73,27 @@ func TestOpenCodeEffortIsTheVariantInConfiguration(t *testing.T) {
 // OpenCode is launched serving its API on the session's loopback port, with
 // the session's password, so the chat can read its conversation and nobody
 // else can drive it; no other agent is given either. Regression: an API on
-// every interface, or one with no password.
+// every interface, one with no password, or a password in a process's
+// arguments.
 func TestOpenCodeServesItsConversationOnTheSessionsPort(t *testing.T) {
 	launch := Launch{Permission: "full", Server: &AgentServer{Port: 41234, Password: "pw"}}
 	if got, want := launch.Args(AgentOpenCode), []string{"--port", "41234", "--hostname", "127.0.0.1", "--auto"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("argv = %q, want %q", got, want)
 	}
-	env := launch.Env(AgentOpenCode)
+	// The credentials are the terminal's environment, never the command line,
+	// which is the long-lived `runner pty` wrapper's argv.
+	if line := launch.CommandLine(AgentOpenCode); strings.Contains(line, "pw") {
+		t.Fatalf("command line = %q, want no password in it", line)
+	}
+	env := launch.ServerEnv(AgentOpenCode)
 	if env["OPENCODE_SERVER_PASSWORD"] != "pw" || env["OPENCODE_SERVER_USERNAME"] != AgentServerUser {
-		t.Fatalf("env = %v, want the session's credentials", env)
+		t.Fatalf("server env = %v, want the session's credentials", env)
 	}
 	if got := launch.Args(AgentClaude); slices.Contains(got, "--port") {
 		t.Fatalf("claude argv = %q, want no server", got)
 	}
-	if env := launch.Env(AgentClaude); env["OPENCODE_SERVER_PASSWORD"] != "" {
-		t.Fatalf("claude env = %v, want no password", env)
+	if env := launch.ServerEnv(AgentClaude); env != nil {
+		t.Fatalf("claude server env = %v, want none", env)
 	}
 	if got := (Launch{Resume: true, Server: &AgentServer{Port: 41234, Password: "pw"}}).Args(AgentOpenCode); !slices.Contains(got, "--continue") || !slices.Contains(got, "--port") {
 		t.Fatalf("resumed argv = %q, want the conversation continued on the port", got)

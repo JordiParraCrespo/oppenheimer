@@ -25,7 +25,9 @@ type openCode struct {
 	sessions []map[string]any
 	messages map[string][]map[string]any
 	reads    int
-	server   *httptest.Server
+	// asked is the directory the last session list was asked for.
+	asked  string
+	server *httptest.Server
 }
 
 func newOpenCode(t *testing.T) *openCode {
@@ -39,6 +41,7 @@ func newOpenCode(t *testing.T) *openCode {
 		}
 		oc.mu.Lock()
 		defer oc.mu.Unlock()
+		oc.asked = r.URL.Query().Get("directory")
 		_ = json.NewEncoder(w).Encode(oc.sessions)
 	})
 	mux.HandleFunc("GET /session/{id}/message", func(w http.ResponseWriter, r *http.Request) {
@@ -80,9 +83,17 @@ func (oc *openCode) port(t *testing.T) int {
 }
 
 func (oc *openCode) conversation(id string, updated int64) {
+	oc.conversationIn(id, "", updated)
+}
+
+func (oc *openCode) conversationIn(id, directory string, updated int64) {
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
-	oc.sessions = append(oc.sessions, map[string]any{"id": id, "time": map[string]any{"created": updated, "updated": updated}})
+	session := map[string]any{"id": id, "time": map[string]any{"created": updated, "updated": updated}}
+	if directory != "" {
+		session["directory"] = directory
+	}
+	oc.sessions = append(oc.sessions, session)
 }
 
 // say appends a message, or replaces the one with its id, as OpenCode
@@ -322,5 +333,31 @@ func TestALongOpenCodeConversationArrivesWholeAndThenGrows(t *testing.T) {
 	got := sink.entries()
 	if blockOf(got[0])["text"] != "prompt 0" || blockOf(got[30])["text"] != "one more" {
 		t.Fatalf("entries run from %v to %v, want the first prompt to the newest", got[0], got[30])
+	}
+}
+
+// OpenCode keeps one store for a repository, so another session's worktree
+// of the same repository lists its conversations beside this one's: the
+// chat asks for its own directory's, and leaves out any other it is given.
+// Regression: a pane that jumps to whichever worktree's agent wrote last.
+func TestTheChatFollowsOnlyTheConversationsInTheSessionsDirectory(t *testing.T) {
+	oc := newOpenCode(t)
+	mine, theirs := t.TempDir(), t.TempDir()
+	oc.conversationIn("ses_mine", mine, 1_700_000_000_000)
+	oc.say("ses_mine", userMessage("msg_1", "in my worktree"))
+	oc.conversationIn("ses_theirs", theirs, 1_700_000_500_000)
+	oc.say("ses_theirs", userMessage("msg_2", "in another worktree"))
+	sink := &batches{}
+	followOpenCode(t, domain.AgentServer{Port: oc.port(t), Password: openCodePassword, Directory: mine}, sink)
+
+	eventually(t, "this session's conversation", func() bool {
+		got := sink.entries()
+		return len(got) == 1 && blockOf(got[0])["text"] == "in my worktree"
+	})
+	oc.mu.Lock()
+	asked := oc.asked
+	oc.mu.Unlock()
+	if asked != mine {
+		t.Fatalf("listed the conversations of %q, want the session's directory %q", asked, mine)
 	}
 }

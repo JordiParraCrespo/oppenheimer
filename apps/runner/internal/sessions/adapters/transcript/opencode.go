@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -22,9 +23,11 @@ import (
 // move between its versions, so the chat view reads them where OpenCode
 // itself promises a shape: the API its TUI serves on a loopback port when it
 // is launched with one (domain.AgentServer). The session's conversation is
-// the newest root conversation OpenCode has for the folder, touched since the
-// session first launched, so `/new` in the TUI is followed and an older
-// conversation in the same folder never is.
+// the newest root conversation OpenCode has for the session's directory,
+// touched since the session first launched, so `/new` in the TUI is followed,
+// and neither an older conversation in the same folder nor one in another
+// worktree of the same repository (OpenCode keeps one store per repository)
+// ever is.
 //
 // Each part of a message is sent once it is finished, as a line of the
 // transcript the chat already reads (Claude Code's shape, `claude_chat.go`):
@@ -65,8 +68,17 @@ const interruptedText = "[Request interrupted by user]"
 // history over.
 func followOpenCode(ctx context.Context, server domain.AgentServer, entryMax, batchMax int, emit func(app.ChatBatch) error) {
 	api := openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
+	// OpenCode names a conversation's directory as the process found it, its
+	// links resolved.
+	directory := server.Directory
+	if directory != "" {
+		directory = filepath.Clean(directory)
+		if resolved, err := filepath.EvalSymlinks(directory); err == nil {
+			directory = resolved
+		}
+	}
 	for {
-		f := newOpenCodeFollower(api, server.Since, entryMax, batchMax, emit)
+		f := newOpenCodeFollower(api, server.Since, directory, entryMax, batchMax, emit)
 		_ = f.run(ctx)
 		select {
 		case <-ctx.Done():
@@ -153,9 +165,10 @@ func (a openCodeAPI) events(ctx context.Context, changed func()) error {
 // few of these fields.
 type (
 	openCodeSession struct {
-		ID       string `json:"id"`
-		ParentID string `json:"parentID"`
-		Time     struct {
+		ID        string `json:"id"`
+		ParentID  string `json:"parentID"`
+		Directory string `json:"directory"`
+		Time      struct {
 			Updated int64 `json:"updated"`
 		} `json:"time"`
 	}
@@ -219,10 +232,11 @@ const (
 
 // openCodeFollower is one connection's read of the conversation.
 type openCodeFollower struct {
-	api      openCodeAPI
-	since    int64
-	entryMax int
-	out      *follower
+	api       openCodeAPI
+	since     int64
+	directory string
+	entryMax  int
+	out       *follower
 
 	session string
 	// sent is how far each message and part has been sent.
@@ -236,9 +250,9 @@ type openCodeFollower struct {
 	windowed bool
 }
 
-func newOpenCodeFollower(api openCodeAPI, since int64, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
+func newOpenCodeFollower(api openCodeAPI, since int64, directory string, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
 	return &openCodeFollower{
-		api: api, since: since, entryMax: entryMax,
+		api: api, since: since, directory: directory, entryMax: entryMax,
 		out:  &follower{entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true},
 		sent: map[string]int{}, windowed: true,
 	}
@@ -309,16 +323,25 @@ func (f *openCodeFollower) check(ctx context.Context) error {
 	return nil
 }
 
-// conversation is the session's conversation: the newest root one touched
-// since the session launched, or "" while there is none.
+// conversation is the session's conversation: the newest root one in its
+// directory touched since the session launched, or "" while there is none.
+// OpenCode is asked for the directory's alone, and each answer is checked
+// against it too, for a version that lists the whole repository's.
 func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
+	query := url.Values{"roots": {"true"}}
+	if f.directory != "" {
+		query.Set("directory", f.directory)
+	}
 	var sessions []openCodeSession
-	if err := f.api.get(ctx, "/session", url.Values{"roots": {"true"}}, &sessions); err != nil {
+	if err := f.api.get(ctx, "/session", query, &sessions); err != nil {
 		return "", err
 	}
 	var newest openCodeSession
 	for _, s := range sessions {
 		if s.ParentID != "" || s.Time.Updated < f.since || !openCodeIDPattern.MatchString(s.ID) {
+			continue
+		}
+		if f.directory != "" && s.Directory != "" && filepath.Clean(s.Directory) != f.directory {
 			continue
 		}
 		if newest.ID == "" || s.Time.Updated > newest.Time.Updated {

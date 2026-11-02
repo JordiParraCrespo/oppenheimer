@@ -66,6 +66,10 @@ type AgentServer struct {
 	// conversation of the agent's not touched since then is an older one in
 	// the same folder, never this session's.
 	Since int64 `json:"since,omitempty"`
+	// Directory is where the agent runs. OpenCode keeps one store per
+	// repository, so the worktrees of one repository share it, and only the
+	// directory tells this session's conversations from another's.
+	Directory string `json:"directory,omitempty"`
 }
 
 // AgentServerUser is the user name the agent's API takes with the password.
@@ -77,13 +81,31 @@ func (a Agent) ServesConversation() bool {
 	return a == AgentOpenCode
 }
 
-// NewAgentServer mints a password for an agent's API on port.
-func NewAgentServer(port int, since int64) (AgentServer, error) {
+// NewAgentServer mints a password for an agent's API on port, for the
+// agent running in directory.
+func NewAgentServer(port int, since int64, directory string) (AgentServer, error) {
 	raw := make([]byte, 24)
 	if _, err := rand.Read(raw); err != nil {
 		return AgentServer{}, err
 	}
-	return AgentServer{Port: port, Password: base64.RawURLEncoding.EncodeToString(raw), Since: since}, nil
+	return AgentServer{
+		Port: port, Password: base64.RawURLEncoding.EncodeToString(raw), Since: since, Directory: directory,
+	}, nil
+}
+
+// ServerEnv is the environment that hands the agent its API's credentials,
+// or nil. It is the session's tmux environment, never the launch command
+// line: the line is the arguments of the `runner pty` wrapper, which lives
+// as long as the agent, and any account on the host can read a process's
+// arguments.
+func (l Launch) ServerEnv(agent Agent) map[string]string {
+	if l.Server == nil || !agent.ServesConversation() {
+		return nil
+	}
+	return map[string]string{
+		"OPENCODE_SERVER_USERNAME": AgentServerUser,
+		"OPENCODE_SERVER_PASSWORD": l.Server.Password,
+	}
 }
 
 // launchMap is one agent's `launch` entry of the catalog
@@ -226,25 +248,18 @@ func (l Launch) effortLevel(m launchMap) launchLevel {
 // agent's process, or nil. The catalog spec holds that the two never name the
 // same variable; if they ever did, the permission level wins, because an
 // effort must not be able to loosen what the agent may do.
-//
-// The agent's API password (Server) rides here too, beside the levels.
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
-	server := l.Server != nil && agent.ServesConversation()
-	if len(effort) == 0 && !server {
+	if len(effort) == 0 {
 		return permission
 	}
-	env := make(map[string]string, len(permission)+len(effort)+2)
+	env := make(map[string]string, len(permission)+len(effort))
 	for name, value := range effort {
 		env[name] = value
 	}
 	for name, value := range permission {
 		env[name] = value
-	}
-	if server {
-		env["OPENCODE_SERVER_USERNAME"] = AgentServerUser
-		env["OPENCODE_SERVER_PASSWORD"] = l.Server.Password
 	}
 	return env
 }

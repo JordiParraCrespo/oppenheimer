@@ -169,6 +169,9 @@ type stageRunner func(start domain.StageEvent, fn func() error) error
 // by the next attempt for the same session (Places.MakeSession,
 // Worktrees.Add). A folder session has no clone and no worktree stage.
 func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
+	// Where the agent will serve its conversation, chosen before the terminal
+	// is made: its credentials are the terminal's environment.
+	session.Launch.Server = s.agentServer(session.Agent, nil, session.Cwd())
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
 	run := stageRunner(func(start domain.StageEvent, fn func() error) error {
@@ -204,7 +207,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
-		return s.terminals.Create(ctx, session.TmuxName(), dir, "", s.env(session))
+		return s.terminals.Create(ctx, session.TmuxName(), dir, "", s.sessionEnv(session))
 	}); err != nil {
 		return domain.Session{}, err
 	}
@@ -228,7 +231,6 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
-		session.Launch.Server = s.agentServer(session.Agent, nil)
 		launch.Server = session.Launch.Server
 		launch.StatusLine = s.statusLine
 		launch.Wrap = s.observer.wrap(session.ID)
