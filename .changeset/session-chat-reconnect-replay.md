@@ -10,4 +10,6 @@ turns, drew every turn afresh and threw the reader to the top of the
 conversation, with the whole history drawn. A reset that carries lines is now
 checked against the lines the chat already holds. What matches stays drawn
 and nothing is published. The chat is rebuilt only from the first line that
-differs, and lines past the end of the replay are appended as usual.
+differs, and lines past the end of the replay are appended as usual. A replay that
+goes quiet before it has resent every line the chat holds means the
+transcript is now shorter, and the lines it did not resend are dropped.

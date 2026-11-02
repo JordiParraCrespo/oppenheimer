@@ -183,6 +183,12 @@ const PASTE_START = '\u001b[200~';
 const PASTE_END = '\u001b[201~';
 /** The key that stops Claude Code's turn. */
 const ESCAPE = '\u001b';
+/**
+ * How long a reconnect's replay may go quiet, short of the lines the chat
+ * holds, before those it did not send again are taken as gone: well past
+ * the runner's 300ms between reads of a long history.
+ */
+const REPLAY_SETTLE_MS = 3000;
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
 /**
@@ -219,11 +225,17 @@ class Transcript {
   private openFrom = 0;
   /**
    * While a reconnect replays the history: how many of the lines already
-   * read it has sent again. The transcript only grows, so a replay is what
-   * is held followed by what is new; what is held stays, and only a line
-   * that differs cuts the conversation there.
+   * read it has sent again. A transcript mostly grows, so a replay is what
+   * is held followed by what is new; what is held stays, and a line that
+   * differs cuts the conversation there. One the CLI shortened ends before
+   * it has sent everything held, which `settle` cuts.
    */
   private replayed: number | null = null;
+
+  /** A replay has not yet sent again every line held. */
+  get replaying(): boolean {
+    return this.replayed !== null;
+  }
 
   /**
    * A reset: the history again from its first line. With lines to come it
@@ -281,14 +293,38 @@ class Transcript {
     return last ? [...this.closed, last] : [...this.closed];
   }
 
-  /** Keeps the first `length` lines, and opens again every closed turn that held one past them. */
+  /**
+   * Ends a replay that went quiet before it sent every line held: the
+   * transcript is shorter now, so the lines it did not send again go.
+   * Whether any did.
+   */
+  settle(): boolean {
+    if (this.replayed === null) return false;
+    const length = this.replayed;
+    this.replayed = null;
+    this.truncate(length);
+    return true;
+  }
+
+  /**
+   * Keeps the first `length` lines, and opens again every closed turn that
+   * held one past them or took a result from one.
+   */
   private truncate(length: number): void {
+    let turn = length === 0 ? 0 : Number.POSITIVE_INFINITY;
+    // A result past the cut that landed on a closed turn's call goes with it.
+    for (let index = length; index < this.lines.length && turn > 0; index += 1) {
+      turn = Math.min(turn, this.closedAnswered(this.lines[index]?.entry, index));
+    }
     this.lines.length = Math.min(this.lines.length, length);
     this.unread = Math.min(this.unread, length);
-    if (length >= this.openFrom) return;
-    // The first closed turn that runs past `length`: it ends where the next starts.
-    let turn = 0;
-    while ((this.closedStarts[turn + 1] ?? this.openFrom) <= length) turn += 1;
+    if (length < this.openFrom) {
+      // The first closed turn that runs past `length`: it ends where the next starts.
+      let first = 0;
+      while ((this.closedStarts[first + 1] ?? this.openFrom) <= length) first += 1;
+      turn = Math.min(turn, first);
+    }
+    if (turn >= this.closed.length) return;
     this.reopen(turn);
     if (turn === 0) this.openFrom = 0;
   }
@@ -338,6 +374,7 @@ export class SessionChat {
    */
   private queuedDuring: string | null = null;
   private queuedIds = 0;
+  private replayTimer: ReturnType<typeof setTimeout> | null = null;
 
   apply(batch: ChatBatch): void {
     let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
@@ -360,7 +397,24 @@ export class SessionChat {
       // A replay so far, or a status alone: the conversation is as drawn.
       this.publish({ ...this.state, status });
     }
+    this.watchReplay();
     this.flush();
+  }
+
+  /**
+   * A replay that stops short of the lines held says the transcript is
+   * shorter now; nothing marks a history's end, so its quiet does.
+   */
+  private watchReplay(): void {
+    if (this.replayTimer) clearTimeout(this.replayTimer);
+    this.replayTimer = null;
+    if (!this.transcript.replaying) return;
+    this.replayTimer = setTimeout(() => {
+      this.replayTimer = null;
+      if (!this.transcript.settle()) return;
+      this.publish({ ...this.state, turns: this.transcript.turns() });
+      this.flush();
+    }, REPLAY_SETTLE_MS);
   }
 
   private publish(state: ChatState): void {

@@ -408,6 +408,57 @@ describe('SessionChat', () => {
     expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Other']);
   });
 
+  it('drops what a replay that went quiet did not send again', () => {
+    // What breaks this: a replay that only ever cuts on a line that differs,
+    // so a transcript the CLI shortened keeps its old turns on screen.
+    vi.useFakeTimers();
+    const lines = [user('u1', 'One'), user('u2', 'Two'), user('u3', 'Three')].map((entry) =>
+      JSON.stringify(entry),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    chat.apply({ reset: true, entries: lines.slice(0, 2) });
+    expect(chat.snapshot().turns).toHaveLength(3);
+    vi.advanceTimersByTime(5_000);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Two']);
+    vi.useRealTimers();
+  });
+
+  it('opens a closed turn again when a replay cuts the late result it took', () => {
+    // What breaks this: a cut that rebuilds only from the turn it falls in,
+    // so an earlier turn keeps a call finished by a line that is gone.
+    const one = JSON.stringify(user('u1', 'One'));
+    const call = JSON.stringify(
+      assistant('a1', [
+        { type: 'tool_use', id: 'bg', name: 'Bash', input: { command: 'pnpm dev' } },
+      ]),
+    );
+    const started = JSON.stringify(assistant('a2', [{ type: 'text', text: 'Started.' }]));
+    const two = JSON.stringify(user('u2', 'Two'));
+    const result = JSON.stringify(
+      user('r1', [{ type: 'tool_result', tool_use_id: 'bg', content: 'stopped' }]),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: [one, call, started, two, result] });
+    const bg = () => {
+      const step = chat.snapshot().turns[0]?.steps[0];
+      return step?.kind === 'tool' ? step.call.status : null;
+    };
+    expect(bg()).toBe('done');
+
+    chat.apply({
+      reset: true,
+      entries: [
+        one,
+        call,
+        started,
+        two,
+        JSON.stringify(assistant('a3', [{ type: 'text', text: 'Hi.' }])),
+      ],
+    });
+    expect(bg()).toBe('running');
+  });
+
   it('reads a long conversation line by line as the whole transcript reads, keeping closed turns', () => {
     const entries = [
       user('u1', 'One'),
