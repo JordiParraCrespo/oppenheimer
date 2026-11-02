@@ -10,8 +10,10 @@ import { BotApprovalRequestFactory } from './application/bot-approval-request.fa
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotGoalResolver } from './application/bot-goal.resolver';
+import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
@@ -313,6 +315,8 @@ const queryHandlers: Provider[] = [
     BotGoalToolsFactory,
     BotQuestionToolsFactory,
     BotGoalResolver,
+    BotGoalReviewResolver,
+    BotCompletionResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotPlanToolsFactory,

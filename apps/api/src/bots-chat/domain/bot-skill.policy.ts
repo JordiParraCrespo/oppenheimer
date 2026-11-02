@@ -1,4 +1,5 @@
-import type { BotSlashCommand } from '@oppenheimer/shared';
+import { type BotSlashCommand, botGoalCommandOf } from '@oppenheimer/shared';
+import { goalSetPrompt } from './bot-goal.policy';
 
 /** What the prompt and the tools read of a skill. */
 export interface BotSkillView {
@@ -87,10 +88,22 @@ ${prompt}`;
 }
 
 /**
+ * A `/goal` that shows or clears the goal is the console's to run
+ * (`GET`/`DELETE /bots/:id/goal`) and the API refuses to send one; this only
+ * reads one that came from before that rule, so the bot answers in a line.
+ */
+function goalCommandPrompt(prompt: string): string {
+  return `The person typed a /goal command that shows or clears your goal; Oppenheimer runs those itself. Say in a line what your goal is now, if you have one.
+
+${prompt}`;
+}
+
+/**
  * The turn's message, as the person's words become it (`25-bots.md` §4.1):
- * the skill their `/<name>` runs before them, a note when the command names
- * no skill they can run, or the words alone when they typed no command. The
- * one place a slash command becomes the turn's message.
+ * a built-in command's directive (`/goal <condition>`), the skill their
+ * `/<name>` runs before them, a note when the command names no skill they
+ * can run, or the words alone when they typed no command. The one place a
+ * slash command becomes the turn's message.
  */
 export function composeTurnMessage(
   command: BotSlashCommand | null,
@@ -98,6 +111,8 @@ export function composeTurnMessage(
   prompt: string,
 ): string {
   if (!command) return prompt;
+  const goal = botGoalCommandOf(command);
+  if (goal) return goal.kind === 'set' ? goalSetPrompt(goal.condition) : goalCommandPrompt(prompt);
   const skill = invokedSkill(command, skills);
   return skill
     ? skillInvocationPrompt(skill, command, prompt)

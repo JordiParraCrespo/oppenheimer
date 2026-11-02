@@ -1,16 +1,12 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { BotEngine } from '@oppenheimer/backend-agents';
+import { BotCompletionResolver } from '../../application/bot-completion.resolver';
 import {
   BotModelAccessResolver,
   type BotModelTarget,
 } from '../../application/bot-model-access.resolver';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
-  BOT_ENGINE,
   BOT_MESSAGE_REPOSITORY,
 } from '../../bots-chat.di-tokens';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
@@ -45,7 +41,7 @@ export class SummarizeBotConversationCommandHandler
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
-    @Inject(BOT_ENGINE) private readonly engine: BotEngine,
+    private readonly completions: BotCompletionResolver,
     private readonly access: BotModelAccessResolver,
   ) {}
 
@@ -85,19 +81,16 @@ export class SummarizeBotConversationCommandHandler
     }
   }
 
-  /** One tool-less answer from the bot's model, in a scratch directory of its own. */
-  private async complete(target: BotModelTarget, message: string): Promise<string> {
-    const scratchDir = await mkdtemp(join(tmpdir(), 'bot-summary-'));
-    try {
-      return await this.engine.complete({
+  /** One tool-less answer from the bot's model. */
+  private complete(target: BotModelTarget, message: string): Promise<string> {
+    return this.completions.complete(
+      {
         ...target,
         systemPrompt: BOT_SUMMARIZER_PROMPT,
         message,
         signal: AbortSignal.timeout(BOT_TURN_TIME_LIMIT_MS),
-        scratchDir,
-      });
-    } finally {
-      await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
-    }
+      },
+      'summary',
+    );
   }
 }
