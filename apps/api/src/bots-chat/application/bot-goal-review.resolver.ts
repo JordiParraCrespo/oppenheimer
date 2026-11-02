@@ -10,9 +10,10 @@ import {
   BOT_GOAL_REVIEWER_PROMPT,
   type BotGoalVerdict,
   composeGoalReview,
+  goalReviewTranscript,
   goalVerdict,
 } from '../domain/bot-goal-review.policy';
-import { type HistoryEntry, historyEntry } from '../domain/bot-history.policy';
+import type { HistoryEntry } from '../domain/bot-history.policy';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
 /** How long one review may take before the goal goes on without a verdict. */
@@ -69,15 +70,12 @@ export class BotGoalReviewResolver {
     }
   }
 
-  /** The conversation before the turn, as a turn reads it back, then what the turn wrote. */
+  /** What the reviewer reads: the conversation before the turn, then what the turn wrote. */
   private async transcript(goal: BotGoalEntity, turnId: string): Promise<HistoryEntry[]> {
     const [before, texts] = await Promise.all([
       this.messages.findHistory(goal.organizationId, goal.botId, turnId, null, REVIEW_READ_MAX),
       this.messages.findTurnTexts(goal.organizationId, turnId),
     ]);
-    return [
-      ...before.filter((message) => message.role !== 'activity').map(historyEntry),
-      ...texts.map((text) => ({ role: 'assistant' as const, text })),
-    ];
+    return goalReviewTranscript(before, texts);
   }
 }

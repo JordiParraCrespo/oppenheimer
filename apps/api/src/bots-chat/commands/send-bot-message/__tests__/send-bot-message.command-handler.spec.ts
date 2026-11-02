@@ -15,6 +15,7 @@ import type { BotQuestionRepositoryPort } from '../../../database/bot-question.r
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../../../domain/bot-attachment.entity';
+import { BotGoalEntity } from '../../../domain/bot-goal.entity';
 import { BotQuestionEntity } from '../../../domain/bot-question.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
@@ -44,6 +45,7 @@ function setup(
     question?: boolean;
     lost?: boolean;
     provider?: BotEntity['provider'];
+    replaced?: BotGoalEntity;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -56,8 +58,16 @@ function setup(
     homeHostId: null,
     provider: options.provider ?? 'glm',
   });
-  const turns = { enqueue: vi.fn<BotTurnRepositoryPort['enqueue']>(async () => 'staged') };
-  const goals = { set: vi.fn<BotGoalResolver['set']>(async () => null) };
+  const turns = {
+    enqueue: vi.fn<BotTurnRepositoryPort['enqueue']>(async () => 'staged'),
+    enqueueWithGoal: vi.fn<BotTurnRepositoryPort['enqueueWithGoal']>(async () => ({
+      outcome: 'staged',
+      replaced: options.replaced ?? null,
+    })),
+  };
+  const goals = {
+    cancelWaiting: vi.fn<BotGoalResolver['cancelWaiting']>(async () => undefined),
+  };
   const uploads: BotAttachmentEntity[] = [];
   const attachments = {
     findManyForBot: vi.fn(async (_org: string, _bot: string, ids: readonly string[]) =>
@@ -273,12 +283,13 @@ describe('SendBotMessageCommandHandler', () => {
     );
   });
 
-  it('sets the bot’s goal on the turn a /goal <condition> queues, with that turn’s reach', async () => {
-    const { handler, turns, goals, bot } = setup();
+  it('queues a /goal <condition> with its goal, set on that turn with its reach', async () => {
+    const { handler, turns, bot } = setup();
     await send(handler, bot.id, 'Europe/Madrid', ['bots:write'], [], '/goal pnpm test exits 0');
-    const [turn, message] = vi.mocked(turns.enqueue).mock.calls[0];
+    expect(turns.enqueue).not.toHaveBeenCalled();
+    const [turn, message, goal] = vi.mocked(turns.enqueueWithGoal).mock.calls[0];
     expect(message.content).toBe('/goal pnpm test exits 0');
-    expect(goals.set.mock.calls[0][0]).toMatchObject({
+    expect(goal).toMatchObject({
       botId: bot.id,
       originTurnId: turn.id,
       objective: 'pnpm test exits 0',
@@ -287,22 +298,38 @@ describe('SendBotMessageCommandHandler', () => {
     });
   });
 
+  it('cancels the continuation the goal a /goal replaced left waiting', async () => {
+    const replaced = BotGoalEntity.set({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      originTurnId: 'turn-0',
+      objective: 'Triage the bugs',
+      limit: 5,
+      credentialScopes: null,
+      timeZone: null,
+    });
+    const { handler, goals, bot } = setup({ replaced });
+    await send(handler, bot.id, null, null, [], '/goal Ship it');
+    expect(goals.cancelWaiting).toHaveBeenCalledWith(replaced, expect.anything());
+  });
+
   it('sets no goal for any other message', async () => {
-    const { handler, goals, bot } = setup();
+    const { handler, turns, goals, bot } = setup();
     await send(handler, bot.id);
-    expect(goals.set).not.toHaveBeenCalled();
+    expect(turns.enqueueWithGoal).not.toHaveBeenCalled();
+    expect(goals.cancelWaiting).not.toHaveBeenCalled();
   });
 
   // What breaks this: `/goal clear` typed through the API queuing a turn that
   // spends a model call to say the goal is cleared, without clearing it.
   it('refuses /goal alone and /goal clear with a generic 400, queuing nothing', async () => {
-    const { handler, turns, goals, bot } = setup();
+    const { handler, turns, bot } = setup();
     for (const content of ['/goal', '/goal clear']) {
       await expect(send(handler, bot.id, null, null, [], content)).rejects.toMatchObject({
         code: 'GENERIC.ARGUMENT_INVALID',
       });
     }
     expect(turns.enqueue).not.toHaveBeenCalled();
-    expect(goals.set).not.toHaveBeenCalled();
+    expect(turns.enqueueWithGoal).not.toHaveBeenCalled();
   });
 });

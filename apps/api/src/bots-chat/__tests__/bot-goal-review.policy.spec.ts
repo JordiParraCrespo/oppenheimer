@@ -9,6 +9,7 @@ import {
   BOT_GOAL_REASON_MAX,
   BOT_GOAL_REVIEW_TOKEN_BUDGET,
   composeGoalReview,
+  goalReviewTranscript,
   goalVerdict,
 } from '../domain/bot-goal-review.policy';
 
@@ -55,5 +56,24 @@ describe('composeGoalReview', () => {
     const message = composeGoalReview('CI is green', [old, { role: 'assistant', text: 'newest' }]);
     expect(message).toContain('newest');
     expect(message).not.toContain('ooo');
+  });
+});
+
+describe('goalReviewTranscript', () => {
+  it('reads the conversation back without the bot’s working, the ended turn’s words last', () => {
+    expect(
+      goalReviewTranscript(
+        [
+          { role: 'user', content: 'Fix the build' },
+          { role: 'activity', content: 'ran pnpm test' },
+          { role: 'assistant', content: 'On it' },
+        ],
+        ['pnpm test exited 0'],
+      ),
+    ).toEqual([
+      { role: 'user', text: 'Fix the build' },
+      { role: 'assistant', text: 'On it' },
+      { role: 'assistant', text: 'pnpm test exited 0' },
+    ]);
   });
 });

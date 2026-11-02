@@ -13,9 +13,10 @@ import { ContinueBotGoalCommand } from './continue-bot-goal.command';
  * A turn of a goal ended (`25-bots.md` §4.1): load, decide (`goalDecision`),
  * ask the reviewer whether the condition holds (`BotGoalReviewResolver`),
  * decide again on its verdict (`goalOutcome`), act. The goal is read again
- * after the review, which takes a model call: one ended or replaced
- * meanwhile (the bot's `end_goal`, the owner's Stop, a new `/goal`) is left
- * as it is. Going on queues the next continuation as the bot's owner, and the
+ * after the review, which takes a model call: one ended, replaced (the bot's
+ * `end_goal`, the owner's Stop, a new `/goal`) or moved on by another
+ * delivery of the same end meanwhile is left as it is, and the continuation
+ * is still claimed on the count loaded before the review. Going on queues the next continuation as the bot's owner, and the
  * goal's count is claimed in the same transaction as the queued turn, so a
  * Stop that deleted the goal meanwhile queues nothing, and a process that dies
  * leaves either both or neither. Ending goes through `BotGoalResolver`.
@@ -47,31 +48,28 @@ export class ContinueBotGoalCommandHandler
       return;
     }
     const verdict = await this.reviewer.review(goal, ended.id);
+    // Still this goal at the count it was loaded at: an end delivered twice
+    // that read the count the other one claimed would queue a second
+    // continuation beside the first.
     const current = await this.goals.findForBot(goal.organizationId, goal.botId);
-    if (current?.id !== goal.id) return;
-    const outcome = goalOutcome(current, verdict);
-    const props =
-      outcome.kind === 'continue' ? await this.goalsOf.continuationProps(current) : null;
+    if (current?.id !== goal.id || current.continuations !== goal.continuations) return;
+    const outcome = goalOutcome(goal, verdict);
+    const props = outcome.kind === 'continue' ? await this.goalsOf.continuationProps(goal) : null;
     if (!props) {
       const ending =
         outcome.kind === 'end'
           ? { activity: outcome.activity, reason: outcome.reason }
           : { activity: 'stopped' as const, reason: 'access_lost' };
-      await this.goalsOf.end(current, ending, metadata.correlationId);
+      await this.goalsOf.end(goal, ending, metadata.correlationId);
       return;
     }
 
-    const { turn, opening } = goalContinuationTurn(
-      props,
-      current,
-      current.advance(),
-      outcome.reason,
-    );
+    const { turn, opening } = goalContinuationTurn(props, goal, goal.advance(), outcome.reason);
     const queued = await this.turns.enqueueContinuation(
       turn,
       opening,
       metadata.correlationId,
-      current,
+      goal,
     );
     if (queued === 'staged' || queued === 'waiting') {
       await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: 'queued' });

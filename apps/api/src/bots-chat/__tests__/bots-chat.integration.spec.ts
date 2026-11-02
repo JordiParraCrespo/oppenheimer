@@ -192,6 +192,7 @@ describe('bots chat (integration)', () => {
       new BotTurnMapper(),
       new BotMessageMapper(),
       new BotConversationRepository(),
+      new BotGoalMapper(),
     );
     messages = new BotMessageRepository(
       dataSource.getRepository(BotMessageOrmEntity),
@@ -2229,6 +2230,45 @@ describe('bots chat (integration)', () => {
         continuations: 0,
         credentialScopes: ['bots:read'],
       });
+    });
+
+    // What breaks this: a /goal's turn queued in one transaction and its goal
+    // set in another, so a fast worker (or a crash between them) runs and
+    // ends the turn with no goal, and the goal set after is never reviewed.
+    it('sets a /goal’s goal in the transaction that queues its turn, replacing the one there was', async () => {
+      const bot = await create('Setter');
+      const earlier = await runningTurn(bot);
+      const old = goalFor(bot, earlier.id, 'Triage the bugs');
+      await goals.set(old);
+      const yours = sent(bot, '/goal Ship it');
+      const goal = goalFor(bot, yours.turn.id, 'Ship it');
+      const { outcome, replaced } = await turns.enqueueWithGoal(
+        yours.turn,
+        yours.message,
+        goal,
+        null,
+      );
+      expect(outcome).toBe('waiting');
+      expect(replaced).toMatchObject({ id: old.id });
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        id: goal.id,
+        originTurnId: yours.turn.id,
+      });
+    });
+
+    it('sets no goal when the /goal’s bot is gone', async () => {
+      const bot = await create('Gone');
+      const yours = sent(bot, '/goal Ship it');
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [bot.id]);
+      const goal = goalFor(bot, yours.turn.id);
+      expect(await turns.enqueueWithGoal(yours.turn, yours.message, goal, null)).toEqual({
+        outcome: 'missing',
+        replaced: null,
+      });
+      const left: unknown[] = await dataSource.query(`SELECT 1 FROM bot_goal WHERE id = $1`, [
+        goal.id,
+      ]);
+      expect(left).toEqual([]);
     });
 
     function continuation(bot: BotEntity, goal: BotGoalEntity) {

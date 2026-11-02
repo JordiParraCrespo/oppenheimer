@@ -36,6 +36,23 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'>;
 
   /**
+   * `enqueue` for a message that sets the bot's goal (`/goal <condition>`):
+   * the goal is set in the same transaction as the turn and its job, so the
+   * turn never runs, or ends, without the goal it set. Answers the goal it
+   * replaced, whose waiting continuation the caller cancels; null when
+   * nothing was written.
+   */
+  enqueueWithGoal(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }>;
+
+  /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
    * (a routine's run): a key already queued answers that turn instead, so a
    * run dispatched twice queues one turn. With `busyPrefix`, a queued or

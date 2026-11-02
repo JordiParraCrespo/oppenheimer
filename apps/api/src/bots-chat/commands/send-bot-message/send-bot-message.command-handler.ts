@@ -34,7 +34,8 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * where the person can fix it, rather than failing in the worker. A card the
  * bot is waiting on expires: the person moved on. `/goal <condition>` sets
  * the bot's goal on the turn it queues (`goalFromMessage`), checked before
- * anything is written and set once the turn is.
+ * anything is written and set in the transaction that queues the turn, so
+ * the turn never runs or ends without it.
  */
 /** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
 export interface SentBotMessage {
@@ -101,10 +102,16 @@ export class SendBotMessageCommandHandler
       position: 0,
       attachments,
     });
-    const outcome = await this.turns.enqueue(turn, message, metadata.correlationId);
+    const { outcome, replaced } = goal
+      ? await this.turns.enqueueWithGoal(turn, message, goal, metadata.correlationId)
+      : {
+          outcome: await this.turns.enqueue(turn, message, metadata.correlationId),
+          replaced: null,
+        };
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
-    if (goal) await this.goals.set(goal);
+    // The goal it replaced goes with the continuation it left waiting.
+    if (replaced) await this.goals.cancelWaiting(replaced, metadata.correlationId);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.cards.retire(bot.organizationId, bot.id);
     return { turnId: turn.id, messageId: message.id };

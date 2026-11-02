@@ -169,6 +169,17 @@ describe('ContinueBotGoalCommandHandler', () => {
     expect(goalsOf.end).not.toHaveBeenCalled();
   });
 
+  // What breaks this: two deliveries of one end both reviewing, the first
+  // queuing continuation 2 before the second reads the goal again, and the
+  // second claiming the count the first left and queuing continuation 3.
+  it('queues nothing when another delivery moved the goal on while the reviewer answered', async () => {
+    const { goals, turns, goalsOf, run } = setup(goal(1), ended('completed'));
+    goals.findForBot.mockResolvedValueOnce(goal(1)).mockResolvedValueOnce(goal(2));
+    await run();
+    expect(turns.enqueueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.end).not.toHaveBeenCalled();
+  });
+
   it('stops the goal when its own continuation was stopped, without a review, and queues nothing', async () => {
     const stored = goal(1);
     const { turns, goalsOf, reviewer, run } = setup(stored, ended('cancelled'));
