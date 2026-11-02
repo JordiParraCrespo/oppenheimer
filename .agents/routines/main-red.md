@@ -4,15 +4,24 @@
 schedule its `cron` sets. Pull requests get no GitHub CI; each one carries a
 `pnpm ci:local` report instead (`.agents/skills/steward/SKILL.md`). A red
 scheduled run opens the `main-red` issue with the failed rows, and the next
-green run closes it. This routine runs an hour after each scheduled run, and it
-is the owner of that issue.
+green run closes it. This routine runs about ninety minutes after each
+scheduled run (GitHub starts a scheduled run up to half an hour late, and a
+run takes up to half an hour), and it is the owner of that issue. When the
+fix is obvious (step 4), it merges its own pull request: `main` is merged
+into many times a day, and a red `main` that waits for a person gets a dozen
+more merges on top of it.
 
 ## 1. Is there anything to do?
 
 Look for an open issue labelled `main-red`. If there is none, stop: say
-nothing, open nothing. If an open pull request already links the issue and
-its head has a green `## Local CI` report, stop as well; it is waiting on a
-merge, not on you.
+nothing, open nothing. Read the latest completed `ci.yml` run on `main` too
+(GitHub MCP `actions_list`): if it is newer than the issue's latest comment
+and green, the issue is about to close; stop.
+
+If an open pull request already links the issue:
+- it is this routine's (labelled `main-red`) and its head has a green
+  `## Local CI` report: go to step 4 with it; do not open a second one;
+- it is someone else's: stop, it is theirs to land.
 
 ## 2. Reproduce
 
@@ -39,11 +48,65 @@ ran (a lost runner, an install that failed), and say so on the issue.
 
 ## 3. Fix
 
-A branch from `origin/main`, the smallest change that fixes the root cause,
-and a pull request that says `Fixes #<issue>`. Never skip, disable or
+A branch `main-red/<yyyy-mm-dd>-<slug>` from `origin/main`, the smallest
+change that fixes the root cause, and a pull request labelled `main-red` that
+says `Fixes #<issue>` and names the commit (and the pull request) that broke
+`main`. Never skip, disable or
 quarantine a test to get green. When the failure is in a test, fix the code
 the test caught before you touch the test: a flake is usually the code
 reporting the wrong error under a race.
 
 Then follow `.agents/skills/steward/SKILL.md`: run `pnpm ci:local --all`,
 push only on green, and put the report in the pull request.
+
+## 4. Merge it yourself when the fix is obvious
+
+The person who owns this repository asked for this: an obvious fix to a red
+`main` lands without waiting for review. Merge your pull request only when
+**every** one of these holds; when one does not, leave it open, comment on
+the issue in one line which rule kept it open, and stop.
+
+1. **The cause is plain.** You reproduced the failure, the failing row
+   points at a change that is already on `main`, and the fix follows from
+   the error message. The cases that qualify:
+   - a generated file is stale (the API client, `routeTree.gen.ts`, a
+     catalog or a lockfile), and the fix is running the repository's own
+     generator;
+   - two pull requests each passed alone and clash together: a migration
+     number or timestamp taken twice (renumber the one not yet released), a
+     symbol one renamed and the other still uses, an import of a file the
+     other moved, a duplicated key or route;
+   - lint, format or a type error the merge introduced, fixed without
+     changing what the code does;
+   - a missing row the checks demand (an error code in
+     `apps/docs/docs/errors.md`, a translation key, a `features.json` path,
+     an `oppenheimer:begin`/`end` marker).
+2. **The fix is small.** At most 5 files and about 80 changed lines, not
+   counting files a generator wrote.
+3. **It changes nothing anyone has to decide.** None of these:
+   - a test skipped, deleted, loosened or given a longer timeout; an
+     assertion changed to match new output;
+   - a budget, threshold, ledger entry or exemption added or raised;
+   - authentication, credentials, secrets, the deploy (`deploy/`,
+     `.github/workflows/`), the CI plan (`scripts/ci/`), the hooks
+     (`.agents/hooks/`, `.claude/settings.json`), or a migration that is
+     already released;
+   - a revert of someone's pull request (that drops their work; say on the
+     issue which one broke `main` and leave the choice to a person);
+   - a race, a flake or a failure that passes here and fails on the runner.
+4. **It is green on today's `main`.** The branch is up to date with
+   `origin/main` (merge it in if `main` moved, and run again), `pnpm
+   ci:local --all` is green on the head, and its report is in the pull
+   request.
+
+To merge: squash with `merge_pull_request`, passing the head as
+`expectedHeadSha` so a push you did not see stops it. Then start the CI
+workflow on `main` (`workflow_dispatch` of `ci.yml`), and comment on the
+issue with the pull request, the merge commit and that run's link; the green
+run closes the issue. Never push to `main` itself, never approve, and never
+merge a pull request that is not this routine's. If the dispatched run is
+red again, the next run of this routine starts over from step 1 and does not
+merge a second fix for the same failure: leave it for a person.
+
+End with one line: what was red, what you did, and the pull request (merged
+or waiting, and why).
