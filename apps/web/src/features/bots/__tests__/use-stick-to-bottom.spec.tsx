@@ -54,9 +54,11 @@ function measure(box: HTMLElement) {
   Object.defineProperty(box, 'clientHeight', { configurable: true, get: () => 300 });
 }
 
+/** The reader scrolls up: a wheel turned up, then the pane moves. */
 function scrollUp(box: HTMLElement) {
   box.scrollTop = 700;
   box.dispatchEvent(new Event('scroll'));
+  box.dispatchEvent(new WheelEvent('wheel', { deltaY: -600 }));
   box.scrollTop = 100;
   box.dispatchEvent(new Event('scroll'));
 }
@@ -94,6 +96,29 @@ describe('useStickToBottom', () => {
 
     view.rerender(<Harness sent={['m2', 'm3', 'm4']} />);
     act(() => grow?.());
+    expect(box.style.overflowAnchor).toBe('none');
+  });
+
+  it('keeps following when the browser moves the view up with no input from the reader', () => {
+    // What breaks this: any move up read as the reader leaving. Content that
+    // shrinks makes the browser clamp the view up, reported a frame later,
+    // once the content may have grown again, and the chat stopped following
+    // a long conversation as it loaded, short of its end.
+    const view = render(<Harness sent={['m1', 'm2', 'm3']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+    act(() => grow?.());
+    // The browser reports the hook's own scroll to the end.
+    box.dispatchEvent(new Event('scroll'));
+    expect(box.scrollTop).toBe(1000);
+
+    box.scrollTop = 400;
+    act(() => {
+      box.dispatchEvent(new Event('scroll'));
+    });
+    expect(box.scrollTop).toBe(1000);
+    act(() => grow?.());
+    expect(box.scrollTop).toBe(1000);
     expect(box.style.overflowAnchor).toBe('none');
   });
 });
