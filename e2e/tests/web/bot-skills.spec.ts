@@ -65,17 +65,20 @@ test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) 
   await expect(edit).toBeHidden();
   await expect(page.getByText('Only the bot uses it')).toBeVisible();
 
-  // ...so the chat's menu does not offer it; turned back on, it does.
+  // ...so the chat's menu does not offer it, only the built-in /goal;
+  // turned back on, it does.
   await page.goto(`/bots/${bot.id}`);
   const composer = page.getByPlaceholder('Message Juno');
   await composer.fill('/');
-  await expect(page.getByRole('listbox', { name: 'Skills you can run' })).toBeHidden();
+  const offered = page.getByRole('listbox', { name: 'Commands and skills you can run' });
+  await expect(offered.getByRole('option', { name: 'Use /goal' })).toBeVisible();
+  await expect(offered.getByRole('option', { name: 'Use /release-notes' })).toBeHidden();
   await owner.api.patch(`/api/v1/bots/${bot.id}/skills/${await skillId(owner, bot.id)}`, {
     data: { userInvocable: true },
   });
   await page.reload();
   await composer.fill('/rel');
-  const menu = page.getByRole('listbox', { name: 'Skills you can run' });
+  const menu = page.getByRole('listbox', { name: 'Commands and skills you can run' });
   await expect(menu.getByRole('option', { name: 'Use /release-notes' })).toBeVisible();
   await composer.press('Enter');
   await expect(composer).toHaveValue('/release-notes ');

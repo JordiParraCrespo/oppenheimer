@@ -1,6 +1,7 @@
 import { type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
 import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { None, Some } from 'oxide.ts';
+import { BotCompletionResolver } from '../../../application/bot-completion.resolver';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotConversationSummaryRepositoryPort } from '../../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
@@ -80,7 +81,7 @@ function setup(
   const handler = new SummarizeBotConversationCommandHandler(
     summaries,
     messages as unknown as BotMessageRepositoryPort,
-    engine,
+    new BotCompletionResolver(engine),
     access as unknown as BotModelAccessResolver,
   );
   const run = () =>

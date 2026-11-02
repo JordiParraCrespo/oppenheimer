@@ -6,7 +6,7 @@ import {
   ComposerStackRow,
   FieldError,
 } from '@oppenheimer/design-system-web';
-import { KeyRound } from '@oppenheimer/design-system-web/icons';
+import { KeyRound, SquareSlash } from '@oppenheimer/design-system-web/icons';
 import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
@@ -39,6 +39,7 @@ import { BotComposerImage } from '@/features/bots/components/bot-composer-image'
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
+import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
@@ -74,6 +75,9 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
+ * A built-in command the console runs itself (`/goal clear`) sends nothing,
+ * and one that cannot be sent as typed (`/goal` with no condition) keeps send
+ * off and says why on the box's top edge (`useBuiltInCommand`).
  */
 export function BotComposer({
   botId,
@@ -114,14 +118,16 @@ export function BotComposer({
     },
   });
   const cancel = useCancelBotTurn();
+  const builtIn = useBuiltInCommand(botId, draft);
   // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
   const { data: goal } = useBotGoal(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
   const blocked =
     noKey ??
-    (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined);
-  const failure = send.error ?? cancel.error;
+    (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined) ??
+    builtIn.notice;
+  const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
   const message = (steer: boolean) => ({
     id: botId,
@@ -155,6 +161,12 @@ export function BotComposer({
     );
   }
 
+  // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
+  function submit(steer: boolean) {
+    if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
+    send.mutate(message(steer));
+  }
+
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
     // Nothing is prevented: text pasted with an image still lands in the field.
     const pasted = Array.from(event.clipboardData.files);
@@ -164,6 +176,7 @@ export function BotComposer({
   const top = composerTopOf({
     waiting: waiting.length,
     noKey: Boolean(noKey),
+    command: Boolean(builtIn.notice),
     goal: Boolean(goal),
   });
   const tops: Record<ComposerTop, () => ReactNode> = {
@@ -195,6 +208,7 @@ export function BotComposer({
         {noKey}
       </ComposerNotice>
     ),
+    command: () => <ComposerNotice icon={<SquareSlash />}>{builtIn.notice}</ComposerNotice>,
     goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
   };
 
@@ -216,23 +230,35 @@ export function BotComposer({
       />
       <ErrorAlert
         error={failure}
-        fallback={send.error ? t('bots.chat.sendFailed') : t('bots.chat.stopFailed')}
+        fallback={
+          send.error
+            ? t('bots.chat.sendFailed')
+            : builtIn.error
+              ? builtIn.failure
+              : t('bots.chat.stopFailed')
+        }
         onDismiss={() => {
           send.reset();
           cancel.reset();
+          builtIn.reset();
         }}
       />
       <div className="relative">
         {slash.open ? (
-          <BotSlashMenu items={slash.items} highlighted={slash.highlighted} onPick={slash.pick} />
+          <BotSlashMenu
+            builtIns={slash.groups.builtIns}
+            skills={slash.groups.skills}
+            highlighted={slash.highlighted}
+            onPick={slash.pick}
+          />
         ) : null}
         <ChatComposer
           onKeyDownCapture={slash.onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}
-          onSubmit={() => send.mutate(message(running))}
-          onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
+          onSubmit={() => submit(running)}
+          onAltSubmit={running ? () => submit(false) : undefined}
           onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0

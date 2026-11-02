@@ -31,6 +31,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSendBotMessage: idle,
   useUploadBotImage: () => ({ mutateAsync: async () => ({ id: 'a1' }) }),
   useCancelBotTurn: idle,
+  useClearBotGoal: idle,
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
   useBotSlashCommands: () => ({ data: undefined }),
 }));

@@ -73,8 +73,45 @@ export function parseBotSlashCommand(message: string): BotSlashCommand | null {
   return { name: match[1], args };
 }
 
-/** `skill` is the generic entry point, so no skill may take it as its own name. */
-export const BOT_SKILL_RESERVED_NAMES = ['skill'] as const;
+/**
+ * The commands Oppenheimer runs itself, whatever skills the bot has
+ * (`25-bots.md` §4.1, "Built-in commands"; from Claude Code's): a built-in
+ * drives a feature the product owns, where a skill only puts words in front
+ * of the bot. `goal` sets, shows or clears the bot's goal.
+ */
+export const BOT_BUILT_IN_COMMANDS = ['goal'] as const;
+export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
+
+/**
+ * `skill` is the generic entry point and each built-in is the product's, so
+ * no skill may take one as its own name. A skill saved under one before it
+ * was reserved keeps its row and stays the bot's to use, but its `/<name>`
+ * runs the built-in.
+ */
+export const BOT_SKILL_RESERVED_NAMES = ['skill', ...BOT_BUILT_IN_COMMANDS] as const;
+
+/** The words after `/goal` that clear it rather than set one (Claude Code's aliases). */
+export const BOT_GOAL_CLEAR_WORDS = ['clear', 'stop', 'off', 'reset', 'none', 'cancel'] as const;
+
+/**
+ * What a `/goal` asks for: nothing after it shows the goal, a clear word
+ * stops it, anything else is the condition of a new goal, which replaces the
+ * one there is. Null for a command that is not `/goal`.
+ */
+export type BotGoalCommand =
+  | { kind: 'show' }
+  | { kind: 'clear' }
+  | { kind: 'set'; condition: string };
+
+export function botGoalCommandOf(command: BotSlashCommand | null): BotGoalCommand | null {
+  if (command?.name !== 'goal') return null;
+  const args = command.args.trim();
+  if (!args) return { kind: 'show' };
+  if ((BOT_GOAL_CLEAR_WORDS as readonly string[]).includes(args.toLowerCase())) {
+    return { kind: 'clear' };
+  }
+  return { kind: 'set', condition: args };
+}
 
 const skillNameSchema = z
   .string()

@@ -51,7 +51,7 @@ export class BotGoalMapper {
   /** What `set_goal` answers: the goal, what replaced it, and how continuations work. */
   toSetAnswer(goal: BotGoalEntity, replaced: BotGoalEntity | null): string {
     const before = replaced ? ` It replaces your goal "${replaced.objective}".` : '';
-    return `Goal set: ${goal.objective}.${before} When a turn of yours ends with it still open, you get a continuation turn to keep going, at most ${goal.limit}. Call end_goal when it is met or cannot go on without the person.`;
+    return `Goal set: ${goal.objective}.${before} After each of your turns a reviewer reads what you showed and decides whether it holds; while it does not, you get a continuation turn to keep going, at most ${goal.limit}. Call end_goal when it is met or cannot go on without the person.`;
   }
 }
 

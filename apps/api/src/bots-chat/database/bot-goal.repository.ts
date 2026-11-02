@@ -37,17 +37,7 @@ export class BotGoalRepository
   }
 
   set(goal: BotGoalEntity): Promise<BotGoalEntity | null> {
-    return this.dataSource.transaction(async (manager) => {
-      // The old one goes first, under its row lock, so UQ_bot_goal_bot holds
-      // and two sets at once leave the later one standing.
-      const previous = await manager.findOne(BotGoalOrmEntity, {
-        where: { organizationId: goal.organizationId, botId: goal.botId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (previous) await manager.delete(BotGoalOrmEntity, { id: previous.id });
-      await manager.insert(BotGoalOrmEntity, this.mapper.toPersistence(goal));
-      return previous ? this.mapper.toDomain(previous) : null;
-    });
+    return this.dataSource.transaction((manager) => setGoalWithin(manager, this.mapper, goal));
   }
 
   end(goal: BotGoalEntity, line: BotMessageEntity | null): Promise<boolean> {
@@ -61,6 +51,27 @@ export class BotGoalRepository
       return true;
     });
   }
+}
+
+/**
+ * Sets a bot's goal inside a transaction, in place of the one it has, and
+ * answers the one it replaced. The old one goes first, under its row lock,
+ * so UQ_bot_goal_bot holds and two sets at once leave the later one
+ * standing. `BotTurnRepository.enqueueWithGoal` calls it in the transaction
+ * that queues the turn setting it, after the turn's row (the origin's key).
+ */
+export async function setGoalWithin(
+  manager: EntityManager,
+  mapper: BotGoalMapper,
+  goal: BotGoalEntity,
+): Promise<BotGoalEntity | null> {
+  const previous = await manager.findOne(BotGoalOrmEntity, {
+    where: { organizationId: goal.organizationId, botId: goal.botId },
+    lock: { mode: 'pessimistic_write' },
+  });
+  if (previous) await manager.delete(BotGoalOrmEntity, { id: previous.id });
+  await manager.insert(BotGoalOrmEntity, mapper.toPersistence(goal));
+  return previous ? mapper.toDomain(previous) : null;
 }
 
 /**

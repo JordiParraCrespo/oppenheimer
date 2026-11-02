@@ -15,7 +15,8 @@ import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-t
 /**
  * A goal the bot sets itself (`25-bots.md` §4.1; from Grok Bot's goals): it
  * keeps going, a continuation turn at a time, until it ends the goal, the
- * owner stops it, a turn of it fails or its continuations run out. Neither
+ * reviewer finds it met or out of reach, the owner stops it, a turn of it
+ * fails or its continuations run out. Neither
  * tool asks: the spend is bounded by the limit, every continuation is a line
  * in the chat, and the owner stops it from there. A continuation cannot set
  * a goal, so a goal never renews itself.
@@ -39,13 +40,13 @@ export class BotGoalToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'set_goal',
       scope: 'bots:write',
-      description: `Sets a goal you keep working toward across turns, for work that takes several steps on your own: "get the release branch green", "triage every open issue labelled bug". When a turn of yours ends with the goal open, you get a continuation turn to take the next step, at most ${BOT_GOAL_CONTINUATIONS_DEFAULT} unless you ask for up to ${BOT_GOAL_CONTINUATIONS_MAX}; the person sees each one and can stop it. One goal at a time: setting one replaces the last. Not for a task one turn finishes, and not for waiting on a session (watch it instead). Call end_goal when it is met.`,
+      description: `Sets a goal you keep working toward across turns, for work that takes several steps on your own: "get the release branch green", "triage every open issue labelled bug". Write it as a condition with the check that proves it ("pnpm test exits 0 on the release branch"). After each of your turns a reviewer reads what you showed and decides whether it holds; while it does not, you get a continuation turn to take the next step, at most ${BOT_GOAL_CONTINUATIONS_DEFAULT} unless you ask for up to ${BOT_GOAL_CONTINUATIONS_MAX}; the person sees each one and can stop it. One goal at a time: setting one replaces the last. Not for a task one turn finishes, and not for waiting on a session (watch it instead). Call end_goal when it is met.`,
       input: z.object({
         objective: z
           .string()
           .min(1)
           .max(BOT_GOAL_OBJECTIVE_MAX)
-          .describe('What done looks like, in a sentence the person can read.'),
+          .describe('What done looks like, and how to check it, in words the person can read.'),
         limit: z
           .number()
           .int()
@@ -68,9 +69,7 @@ export class BotGoalToolsFactory implements BotToolArea {
           credentialScopes: context.credentialScopes,
           timeZone: context.timeZone,
         });
-        const replaced = await this.goals.set(goal);
-        // The goal it replaces goes with its waiting continuation.
-        if (replaced) await this.goalsOf.cancelWaiting(replaced, null);
+        const replaced = await this.goalsOf.set(goal);
         return this.mapper.toSetAnswer(goal, replaced);
       },
     });
