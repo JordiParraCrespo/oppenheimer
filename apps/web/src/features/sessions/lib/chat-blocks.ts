@@ -350,7 +350,7 @@ export function fileSize(bytes: number, locale: string): string {
     format = new Intl.NumberFormat(locale, {
       style: 'unit',
       unit: SIZE_UNITS[unit],
-      unitDisplay: 'short',
+      unitDisplay: unit === 0 ? 'long' : 'short',
       maximumFractionDigits: unit === 0 ? 0 : 1,
     });
     sizeFormats.set(key, format);

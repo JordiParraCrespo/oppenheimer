@@ -69,8 +69,10 @@ export function sharedFileOf(value: unknown): ChatSharedFile | null {
  * The turns with each shared file placed where it was shared: in the last
  * turn that had started by then, after the steps written before it. A file
  * with no time, or shared before the first turn, goes in the first; with no
- * turns yet, it waits for one. Only the turns that take a file are new
- * objects, so the closed turns the chat keeps by identity stay as they were.
+ * turns yet, it waits for one. A file leaves its turn's times alone: how
+ * long the agent worked is its transcript's to say. Only the turns that take
+ * a file are new objects, so the closed turns the chat keeps by identity stay
+ * as they were.
  */
 export function withSharedFiles(turns: ChatTurn[], files: readonly ChatSharedFile[]): ChatTurn[] {
   if (files.length === 0 || turns.length === 0) return turns;
@@ -96,10 +98,6 @@ export function withSharedFiles(turns: ChatTurn[], files: readonly ChatSharedFil
       while (at > 0 && (steps[at - 1]?.at?.getTime() ?? 0) > time) at -= 1;
       steps.splice(at, 0, step);
     }
-    const lastAt = placed.reduce<Date | null>(
-      (latest, file) => (file.at && (!latest || file.at > latest) ? file.at : latest),
-      turn.lastAt,
-    );
-    return { ...turn, steps, lastAt };
+    return { ...turn, steps };
   });
 }
