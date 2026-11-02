@@ -83,5 +83,6 @@ pnpm --filter @oppenheimer/shared protocol:release   # build, then copy protocol
 
 ## Consumed by
 
-`apps/api`, `apps/web`, `packages/auth`, `packages/backend/core`, and the
-`packages/frontend` packages (`core`, `consumer`, `web`).
+`apps/api`, `apps/web`, `packages/auth`, `packages/backend/core`,
+`packages/backend/authz`, and the `packages/frontend` packages (`core`,
+`consumer`, `web`).

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
+import { showTerminal } from '../../support/session-chat';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { linkLive, signInAs } from '../../support/web';
 
@@ -51,6 +52,7 @@ test('the console streams a live session from a real runner', async ({ page }) =
   await expect.poll(() => screen.includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
   await expect(linkLive(page)).toBeVisible();
 
+  await showTerminal(page);
   await page.locator('.xterm').first().click();
   await page.keyboard.type('echo console-$((6*7))');
   await page.keyboard.press('Enter');

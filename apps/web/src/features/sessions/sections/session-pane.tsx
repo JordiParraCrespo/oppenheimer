@@ -16,7 +16,7 @@ import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
-import type { PaneReading, SessionView } from '../lib/chat-blocks';
+import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import type { PreviewTab } from '../lib/preview-open';
 import { LatencyReadout } from './latency-readout';
@@ -51,18 +51,11 @@ const SessionPreview = lazy(() =>
  */
 export function SessionPane({
   sessionId,
-  initialView = 'terminal',
   closed,
   bar,
   terminal,
 }: {
   sessionId: string;
-  /**
-   * The view the pane opens on. Chat is drawn only once the host sends the
-   * agent's transcript, so a pane that opens on it shows the terminal until
-   * then, and the chat the moment it can.
-   */
-  initialView?: SessionView;
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
@@ -92,7 +85,7 @@ export function SessionPane({
   }) => ReactNode;
 }) {
   const { t } = useTranslation();
-  const [view, setView] = useState<SessionView>(initialView);
+  const [view, setView] = useState<SessionView>(DEFAULT_SESSION_VIEW);
   // The preview pane beside the terminal: its toggle is in the bar, the pane
   // in the row under it, so the one state both read lives here.
   // Which of the pane's views this console and deployment can show: the

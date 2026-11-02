@@ -1,5 +1,5 @@
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
@@ -34,6 +34,23 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'>;
+
+  /**
+   * `enqueue` for a message that sets the bot's goal (`/goal <condition>`):
+   * the goal is set in the same transaction as the turn and its job, so the
+   * turn never runs, or ends, without the goal it set. Answers the goal it
+   * replaced, whose waiting continuation the caller cancels; null when
+   * nothing was written.
+   */
+  enqueueWithGoal(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }>;
 
   /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`

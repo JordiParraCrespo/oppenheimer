@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type ScopeResolverPort } from '../../authz/application/scope-resolver.port';
-import { SCOPE_RESOLVER } from '../../authz/authz.di-tokens';
-import { type AccessScope } from '../../authz/domain/access-scope.types';
+import {
+  type AccessScope,
+  SCOPE_RESOLVER,
+  type ScopeResolverPort,
+} from '@oppenheimer/backend-authz';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 

@@ -19,6 +19,14 @@ import type { FileHandOff } from './file-hand-off';
 export type SessionView = 'terminal' | 'chat';
 
 /**
+ * The view every session pane opens on, a member's and a guest's. Chat is
+ * drawn only once the host sends the agent's transcript (`useChatReading`),
+ * so until then, and for an agent with none, the pane is the terminal; the
+ * Terminal / Chat switch is always there to type into the PTY itself.
+ */
+export const DEFAULT_SESSION_VIEW: SessionView = 'chat';
+
+/**
  * What a session pane hands its terminal about the chat: the chat its stream
  * feeds, the view the reader picked, and the chat view itself, which the
  * terminal draws over its grid without knowing what it is.
@@ -70,6 +78,8 @@ export type ChatBlock =
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
+  /** What a command the CLI answered itself printed (`/context`). */
+  | { kind: 'output'; id: string; text: string; failed: boolean }
   | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
   | { kind: 'changes'; id: string; files: ChangedFile[] }
   /** What the call read them from, a path or a URL, when it says. */
@@ -132,6 +142,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       };
     case 'notice':
       return { kind: 'notice', id: step.id, notice: step.notice };
+    case 'output':
+      return { kind: 'output', id: step.id, text: step.text, failed: step.failed };
     case 'task':
       return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
     case 'tool':

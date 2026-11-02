@@ -5,7 +5,7 @@
  * than the message that led to them; ending or replacing a goal leaving its
  * waiting continuation to run work the bot just called done.
  */
-import { emptyScope } from '../../../authz/domain/access-scope.types';
+import { emptyScope } from '@oppenheimer/backend-authz';
 import { BotGoalMapper } from '../../bot-goal.mapper';
 import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
 import { BotGoalEntity } from '../../domain/bot-goal.entity';
@@ -31,11 +31,10 @@ function open(objective = 'Triage the bugs'): BotGoalEntity {
 function setup(stored: BotGoalEntity | null = null) {
   const goals = {
     findForBot: vi.fn<BotGoalRepositoryPort['findForBot']>(async () => stored),
-    set: vi.fn<BotGoalRepositoryPort['set']>(async () => stored),
   } satisfies Partial<BotGoalRepositoryPort>;
   const goalsOf = {
     end: vi.fn<BotGoalResolver['end']>(async () => true),
-    cancelWaiting: vi.fn<BotGoalResolver['cancelWaiting']>(async () => undefined),
+    set: vi.fn<BotGoalResolver['set']>(async () => stored),
   };
   const factory = new BotGoalToolsFactory(
     goals as unknown as BotGoalRepositoryPort,
@@ -67,10 +66,10 @@ function setup(stored: BotGoalEntity | null = null) {
 
 describe('BotGoalToolsFactory', () => {
   it('sets a goal for the turn that asked, with its reach and the default limit, without a card', async () => {
-    const { goals, call } = setup();
+    const { goalsOf, call } = setup();
     const result = await call('set_goal', { objective: 'Get the release branch green' });
 
-    expect(goals.set.mock.calls[0][0]).toMatchObject({
+    expect(goalsOf.set.mock.calls[0][0]).toMatchObject({
       botId: 'bot-1',
       originTurnId: 'turn-1',
       objective: 'Get the release branch green',
@@ -87,11 +86,12 @@ describe('BotGoalToolsFactory', () => {
     expect(setup().definition('end_goal').notOn).toEqual([]);
   });
 
-  it('cancels the continuation the goal it replaces left waiting', async () => {
+  it('sets it through the one set that cancels what the goal it replaces left waiting', async () => {
     const replaced = open();
     const { goalsOf, call } = setup(replaced);
-    await call('set_goal', { objective: 'Ship it' });
-    expect(goalsOf.cancelWaiting).toHaveBeenCalledWith(replaced, null);
+    const result = await call('set_goal', { objective: 'Ship it' });
+    expect(goalsOf.set).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(result)).toContain('Triage the bugs');
   });
 
   it('ends the goal with no line of its own, through the one end that cancels what waits', async () => {

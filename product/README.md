@@ -957,6 +957,16 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) had a goal end only when the
+  bot called `end_goal`, the owner stopped it, a turn of it failed or its 5
+  continuations (up to 10) ran out. On 2026-11-02 the owner asked for bots
+  to come with basic commands like Claude Code's `/goal`, in the order
+  `/goal`, `/usage`, `/loop` or `/schedule`, `/plan`, `/grill-me`. They are
+  built-ins, product code with reserved names, not skills. `/goal
+  <condition>` sets the goal as the person, and a reviewer on the bot's own
+  model judges it after every turn (met, not met, impossible), as Claude
+  Code's evaluator does; a person's goal takes up to 20 continuations, a
+  bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.
@@ -982,13 +992,6 @@ earlier note:
   connects, and the console reconciles by block and sequence number, the
   stored message being the authority (`versions/mvp/25-bots.md` §2,
   `next-steps/0.7-chat-protocol.md` slice 2).
-- `AUTHORIZATION.md` (the starter's kernel design, kept as history) put
-  row-level authorization in its own package, `@oppenheimer/backend-authz`.
-  On 2026-10-31 (#556) it was folded into `apps/api/src/authz/`, with
-  `AbilityFactory` (from `roles`) and `PoliciesGuard` (from `auth`): it had
-  one consumer and no second implementation of its one port, and
-  authorization had lived in four places. `.agents/rules/rbac-roles.md` is
-  the current map.
 - Note 25 §7 listed slash commands among what bots did not have yet. On
   2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
   (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash
@@ -1020,6 +1023,12 @@ earlier note:
   preset until then, and Always allow on its card or Allow in Settings
   makes it standing. Sends (§3.4) still ask every time and cannot be
   allowed.
+- `next-steps/0.7-terminal-and-chat.md` opened a session on Terminal, with
+  Chat a tab beside it (only a pull request's review session opened on
+  Chat). On 2026-11-02 the owner made Chat the default view of every
+  session, a member's and a guest's: the terminal shows until the
+  transcript arrives and stays the view for an agent with none, and the
+  Terminal tab is still there to type into the PTY.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the

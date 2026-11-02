@@ -3990,9 +3990,9 @@ export type BotSessionEventResponseDto = {
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
-     * `continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
+     * `continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
      */
-    activity: 'continued' | 'cleared' | 'exhausted' | 'stopped';
+    activity: 'continued' | 'met' | 'impossible' | 'cleared' | 'exhausted' | 'stopped';
     goalId: string;
     /**
      * The goal's objective at the time.
@@ -4007,7 +4007,7 @@ export type BotGoalEventResponseDto = {
      */
     limit: number;
     /**
-     * For `stopped`: the status of the turn that ended it, or `access_lost`.
+     * For `continued`, `met`, `impossible` and `exhausted`: the reviewer's reason in its words, null when it gave none. For `stopped`: the status of the turn that ended it, or `access_lost`.
      */
     reason: string | null;
 };

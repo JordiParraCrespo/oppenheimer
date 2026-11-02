@@ -34786,11 +34786,13 @@
             "type": "string",
             "enum": [
               "continued",
+              "met",
+              "impossible",
               "cleared",
               "exhausted",
               "stopped"
             ],
-            "description": "`continued` opens a continuation turn; the others say how the goal ended outside any turn: stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`)."
+            "description": "`continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`)."
           },
           "goalId": {
             "type": "string",
@@ -34811,7 +34813,7 @@
           "reason": {
             "type": "string",
             "nullable": true,
-            "description": "For `stopped`: the status of the turn that ended it, or `access_lost`."
+            "description": "For `continued`, `met`, `impossible` and `exhausted`: the reviewer's reason in its words, null when it gave none. For `stopped`: the status of the turn that ended it, or `access_lost`."
           }
         },
         "required": [

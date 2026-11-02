@@ -1,4 +1,4 @@
-import type { AccessScope } from '../../authz/domain/access-scope.types';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 
 /**
  * What a project is still being used for, answered by whoever owns the thing that uses

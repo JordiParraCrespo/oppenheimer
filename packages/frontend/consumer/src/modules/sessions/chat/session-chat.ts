@@ -90,6 +90,18 @@ export type ChatStep =
   | { kind: 'thinking'; id: string; at: Date | null; text: string }
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
   | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
+  /**
+   * What a command the CLI answers itself printed (`/context`, `/cost`), as
+   * text with the terminal's colours taken out; `failed` when it wrote to
+   * stderr.
+   */
+  | {
+      kind: 'output';
+      id: string;
+      at: Date | null;
+      text: string;
+      failed: boolean;
+    }
   /** A background task finished: the line Claude Code hands the agent, not a prompt. */
   | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null };
 
@@ -196,8 +208,10 @@ export class SessionChat {
    * line the length of its last turn, not of the whole transcript.
    */
   private closed: ChatTurn[] = [];
-  /** The calls in those turns, to notice a result that lands on one. */
-  private closedCalls = new Set<string>();
+  /** The entry each of those turns starts at, to build again from one of them. */
+  private closedStarts: number[] = [];
+  /** The calls in those turns and the turn each is in, to notice a result that lands on one. */
+  private closedCalls = new Map<string, number>();
   /** The entry the open turn starts at. */
   private openFrom = 0;
   private type: ((data: string) => void) | null = null;
@@ -217,7 +231,8 @@ export class SessionChat {
   apply(batch: ChatBatch): void {
     if (batch.reset) {
       this.entries = [];
-      this.reopen();
+      this.reopen(0);
+      this.openFrom = 0;
     }
     const from = this.entries.length;
     let status = this.state.status;
@@ -234,15 +249,21 @@ export class SessionChat {
       else this.entries.push(parsed);
     }
     // A result for a call a closed turn made (a background command that
-    // finished after the next prompt) changes that turn: build them all again.
-    if (this.entries.slice(from).some((entry, i) => this.answersClosed(entry, from + i))) {
-      this.reopen();
+    // finished after the next prompt) changes that turn: build again from
+    // it, keeping the turns before it as they are.
+    let answered = Number.POSITIVE_INFINITY;
+    for (let index = from; index < this.entries.length; index += 1) {
+      answered = Math.min(answered, this.closedAnswered(this.entries[index], index));
     }
+    if (answered < this.closed.length) this.reopen(answered);
     const { turns, starts } = buildTurns(this.entries, this.openFrom);
     const open = turns.length - 1;
-    for (const turn of turns.slice(0, Math.max(0, open))) {
+    for (const [index, turn] of turns.slice(0, Math.max(0, open)).entries()) {
+      const at = this.closed.length;
       this.closed.push(turn);
-      for (const step of turn.steps) if (step.kind === 'tool') this.closedCalls.add(step.call.id);
+      this.closedStarts.push(starts[index] ?? this.openFrom);
+      for (const step of turn.steps)
+        if (step.kind === 'tool') this.closedCalls.set(step.call.id, at);
     }
     if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
     const last = turns[open];
@@ -326,18 +347,23 @@ export class SessionChat {
     if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
   }
 
-  private reopen(): void {
-    this.closed = [];
-    this.closedCalls.clear();
-    this.openFrom = 0;
+  /** Opens the closed turns from `turn` on again, for the next build to make afresh. */
+  private reopen(turn: number): void {
+    this.openFrom = this.closedStarts[turn] ?? 0;
+    this.closed = this.closed.slice(0, turn);
+    this.closedStarts = this.closedStarts.slice(0, turn);
+    for (const [call, at] of this.closedCalls) if (at >= turn) this.closedCalls.delete(call);
   }
 
-  private answersClosed(entry: unknown, index: number): boolean {
-    if (this.closedCalls.size === 0) return false;
+  /** The earliest closed turn a result in this entry lands on; `Infinity` for none. */
+  private closedAnswered(entry: unknown, index: number): number {
+    if (this.closedCalls.size === 0) return Number.POSITIVE_INFINITY;
     const reading = classify(entry, index);
-    return (
-      reading?.kind === 'results' &&
-      reading.results.some((result) => this.closedCalls.has(result.toolUseId))
+    if (reading?.kind !== 'results') return Number.POSITIVE_INFINITY;
+    return Math.min(
+      ...reading.results.map(
+        (result) => this.closedCalls.get(result.toolUseId) ?? Number.POSITIVE_INFINITY,
+      ),
     );
   }
 
@@ -427,8 +453,11 @@ type Reading =
       contextTokens?: number | null;
     }
   | { kind: 'results'; results: ChatResult[]; at: Date | null }
-  /** A command the CLI answered itself (`/cost`): its output ends the turn it opened. */
-  | { kind: 'answered'; at: Date | null }
+  /**
+   * A command the CLI answered itself (`/cost`): its output ends the turn it
+   * opened, and is a step of it when it printed something.
+   */
+  | { kind: 'answered'; at: Date | null; output: ChatStep | null }
   | null;
 
 interface ChatResult {
@@ -489,8 +518,8 @@ export function classify(value: unknown, index: number): Reading {
   );
   if (results.length > 0) return { kind: 'results', results, at };
   if (entry.isMeta === true) return null;
-  if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
-    return { kind: 'answered', at };
+  if (typeof content === 'string' && LOCAL_COMMAND.test(content)) {
+    return { kind: 'answered', at, output: localOutput(content, id, at) };
   }
   const said =
     typeof content === 'string'
@@ -508,6 +537,39 @@ export function classify(value: unknown, index: number): Reading {
   ).length;
   const images = blocks.flatMap((block) => (block?.type === 'image' ? [imageOf(block)] : []));
   return { kind: 'prompt', prompt: { id, text: typed, files, images, at } };
+}
+
+const LOCAL_COMMAND = /^\s*<local-command-std(?:out|err)>/;
+const LOCAL_OUTPUT =
+  /<local-command-std(out|err)>([\s\S]*?)(?:<\/local-command-std(?:out|err)>|$)/g;
+/** A control sequence (a colour, a cursor move) or an OSC string (a link, a title). */
+const ANSI =
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: the escapes are what it removes
+  /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)|\u001b[@-Z\\-_]/g;
+
+/** A command's output as the terminal printed it, with its escapes and carriage returns removed. */
+function plainOutput(raw: string): string {
+  return raw
+    .replace(ANSI, '')
+    .replace(/\r(?!\n)/g, '')
+    .replace(/\r\n/g, '\n');
+}
+
+/**
+ * The step a `<local-command-stdout>` line stands for: what the command
+ * printed, or none when it printed nothing (`/clear`, a setting changed in a
+ * picker). The host may have cut the line, losing its closing tag.
+ */
+function localOutput(content: string, id: string, at: Date | null): ChatStep | null {
+  let failed = false;
+  const parts: string[] = [];
+  for (const [, stream, body = ''] of content.matchAll(LOCAL_OUTPUT)) {
+    if (stream === 'err') failed = true;
+    parts.push(body);
+  }
+  const output = plainOutput(parts.join('\n')).replace(/^\n+|\s+$/g, '');
+  if (output.trim() === '') return null;
+  return { kind: 'output', id, at, text: output, failed };
 }
 
 /** The media types an image's preview may come as: what an `img` shows and never runs. */
@@ -624,6 +686,7 @@ function buildTurns(
         const turn = turns.at(-1);
         if (turn) {
           answered.add(turn);
+          if (reading.output) turn.steps.push(reading.output);
           if (reading.at) turn.lastAt = reading.at;
         }
         continue;
@@ -669,7 +732,7 @@ function isWorking(turn: ChatTurn): boolean {
   if (tail === undefined) return true;
   if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
     return true;
-  return tail.kind !== 'reply' && tail.kind !== 'notice';
+  return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
 }
 
 /**

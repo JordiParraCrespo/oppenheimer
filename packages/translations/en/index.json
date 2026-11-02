@@ -1610,6 +1610,8 @@
         },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
+          "met": "Goal met: “{{objective}}”",
+          "impossible": "Goal “{{objective}}” cannot be met without you",
           "cleared": "You stopped the goal “{{objective}}”",
           "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
           "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
@@ -1630,12 +1632,17 @@
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
         "stop": "Stop goal",
-        "stopFailed": "Could not stop the goal. Try again."
+        "stopFailed": "Could not stop the goal. Try again.",
+        "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."
       },
       "slash": {
         "label": "Skills",
-        "menu": "Skills you can run",
-        "pick": "Use /{{name}}"
+        "menu": "Commands and skills you can run",
+        "pick": "Use /{{name}}",
+        "builtInLabel": "Commands",
+        "builtIn": {
+          "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it."
+        }
       }
     },
     "settings": {

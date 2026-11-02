@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import {
   BOT_AVATAR_COLORS,
   type BotProvider,
@@ -6,7 +7,6 @@ import {
   botSoulFor,
 } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
-import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { NewBotProviderResolver } from '../../../application/new-bot-provider.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';

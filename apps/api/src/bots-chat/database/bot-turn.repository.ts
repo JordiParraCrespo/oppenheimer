@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { BOT_ACTIVE_TURN_STATUSES, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
-import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
-import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { BotResource } from '../../bots/bots.resource';
+import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
@@ -16,7 +16,7 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
-import { claimContinuationWithin, owesGoalWithin } from './bot-goal.repository';
+import { claimContinuationWithin, owesGoalWithin, setGoalWithin } from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type {
@@ -81,6 +81,7 @@ export class BotTurnRepository
     private readonly messages: BotMessageMapper,
     @Inject(BOT_CONVERSATION_REPOSITORY)
     private readonly conversations: BotConversationRepositoryPort,
+    private readonly goals: BotGoalMapper,
   ) {
     super();
   }
@@ -90,6 +91,31 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'> {
+    return (await this.enqueueSetting(turn, message, null, correlationId)).outcome;
+  }
+
+  enqueueWithGoal(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }> {
+    return this.enqueueSetting(turn, message, goal, correlationId);
+  }
+
+  /** A sent message's turn, and the goal it sets when it sets one, in one transaction. */
+  private async enqueueSetting(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity | null,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }> {
     try {
       return await this.outbox.transaction(async (manager) => {
         const outcome = await enqueueWithin(
@@ -101,13 +127,15 @@ export class BotTurnRepository
           message,
           correlationId,
         );
-        if (outcome !== 'missing' && !(await claimAttachmentsTo(manager, turn, message))) {
-          throw new AttachmentsTaken();
-        }
-        return outcome;
+        if (outcome === 'missing') return { outcome, replaced: null };
+        if (!(await claimAttachmentsTo(manager, turn, message))) throw new AttachmentsTaken();
+        const replaced = goal ? await setGoalWithin(manager, this.goals, goal) : null;
+        return { outcome, replaced };
       });
     } catch (error) {
-      if (error instanceof AttachmentsTaken) return 'attachments_taken';
+      if (error instanceof AttachmentsTaken) {
+        return { outcome: 'attachments_taken' as const, replaced: null };
+      }
       throw error;
     }
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOT_SKILL_NAME_MAX,
+  botGoalCommandOf,
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
@@ -47,6 +48,29 @@ describe('parseBotSlashCommand', () => {
   });
 });
 
+describe('botGoalCommandOf', () => {
+  const goal = (message: string) => botGoalCommandOf(parseBotSlashCommand(message));
+
+  it('reads a condition after /goal as a new goal, whole, over several lines', () => {
+    expect(goal('/goal all tests in test/auth pass\nand lint is clean')).toEqual({
+      kind: 'set',
+      condition: 'all tests in test/auth pass\nand lint is clean',
+    });
+  });
+
+  it('shows the goal for /goal alone, and clears it for any of the clear words', () => {
+    expect(goal('/goal')).toEqual({ kind: 'show' });
+    for (const word of ['clear', 'stop', 'off', 'reset', 'none', 'cancel', 'Clear']) {
+      expect(goal(`/goal ${word}`)).toEqual({ kind: 'clear' });
+    }
+  });
+
+  it('leaves a skill command, and a message that is no command, to the skills', () => {
+    expect(goal('/goals today')).toBeNull();
+    expect(goal('what is my goal')).toBeNull();
+  });
+});
+
 describe('botSkillNameOf', () => {
   it('turns a typed title into a command name', () => {
     expect(botSkillNameOf('Release Notes!')).toBe('release-notes');
@@ -67,8 +91,8 @@ describe('botSkillSchema', () => {
     expect(botSkillSchema.parse(skill)).toEqual(skill);
   });
 
-  it('refuses a name that could not be typed as a command, or the reserved one', () => {
-    for (const name of ['Release', 'release notes', '-release', 'skill', '']) {
+  it('refuses a name that could not be typed as a command, or a reserved one', () => {
+    for (const name of ['Release', 'release notes', '-release', 'skill', 'goal', '']) {
       expect(botSkillSchema.safeParse({ ...skill, name }).success).toBe(false);
     }
   });

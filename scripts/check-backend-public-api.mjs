@@ -65,6 +65,9 @@ export const ALLOWED = {
     'node',
     ...builtinModules,
   ],
+  // Row scoping is applied to the caller's TypeORM query builders, which is
+  // why `typeorm` is a peer dependency of the package.
+  '@oppenheimer/backend-authz': ['typeorm'],
   // The cache is handed the app's Redis client and does not own it (see
   // `RedisCacheService`: the connection is shared with the queue and sessions),
   // so the client's type is part of `CacheModuleOptions` by design.

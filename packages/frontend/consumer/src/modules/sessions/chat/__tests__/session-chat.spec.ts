@@ -241,7 +241,7 @@ describe('toTurns', () => {
         },
       ),
       user('m', '<command-name>/review</command-name>\n<command-args>142</command-args>'),
-      user('o', '<local-command-stdout>ok</local-command-stdout>'),
+      user('o', '<local-command-stdout></local-command-stdout>'),
       { ...assistant('s', [{ type: 'text', text: 'subagent' }]), isSidechain: true },
       { type: 'attachment', attachment: {} },
       'not an object',
@@ -306,8 +306,43 @@ describe('toTurns', () => {
       ]),
     ]);
     expect(turns).toHaveLength(1);
-    expect(kinds(turns[0]?.steps ?? [])).toEqual(['task', 'tool:command']);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['output', 'task', 'tool:command']);
     expect(turns[0]?.working).toBe(true);
+  });
+
+  // Regression: `/context` showed its prompt and nothing under it, because
+  // the CLI's answer only settled the turn and its text was dropped.
+  it("shows what a command the CLI answered printed, without the terminal's colours", () => {
+    const [turn] = toTurns([
+      user('c', '<command-name>/context</command-name>\n<command-args></command-args>'),
+      user(
+        'o',
+        '<local-command-stdout>\u001b[1mContext Usage\u001b[22m\r\n\u001b[38;2;136;136;136m⛁ ⛀ \u001b[39m\u001b[38;2;153;153;153mOpus 5.5\u001b[39m\n  ⛶ ⛶   118.6k/1m tokens (12%)\n</local-command-stdout>',
+      ),
+    ]);
+    expect(turn?.prompt?.text).toBe('/context');
+    expect(turn?.working).toBe(false);
+    expect(turn?.steps).toEqual([
+      {
+        kind: 'output',
+        id: 'o',
+        at: new Date('2026-10-21T09:00:00.000Z'),
+        text: 'Context Usage\n⛁ ⛀ Opus 5.5\n  ⛶ ⛶   118.6k/1m tokens (12%)',
+        failed: false,
+      },
+    ]);
+  });
+
+  it('reads what a command wrote to stderr as a failed output', () => {
+    const [turn] = toTurns([
+      user('c', '<command-name>/model</command-name>\n<command-args>nope</command-args>'),
+      user('o', '<local-command-stderr>Unknown model: nope</local-command-stderr>'),
+    ]);
+    expect(turn?.steps[0]).toMatchObject({
+      kind: 'output',
+      text: 'Unknown model: nope',
+      failed: true,
+    });
   });
 });
 
@@ -359,6 +394,36 @@ describe('SessionChat', () => {
     // A result for a closed turn's call still lands on it.
     const first = chat.snapshot().turns[0]?.steps[0];
     expect(first?.kind === 'tool' && first.call.status).toBe('failed');
+  });
+
+  it('builds again from the turn a late result lands on, keeping the turns before it', () => {
+    // What breaks this: a late result that rebuilds the whole conversation
+    // (every turn a new object, a long chat's every line redrawn), or one
+    // that rebuilds from the wrong turn and loses the result or a turn.
+    const entries = [
+      user('u1', 'One'),
+      assistant('a1', [{ type: 'text', text: 'Hi.' }]),
+      user('u2', 'Two'),
+      assistant('a2', [
+        { type: 'tool_use', id: 'bg', name: 'Bash', input: { command: 'pnpm build' } },
+      ]),
+      assistant('a3', [{ type: 'text', text: 'Building.' }]),
+      user('u3', 'Three'),
+      assistant('a4', [{ type: 'text', text: 'Sure.' }]),
+      user('u4', 'Four'),
+      // The second turn's build ends while the fourth turn runs.
+      user('r1', [{ type: 'tool_result', tool_use_id: 'bg', content: 'built' }]),
+    ];
+    const chat = new SessionChat();
+    chat.apply({ entries: entries.slice(0, -1).map((entry) => JSON.stringify(entry)) });
+    const before = chat.snapshot().turns;
+    chat.apply({ entries: [JSON.stringify(entries.at(-1))] });
+    const after = chat.snapshot().turns;
+
+    expect(after).toEqual(toTurns(entries));
+    expect(after[0]).toBe(before[0]);
+    const build = after[1]?.steps[0];
+    expect(build?.kind === 'tool' && build.call.status).toBe('done');
   });
 });
 

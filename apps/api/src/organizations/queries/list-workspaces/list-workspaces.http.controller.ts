@@ -3,6 +3,7 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
+import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { OrganizationScoped } from '../../../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
@@ -11,8 +12,7 @@ import {
   tenantOrganizationIdOf,
 } from '../../../auth/domain/request-tenant.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
-import { PoliciesGuard } from '../../../authz/guards/policies.guard';
+import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { WorkspaceProblemResponses } from '../../decorators/workspace-problem-responses.decorator';
 import { WorkspaceResponseDto } from '../../dtos/workspace.response.dto';
 import { ListWorkspacesQuery } from './list-workspaces.query';

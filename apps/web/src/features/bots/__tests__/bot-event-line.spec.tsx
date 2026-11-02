@@ -226,4 +226,29 @@ describe('BotEventLine', () => {
     expect(screen.getByText(/^bots\.chat\.event\.goal\.stopped/)).toBeTruthy();
     expect(stopped.container.querySelector('.text-danger')).toBeTruthy();
   });
+
+  // What breaks this: the reviewer's reason lost from the line, or a stop's
+  // status code shown to the person as if it were a reason.
+  it('draws a goal the reviewer found met with its reason, and no code beside a stop', () => {
+    const goal = (activity: 'met' | 'stopped', reason: string) =>
+      ({
+        id: `g-${activity}`,
+        role: 'event',
+        content: 'Goal ended',
+        event: {
+          kind: 'goal',
+          activity,
+          goalId: 'goal-1',
+          objective: 'Ship it',
+          step: 2,
+          limit: 20,
+          reason,
+        },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={goal('met', 'CI is green on main')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.met/)).toBeTruthy();
+    expect(screen.getByText(/CI is green on main/)).toBeTruthy();
+    render(<BotEventLine message={goal('stopped', 'failed')} />);
+    expect(screen.queryByText(/· failed/)).toBeNull();
+  });
 });

@@ -25,7 +25,7 @@ import { cn } from '../lib/utils';
  *   a line too long to read cut to its head and tail, and "+N lines" under
  *   it, which shows the whole output as it came.
  * - `ToolCallLive`: the call in flight, in place of the summary: a spinner,
- *   the verb and target breathing, the elapsed time.
+ *   the verb and target breathing, the elapsed time, on a row's one line.
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
  *   the muted tone behind a hairline.
  *
@@ -77,6 +77,35 @@ function ToolCallGroup({
   );
 }
 
+/**
+ * What a call reads as, done or running, on one line: the verb and the meta
+ * whole, the target cut to the room between them, so a long command never
+ * widens the chat. `className` dresses the verb and target together.
+ */
+function ToolCallWords({
+  verb,
+  target,
+  meta,
+  className,
+  metaClassName,
+}: {
+  verb: React.ReactNode;
+  target?: React.ReactNode;
+  meta?: React.ReactNode;
+  className?: string;
+  metaClassName?: string;
+}) {
+  return (
+    <>
+      <span className={cn('flex min-w-0 items-center gap-2.25', className)}>
+        <span className="shrink-0">{verb}</span>
+        {target ? <span className="min-w-0 truncate font-mono text-[12px] text-fg">{target}</span> : null}
+      </span>
+      {meta ? <span className={cn('figures flex shrink-0 gap-1.5 font-mono text-[11.5px]', metaClassName)}>{meta}</span> : null}
+    </>
+  );
+}
+
 function ToolCallRow({
   icon,
   verb,
@@ -101,13 +130,7 @@ function ToolCallRow({
       <span aria-hidden className="flex text-fg-subtle [&_svg]:size-3.5">
         {icon}
       </span>
-      <span>{verb}</span>
-      {target ? <span className="min-w-0 truncate font-mono text-[12px] text-fg">{target}</span> : null}
-      {meta ? (
-        <span className={cn('figures flex shrink-0 gap-1.5 font-mono text-[11.5px]', tone === 'danger' ? 'text-danger' : 'text-fg-subtle')}>
-          {meta}
-        </span>
-      ) : null}
+      <ToolCallWords verb={verb} target={target} meta={meta} metaClassName={tone === 'danger' ? 'text-danger' : 'text-fg-subtle'} />
     </>
   );
   if (!output) {
@@ -195,15 +218,18 @@ function ToolCallLive({
     <div
       data-slot="tool-call-live"
       role="status"
-      className={cn('inline-flex items-center gap-1.75 text-[13.5px] text-fg-muted', className)}
+      className={cn('flex min-w-0 items-center gap-1.75 text-[13.5px] text-fg-muted', className)}
     >
-      <span aria-hidden className="flex w-4 justify-center">
+      <span aria-hidden className="flex w-4 shrink-0 justify-center">
         <LoaderIcon className="size-3.5 motion-safe:animate-spin" />
       </span>
-      <span className="motion-safe:animate-shimmer">
-        {verb} {target ? <span className="font-mono text-[12px] text-fg">{target}</span> : null}
-      </span>
-      {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
+      <ToolCallWords
+        verb={verb}
+        target={target}
+        meta={elapsed}
+        className="gap-1 motion-safe:animate-shimmer"
+        metaClassName="text-fg-subtle"
+      />
     </div>
   );
 }

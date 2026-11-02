@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
-import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
 import { WhatsappResource } from '../whatsapp.resource';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';

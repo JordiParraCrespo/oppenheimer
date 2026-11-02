@@ -1,0 +1,150 @@
+import { RequestMethod } from '@nestjs/common';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { CHECK_POLICIES_KEY, type PolicyRule } from '@oppenheimer/backend-authz';
+import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
+import { describe, expect, it } from 'vitest';
+import { ListUsersHttpController } from '../../admin/queries/list-users/list-users.http.controller';
+import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
+import { CreateAutomationHttpController } from '../../automations/commands/create-automation/create-automation.http.controller';
+import { DeleteAutomationHttpController } from '../../automations/commands/delete-automation/delete-automation.http.controller';
+import { RunAutomationHttpController } from '../../automations/commands/run-automation/run-automation.http.controller';
+import { UpdateAutomationHttpController } from '../../automations/commands/update-automation/update-automation.http.controller';
+import { FindAutomationHttpController } from '../../automations/queries/find-automation/find-automation.http.controller';
+import { FindAutomationRunsHttpController } from '../../automations/queries/find-automation-runs/find-automation-runs.http.controller';
+import { FindAutomationsHttpController } from '../../automations/queries/find-automations/find-automations.http.controller';
+import { CreateBotHttpController } from '../../bots/commands/create-bot/create-bot.http.controller';
+import { DeleteBotHttpController } from '../../bots/commands/delete-bot/delete-bot.http.controller';
+import { UpdateBotHttpController } from '../../bots/commands/update-bot/update-bot.http.controller';
+import { FindBotHttpController } from '../../bots/queries/find-bot/find-bot.http.controller';
+import { FindBotsHttpController } from '../../bots/queries/find-bots/find-bots.http.controller';
+import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
+import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
+import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
+import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
+import { UpdateProjectHttpController } from '../../projects/commands/update-project/update-project.http.controller';
+import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
+import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
+import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
+import { AddCheckoutHttpController } from '../../sessions/commands/add-checkout/add-checkout.http.controller';
+import { CloseSessionHttpController } from '../../sessions/commands/close-session/close-session.http.controller';
+import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { MoveSessionHttpController } from '../../sessions/commands/move-session/move-session.http.controller';
+import { PasteSessionImageHttpController } from '../../sessions/commands/paste-session-image/paste-session-image.http.controller';
+import { PrepareSessionHttpController } from '../../sessions/commands/prepare-session/prepare-session.http.controller';
+import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
+import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
+import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
+import { FindSessionHttpController } from '../../sessions/queries/find-session/find-session.http.controller';
+import { FindSessionEventsHttpController } from '../../sessions/queries/find-session-events/find-session-events.http.controller';
+import { FindSessionsHttpController } from '../../sessions/queries/find-sessions/find-sessions.http.controller';
+
+/**
+ * The clients and the guards must not drift.
+ *
+ * `ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`)
+ * is what a client gates a destination on; `@CheckPolicies` is what the
+ * endpoint demands. If they come apart, a screen shown to everyone can only
+ * answer 403. Changing a `@CheckPolicies` on one of these handlers fails here
+ * until the catalog follows; nothing else in the build would notice. Client
+ * route paths are not in it, so this test needs no frontend package.
+ */
+
+/** The handler each guarded endpoint's data actually comes from. */
+const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }> = {
+  'GET /organizations/:orgId/members': { controller: ListMembersHttpController, handler: 'list' },
+  'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
+  'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
+  'GET /admin/users': { controller: ListUsersHttpController, handler: 'listUsers' },
+  'GET /feature-flags/admin': {
+    controller: FindFeatureFlagsHttpController,
+    handler: 'findFeatureFlags',
+  },
+  'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
+  'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
+  'POST /projects': { controller: CreateProjectHttpController, handler: 'create' },
+  'PATCH /projects/:id': { controller: UpdateProjectHttpController, handler: 'update' },
+  'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
+  'GET /sessions': { controller: FindSessionsHttpController, handler: 'list' },
+  'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
+  'GET /sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
+  'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
+  'POST /sessions/prepare': { controller: PrepareSessionHttpController, handler: 'prepare' },
+  'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
+  'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
+  'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
+  'POST /sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
+  'DELETE /sessions/:id/checkouts/:checkoutId': {
+    controller: RemoveCheckoutHttpController,
+    handler: 'remove',
+  },
+  'POST /sessions/:id/attach-ticket': {
+    controller: IssueAttachTicketHttpController,
+    handler: 'issue',
+  },
+  'POST /sessions/:id/images': {
+    controller: PasteSessionImageHttpController,
+    handler: 'paste',
+  },
+  'GET /automations': { controller: FindAutomationsHttpController, handler: 'list' },
+  'GET /automations/:id': { controller: FindAutomationHttpController, handler: 'find' },
+  'POST /automations': { controller: CreateAutomationHttpController, handler: 'create' },
+  'PATCH /automations/:id': { controller: UpdateAutomationHttpController, handler: 'update' },
+  'DELETE /automations/:id': { controller: DeleteAutomationHttpController, handler: 'handle' },
+  'POST /automations/:id/run': { controller: RunAutomationHttpController, handler: 'run' },
+  'GET /automation-runs': { controller: FindAutomationRunsHttpController, handler: 'list' },
+  'GET /bots': { controller: FindBotsHttpController, handler: 'list' },
+  'GET /bots/:id': { controller: FindBotHttpController, handler: 'find' },
+  'POST /bots': { controller: CreateBotHttpController, handler: 'create' },
+  'PATCH /bots/:id': { controller: UpdateBotHttpController, handler: 'update' },
+  'DELETE /bots/:id': { controller: DeleteBotHttpController, handler: 'delete' },
+};
+
+function methodOn(controller: object, handler: string): object {
+  const method = (controller as { prototype: Record<string, unknown> }).prototype[handler];
+  expect(method, `${handler} must exist on the controller`).toBeTypeOf('function');
+  return method as object;
+}
+
+/** The rules `@CheckPolicies` recorded on a controller method, order-insensitive. */
+function policiesOn(controller: object, handler: string): string[] {
+  const rules = (Reflect.getMetadata(CHECK_POLICIES_KEY, methodOn(controller, handler)) ??
+    []) as PolicyRule[];
+  return rules.map((rule) => `${rule.action} ${rule.subject}`).sort();
+}
+
+/**
+ * The endpoint Nest mounts a handler at — method and path, less the global
+ * `/api/v{n}` prefix. The method is part of it because the catalog is keyed by it:
+ * reading a session and closing one share a route and are not the same endpoint.
+ */
+function endpointOf(controller: object, handler: string): string {
+  const base = Reflect.getMetadata(PATH_METADATA, controller) as string;
+  const method = Reflect.getMetadata(PATH_METADATA, methodOn(controller, handler)) as string;
+  const verb = Reflect.getMetadata(METHOD_METADATA, methodOn(controller, handler)) as RequestMethod;
+  const path = `/${[base, method].filter((segment) => segment && segment !== '/').join('/')}`;
+  return `${RequestMethod[verb]} ${path}`;
+}
+
+describe('the endpoint policy catalog and the handlers behind it', () => {
+  for (const [endpoint, { controller, handler }] of Object.entries(HANDLERS) as Array<
+    [GuardedEndpoint, { controller: object; handler: string }]
+  >) {
+    it(`${endpoint} demands exactly what ENDPOINT_POLICIES says it does`, () => {
+      const declared = ENDPOINT_POLICIES[endpoint]
+        .map((policy) => `${policy.action} ${policy.subject}`)
+        .sort();
+
+      expect(policiesOn(controller, handler)).toEqual(declared);
+    });
+
+    // Without this, pointing an entry at the wrong controller would leave the
+    // check above passing about an endpoint it is not looking at.
+    it(`${endpoint} is served by the handler the catalog names`, () => {
+      expect(endpointOf(controller, handler)).toBe(endpoint);
+    });
+  }
+
+  it('covers every endpoint in the catalog', () => {
+    expect(Object.keys(HANDLERS).sort()).toEqual(Object.keys(ENDPOINT_POLICIES).sort());
+  });
+});
