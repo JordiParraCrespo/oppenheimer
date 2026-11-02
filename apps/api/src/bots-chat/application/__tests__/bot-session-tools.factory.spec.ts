@@ -479,6 +479,33 @@ describe('BotSessionToolsFactory', () => {
       expect(result.data).toEqual({ sessionId: 'session-1' });
     });
 
+    it('refuses a field its cloud does not take before any card, so the owner is never asked to approve what cannot start', async () => {
+      const { commandBus, approvals, call } = setup('auto');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        agent: 'cursor',
+        host_id: HOME,
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('host_id is only for claude-code and codex');
+      expect(approvals.request).not.toHaveBeenCalled();
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('refuses a repository the project does not hold before any card', async () => {
+      const { approvals, call } = setup('auto');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        agent: 'codex',
+        repository: 'acme/other',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('The project has no repository acme/other');
+      expect(approvals.request).not.toHaveBeenCalled();
+    });
+
     it('refuses a host for Cursor, which runs with none, launching nothing', async () => {
       const { commandBus, call } = setup('full');
       const result = await call('start_cloud_session', {

@@ -120,17 +120,8 @@ export function planCloudSession(
   homeHostId: string | null,
 ): CloudSessionPlan | { refusal: string } {
   const agent = cloudAgentOf(input);
-  const misplaced = CLOUD_FIELDS.find(
-    (field) => input[field] !== undefined && !CLOUD_RULES[agent].fields.includes(field),
-  );
-  if (misplaced) {
-    const takers = CLOUD_SESSION_AGENTS.filter((each) =>
-      CLOUD_RULES[each].fields.includes(misplaced),
-    );
-    return {
-      refusal: `${misplaced} is only for ${takers.join(' and ')}; leave it out for ${agent}.`,
-    };
-  }
+  const misfit = cloudFieldRefusal(input);
+  if (misfit) return { refusal: misfit };
   const checkout = pickRepository(project, input.repository);
   if ('reason' in checkout) return { refusal: checkout.reason };
   const common = { projectId: project.id, name: input.name, prompt: input.task };
@@ -173,6 +164,23 @@ export function planCloudSession(
     };
   }
   return { kind: 'host', agent, hostId, body: parsed.data };
+}
+
+/**
+ * A field the call's cloud does not take, in words that say which clouds
+ * do; null when every field fits. Needs nothing but the input, so the card
+ * can refuse with it even when the project cannot be read.
+ */
+export function cloudFieldRefusal(input: StartCloudSessionInput): string | null {
+  const agent = cloudAgentOf(input);
+  const misplaced = CLOUD_FIELDS.find(
+    (field) => input[field] !== undefined && !CLOUD_RULES[agent].fields.includes(field),
+  );
+  if (!misplaced) return null;
+  const takers = CLOUD_SESSION_AGENTS.filter((each) =>
+    CLOUD_RULES[each].fields.includes(misplaced),
+  );
+  return `${misplaced} is only for ${takers.join(' and ')}; leave it out for ${agent}.`;
 }
 
 /** The host a call's card names: the one that would start it, none for a launched cloud. */

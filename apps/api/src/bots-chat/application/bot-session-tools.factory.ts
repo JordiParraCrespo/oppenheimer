@@ -28,6 +28,7 @@ import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
   CLOUD_SESSION_AGENTS,
   type CloudSessionPlan,
+  cloudFieldRefusal,
   cloudSessionHostId,
   cloudSessionSummary,
   cloudStartAnswer,
@@ -258,6 +259,10 @@ export class BotSessionToolsFactory implements BotToolArea {
       }),
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id).catch(() => null);
+        // A call that cannot start is refused here, before it interrupts the owner with a card.
+        const plan = project ? planCloudSession(input, project, context.homeHostId) : null;
+        const refusal = plan && 'refusal' in plan ? plan.refusal : cloudFieldRefusal(input);
+        if (refusal) throw new BotToolRefusal(refusal);
         const hostId = cloudSessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return cloudSessionSummary(input, project, host);
