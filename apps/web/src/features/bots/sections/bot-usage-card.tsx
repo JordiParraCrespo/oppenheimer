@@ -1,4 +1,4 @@
-import { Button, Card } from '@oppenheimer/design-system-web';
+import { Button, Card, ChatTranscript } from '@oppenheimer/design-system-web';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotUsageSkeleton } from '@/features/bots/components/bot-usage-skeleton';
@@ -17,29 +17,32 @@ export function BotUsageCard({ botId }: { botId: string }) {
   const open = useUsageCard(botId);
   if (!open) return null;
   return (
-    <Card padded className="mt-6">
-      <QueryState>
-        <QueryState.Pending>
-          <BotUsageSkeleton />
-        </QueryState.Pending>
-        <QueryState.Error>
-          {(error, retry) => (
-            <ErrorAlert
-              error={error}
-              fallback={t('bots.chat.usage.loadFailed')}
-              action={
-                <Button variant="ghost" size="sm" onClick={retry}>
-                  {t('common.retry')}
-                </Button>
-              }
-              onDismiss={() => closeUsageCard(botId)}
-            />
-          )}
-        </QueryState.Error>
-        <QueryState.Data>
-          <BotUsageSummary botId={botId} onClose={() => closeUsageCard(botId)} />
-        </QueryState.Data>
-      </QueryState>
-    </Card>
+    // The chat's own column, so the card lines up with its messages and the composer.
+    <ChatTranscript className="mt-5">
+      <Card padded>
+        <QueryState>
+          <QueryState.Pending>
+            <BotUsageSkeleton />
+          </QueryState.Pending>
+          <QueryState.Error>
+            {(error, retry) => (
+              <ErrorAlert
+                error={error}
+                fallback={t('bots.chat.usage.loadFailed')}
+                action={
+                  <Button variant="ghost" size="sm" onClick={retry}>
+                    {t('common.retry')}
+                  </Button>
+                }
+                onDismiss={() => closeUsageCard(botId)}
+              />
+            )}
+          </QueryState.Error>
+          <QueryState.Data>
+            <BotUsageSummary botId={botId} onClose={() => closeUsageCard(botId)} />
+          </QueryState.Data>
+        </QueryState>
+      </Card>
+    </ChatTranscript>
   );
 }
