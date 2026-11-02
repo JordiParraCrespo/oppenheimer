@@ -3,7 +3,14 @@ import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /** The figures' cells, a label and a number each, at the widths they run to. */
-const FIGURES = ['w-10', 'w-12', 'w-16', 'w-12', 'w-20', 'w-14'];
+const FIGURES = [
+  { key: 'turns', width: 'w-10' },
+  { key: 'active', width: 'w-12' },
+  { key: 'cache', width: 'w-16' },
+  { key: 'tokens', width: 'w-12' },
+  { key: 'first-model', width: 'w-20' },
+  { key: 'second-model', width: 'w-14' },
+];
 
 /**
  * The usage card before it answers: its title as it reads, this chat's
@@ -25,8 +32,8 @@ export function BotUsageSkeleton() {
       <section aria-hidden className="flex flex-col">
         <h4 className="pb-1 font-medium">{t('bots.chat.usage.thisChat')}</h4>
         <div className="grid grid-cols-2 gap-x-6 sm:grid-cols-3">
-          {FIGURES.map((width, index) => (
-            <div key={`${width}-${index}`} className={line}>
+          {FIGURES.map(({ key, width }) => (
+            <div key={key} className={line}>
               {bar(width)}
               {bar('w-8')}
             </div>
