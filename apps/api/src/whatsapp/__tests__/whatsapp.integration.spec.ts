@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { WhatsappAccountOrmEntity } from '../database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from '../database/whatsapp-account.repository';
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';

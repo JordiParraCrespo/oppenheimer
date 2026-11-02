@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { WHATSAPP_TEXT_MAX_CHARS } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { SendWhatsappMessageCommand } from '../../whatsapp/commands/send-whatsapp-message/send-whatsapp-message.command';
 import type {
   WhatsappChat,
