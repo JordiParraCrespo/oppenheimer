@@ -17,12 +17,12 @@ export interface UpstreamBudgetOptions {
 const LOCAL_MAX = 1_000;
 
 /**
- * A bucket's spending in fixed windows, shared through the store when it can
- * count (`incrementBy`), so every replica spends from one budget. The limiter
- * spends a call's cost before it sends the call: a provider's limit we know is
- * one we can keep without being told, rather than learn from its refusal. A
- * store that cannot count, or is down, never fails a call: the budget is then
- * this process's alone, and the failure is logged.
+ * A bucket's spending in fixed windows. The limiter spends a call's cost
+ * before it sends the call: a provider's limit we know is one we can keep
+ * without being told, rather than learn from its refusal. Two modes, never
+ * mixed: a store that can count (`incrementBy`) holds the one budget every
+ * replica spends from; without one, or for a call the store failed to count
+ * (logged, never a failed call), this process counts alone.
  */
 export class UpstreamBudget {
   private readonly logger = new Logger(UpstreamBudget.name);
@@ -53,25 +53,33 @@ export class UpstreamBudget {
    */
   async spend(bucket: string, cost: number, now: number = Date.now()): Promise<Date | null> {
     const window = Math.floor(now / this.options.windowMs);
-    const held = this.local.get(bucket);
-    let spent = (held?.window === window ? held.spent : 0) + cost;
-    this.remember(bucket, window, spent);
-    if (this.store?.incrementBy) {
-      try {
-        const ttlSeconds = Math.ceil(this.options.windowMs / 1000) + 1;
-        spent = Math.max(
-          spent,
-          await this.store.incrementBy(this.key(bucket, window), cost, ttlSeconds),
-        );
-      } catch (error) {
-        this.logger.warn({
-          message: `Could not count the shared ${this.system} budget; counting in this process only`,
-          bucket,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
+    const spent =
+      (await this.sharedSpend(bucket, window, cost)) ?? this.localSpend(bucket, window, cost);
     return spent > this.options.units ? new Date((window + 1) * this.options.windowMs) : null;
+  }
+
+  /** The shared count after this call, or null when there is no shared count to keep. */
+  private async sharedSpend(bucket: string, window: number, cost: number): Promise<number | null> {
+    if (!this.store?.incrementBy) return null;
+    try {
+      const ttlSeconds = Math.ceil(this.options.windowMs / 1000) + 1;
+      return await this.store.incrementBy(this.key(bucket, window), cost, ttlSeconds);
+    } catch (error) {
+      this.logger.warn({
+        message: `Could not count the shared ${this.system} budget; counting in this process only`,
+        bucket,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  /** This process's count after this call: the budget when no store can count it. */
+  private localSpend(bucket: string, window: number, cost: number): number {
+    const held = this.local.get(bucket);
+    const spent = (held?.window === window ? held.spent : 0) + cost;
+    this.remember(bucket, window, spent);
+    return spent;
   }
 
   private remember(bucket: string, window: number, spent: number): void {

@@ -355,19 +355,9 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          const { sessionId, subagents, images, mailDraft, rateLimit, ...result } = await call(
-            parsed.data,
-            callId ? { ...context, callId } : context,
-            signal,
+          return toEngineResult(
+            await call(parsed.data, callId ? { ...context, callId } : context, signal),
           );
-          const data = {
-            ...(sessionId ? { sessionId } : {}),
-            ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
-            ...(images ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
-            ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
-            ...(rateLimit ? { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } : {}),
-          };
-          return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
       };
       // Off never reaches here: the toolbox does not offer it.
@@ -418,10 +408,7 @@ function askingFirst<Input extends z.ZodType>(
         }
         return { content: await askOwner(spec, context, call, subject, reviewNote) };
       } catch (error) {
-        const { rateLimit, ...failed } = failureOf(error);
-        return rateLimit
-          ? { ...failed, data: { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } }
-          : failed;
+        return toEngineResult(failureOf(error));
       }
     },
   };
@@ -450,10 +437,7 @@ function reviewedFirst<Input extends z.ZodType>(
         const subject = await subjectOf(spec, call, context);
         return { content: await askOwner(spec, context, call, subject, verdict.note) };
       } catch (error) {
-        const { rateLimit, ...failed } = failureOf(error);
-        return rateLimit
-          ? { ...failed, data: { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } }
-          : failed;
+        return toEngineResult(failureOf(error));
       }
     },
   };
@@ -573,6 +557,24 @@ function describeIssues(error: z.ZodError): string {
  * call that refuses ends `failed`, not `approved`).
  */
 export class BotToolRefusal extends Error {}
+
+/**
+ * A call's result as the engine takes it: the words, and everything the chat
+ * or the turn reads apart from them (the session, the children, the images,
+ * the draft, the limit) as the call's data. Every path a call ends on, run,
+ * refused or failed, goes through here.
+ */
+function toEngineResult(result: BotToolResult): Awaited<ReturnType<BotEngineTool['run']>> {
+  const { sessionId, subagents, images, mailDraft, rateLimit, ...rest } = result;
+  const data = {
+    ...(sessionId ? { sessionId } : {}),
+    ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
+    ...(images?.length ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
+    ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
+    ...(rateLimit ? { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } : {}),
+  };
+  return Object.keys(data).length > 0 ? { ...rest, data } : rest;
+}
 
 /** A failed call: its words, and the limit it met when a system was limiting our requests. */
 function failureOf(error: unknown): BotToolResult {

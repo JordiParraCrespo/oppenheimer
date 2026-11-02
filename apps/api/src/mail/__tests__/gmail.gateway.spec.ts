@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GmailGateway } from '../infrastructure/gmail.gateway';
+import { GmailGateway, gmailUnitsOf } from '../infrastructure/gmail.gateway';
 import { GmailGrantRevokedError, GmailNotFoundError } from '../infrastructure/gmail-provider.port';
 
 /**
@@ -506,5 +506,21 @@ describe('GmailGateway', () => {
     expect(whole.body).toBe(long);
     expect(whole.bcc).toBe('audit@acme.test');
     expect(thread.messages[0].body).toContain('was cut');
+  });
+});
+
+describe('gmailUnitsOf', () => {
+  // What breaks this: the budget spending less than Gmail counts, so the bot
+  // meets Google's refusal before our own limit.
+  it('prices a call as Gmail’s quota table does, and an unknown one as the dearest ordinary call', () => {
+    expect(gmailUnitsOf('GET', 'messages/m1')).toBe(5);
+    expect(gmailUnitsOf('POST', 'messages/send')).toBe(100);
+    expect(gmailUnitsOf('POST', 'messages/batchModify')).toBe(50);
+    expect(gmailUnitsOf('POST', 'threads/t1/modify')).toBe(10);
+    expect(gmailUnitsOf('PUT', 'drafts/d1')).toBe(15);
+    expect(gmailUnitsOf('GET', 'drafts/d1')).toBe(5);
+    expect(gmailUnitsOf('POST', 'labels')).toBe(5);
+    expect(gmailUnitsOf('GET', 'messages/constructor')).toBe(5);
+    expect(gmailUnitsOf('POST', 'watch')).toBe(10);
   });
 });

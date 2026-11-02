@@ -515,28 +515,30 @@ export class GmailGateway implements GmailProviderPort {
 
 /**
  * What a call costs of Gmail's per-person quota, in Gmail's units
- * (developers.google.com/gmail/api/reference/quota). A path this does not
- * know is priced as the dearest read, so a new call never spends less than
- * it does.
+ * (developers.google.com/gmail/api/reference/quota), by resource, then by the
+ * path's second segment (`send`, `batchModify`) or the method. A new endpoint
+ * is a row here.
  */
+const GMAIL_UNITS: Record<string, { default: number; [segmentOrMethod: string]: number }> = {
+  messages: { default: 5, send: 100, batchModify: 50 },
+  threads: { default: 10 },
+  drafts: { default: 10, send: 100, GET: 5, PUT: 15 },
+  labels: { default: 1, POST: 5 },
+  history: { default: 2 },
+  profile: { default: 1 },
+  settings: { default: 1 },
+};
+/** A call this table does not know is priced as the dearest ordinary call, so it never spends less than it does. */
+const GMAIL_UNKNOWN_UNITS = 10;
+
 export function gmailUnitsOf(method: string, path: string): number {
-  const [resource, id] = path.split('/');
-  if (resource === 'messages') {
-    if (id === 'send') return 100;
-    if (id === 'batchModify') return 50;
-    return 5;
-  }
-  if (resource === 'threads') return 10;
-  if (resource === 'drafts') {
-    if (id === 'send') return 100;
-    if (method === 'GET') return 5;
-    if (method === 'PUT') return 15;
-    return 10;
-  }
-  if (resource === 'labels') return method === 'POST' ? 5 : 1;
-  if (resource === 'history') return 2;
-  if (resource === 'profile' || resource === 'settings') return 1;
-  return 10;
+  const [resource, segment] = path.split('/');
+  if (!Object.hasOwn(GMAIL_UNITS, resource)) return GMAIL_UNKNOWN_UNITS;
+  const prices = GMAIL_UNITS[resource];
+  // Own keys only: a segment is often an id, and an id must not read a prototype member.
+  const priced = (key: string | undefined) =>
+    key !== undefined && Object.hasOwn(prices, key) ? prices[key] : undefined;
+  return priced(segment) ?? priced(method) ?? prices.default;
 }
 
 /** A message as Gmail's API takes it: the whole of it, base64url, in its thread when it has one. */
@@ -579,17 +581,25 @@ async function eachThread(
       await write(id);
       outcome.changed.push(id);
     } catch (error) {
-      if (error instanceof GmailNotFoundError) {
-        outcome.missing.push(id);
-        continue;
-      }
-      // Stopped partway by the limit: what changed did change, and is said.
-      const limited = upstreamRateLimitOf(error);
-      if (!limited || index === 0) throw error;
-      outcome.notReached = threadIds.slice(index);
-      outcome.limited = limited;
-      return outcome;
+      if (error instanceof GmailNotFoundError) outcome.missing.push(id);
+      else return stoppedAt(outcome, threadIds.slice(index), error);
     }
   }
   return outcome;
+}
+
+/**
+ * A batch stopped by `error` with `rest` still to do. Gmail's limit after the
+ * batch got somewhere is an outcome: what it reached stands, the rest is not
+ * reached. Anything else, or a limit on the first thread, is the error itself.
+ */
+function stoppedAt(
+  outcome: GmailBulkOutcome,
+  rest: readonly string[],
+  error: unknown,
+): GmailBulkOutcome {
+  const limited = upstreamRateLimitOf(error);
+  const reached = outcome.changed.length + outcome.missing.length > 0;
+  if (!limited || !reached) throw error;
+  return { ...outcome, notReached: [...rest], limited };
 }
