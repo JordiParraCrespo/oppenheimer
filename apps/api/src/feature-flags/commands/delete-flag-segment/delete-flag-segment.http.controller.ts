@@ -2,11 +2,11 @@ import { Controller, Delete, HttpCode, Param, Query, UseGuards, Version } from '
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { DeleteFlagSegmentCommand } from './delete-flag-segment.command';
 import { DeleteFlagSegmentRequest } from './delete-flag-segment.request.dto';
 

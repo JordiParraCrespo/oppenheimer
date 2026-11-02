@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { PlanStatsQueryDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** Plan's Stats for a period, per week in the viewer's zone (`GET /plan/stats`). */
 export class FindPlanStatsQuery extends QueryBase {

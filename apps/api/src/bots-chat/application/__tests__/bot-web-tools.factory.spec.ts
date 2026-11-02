@@ -1,5 +1,5 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { BOT_IMAGE_MAX_BYTES } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import { SHOWN_IMAGES_DATA_KEY, SHOWN_IMAGES_PER_TURN } from '../../domain/bot-shown-image.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';

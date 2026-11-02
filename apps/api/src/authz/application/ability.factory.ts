@@ -7,14 +7,14 @@ import {
   type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
-import type { AbilityPort } from '../../auth/application/ability.port';
 import { type TenantRequest, tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
 import type {
   AuthzVersionRepositoryPort,
   AuthzVersions,
-} from '../database/authz-version.repository.port';
-import type { UserRoleRepositoryPort } from '../database/user-role.repository.port';
-import { AUTHZ_VERSION_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
+} from '../../roles/database/authz-version.repository.port';
+import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
+import { AUTHZ_VERSION_REPOSITORY, USER_ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
+import type { AbilityPort } from './ability.port';
 import { GlobalRoleRegistry } from './global-role.registry';
 
 /** Minimal shape of the authenticated principal the guard hands to the factory. */

@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import { BOT_LOOKUP } from '../../../bots/bots.di-tokens';
 import { BOT_MESSAGE_REPOSITORY } from '../../bots-chat.di-tokens';

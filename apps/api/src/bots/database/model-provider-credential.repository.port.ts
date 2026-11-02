@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotProvider } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 
 export interface ModelProviderCredentialRepositoryPort {

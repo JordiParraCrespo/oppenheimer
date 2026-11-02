@@ -1,8 +1,8 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { type CacheService, RedisCacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
 import { GithubInstallationEntity } from '../../../domain/github-installation.entity';
 import type { GithubAppPort, GithubRepository } from '../../../infrastructure/github-app.port';

@@ -1,4 +1,4 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { CiFindingEntity } from '../domain/ci-finding.entity';
 
 /** A pull request's head, as its findings are filed: its repository's id, its number and the commit. */

@@ -6,9 +6,9 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import type { AccessScope } from '../scope/access-scope';
-import { canGrant, describePermission, ungrantablePermissions } from './can-grant';
-import { canGrantScope } from './can-grant-scope';
+import type { AccessScope } from '../domain/access-scope.types';
+import { canGrant, describePermission, ungrantablePermissions } from '../domain/can-grant.policy';
+import { canGrantScope } from '../domain/can-grant-scope.policy';
 
 const abilityOf = (rules: Parameters<typeof defineAbilitiesFromPermissions>[0]) =>
   defineAbilitiesFromPermissions(rules);

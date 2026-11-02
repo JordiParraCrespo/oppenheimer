@@ -1,3 +1,5 @@
+import { LlmRateLimitError } from '@oppenheimer/backend-llm';
+
 /**
  * Who answers a bot's turn. `glm` is z.ai's Anthropic-compatible endpoint;
  * `chatgpt` is a ChatGPT subscription, through the backend the Codex CLI uses;
@@ -100,8 +102,12 @@ export interface BotTurnRequest {
   /** Model round trips before the turn ends with `max_steps`. Default 25. */
   maxSteps?: number;
   signal: AbortSignal;
-  /** A directory the engine may write in for this turn; the caller creates and deletes it. */
-  scratchDir: string;
+  /**
+   * A directory the engine may write in for this turn; the caller creates and
+   * deletes it. Optional: only the Claude engine needs one (Claude Code runs
+   * in it), and without one it makes its own for the turn and removes it.
+   */
+  scratchDir?: string;
   /** Absent: nothing the person sends meanwhile reaches this turn. */
   steering?: BotSteering;
 }
@@ -197,22 +203,6 @@ export const BOT_ENGINE_FAILURES = [
 export type BotEngineFailure = (typeof BOT_ENGINE_FAILURES)[number];
 
 /**
- * What `complete` throws when the provider refused for rate or quota. A
- * caller does not call it again before `resetAt` (null: the provider gave no
- * time, so the caller picks a wait of its own).
- */
-export class BotRateLimitError extends Error {
-  override readonly name = 'BotRateLimitError';
-
-  constructor(
-    message: string,
-    readonly resetAt: Date | null,
-  ) {
-    super(message);
-  }
-}
-
-/**
  * One answer to one message, with no tools and no history: a request for
  * text the caller keeps (a conversation's summary), on the same provider,
  * model and key a turn would use.
@@ -242,8 +232,9 @@ export abstract class BotEngine {
    * A completion: one model round trip with no tool at all, ours or the
    * engine's, through `run`, so it holds to the same contract (no key in an
    * error, abort honoured). Resolves to the text the model wrote; rejects
-   * with the turn's reason when it does not complete, as a
-   * `BotRateLimitError` when the provider refused for rate or quota.
+   * with the turn's reason when it does not complete, as an
+   * `LlmRateLimitError` (`@oppenheimer/backend-llm`, the type both model
+   * stacks raise) when the provider refused for rate or quota.
    */
   async complete(request: BotCompletionRequest): Promise<string> {
     const texts: string[] = [];
@@ -257,7 +248,9 @@ export abstract class BotEngine {
       if (event.type === 'text.done') texts.push(event.text);
       if (event.type === 'done' && event.reason !== 'completed') {
         const reason = event.error ?? `The completion ended ${event.reason}.`;
-        if (event.rateLimit) throw new BotRateLimitError(reason, event.rateLimit.resetAt);
+        if (event.rateLimit) {
+          throw new LlmRateLimitError(request.provider, reason, event.rateLimit.resetAt);
+        }
         throw new Error(reason);
       }
     }

@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { BOT_AVATAR_COLORS, type BotSection } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { CreateBotMemoryFactCommand } from '../../../bots/commands/create-bot-memory-fact/create-bot-memory-fact.command';
 import { DeleteBotMemoryFactCommand } from '../../../bots/commands/delete-bot-memory-fact/delete-bot-memory-fact.command';
 import { UpdateBotCommand } from '../../../bots/commands/update-bot/update-bot.command';

@@ -1,5 +1,5 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
+import { emptyScope } from '../../authz/domain/access-scope.types';
 import { BotRoutineResolver } from '../application/bot-routine.resolver';
 import { DeleteBotRoutineCommand } from '../commands/delete-bot-routine/delete-bot-routine.command';
 import { DeleteBotRoutineCommandHandler } from '../commands/delete-bot-routine/delete-bot-routine.command-handler';

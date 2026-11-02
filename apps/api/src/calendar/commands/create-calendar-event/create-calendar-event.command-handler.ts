@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { CALENDAR_EVENT_REPOSITORY } from '../../calendar.di-tokens';
 import type { CalendarEventRepositoryPort } from '../../database/calendar-event.repository.port';
 import { CalendarEventEntity } from '../../domain/calendar-event.entity';

@@ -1,6 +1,6 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
-import type { AbilityFactory } from '../../../roles/application/ability.factory';
+import type { AbilityFactory } from '../../../authz/application/ability.factory';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 
 /**

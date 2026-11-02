@@ -3,12 +3,12 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { PermissionDefinition } from '@oppenheimer/shared';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { MyPermissionsResponseDto } from '../../dtos/my-permissions.response.dto';
 import { GetMyPermissionsQuery } from './get-my-permissions.query';
 

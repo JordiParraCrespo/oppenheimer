@@ -23,12 +23,18 @@ const TESTS = ['\\.spec\\.ts$', '^src/[^/]+/__tests__/', '^src/__tests__/'];
  */
 const CROSS_MODULE_PUBLIC_SURFACE = [
   '^src/config/', // not a module: the composition root's configuration
-  // `roles` is @Global precisely so its AbilityFactory is the app's one
+  // `authz` is @Global precisely so its AbilityFactory is the app's one
   // answer to "what may this principal do". Handlers that check grantability
-  // ask it by design; it is published surface. The auth kernel is the one
-  // caller that may not name it — it asks through its own `ABILITY` port,
-  // which `roles` binds to the same factory (see `auth-is-a-kernel`).
-  '^src/roles/application/ability\\.factory\\.ts$',
+  // ask it by design; it is published surface.
+  '^src/authz/application/ability\\.factory\\.ts$',
+  // Its companion: a row-level check against the ability that factory built
+  // (tagging the row for CASL, which is why it is not in `domain/`).
+  '^src/authz/application/can-access-row\\.policy\\.ts$',
+  // The one tenancy check every tenant use case makes (`TENANT_001`).
+  '^src/authz/application/tenant-scope\\.policy\\.ts$',
+  // The base every tenant repository extends, and the predicate it applies:
+  // row scoping is a persistence concern, so it lives in `authz/database/`.
+  '^src/authz/database/scoped\\.repository\\.ts$',
   // The one way to report a system role the database does not have: two of
   // the three paths that raise it live outside `roles`.
   '^src/roles/application/missing-system-role\\.factory\\.ts$',
@@ -64,12 +70,12 @@ module.exports = {
     {
       name: 'domain-stays-pure',
       comment:
-        'The domain layer may only depend on @oppenheimer/backend-ddd, @oppenheimer/backend-authz, @oppenheimer/shared and node core. No NestJS, TypeORM, oxide.ts, @oppenheimer/backend-core, or any other infrastructure.',
+        'The domain layer may only depend on @oppenheimer/backend-ddd, @oppenheimer/shared and node core. No NestJS, TypeORM, oxide.ts, @oppenheimer/backend-core, the CASL runtime, or any other infrastructure.',
       severity: 'error',
       from: { path: '^src/[^/]+/domain/' },
       to: {
         dependencyTypesNot: ['core'],
-        pathNot: ['^src/[^/]+/domain/', 'packages/(backend/ddd|backend/authz|shared)/'],
+        pathNot: ['^src/[^/]+/domain/', 'packages/(backend/ddd|shared)/'],
       },
     },
     {
@@ -175,7 +181,7 @@ module.exports = {
     {
       name: 'auth-is-a-kernel',
       comment:
-        'src/auth is the kernel every other module is built on: it authenticates a request, resolves what its credential authorizes and applies the route’s policy. It must therefore know nothing of the features built on it — a credential kind is contributed with AuthModule.contributeCredentials, what a principal may do is asked through the ABILITY port, and who a credential belongs to through CREDENTIAL_OWNER. An import here is the kernel depending on one of its dependents, which is how the credential resolver came to hard-code API tokens.',
+        'src/auth is the kernel every other module is built on: it authenticates a request, and resolves what its credential authorizes; what the principal may then do is `authz`’s question, which builds on it. It must therefore know nothing of the features built on it — a credential kind is contributed with AuthModule.contributeCredentials, and who a credential belongs to is asked through CREDENTIAL_OWNER. An import here is the kernel depending on one of its dependents, which is how the credential resolver came to hard-code API tokens.',
       severity: 'error',
       from: {
         path: '^src/auth/',

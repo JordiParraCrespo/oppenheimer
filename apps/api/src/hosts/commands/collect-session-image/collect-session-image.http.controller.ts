@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { NoPolicy } from '@oppenheimer/backend-authz';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import { SESSION_FILE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import type { ParkedFile } from '../../../links/application/parked-file.port';
 import { CurrentHost } from '../../decorators/current-host.decorator';
 import { HostPrincipalGuard } from '../../guards/host-principal.guard';

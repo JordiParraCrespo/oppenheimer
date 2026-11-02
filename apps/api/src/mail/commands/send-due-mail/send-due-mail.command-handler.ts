@@ -1,8 +1,8 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { MAIL_SENDS_PER_DAY } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { GmailCallResolver } from '../../application/gmail-call.resolver';
 import { MailComposeResolver } from '../../application/mail-compose.resolver';
 import type { MailSendRepositoryPort } from '../../database/mail-send.repository.port';

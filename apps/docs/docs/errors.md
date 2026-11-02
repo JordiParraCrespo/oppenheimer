@@ -178,7 +178,7 @@ is authorized in is `product/versions/mvp/08-auth.md`.
 A route that reads or writes a workspace's rows answers `TENANT_001` when the
 request acts in no organization: open a workspace (or send a token minted in
 one) and try again. Every module raises this one code
-(`requireTenant` in `@oppenheimer/backend-authz`).
+(`requireTenant` in `apps/api/src/authz/application/tenant-scope.policy.ts`).
 
 It replaced a code per module, all of them a 400 saying the same thing about a
 different noun. These are retired and no longer sent: `BOTS_002` <a id="bots_002" />, `PROJECTS_002` <a id="projects_002" />, `GRANT_004` <a id="grant_004" />, `TASKS_003` <a id="tasks_003" />, `CLOUD_AGENTS_002` <a id="cloud_agents_002" />, `VOICE_001` <a id="voice_001" />, `MAIL_002` <a id="mail_002" />, `INBOX_001` <a id="inbox_001" />, `CALENDAR_002` <a id="calendar_002" />, `AUTOMATIONS_002` <a id="automations_002" />.

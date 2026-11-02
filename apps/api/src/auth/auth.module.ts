@@ -22,7 +22,6 @@ import { Session } from './database/session.orm-entity';
 import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
 import { OptionalApiAuthGuard } from './guards/optional-api-auth.guard';
-import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
 import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
 import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-auth-credential-verifier.adapter';
@@ -30,13 +29,12 @@ import { BetterAuthSessionCacheAdapter } from './infrastructure/better-auth-sess
 import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
 /**
- * The auth kernel: who is calling, with what credential, and whether the route
- * admits it. It knows nothing about the features built on it. A module that
- * owns a credential kind contributes a resolver with
- * {@link AuthModule.contributeCredentials}; what a principal may do comes
- * through the `ABILITY` port (bound by `roles`), who owns a credential through
- * `CREDENTIAL_OWNER` (bound by `users`). `auth-is-a-kernel` in
- * `.dependency-cruiser.cjs` enforces this.
+ * The auth kernel: who is calling, and with what credential. It knows nothing
+ * about the features built on it. A module that owns a credential kind
+ * contributes a resolver with {@link AuthModule.contributeCredentials}; who
+ * owns a credential comes through `CREDENTIAL_OWNER` (bound by `users`).
+ * `auth-is-a-kernel` in `.dependency-cruiser.cjs` enforces this. What the
+ * principal may then do is `authz`'s question (`PoliciesGuard`).
  *
  * {@link ScopesGuard} is registered globally in `AppModule`; the other guards
  * are applied per controller. The Better Auth HTTP handler is mounted in
@@ -70,7 +68,6 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     AuthCommandBusBridge,
     CompleteSignUpCommandHandler,
     RotateDelegatedSessionsCommandHandler,
-    PoliciesGuard,
     ApiAuthGuard,
     OptionalApiAuthGuard,
     ScopesGuard,
@@ -85,7 +82,6 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
   // is published as tokens, so nothing downstream names a concrete class.
   exports: [
-    PoliciesGuard,
     ApiAuthGuard,
     OptionalApiAuthGuard,
     ScopesGuard,

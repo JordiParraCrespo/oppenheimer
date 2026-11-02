@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { MilestoneEntity } from '../domain/milestone.entity';
 import type { MilestoneProgress } from '../milestone.mapper';
 

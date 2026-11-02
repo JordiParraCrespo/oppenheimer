@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { defineResource } from '../registry/resource-definition';
-import type { AccessScope } from './access-scope';
-import { applyAccessScope } from './apply-access-scope';
+import type { AccessScope } from '../../domain/access-scope.types';
+import { defineResource } from '../../domain/resource-definition.types';
+import { applyAccessScope } from '../scoped.repository';
 
 /**
  * A stand-in for TypeORM's `SelectQueryBuilder` that records the clauses it was

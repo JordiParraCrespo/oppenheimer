@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import type { Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
 import { BotResource } from '../../bots/bots.resource';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import type { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';

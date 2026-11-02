@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PermissionDefinition } from '@oppenheimer/shared';
-import type { RoleRepositoryPort } from '../database/role.repository.port';
-import { ROLE_REPOSITORY } from '../roles.di-tokens';
+import type { RoleRepositoryPort } from '../../roles/database/role.repository.port';
+import { ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
 
 /** The global roles as they stood at one catalog version. */
 interface Snapshot {

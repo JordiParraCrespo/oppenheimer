@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { AttachmentReading } from '../../infrastructure/attachment-reader.port';
 
 /** The bytes of one attachment of one message in one of the caller's Gmail accounts. */

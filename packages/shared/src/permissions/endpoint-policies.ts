@@ -23,7 +23,7 @@ export interface EndpointPolicy {
  * **The key carries the method**: destructive endpoints (closing a session,
  * archiving a project) share a path with a read, so a path alone cannot name them.
  *
- * `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` asserts that each
+ * `apps/api/src/authz/__tests__/endpoint-policies.spec.ts` asserts that each
  * endpoint below carries exactly the rules named here, and that the handler it
  * checks is really mounted at that method and path — so the assertion cannot
  * quietly be pointed at the wrong controller and go on passing.

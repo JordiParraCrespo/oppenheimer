@@ -2,7 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { defineAbilitiesFromPermissions, type PermissionDefinition } from '@oppenheimer/shared';
 import { None } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
-import type { AbilityFactory } from '../../../application/ability.factory';
+import type { AbilityFactory } from '../../../../authz/application/ability.factory';
 import { RoleGrantPolicy } from '../../../application/role-grant.policy';
 import type { RoleRepositoryPort } from '../../../database/role.repository.port';
 import type { RoleEntity } from '../../../domain/role.entity';

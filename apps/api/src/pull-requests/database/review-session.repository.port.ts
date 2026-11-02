@@ -1,4 +1,4 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 
 /** The pull request a review session reviews, as it was when it started. */
 export interface ReviewSessionLink {

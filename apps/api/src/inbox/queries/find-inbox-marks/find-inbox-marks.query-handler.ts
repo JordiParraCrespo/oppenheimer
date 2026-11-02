@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { requireOrganization } from '@oppenheimer/backend-authz';
 import { INBOX_MARKS_MAX } from '@oppenheimer/shared';
+import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
 import type { InboxMarkRepositoryPort } from '../../database/inbox-mark.repository.port';
 import type { InboxMarkEntity } from '../../domain/inbox-mark.entity';
 import { INBOX_MARK_REPOSITORY } from '../../inbox.di-tokens';

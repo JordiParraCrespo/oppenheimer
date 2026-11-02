@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { externalEventDefinition } from '@oppenheimer/shared/automations';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import type { InboundEventLookupPort } from '../../../inbound-events/application/inbound-event-lookup.port';
 import { INBOUND_EVENT_LOOKUP } from '../../../inbound-events/inbound-events.di-tokens';
 import type { TriggerPreview } from '../../domain/automation-read.types';

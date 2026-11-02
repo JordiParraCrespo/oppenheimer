@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { BOT_GROUP_REPOSITORY } from '../../bots.di-tokens';
 import type { BotGroupRepositoryPort } from '../../database/bot-group.repository.port';
 import { BotGroupEntity } from '../../domain/bot-group.entity';

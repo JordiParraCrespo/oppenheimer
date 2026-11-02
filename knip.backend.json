@@ -9,12 +9,7 @@
     "exports",
     "duplicates"
   ],
-  "ignore": [
-    "apps/api/**",
-    "packages/backend/authz/**",
-    "packages/backend/llm/**",
-    "packages/backend/agents/**"
-  ],
+  "ignore": ["apps/api/**", "packages/backend/llm/**", "packages/backend/agents/**"],
   "workspaces": {
     "apps/api": {
       "entry": [
@@ -26,7 +21,6 @@
       "project": ["src/**/*.ts"]
     },
     "packages/backend/agents": { "project": ["src/**/*.ts"] },
-    "packages/backend/authz": { "project": ["src/**/*.ts"] },
     "packages/backend/cache": { "project": ["src/**/*.ts"], "includeEntryExports": true },
     "packages/backend/core": { "project": ["src/**/*.ts"], "includeEntryExports": true },
     "packages/backend/ddd": { "project": ["src/**/*.ts"], "includeEntryExports": true },

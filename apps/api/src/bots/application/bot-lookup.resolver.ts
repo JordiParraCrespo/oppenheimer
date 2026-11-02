@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { BotDocumentName } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { BOT_REPOSITORY } from '../bots.di-tokens';
 import type { BotRepositoryPort } from '../database/bot.repository.port';
 import type { BotEntity } from '../domain/bot.entity';

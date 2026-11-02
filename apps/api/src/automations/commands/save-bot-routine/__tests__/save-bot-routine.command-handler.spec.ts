@@ -1,7 +1,7 @@
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import { MailErrors } from '../../../../mail/domain/mail.errors';
 import { AutomationPlanFactory } from '../../../application/automation-plan.factory';
 import { BotRoutineResolver } from '../../../application/bot-routine.resolver';

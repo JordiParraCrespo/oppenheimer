@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';

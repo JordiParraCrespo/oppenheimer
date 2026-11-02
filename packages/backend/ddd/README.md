@@ -21,8 +21,8 @@ rules.
 - **Repository base**: `TypeOrmRepositoryBase`, the port's four methods for a
   non-tenant TypeORM adapter (map, write through `writeWithEvents`, map back;
   `idColumn` for a table keyed by something other than `id`). Tenant-scoped
-  adapters use `ScopedRepositoryBase` from `@oppenheimer/backend-authz`
-  instead.
+  adapters use `ScopedRepositoryBase` from the API's
+  `src/authz/database/scoped.repository.ts` instead.
 - **Optimistic concurrency, the default write of an existing aggregate**:
   `VersionedAggregateRoot` (carries the row's version), `writeVersioned`
   (one `UPDATE … WHERE id AND version` that bumps it, or throws

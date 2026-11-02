@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** One skill of a bot, by its id or by its name (what a slash command or `use_skill` names). */
 export class FindBotSkillQuery extends QueryBase {

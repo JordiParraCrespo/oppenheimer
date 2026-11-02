@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { WorkspaceRepository } from '../../../github/application/pull-request-access.port';
 import type { PullRequestDirectoryPort } from '../../../github/application/pull-request-directory.port';
 import type {

@@ -24,9 +24,13 @@ behind it.
   `openai-compatible` covers everything else that serves
   `POST {baseUrl}/chat/completions`: Groq, Fireworks, vLLM, a local Ollama.
 - `LlmError` — one error type, with a `code`: `not_configured`, `timeout`,
-  `aborted`, `network`, `rate_limited` (with `resetAt`), `http` (with
-  `status`) or `invalid_response`. A provider that answered `429` is not
-  called again by that service until its `Retry-After` has passed.
+  `aborted`, `network`, `rate_limited`, `http` (with `status`) or
+  `invalid_response`. A rate limit is its subclass `LlmRateLimitError`, with
+  `resetAt` (a `Date`, or `null` when the provider did not say). A provider
+  that answered `429` is not called again by that service until its
+  `Retry-After` has passed. `LlmRateLimitError` is also what
+  `@oppenheimer/backend-agents` raises when a bot engine's provider refuses
+  for rate, so a caller handles a rate limit the same way on either stack.
 - `createLlmService(config)` builds a client without Nest; `llmIsConfigured(config)`
   answers whether one could make a call, without building anything.
 - `LlmModule.forRoot(config)` / `forRootAsync({ inject, useFactory })` — a
